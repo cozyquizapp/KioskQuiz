@@ -1,0 +1,1033 @@
+﻿import { useEffect, useRef, useState } from 'react';
+import { AnyQuestion, MultipleChoiceQuestion, SortItemsQuestion, BingoBoard } from '@shared/quizTypes';
+import {
+  fetchCurrentQuestion,
+  joinRoom,
+  submitAnswer,
+  fetchBingoBoard,
+  markBingoCell,
+  fetchLanguage
+} from '../api';
+import { theme } from '../theme';
+import { connectToRoom, SOCKET_URL } from '../socket';
+import { categoryColors } from '../categoryColors';
+import { categoryLabels } from '../categoryLabels';
+import { categoryIcons } from '../categoryAssets';
+import { PrimaryButton, Pill } from '../components/uiPrimitives';
+import { SyncStatePayload } from '@shared/quizTypes';
+import {
+  pageStyleTeam,
+  gridOverlay,
+  contentShell,
+  footerLogo,
+  hourglassStyle,
+  headerBarTeam,
+  pillSmall,
+  logoBadge,
+  heroCard,
+  heroIcon,
+  eyebrow,
+  metaRow,
+  metaChip,
+  glassCard,
+  pillLabel,
+  heading,
+  mutedText,
+  softDivider,
+  inputStyle,
+  primaryButton,
+  choiceButton,
+  progressOuter,
+  progressInner,
+  progressKnob,
+  questionShell,
+  gradientHalo,
+  questionHeader,
+  categoryChip,
+  chipIcon,
+  connectionPill,
+  timerPill,
+  questionStyleTeam
+} from './teamStyles';
+
+type Phase = 'notJoined' | 'waitingForQuestion' | 'answering' | 'waitingForResult' | 'showResult';
+
+interface TeamViewProps {
+  roomCode: string;
+}
+
+const COPY = {
+  de: {
+    send: 'Antwort senden',
+    waiting: 'Antwort eingeloggt! Bitte warten...',
+    waitingSoon: 'Quiz startet gleich ...',
+    waitingJoin: 'Bitte beitreten, dann geht es gleich los.',
+    waitingAdmin: 'Warte auf Admin ...',
+    joinWelcome: 'Willkommen beim Cozy Bingo Quiz',
+    joinHint: "Gib deinen Teamnamen ein, bestaetige und dann geht's los.",
+    timerActiveLabel: 'Timer aktiv',
+    timerDoneLabel: 'Zeit vorbei',
+    evaluating: 'Wir pruefen alle Antworten ...',
+    bingoTitle: 'Bingo',
+    bingoReady: 'Du hast die Frage richtig - setze jetzt ein X auf ein freies Feld der aktuellen Kategorie.',
+    readyOn: 'Wir sind bereit',
+    readyOff: 'Wir sind noch nicht bereit',
+    joinTitle: 'Team beitreten',
+    joinPlaceholder: 'Teamname',
+    joinButton: 'Beitreten',
+    waitingMsg: 'Bitte wartet auf die naechste Frage ...',
+    tfTrue: 'Wahr',
+    tfFalse: 'Falsch',
+    inputNumber: (unit?: string) => (unit ? `in ${unit}` : 'Zahl eingeben'),
+    inputOrder: 'Reihenfolge eingeben',
+    inputAnswer: 'Antwort eingeben',
+    timeLeft: (s: number) => `${s}s verbleibend`,
+    resultTitle: (correct: boolean | null) =>
+      correct === null ? 'Ergebnis' : correct ? 'Richtig!' : 'Leider falsch',
+    loginError: 'Bitte zuerst beitreten.',
+    markError: 'Du kannst ein Feld nur nach einer richtigen Antwort markieren.',
+    kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
+    estimateBest: 'Ihr wart am naechsten dran!',
+    estimateWorse: 'Leider weiter weg als das beste Team.'
+  },
+  en: {
+    send: 'Submit answer',
+    waiting: 'Answer submitted! Please wait...',
+    waitingSoon: 'Quiz starting soon ...',
+    waitingJoin: 'Please join to get started.',
+    waitingAdmin: 'Waiting for host ...',
+    joinWelcome: 'Welcome to Cozy Bingo Quiz',
+    joinHint: 'Enter your team name, confirm, and off you go.',
+    timerActiveLabel: 'Timer active',
+    timerDoneLabel: 'Time is up',
+    evaluating: 'We are checking all answers ...',
+    bingoTitle: 'Bingo',
+    bingoReady: 'You answered correctly - place an X on a free cell of the current category.',
+    readyOn: 'We are ready',
+    readyOff: 'We are not ready yet',
+    joinTitle: 'Join team',
+    joinPlaceholder: 'Team name',
+    joinButton: 'Join',
+    waitingMsg: 'Please wait for the next question ...',
+    tfTrue: 'True',
+    tfFalse: 'False',
+    inputNumber: (unit?: string) => (unit ? `in ${unit}` : 'Enter number'),
+    inputOrder: 'Enter order',
+    inputAnswer: 'Enter answer',
+    timeLeft: (s: number) => `${s}s remaining`,
+    resultTitle: (correct: boolean | null) =>
+      correct === null ? 'Result' : correct ? 'Correct!' : 'Incorrect',
+    estimateBest: 'You were the closest!',
+    estimateWorse: 'Further off than the best team.',
+    loginError: 'Please join first.',
+    markError: 'You can only mark a field after a correct answer.',
+    kicked: 'You were removed by the admin. Please rejoin.'
+  }
+} as const;
+
+function TeamView({ roomCode }: TeamViewProps) {
+  const [teamName, setTeamName] = useState('');
+  const [teamId, setTeamId] = useState<string | null>(null);
+  const [question, setQuestion] = useState<AnyQuestion | null>(null);
+  const [questionMeta, setQuestionMeta] = useState<any | null>(null);
+  const [answer, setAnswer] = useState<string>('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [board, setBoard] = useState<BingoBoard>([]);
+  const [phase, setPhase] = useState<Phase>('notJoined');
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [resultCorrect, setResultCorrect] = useState<boolean | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
+  const [timerDuration, setTimerDuration] = useState<number>(30);
+  const [transitioning, setTransitioning] = useState(false);
+  const [canMarkBingo, setCanMarkBingo] = useState(false);
+  const [showBingoPanel, setShowBingoPanel] = useState(false);
+  const [timerTick, setTimerTick] = useState(0);
+  const [language, setLanguage] = useState<'de' | 'en'>('de');
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [allowReadyToggle, setAllowReadyToggle] = useState(true);
+  const [evaluating, setEvaluating] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [toast, setToast] = useState<string | null>(null);
+  const [solution, setSolution] = useState<string | null>(null);
+  const [isFinal, setIsFinal] = useState(false);
+
+  const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recoveringRef = useRef(false);
+  const [reconnectKey, setReconnectKey] = useState(0);
+
+  // inject animations once
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const id = 'teamview-anim-style';
+    if (!document.getElementById(id)) {
+      const style = document.createElement('style');
+      style.id = id;
+      style.innerHTML = `
+      @keyframes hourglass-wiggle {
+        0% { transform: translateY(0) rotate(-4deg); }
+        50% { transform: translateY(-4px) rotate(0deg); }
+        100% { transform: translateY(0) rotate(4deg); }
+      }
+      @keyframes sendPulse {
+        0% { box-shadow: 0 12px 26px rgba(0,0,0,0.25); transform: translateY(0) scale(1); }
+        50% { box-shadow: 0 16px 38px rgba(0,0,0,0.35), 0 0 0 6px rgba(255,255,255,0.08); transform: translateY(-2px) scale(1.01); }
+        100% { box-shadow: 0 12px 26px rgba(0,0,0,0.25); transform: translateY(0) scale(1); }
+      }
+      @keyframes timeup-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+        100% { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+      }`;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  const t = <K extends keyof (typeof COPY)['de']>(key: K) => COPY[language]?.[key] ?? COPY.de[key];
+
+  const handleReconnect = () => {
+    setConnectionStatus('connecting');
+    setReconnectKey((v) => v + 1);
+  };
+
+  // Socket connection & live updates
+  useEffect(() => {
+    const socket = connectToRoom(roomCode);
+    socketRef.current = socket;
+    setConnectionStatus('connecting');
+
+    socket.on('connect', () => {
+      setConnectionStatus('connected');
+      setToast(null);
+      // Falls wir bereits einen Teamnamen haben, bei Reconnect automatisch beitreten
+      if (teamName && !recoveringRef.current && !teamId) {
+        recoveringRef.current = true;
+        handleJoin()
+          .catch(() => undefined)
+          .finally(() => {
+            recoveringRef.current = false;
+          });
+      }
+    });
+    socket.on('disconnect', () => setConnectionStatus('disconnected'));
+    socket.io?.on?.('reconnect_attempt', () => setConnectionStatus('connecting'));
+
+    socket.on('syncState', (payload: SyncStatePayload) => {
+      if (payload.language) setLanguage(payload.language);
+      if (payload.question) {
+        setQuestion(payload.question);
+        setQuestionMeta(payload.questionMeta);
+        setPhase(
+          payload.questionPhase === 'revealed'
+            ? 'showResult'
+            : payload.questionPhase === 'evaluated'
+            ? 'waitingForResult'
+            : 'answering'
+        );
+        setAllowReadyToggle(false);
+        setAnswerSubmitted(false);
+        setResultMessage(null);
+        setResultCorrect(null);
+        setSolution(null);
+        setIsFinal(false);
+      } else {
+        setQuestion(null);
+        setQuestionMeta(null);
+        setPhase(teamId ? 'waitingForQuestion' : 'notJoined');
+        setAllowReadyToggle(true);
+      }
+      setTimerEndsAt(payload.timerEndsAt ?? null);
+      if (payload.timerEndsAt) {
+        const remaining = Math.max(0, Math.ceil((payload.timerEndsAt - Date.now()) / 1000));
+        setTimerDuration(remaining || 30);
+      }
+    });
+
+    socket.on('team:show-question', ({ question: q }) => {
+      setQuestion(q);
+      setPhase('answering');
+      setAllowReadyToggle(false);
+      setAnswer('');
+      setAnswerSubmitted(false);
+      setResultMessage(null);
+      setResultCorrect(null);
+    });
+
+    socket.on('timerStarted', ({ endsAt }) => {
+      setTimerEndsAt(endsAt);
+      const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setTimerDuration(remaining || 30);
+    });
+    socket.on('timerStopped', () => setTimerEndsAt(null));
+
+    socket.on('evaluation:started', () => {
+      setPhase('waitingForResult');
+      setEvaluating(true);
+      setIsFinal(false);
+    });
+    socket.on('answersEvaluated', ({ answers }) => {
+      setEvaluating(false);
+      if (teamId && answers && answers[teamId]) {
+        const entry = answers[teamId];
+        setResultCorrect(Boolean(entry.isCorrect));
+        if (entry.deviation !== undefined && entry.bestDeviation !== undefined) {
+          if (entry.deviation === entry.bestDeviation) {
+            setResultMessage(COPY[language].estimateBest);
+          } else {
+            setResultMessage(COPY[language].estimateWorse);
+          }
+        }
+        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
+        setPhase('showResult');
+      }
+    });
+    socket.on('teamResult', ({ teamId: tId, isCorrect, deviation, bestDeviation, solution: sol }) => {
+      if (tId !== teamId) return;
+      setResultCorrect(Boolean(isCorrect));
+      if (deviation !== undefined && bestDeviation !== undefined) {
+        setResultMessage(
+          deviation === bestDeviation ? COPY[language].estimateBest : COPY[language].estimateWorse
+        );
+      }
+      setPhase('showResult');
+      if (isCorrect) {
+        setCanMarkBingo(true);
+        setShowBingoPanel(true);
+      }
+      if (sol) setSolution(sol);
+      setIsFinal(true);
+    });
+    socket.on('teamKicked', ({ teamId: kicked }) => {
+      if (kicked === teamId) {
+        setMessage(COPY[language].kicked);
+        setTeamId(null);
+        setPhase('notJoined');
+      }
+    });
+    socket.on('languageChanged', ({ language: lang }) => {
+      if (lang === 'de' || lang === 'en') setLanguage(lang);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [roomCode, teamId, language, reconnectKey]);
+
+  // Timer tick for smooth progress animations
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setTimerTick((t) => t + 1);
+    }, 500);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [timerEndsAt]);
+
+  const connectionStatusPill = () => (
+    <div style={connectionPill(connectionStatus)}>
+      {language === 'de'
+        ? connectionStatus === 'connected'
+          ? 'Verbunden'
+          : connectionStatus === 'connecting'
+          ? 'Verbinde...'
+          : 'Getrennt'
+        : connectionStatus === 'connected'
+        ? 'Online'
+        : connectionStatus === 'connecting'
+        ? 'Reconnecting...'
+        : 'Offline'}
+      {connectionStatus === 'disconnected' && (
+        <button
+          style={{
+            marginLeft: 10,
+            padding: '6px 10px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.22)',
+            background: 'rgba(255,255,255,0.06)',
+            color: '#e5e7eb',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+          onClick={handleReconnect}
+        >
+          {language === 'de' ? 'Erneut verbinden' : 'Reconnect'}
+        </button>
+      )}
+    </div>
+  );
+
+  const loadQuestion = async () => {
+    const data = await fetchCurrentQuestion(roomCode);
+    setQuestion(data.question);
+    if (data.question) {
+      setPhase('answering');
+      setResultMessage(null);
+      setAllowReadyToggle(false);
+    } else {
+      setPhase('waitingForQuestion');
+      setResultMessage(null);
+      setAllowReadyToggle(true);
+    }
+  };
+
+  const handleJoin = async () => {
+    try {
+      const data = await joinRoom(roomCode, teamName);
+      setTeamId(data.team.id);
+      if (data.board) {
+        setBoard(data.board);
+      } else {
+        const fetched = await fetchBingoBoard(roomCode, data.team.id);
+        setBoard(fetched.board);
+      }
+      try {
+        const langRes = await fetchLanguage(roomCode);
+        if (langRes?.language) setLanguage(langRes.language);
+      } catch {
+        // ignore
+      }
+      await loadQuestion();
+      setMessage(null);
+    } catch (err) {
+      setMessage(
+          language === 'de'
+          ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung pruefen.`
+          : `Join failed (${SOCKET_URL}). Please check room code/connection.`
+        );
+    }
+  };
+
+  const offlineBar = () =>
+    connectionStatus === 'disconnected' ? (
+      <div
+        style={{
+          position: 'fixed',
+          top: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '8px 12px',
+          borderRadius: 12,
+          background: 'rgba(239,68,68,0.14)',
+          border: '1px solid rgba(239,68,68,0.45)',
+          color: '#fecdd3',
+          fontWeight: 700,
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}
+      >
+        {language === 'de' ? 'Offline - bitte erneut verbinden' : 'Offline - please reconnect'}
+        <button
+          style={{
+            padding: '6px 10px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(255,255,255,0.08)',
+            color: '#e5e7eb',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+          onClick={handleReconnect}
+        >
+          {language === 'de' ? 'Neu verbinden' : 'Reconnect'}
+        </button>
+      </div>
+    ) : null;
+
+  const renderAnswering = () => (
+    <div
+      style={{
+        ...questionShell,
+        opacity: transitioning ? 0.4 : 1,
+        transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
+        transition: 'opacity 0.3s ease, transform 0.35s ease',
+        background: 'rgba(12,15,22,0.9)',
+        color: '#e2e8f0',
+        borderColor: timeUp ? 'rgba(239,68,68,0.9)' : `${accentColor}66`,
+        boxShadow: timeUp
+          ? '0 0 0 3px rgba(239,68,68,0.35), 0 24px 40px rgba(0,0,0,0.45)'
+          : `0 22px 40px ${accentColor}33`,
+        animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
+      }}
+    >
+      <div style={questionHeader}>
+        <div
+          style={{
+            ...categoryChip,
+            background: 'rgba(0,0,0,0.45)',
+            border: `1px solid ${accentColor}66`,
+            color: '#e2e8f0'
+          }}
+        >
+          {accentIcon && (
+            <img
+              src={accentIcon}
+              alt={accentLabel}
+              style={{
+                ...chipIcon,
+                transform: `translate(${layout.logoOffsetX ?? 0}px, ${layout.logoOffsetY ?? 0}px)`
+              }}
+            />
+          )}
+          <span>{accentLabel}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {connectionStatusPill()}
+      <div style={{ ...pillLabel, marginBottom: 0 }}>
+        {isFinal
+          ? language === 'de'
+            ? 'Final'
+            : 'Final'
+          : evaluating || phase === 'waitingForResult'
+          ? language === 'de'
+            ? 'Host prueft...'
+            : 'Host reviewing...'
+          : phase === 'answering'
+          ? language === 'de'
+            ? 'Antworten'
+            : 'Answering'
+          : 'Warten'}
+      </div>
+          {hasTimer && (
+            <div
+              style={{
+                ...timerPill,
+                background: 'rgba(0,0,0,0.35)',
+                border: `1px solid ${accentColor}66`,
+                color: '#e2e8f0'
+              }}
+            >
+              {COPY[language].timeLeft(Math.round(remainingSeconds))}
+            </div>
+          )}
+        </div>
+      </div>
+      <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question ?? COPY[language].waitingMsg}</h2>
+      {(() => {
+        const q: any = question;
+        const mediaUrl = q?.imageUrl || q?.media?.url;
+        if (!q || !mediaUrl) return null;
+        return (
+          <div style={{ margin: '10px 0 6px', display: 'flex', justifyContent: 'center' }}>
+            <img
+              src={mediaUrl}
+              alt="Fragebild"
+              style={{
+                maxWidth: '90%',
+                maxHeight: 220,
+                objectFit: 'contain',
+                borderRadius: 16,
+                border: `1px solid ${accentColor}55`,
+                boxShadow: `0 16px 32px ${accentColor}33`,
+                transform: `translate(${layout.imageOffsetX ?? 0}px, ${layout.imageOffsetY ?? 0}px)`
+              }}
+            />
+          </div>
+        );
+      })()}
+      {hasTimer && (
+        <div style={{ marginTop: 10 }} />
+      )}
+      <div style={{ marginTop: 10 }}>{renderInput(accentColor)}</div>
+      {timeUp && (
+        <p style={{ color: '#ef4444', fontWeight: 700, marginTop: 8 }}>
+          Leider ist die Zeit schon vorbei.
+        </p>
+      )}
+      <button
+        style={{
+          ...primaryButton,
+          marginTop: 14,
+          background: `linear-gradient(90deg, ${accentColor} ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.08) ${Math.max(0, Math.min(100, progress))}%)`,
+          color: '#0d0f14',
+          boxShadow: `0 16px 30px ${accentColor}55`,
+          border: `1px solid ${accentColor}66`,
+          animation: 'none',
+          cursor: canAnswer ? 'pointer' : 'not-allowed',
+          opacity: canAnswer ? 1 : 0.6,
+          transform: canAnswer ? undefined : 'scale(0.99)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+        onClick={handleSubmit}
+        disabled={!canAnswer}
+      >
+        <span
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            fontWeight: 900
+          }}
+        >
+          {t('send')}
+        </span>
+        <span
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'repeating-linear-gradient(135deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 6px, transparent 6px, transparent 12px)',
+            opacity: 0.4,
+            pointerEvents: 'none'
+          }}
+        />
+      </button>
+      {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
+    </div>
+  );
+
+  const renderWaitingForResult = () =>
+    renderWaiting(
+      t('waiting'),
+      language === 'de' ? 'Wir pruefen alle Antworten ...' : (COPY[language] as any).evaluating ?? COPY.en.evaluating
+    );
+
+const handleSubmit = async () => {
+    if (!teamId) {
+      if (teamName) {
+        try {
+          await handleJoin();
+        } catch {
+          setMessage(COPY[language].loginError);
+          return;
+        }
+      } else {
+        setMessage(COPY[language].loginError);
+        return;
+      }
+    }
+    if (!canAnswer) return;
+    try {
+      await submitAnswer(roomCode, teamId, answer);
+      setAnswerSubmitted(true);
+      setPhase('waitingForResult');
+      setAllowReadyToggle(false);
+      setTransitioning(true);
+      setTimeout(() => setTransitioning(false), 400);
+      setMessage(null);
+    } catch (err) {
+      setMessage(
+        language === 'de'
+          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prüfen.'
+          : 'Could not send answer. Please check connection.'
+      );
+    }
+  };
+
+  const handleMarkCell = async (cellIndex: number) => {
+    if (!teamId) {
+      setMessage(COPY[language].loginError);
+      return;
+    }
+    if (!canMarkBingo) return;
+    try {
+      const res = await markBingoCell(roomCode, teamId, cellIndex);
+      setBoard(res.board);
+      setCanMarkBingo(false);
+      setShowBingoPanel(true);
+      setMessage(null);
+    } catch (err) {
+      setMessage(
+        language === 'de'
+          ? COPY[language].markError
+          : COPY[language].markError
+      );
+    }
+  };
+
+  const renderInput = (accent: string) => {
+    if (!question) return null;
+    switch (question.mechanic) {
+      case 'multipleChoice': {
+        const q = question as MultipleChoiceQuestion;
+        return (
+          <div style={{ display: 'grid', gap: 10 }}>
+            {q.options.map((opt, idx) => (
+              <button
+                key={idx}
+                style={{
+                  ...choiceButton,
+                  border: `1px solid ${accent}55`,
+                  background: answer === String(idx) ? `${accent}22` : 'rgba(255,255,255,0.04)`',
+                  color: '#e2e8f0'
+                }}
+                onClick={() => setAnswer(String(idx))}
+                disabled={!canAnswer}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      }
+      case 'trueFalse':
+        return (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              style={{
+                ...choiceButton,
+                border: `1px solid ${accent}55`,
+                background: answer === 'true' ? `${accent}22` : 'rgba(255,255,255,0.04)`',
+                color: '#e2e8f0'
+              }}
+              onClick={() => setAnswer('true')}
+              disabled={!canAnswer}
+            >
+              {COPY[language].tfTrue}
+            </button>
+            <button
+              style={{
+                ...choiceButton,
+                border: `1px solid ${accent}55`,
+                background: answer === 'false' ? `${accent}22` : 'rgba(255,255,255,0.04)`',
+                color: '#e2e8f0'
+              }}
+              onClick={() => setAnswer('false')}
+              disabled={!canAnswer}
+            >
+              {COPY[language].tfFalse}
+            </button>
+          </div>
+        );
+      case 'sortItems': {
+        const q = question as SortItemsQuestion;
+        return (
+          <input
+            style={inputStyle}
+            placeholder={COPY[language].inputOrder}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            disabled={!canAnswer}
+          />
+        );
+      }
+      default: {
+        const unit = (question as any).unit;
+        return (
+          <input
+            style={inputStyle}
+            placeholder={COPY[language].inputNumber(unit)}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            disabled={!canAnswer}
+            autoFocus
+          />
+        );
+      }
+    }
+  };
+
+  const renderShowResult = () => (
+    <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
+      <div style={pillLabel}>
+        {isFinal
+          ? language === 'de'
+            ? 'Final'
+            : 'Final'
+          : evaluating
+          ? language === 'de'
+            ? 'Host prueft...'
+            : 'Host reviewing...'
+          : language === 'de'
+          ? 'Ergebnis'
+          : 'Result'}
+      </div>
+      <p style={{ margin: 0, color: resultCorrect ? '#22c55e' : '#ef4444', fontSize: 24, fontWeight: 900 }}>
+        {COPY[language].resultTitle(resultCorrect)}
+      </p>
+      {resultMessage && <p style={{ margin: 0, color: 'var(--muted)' }}>{resultMessage}</p>}
+      {solution && (
+        <p style={{ margin: '8px 0 0', color: '#e2e8f0', fontWeight: 700 }}>
+          {language === 'de' ? 'Loesung:' : 'Solution:'} {solution}
+        </p>
+      )}
+    </div>
+  );
+
+  const renderBingo = () => {
+    if (board.length !== 25) return null;
+    const show = canMarkBingo || showBingoPanel;
+    if (!show) return null;
+    const activeCategory = question.category;
+    return (
+      <div style={{ ...glassCard, marginTop: theme.spacing(2) }}>
+        <div style={pillLabel}>{t('bingoTitle')}</div>
+        {canMarkBingo && <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 8 }}>{t('bingoReady')}</p>}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            gap: 8
+          }}
+        >
+          {board.map((cell, idx) => {
+            const color = categoryColors[cell.category] ?? 'var(--surface)';
+            const isActiveCategory = !activeCategory || cell.category === activeCategory;
+            const isAllowed = canMarkBingo && !cell.marked && isActiveCategory;
+            const icon = categoryIcons[cell.category];
+            return (
+              <button
+                key={idx}
+                onClick={() => handleMarkCell(idx)}
+                style={{
+                  aspectRatio: '1 / 1',
+                  borderRadius: 12,
+                  border: cell.marked ? '2px solid #fff' : '1px solid rgba(255,255,255,0.12)',
+                  background: cell.marked ? '#0d0f14' : color,
+                  color: cell.marked ? '#fff' : '#0d0f14',
+                  fontWeight: 800,
+                  boxShadow: cell.marked ? '0 14px 28px rgba(0,0,0,0.35)' : '0 10px 20px rgba(0,0,0,0.18)',
+                  cursor: isAllowed ? 'pointer' : 'not-allowed',
+                  opacity: isAllowed ? 1 : 0.45,
+                  filter: isActiveCategory ? 'none' : 'grayscale(0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                disabled={!isAllowed}
+              >
+                {!cell.marked && icon && (
+                  <img
+                    src={icon}
+                    alt=""
+                    style={{ position: 'absolute', inset: 10, opacity: 0.26, objectFit: 'contain' }}
+                  />
+                )}
+                <span style={{ position: 'relative', zIndex: 1 }}>{cell.marked ? 'X' : ''}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderBingoPrompt = () => (
+    <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '20px 18px' }}>
+      <div style={pillLabel}>{t('bingoTitle')}</div>
+      <h3 style={{ ...heading, marginBottom: 6 }}>
+        {language === 'de' ? 'Richtig! Setzt jetzt euer Feld.' : 'Correct! Place your bingo mark.'}
+      </h3>
+      <p style={{ ...mutedText, margin: 0 }}>
+        {language === 'de'
+          ? 'Wählt ein freies Feld der aktuellen Kategorie.'
+          : 'Pick a free cell of the current category.'}
+      </p>
+    </div>
+  );
+
+  const renderNotJoined = () => (
+    <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
+      <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Join
+      </Pill>
+      <h3 style={{ ...heading, marginBottom: 8 }}>{COPY[language].joinWelcome}</h3>
+      <p style={mutedText}>{COPY[language].joinHint}</p>
+      <input
+        value={teamName}
+        onChange={(e) => setTeamName(e.target.value)}
+        placeholder={COPY[language].joinPlaceholder}
+        style={inputStyle}
+      />
+      <PrimaryButton style={{ marginTop: 12 }} onClick={handleJoin}>
+        {COPY[language].joinButton}
+      </PrimaryButton>
+      {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
+    </div>
+  );
+
+  const renderWaiting = (title: string, subtitle?: string) => (
+    <div
+      style={{
+        ...glassCard,
+        textAlign: 'center',
+        alignItems: 'center',
+        maxWidth: 620,
+        background: 'rgba(16,20,31,0.8)',
+        boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+      }}
+    >
+      <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'Warten' : 'Info'}</div>
+      <h3 style={{ ...heading, marginBottom: 4 }}>{title}</h3>
+      {subtitle && <p style={mutedText}>{subtitle}</p>}
+      {!teamId && <p style={mutedText}>{COPY[language].joinTitle}</p>}
+      <div style={hourglassStyle}>{'\u23F3'}</div>
+      <div style={{ marginTop: 8 }}>{connectionStatusPill()}</div>
+      {!question && (
+        <p style={{ ...mutedText, marginBottom: 6 }}>
+          {language === 'de'
+            ? 'Timer startet, sobald die Frage erscheint.'
+            : 'Timer starts as soon as the question appears.'}
+        </p>
+      )}
+      {hasTimer && (
+        <>
+          <div style={softDivider} />
+          <div style={progressOuter(accentColor)}>
+            <div style={{ ...progressInner(accentColor), width: `${progress}%` }} />
+          </div>
+          <div style={{ marginTop: 6, color: 'var(--muted)', fontWeight: 700 }}>
+            {COPY[language].timeLeft(Math.round(remainingSeconds))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const renderByPhase = () => {
+    if (canMarkBingo && isFinal) {
+      return renderBingoPrompt();
+    }
+    switch (phase) {
+      case 'notJoined':
+        return renderNotJoined();
+      case 'waitingForQuestion':
+        return evaluating
+          ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating, null)
+          : renderWaiting(
+              COPY[language].waitingSoon ?? COPY.en.waitingSoon,
+              teamId ? null : COPY[language].waitingJoin,
+              Boolean(teamId)
+            );
+      case 'answering':
+        return renderAnswering();
+      case 'waitingForResult':
+        return evaluating ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating) : renderWaitingForResult();
+      case 'showResult':
+        return renderShowResult();
+      default:
+        return evaluating
+          ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating)
+          : renderWaiting(COPY[language].waitingMsg);
+    }
+  };
+  const toggleReady = () => {
+    if (!teamId || !socketRef.current) return;
+    const next = !isReady;
+    setIsReady(next);
+    socketRef.current.emit('teamReady', { roomCode, teamId, isReady: next });
+  };
+
+  const remainingSeconds = timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0;
+  const progress =
+    timerEndsAt && timerDuration > 0
+      ? Math.max(0, Math.min(100, (remainingSeconds / timerDuration) * 100))
+      : 0;
+  const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
+  const canAnswer = phase === 'answering' && !timeUp;
+  const hasTimer = Boolean(timerEndsAt && timerDuration > 0);
+
+  const accentCategory = (question?.category as keyof typeof categoryColors) ?? 'GemischteTuete';
+  const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
+  const accentIcon = categoryIcons[accentCategory];
+  const accentLabel =
+    categoryLabels[accentCategory]?.[language] ?? categoryLabels[accentCategory]?.de ?? accentCategory;
+  const layout =
+    (question as any)?.layout || { imageOffsetX: 0, imageOffsetY: 0, logoOffsetX: 0, logoOffsetY: 0 };
+
+  const phaseLabel =
+    phase === 'answering'
+      ? 'Antworten'
+      : phase === 'waitingForResult'
+      ? 'Auswertung'
+      : phase === 'showResult'
+      ? 'Ergebnis'
+      : 'Warten';
+
+  return (
+    <div style={pageStyleTeam} data-timer={timerTick}>
+      {offlineBar()}
+      <div style={gridOverlay} />
+      <div style={contentShell}>
+        <header style={headerBarTeam}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.16)' }}>
+              Cozy Bingo Quiz
+            </Pill>
+            {teamId && <Pill tone="neutral" style={{ background: 'rgba(255,255,255,0.06)', borderColor: accentColor }}>{teamName || 'Team'}</Pill>}
+          </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {hasTimer && (
+                <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
+                  {timeUp ? COPY[language].timerDoneLabel : COPY[language].timerActiveLabel}
+                </Pill>
+              )}
+            </div>
+          </header>
+
+        {renderByPhase()}
+        {renderBingo()}
+
+        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
+          <PrimaryButton
+            style={{
+              marginTop: 12,
+              background: isReady ? accentColor : `${accentColor}22`,
+              color: isReady ? '#0d0f14' : '#e2e8f0',
+              border: `1px solid ${accentColor}66`,
+              boxShadow: isReady ? `0 12px 26px ${accentColor}55` : `0 14px 26px ${accentColor}33`,
+              opacity: connectionStatus === 'connected' ? 1 : 0.6,
+              cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
+            }}
+            onClick={connectionStatus === 'connected' ? toggleReady : undefined}
+            disabled={connectionStatus !== 'connected'}
+          >
+            {isReady ? t('readyOn') : 'Unser Team ist bereit'}
+          </PrimaryButton>
+        )}
+        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (
+          <p style={{ marginTop: 6, color: '#f97316', fontWeight: 700 }}>
+            {language === 'de'
+              ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden.`
+              : `Not connected to server (${SOCKET_URL}). Please reconnect.`}
+          </p>
+        )}
+      </div>
+      <div style={footerLogo}>
+        {/* Logo entfernt, damit Bingo nicht verdeckt wird */}
+      </div>
+    </div>
+  );
+}
+
+export default TeamView;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

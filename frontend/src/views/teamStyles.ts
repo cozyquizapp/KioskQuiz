@@ -208,9 +208,9 @@ export const primaryButton: CSSProperties = {
 
 export const choiceButton: CSSProperties = {
   flex: 1,
-  background: 'var(--surface-2)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  color: 'white',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.16)',
+  color: '#e2e8f0',
   borderRadius: theme.radius,
   padding: '14px 12px',
   cursor: 'pointer',
@@ -307,21 +307,17 @@ export const chipIcon: CSSProperties = {
 
 export const connectionPill = (status: 'connecting' | 'connected' | 'disconnected'): CSSProperties => {
   const map = {
-    connected: { bg: 'rgba(34,197,94,0.16)', border: 'rgba(34,197,94,0.5)', color: '#22c55e' },
-    connecting: { bg: 'rgba(245,158,11,0.16)', border: 'rgba(245,158,11,0.5)', color: '#f59e0b' },
-    disconnected: { bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.5)', color: '#ef4444' }
+    connected: { bg: '#22c55e' },
+    connecting: { bg: '#f59e0b' },
+    disconnected: { bg: '#ef4444' }
   } as const;
   const palette = map[status];
   return {
-    ...pillLabel,
-    marginBottom: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 999,
     background: palette.bg,
-    borderColor: palette.border,
-    color: palette.color,
-    letterSpacing: 0,
-    textTransform: 'none',
-    fontSize: 12,
-    padding: '6px 10px'
+    display: 'inline-block'
   };
 };
 

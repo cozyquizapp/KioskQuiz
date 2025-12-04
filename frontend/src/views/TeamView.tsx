@@ -17,7 +17,6 @@ import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import {
   pageStyleTeam,
-  gridOverlay,
   contentShell,
   footerLogo,
   hourglassStyle,
@@ -63,7 +62,7 @@ const COPY = {
     waitingSoon: 'Quiz startet gleich ...',
     waitingJoin: 'Bitte beitreten, dann geht es gleich los.',
     waitingAdmin: 'Warte auf Admin ...',
-    joinWelcome: 'Willkommen beim Cozy Bingo Quiz',
+    joinWelcome: 'Willkommen beim Cozy Kiosk Quiz',
     joinHint: "Gib deinen Teamnamen ein, bestaetige und dann geht's los.",
     timerActiveLabel: 'Timer aktiv',
     timerDoneLabel: 'Zeit vorbei',
@@ -78,7 +77,7 @@ const COPY = {
     waitingMsg: 'Bitte wartet auf die naechste Frage ...',
     tfTrue: 'Wahr',
     tfFalse: 'Falsch',
-    inputNumber: (unit?: string) => (unit ? `in ${unit}` : 'Zahl eingeben'),
+    inputNumber: (unit?: string) => (unit ? `Zahl (${unit}) eingeben` : 'Zahl eingeben'),
     inputOrder: 'Reihenfolge eingeben',
     inputAnswer: 'Antwort eingeben',
     timeLeft: (s: number) => `${s}s verbleibend`,
@@ -96,7 +95,7 @@ const COPY = {
     waitingSoon: 'Quiz starting soon ...',
     waitingJoin: 'Please join to get started.',
     waitingAdmin: 'Waiting for host ...',
-    joinWelcome: 'Welcome to Cozy Bingo Quiz',
+    joinWelcome: 'Welcome to Cozy Kiosk Quiz',
     joinHint: 'Enter your team name, confirm, and off you go.',
     timerActiveLabel: 'Timer active',
     timerDoneLabel: 'Time is up',
@@ -111,7 +110,7 @@ const COPY = {
     waitingMsg: 'Please wait for the next question ...',
     tfTrue: 'True',
     tfFalse: 'False',
-    inputNumber: (unit?: string) => (unit ? `in ${unit}` : 'Enter number'),
+    inputNumber: (unit?: string) => (unit ? `Enter number (${unit})` : 'Enter number'),
     inputOrder: 'Enter order',
     inputAnswer: 'Enter answer',
     timeLeft: (s: number) => `${s}s remaining`,
@@ -151,11 +150,13 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
   const [isFinal, setIsFinal] = useState(false);
+  const savedIdRef = useRef<string | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const recoveringRef = useRef(false);
   const [reconnectKey, setReconnectKey] = useState(0);
+  const storageKey = (suffix: string) => `team:${roomCode}:${suffix}`;
 
   // inject animations once
   useEffect(() => {
@@ -183,6 +184,16 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, []);
 
+  // Load persisted team (for reconnects)
+  useEffect(() => {
+    const savedName = localStorage.getItem(storageKey('name'));
+    const savedId = localStorage.getItem(storageKey('id'));
+    if (savedName) setTeamName(savedName);
+    if (savedId) {
+      savedIdRef.current = savedId;
+    }
+  }, [roomCode]);
+
   const t = <K extends keyof (typeof COPY)['de']>(key: K) => COPY[language]?.[key] ?? COPY.de[key];
 
   const handleReconnect = () => {
@@ -199,20 +210,24 @@ function TeamView({ roomCode }: TeamViewProps) {
     socket.on('connect', () => {
       setConnectionStatus('connected');
       setToast(null);
-      // Falls wir bereits einen Teamnamen haben, bei Reconnect automatisch beitreten
-      if (teamName && !recoveringRef.current && !teamId) {
-        recoveringRef.current = true;
-        handleJoin()
-          .catch(() => undefined)
-          .finally(() => {
-            recoveringRef.current = false;
-          });
-      }
     });
     socket.on('disconnect', () => setConnectionStatus('disconnected'));
     socket.io?.on?.('reconnect_attempt', () => setConnectionStatus('connecting'));
 
     socket.on('syncState', (payload: SyncStatePayload) => {
+      const hasTeam = Boolean(teamId);
+      if (!hasTeam) {
+        setQuestion(null);
+        setQuestionMeta(null);
+        setPhase('notJoined');
+        setAllowReadyToggle(true);
+        setAnswerSubmitted(false);
+        setEvaluating(false);
+        setTimerEndsAt(null);
+        setShowBingoPanel(false);
+        setCanMarkBingo(false);
+        return;
+      }
       if (payload.language) setLanguage(payload.language);
       if (payload.question) {
         setQuestion(payload.question);
@@ -230,11 +245,15 @@ function TeamView({ roomCode }: TeamViewProps) {
         setResultCorrect(null);
         setSolution(null);
         setIsFinal(false);
+        setShowBingoPanel(false);
+        setCanMarkBingo(false);
       } else {
         setQuestion(null);
         setQuestionMeta(null);
         setPhase(teamId ? 'waitingForQuestion' : 'notJoined');
         setAllowReadyToggle(true);
+        setShowBingoPanel(false);
+        setCanMarkBingo(false);
       }
       setTimerEndsAt(payload.timerEndsAt ?? null);
       if (payload.timerEndsAt) {
@@ -244,6 +263,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     });
 
     socket.on('team:show-question', ({ question: q }) => {
+      if (!teamId) return;
       setQuestion(q);
       setPhase('answering');
       setAllowReadyToggle(false);
@@ -251,6 +271,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       setAnswerSubmitted(false);
       setResultMessage(null);
       setResultCorrect(null);
+      setShowBingoPanel(false);
+      setCanMarkBingo(false);
     });
 
     socket.on('timerStarted', ({ endsAt }) => {
@@ -325,22 +347,26 @@ function TeamView({ roomCode }: TeamViewProps) {
   }, [timerEndsAt]);
 
   const connectionStatusPill = () => (
-    <div style={connectionPill(connectionStatus)}>
-      {language === 'de'
-        ? connectionStatus === 'connected'
-          ? 'Verbunden'
-          : connectionStatus === 'connecting'
-          ? 'Verbinde...'
-          : 'Getrennt'
-        : connectionStatus === 'connected'
-        ? 'Online'
-        : connectionStatus === 'connecting'
-        ? 'Reconnecting...'
-        : 'Offline'}
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span
+        style={connectionPill(connectionStatus)}
+        title={
+          connectionStatus === 'connected'
+            ? language === 'de'
+              ? 'Verbunden'
+              : 'Online'
+            : connectionStatus === 'connecting'
+            ? language === 'de'
+              ? 'Verbinde...'
+              : 'Connecting...'
+            : language === 'de'
+            ? 'Getrennt'
+            : 'Offline'
+        }
+      />
       {connectionStatus === 'disconnected' && (
         <button
           style={{
-            marginLeft: 10,
             padding: '6px 10px',
             borderRadius: 10,
             border: '1px solid rgba(255,255,255,0.22)',
@@ -371,10 +397,18 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   };
 
-  const handleJoin = async () => {
+  const handleJoin = async (useSavedId = false) => {
     try {
-      const data = await joinRoom(roomCode, teamName);
+      const cleanName = teamName.trim();
+      if (!cleanName) {
+        setMessage(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
+        return;
+      }
+      const data = await joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined);
       setTeamId(data.team.id);
+      localStorage.setItem(storageKey('name'), cleanName);
+      localStorage.setItem(storageKey('id'), data.team.id);
+      savedIdRef.current = data.team.id;
       if (data.board) {
         setBoard(data.board);
       } else {
@@ -474,22 +508,21 @@ function TeamView({ roomCode }: TeamViewProps) {
           <span>{accentLabel}</span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {connectionStatusPill()}
-      <div style={{ ...pillLabel, marginBottom: 0 }}>
-        {isFinal
-          ? language === 'de'
-            ? 'Final'
-            : 'Final'
-          : evaluating || phase === 'waitingForResult'
-          ? language === 'de'
-            ? 'Host prueft...'
-            : 'Host reviewing...'
-          : phase === 'answering'
-          ? language === 'de'
-            ? 'Antworten'
-            : 'Answering'
-          : 'Warten'}
-      </div>
+          <div style={{ ...pillLabel, marginBottom: 0 }}>
+            {isFinal
+              ? language === 'de'
+                ? 'Final'
+                : 'Final'
+              : evaluating || phase === 'waitingForResult'
+              ? language === 'de'
+                ? 'Host prueft...'
+                : 'Host reviewing...'
+              : phase === 'answering'
+              ? language === 'de'
+                ? 'Antworten'
+                : 'Answering'
+              : 'Warten'}
+          </div>
           {hasTimer && (
             <div
               style={{
@@ -650,8 +683,9 @@ const handleSubmit = async () => {
                 style={{
                   ...choiceButton,
                   border: `1px solid ${accent}55`,
-                  background: answer === String(idx) ? `${accent}22` : 'rgba(255,255,255,0.04)`',
-                  color: '#e2e8f0'
+                  background: answer === String(idx) ? `${accent}22` : 'rgba(255,255,255,0.08)',
+                  color: '#e2e8f0',
+                  boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none'
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
@@ -669,8 +703,9 @@ const handleSubmit = async () => {
               style={{
                 ...choiceButton,
                 border: `1px solid ${accent}55`,
-                background: answer === 'true' ? `${accent}22` : 'rgba(255,255,255,0.04)`',
-                color: '#e2e8f0'
+                background: answer === 'true' ? `${accent}22` : 'rgba(255,255,255,0.08)',
+                color: '#e2e8f0',
+                boxShadow: answer === 'true' ? `0 10px 24px ${accent}35` : 'none'
               }}
               onClick={() => setAnswer('true')}
               disabled={!canAnswer}
@@ -681,8 +716,9 @@ const handleSubmit = async () => {
               style={{
                 ...choiceButton,
                 border: `1px solid ${accent}55`,
-                background: answer === 'false' ? `${accent}22` : 'rgba(255,255,255,0.04)`',
-                color: '#e2e8f0'
+                background: answer === 'false' ? `${accent}22` : 'rgba(255,255,255,0.08)',
+                color: '#e2e8f0',
+                boxShadow: answer === 'false' ? `0 10px 24px ${accent}35` : 'none'
               }}
               onClick={() => setAnswer('false')}
               disabled={!canAnswer}
@@ -750,16 +786,32 @@ const handleSubmit = async () => {
     if (board.length !== 25) return null;
     const show = canMarkBingo || showBingoPanel;
     if (!show) return null;
-    const activeCategory = question.category;
+    const activeCategory = question ? question.category : null;
     return (
       <div style={{ ...glassCard, marginTop: theme.spacing(2) }}>
-        <div style={pillLabel}>{t('bingoTitle')}</div>
-        {canMarkBingo && <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 8 }}>{t('bingoReady')}</p>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Bingofeld' : 'Bingo board'}</div>
+          <button
+            style={{
+              ...primaryButton,
+              background: 'rgba(255,255,255,0.06)',
+              color: '#e2e8f0',
+              border: '1px solid rgba(255,255,255,0.14)',
+              minHeight: 40,
+              padding: '8px 12px',
+              width: 'auto'
+            }}
+            onClick={() => setShowBingoPanel(false)}
+          >
+            {language === 'de' ? 'Bingofeld schließen' : 'Close bingo board'}
+          </button>
+        </div>
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-            gap: 8
+            gap: 8,
+            marginTop: 10
           }}
         >
           {board.map((cell, idx) => {
@@ -833,9 +885,26 @@ const handleSubmit = async () => {
         placeholder={COPY[language].joinPlaceholder}
         style={inputStyle}
       />
-      <PrimaryButton style={{ marginTop: 12 }} onClick={handleJoin}>
+      <PrimaryButton style={{ marginTop: 12 }} onClick={() => handleJoin(false)}>
         {COPY[language].joinButton}
       </PrimaryButton>
+      {savedIdRef.current && (
+        <button
+          style={{
+            ...primaryButton,
+            marginTop: 8,
+            background: 'rgba(255,255,255,0.1)',
+            color: '#e2e8f0',
+            border: '1px solid rgba(255,255,255,0.2)',
+            minHeight: 44
+          }}
+          onClick={() => handleJoin(true)}
+        >
+          {language === 'de'
+            ? `Team fortsetzen${teamName ? ` (${teamName})` : ''}`
+            : `Resume team${teamName ? ` (${teamName})` : ''}`}
+        </button>
+      )}
       {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
     </div>
   );
@@ -856,14 +925,6 @@ const handleSubmit = async () => {
       {subtitle && <p style={mutedText}>{subtitle}</p>}
       {!teamId && <p style={mutedText}>{COPY[language].joinTitle}</p>}
       <div style={hourglassStyle}>{'\u23F3'}</div>
-      <div style={{ marginTop: 8 }}>{connectionStatusPill()}</div>
-      {!question && (
-        <p style={{ ...mutedText, marginBottom: 6 }}>
-          {language === 'de'
-            ? 'Timer startet, sobald die Frage erscheint.'
-            : 'Timer starts as soon as the question appears.'}
-        </p>
-      )}
       {hasTimer && (
         <>
           <div style={softDivider} />
@@ -879,6 +940,9 @@ const handleSubmit = async () => {
   );
 
   const renderByPhase = () => {
+    if (showBingoPanel || canMarkBingo) {
+      return renderBingo();
+    }
     if (canMarkBingo && isFinal) {
       return renderBingoPrompt();
     }
@@ -919,10 +983,16 @@ const handleSubmit = async () => {
       : 0;
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
   const canAnswer = phase === 'answering' && !timeUp;
-  const hasTimer = Boolean(timerEndsAt && timerDuration > 0);
+  const hasTimer = Boolean(
+    question &&
+    timerEndsAt &&
+    timerDuration > 0 &&
+    (phase === 'answering' || phase === 'waitingForResult')
+  );
 
   const accentCategory = (question?.category as keyof typeof categoryColors) ?? 'GemischteTuete';
   const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
+  const accentPink = '#ff4f9e';
   const accentIcon = categoryIcons[accentCategory];
   const accentLabel =
     categoryLabels[accentCategory]?.[language] ?? categoryLabels[accentCategory]?.de ?? accentCategory;
@@ -941,35 +1011,76 @@ const handleSubmit = async () => {
   return (
     <div style={pageStyleTeam} data-timer={timerTick}>
       {offlineBar()}
-      <div style={gridOverlay} />
       <div style={contentShell}>
         <header style={headerBarTeam}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.16)' }}>
-              Cozy Bingo Quiz
-            </Pill>
-            {teamId && <Pill tone="neutral" style={{ background: 'rgba(255,255,255,0.06)', borderColor: accentColor }}>{teamName || 'Team'}</Pill>}
-          </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {hasTimer && (
-                <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
-                  {timeUp ? COPY[language].timerDoneLabel : COPY[language].timerActiveLabel}
-                </Pill>
-              )}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.16)' }}>
+              <img src="/logo.png" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+              <span style={{ fontWeight: 800 }}>Cozy Kiosk Quiz</span>
             </div>
-          </header>
+            {teamId && (
+              <Pill
+                tone="neutral"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  borderColor: accentPink,
+                  color: '#f8fafc'
+                }}
+              >
+                {teamName || 'Team'}
+              </Pill>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background:
+                    connectionStatus === 'connected'
+                      ? '#4ade80'
+                      : connectionStatus === 'connecting'
+                      ? '#facc15'
+                      : '#f87171'
+                }}
+              />
+            </div>
+            {hasTimer && (
+              <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
+                {timeUp ? COPY[language].timerDoneLabel : COPY[language].timerActiveLabel}
+              </Pill>
+            )}
+            {board.length === 25 && !showBingoPanel && (
+              <button
+                style={{
+                  ...primaryButton,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#e2e8f0',
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  minHeight: 40,
+                  padding: '8px 12px',
+                  width: 'auto'
+                }}
+                onClick={() => setShowBingoPanel(true)}
+              >
+                {language === 'de' ? 'Bingofeld öffnen' : 'Open bingo board'}
+              </button>
+            )}
+          </div>
+        </header>
 
         {renderByPhase()}
-        {renderBingo()}
 
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
           <PrimaryButton
             style={{
               marginTop: 12,
-              background: isReady ? accentColor : `${accentColor}22`,
+              background: isReady ? accentPink : `${accentPink}22`,
               color: isReady ? '#0d0f14' : '#e2e8f0',
-              border: `1px solid ${accentColor}66`,
-              boxShadow: isReady ? `0 12px 26px ${accentColor}55` : `0 14px 26px ${accentColor}33`,
+              border: `1px solid ${accentPink}66`,
+              boxShadow: isReady ? `0 12px 26px ${accentPink}55` : `0 14px 26px ${accentPink}33`,
               opacity: connectionStatus === 'connected' ? 1 : 0.6,
               cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
             }}
@@ -987,6 +1098,33 @@ const handleSubmit = async () => {
           </p>
         )}
       </div>
+      {board.length === 25 && !showBingoPanel && (
+        <button
+          onClick={() => setShowBingoPanel((v) => (canMarkBingo ? true : !v))}
+          style={{
+            position: 'fixed',
+            bottom: 14,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 18px',
+            borderRadius: 14,
+            border: `1px solid ${accentColor}66`,
+            background: canMarkBingo ? `${accentColor}cc` : 'rgba(0,0,0,0.6)',
+            color: canMarkBingo ? '#0d0f14' : '#e2e8f0',
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+            boxShadow: canMarkBingo ? `0 14px 28px ${accentColor}55` : '0 12px 24px rgba(0,0,0,0.4)',
+            zIndex: 35
+          }}
+        >
+          {canMarkBingo
+            ? language === 'de'
+              ? 'Bingofeld öffnen'
+              : 'Open bingo board'
+            : 'Bingofeld'}
+        </button>
+      )}
       <div style={footerLogo}>
         {/* Logo entfernt, damit Bingo nicht verdeckt wird */}
       </div>

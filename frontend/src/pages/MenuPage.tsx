@@ -38,7 +38,7 @@ const MenuPage = () => {
               fontSize: 12
             }}
           >
-            Cozy Bingo Quiz · Navigation
+            Cozy Kiosk Quiz · Navigation
           </div>
           <h1 style={{ margin: '10px 0 6px' }}>Schnellzugriff</h1>
           <p style={{ margin: 0, color: '#94a3b8' }}>Wähle den Bereich, den du öffnen willst.</p>

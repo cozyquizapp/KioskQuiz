@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import {
   AnyQuestion,
@@ -19,11 +19,11 @@ import { DECORATION_ICONS } from '../config/questionDecorations';
 import BeamerLobbyView from './BeamerLobbyView';
 import BeamerSlotView from './BeamerSlotView';
 import BeamerQuestionView from './BeamerQuestionView';
-import { introSlides as INTRO_SLIDES } from '../introSlides';
+import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
 
 type Lang = 'de' | 'en';
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
-type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'answer' | 'rules' | 'intro';
+type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'answer' | 'intro';
 
 type BeamerProps = { roomCode: string };
 
@@ -33,7 +33,7 @@ const SLOT_SPIN_DURATION = 1400;
 const translations = {
   de: {
     lobbyTitle: "Gleich geht's los.",
-    lobbySubtitle: 'Macht es euch gemÃ¼tlich - der Admin legt gleich los.',
+    lobbySubtitle: 'Macht es euch gemütlich - der Admin legt gleich los.',
     codeLabel: 'Code',
     languageLabel: 'Sprache',
     waitingForHost: 'Warten auf Admin ...',
@@ -45,9 +45,9 @@ const translations = {
     calculating: 'Wir rechnen die Loesung aus... Bitte einen Moment geduldig sein.',
     answerLabel: 'Antwort',
     answerFallback: 'Antwort wird eingeblendet.',
-    slotTitle: 'NÃ¤chste Kategorie',
+    slotTitle: 'Naechste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
-    mixedMechanic: 'Gemischte TÃ¼te - Sondermechanik.',
+    mixedMechanic: 'Gemischte Tüte - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
     footerMeta: (
       globalIndex: number,
@@ -89,7 +89,7 @@ const translations = {
 
 const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<Lang, string>> = {
   Schaetzchen: {
-    de: 'Hier zÃ¤hlt euer GefÃ¼hl fÃ¼r Zahlen und GrÃ¶ÃŸen.',
+    de: 'Hier zählt euer Gefühl für Zahlen und Größen.',
     en: 'Here your sense for numbers and sizes matters.'
   },
   'Mu-Cho': {
@@ -104,8 +104,8 @@ const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<Lang, string>> = {
     de: 'Alles rund ums Motiv - genau hinschauen.',
     en: 'All about the picture - look closely.'
   },
-  GemischteTuete: {
-    de: 'Gemischte TÃ¼te: ein bisschen von allem.',
+  GemischteTüte: {
+    de: 'Gemischte Tüte: ein bisschen von allem.',
     en: 'Mixed bag: a bit of everything.'
   }
 };
@@ -116,9 +116,23 @@ const getCategoryLabel = (key: QuizCategory, lang: Lang) => categoryLabels[key]?
 
 const getCategoryDescription = (key: QuizCategory, lang: Lang) => CATEGORY_DESCRIPTIONS[key]?.[lang] ?? '';
 
+const pillRule: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 999,
+  fontWeight: 800,
+  fontSize: 13,
+  letterSpacing: '0.06em',
+  border: '1px solid rgba(255,255,255,0.14)',
+  background: 'rgba(255,255,255,0.08)',
+  color: '#e2e8f0',
+  textTransform: 'uppercase',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6
+};
+
 const BeamerView = ({ roomCode }: BeamerProps) => {
   const [screen, setScreen] = useState<BaseScreen>('lobby');
-  const [showRules, setShowRules] = useState(false);
   const [slotMeta, setSlotMeta] = useState<SlotTransitionMeta | null>(null);
   const [slotSequence, setSlotSequence] = useState<QuizCategory[]>([]);
   const [slotOffset, setSlotOffset] = useState(0);
@@ -139,6 +153,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [toast, setToast] = useState<string | null>(null);
   const [connectionStuck, setConnectionStuck] = useState(false);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
   const [categoryProgress, setCategoryProgress] = useState<Record<QuizCategory, number>>(() =>
     (Object.keys(categoryLabels) as QuizCategory[]).reduce(
       (acc, key) => ({ ...acc, [key]: 0 }),
@@ -152,20 +167,41 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     )
   );
   const [questionFlyIn, setQuestionFlyIn] = useState(false);
-  const [introSlides, setIntroSlides] = useState(INTRO_SLIDES);
+  const [introSlides, setIntroSlides] = useState<IntroSlide[]>(INTRO_SLIDE_MAP[language]);
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
 
   const timerRef = useRef<number | null>(null);
   const slotTimeoutRef = useRef<number | null>(null);
+  const reconnectTimeoutsRef = useRef<number[]>([]);
+  const connectionStatusRef = useRef(connectionStatus);
 
   const categories = useMemo(() => Object.keys(categoryLabels) as QuizCategory[], []);
   const t = translations[language];
+
+  const clearReconnectTimeouts = () => {
+    reconnectTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    reconnectTimeoutsRef.current = [];
+  };
+
+  const scheduleReconnectAttempt = (delayMs: number) => {
+    const id = window.setTimeout(() => {
+      if (connectionStatusRef.current !== 'connected') {
+        setReconnectNonce((n) => n + 1);
+      }
+    }, delayMs);
+    reconnectTimeoutsRef.current.push(id);
+  };
+
   const handleReconnect = () => {
     setConnectionStatus('connecting');
+    setConnectionStuck(false);
     setToast(language === 'de' ? 'Verbindung wird aufgebaut...' : 'Reconnecting...');
     setTimeout(() => setToast(null), 2000);
-    window.location.reload();
+    clearReconnectTimeouts();
+    setReconnectNonce((n) => n + 1);
+    scheduleReconnectAttempt(1500);
+    scheduleReconnectAttempt(4000);
   };
 
   const toastStyle: React.CSSProperties = {
@@ -239,6 +275,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => window.clearTimeout(id);
   }, [connectionStatus]);
 
+  useEffect(() => {
+    connectionStatusRef.current = connectionStatus;
+  }, [connectionStatus]);
+
   // initial fetch
   useEffect(() => {
     fetchLanguage(roomCode)
@@ -265,9 +305,17 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       .catch(() => undefined);
   }, [roomCode]);
 
+  useEffect(() => {
+    return () => {
+      clearReconnectTimeouts();
+    };
+  }, []);
+
   // sockets
   useEffect(() => {
     setConnectionStatus('connecting');
+    setConnectionStuck(false);
+    clearReconnectTimeouts();
     const socket: Socket = connectToRoom(roomCode);
 
     socket.on('connect', () => {
@@ -293,7 +341,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('beamer:show-slot-transition', (meta: SlotTransitionMeta) => {
       setSlotMeta(meta);
       setScreen('slot');
-      setShowRules(false);
       setQuestion(null);
       setQuestionMeta(null);
       setEvaluating(false);
@@ -303,11 +350,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setSlotExiting(false);
     });
 
-    socket.on('beamer:show-intro', (payload: { slides?: typeof INTRO_SLIDES }) => {
-      setIntroSlides(payload?.slides ?? INTRO_SLIDES);
+    socket.on('beamer:show-intro', (payload: { slides?: IntroSlide[] }) => {
+      setIntroSlides(payload?.slides ?? INTRO_SLIDE_MAP[language]);
       setIntroIndex(0);
       setScreen('intro');
-      setShowRules(false);
       setQuestion(null);
       setQuestionMeta(null);
       setEvaluating(false);
@@ -331,7 +377,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
           setQuestionPhase('answering');
           setQuestionFlyIn(true);
           requestAnimationFrame(() => setQuestionFlyIn(false));
-          setShowRules(false);
         }, 520);
         return;
       }
@@ -345,7 +390,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setQuestionPhase('answering');
       setQuestionFlyIn(true);
       requestAnimationFrame(() => setQuestionFlyIn(false));
-      setShowRules(false);
     });
 
     socket.on('questionStarted', ({ meta }: { meta?: QuestionMeta }) => {
@@ -372,7 +416,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     socket.on('beamer:show-rules', () => {
-      setShowRules(true);
       setScreen('lobby');
       setSlotMeta(null);
       setQuestion(null);
@@ -408,7 +451,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => {
       socket.disconnect();
     };
-  }, [roomCode, language]);
+  }, [roomCode, language, reconnectNonce]);
 
   // slot animation
   useEffect(() => {
@@ -443,7 +486,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [categories, slotMeta]);
 
-  // rotate lobby category highlights
+  // roTüte lobby category highlights
   useEffect(() => {
     if (categories.length === 0) return;
     if (screen !== 'lobby') return;
@@ -475,6 +518,12 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
     };
   }, [screen, introSlides.length]);
+
+  // sync intro slides to current language
+  useEffect(() => {
+    setIntroSlides(INTRO_SLIDE_MAP[language]);
+    setIntroIndex(0);
+  }, [language]);
 
   // category progress from meta
   useEffect(() => {
@@ -572,64 +621,59 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
   const renderIntro = () => {
     const slide = introSlides[introIndex % introSlides.length];
+    const backLabel = language === 'de' ? 'Zurueck' : 'Back';
+    const nextLabel = language === 'de' ? 'Weiter' : 'Next';
     return (
       <div style={{ ...cardFrame, padding: 0 }}>
         <div
           style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 1100,
+            maxWidth: 1180,
             margin: '0 auto',
-            borderRadius: 28,
-            padding: '28px 26px',
-            border: '1px solid rgba(255,255,255,0.14)',
-            background: 'rgba(13,15,20,0.78)',
-            boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
+            borderRadius: 32,
+            padding: '34px 32px',
+            border: '1px solid rgba(255,255,255,0.16)',
+            background: 'linear-gradient(140deg, rgba(13,15,20,0.94), rgba(14,17,27,0.85))',
+            boxShadow: '0 30px 64px rgba(0,0,0,0.5)',
             overflow: 'hidden',
-            minHeight: 280,
+            minHeight: 360,
             transition: 'opacity 240ms ease, transform 240ms ease'
           }}
         >
-          <div style={rulesHalo} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={pillRule}>{slide.badge || 'Intro'}</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {introSlides.map((_, i) => (
-                <div
-                  key={i}
-                  onClick={() => setIntroIndex(i)}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: i === introIndex ? '#fbbf24' : 'rgba(255,255,255,0.25)',
-                    transform: i === introIndex ? 'scale(1.2)' : 'scale(1)',
-                    transition: 'all 120ms ease',
-                    cursor: 'pointer'
-                  }}
-                />
-              ))}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'radial-gradient(circle at 30% 30%, rgba(243,195,103,0.16), transparent 48%), radial-gradient(circle at 80% 15%, rgba(108,122,255,0.18), transparent 45%)',
+              pointerEvents: 'none',
+              opacity: 0.9
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, position: 'relative', zIndex: 1 }}>
+            <div style={{ ...pillRule, fontSize: 12, padding: '10px 14px', background: 'rgba(243,195,103,0.16)', borderColor: 'rgba(243,195,103,0.45)', color: '#fde68a' }}>
+              {slide.badge || 'Intro'}
+            </div>
+            <div style={{ ...pillRule, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.16)', color: '#e2e8f0' }}>
+              {introIndex + 1}/{introSlides.length}
             </div>
           </div>
-          <div style={{ color: '#cbd5e1', fontSize: 16, marginBottom: 6 }}>{slide.subtitle}</div>
-          <div style={{ color: '#e2e8f0', fontSize: 34, fontWeight: 900, lineHeight: 1.2, marginBottom: 12 }}>
+          <div style={{ color: '#cbd5e1', fontSize: 18, letterSpacing: '0.02em', marginBottom: 10, position: 'relative', zIndex: 1 }}>{slide.subtitle}</div>
+          <div
+            style={{
+              color: '#f8fafc',
+              fontSize: 42,
+              fontWeight: 900,
+              lineHeight: 1.15,
+              marginBottom: 14,
+              position: 'relative',
+              zIndex: 1
+            }}
+          >
             {slide.title}
           </div>
-          <div style={{ color: '#cbd5e1', fontSize: 18, lineHeight: 1.5 }}>{slide.body}</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <button
-              style={{ ...cardButtonStyle, background: '#1f2733', color: '#e2e8f0' }}
-              onClick={() => setIntroIndex((i) => (i - 1 + introSlides.length) % introSlides.length)}
-            >
-              Zurück
-            </button>
-            <button
-              style={{ ...cardButtonStyle, background: '#fbbf24', color: '#0f141d' }}
-              onClick={() => setIntroIndex((i) => (i + 1) % introSlides.length)}
-            >
-              Weiter
-            </button>
-          </div>
+          <div style={{ color: '#e2e8f0', fontSize: 20, lineHeight: 1.6, maxWidth: 860, position: 'relative', zIndex: 1 }}>{slide.body}</div>
         </div>
       </div>
     );
@@ -640,7 +684,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       {offlineBar(connectionStatus, language)}
       {toast && <div style={toastStyle}>{toast}</div>}
       <div style={beamerAurora(lobbyActiveColor)} />
-      <div style={beamerGrid} />
       <div style={beamerShell}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
           <span style={connectionPill(connectionStatus)}>
@@ -690,29 +733,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
             {language === 'de'
               ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
-          </div>
-        )}
-        {showRules && (
-          <div style={cardFrame}>
-            <section style={rulesCard}>
-              <div style={rulesHalo} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <div style={{ ...pillRule, background: 'rgba(255,255,255,0.1)' }}>Regeln</div>
-                <div style={{ ...pillRule, background: 'rgba(0,0,0,0.35)' }}>{roomCode}</div>
-              </div>
-              <h1 style={rulesTitle}>Cozy Bingo Quiz</h1>
-              <p style={rulesSubtitle}>
-                1) Alle Teams beitreten & "Wir sind bereit" drücken. 2) Fragen kommen nacheinander. 3) Timer beachten, Antworten fixen. 4) Bei richtiger Antwort ein Bingo-Feld markieren.
-              </p>
-              <div style={rulesList}>
-                <div style={pillRule}>Punkte pro Frage</div>
-                <div style={pillRule}>Timer auto-stopp bei allen Antworten</div>
-                <div style={pillRule}>Bingo nach korrekter Antwort</div>
-              </div>
-              <div style={{ marginTop: 12, color: 'rgba(226,232,240,0.7)', fontSize: 14 }}>
-                Der Admin startet die erste Frage, sobald alle bereit sind.
-              </div>
-            </section>
           </div>
         )}
         {viewMode === 'lobby' && (
@@ -802,23 +822,17 @@ const beamerAurora = (color: string): React.CSSProperties => ({
   animation: 'aurora-shift 16s ease-in-out infinite'
 });
 
-const beamerGrid: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  backgroundImage:
-    'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-  backgroundSize: '52px 52px',
-  opacity: 0.25,
-  pointerEvents: 'none'
+const beamerShell: React.CSSProperties = {
+  position: 'relative',
+  maxWidth: 1380,
+  margin: '0 auto',
+  padding: '0 16px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 12
 };
-
-  const beamerShell: React.CSSProperties = {
-    position: 'relative',
-    maxWidth: 1240,
-    margin: '0 auto'
-  };
-
-  const offlineBar = (status: typeof connectionStatus, lang: Lang) =>
+const offlineBar = (status: typeof connectionStatus, lang: Lang) =>
     status === 'connected'
       ? null
       : (
@@ -845,8 +859,8 @@ const beamerGrid: React.CSSProperties = {
                 ? 'Verbinde erneut ...'
                 : 'Reconnecting ...'
               : lang === 'de'
-              ? 'Offline – Bitte neu laden'
-              : 'Offline – please reload'}
+              ? 'Offline - Bitte neu laden'
+              : 'Offline - please reload'}
             {status === 'disconnected' && (
               <button
                 style={{
@@ -883,64 +897,21 @@ const cardFrame: React.CSSProperties = {
   padding: 0
 };
 
-const rulesCard: React.CSSProperties = {
-  position: 'relative',
-  width: '100%',
-  maxWidth: 1100,
-  margin: '0 auto',
-  padding: '28px 26px',
-  borderRadius: 28,
-  border: '1px solid rgba(255,255,255,0.14)',
-  background: 'rgba(13,15,20,0.78)',
-  boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
-  overflow: 'hidden'
-};
-
-const rulesHalo: React.CSSProperties = {
-  position: 'absolute',
-  inset: -20,
-  background:
-    'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 42%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.12), transparent 40%)',
-  opacity: 0.6,
-  filter: 'blur(16px)',
-  pointerEvents: 'none'
-};
-
-const rulesTitle: React.CSSProperties = {
-  margin: '8px 0 10px',
-  fontSize: 38,
-  lineHeight: 1.2,
-  color: '#e2e8f0',
-  fontWeight: 900
-};
-
-const rulesSubtitle: React.CSSProperties = {
-  margin: '0 0 12px',
-  color: 'rgba(226,232,240,0.75)',
-  fontSize: 16,
-  lineHeight: 1.5
-};
-
-const rulesList: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 10,
-  marginTop: 8
-};
-
-const pillRule: React.CSSProperties = {
-  padding: '8px 12px',
-  borderRadius: 999,
-  border: '1px solid rgba(255,255,255,0.12)',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#e2e8f0',
-  fontWeight: 800,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  fontSize: 12
-};
-
 export default BeamerView;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -747,15 +747,28 @@ app.get('/api/rooms/:roomCode/current-question', (req, res) => {
 // Team join (mit Bingo-Board)
 app.post('/api/rooms/:roomCode/join', (req, res) => {
   const { roomCode } = req.params;
-  const { teamName } = req.body as { teamName?: string };
+  const { teamName, teamId } = req.body as { teamName?: string; teamId?: string };
   if (!teamName) return res.status(400).json({ error: 'teamName fehlt' });
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  const existing = Object.values(room.teams).find((t) => t.name === teamName);
-  if (existing) {
-    if (!room.teamBoards[existing.id]) room.teamBoards[existing.id] = generateBingoBoard();
-    return res.json({ team: existing, roomCode, board: room.teamBoards[existing.id] });
+
+  // Rejoin explizit per teamId erlauben
+  if (teamId && room.teams[teamId]) {
+    room.teams[teamId].name = teamName;
+    if (!room.teamBoards[teamId]) room.teamBoards[teamId] = generateBingoBoard();
+    broadcastTeamsReady(room);
+    return res.json({ team: room.teams[teamId], roomCode, board: room.teamBoards[teamId] });
   }
+
+  // Falls Name bereits existiert: bestehendes Team zurückgeben (für Rejoin per Name)
+  const existingByName = Object.values(room.teams).find((t) => t.name === teamName);
+  if (existingByName) {
+    if (!room.teamBoards[existingByName.id]) room.teamBoards[existingByName.id] = generateBingoBoard();
+    broadcastTeamsReady(room);
+    return res.json({ team: existingByName, roomCode, board: room.teamBoards[existingByName.id] });
+  }
+
+  // Immer neues Team anlegen (keine Wiederverwendung nur nach Name)
   const newTeam: Team = { id: uuid(), name: teamName, score: 0, isReady: false };
   room.teams[newTeam.id] = newTeam;
   room.teamBoards[newTeam.id] = generateBingoBoard();

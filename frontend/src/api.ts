@@ -10,11 +10,11 @@ export interface JoinResponse {
   board?: BingoBoard;
 }
 
-export const joinRoom = async (roomCode: string, teamName: string): Promise<JoinResponse> => {
+export const joinRoom = async (roomCode: string, teamName: string, teamId?: string): Promise<JoinResponse> => {
   const res = await fetch(`${API_BASE}/rooms/${roomCode}/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ teamName })
+    body: JSON.stringify({ teamName, teamId })
   });
   if (!res.ok) throw new Error('Beitritt fehlgeschlagen');
   return res.json();

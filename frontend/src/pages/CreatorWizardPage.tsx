@@ -83,7 +83,7 @@ type CsvPreviewRow = { line: number; raw: string; id?: string; category?: string
 
 const CreatorWizardPage: React.FC = () => {
   const [activeStep, setActiveStep] = useState<Step>('base');
-  const [quizName, setQuizName] = useState('Cozy Bingo Quiz');
+  const [quizName, setQuizName] = useState('Cozy Kiosk Quiz');
   const [language, setLanguage] = useState<'de' | 'en'>('de');
   const [defaultTimer, setDefaultTimer] = useState(30);
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);

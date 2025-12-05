@@ -13,6 +13,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/team" replace />} />
+      <Route path="/menu" element={<MenuPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/team" element={<TeamPage />} />
       <Route path="/beamer" element={<BeamerPage />} />

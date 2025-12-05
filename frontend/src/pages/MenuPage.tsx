@@ -5,15 +5,22 @@ type LinkItem = { path: string; label: string; note?: string };
 const links: LinkItem[] = [
   { path: '/admin', label: 'Admin', note: 'Quiz-Steuerung & Auswertung' },
   { path: '/moderator', label: 'Moderator (Mobile)', note: 'Remote: Timer, Slot, Frage-Sprung' },
-  { path: '/beamer', label: 'Beamer', note: 'Anzeige fürs Publikum' },
+  { path: '/beamer', label: 'Beamer', note: 'Anzeige fuers Publikum' },
   { path: '/team', label: 'Team', note: 'Teilnehmer-View / Antworten' },
-  { path: '/intro', label: 'Intro & Regeln', note: 'Slides mit Begrüßung/Regeln' },
-  { path: '/creator', label: 'Creator', note: 'Alle Features (Wizard, Bilder, Layout, Lösungen)' },
-  { path: '/question-editor', label: 'Question Editor', note: 'Frage-Details, Bilder, Layout-Offsets' },
-  { path: '/scoreboard', label: 'Scoreboard', note: 'Punkte & Bingo' }
+  { path: '/intro', label: 'Intro & Regeln', note: 'Slides mit Begruessung/Regeln' },
+  { path: '/creator', label: 'Creator', note: 'Alle Features (Wizard, Bilder, Layout, Loesungen)' },
+  { path: '/creator-wizard', label: 'Creator Wizard', note: 'Direkter Einstieg in den Wizard' },
+  { path: '/question-editor', label: 'Question Editor', note: 'Frage-Details, Bilder, Layout-Offsets' }
 ];
 
+const getTeamUrl = () => {
+  if (typeof window !== 'undefined') return `${window.location.origin}/team`;
+  return 'https://play.cozyquiz.app/team';
+};
+
 const MenuPage = () => {
+  const teamUrl = getTeamUrl();
+
   return (
     <div
       style={{
@@ -38,10 +45,56 @@ const MenuPage = () => {
               fontSize: 12
             }}
           >
-            Cozy Kiosk Quiz · Navigation
+            Cozy Kiosk Quiz | Navigation
           </div>
           <h1 style={{ margin: '10px 0 6px' }}>Schnellzugriff</h1>
-          <p style={{ margin: 0, color: '#94a3b8' }}>Wähle den Bereich, den du öffnen willst.</p>
+          <p style={{ margin: '0 0 6px', color: '#94a3b8' }}>Waehle den Bereich, den du oeffnen willst.</p>
+          <p style={{ margin: 0, color: '#cbd5e1', fontSize: 13 }}>
+            Falls direkte URLs nicht laden: erst diese Seite oeffnen und hier auf den gewuenschten Link klicken
+            (SPA-Routing).
+          </p>
+        </div>
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '14px 16px',
+            borderRadius: 14,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            flexWrap: 'wrap'
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>Team-Link & QR</div>
+            <div style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Diesen QR koennen Teams scannen, um direkt zur Team-Seite zu kommen (ohne Menü).
+            </div>
+            <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{teamUrl}</div>
+          </div>
+          <div
+            style={{
+              marginLeft: 'auto',
+              minWidth: 160,
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}
+          >
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(teamUrl)}`}
+              alt="QR-Code fuer /team"
+              style={{
+                width: 140,
+                height: 140,
+                borderRadius: 10,
+                background: 'white',
+                padding: 8,
+                boxShadow: '0 12px 26px rgba(0,0,0,0.35)'
+              }}
+            />
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
           {links.map((link) => (

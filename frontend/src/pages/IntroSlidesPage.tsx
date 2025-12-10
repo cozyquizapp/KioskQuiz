@@ -1,18 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { introSlides as slides } from '../introSlides';
+import React, { useEffect, useMemo, useState } from 'react';
+import { introSlides } from '../introSlides';
+import { Language } from '@shared/quizTypes';
 
 const IntroSlidesPage: React.FC = () => {
   const [index, setIndex] = useState(0);
   const [fade, setFade] = useState(true);
+  const [language, setLanguage] = useState<Language>('de');
 
-  const slide = slides[index];
+  const slides = useMemo(() => {
+    if (language === 'de' || language === 'en') return introSlides[language];
+    // bilingual: combine
+    return introSlides.de.map((deSlide, i) => {
+      const enSlide = introSlides.en[i] ?? introSlides.en[introSlides.en.length - 1];
+      const combine = (deVal: string, enVal: string) => {
+        if (deVal === enVal) return deVal;
+        return `${deVal} / ${enVal}`;
+      };
+      return {
+        title: combine(deSlide.title, enSlide.title),
+        subtitle: combine(deSlide.subtitle, enSlide.subtitle),
+        body: combine(deSlide.body, enSlide.body),
+        badge: combine(deSlide.badge ?? 'Info', enSlide.badge ?? 'Info')
+      };
+    });
+  }, [language]);
+
+  const slide = slides[index] ?? slides[0];
 
   const go = (dir: number) => {
     setFade(false);
     setTimeout(() => {
       setIndex((prev) => {
         const next = prev + dir;
-        if (next < 0) return slides.length - 1;
+        if (next < 0) return Math.max(slides.length - 1, 0);
         if (next >= slides.length) return 0;
         return next;
       });
@@ -63,8 +83,28 @@ const IntroSlidesPage: React.FC = () => {
           >
             {slide.badge ?? 'Info'}
           </div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: 13, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 10 }}>
             {index + 1}/{slides.length}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['de', 'en', 'both'] as Language[]).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 10,
+                    border: language === lang ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
+                    background: language === lang ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.05)',
+                    color: '#e2e8f0',
+                    cursor: 'pointer',
+                    fontWeight: 800
+                  }}
+                  type="button"
+                >
+                  {lang === 'de' ? 'DE' : lang === 'en' ? 'EN' : 'DE+EN'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

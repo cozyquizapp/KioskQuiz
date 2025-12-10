@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { theme } from '../theme';
 
 interface AdminRoomHeaderProps {
@@ -62,6 +63,11 @@ const AdminRoomHeader = ({
           <span style={{ color: 'var(--muted)' }}>Raum</span>
           <strong style={{ letterSpacing: 1 }}>{roomCode}</strong>
         </div>
+        <Link to="/menu" style={{ textDecoration: 'none' }}>
+          <div style={{ ...pillStyle, background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.22)' }}>
+            Menu
+          </div>
+        </Link>
         {phase && <div style={pillStyle}>Phase: {phase}</div>}
         {typeof remainingQuestions === 'number' && <div style={pillStyle}>Rest: {remainingQuestions}</div>}
         {language && <div style={pillStyle}>{language.toUpperCase()}</div>}

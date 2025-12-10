@@ -1,4 +1,5 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnyQuestion, MultipleChoiceQuestion, SortItemsQuestion, BingoBoard } from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
@@ -1014,10 +1015,26 @@ const handleSubmit = async () => {
       <div style={contentShell}>
         <header style={headerBarTeam}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.16)' }}>
-              <img src="/logo.png" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
-              <span style={{ fontWeight: 800 }}>Cozy Kiosk Quiz</span>
-            </div>
+            <Link
+              to="/menu"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+              title={language === 'de' ? 'Menü öffnen' : 'Open menu'}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  background: 'rgba(0,0,0,0.35)',
+                  border: '1px solid rgba(255,255,255,0.16)'
+                }}
+              >
+                <img src="/logo.png" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+                <span style={{ fontWeight: 800 }}>Cozy Kiosk Quiz</span>
+              </div>
+            </Link>
             {teamId && (
               <Pill
                 tone="neutral"

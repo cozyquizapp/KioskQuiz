@@ -315,7 +315,10 @@ const applyOverrides = (question: AnyQuestion): AnyQuestion => {
 const combineText = <T extends string | undefined>(deVal: T, enVal: T, language: Language): T => {
   if (!enVal) return deVal;
   if (language === 'en') return enVal;
-  if (language === 'both') return `${deVal ?? ''}${deVal && enVal ? ' / ' : ''}${enVal}` as T;
+  if (language === 'both') {
+    if ((deVal ?? '') === (enVal ?? '')) return deVal;
+    return `${deVal ?? ''}${deVal && enVal ? ' / ' : ''}${enVal}` as T;
+  }
   return deVal;
 };
 

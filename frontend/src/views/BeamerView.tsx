@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import {
   AnyQuestion,
@@ -34,7 +34,7 @@ const SLOT_SPIN_DURATION = 1400;
 const translations = {
   de: {
     lobbyTitle: "Gleich geht's los.",
-    lobbySubtitle: 'Macht es euch gemütlich - der Admin legt gleich los.',
+    lobbySubtitle: 'Macht es euch gemÃ¼tlich - der Admin legt gleich los.',
     codeLabel: 'Code',
     languageLabel: 'Sprache',
     waitingForHost: 'Warten auf Admin ...',
@@ -48,7 +48,7 @@ const translations = {
     answerFallback: 'Antwort wird eingeblendet.',
     slotTitle: 'Naechste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
-    mixedMechanic: 'Gemischte Tüte - Sondermechanik.',
+    mixedMechanic: 'Gemischte TÃ¼te - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
     footerMeta: (
       globalIndex: number,
@@ -117,9 +117,10 @@ const translationsBoth = {
   teamsReady: (ready: number, total: number) => `${translations.de.teamsReady(ready, total)} / ${translations.en.teamsReady(ready, total)}`
 };
 
+
 const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> = {
   Schaetzchen: {
-    de: 'Hier zählt euer Gefühl für Zahlen und Größen.',
+    de: 'Hier \u00e4\u0068lt euer Gef\u00fchl f\u00fcr Zahlen und Gr\u00f6\u00dfen.',
     en: 'Here your sense for numbers and sizes matters.'
   },
   'Mu-Cho': {
@@ -131,11 +132,11 @@ const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> =
     en: 'True or false? Trust your gut or knowledge.'
   },
   Cheese: {
-    de: 'Alles rund ums Motiv - genau hinschauen.',
-    en: 'All about the picture - look closely.'
+    de: 'Alles rund ums Motiv \u2013 genau hinschauen.',
+    en: 'All about the picture \u2013 look closely.'
   },
-  GemischteTüte: {
-    de: 'Gemischte Tüte: ein bisschen von allem.',
+  GemischteTuete: {
+    de: 'Gemischte T\u00fcte: ein bisschen von allem.',
     en: 'Mixed bag: a bit of everything.'
   }
 };
@@ -145,20 +146,26 @@ const formatSeconds = (ms: number) => Math.max(0, Math.ceil(ms / 1000));
 const normalizeLang = (lang: Lang): 'de' | 'en' => (lang === 'both' ? 'de' : lang);
 const slidesForLanguage = (lang: Lang) => INTRO_SLIDE_MAP[normalizeLang(lang)];
 
+const combineDisplay = (de: string, en: string, lang: Lang) => {
+  if (lang === 'both') {
+    if (de === en) return de;
+    return `${de} / ${en}`;
+  }
+  return lang === 'en' ? en : de;
+};
+
 const getCategoryLabel = (key: QuizCategory, lang: Lang) => {
-  const norm = normalizeLang(lang);
   const labels = categoryLabels[key];
   const de = labels?.de ?? key;
   const en = labels?.en ?? de;
-  return lang === 'both' ? `${de} / ${en}` : norm === 'en' ? en : de;
+  return combineDisplay(de, en, lang);
 };
 
 const getCategoryDescription = (key: QuizCategory, lang: Lang) => {
-  const norm = normalizeLang(lang);
   const base = CATEGORY_DESCRIPTIONS[key];
   const de = base?.de ?? '';
   const en = base?.en ?? de;
-  return lang === 'both' ? `${de} / ${en}` : base?.[norm] ?? '';
+  return combineDisplay(de, en, lang);
 };
 
 const pillRule: React.CSSProperties = {
@@ -479,7 +486,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('answersEvaluated', ({ solution: sol }: { solution?: string }) => {
       setSolution(sol);
       setEvaluating(false);
-      setAnswerVisible(true); // Lösung direkt einblenden
+      setAnswerVisible(true); // LÃ¶sung direkt einblenden
       setQuestionPhase('evaluated');
     });
 
@@ -531,7 +538,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [categories, slotMeta]);
 
-  // roTüte lobby category highlights
+  // roTÃ¼te lobby category highlights
   useEffect(() => {
     if (categories.length === 0) return;
     if (screen !== 'lobby') return;
@@ -776,7 +783,7 @@ useEffect(() => {
             }}
           >
             {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen.'
+              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prÃ¼fen.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
@@ -943,6 +950,16 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
+
+
+
+
+
+
+
+
+
+
 
 
 

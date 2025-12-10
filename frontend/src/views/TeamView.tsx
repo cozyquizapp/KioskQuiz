@@ -7,7 +7,8 @@ import {
   submitAnswer,
   fetchBingoBoard,
   markBingoCell,
-  fetchLanguage
+  fetchLanguage,
+  setLanguage as setLanguageApi
 } from '../api';
 import { theme } from '../theme';
 import { connectToRoom, SOCKET_URL } from '../socket';
@@ -143,7 +144,10 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [canMarkBingo, setCanMarkBingo] = useState(false);
   const [showBingoPanel, setShowBingoPanel] = useState(false);
   const [timerTick, setTimerTick] = useState(0);
-  const [language, setLanguage] = useState<Language>('de');
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('teamLanguage');
+    return saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
+  });
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [allowReadyToggle, setAllowReadyToggle] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -214,6 +218,12 @@ function TeamView({ roomCode }: TeamViewProps) {
     setReconnectKey((v) => v + 1);
   };
 
+  const updateLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('teamLanguage', lang);
+    setLanguageApi(roomCode, lang).catch(() => undefined);
+  };
+
   // Socket connection & live updates
   useEffect(() => {
     const socket = connectToRoom(roomCode);
@@ -241,7 +251,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         setCanMarkBingo(false);
         return;
       }
-      if (payload.language) setLanguage(payload.language);
+      if (payload.language) {
+        setLanguageState(payload.language);
+        localStorage.setItem('teamLanguage', payload.language);
+      }
       if (payload.question) {
         setQuestion(payload.question);
         setQuestionMeta(payload.questionMeta);
@@ -340,7 +353,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
     });
     socket.on('languageChanged', ({ language: lang }) => {
-      if (lang === 'de' || lang === 'en') setLanguage(lang);
+      if (lang === 'de' || lang === 'en' || lang === 'both') setLanguageState(lang);
     });
 
     return () => {
@@ -430,7 +443,10 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       try {
         const langRes = await fetchLanguage(roomCode);
-        if (langRes?.language) setLanguage(langRes.language);
+        if (langRes?.language) {
+          setLanguageState(langRes.language);
+          localStorage.setItem('teamLanguage', langRes.language);
+        }
       } catch {
         // ignore
       }
@@ -890,6 +906,32 @@ const handleSubmit = async () => {
       <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Join
       </Pill>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: 12 }}>{language === 'en' ? 'Language' : 'Sprache'}</span>
+        {([
+          { key: 'de', label: 'DE', flag: '🇩🇪' },
+          { key: 'en', label: 'EN', flag: '🇬🇧' },
+          { key: 'both', label: 'DE+EN', flag: '🌐' }
+        ] as { key: Language; label: string; flag: string }[]).map((opt) => (
+          <button
+            key={opt.key}
+            style={{
+              padding: '6px 10px',
+              borderRadius: 10,
+              border: language === opt.key ? '1px solid rgba(255,255,255,0.45)' : '1px solid rgba(255,255,255,0.14)',
+              background: language === opt.key ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
+              color: '#e2e8f0',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+            onClick={() => updateLanguage(opt.key)}
+            type="button"
+          >
+            <span style={{ marginRight: 6 }}>{opt.flag}</span>
+            {opt.label}
+          </button>
+        ))}
+      </div>
       <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
       <p style={mutedText}>{t('joinHint')}</p>
       <input

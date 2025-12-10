@@ -307,9 +307,9 @@ function TeamView({ roomCode }: TeamViewProps) {
         setResultCorrect(Boolean(entry.isCorrect));
         if (entry.deviation !== undefined && entry.bestDeviation !== undefined) {
           if (entry.deviation === entry.bestDeviation) {
-            setResultMessage(COPY[language].estimateBest);
+            setResultMessage(t('estimateBest'));
           } else {
-            setResultMessage(COPY[language].estimateWorse);
+            setResultMessage(t('estimateWorse'));
           }
         }
         // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
@@ -321,7 +321,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       setResultCorrect(Boolean(isCorrect));
       if (deviation !== undefined && bestDeviation !== undefined) {
         setResultMessage(
-          deviation === bestDeviation ? COPY[language].estimateBest : COPY[language].estimateWorse
+          deviation === bestDeviation ? t('estimateBest') : t('estimateWorse')
         );
       }
       setPhase('showResult');
@@ -334,7 +334,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     });
     socket.on('teamKicked', ({ teamId: kicked }) => {
       if (kicked === teamId) {
-        setMessage(COPY[language].kicked);
+        setMessage(t('kicked'));
         setTeamId(null);
         setPhase('notJoined');
       }
@@ -545,12 +545,12 @@ function TeamView({ roomCode }: TeamViewProps) {
                 color: '#e2e8f0'
               }}
             >
-              {COPY[language].timeLeft(Math.round(remainingSeconds))}
+              {t('timeLeft')(Math.round(remainingSeconds))}
             </div>
           )}
         </div>
       </div>
-      <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question ?? COPY[language].waitingMsg}</h2>
+        <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question ?? t('waitingMsg')}</h2>
       {(() => {
         const q: any = question;
         const mediaUrl = q?.imageUrl || q?.media?.url;
@@ -627,7 +627,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const renderWaitingForResult = () =>
     renderWaiting(
       t('waiting'),
-      language === 'de' ? 'Wir pruefen alle Antworten ...' : (COPY[language] as any).evaluating ?? COPY.en.evaluating
+      language === 'de' ? 'Wir pruefen alle Antworten ...' : t('evaluating')
     );
 
 const handleSubmit = async () => {
@@ -636,11 +636,11 @@ const handleSubmit = async () => {
         try {
           await handleJoin();
         } catch {
-          setMessage(COPY[language].loginError);
+          setMessage(t('loginError'));
           return;
         }
       } else {
-        setMessage(COPY[language].loginError);
+        setMessage(t('loginError'));
         return;
       }
     }
@@ -664,7 +664,7 @@ const handleSubmit = async () => {
 
   const handleMarkCell = async (cellIndex: number) => {
     if (!teamId) {
-      setMessage(COPY[language].loginError);
+      setMessage(t('loginError'));
       return;
     }
     if (!canMarkBingo) return;
@@ -677,8 +677,8 @@ const handleSubmit = async () => {
     } catch (err) {
       setMessage(
         language === 'de'
-          ? COPY[language].markError
-          : COPY[language].markError
+          ? t('markError')
+          : t('markError')
       );
     }
   };
@@ -723,7 +723,7 @@ const handleSubmit = async () => {
               onClick={() => setAnswer('true')}
               disabled={!canAnswer}
             >
-              {COPY[language].tfTrue}
+              {t('tfTrue')}
             </button>
             <button
               style={{
@@ -736,7 +736,7 @@ const handleSubmit = async () => {
               onClick={() => setAnswer('false')}
               disabled={!canAnswer}
             >
-              {COPY[language].tfFalse}
+              {t('tfFalse')}
             </button>
           </div>
         );
@@ -745,7 +745,7 @@ const handleSubmit = async () => {
         return (
           <input
             style={inputStyle}
-            placeholder={COPY[language].inputOrder}
+            placeholder={t('inputOrder')}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             disabled={!canAnswer}
@@ -757,7 +757,7 @@ const handleSubmit = async () => {
         return (
           <input
             style={inputStyle}
-            placeholder={COPY[language].inputNumber(unit)}
+            placeholder={t('inputNumber')(unit)}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             disabled={!canAnswer}
@@ -784,7 +784,7 @@ const handleSubmit = async () => {
           : 'Result'}
       </div>
       <p style={{ margin: 0, color: resultCorrect ? '#22c55e' : '#ef4444', fontSize: 24, fontWeight: 900 }}>
-        {COPY[language].resultTitle(resultCorrect)}
+        {t('resultTitle')(resultCorrect)}
       </p>
       {resultMessage && <p style={{ margin: 0, color: 'var(--muted)' }}>{resultMessage}</p>}
       {solution && (
@@ -890,16 +890,16 @@ const handleSubmit = async () => {
       <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Join
       </Pill>
-      <h3 style={{ ...heading, marginBottom: 8 }}>{COPY[language].joinWelcome}</h3>
-      <p style={mutedText}>{COPY[language].joinHint}</p>
+      <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
+      <p style={mutedText}>{t('joinHint')}</p>
       <input
         value={teamName}
         onChange={(e) => setTeamName(e.target.value)}
-        placeholder={COPY[language].joinPlaceholder}
+        placeholder={t('joinPlaceholder')}
         style={inputStyle}
       />
       <PrimaryButton style={{ marginTop: 12 }} onClick={() => handleJoin(false)}>
-        {COPY[language].joinButton}
+        {t('joinButton')}
       </PrimaryButton>
       {savedIdRef.current && (
         <button
@@ -936,7 +936,7 @@ const handleSubmit = async () => {
       <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'Warten' : 'Info'}</div>
       <h3 style={{ ...heading, marginBottom: 4 }}>{title}</h3>
       {subtitle && <p style={mutedText}>{subtitle}</p>}
-      {!teamId && <p style={mutedText}>{COPY[language].joinTitle}</p>}
+      {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
       <div style={hourglassStyle}>{'\u23F3'}</div>
       {hasTimer && (
         <>
@@ -945,7 +945,7 @@ const handleSubmit = async () => {
             <div style={{ ...progressInner(accentColor), width: `${progress}%` }} />
           </div>
           <div style={{ marginTop: 6, color: 'var(--muted)', fontWeight: 700 }}>
-            {COPY[language].timeLeft(Math.round(remainingSeconds))}
+            {t('timeLeft')(Math.round(remainingSeconds))}
           </div>
         </>
       )}
@@ -964,22 +964,22 @@ const handleSubmit = async () => {
         return renderNotJoined();
       case 'waitingForQuestion':
         return evaluating
-          ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating, null)
+          ? renderWaiting(t('evaluating'), null)
           : renderWaiting(
-              COPY[language].waitingSoon ?? COPY.en.waitingSoon,
-              teamId ? null : COPY[language].waitingJoin,
+              t('waitingSoon') ?? COPY.en.waitingSoon,
+              teamId ? null : t('waitingJoin'),
               Boolean(teamId)
             );
       case 'answering':
         return renderAnswering();
       case 'waitingForResult':
-        return evaluating ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating) : renderWaitingForResult();
+        return evaluating ? renderWaiting(t('evaluating')) : renderWaitingForResult();
       case 'showResult':
         return renderShowResult();
       default:
         return evaluating
-          ? renderWaiting(COPY[language].evaluating ?? COPY.en.evaluating)
-          : renderWaiting(COPY[language].waitingMsg);
+            ? renderWaiting(t('evaluating'), null)
+            : renderWaiting(t('waitingMsg'));
     }
   };
   const toggleReady = () => {
@@ -1079,7 +1079,7 @@ const handleSubmit = async () => {
             </div>
             {hasTimer && (
               <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
-                {timeUp ? COPY[language].timerDoneLabel : COPY[language].timerActiveLabel}
+                {timeUp ? t('timerDoneLabel') : t('timerActiveLabel')}
               </Pill>
             )}
             {board.length === 25 && !showBingoPanel && (

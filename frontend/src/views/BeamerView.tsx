@@ -34,7 +34,7 @@ const SLOT_SPIN_DURATION = 1400;
 const translations = {
   de: {
     lobbyTitle: "Gleich geht's los.",
-    lobbySubtitle: 'Macht es euch gemÃ¼tlich - der Admin legt gleich los.',
+    lobbySubtitle: 'Macht es euch gemütlich - der Admin legt gleich los.',
     codeLabel: 'Code',
     languageLabel: 'Sprache',
     waitingForHost: 'Warten auf Admin ...',

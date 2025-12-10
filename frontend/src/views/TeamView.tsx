@@ -1159,7 +1159,13 @@ const handleSubmit = async () => {
             onClick={connectionStatus === 'connected' ? toggleReady : undefined}
             disabled={connectionStatus !== 'connected'}
           >
-            {isReady ? t('readyOn') : 'Unser Team ist bereit'}
+            {isReady
+              ? t('readyOn')
+              : language === 'en'
+              ? 'Our team is ready'
+              : language === 'both'
+              ? 'Unser Team ist bereit / Our team is ready'
+              : 'Unser Team ist bereit'}
           </PrimaryButton>
         )}
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (

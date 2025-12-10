@@ -164,7 +164,7 @@ export interface RoomState {
   remainingQuestionIds: string[];
   teamBoards: Record<string, BingoBoard>;
   timerEndsAt: number | null;
-  language?: 'de' | 'en';
+  language?: Language;
 }
 
 export type QuizMode = 'ordered' | 'random';
@@ -188,6 +188,8 @@ export interface CategoryConfig {
   icon?: string;
   order?: number;
 }
+
+export type Language = 'de' | 'en' | 'both';
 
 export interface QuizTemplate {
   id: string;
@@ -237,7 +239,7 @@ export type QuestionPhase = 'idle' | 'slot' | 'answering' | 'evaluated' | 'revea
 
 export type SyncStatePayload = {
   screen: ScreenState;
-  language: 'de' | 'en';
+  language: Language;
   questionPhase: QuestionPhase;
   timerEndsAt: number | null;
   question: AnyQuestion | null;

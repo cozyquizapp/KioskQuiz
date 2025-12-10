@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnyQuestion, MultipleChoiceQuestion, SortItemsQuestion, BingoBoard } from '@shared/quizTypes';
+import { AnyQuestion, MultipleChoiceQuestion, SortItemsQuestion, BingoBoard, Language } from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
   joinRoom,
@@ -143,7 +143,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [canMarkBingo, setCanMarkBingo] = useState(false);
   const [showBingoPanel, setShowBingoPanel] = useState(false);
   const [timerTick, setTimerTick] = useState(0);
-  const [language, setLanguage] = useState<'de' | 'en'>('de');
+  const [language, setLanguage] = useState<Language>('de');
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [allowReadyToggle, setAllowReadyToggle] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -195,7 +195,19 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, [roomCode]);
 
-  const t = <K extends keyof (typeof COPY)['de']>(key: K) => COPY[language]?.[key] ?? COPY.de[key];
+  const t = <K extends keyof (typeof COPY)['de']>(key: K) => {
+    const deVal = COPY.de[key] as any;
+    const enVal = (COPY.en as any)[key] as any;
+    if (language === 'both') {
+      if (typeof deVal === 'function' && typeof enVal === 'function') {
+        return ((...args: any[]) => `${deVal(...args)} / ${enVal(...args)}`) as any;
+      }
+      if (typeof deVal === 'string' && typeof enVal === 'string') {
+        return `${deVal} / ${enVal}` as any;
+      }
+    }
+    return (COPY as any)[language]?.[key] ?? COPY.de[key];
+  };
 
   const handleReconnect = () => {
     setConnectionStatus('connecting');
@@ -995,8 +1007,9 @@ const handleSubmit = async () => {
   const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
   const accentPink = '#ff4f9e';
   const accentIcon = categoryIcons[accentCategory];
+  const labelLang = language === 'both' ? 'de' : language;
   const accentLabel =
-    categoryLabels[accentCategory]?.[language] ?? categoryLabels[accentCategory]?.de ?? accentCategory;
+    categoryLabels[accentCategory]?.[labelLang] ?? categoryLabels[accentCategory]?.de ?? accentCategory;
   const layout =
     (question as any)?.layout || { imageOffsetX: 0, imageOffsetY: 0, logoOffsetX: 0, logoOffsetY: 0 };
 

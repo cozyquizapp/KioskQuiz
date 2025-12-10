@@ -8,7 +8,8 @@ import {
   QuestionPhase,
   SlotTransitionMeta,
   Team,
-  SyncStatePayload
+  SyncStatePayload,
+  Language
 } from '@shared/quizTypes';
 import { fetchCurrentQuestion, fetchLanguage, fetchTimer, QuestionMeta } from '../api';
 import { connectToRoom } from '../socket';
@@ -21,7 +22,7 @@ import BeamerSlotView from './BeamerSlotView';
 import BeamerQuestionView from './BeamerQuestionView';
 import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
 
-type Lang = 'de' | 'en';
+type Lang = Language;
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
 type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'answer' | 'intro';
 
@@ -87,7 +88,36 @@ const translations = {
   }
 } as const;
 
-const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<Lang, string>> = {
+const translationsBoth = {
+  lobbyTitle: `${translations.de.lobbyTitle} / ${translations.en.lobbyTitle}`,
+  lobbySubtitle: `${translations.de.lobbySubtitle} / ${translations.en.lobbySubtitle}`,
+  codeLabel: `${translations.de.codeLabel} / ${translations.en.codeLabel}`,
+  languageLabel: `${translations.de.languageLabel} / ${translations.en.languageLabel}`,
+  waitingForHost: `${translations.de.waitingForHost} / ${translations.en.waitingForHost}`,
+  teamsInRoom: `${translations.de.teamsInRoom} / ${translations.en.teamsInRoom}`,
+  waitingForQuestion: `${translations.de.waitingForQuestion} / ${translations.en.waitingForQuestion}`,
+  timeLeft: (s: number) => `${translations.de.timeLeft(s)} / ${translations.en.timeLeft(s)}`,
+  timeUp: `${translations.de.timeUp} / ${translations.en.timeUp}`,
+  noTimer: `${translations.de.noTimer} / ${translations.en.noTimer}`,
+  calculating: `${translations.de.calculating} / ${translations.en.calculating}`,
+  answerLabel: `${translations.de.answerLabel} / ${translations.en.answerLabel}`,
+  answerFallback: `${translations.de.answerFallback} / ${translations.en.answerFallback}`,
+  slotTitle: `${translations.de.slotTitle} / ${translations.en.slotTitle}`,
+  slotHint: `${translations.de.slotHint} / ${translations.en.slotHint}`,
+  mixedMechanic: `${translations.de.mixedMechanic} / ${translations.en.mixedMechanic}`,
+  questionLabel: (index: number, total: number) =>
+    `${translations.de.questionLabel(index, total)} / ${translations.en.questionLabel(index, total)}`,
+  footerMeta: (
+    globalIndex: number,
+    globalTotal: number,
+    categoryLabel: string,
+    categoryIndex: number,
+    categoryTotal: number
+  ) => `${translations.de.footerMeta(globalIndex, globalTotal, categoryLabel, categoryIndex, categoryTotal)} / ${translations.en.footerMeta(globalIndex, globalTotal, categoryLabel, categoryIndex, categoryTotal)}`,
+  teamsReady: (ready: number, total: number) => `${translations.de.teamsReady(ready, total)} / ${translations.en.teamsReady(ready, total)}`
+};
+
+const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> = {
   Schaetzchen: {
     de: 'Hier zählt euer Gefühl für Zahlen und Größen.',
     en: 'Here your sense for numbers and sizes matters.'
@@ -112,9 +142,24 @@ const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<Lang, string>> = {
 
 const formatSeconds = (ms: number) => Math.max(0, Math.ceil(ms / 1000));
 
-const getCategoryLabel = (key: QuizCategory, lang: Lang) => categoryLabels[key]?.[lang] ?? key;
+const normalizeLang = (lang: Lang): 'de' | 'en' => (lang === 'both' ? 'de' : lang);
+const slidesForLanguage = (lang: Lang) => INTRO_SLIDE_MAP[normalizeLang(lang)];
 
-const getCategoryDescription = (key: QuizCategory, lang: Lang) => CATEGORY_DESCRIPTIONS[key]?.[lang] ?? '';
+const getCategoryLabel = (key: QuizCategory, lang: Lang) => {
+  const norm = normalizeLang(lang);
+  const labels = categoryLabels[key];
+  const de = labels?.de ?? key;
+  const en = labels?.en ?? de;
+  return lang === 'both' ? `${de} / ${en}` : norm === 'en' ? en : de;
+};
+
+const getCategoryDescription = (key: QuizCategory, lang: Lang) => {
+  const norm = normalizeLang(lang);
+  const base = CATEGORY_DESCRIPTIONS[key];
+  const de = base?.de ?? '';
+  const en = base?.en ?? de;
+  return lang === 'both' ? `${de} / ${en}` : base?.[norm] ?? '';
+};
 
 const pillRule: React.CSSProperties = {
   padding: '8px 12px',
@@ -167,7 +212,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     )
   );
   const [questionFlyIn, setQuestionFlyIn] = useState(false);
-  const [introSlides, setIntroSlides] = useState<IntroSlide[]>(INTRO_SLIDE_MAP[language]);
+  const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
 
@@ -177,7 +222,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const connectionStatusRef = useRef(connectionStatus);
 
   const categories = useMemo(() => Object.keys(categoryLabels) as QuizCategory[], []);
-  const t = translations[language];
+  const t = language === 'both' ? translationsBoth : translations[language === 'both' ? 'de' : language];
 
   const clearReconnectTimeouts = () => {
     reconnectTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -351,7 +396,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     socket.on('beamer:show-intro', (payload: { slides?: IntroSlide[] }) => {
-      setIntroSlides(payload?.slides ?? INTRO_SLIDE_MAP[language]);
+      setIntroSlides(payload?.slides ?? slidesForLanguage(language));
       setIntroIndex(0);
       setScreen('intro');
       setQuestion(null);
@@ -519,9 +564,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [screen, introSlides.length]);
 
-  // sync intro slides to current language
-  useEffect(() => {
-    setIntroSlides(INTRO_SLIDE_MAP[language]);
+// sync intro slides to current language
+useEffect(() => {
+    setIntroSlides(slidesForLanguage(language));
     setIntroIndex(0);
   }, [language]);
 

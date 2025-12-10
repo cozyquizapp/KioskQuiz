@@ -21,7 +21,7 @@ import {
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
-import { QuizMeta } from '../../shared/quizTypes';
+import { QuizMeta, Language } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { DEBUG, DEFAULT_QUESTION_TIME, ROOM_IDLE_CLEANUP_MS, SLOT_DURATION_MS } from './constants';
 import { INTRO_SLIDES } from './config/introSlides';
@@ -103,7 +103,7 @@ type RoomState = {
   screen: ScreenState;
   questionPhase: QuestionPhase;
   lastActivityAt: number;
-  language: 'de' | 'en';
+  language: Language;
 };
 
 const rooms = new Map<string, RoomState>();
@@ -222,10 +222,9 @@ const buildQuestionMeta = (room: RoomState, questionId: string) => {
       ? order.slice(0, position + 1).filter((id) => questionById.get(id)?.category === question.category).length
       : 1;
 
-  const categoryName =
-    room.language === 'en'
-      ? CATEGORY_CONFIG[question.category]?.labelEn ?? question.category
-      : CATEGORY_CONFIG[question.category]?.label ?? question.category;
+  const deLabel = CATEGORY_CONFIG[question.category]?.label ?? question.category;
+  const enLabel = CATEGORY_CONFIG[question.category]?.labelEn ?? deLabel;
+  const categoryName = combineText(deLabel, enLabel, room.language);
 
   return {
     globalIndex,
@@ -241,13 +240,12 @@ const buildSlotMeta = (
   question: AnyQuestion,
   indexInCategory: number,
   totalInCategory: number,
-  language: 'de' | 'en'
+  language: Language
 ): SlotTransitionMeta => {
   const cfg = CATEGORY_CONFIG[question.category];
-  const label =
-    language === 'en'
-      ? cfg?.labelEn ?? cfg?.label ?? question.category
-      : cfg?.label ?? question.category;
+  const deLabel = cfg?.label ?? question.category;
+  const enLabel = cfg?.labelEn ?? deLabel;
+  const label = combineText(deLabel, enLabel, language);
 
   const meta: SlotTransitionMeta = {
     categoryId: question.category,
@@ -314,21 +312,46 @@ const applyOverrides = (question: AnyQuestion): AnyQuestion => {
   return q as AnyQuestion;
 };
 
-const localizeQuestion = (question: AnyQuestion, language: 'de' | 'en'): AnyQuestion => {
+const combineText = <T extends string | undefined>(deVal: T, enVal: T, language: Language): T => {
+  if (!enVal) return deVal;
+  if (language === 'en') return enVal;
+  if (language === 'both') return `${deVal ?? ''}${deVal && enVal ? ' / ' : ''}${enVal}` as T;
+  return deVal;
+};
+
+const combineArray = (deArr: string[], enArr: string[] | undefined, language: Language) => {
+  if (!enArr || language === 'de') return deArr;
+  if (language === 'en') return enArr;
+  const max = Math.max(deArr.length, enArr.length);
+  const combined: string[] = [];
+  for (let i = 0; i < max; i += 1) {
+    const deVal = deArr[i] ?? '';
+    const enVal = enArr[i] ?? '';
+    combined.push(combineText(deVal, enVal, language));
+  }
+  return combined;
+};
+
+const localizeQuestion = (question: AnyQuestion, language: Language): AnyQuestion => {
   const base: any = { ...question };
   if (questionImageMap[question.id]) base.imageUrl = questionImageMap[question.id];
-  if (language === 'de') return base as AnyQuestion;
-  if ((question as any).questionEn) base.question = (question as any).questionEn;
-  if (question.mechanic === 'multipleChoice' && (question as any).optionsEn) {
-    base.options = (question as any).optionsEn;
+  base.question = combineText(question.question, (question as any).questionEn, language);
+
+  if (question.mechanic === 'multipleChoice') {
+    const deOptions = (question as any).options ?? [];
+    base.options = combineArray(deOptions, (question as any).optionsEn, language);
   }
   if (question.mechanic === 'sortItems') {
-    if ((question as any).itemsEn) base.items = (question as any).itemsEn;
-    if ((question as any).correctOrderEn) base.correctOrder = (question as any).correctOrderEn;
-    if ((question as any).hintEn) base.hint = (question as any).hintEn;
+    const deItems = (question as any).items ?? [];
+    base.items = combineArray(deItems, (question as any).itemsEn, language);
+    const deOrder = (question as any).correctOrder ?? [];
+    base.correctOrder = combineArray(deOrder, (question as any).correctOrderEn, language);
+    const hintDe = (question as any).hint;
+    const hintEn = (question as any).hintEn;
+    if (hintDe || hintEn) base.hint = combineText(hintDe, hintEn, language);
   }
-  if (question.mechanic === 'imageQuestion' && (question as any).answerEn) {
-    base.answer = (question as any).answerEn;
+  if (question.mechanic === 'imageQuestion') {
+    base.answer = combineText((question as any).answer, (question as any).answerEn, language);
   }
   return base as AnyQuestion;
 };
@@ -388,18 +411,28 @@ const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
     const boolVal = String(answer).toLowerCase() === 'true';
     return boolVal === (question as any).isTrue;
   }
-  if ((question as any).correctOrder) {
+  const order = (question as any).correctOrder as string[] | undefined;
+  const orderEn = (question as any).correctOrderEn as string[] | undefined;
+  if (order && order.length > 0) {
     const orderStr = normalizeString(answer).replace(/\s+/g, '');
-    const targetOrder = ((question as any).correctOrder as string[]).join(',').toLowerCase();
-    return orderStr === targetOrder.replace(/\s+/g, '');
+    const targetOrder = order.join(',').toLowerCase();
+    const targetOrderEn = orderEn ? orderEn.join(',').toLowerCase() : undefined;
+    if (orderStr === targetOrder.replace(/\s+/g, '')) return true;
+    if (targetOrderEn && orderStr === targetOrderEn.replace(/\s+/g, '')) return true;
+    return false;
   }
   if ((question as any).answer) {
-    return normalizeString(answer) === normalizeString((question as any).answer);
+    const normalized = normalizeString(answer);
+    const deAnswer = normalizeString((question as any).answer);
+    const enAnswer = (question as any).answerEn ? normalizeString((question as any).answerEn) : null;
+    if (normalized === deAnswer) return true;
+    if (enAnswer && normalized === enAnswer) return true;
+    return false;
   }
   return false;
 };
 
-const formatSolution = (question: AnyQuestion, language: 'de' | 'en'): string | undefined => {
+const formatSolution = (question: AnyQuestion, language: Language): string | undefined => {
   if (!question) return undefined;
   if (question.mechanic === 'estimate') {
     const unit = (question as any).unit ? ` ${(question as any).unit}` : '';
@@ -408,23 +441,29 @@ const formatSolution = (question: AnyQuestion, language: 'de' | 'en'): string | 
   if (question.mechanic === 'multipleChoice') {
     const idx = (question as any).correctIndex;
     if (idx === undefined) return undefined;
-    const opts =
-      language === 'en' && (question as any).optionsEn
-        ? (question as any).optionsEn
-        : (question as any).options;
+    const opts = combineArray(
+      (question as any).options ?? [],
+      (question as any).optionsEn,
+      language
+    );
     return Array.isArray(opts) ? opts[idx] : undefined;
   }
   if (question.mechanic === 'trueFalse') {
-    return (question as any).isTrue ? 'True' : 'False';
+    const de = (question as any).isTrue ? 'Wahr' : 'Falsch';
+    const en = (question as any).isTrue ? 'True' : 'False';
+    return combineText(de, en, language);
   }
   if ((question as any).correctOrder) {
-    const ord =
-      language === 'en' && (question as any).correctOrderEn
-        ? (question as any).correctOrderEn
-        : (question as any).correctOrder;
+    const ord = combineArray(
+      (question as any).correctOrder ?? [],
+      (question as any).correctOrderEn,
+      language
+    );
     return Array.isArray(ord) ? ord.join(' / ') : undefined;
   }
-  return (question as any).answer ?? undefined;
+  const deAnswer = (question as any).answer ?? undefined;
+  const enAnswer = (question as any).answerEn ?? undefined;
+  return combineText(deAnswer, enAnswer, language);
 };
 
 const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => question;
@@ -1080,8 +1119,9 @@ app.get('/api/rooms/:roomCode/language', (req, res) => {
 
 app.post('/api/rooms/:roomCode/language', (req, res) => {
   const { roomCode } = req.params;
-  const { language } = req.body as { language?: 'de' | 'en' };
-  if (language !== 'de' && language !== 'en') return res.status(400).json({ error: 'language muss de oder en sein' });
+  const { language } = req.body as { language?: Language };
+  if (language !== 'de' && language !== 'en' && language !== 'both')
+    return res.status(400).json({ error: 'language muss de, en oder both sein' });
   const room = ensureRoom(roomCode);
   room.language = language;
   touchRoom(room);

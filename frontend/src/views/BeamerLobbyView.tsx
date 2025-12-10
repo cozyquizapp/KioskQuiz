@@ -1,7 +1,7 @@
 import React from 'react';
-import { QuizCategory } from '@shared/quizTypes';
+import { QuizCategory, Language } from '@shared/quizTypes';
 
-type Lang = 'de' | 'en';
+type Lang = Language;
 
 type BeamerLobbyViewProps = {
   t: any;

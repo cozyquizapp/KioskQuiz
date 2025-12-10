@@ -5,7 +5,8 @@ import {
   Team,
   QuizTemplate,
   BingoBoard,
-  SyncStatePayload
+  SyncStatePayload,
+  Language
 } from '@shared/quizTypes';
 import {
   fetchQuizzes,
@@ -61,7 +62,7 @@ export default function AdminView({ roomCode }: Props) {
   const [answerState, setAnswerState] = useState<AnswerState>({ answers: {}, teams: {} });
   const [teamBoards, setTeamBoards] = useState<Record<string, BingoBoard>>({});
   const [phase, setPhase] = useState<Phase>('setup');
-  const [language, setLanguageState] = useState<'de' | 'en'>('de');
+  const [language, setLanguageState] = useState<Language>('de');
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [defaultTimer, setDefaultTimer] = useState(30);
   const [activeTab, setActiveTab] = useState<Tab>('answers');
@@ -454,6 +455,12 @@ export default function AdminView({ roomCode }: Props) {
                 onClick={() => setLanguage(roomCode, 'en').then(() => setLanguageState('en'))}
               >
                 EN
+              </button>
+              <button
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: language === 'both' ? '#22c55e33' : 'rgba(255,255,255,0.04)', color: '#e2e8f0' }}
+                onClick={() => setLanguage(roomCode, 'both').then(() => setLanguageState('both'))}
+              >
+                DE+EN
               </button>
             </div>
             <button

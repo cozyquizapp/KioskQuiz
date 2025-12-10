@@ -84,7 +84,7 @@ type CsvPreviewRow = { line: number; raw: string; id?: string; category?: string
 const CreatorWizardPage: React.FC = () => {
   const [activeStep, setActiveStep] = useState<Step>('base');
   const [quizName, setQuizName] = useState('Cozy Kiosk Quiz');
-  const [language, setLanguage] = useState<'de' | 'en'>('de');
+  const [language, setLanguage] = useState<'de' | 'en' | 'both'>('de');
   const [defaultTimer, setDefaultTimer] = useState(30);
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -267,10 +267,11 @@ const CreatorWizardPage: React.FC = () => {
           <select
             style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
             value={language}
-            onChange={(e) => setLanguage(e.target.value as 'de' | 'en')}
+            onChange={(e) => setLanguage(e.target.value as 'de' | 'en' | 'both')}
           >
             <option value="de">Deutsch</option>
             <option value="en">English</option>
+            <option value="both">Deutsch + English</option>
           </select>
         </div>
         <div>

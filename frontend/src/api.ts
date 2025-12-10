@@ -1,4 +1,4 @@
-import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry } from '@shared/quizTypes';
+import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language } from '@shared/quizTypes';
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -183,13 +183,13 @@ export const fetchTimer = async (roomCode: string) => {
 };
 
 // Sprache
-export const fetchLanguage = async (roomCode: string): Promise<{ language: 'de' | 'en' }> => {
+export const fetchLanguage = async (roomCode: string): Promise<{ language: Language }> => {
   const res = await fetch(`${API_BASE}/rooms/${roomCode}/language`);
   if (!res.ok) throw new Error('Sprache konnte nicht geladen werden');
   return res.json();
 };
 
-export const setLanguage = async (roomCode: string, language: 'de' | 'en') => {
+export const setLanguage = async (roomCode: string, language: Language) => {
   const res = await fetch(`${API_BASE}/rooms/${roomCode}/language`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

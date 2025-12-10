@@ -15,7 +15,7 @@ import {
   fetchAnswers,
   fetchTimer
 } from '../api';
-import { AnswerEntry, AnyQuestion, QuizTemplate } from '@shared/quizTypes';
+import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
@@ -111,9 +111,9 @@ const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span 
 
 const ModeratorPage: React.FC = () => {
   const [roomCode, setRoomCode] = useState('MAIN');
-  const [language, setLang] = useState<'de' | 'en'>(() => {
+  const [language, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('moderatorLanguage');
-    return saved === 'de' || saved === 'en' ? saved : 'de';
+    return saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
   });
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [meta, setMeta] = useState<{ globalIndex?: number; globalTotal?: number; categoryKey?: string } | null>(null);
@@ -384,7 +384,7 @@ const ModeratorPage: React.FC = () => {
                 <select
                   value={language}
                   onChange={(e) => {
-                    const val = e.target.value as 'de' | 'en';
+                    const val = e.target.value as Language;
                     setLang(val);
                     localStorage.setItem('moderatorLanguage', val);
                   }}
@@ -392,6 +392,7 @@ const ModeratorPage: React.FC = () => {
                 >
                   <option value="de">Deutsch</option>
                   <option value="en">Englisch</option>
+                  <option value="both">Beides</option>
                 </select>
                 <button
                   style={{

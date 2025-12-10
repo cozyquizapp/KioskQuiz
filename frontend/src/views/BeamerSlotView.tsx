@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { QuizCategory, SlotTransitionMeta } from '@shared/quizTypes';
+import { QuizCategory, SlotTransitionMeta, Language } from '@shared/quizTypes';
 import { mixedMechanicMap } from '@shared/mixedMechanics';
 import { categoryColors as CATEGORY_COLORS } from '../categoryColors';
 
-type Lang = 'de' | 'en';
+type Lang = Language;
 
 type BeamerSlotViewProps = {
   t: any;

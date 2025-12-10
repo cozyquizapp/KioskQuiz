@@ -9,38 +9,38 @@ export const introSlides: Record<'de' | 'en', IntroSlide[]> = {
   de: [
     {
       title: 'Willkommen zum Cozy Kiosk Quiz',
-      subtitle: 'Kurz erklaert',
-      body: 'Ihr spielt Kategorie fuer Kategorie. Jede Runde bringt Punkte aufs Bingo-Board, also aufmerksam bleiben und gemeinsam raetseln.',
+      subtitle: 'Kurz erklärt',
+      body: 'Ihr spielt Kategorie für Kategorie. Jede Runde bringt Punkte aufs Bingo-Board, also aufmerksam bleiben und gemeinsam rätseln.',
       badge: 'Intro'
     },
     {
-      title: 'So laeuft eine Frage ab',
+      title: 'So läuft eine Frage ab',
       subtitle: 'Frage sehen, Timer laeuft',
-      body: 'Ihr seht die Frage, dann startet der Timer automatisch. Antwort eintippen, abschicken – danach wird ausgewertet.',
+      body: 'Ihr seht die Frage, dann startet der Timer automatisch. Antwort eintippen, abschicken - danach wird ausgewertet.',
       badge: 'Ablauf'
     },
     {
       title: 'Ready-Status',
-      subtitle: 'Alle muessen bereit sein',
-      body: 'Vor dem Start: Drueckt "Team ist bereit". Erst wenn alle Teams bereit sind, geht es los. Sonst warten wir.',
+      subtitle: 'Alle müssen bereit sein',
+      body: 'Vor dem Start: Drückt "Team ist bereit". Erst wenn alle Teams bereit sind, geht es los. Sonst warten wir.',
       badge: 'Regel'
     },
     {
-      title: 'Schaetzfragen',
-      subtitle: 'Am naechsten dran gewinnt',
-      body: 'Bei Schaetzfragen zaehlt, wer am naechsten liegt. Extremwert riskieren oder konservativ bleiben? Eure Entscheidung.',
+      title: 'Schätzfragen',
+      subtitle: 'Am nächsten dran gewinnt',
+      body: 'Bei Schätzfragen zählt, wer am nächsten liegt. Extremwert riskieren oder konservativ bleiben? Eure Entscheidung.',
       badge: 'Regel'
     },
     {
       title: 'Bilder & Cheese',
       subtitle: 'Genau hinsehen',
-      body: 'Manche Fragen zeigen Bilder. Nutzt jedes Detail – Logos, Farben, Hintergruende koennen Hinweise sein.',
+      body: 'Manche Fragen zeigen Bilder. Nutzt jedes Detail - Logos, Farben, Hintergründe können Hinweise sein.',
       badge: 'Regel'
     },
     {
       title: 'Fair Play',
       subtitle: 'Kein Googeln, nur Teamwork',
-      body: 'Bitte ehrlich bleiben: Keine Suche im Netz. Der Spass kommt vom gemeinsamen Raten, nicht von der schnellsten Suche.',
+      body: 'Bitte ehrlich bleiben: Keine Suche im Netz. Der Spaß kommt vom gemeinsamen Raten, nicht von der schnellsten Suche.',
       badge: 'Fairplay'
     }
   ],

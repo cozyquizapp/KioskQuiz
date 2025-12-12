@@ -301,6 +301,21 @@ const ModeratorPage: React.FC = () => {
       .slice(0, 3);
   }, [answers]);
 
+  const answerStats = useMemo(() => {
+    if (!answers) return null;
+    const total = Object.keys(answers.answers).length;
+    const correct = Object.values(answers.answers).filter((a: any) => a?.isCorrect === true).length;
+    const perOption: Record<string, number> = {};
+    if (question?.mechanic === 'multipleChoice' && (question as any)?.options) {
+      Object.values(answers.answers).forEach((a: any) => {
+        const raw = a?.answer ?? a?.value;
+        const key = raw !== undefined ? String(raw) : '—';
+        perOption[key] = (perOption[key] || 0) + 1;
+      });
+    }
+    return { total, correct, perOption };
+  }, [answers, question]);
+
   const catKey = (question as any)?.category as keyof typeof categoryColors;
   const catColor = categoryColors[catKey] ?? '#6dd5fa';
   const catIcon = categoryIcons[catKey];
@@ -518,7 +533,7 @@ const ModeratorPage: React.FC = () => {
               style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#bbf7d0' }}
               title={`Letzter Run: ${new Date(run.date).toLocaleString()} | Gewinner: ${run.winners?.join(', ') || 'n/a'}`}
             >
-              Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : '}
+              Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : 'n/a'}
             </span>
           ))}
         </div>
@@ -581,7 +596,7 @@ const ModeratorPage: React.FC = () => {
               <div>
                 <div style={{ fontWeight: 800 }}>{question?.question ?? 'Keine Frage aktiv'}</div>
                 <div style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {question ? `${meta?.globalIndex}/${meta?.globalTotal || '} | ${question.category}` : 'Warten auf Frage'}
+                  {question ? `${meta?.globalIndex}/${meta?.globalTotal ?? '?'} | ${question.category}` : 'Warten auf Frage'}
                 </div>
               </div>
             </div>
@@ -590,7 +605,7 @@ const ModeratorPage: React.FC = () => {
               <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: 'var(--muted)', fontSize: 12 }}>
                   {numericStats && (
-                    <span style={statChip}>Min {numericStats.min} â€¢ Max {numericStats.max} â€¢ Median {numericStats.median} â€¢ Ã˜ {numericStats.avg}</span>
+                    <span style={statChip}>Min {numericStats.min} | Max {numericStats.max} | Median {numericStats.median} | Avg {numericStats.avg}</span>
                   )}
                   <span style={statChip}>{phaseChip}</span>
                   {topTexts.length > 0 && <span style={statChip}>Top: {topTexts.map(([k, v]) => `${k} (${v})`).join(', ')}</span>}
@@ -601,6 +616,21 @@ const ModeratorPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+                {answerStats && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#cbd5e1', fontSize: 12 }}>
+                    <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
+                    {Object.keys(answerStats.perOption || {}).length > 0 && (
+                      <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
+                        {Object.entries(answerStats.perOption).map(([opt, count]) => (
+                          <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ padding: '2px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
+                            <span>{count}</span>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -735,7 +765,7 @@ const ModeratorPage: React.FC = () => {
             setQuestion(null);
             setMeta(null);
             setAnswers(null);
-            setToast('Zurück zum Start');
+            setToast('Zurueck zum Start');
             setTimeout(() => setToast(null), 1500);
           }}
         >

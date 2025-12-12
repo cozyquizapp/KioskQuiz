@@ -8,6 +8,7 @@ const links: LinkItem[] = [
   { path: '/beamer', label: 'Beamer', note: 'Anzeige fuers Publikum' },
   { path: '/team', label: 'Team', note: 'Teilnehmer-View / Antworten' },
   { path: '/intro', label: 'Intro & Regeln', note: 'Slides mit Begruessung/Regeln' },
+  { path: '/presentation-creator', label: 'Presentation Creator', note: 'Fenster-Layouts, Farben, Animationen' },
   { path: '/creator', label: 'Creator', note: 'Alle Features (Wizard, Bilder, Layout, Loesungen)' },
   { path: '/creator-wizard', label: 'Creator Wizard', note: 'Direkter Einstieg in den Wizard' },
   { path: '/question-editor', label: 'Question Editor', note: 'Frage-Details, Bilder, Layout-Offsets' }

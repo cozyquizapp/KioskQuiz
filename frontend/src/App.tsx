@@ -7,6 +7,7 @@ import MenuPage from './pages/MenuPage';
 import QuestionEditorPage from './pages/QuestionEditorPage';
 import ModeratorPage from './pages/ModeratorPage';
 import IntroSlidesPage from './pages/IntroSlidesPage';
+import PresentationCreatorPage from './pages/PresentationCreatorPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -24,6 +25,7 @@ function App() {
       <Route path="/question-editor" element={<QuestionEditorPage />} />
       <Route path="/moderator" element={<ModeratorPage />} />
       <Route path="/intro" element={<IntroSlidesPage />} />
+      <Route path="/presentation-creator" element={<PresentationCreatorPage />} />
       <Route path="*" element={<Navigate to="/team" replace />} />
     </Routes>
   );

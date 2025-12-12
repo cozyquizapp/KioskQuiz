@@ -119,6 +119,110 @@ try {
   questionImageMap = {};
 }
 
+// quiz layouts (presentation)
+const quizLayoutPath = path.join(__dirname, 'data', 'quizLayouts.json');
+type QuizLayout = {
+  backgrounds?: { gradientA: string; gradientB: string; overlay: number };
+  includeIntroOutro?: boolean;
+  includeRuleSlides?: boolean;
+  overrides?: Record<string, any>;
+};
+let quizLayoutMap: Record<string, QuizLayout> = {};
+try {
+  if (fs.existsSync(quizLayoutPath)) {
+    quizLayoutMap = JSON.parse(fs.readFileSync(quizLayoutPath, 'utf-8'));
+  }
+} catch {
+  quizLayoutMap = {};
+}
+const persistQuizLayouts = () => {
+  try {
+    fs.writeFileSync(quizLayoutPath, JSON.stringify(quizLayoutMap, null, 2), 'utf-8');
+  } catch {
+    // ignore
+  }
+};
+
+// stats / leaderboard (minimal)
+const statsPath = path.join(__dirname, 'data', 'quizStats.json');
+type RunEntry = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
+type QuestionStat = { questionId: string; total: number; correct?: number; breakdown?: Record<string, number> };
+type StatsState = { runs: RunEntry[]; questions: Record<string, QuestionStat> };
+let statsState: StatsState = { runs: [], questions: {} };
+try {
+  if (fs.existsSync(statsPath)) {
+    statsState = JSON.parse(fs.readFileSync(statsPath, 'utf-8'));
+  }
+} catch {
+  statsState = { runs: [], questions: {} };
+}
+const persistStats = () => {
+  try {
+    fs.writeFileSync(statsPath, JSON.stringify(statsState, null, 2), 'utf-8');
+  } catch {
+    // ignore
+  }
+};
+
+// --- Quiz Layout Endpoints --------------------------------------------------
+app.get('/api/quizzes/:quizId/layout', (req, res) => {
+  const { quizId } = req.params;
+  const layout = quizLayoutMap[quizId] || null;
+  res.json({ layout });
+});
+
+app.post('/api/quizzes/:quizId/layout', (req, res) => {
+  const { quizId } = req.params;
+  const payload = req.body as QuizLayout;
+  quizLayoutMap[quizId] = {
+    backgrounds: payload.backgrounds,
+    includeIntroOutro: payload.includeIntroOutro,
+    includeRuleSlides: payload.includeRuleSlides,
+    overrides: payload.overrides
+  };
+  persistQuizLayouts();
+  res.json({ ok: true, layout: quizLayoutMap[quizId] });
+});
+
+// --- Stats Endpoints (minimal) ----------------------------------------------
+app.get('/api/stats/leaderboard', (_req, res) => {
+  const runs = statsState.runs.slice(-10).reverse();
+  res.json({ runs });
+});
+
+app.post('/api/stats/run', (req, res) => {
+  const entry = req.body as RunEntry;
+  if (!entry.quizId || !entry.date || !Array.isArray(entry.winners)) {
+    return res.status(400).json({ error: 'quizId, date, winners required' });
+  }
+  statsState.runs.push(entry);
+  if (statsState.runs.length > 50) statsState.runs = statsState.runs.slice(-50);
+  persistStats();
+  res.json({ ok: true });
+});
+
+app.post('/api/stats/question', (req, res) => {
+  const { questionId, correct, total, breakdown } = req.body as { questionId: string; correct?: number; total?: number; breakdown?: Record<string, number> };
+  if (!questionId) return res.status(400).json({ error: 'questionId required' });
+  const existing = statsState.questions[questionId] || { questionId, total: 0, correct: 0, breakdown: {} };
+  existing.total += total ?? 0;
+  if (typeof correct === 'number') existing.correct = (existing.correct || 0) + correct;
+  if (breakdown) {
+    existing.breakdown = existing.breakdown || {};
+    Object.entries(breakdown).forEach(([key, val]) => {
+      existing.breakdown![key] = (existing.breakdown![key] || 0) + val;
+    });
+  }
+  statsState.questions[questionId] = existing;
+  persistStats();
+  res.json({ ok: true, stat: existing });
+});
+
+app.get('/api/stats/question/:questionId', (req, res) => {
+  const stat = statsState.questions[req.params.questionId] || null;
+  res.json({ stat });
+});
+
 // Custom Questions (erstellte/aktualisierte Fragen)
 const customQuestionsPath = path.join(__dirname, 'data', 'customQuestions.json');
 let customQuestions: AnyQuestion[] = [];

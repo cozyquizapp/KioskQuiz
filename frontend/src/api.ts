@@ -298,3 +298,21 @@ export const updateQuestion = async (id: string, payload: Partial<AnyQuestion>) 
   if (!res.ok) throw new Error('Frage konnte nicht aktualisiert werden');
   return res.json() as Promise<{ question: AnyQuestion }>;
 };
+
+// Quiz Layout (Presentation)
+export const fetchQuizLayout = async (quizId: string): Promise<{ layout: any | null }> => {
+  const res = await fetch(${API_BASE}/quizzes//layout);
+  if (!res.ok) throw new Error('Layout konnte nicht geladen werden');
+  return res.json();
+};
+
+export const saveQuizLayout = async (quizId: string, layout: any) => {
+  const res = await fetch(${API_BASE}/quizzes//layout, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(layout)
+  });
+  if (!res.ok) throw new Error('Layout konnte nicht gespeichert werden');
+  return res.json();
+};
+

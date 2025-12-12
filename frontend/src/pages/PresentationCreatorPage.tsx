@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { theme } from '../theme';
-import { fetchQuizzes, fetchQuestions, setQuestionLayout } from '../api';
+import { fetchQuizzes, fetchQuestions, setQuestionLayout, fetchQuizLayout, saveQuizLayout } from '../api';
 import { AnyQuestion, QuizTemplate } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
@@ -210,6 +210,25 @@ const PresentationCreatorPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!selectedQuiz) return;
+    fetchQuizLayout(selectedQuiz.id)
+      .then((res) => {
+        if (res.layout) {
+          if (res.layout.backgrounds) {
+            setQuizBackgrounds((prev) => ({ ...prev, [selectedQuiz.id]: res.layout.backgrounds }));
+          }
+          if (typeof res.layout.includeIntroOutro === 'boolean') setIncludeIntroOutro(res.layout.includeIntroOutro);
+          if (typeof res.layout.includeRuleSlides === 'boolean') setIncludeRuleSlides(res.layout.includeRuleSlides);
+          if (res.layout.overrides) setSlideOverrides(res.layout.overrides);
+          setQuizStatus('Layout geladen (Server)');
+        } else {
+          setQuizStatus('Kein Layout gespeichert');
+        }
+      })
+      .catch(() => setQuizStatus('Layout Laden fehlgeschlagen'));
+  }, [selectedQuiz?.id]);
+
+  useEffect(() => {
     if (selectedId && blocks.find((b) => b.id === selectedId)) return;
     setSelectedId(blocks[0]?.id ?? null);
   }, [blocks, selectedId]);
@@ -337,6 +356,21 @@ const PresentationCreatorPage: React.FC = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const saveLayoutToServer = async () => {
+    if (!selectedQuiz) return;
+    try {
+      await saveQuizLayout(selectedQuiz.id, {
+        backgrounds: quizBackgrounds[selectedQuiz.id] ?? currentBg,
+        includeIntroOutro,
+        includeRuleSlides,
+        overrides: slideOverrides
+      });
+      setQuizStatus('Layout gespeichert (Server)');
+    } catch {
+      setQuizStatus('Speichern fehlgeschlagen');
+    }
   };
 
   const addBlock = () => {
@@ -938,6 +972,19 @@ const PresentationCreatorPage: React.FC = () => {
                     onClick={exportLayout}
                   >
                     Layout exportieren
+                  </button>
+                  <button
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      background: 'rgba(99,102,241,0.18)',
+                      color: '#e5e7eb',
+                      cursor: 'pointer'
+                    }}
+                    onClick={saveLayoutToServer}
+                  >
+                    Layout speichern (Server)
                   </button>
                   <label
                     style={{

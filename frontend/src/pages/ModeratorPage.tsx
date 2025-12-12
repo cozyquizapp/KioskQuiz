@@ -16,6 +16,7 @@ import {
   fetchTimer,
   fetchScoreboard,
   postQuestionStats,
+  postRunStats,
   fetchLeaderboard
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
@@ -27,6 +28,7 @@ import AnswerList from '../components/moderator/AnswerList';
 import TeamsList from '../components/moderator/TeamsList';
 import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
+import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
 
 type AnswersState = {
   answers: Record<string, (AnswerEntry & { answer?: unknown })>;
@@ -140,7 +142,7 @@ const ModeratorPage: React.FC = () => {
     reveal: boolean;
   }>({ quiz: false, next: false, timerStart: false, timerStop: false, reveal: false });
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
-  const [selectedQuiz, setSelectedQuiz] = useState<string>(');
+  const [selectedQuiz, setSelectedQuiz] = useState<string>('');
   const {
     currentQuestion: socketQuestion,
     questionMeta: socketMeta,
@@ -524,6 +526,11 @@ const ModeratorPage: React.FC = () => {
         {renderActions()}
       </div>
 
+      {/* Stats Panels */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 10 }}>
+        <LeaderboardPanel runs={leaderboard} />
+      </div>
+
       {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}
       {toast && (
         <div
@@ -755,4 +762,5 @@ const ModeratorPage: React.FC = () => {
 };
 
 export default ModeratorPage;
+
 

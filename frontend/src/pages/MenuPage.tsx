@@ -1,17 +1,20 @@
 import { Link } from 'react-router-dom';
 
-type LinkItem = { path: string; label: string; note?: string };
+type LinkItem = { path: string; label: string; note?: string; badge?: string };
 
-const links: LinkItem[] = [
-  { path: '/admin', label: 'Admin', note: 'Quiz-Steuerung & Auswertung' },
-  { path: '/moderator', label: 'Moderator (Mobile)', note: 'Remote: Timer, Slot, Frage-Sprung' },
-  { path: '/beamer', label: 'Beamer', note: 'Anzeige fuers Publikum' },
-  { path: '/team', label: 'Team', note: 'Teilnehmer-View / Antworten' },
-  { path: '/intro', label: 'Intro & Regeln', note: 'Slides mit Begruessung/Regeln' },
-  { path: '/presentation-creator', label: 'Presentation Creator', note: 'Fenster-Layouts, Farben, Animationen' },
-  { path: '/creator', label: 'Creator', note: 'Alle Features (Wizard, Bilder, Layout, Loesungen)' },
-  { path: '/creator-wizard', label: 'Creator Wizard', note: 'Direkter Einstieg in den Wizard' },
-  { path: '/question-editor', label: 'Question Editor', note: 'Frage-Details, Bilder, Layout-Offsets' }
+const liveLinks: LinkItem[] = [
+  { path: '/beamer', label: 'Beamer (Anzeige)', note: 'Publikum, Fragen & Slots zeigen' },
+  { path: '/team', label: 'Team (Mitspielen)', note: 'Teilnehmer-View / Antworten', badge: 'QR unten' },
+  { path: '/moderator', label: 'Moderator (Steuerung)', note: 'Timer, Slot, Frage starten' },
+  { path: '/intro', label: 'Intro & Regeln', note: 'Pre-Show Slides / Regeln' },
+  { path: '/admin', label: 'Admin (Legacy)', note: 'Nur falls Moderator nicht genutzt wird' }
+];
+
+const creationFlow: LinkItem[] = [
+  { path: '/creator-wizard', label: 'Creator Wizard', note: 'Schritt 1/4 · 25 Fragen wählen' },
+  { path: '/creator', label: 'Creator', note: 'Schritt 2/4 · Meta, Timer, Sprache' },
+  { path: '/question-editor', label: 'Question Editor', note: 'Schritt 3/4 · Bilder, Layout, Antworten' },
+  { path: '/presentation-creator', label: 'Presentation Creator', note: 'Schritt 4/4 · Slides/Hintergrund/Offsets' }
 ];
 
 const getTeamUrl = () => {
@@ -97,32 +100,107 @@ const MenuPage = () => {
             />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-          {links.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              style={{
-                textDecoration: 'none',
-                color: 'inherit'
-              }}
-            >
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: 14,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.03)',
-                  boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
-                  transition: 'transform 0.2s ease, border-color 0.2s ease'
-                }}
-              >
-                <div style={{ fontWeight: 800, fontSize: 16 }}>{link.label}</div>
-                {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
-                <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>
-              </div>
-            </Link>
-          ))}
+        <div style={{ display: 'grid', gap: 18 }}>
+          <div
+            style={{
+              borderRadius: 16,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.03)',
+              padding: '14px 16px',
+              boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ fontWeight: 800, marginBottom: 10 }}>Live spielen</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              {liveLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: 14,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(0,0,0,0.18)',
+                      boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
+                      transition: 'transform 0.2s ease, border-color 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 800, fontSize: 16 }}>{link.label}</div>
+                      {link.badge && (
+                        <span
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 999,
+                            border: '1px solid rgba(255,255,255,0.18)',
+                            fontSize: 11,
+                            letterSpacing: '0.04em'
+                          }}
+                        >
+                          {link.badge}
+                        </span>
+                      )}
+                    </div>
+                    {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
+                    <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              borderRadius: 16,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.03)',
+              padding: '14px 16px',
+              boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Erstellen (Flow)</div>
+            <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 10 }}>Empfohlene Reihenfolge 1 → 4</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              {creationFlow.map((link, idx) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: 14,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(0,0,0,0.18)',
+                      boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
+                      transition: 'transform 0.2s ease, border-color 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 800, fontSize: 16 }}>{link.label}</div>
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 999,
+                          border: '1px solid rgba(255,255,255,0.18)',
+                          fontSize: 11,
+                          letterSpacing: '0.04em'
+                        }}
+                      >
+                        Schritt {idx + 1}/4
+                      </span>
+                    </div>
+                    {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
+                    <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

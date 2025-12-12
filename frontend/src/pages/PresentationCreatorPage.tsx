@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { theme } from '../theme';
+import { fetchQuizzes, fetchQuestions, setQuestionLayout } from '../api';
+import { AnyQuestion, QuizTemplate } from '@shared/quizTypes';
+import { categoryColors } from '../categoryColors';
+import { categoryIcons } from '../categoryAssets';
+import { categoryLabels } from '../categoryLabels';
 
 type AnimationPreset = 'none' | 'soft-fade' | 'slide-up' | 'pop' | 'float';
 
@@ -20,6 +25,17 @@ type PresentationBlock = {
 };
 
 const STORAGE_KEY = 'presentation-blocks-v1';
+const QUIZ_BG_KEY = 'presentation-quiz-bg-v1';
+const QUIZ_OVERRIDES_KEY = 'presentation-quiz-overrides-v1';
+
+type SlideOffsets = {
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  logoOffsetX?: number;
+  logoOffsetY?: number;
+  textSize?: number;
+  textOffsetY?: number;
+};
 
 const palette = ['#fbbf24', '#f97316', '#22c55e', '#06b6d4', '#818cf8', '#e879f9', '#f43f5e', '#e5e7eb'];
 const fontOptions = [
@@ -72,6 +88,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 const PresentationCreatorPage: React.FC = () => {
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 960, h: 540 });
+  const [mode, setMode] = useState<'custom' | 'quiz'>('custom');
   const [blocks, setBlocks] = useState<PresentationBlock[]>(() => {
     if (typeof window !== 'undefined') {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -95,6 +112,33 @@ const PresentationCreatorPage: React.FC = () => {
     origin: { x: number; y: number; width: number; height: number };
     stage: { w: number; h: number };
   } | null>(null);
+  const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizStatus, setQuizStatus] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<AnyQuestion[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const [includeIntroOutro, setIncludeIntroOutro] = useState(true);
+  const [quizBackgrounds, setQuizBackgrounds] = useState<Record<string, { gradientA: string; gradientB: string; overlay: number }>>(() => {
+    if (typeof window === 'undefined') return {};
+    const raw = window.localStorage.getItem(QUIZ_BG_KEY);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  });
+  const [slideOverrides, setSlideOverrides] = useState<Record<string, SlideOffsets>>(() => {
+    if (typeof window === 'undefined') return {};
+    const raw = window.localStorage.getItem(QUIZ_OVERRIDES_KEY);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  });
 
   useEffect(() => {
     const updateStage = () => {
@@ -130,6 +174,34 @@ const PresentationCreatorPage: React.FC = () => {
   }, [blocks]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(QUIZ_BG_KEY, JSON.stringify(quizBackgrounds));
+  }, [quizBackgrounds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(QUIZ_OVERRIDES_KEY, JSON.stringify(slideOverrides));
+  }, [slideOverrides]);
+
+  useEffect(() => {
+    setQuizLoading(true);
+    Promise.all([fetchQuizzes().catch(() => ({ quizzes: [] })), fetchQuestions().catch(() => ({ questions: [] }))])
+      .then(([quizRes, questionRes]) => {
+        setQuizzes(quizRes.quizzes || []);
+        setQuestions(questionRes.questions || []);
+        if (!quizRes.quizzes || quizRes.quizzes.length === 0) {
+          setQuizStatus('Keine Quizzes geladen');
+        } else {
+          setQuizStatus(null);
+        }
+        if (!selectedQuizId && quizRes.quizzes?.length) {
+          setSelectedQuizId(quizRes.quizzes[0].id);
+        }
+      })
+      .finally(() => setQuizLoading(false));
+  }, []);
+
+  useEffect(() => {
     if (selectedId && blocks.find((b) => b.id === selectedId)) return;
     setSelectedId(blocks[0]?.id ?? null);
   }, [blocks, selectedId]);
@@ -139,8 +211,68 @@ const PresentationCreatorPage: React.FC = () => {
     [blocks, selectedId]
   );
 
+  const selectedQuiz = useMemo(() => {
+    if (!selectedQuizId) return quizzes[0];
+    return quizzes.find((q) => q.id === selectedQuizId) ?? quizzes[0];
+  }, [quizzes, selectedQuizId]);
+
+  const quizSlides = useMemo(() => {
+    if (!selectedQuiz) return [] as ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' })[];
+    const map = new Map<string, AnyQuestion>();
+    questions.forEach((q) => map.set(q.id, q));
+    const items: ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' })[] = selectedQuiz.questionIds
+      .map((id) => map.get(id))
+      .filter(Boolean)
+      .map((q) => ({ kind: 'question', data: q as AnyQuestion }));
+    if (includeIntroOutro) {
+      items.unshift({ kind: 'intro' });
+      items.push({ kind: 'outro' });
+    }
+    return items;
+  }, [questions, selectedQuiz, includeIntroOutro]);
+
+  useEffect(() => {
+    setSelectedSlideIndex(0);
+  }, [selectedQuiz?.id]);
+
+  useEffect(() => {
+    if (quizSlides.length === 0) return;
+    if (selectedSlideIndex >= quizSlides.length) {
+      setSelectedSlideIndex(Math.max(quizSlides.length - 1, 0));
+    }
+  }, [quizSlides.length, selectedSlideIndex]);
+
+  const currentSlide = quizSlides[selectedSlideIndex] ?? quizSlides[0];
+  const currentBg = useMemo(() => {
+    if (!selectedQuiz) {
+      return { gradientA: 'rgba(111,142,255,0.22)', gradientB: 'rgba(248,180,0,0.18)', overlay: 0.22 };
+    }
+    return (
+      quizBackgrounds[selectedQuiz.id] ?? {
+        gradientA: 'rgba(111,142,255,0.22)',
+        gradientB: 'rgba(248,180,0,0.18)',
+        overlay: 0.22
+      }
+    );
+  }, [quizBackgrounds, selectedQuiz]);
+
   const updateBlock = (id: string, patch: Partial<PresentationBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const updateQuizBackground = (patch: Partial<{ gradientA: string; gradientB: string; overlay: number }>) => {
+    if (!selectedQuiz) return;
+    setQuizBackgrounds((prev) => ({
+      ...prev,
+      [selectedQuiz.id]: { ...(prev[selectedQuiz.id] ?? currentBg), ...patch }
+    }));
+  };
+
+  const updateSlideOverride = (questionId: string, patch: SlideOffsets) => {
+    setSlideOverrides((prev) => ({
+      ...prev,
+      [questionId]: { ...(prev[questionId] ?? {}), ...patch }
+    }));
   };
 
   const addBlock = () => {
@@ -363,321 +495,794 @@ const PresentationCreatorPage: React.FC = () => {
       }}
     >
       <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 12 }}>
           <div>
             <div style={{ fontWeight: 900, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#cbd5e1' }}>
               Präsentations Creator
             </div>
             <h1 style={{ margin: '6px 0 4px' }}>Layout & Animations</h1>
             <p style={{ margin: 0, color: '#94a3b8' }}>
-              Fenster positionieren, Größe, Farbe, Animation, Beschriftung & Schrift steuern. Preview nutzt das Beamer/Team-Design.
+              Freies Canvas oder Quiz-Slides mit auto-generierten Fragen, im Beamer/Team-Stil.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <PrimaryButton style={{ width: 'auto', minWidth: 180 }} onClick={addBlock}>
-              Neues Fenster
-            </PrimaryButton>
-            {selectedBlock && (
-              <button
-                style={{
-                  ...controlCard,
-                  padding: '12px 14px',
-                  minWidth: 140,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  borderRadius: 14
-                }}
-                onClick={() => duplicateBlock(selectedBlock.id)}
-              >
-                Duplizieren
-              </button>
-            )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              style={{
+                padding: '10px 14px',
+                borderRadius: 12,
+                border: mode === 'custom' ? '1px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.16)',
+                background: mode === 'custom' ? 'rgba(251,191,36,0.18)' : 'rgba(255,255,255,0.06)',
+                color: mode === 'custom' ? '#fbbf24' : '#f8fafc',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+              onClick={() => setMode('custom')}
+            >
+              Freies Layout
+            </button>
+            <button
+              style={{
+                padding: '10px 14px',
+                borderRadius: 12,
+                border: mode === 'quiz' ? '1px solid rgba(129,140,248,0.7)' : '1px solid rgba(255,255,255,0.16)',
+                background: mode === 'quiz' ? 'rgba(129,140,248,0.2)' : 'rgba(255,255,255,0.06)',
+                color: mode === 'quiz' ? '#c7d2fe' : '#f8fafc',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+              onClick={() => setMode('quiz')}
+            >
+              Quiz Slides
+            </button>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.95fr', gap: 14, alignItems: 'start' }}>
-          <div style={{ ...controlCard, padding: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <Pill tone="muted">Preview 16:9</Pill>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#cbd5e1', fontSize: 13 }}>
-                {blocks.length} Fenster · {Math.round(stageSize.w)}×{Math.round(stageSize.h)}px
-              </div>
-            </div>
-            {stage}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={controlCard}>
+        {mode === 'custom' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.95fr', gap: 14, alignItems: 'start' }}>
+            <div style={{ ...controlCard, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ fontWeight: 800 }}>Fenster</div>
-                <button
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.16)',
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#f8fafc',
-                    cursor: 'pointer'
-                  }}
-                  onClick={addBlock}
-                >
-                  + Hinzufügen
-                </button>
+                <Pill tone="muted">Preview 16:9</Pill>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#cbd5e1', fontSize: 13 }}>
+                  {blocks.length} Fenster · {Math.round(stageSize.w)}×{Math.round(stageSize.h)}px
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {blocks.map((block) => (
-                  <div
-                    key={block.id}
-                    onClick={() => setSelectedId(block.id)}
+              {stage}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={controlCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontWeight: 800 }}>Fenster</div>
+                  <button
                     style={{
+                      padding: '8px 10px',
                       borderRadius: 12,
-                      border: `1px solid ${block.id === selectedBlock?.id ? theme.colors.accent : 'rgba(255,255,255,0.08)'}`,
-                      padding: 10,
-                      background: block.id === selectedBlock?.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 10
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#f8fafc',
+                      cursor: 'pointer'
                     }}
+                    onClick={addBlock}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
-                        style={{
-                          width: 14,
-                          height: 14,
-                          borderRadius: 6,
-                          background: block.color,
-                          border: '1px solid rgba(255,255,255,0.25)'
-                        }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 700 }}>{block.title}</div>
-                        <div style={{ color: '#94a3b8', fontSize: 12 }}>
-                          {Math.round(block.x)}%, {Math.round(block.y)}% · {Math.round(block.width)}×{Math.round(block.height)}%
+                    + Hinzufügen
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {blocks.map((block) => (
+                    <div
+                      key={block.id}
+                      onClick={() => setSelectedId(block.id)}
+                      style={{
+                        borderRadius: 12,
+                        border: `1px solid ${block.id === selectedBlock?.id ? theme.colors.accent : 'rgba(255,255,255,0.08)'}`,
+                        padding: 10,
+                        background: block.id === selectedBlock?.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 10
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: 6,
+                            background: block.color,
+                            border: '1px solid rgba(255,255,255,0.25)'
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{block.title}</div>
+                          <div style={{ color: '#94a3b8', fontSize: 12 }}>
+                            {Math.round(block.x)}%, {Math.round(block.y)}% · {Math.round(block.width)}×{Math.round(block.height)}%
+                          </div>
                         </div>
                       </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 10,
+                            border: '1px solid rgba(255,255,255,0.16)',
+                            background: 'rgba(255,255,255,0.06)',
+                            color: '#f8fafc',
+                            cursor: 'pointer'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            duplicateBlock(block.id);
+                          }}
+                        >
+                          Kopie
+                        </button>
+                        <button
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 10,
+                            border: '1px solid rgba(255,255,255,0.16)',
+                            background: 'rgba(244,63,94,0.12)',
+                            color: '#fca5a5',
+                            cursor: 'pointer'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteBlock(block.id);
+                          }}
+                        >
+                          Löschen
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
+                  ))}
+                </div>
+              </div>
+
+              {selectedBlock && (
+                <div style={controlCard}>
+                  <div style={{ fontWeight: 800, marginBottom: 10 }}>Eigenschaften</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Beschriftung
+                      <input
+                        value={selectedBlock.title}
+                        onChange={(e) => updateBlock(selectedBlock.id, { title: e.target.value })}
                         style={{
-                          padding: '6px 10px',
+                          width: '100%',
+                          padding: '10px 12px',
                           borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.16)',
-                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: '#0f141d',
+                          color: '#f8fafc',
+                          marginTop: 4
+                        }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Animation
+                      <select
+                        value={selectedBlock.animation}
+                        onChange={(e) => updateBlock(selectedBlock.id, { animation: e.target.value as AnimationPreset })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: '#0f141d',
+                          color: '#f8fafc',
+                          marginTop: 4
+                        }}
+                      >
+                        <option value="soft-fade">Soft Fade</option>
+                        <option value="slide-up">Slide Up</option>
+                        <option value="pop">Pop</option>
+                        <option value="float">Float</option>
+                        <option value="none">Keine</option>
+                      </select>
+                    </label>
+
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      X-Position (%)
+                      <input
+                        type="range"
+                        min={0}
+                        max={100 - selectedBlock.width}
+                        value={selectedBlock.x}
+                        onChange={(e) => updateBlock(selectedBlock.id, { x: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Y-Position (%)
+                      <input
+                        type="range"
+                        min={0}
+                        max={100 - selectedBlock.height}
+                        value={selectedBlock.y}
+                        onChange={(e) => updateBlock(selectedBlock.id, { y: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Breite (%)
+                      <input
+                        type="range"
+                        min={10}
+                        max={100 - selectedBlock.x}
+                        value={selectedBlock.width}
+                        onChange={(e) => updateBlock(selectedBlock.id, { width: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Höhe (%)
+                      <input
+                        type="range"
+                        min={8}
+                        max={100 - selectedBlock.y}
+                        value={selectedBlock.height}
+                        onChange={(e) => updateBlock(selectedBlock.id, { height: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Textgröße
+                      <input
+                        type="range"
+                        min={12}
+                        max={36}
+                        value={selectedBlock.fontSize}
+                        onChange={(e) => updateBlock(selectedBlock.id, { fontSize: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Deckkraft
+                      <input
+                        type="range"
+                        min={0.4}
+                        max={1}
+                        step={0.02}
+                        value={selectedBlock.opacity ?? 1}
+                        onChange={(e) => updateBlock(selectedBlock.id, { opacity: Number(e.target.value) })}
+                        style={{ width: '100%' }}
+                      />
+                    </label>
+
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Fensterfarbe
+                      <input
+                        type="color"
+                        value={selectedBlock.color.startsWith('#') ? selectedBlock.color : '#fbbf24'}
+                        onChange={(e) => updateBlock(selectedBlock.id, { color: e.target.value })}
+                        style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Textfarbe
+                      <input
+                        type="color"
+                        value={selectedBlock.textColor}
+                        onChange={(e) => updateBlock(selectedBlock.id, { textColor: e.target.value })}
+                        style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
+                      />
+                    </label>
+
+                    <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Schriftart
+                      <select
+                        value={selectedBlock.fontFamily}
+                        onChange={(e) => updateBlock(selectedBlock.id, { fontFamily: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: '#0f141d',
+                          color: '#f8fafc',
+                          marginTop: 4
+                        }}
+                      >
+                        {fontOptions.map((font) => (
+                          <option key={font.value} value={font.value}>
+                            {font.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>Schnellfarben</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {palette.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => updateBlock(selectedBlock.id, { color: c })}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 10,
+                            border: '1px solid rgba(255,255,255,0.18)',
+                            background: c,
+                            cursor: 'pointer'
+                          }}
+                          aria-label={`Set color ${c}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {mode === 'quiz' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1.35fr', gap: 12, alignItems: 'start' }}>
+              <div style={controlCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontWeight: 800 }}>Quiz auswählen</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {quizLoading && <Pill tone="muted">Lädt ...</Pill>}
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#cbd5e1' }}>
+                      <input type="checkbox" checked={includeIntroOutro} onChange={(e) => setIncludeIntroOutro(e.target.checked)} />
+                      Intro & Outro hinzufügen
+                    </label>
+                  </div>
+                </div>
+                <select
+                  value={selectedQuiz?.id ?? ''}
+                  onChange={(e) => setSelectedQuizId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: '#0f141d',
+                    color: '#f8fafc'
+                  }}
+                >
+                  {quizzes.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.name}
+                    </option>
+                  ))}
+                  {quizzes.length === 0 && <option>Keine Quizzes gefunden</option>}
+                </select>
+                <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 13 }}>
+                  {selectedQuiz ? `${selectedQuiz.questionIds.length} Fragen · ${selectedQuiz.mode}` : 'Kein Quiz ausgewählt'}
+                </div>
+                {quizStatus && <div style={{ marginTop: 8, color: '#c7f9cc' }}>{quizStatus}</div>}
+              </div>
+
+              <div style={controlCard}>
+                <div style={{ fontWeight: 800, marginBottom: 10 }}>Globaler Hintergrund (Quiz)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                    Gradient A
+                    <input
+                      type="color"
+                      value={currentBg.gradientA.startsWith('#') ? currentBg.gradientA : '#6f8eff'}
+                      onChange={(e) => updateQuizBackground({ gradientA: e.target.value })}
+                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                    Gradient B
+                    <input
+                      type="color"
+                      value={currentBg.gradientB.startsWith('#') ? currentBg.gradientB : '#f8b400'}
+                      onChange={(e) => updateQuizBackground({ gradientB: e.target.value })}
+                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                    Overlay-Stärke
+                    <input
+                      type="range"
+                      min={0}
+                      max={0.6}
+                      step={0.02}
+                      value={currentBg.overlay}
+                      onChange={(e) => updateQuizBackground({ overlay: Number(e.target.value) })}
+                      style={{ width: '100%' }}
+                    />
+                  </label>
+                  <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                    Vorschau nutzt Kategorie-Farben und Bild/Logo-Offsets pro Frage.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1.35fr', gap: 12, alignItems: 'start' }}>
+              <div style={controlCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontWeight: 800 }}>Slides ({quizSlides.length || 0})</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => setSelectedSlideIndex((i) => Math.max(i - 1, 0))}
+                      disabled={selectedSlideIndex <= 0}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: '#f8fafc',
+                        cursor: selectedSlideIndex <= 0 ? 'not-allowed' : 'pointer',
+                        opacity: selectedSlideIndex <= 0 ? 0.5 : 1
+                      }}
+                    >
+                      Zurück
+                    </button>
+                    <button
+                      onClick={() => setSelectedSlideIndex((i) => Math.min(i + 1, Math.max(quizSlides.length - 1, 0)))}
+                      disabled={quizSlides.length === 0 || selectedSlideIndex >= quizSlides.length - 1}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: '#f8fafc',
+                        cursor: quizSlides.length === 0 || selectedSlideIndex >= quizSlides.length - 1 ? 'not-allowed' : 'pointer',
+                        opacity: quizSlides.length === 0 || selectedSlideIndex >= quizSlides.length - 1 ? 0.5 : 1
+                      }}
+                    >
+                      Weiter
+                    </button>
+                  </div>
+                  <Pill tone="muted">{selectedSlideIndex + 1}/{quizSlides.length || 1}</Pill>
+                </div>
+                <div style={{ maxHeight: 360, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {quizSlides.length === 0 && <div style={{ color: '#94a3b8' }}>Keine Slides vorhanden.</div>}
+                  {quizSlides.map((slide, idx) => {
+                    const isIntro = slide.kind === 'intro';
+                    const isOutro = slide.kind === 'outro';
+                    const question = slide.kind === 'question' ? slide.data : null;
+                    const cat = question?.category as keyof typeof categoryColors;
+                    const catColor = isIntro || isOutro ? '#fbbf24' : categoryColors[cat] ?? '#cbd5e1';
+                    const title =
+                      isIntro ? 'Intro' : isOutro ? 'Outro' : question?.question.slice(0, 90) + (question && question.question.length > 90 ? '…' : '');
+                    return (
+                      <button
+                        key={isIntro ? 'intro' : isOutro ? 'outro' : question?.id ?? idx}
+                        onClick={() => setSelectedSlideIndex(idx)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid ' + (idx === selectedSlideIndex ? catColor : 'rgba(255,255,255,0.08)'),
+                          background: idx === selectedSlideIndex ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
                           color: '#f8fafc',
                           cursor: 'pointer'
                         }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          duplicateBlock(block.id);
-                        }}
                       >
-                        Kopie
+                        <span style={{ fontWeight: 800, minWidth: 24 }}>{idx + 1}</span>
+                        <div
+                          style={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: 8,
+                            background: catColor,
+                            border: '1px solid rgba(255,255,255,0.25)'
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.35 }}>
+                            {title}
+                          </div>
+                          <div style={{ color: '#94a3b8', fontSize: 12 }}>
+                            {isIntro ? 'Intro Slide' : isOutro ? 'Outro Slide' : categoryLabels[cat]?.de ?? cat}
+                          </div>
+                        </div>
                       </button>
-                      <button
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.16)',
-                          background: 'rgba(244,63,94,0.12)',
-                          color: '#fca5a5',
-                          cursor: 'pointer'
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteBlock(block.id);
-                        }}
-                      >
-                        Löschen
-                      </button>
-                    </div>
+                    );
+                  })}
+                </div>
+
+                {currentSlide && (
+                  <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10 }}>
+                    <div style={{ fontWeight: 800, marginBottom: 6 }}>Slide-Feintuning</div>
+                    {currentSlide.kind === 'question' ? (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Bild X
+                            <input
+                              type="range"
+                              min={-160}
+                              max={160}
+                              value={slideOverrides[currentSlide.data.id]?.imageOffsetX ?? (currentSlide.data as any)?.layout?.imageOffsetX ?? 0}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { imageOffsetX: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Bild Y
+                            <input
+                              type="range"
+                              min={-160}
+                              max={160}
+                              value={slideOverrides[currentSlide.data.id]?.imageOffsetY ?? (currentSlide.data as any)?.layout?.imageOffsetY ?? 0}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { imageOffsetY: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Logo X
+                            <input
+                              type="range"
+                              min={-120}
+                              max={120}
+                              value={slideOverrides[currentSlide.data.id]?.logoOffsetX ?? (currentSlide.data as any)?.layout?.logoOffsetX ?? 0}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { logoOffsetX: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Logo Y
+                            <input
+                              type="range"
+                              min={-120}
+                              max={120}
+                              value={slideOverrides[currentSlide.data.id]?.logoOffsetY ?? (currentSlide.data as any)?.layout?.logoOffsetY ?? 0}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { logoOffsetY: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Textgröße
+                            <input
+                              type="range"
+                              min={16}
+                              max={30}
+                              value={slideOverrides[currentSlide.data.id]?.textSize ?? 20}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { textSize: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                          <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                            Text Y-Offset
+                            <input
+                              type="range"
+                              min={-60}
+                              max={60}
+                              value={slideOverrides[currentSlide.data.id]?.textOffsetY ?? 0}
+                              onChange={(e) => updateSlideOverride(currentSlide.data.id, { textOffsetY: Number(e.target.value) })}
+                              style={{ width: '100%' }}
+                            />
+                          </label>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                          <button
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: 12,
+                              border: '1px solid rgba(255,255,255,0.16)',
+                              background: 'rgba(255,255,255,0.06)',
+                              color: '#f8fafc',
+                              cursor: 'pointer'
+                            }}
+                            onClick={async () => {
+                              const id = currentSlide.data.id;
+                              const o = slideOverrides[id] ?? {};
+                              try {
+                                await setQuestionLayout(id, {
+                                  imageOffsetX: o.imageOffsetX ?? (currentSlide.data as any)?.layout?.imageOffsetX,
+                                  imageOffsetY: o.imageOffsetY ?? (currentSlide.data as any)?.layout?.imageOffsetY,
+                                  logoOffsetX: o.logoOffsetX ?? (currentSlide.data as any)?.layout?.logoOffsetX,
+                                  logoOffsetY: o.logoOffsetY ?? (currentSlide.data as any)?.layout?.logoOffsetY
+                                });
+                                setQuizStatus('Offsets gespeichert (Frage)');
+                              } catch (err) {
+                                setQuizStatus('Speichern fehlgeschlagen');
+                              }
+                            }}
+                          >
+                            Offsets global speichern
+                          </button>
+                          <button
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: 12,
+                              border: '1px solid rgba(255,255,255,0.16)',
+                              background: 'rgba(244,63,94,0.12)',
+                              color: '#fca5a5',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              if (!currentSlide.data) return;
+                              setSlideOverrides((prev) => {
+                                const next = { ...prev };
+                                delete next[currentSlide.data.id];
+                                return next;
+                              });
+                            }}
+                          >
+                            Lokale Offsets zurücksetzen
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
+                          Änderungen werden lokal gespeichert. "Offsets global speichern" schreibt sie in das Frage-Layout (wirkt auf Beamer/Team).
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ color: '#94a3b8', fontSize: 13 }}>Intro/Outro haben keine Offsets.</div>
+                    )}
                   </div>
-                ))}
+                )}
+              </div>
+
+              <div style={controlCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10 }}>
+                  <div style={{ fontWeight: 800 }}>Preview (Quiz Slide)</div>
+                  {currentSlide && currentSlide.kind === 'question' && (
+                    <Pill tone="neutral">{categoryLabels[currentSlide.data.category as keyof typeof categoryLabels]?.de ?? currentSlide.data.category}</Pill>
+                  )}
+                  {currentSlide && currentSlide.kind !== 'question' && <Pill tone="muted">{currentSlide.kind === 'intro' ? 'Intro' : 'Outro'}</Pill>}
+                </div>
+                <div
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16 / 9',
+                    borderRadius: 22,
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: `linear-gradient(135deg, ${currentBg.gradientA}, ${currentBg.gradientB}), #0c111a`
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: `rgba(12,17,26,${currentBg.overlay})`
+                    }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06), transparent 40%)', opacity: 0.35 }} />
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '46px 46px', opacity: 0.3 }} />
+
+                  {currentSlide ? (
+                    <div style={{ position: 'absolute', inset: 16, borderRadius: 18, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)' }} />
+                      <div style={{ position: 'relative', width: '100%', height: '100%', padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              padding: '8px 12px',
+                              borderRadius: 999,
+                              background: 'rgba(0,0,0,0.35)',
+                              border: '1px solid rgba(255,255,255,0.14)',
+                              color: '#fff'
+                            }}
+                          >
+                            {currentSlide.kind === 'question' && categoryIcons[currentSlide.data.category] && (
+                              <img
+                                src={categoryIcons[currentSlide.data.category]}
+                                alt=""
+                                style={{ width: 26, height: 26, objectFit: 'contain', filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.25))' }}
+                              />
+                            )}
+                            <span style={{ fontWeight: 800 }}>
+                              {currentSlide.kind === 'intro'
+                                ? 'Intro'
+                                : currentSlide.kind === 'outro'
+                                ? 'Outro'
+                                : categoryLabels[currentSlide.data.category as keyof typeof categoryLabels]?.de ?? currentSlide.data.category}
+                            </span>
+                          </div>
+                          <Pill tone="muted">Quiz Preview</Pill>
+                        </div>
+
+                        <div style={{ position: 'relative', flex: 1, borderRadius: 16, background: 'rgba(0,0,0,0.25)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          {currentSlide.kind === 'question' && currentSlide.data.imageUrl && (
+                            <img
+                              src={currentSlide.data.imageUrl}
+                              alt=""
+                              style={{
+                                position: 'absolute',
+                                width: '36%',
+                                height: '70%',
+                                objectFit: 'cover',
+                                borderRadius: 16,
+                                top: '12%',
+                                left: '6%',
+                                transform: `translate(${(slideOverrides[currentSlide.data.id]?.imageOffsetX ?? (currentSlide.data as any)?.layout?.imageOffsetX ?? 0)}px, ${(slideOverrides[currentSlide.data.id]?.imageOffsetY ?? (currentSlide.data as any)?.layout?.imageOffsetY ?? 0)}px)`,
+                                border: '1px solid rgba(255,255,255,0.12)',
+                                boxShadow: '0 18px 32px rgba(0,0,0,0.35)'
+                              }}
+                            />
+                          )}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: '6%',
+                              top: '10%',
+                              width: 52,
+                              height: 52,
+                              borderRadius: '50%',
+                              background: '#0f141d',
+                              border: `2px solid ${
+                                currentSlide.kind === 'question'
+                                  ? categoryColors[currentSlide.data.category as keyof typeof categoryColors] ?? '#cbd5e1'
+                                  : '#cbd5e1'
+                              }`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transform: `translate(${(slideOverrides[(currentSlide.kind === 'question' ? currentSlide.data.id : 'intro')]?.logoOffsetX ??
+                                (currentSlide.kind === 'question' ? (currentSlide.data as any)?.layout?.logoOffsetX : 0) ??
+                                0)}px, ${(slideOverrides[(currentSlide.kind === 'question' ? currentSlide.data.id : 'intro')]?.logoOffsetY ??
+                                (currentSlide.kind === 'question' ? (currentSlide.data as any)?.layout?.logoOffsetY : 0) ??
+                                0)}px)`,
+                              boxShadow: `0 10px 20px ${
+                                currentSlide.kind === 'question'
+                                  ? (categoryColors[currentSlide.data.category as keyof typeof categoryColors] ?? '#cbd5e1')
+                                  : '#cbd5e1'
+                              }44`
+                            }}
+                          >
+                            {currentSlide.kind === 'question' && categoryIcons[currentSlide.data.category] && (
+                              <img src={categoryIcons[currentSlide.data.category]} alt="" style={{ width: 34, height: 34 }} />
+                            )}
+                            {currentSlide.kind !== 'question' && <span style={{ fontWeight: 800, fontSize: 12 }}>★</span>}
+                          </div>
+                          <div style={{ position: 'absolute', left: '48%', right: '6%', bottom: '14%', color: '#f8fafc' }}>
+                            <div style={{ fontSize: 14, color: '#cbd5e1', marginBottom: 6 }}>
+                              {currentSlide.kind === 'intro' ? 'Willkommen' : currentSlide.kind === 'outro' ? 'Danke' : 'Frage'}
+                            </div>
+                            <div
+                              style={{
+                                fontSize:
+                                  currentSlide.kind === 'question'
+                                    ? slideOverrides[currentSlide.data.id]?.textSize ?? 20
+                                    : 22,
+                                lineHeight: 1.35,
+                                fontWeight: 800,
+                                transform:
+                                  currentSlide.kind === 'question'
+                                    ? `translateY(${slideOverrides[currentSlide.data.id]?.textOffsetY ?? 0}px)`
+                                    : undefined
+                              }}
+                            >
+                              {currentSlide.kind === 'intro'
+                                ? `Quiz: ${selectedQuiz?.name ?? ''}`
+                                : currentSlide.kind === 'outro'
+                                ? 'Das war das Quiz – vielen Dank!'
+                                : currentSlide.data.question}
+                            </div>
+                            {currentSlide.kind === 'question' && currentSlide.data.imageUrl && (
+                              <div style={{ marginTop: 8, fontSize: 12, color: '#cbd5e1' }}>Bild kann per Offset verschoben werden.</div>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8', fontSize: 12 }}>
+                          <span>Slide {selectedSlideIndex + 1} / {quizSlides.length || 1}</span>
+                          <span>Preview im Browser · Daten aus Quiz</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#94a3b8' }}>
+                      Kein Slide ausgewählt.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-
-            {selectedBlock && (
-              <div style={controlCard}>
-                <div style={{ fontWeight: 800, marginBottom: 10 }}>Eigenschaften</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Beschriftung
-                    <input
-                      value={selectedBlock.title}
-                      onChange={(e) => updateBlock(selectedBlock.id, { title: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: '#0f141d',
-                        color: '#f8fafc',
-                        marginTop: 4
-                      }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Animation
-                    <select
-                      value={selectedBlock.animation}
-                      onChange={(e) => updateBlock(selectedBlock.id, { animation: e.target.value as AnimationPreset })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: '#0f141d',
-                        color: '#f8fafc',
-                        marginTop: 4
-                      }}
-                    >
-                      <option value="soft-fade">Soft Fade</option>
-                      <option value="slide-up">Slide Up</option>
-                      <option value="pop">Pop</option>
-                      <option value="float">Float</option>
-                      <option value="none">Keine</option>
-                    </select>
-                  </label>
-
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    X-Position (%)
-                    <input
-                      type="range"
-                      min={0}
-                      max={100 - selectedBlock.width}
-                      value={selectedBlock.x}
-                      onChange={(e) => updateBlock(selectedBlock.id, { x: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Y-Position (%)
-                    <input
-                      type="range"
-                      min={0}
-                      max={100 - selectedBlock.height}
-                      value={selectedBlock.y}
-                      onChange={(e) => updateBlock(selectedBlock.id, { y: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Breite (%)
-                    <input
-                      type="range"
-                      min={10}
-                      max={100 - selectedBlock.x}
-                      value={selectedBlock.width}
-                      onChange={(e) => updateBlock(selectedBlock.id, { width: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Höhe (%)
-                    <input
-                      type="range"
-                      min={8}
-                      max={100 - selectedBlock.y}
-                      value={selectedBlock.height}
-                      onChange={(e) => updateBlock(selectedBlock.id, { height: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Textgröße
-                    <input
-                      type="range"
-                      min={12}
-                      max={36}
-                      value={selectedBlock.fontSize}
-                      onChange={(e) => updateBlock(selectedBlock.id, { fontSize: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Deckkraft
-                    <input
-                      type="range"
-                      min={0.4}
-                      max={1}
-                      step={0.02}
-                      value={selectedBlock.opacity ?? 1}
-                      onChange={(e) => updateBlock(selectedBlock.id, { opacity: Number(e.target.value) })}
-                      style={{ width: '100%' }}
-                    />
-                  </label>
-
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Fensterfarbe
-                    <input
-                      type="color"
-                      value={selectedBlock.color.startsWith('#') ? selectedBlock.color : '#fbbf24'}
-                      onChange={(e) => updateBlock(selectedBlock.id, { color: e.target.value })}
-                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
-                    />
-                  </label>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Textfarbe
-                    <input
-                      type="color"
-                      value={selectedBlock.textColor}
-                      onChange={(e) => updateBlock(selectedBlock.id, { textColor: e.target.value })}
-                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: '#0f141d' }}
-                    />
-                  </label>
-
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                    Schriftart
-                    <select
-                      value={selectedBlock.fontFamily}
-                      onChange={(e) => updateBlock(selectedBlock.id, { fontFamily: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: '#0f141d',
-                        color: '#f8fafc',
-                        marginTop: 4
-                      }}
-                    >
-                      {fontOptions.map((font) => (
-                        <option key={font.value} value={font.value}>
-                          {font.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>Schnellfarben</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {palette.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => updateBlock(selectedBlock.id, { color: c })}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.18)',
-                          background: c,
-                          cursor: 'pointer'
-                        }}
-                        aria-label={`Set color ${c}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
       </div>
     </main>
   );

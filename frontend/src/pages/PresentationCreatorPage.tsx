@@ -128,6 +128,10 @@ const PresentationCreatorPage: React.FC = () => {
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const selectedQuiz = useMemo(() => {
+    if (!selectedQuizId) return quizzes[0];
+    return quizzes.find((q) => q.id === selectedQuizId) ?? quizzes[0];
+  }, [quizzes, selectedQuizId]);
   const [includeIntroOutro, setIncludeIntroOutro] = useState(true);
   const [quizBackgrounds, setQuizBackgrounds] = useState<Record<string, { gradientA: string; gradientB: string; overlay: number }>>(() => {
     if (typeof window === 'undefined') return {};
@@ -239,11 +243,6 @@ const PresentationCreatorPage: React.FC = () => {
     () => blocks.find((b) => b.id === selectedId) ?? blocks[0],
     [blocks, selectedId]
   );
-
-  const selectedQuiz = useMemo(() => {
-    if (!selectedQuizId) return quizzes[0];
-    return quizzes.find((q) => q.id === selectedQuizId) ?? quizzes[0];
-  }, [quizzes, selectedQuizId]);
 
   const getRuleSlide = (q: AnyQuestion): RuleSlide | null => {
     if (q.category !== 'GemischteTuete' || !q.mixedMechanic) return null;

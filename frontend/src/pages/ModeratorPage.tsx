@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   fetchCurrentQuestion,
@@ -14,6 +14,7 @@ import {
   kickTeam,
   fetchAnswers,
   fetchTimer,
+  fetchScoreboard,
   postQuestionStats,
   fetchLeaderboard
 } from '../api';
@@ -139,7 +140,7 @@ const ModeratorPage: React.FC = () => {
     reveal: boolean;
   }>({ quiz: false, next: false, timerStart: false, timerStop: false, reveal: false });
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
-  const [selectedQuiz, setSelectedQuiz] = useState<string>('');
+  const [selectedQuiz, setSelectedQuiz] = useState<string>(');
   const {
     currentQuestion: socketQuestion,
     questionMeta: socketMeta,
@@ -324,6 +325,31 @@ const ModeratorPage: React.FC = () => {
       ? 'Intro'
       : 'Quiz';
 
+  const endQuizAndReport = async () => {
+    try {
+      const res = await fetchScoreboard(roomCode);
+      const teams = res.teams || [];
+      const sorted = [...teams].sort((a, b) => (b.score || 0) - (a.score || 0));
+      const winners = sorted.slice(0, 3).map((t) => t.name);
+      const scores: Record<string, number> = {};
+      sorted.forEach((t) => {
+        scores[t.name] = t.score || 0;
+      });
+      await postQuestionStats({ questionId: '__quiz_end__', total: teams.length, correct: teams.length }); // marker
+      await postRunStats({
+        quizId: selectedQuiz || roomCode,
+        date: new Date().toISOString(),
+        winners,
+        scores
+      });
+      setToast('Quiz-Stats gespeichert');
+    } catch (err) {
+      setToast('Quiz-Stats konnten nicht gespeichert werden');
+    } finally {
+      setTimeout(() => setToast(null), 2000);
+    }
+  };
+
   const renderActions = () => (
     <ActionButtons
       viewPhase={viewPhase}
@@ -490,7 +516,7 @@ const ModeratorPage: React.FC = () => {
               style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#bbf7d0' }}
               title={`Letzter Run: ${new Date(run.date).toLocaleString()} | Gewinner: ${run.winners?.join(', ') || 'n/a'}`}
             >
-              Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : ''}
+              Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : '}
             </span>
           ))}
         </div>
@@ -548,7 +574,7 @@ const ModeratorPage: React.FC = () => {
               <div>
                 <div style={{ fontWeight: 800 }}>{question?.question ?? 'Keine Frage aktiv'}</div>
                 <div style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {question ? `${meta?.globalIndex}/${meta?.globalTotal || ''} | ${question.category}` : 'Warten auf Frage'}
+                  {question ? `${meta?.globalIndex}/${meta?.globalTotal || '} | ${question.category}` : 'Warten auf Frage'}
                 </div>
               </div>
             </div>
@@ -557,7 +583,7 @@ const ModeratorPage: React.FC = () => {
               <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: 'var(--muted)', fontSize: 12 }}>
                   {numericStats && (
-                    <span style={statChip}>Min {numericStats.min} • Max {numericStats.max} • Median {numericStats.median} • Ø {numericStats.avg}</span>
+                    <span style={statChip}>Min {numericStats.min} â€¢ Max {numericStats.max} â€¢ Median {numericStats.median} â€¢ Ã˜ {numericStats.avg}</span>
                   )}
                   <span style={statChip}>{phaseChip}</span>
                   {topTexts.length > 0 && <span style={statChip}>Top: {topTexts.map(([k, v]) => `${k} (${v})`).join(', ')}</span>}
@@ -684,9 +710,8 @@ const ModeratorPage: React.FC = () => {
           </div>
         </section>
       )}
-
       {/* Quick Exit */}
-      <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
         <button
           style={{
             ...inputStyle,
@@ -707,7 +732,22 @@ const ModeratorPage: React.FC = () => {
             setTimeout(() => setToast(null), 1500);
           }}
         >
-          ✕ Quiz beenden
+          Quiz beenden (ohne Stats)
+        </button>
+        <button
+          style={{
+            ...inputStyle,
+            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+            color: '#0b1020',
+            width: 'auto',
+            padding: '10px 14px',
+            cursor: 'pointer',
+            border: '1px solid rgba(34,197,94,0.5)',
+            boxShadow: '0 18px 38px rgba(22,163,74,0.35)'
+          }}
+          onClick={endQuizAndReport}
+        >
+          Quiz beenden & Stats loggen
         </button>
       </div>
     </main>
@@ -715,3 +755,4 @@ const ModeratorPage: React.FC = () => {
 };
 
 export default ModeratorPage;
+

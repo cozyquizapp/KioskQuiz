@@ -202,6 +202,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [solution, setSolution] = useState<string | undefined>(undefined);
   const [teams, setTeams] = useState<Team[]>([]);
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
+  const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
+  const previousQuestionRef = useRef<AnyQuestion | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [toast, setToast] = useState<string | null>(null);
   const [connectionStuck, setConnectionStuck] = useState(false);
@@ -336,6 +338,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   useEffect(() => {
     connectionStatusRef.current = connectionStatus;
   }, [connectionStatus]);
+
+  useEffect(() => {
+    const prev = previousQuestionRef.current;
+    if (prev && question && prev.id !== question.id) {
+      setLastQuestion({ text: prev.question, category: (prev as any)?.category });
+    } else if (prev && !question && !lastQuestion) {
+      setLastQuestion({ text: prev.question, category: (prev as any)?.category });
+    }
+    previousQuestionRef.current = question;
+  }, [question, lastQuestion]);
 
   // initial fetch
   useEffect(() => {
@@ -859,6 +871,31 @@ useEffect(() => {
           </div>
         )}
       </div>
+      {lastQuestion && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            maxWidth: 340,
+            padding: '12px 14px',
+            borderRadius: 14,
+            border: '1px solid rgba(255,255,255,0.16)',
+            background: 'rgba(15,23,42,0.92)',
+            boxShadow: '0 18px 42px rgba(0,0,0,0.42)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 40
+          }}
+        >
+          <div style={{ fontWeight: 800, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8' }}>Letzte Frage</div>
+          <div style={{ fontWeight: 800, marginTop: 4 }}>{lastQuestion.text}</div>
+          {lastQuestion.category && (
+            <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 2 }}>
+              Kategorie: {getCategoryLabel(lastQuestion.category as QuizCategory)}
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 };

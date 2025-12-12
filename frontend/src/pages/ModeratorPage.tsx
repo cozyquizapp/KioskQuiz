@@ -129,6 +129,7 @@ const ModeratorPage: React.FC = () => {
     const saved = localStorage.getItem('moderatorTimerSeconds');
     return saved ? Number(saved) || 30 : 30;
   });
+  const [statsView, setStatsView] = useState<'runs' | 'question'>('runs');
   const [phase, setPhase] = useState<Phase>('setup');
   const [viewPhase, setViewPhase] = useState<ViewPhase>('pre');
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
@@ -359,6 +360,9 @@ const ModeratorPage: React.FC = () => {
         winners,
         scores
       });
+      fetchLeaderboard()
+        .then((res) => setLeaderboard(res.runs || []))
+        .catch(() => undefined);
       setToast('Quiz-Stats gespeichert');
     } catch (err) {
       setToast('Quiz-Stats konnten nicht gespeichert werden');
@@ -543,7 +547,63 @@ const ModeratorPage: React.FC = () => {
 
       {/* Stats Panels */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 10 }}>
-        <LeaderboardPanel runs={leaderboard} />
+        <div style={{ ...card, padding: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+            <div style={{ fontWeight: 800 }}>Stats</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['runs', 'question'] as const).map((key) => (
+                <button
+                  key={key}
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    minWidth: 90,
+                    padding: '8px 10px',
+                    cursor: 'pointer',
+                    background: statsView === key ? 'linear-gradient(135deg, #63e5ff, #60a5fa)' : 'rgba(255,255,255,0.05)',
+                    color: statsView === key ? '#0b1020' : '#e2e8f0',
+                    border: statsView === key ? '1px solid rgba(99,229,255,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: 'none'
+                  }}
+                  onClick={() => setStatsView(key)}
+                >
+                  {key === 'runs' ? 'Runs' : 'Frage'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {statsView === 'runs' ? (
+            <LeaderboardPanel runs={leaderboard} />
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {numericStats && (
+                  <span style={statChip}>Min {numericStats.min} | Max {numericStats.max} | Median {numericStats.median} | Avg {numericStats.avg}</span>
+                )}
+                <span style={statChip}>{answersCount}/{teamsCount} Antworten</span>
+                {topTexts.length > 0 && <span style={statChip}>Top: {topTexts.map(([k, v]) => `${k} (${v})`).join(', ')}</span>}
+              </div>
+              {answerStats ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#cbd5e1', fontSize: 12 }}>
+                  <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
+                  {Object.keys(answerStats.perOption || {}).length > 0 && (
+                    <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
+                      {Object.entries(answerStats.perOption).map(([opt, count]) => (
+                        <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ padding: '2px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
+                          <span>{count}</span>
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>Noch keine Antworten eingegangen.</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}

@@ -301,18 +301,51 @@ export const updateQuestion = async (id: string, payload: Partial<AnyQuestion>) 
 
 // Quiz Layout (Presentation)
 export const fetchQuizLayout = async (quizId: string): Promise<{ layout: any | null }> => {
-  const res = await fetch(${API_BASE}/quizzes//layout);
+  const res = await fetch(`${API_BASE}/quizzes/${quizId}/layout`);
   if (!res.ok) throw new Error('Layout konnte nicht geladen werden');
   return res.json();
 };
 
 export const saveQuizLayout = async (quizId: string, layout: any) => {
-  const res = await fetch(${API_BASE}/quizzes//layout, {
+  const res = await fetch(`${API_BASE}/quizzes/${quizId}/layout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(layout)
   });
   if (!res.ok) throw new Error('Layout konnte nicht gespeichert werden');
+  return res.json();
+};
+
+// Stats & Leaderboard
+export const fetchLeaderboard = async (): Promise<{ runs: any[] }> => {
+  const res = await fetch(`${API_BASE}/stats/leaderboard`);
+  if (!res.ok) throw new Error('Leaderboard konnte nicht geladen werden');
+  return res.json();
+};
+
+export const postRunStats = async (payload: { quizId: string; date: string; winners: string[]; scores?: Record<string, number> }) => {
+  const res = await fetch(`${API_BASE}/stats/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Run-Stats konnten nicht gespeichert werden');
+  return res.json();
+};
+
+export const postQuestionStats = async (payload: { questionId: string; correct?: number; total?: number; breakdown?: Record<string, number> }) => {
+  const res = await fetch(`${API_BASE}/stats/question`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Frage-Stats konnten nicht gespeichert werden');
+  return res.json();
+};
+
+export const fetchQuestionStat = async (questionId: string): Promise<{ stat: any | null }> => {
+  const res = await fetch(`${API_BASE}/stats/question/${questionId}`);
+  if (!res.ok) throw new Error('Frage-Stat konnte nicht geladen werden');
   return res.json();
 };
 

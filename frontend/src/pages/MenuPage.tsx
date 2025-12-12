@@ -17,6 +17,10 @@ const creationFlow: LinkItem[] = [
   { path: '/presentation-creator', label: 'Presentation Creator', note: 'Schritt 4/4 · Slides/Hintergrund/Offsets' }
 ];
 
+const metaLinks: LinkItem[] = [
+  { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }
+];
+
 const getTeamUrl = () => {
   if (typeof window !== 'undefined') return `${window.location.origin}/team`;
   return 'https://play.cozyquiz.app/team';
@@ -193,6 +197,41 @@ const MenuPage = () => {
                       >
                         Schritt {idx + 1}/4
                       </span>
+                    </div>
+                    {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
+                    <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            </div>
+
+          <div
+            style={{
+              borderRadius: 16,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.03)',
+              padding: '14px 16px',
+              boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
+            }}
+          >
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Meta</div>
+            <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 10 }}>Auswertung & Zusatztools</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              {metaLinks.map((link) => (
+                <Link key={link.path} to={link.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: 14,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(0,0,0,0.18)',
+                      boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
+                      transition: 'transform 0.2s ease, border-color 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 800, fontSize: 16 }}>{link.label}</div>
                     </div>
                     {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
                     <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>

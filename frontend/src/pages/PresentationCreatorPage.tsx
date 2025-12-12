@@ -6,6 +6,8 @@ import { AnyQuestion, QuizTemplate } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { categoryLabels } from '../categoryLabels';
+import QuizSlideControls from '../components/presentation/QuizSlideControls';
+import { exportQuizPdf } from '../utils/pdfExport';
 
 type AnimationPreset = 'none' | 'soft-fade' | 'slide-up' | 'pop' | 'float';
 

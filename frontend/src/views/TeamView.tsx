@@ -1170,7 +1170,9 @@ const handleSubmit = async () => {
         )}
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (
           <p style={{ marginTop: 6, color: '#f97316', fontWeight: 700 }}>
-            {language === 'de'
+            {language === 'both'
+              ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden. / Not connected to server (${SOCKET_URL}). Please reconnect.`
+              : language === 'de'
               ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden.`
               : `Not connected to server (${SOCKET_URL}). Please reconnect.`}
           </p>

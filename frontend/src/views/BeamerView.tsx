@@ -248,7 +248,13 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const handleReconnect = () => {
     setConnectionStatus('connecting');
     setConnectionStuck(false);
-    setToast(language === 'de' ? 'Verbindung wird aufgebaut...' : 'Reconnecting...');
+    const reconnectText =
+      language === 'both'
+        ? 'Verbindung wird aufgebaut... / Reconnecting...'
+        : language === 'de'
+        ? 'Verbindung wird aufgebaut...'
+        : 'Reconnecting...';
+    setToast(reconnectText);
     setTimeout(() => setToast(null), 2000);
     clearReconnectTimeouts();
     setReconnectNonce((n) => n + 1);
@@ -783,7 +789,7 @@ useEffect(() => {
             }}
           >
             {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prÃ¼fen.'
+              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen. / No connection for >5s. Check Wi-Fi/backend.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
@@ -950,6 +956,7 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
+
 
 
 

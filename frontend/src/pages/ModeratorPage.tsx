@@ -13,7 +13,9 @@ import {
   overrideAnswer,
   kickTeam,
   fetchAnswers,
-  fetchTimer
+  fetchTimer,
+  postQuestionStats,
+  fetchLeaderboard
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
@@ -33,6 +35,7 @@ type AnswersState = {
 
 type Phase = 'setup' | 'question' | 'evaluating' | 'final';
 type ViewPhase = 'pre' | 'lobby' | 'intro' | 'quiz';
+type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
 
 const card: React.CSSProperties = {
   background: 'rgba(10,14,24,0.92)',
@@ -126,6 +129,8 @@ const ModeratorPage: React.FC = () => {
   const [phase, setPhase] = useState<Phase>('setup');
   const [viewPhase, setViewPhase] = useState<ViewPhase>('pre');
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
+  const lastReportedQuestionId = React.useRef<string | null>(null);
   const [actionState, setActionState] = useState<{
     quiz: boolean;
     next: boolean;
@@ -223,12 +228,28 @@ const ModeratorPage: React.FC = () => {
     if (socketQuestionPhase === 'revealed') setPhase('final');
   }, [socketQuestionPhase]);
 
+  // Auto-Stats bei Reveal
+  useEffect(() => {
+    if (phase !== 'final' || !question) return;
+    if (lastReportedQuestionId.current === question.id) return;
+    lastReportedQuestionId.current = question.id;
+    const total = Object.keys(answers?.answers || {}).length;
+    const correct = Object.values(answers?.answers || {}).filter((a: any) => a?.isCorrect).length;
+    postQuestionStats({ questionId: question.id, total, correct }).catch(() => undefined);
+  }, [phase, question, answers]);
+
   // Sync Beamer to lobby when Moderator switches to lobby
   useEffect(() => {
     if (viewPhase === 'lobby' && roomCode) {
       socketEmit?.('beamer:show-rules', roomCode);
     }
   }, [viewPhase, roomCode, socketEmit]);
+
+  useEffect(() => {
+    fetchLeaderboard()
+      .then((res) => setLeaderboard(res.runs || []))
+      .catch(() => undefined);
+  }, []);
 
   const doAction = async (fn: () => Promise<any>, msg?: string) => {
     try {
@@ -463,6 +484,15 @@ const ModeratorPage: React.FC = () => {
               Quiz: {currentQuizName}
             </span>
           )}
+          {leaderboard.slice(0, 1).map((run, idx) => (
+            <span
+              key={idx}
+              style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#bbf7d0' }}
+              title={`Letzter Run: ${new Date(run.date).toLocaleString()} | Gewinner: ${run.winners?.join(', ') || 'n/a'}`}
+            >
+              Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : ''}
+            </span>
+          ))}
         </div>
 
         {renderActions()}

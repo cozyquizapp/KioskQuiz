@@ -37,6 +37,13 @@ type SlideOffsets = {
   textOffsetY?: number;
 };
 
+type RuleSlide = {
+  kind: 'rule';
+  mechanic?: string;
+  description: string;
+  title: string;
+};
+
 const palette = ['#fbbf24', '#f97316', '#22c55e', '#06b6d4', '#818cf8', '#e879f9', '#f43f5e', '#e5e7eb'];
 const fontOptions = [
   { label: 'Manrope', value: "'Manrope', 'Space Grotesk', sans-serif" },
@@ -89,6 +96,7 @@ const PresentationCreatorPage: React.FC = () => {
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 960, h: 540 });
   const [mode, setMode] = useState<'custom' | 'quiz'>('custom');
+  const [includeRuleSlides, setIncludeRuleSlides] = useState(true);
   const [blocks, setBlocks] = useState<PresentationBlock[]>(() => {
     if (typeof window !== 'undefined') {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -216,20 +224,39 @@ const PresentationCreatorPage: React.FC = () => {
     return quizzes.find((q) => q.id === selectedQuizId) ?? quizzes[0];
   }, [quizzes, selectedQuizId]);
 
+  const getRuleSlide = (q: AnyQuestion): RuleSlide | null => {
+    if (q.category !== 'GemischteTuete' || !q.mixedMechanic) return null;
+    const map: Record<string, { title: string; description: string }> = {
+      'sortieren': { title: 'Sortieren', description: 'Ordne die Items in die richtige Reihenfolge (z. B. Norden → Süden, Westen → Osten, Chronologie).' },
+      'praezise-antwort': { title: 'Präzise Antwort', description: 'Wer am nächsten an der Zielzahl liegt, gewinnt die Punkte.' },
+      'wer-bietet-mehr': { title: 'Wer bietet mehr?', description: 'Bietet eine Zahl, dann liefert – höhere Zahl gewinnt nur, wenn die Angabe stimmt.' },
+      'eine-falsch': { title: 'Eine ist falsch', description: '8 Aussagen, 1 ist falsch – finde die falsche Aussage.' },
+      'three-clue-race': { title: 'Three Clue Race', description: 'Bis zu 3 Hinweise; frühes Raten = mehr Risiko, aber schnell punkten.' },
+      'vier-woerter-eins': { title: 'Vier Wörter – eins', description: 'Vier Begriffe haben einen gemeinsamen Ursprung – finde den Verbindungsterm.' }
+    };
+    const entry = map[q.mixedMechanic];
+    if (!entry) return null;
+    return { kind: 'rule', mechanic: q.mixedMechanic, title: entry.title, description: entry.description };
+  };
+
   const quizSlides = useMemo(() => {
-    if (!selectedQuiz) return [] as ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' })[];
+    if (!selectedQuiz) return [] as ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' } | RuleSlide)[];
     const map = new Map<string, AnyQuestion>();
     questions.forEach((q) => map.set(q.id, q));
-    const items: ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' })[] = selectedQuiz.questionIds
-      .map((id) => map.get(id))
-      .filter(Boolean)
-      .map((q) => ({ kind: 'question', data: q as AnyQuestion }));
-    if (includeIntroOutro) {
-      items.unshift({ kind: 'intro' });
-      items.push({ kind: 'outro' });
-    }
+    const items: ({ kind: 'question'; data: AnyQuestion } | { kind: 'intro' } | { kind: 'outro' } | RuleSlide)[] = [];
+    if (includeIntroOutro) items.push({ kind: 'intro' });
+    selectedQuiz.questionIds.forEach((id) => {
+      const q = map.get(id);
+      if (!q) return;
+      if (includeRuleSlides) {
+        const ruleSlide = getRuleSlide(q);
+        if (ruleSlide) items.push(ruleSlide);
+      }
+      items.push({ kind: 'question', data: q });
+    });
+    if (includeIntroOutro) items.push({ kind: 'outro' });
     return items;
-  }, [questions, selectedQuiz, includeIntroOutro]);
+  }, [questions, selectedQuiz, includeIntroOutro, includeRuleSlides]);
 
   useEffect(() => {
     setSelectedSlideIndex(0);
@@ -273,6 +300,43 @@ const PresentationCreatorPage: React.FC = () => {
       ...prev,
       [questionId]: { ...(prev[questionId] ?? {}), ...patch }
     }));
+  };
+
+  const exportLayout = () => {
+    if (!selectedQuiz) return;
+    const payload = {
+      quizId: selectedQuiz.id,
+      backgrounds: quizBackgrounds[selectedQuiz.id] ?? currentBg,
+      includeIntroOutro,
+      includeRuleSlides,
+      overrides: slideOverrides
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quiz-layout-${selectedQuiz.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importLayout = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        if (data.backgrounds && selectedQuiz) {
+          setQuizBackgrounds((prev) => ({ ...prev, [selectedQuiz.id]: data.backgrounds }));
+        }
+        if (typeof data.includeIntroOutro === 'boolean') setIncludeIntroOutro(data.includeIntroOutro);
+        if (typeof data.includeRuleSlides === 'boolean') setIncludeRuleSlides(data.includeRuleSlides);
+        if (data.overrides && typeof data.overrides === 'object') setSlideOverrides(data.overrides);
+        setQuizStatus('Layout importiert (lokal)');
+      } catch (e) {
+        setQuizStatus('Import fehlgeschlagen');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const addBlock = () => {
@@ -829,6 +893,10 @@ const PresentationCreatorPage: React.FC = () => {
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {quizLoading && <Pill tone="muted">Lädt ...</Pill>}
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#cbd5e1' }}>
+                      <input type="checkbox" checked={includeRuleSlides} onChange={(e) => setIncludeRuleSlides(e.target.checked)} />
+                      Mechanik-Regel-Slides
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#cbd5e1' }}>
                       <input type="checkbox" checked={includeIntroOutro} onChange={(e) => setIncludeIntroOutro(e.target.checked)} />
                       Intro & Outro hinzufügen
                     </label>
@@ -857,6 +925,43 @@ const PresentationCreatorPage: React.FC = () => {
                   {selectedQuiz ? `${selectedQuiz.questionIds.length} Fragen · ${selectedQuiz.mode}` : 'Kein Quiz ausgewählt'}
                 </div>
                 {quizStatus && <div style={{ marginTop: 8, color: '#c7f9cc' }}>{quizStatus}</div>}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                  <button
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#f8fafc',
+                      cursor: 'pointer'
+                    }}
+                    onClick={exportLayout}
+                  >
+                    Layout exportieren
+                  </button>
+                  <label
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#f8fafc',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Layout importieren
+                    <input
+                      type="file"
+                      accept="application/json"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) importLayout(file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
 
               <div style={controlCard}>
@@ -942,14 +1047,28 @@ const PresentationCreatorPage: React.FC = () => {
                   {quizSlides.map((slide, idx) => {
                     const isIntro = slide.kind === 'intro';
                     const isOutro = slide.kind === 'outro';
+                    const isRule = slide.kind === 'rule';
                     const question = slide.kind === 'question' ? slide.data : null;
                     const cat = question?.category as keyof typeof categoryColors;
-                    const catColor = isIntro || isOutro ? '#fbbf24' : categoryColors[cat] ?? '#cbd5e1';
+                    const catColor =
+                      isIntro || isOutro
+                        ? '#fbbf24'
+                        : isRule
+                        ? '#38bdf8'
+                        : categoryColors[cat] ?? '#cbd5e1';
                     const title =
-                      isIntro ? 'Intro' : isOutro ? 'Outro' : question?.question.slice(0, 90) + (question && question.question.length > 90 ? '…' : '');
+                      isIntro
+                        ? 'Intro'
+                        : isOutro
+                        ? 'Outro'
+                        : isRule
+                        ? slide.title
+                        : question?.question.slice(0, 90) + (question && question.question.length > 90 ? '…' : '');
                     return (
                       <button
-                        key={isIntro ? 'intro' : isOutro ? 'outro' : question?.id ?? idx}
+                        key={
+                          isIntro ? 'intro' : isOutro ? 'outro' : isRule ? `rule-${idx}` : question?.id ?? idx
+                        }
                         onClick={() => setSelectedSlideIndex(idx)}
                         style={{
                           display: 'flex',
@@ -980,7 +1099,13 @@ const PresentationCreatorPage: React.FC = () => {
                             {title}
                           </div>
                           <div style={{ color: '#94a3b8', fontSize: 12 }}>
-                            {isIntro ? 'Intro Slide' : isOutro ? 'Outro Slide' : categoryLabels[cat]?.de ?? cat}
+                            {isIntro
+                              ? 'Intro Slide'
+                              : isOutro
+                              ? 'Outro Slide'
+                              : isRule
+                              ? 'Mechanik-Regeln'
+                              : categoryLabels[cat]?.de ?? cat}
                           </div>
                         </div>
                       </button>
@@ -1115,7 +1240,9 @@ const PresentationCreatorPage: React.FC = () => {
                         </div>
                       </>
                     ) : (
-                      <div style={{ color: '#94a3b8', fontSize: 13 }}>Intro/Outro haben keine Offsets.</div>
+                      <div style={{ color: '#94a3b8', fontSize: 13 }}>
+                        Intro/Outro/Regel-Slides haben keine Offsets.
+                      </div>
                     )}
                   </div>
                 )}
@@ -1174,11 +1301,14 @@ const PresentationCreatorPage: React.FC = () => {
                                 style={{ width: 26, height: 26, objectFit: 'contain', filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.25))' }}
                               />
                             )}
+                            {currentSlide.kind === 'rule' && <span style={{ fontWeight: 900 }}>ℹ</span>}
                             <span style={{ fontWeight: 800 }}>
                               {currentSlide.kind === 'intro'
                                 ? 'Intro'
                                 : currentSlide.kind === 'outro'
                                 ? 'Outro'
+                                : currentSlide.kind === 'rule'
+                                ? currentSlide.title
                                 : categoryLabels[currentSlide.data.category as keyof typeof categoryLabels]?.de ?? currentSlide.data.category}
                             </span>
                           </div>
@@ -1233,14 +1363,20 @@ const PresentationCreatorPage: React.FC = () => {
                               }44`
                             }}
                           >
-                            {currentSlide.kind === 'question' && categoryIcons[currentSlide.data.category] && (
+                          {currentSlide.kind === 'question' && categoryIcons[currentSlide.data.category] && (
                               <img src={categoryIcons[currentSlide.data.category]} alt="" style={{ width: 34, height: 34 }} />
                             )}
                             {currentSlide.kind !== 'question' && <span style={{ fontWeight: 800, fontSize: 12 }}>★</span>}
                           </div>
                           <div style={{ position: 'absolute', left: '48%', right: '6%', bottom: '14%', color: '#f8fafc' }}>
                             <div style={{ fontSize: 14, color: '#cbd5e1', marginBottom: 6 }}>
-                              {currentSlide.kind === 'intro' ? 'Willkommen' : currentSlide.kind === 'outro' ? 'Danke' : 'Frage'}
+                              {currentSlide.kind === 'intro'
+                                ? 'Willkommen'
+                                : currentSlide.kind === 'outro'
+                                ? 'Danke'
+                                : currentSlide.kind === 'rule'
+                                ? 'Mechanik'
+                                : 'Frage'}
                             </div>
                             <div
                               style={{
@@ -1260,6 +1396,8 @@ const PresentationCreatorPage: React.FC = () => {
                                 ? `Quiz: ${selectedQuiz?.name ?? ''}`
                                 : currentSlide.kind === 'outro'
                                 ? 'Das war das Quiz – vielen Dank!'
+                                : currentSlide.kind === 'rule'
+                                ? currentSlide.description
                                 : currentSlide.data.question}
                             </div>
                             {currentSlide.kind === 'question' && currentSlide.data.imageUrl && (

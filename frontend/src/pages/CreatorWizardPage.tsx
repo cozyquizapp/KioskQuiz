@@ -92,6 +92,8 @@ const CreatorWizardPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<QuizCategory | 'ALL'>('ALL');
   const [mixedFilter, setMixedFilter] = useState<MixedMechanicId | 'all'>('all');
+  const [freshOnly, setFreshOnly] = useState(false);
+  const [requireCheeseImage, setRequireCheeseImage] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mixedSelection, setMixedSelection] = useState<Record<string, MixedMechanicId | undefined>>({});
   const [previewMode, setPreviewMode] = useState<'beamer' | 'team'>('beamer');
@@ -165,6 +167,12 @@ const CreatorWizardPage: React.FC = () => {
     return questions.filter((q) => {
       if (filterCat !== 'ALL' && q.category !== filterCat) return false;
       if (mixedFilter !== 'all' && q.category === 'GemischteTuete' && q.mixedMechanic !== mixedFilter) return false;
+      if (freshOnly) {
+        const last = q.lastUsedAt ? new Date(q.lastUsedAt).getTime() : 0;
+        const days = last ? (Date.now() - last) / (1000 * 60 * 60 * 24) : 999;
+        if (days < 30) return false;
+      }
+      if (requireCheeseImage && q.category === 'Cheese' && !q.imageUrl) return false;
       if (search) {
         const term = search.toLowerCase();
         const hay = `${q.question} ${q.id} ${q.answer ?? ''}`.toLowerCase();
@@ -311,47 +319,57 @@ const CreatorWizardPage: React.FC = () => {
   );
 
   const poolStep = (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-      <div style={card}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <input
-            placeholder="Suchen (ID, Text)..."
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={card}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input
+                placeholder="Suchen (ID, Text)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={inputStyle}
           />
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <select
-            style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value as QuizCategory | 'ALL')}
-          >
-            <option value="ALL">Alle Kategorien</option>
-            {catList.map((cat) => (
-              <option key={cat} value={cat}>
-                {catLabel[cat]}
-              </option>
-            ))}
-          </select>
-          <select
-            style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
-            value={mixedFilter}
-            onChange={(e) => setMixedFilter(e.target.value as MixedMechanicId | 'all')}
-          >
-            <option value="all">Alle Mechaniken</option>
-            {mixedMechanics.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <textarea
-            placeholder="IDs per Zeile oder Komma"
-            value={bulkInput}
-            onChange={(e) => setBulkInput(e.target.value)}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <select
+                style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
+                value={filterCat}
+                onChange={(e) => setFilterCat(e.target.value as QuizCategory | 'ALL')}
+              >
+                <option value="ALL">Alle Kategorien</option>
+                {catList.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {catLabel[cat]}
+                  </option>
+                ))}
+              </select>
+              <select
+                style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
+                value={mixedFilter}
+                onChange={(e) => setMixedFilter(e.target.value as MixedMechanicId | 'all')}
+              >
+                <option value="all">Alle Mechaniken</option>
+                {mixedMechanics.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={freshOnly} onChange={(e) => setFreshOnly(e.target.checked)} />
+                Nur frisch (nicht genutzt in 30 Tagen)
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={requireCheeseImage} onChange={(e) => setRequireCheeseImage(e.target.checked)} />
+                Cheese nur mit Bild
+              </label>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <textarea
+                placeholder="IDs per Zeile oder Komma"
+                value={bulkInput}
+                onChange={(e) => setBulkInput(e.target.value)}
             style={{ ...inputStyle, minHeight: 80 }}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -428,6 +446,9 @@ const CreatorWizardPage: React.FC = () => {
             const isSelected = selectedIds.includes(q.id);
             const isNew = newlyAddedIds.includes(q.id);
             const layout = (q as any).layout || layoutPreview[q.id] || {};
+            const needsMechanic = q.category === 'GemischteTuete' && !q.mixedMechanic;
+            const needsImage = q.category === 'Cheese' && !q.imageUrl;
+            const freshness = q.lastUsedAt ? Math.round((Date.now() - new Date(q.lastUsedAt).getTime()) / (1000 * 60 * 60 * 24)) : null;
             return (
               <div
                 key={q.id}
@@ -448,7 +469,14 @@ const CreatorWizardPage: React.FC = () => {
                     {q.category === 'GemischteTuete' && q.mixedMechanic && (
                       <div style={{ ...pill(theme.accentStrong, true) }}>{q.mixedMechanic}</div>
                     )}
-                    {isNew && <div style={{ ...pill(theme.success), color: '#0d0f14' }}>Neu</div>}
+                    {needsMechanic && <div style={{ ...pill('#ef4444', true) }}>Mechanik fehlt</div>}
+                    {needsImage && <div style={{ ...pill('#fbbf24', true) }}>Bild fehlt</div>}
+                    {freshness !== null && (
+                      <div style={{ ...pill('#22c55e', true) }}>
+                        {freshness >= 0 ? `${freshness} Tage` : 'Neu'}
+                      </div>
+                    )}
+                    {isNew && <div style={{ ...pill('#22c55e'), color: '#0d0f14' }}>Neu</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button

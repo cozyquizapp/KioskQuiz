@@ -17,7 +17,8 @@ import {
   fetchScoreboard,
   postQuestionStats,
   postRunStats,
-  fetchLeaderboard
+  fetchLeaderboard,
+  fetchHealth
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
@@ -130,6 +131,7 @@ const ModeratorPage: React.FC = () => {
     return saved ? Number(saved) || 30 : 30;
   });
   const [statsView, setStatsView] = useState<'runs' | 'question'>('runs');
+  const [health, setHealth] = useState<'idle' | 'ok' | 'fail'>('idle');
   const [phase, setPhase] = useState<Phase>('setup');
   const [viewPhase, setViewPhase] = useState<ViewPhase>('pre');
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
@@ -448,11 +450,11 @@ const ModeratorPage: React.FC = () => {
                 </div>
               </div>
               <input value={roomCode} onChange={(e) => setRoomCode(e.target.value)} style={inputStyle} />
-              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <select
-                  value={language}
-                  onChange={(e) => {
-                    const val = e.target.value as Language;
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <select
+                value={language}
+                onChange={(e) => {
+                  const val = e.target.value as Language;
                     setLang(val);
                     localStorage.setItem('moderatorLanguage', val);
                   }}
@@ -474,6 +476,40 @@ const ModeratorPage: React.FC = () => {
                   onClick={() => doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt')}
                 >
                   Sprache setzen
+                </button>
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background:
+                      health === 'ok'
+                        ? 'rgba(34,197,94,0.16)'
+                        : health === 'fail'
+                        ? 'rgba(239,68,68,0.16)'
+                        : 'rgba(255,255,255,0.05)',
+                    border:
+                      health === 'ok'
+                        ? '1px solid rgba(34,197,94,0.5)'
+                        : health === 'fail'
+                        ? '1px solid rgba(239,68,68,0.5)'
+                        : '1px solid rgba(255,255,255,0.08)',
+                    color: health === 'ok' ? '#bbf7d0' : health === 'fail' ? '#fecdd3' : '#e2e8f0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={async () => {
+                    try {
+                      await fetchHealth();
+                      setHealth('ok');
+                      setToast('Backend erreichbar');
+                    } catch (err) {
+                      setHealth('fail');
+                      setToast('Backend nicht erreichbar');
+                    } finally {
+                      setTimeout(() => setToast(null), 1800);
+                    }
+                  }}
+                >
+                  {health === 'ok' ? 'Health: OK' : health === 'fail' ? 'Health: Fehler' : 'Health-Check'}
                 </button>
                 {readyCount.total > 0 && (
                   <div

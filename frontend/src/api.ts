@@ -39,6 +39,12 @@ export interface QuestionMeta {
   categoryName: string;
 }
 
+export const fetchHealth = async (): Promise<{ ok: boolean }> => {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) throw new Error('Backend nicht erreichbar');
+  return res.json();
+};
+
 export const fetchCurrentQuestion = async (
   roomCode: string
 ): Promise<{ question: AnyQuestion | null; meta?: QuestionMeta | null }> => {

@@ -12,6 +12,8 @@ export default function QuestionEditor() {
   const [questions, setQuestions] = useState<QuestionSummary[]>([])
   const [status, setStatus] = useState<string | null>(null)
   const [filterText, setFilterText] = useState('')
+  const [requireImage, setRequireImage] = useState(false)
+  const [maxAgeDays, setMaxAgeDays] = useState(90)
   const apiSet = Boolean(loadApiConfig()?.baseUrl)
 
   useEffect(() => {
@@ -29,8 +31,27 @@ export default function QuestionEditor() {
 
   const filtered = useMemo(() => {
     const term = filterText.toLowerCase()
-    return questions.filter((q) => q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term))
-  }, [questions, filterText])
+    const now = Date.now()
+    const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000
+    return questions.filter((q) => {
+      const matchesText = q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
+      const ageOk =
+        !q.lastUsedAt || Number.isNaN(Date.parse(q.lastUsedAt)) ? true : now - Date.parse(q.lastUsedAt) <= maxAgeMs
+      const imageOk = requireImage ? Boolean(q.hasImage) : true
+      return matchesText && ageOk && imageOk
+    })
+  }, [questions, filterText, requireImage, maxAgeDays])
+
+  const staleCount = useMemo(() => {
+    const now = Date.now()
+    const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000
+    return questions.filter((q) => q.lastUsedAt && now - Date.parse(q.lastUsedAt) > maxAgeMs).length
+  }, [questions, maxAgeDays])
+
+  const missingImageCount = useMemo(
+    () => questions.filter((q) => requireImage && !q.hasImage).length,
+    [questions, requireImage],
+  )
 
   return (
     <div className="page">
@@ -44,6 +65,23 @@ export default function QuestionEditor() {
         <div className="field">
           <label>Suche</label>
           <input placeholder="Text oder Kategorie" value={filterText} onChange={(e) => setFilterText(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Frische (max. Alter in Tagen)</label>
+          <input
+            type="number"
+            min={7}
+            max={365}
+            value={maxAgeDays}
+            onChange={(e) => setMaxAgeDays(Number(e.target.value) || 90)}
+          />
+        </div>
+        <div className="field">
+          <label>Bildpflicht</label>
+          <div className="row">
+            <input type="checkbox" checked={requireImage} onChange={(e) => setRequireImage(e.target.checked)} />
+            <span className="muted-small">Nur Fragen mit Bild anzeigen</span>
+          </div>
         </div>
       </div>
 
@@ -60,9 +98,10 @@ export default function QuestionEditor() {
       <div className="section-title">Geplante Checks</div>
       <div className="stack">
         <div className="pill">MC/Mechanik gesetzt</div>
-        <div className="pill">Bilder/Audio vorhanden (falls benötigt)</div>
+        <div className="pill">Bilder/Audio vorhanden (falls benötigt) • {missingImageCount} ohne Bild</div>
         <div className="pill">Keine Duplikate im aktuellen Quiz</div>
         <div className="pill">Tags & Schwierigkeitsgrad gepflegt</div>
+        <div className="pill">Frische Check • {staleCount} älter als {maxAgeDays} Tage</div>
       </div>
 
       <div className="section-title">Fragen</div>

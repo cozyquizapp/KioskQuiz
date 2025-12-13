@@ -318,7 +318,7 @@ export default function CreatorCanvasPage() {
                 </div>
                 <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
                   {filteredQuestions.slice(0, 60).map((q) => (
-                                        <div
+                    <div
                       key={q.id}
                       style={{
                         display: "grid",
@@ -341,7 +341,7 @@ export default function CreatorCanvasPage() {
                           Bearbeiten
                         </button>
                         <a href="/question-editor" style={{ color: "#93c5fd", fontSize: 12 }}>
-                          Im Editor öffnen
+                          Im Editor oeffnen
                         </a>
                       </div>
                     </div>
@@ -354,6 +354,43 @@ export default function CreatorCanvasPage() {
                 <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>
                   Tiefere Bearbeitung: <a href="/question-editor" style={{ color: '#93c5fd' }}>Question Editor oeffnen</a>
                 </div>
+                {editQuestion && (
+                  <Modal open={true} onClose={() => setEditQuestion(null)} title="Frage bearbeiten (Canvas)">
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      <div style={field()}>
+                        <label>Text</label>
+                        <input style={input()} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                      </div>
+                      <div style={field()}>
+                        <label>Antwort</label>
+                        <input style={input()} value={editAnswer} onChange={(e) => setEditAnswer(e.target.value)} />
+                      </div>
+                      <div style={field()}>
+                        <label>Kategorie</label>
+                        <input style={input()} value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+                      </div>
+                      <div style={field()}>
+                        <label>Mechanik</label>
+                        <input style={input()} value={editMechanic} onChange={(e) => setEditMechanic(e.target.value)} placeholder="z.B. Schaetzfrage" />
+                      </div>
+                      <div style={field()}>
+                        <label>Bild (URL)</label>
+                        <input style={input()} value={editImage} onChange={(e) => setEditImage(e.target.value)} placeholder="https://..." />
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button style={cta(themeColor)} onClick={saveEdit}>
+                          Speichern (Canvas)
+                        </button>
+                        <button style={smallBtn()} onClick={() => setEditQuestion(null)}>
+                          Abbrechen
+                        </button>
+                      </div>
+                      <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                        Hinweis: Speichert aktuell nur in der Canvas-Liste; Backend-Update bitte separat im Question Editor.
+                      </div>
+                    </div>
+                  </Modal>
+                )}
               </section>
 
               <section style={card()}>
@@ -726,5 +763,4 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
-
 

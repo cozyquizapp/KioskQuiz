@@ -13,6 +13,7 @@ import {
   deleteQuestionImage,
   setQuestionLayout
 } from '../api';
+import StructureStep from './creatorWizard/StructureStep';
 
 type Step = 'structure' | 'questions' | 'presentation' | 'review';
 
@@ -263,59 +264,19 @@ const CreatorWizardPage: React.FC = () => {
   };
 
   const structureStep = (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div style={card}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Quiz-Name</div>
-            <input style={inputStyle} value={quizName} onChange={(e) => setQuizName(e.target.value)} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Sprache</div>
-            <select
-              style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as 'de' | 'en' | 'both')}
-            >
-              <option value="de">Deutsch</option>
-              <option value="en">English</option>
-              <option value="both">Deutsch + English</option>
-            </select>
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Standard-Timer (Sek.)</div>
-            <input
-              type="number"
-              style={inputStyle}
-              value={defaultTimer}
-              min={5}
-              max={120}
-              onChange={(e) => setDefaultTimer(Number(e.target.value))}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div style={card}>
-        <div style={{ fontWeight: 800, marginBottom: 8 }}>Kategorien & Verteilung</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-          {catList.map((cat) => (
-            <div
-              key={cat}
-              style={{
-                ...pill(categoryColors[cat]),
-                background: `${categoryColors[cat]}22`,
-                borderColor: `${categoryColors[cat]}55`
-              }}
-            >
-              <img src={categoryIcons[cat]} alt={cat} style={{ width: 20, height: 20 }} />
-              <span>{catLabel[cat]}</span>
-              <span style={{ marginLeft: 8, fontWeight: 800 }}>{categoryCount[cat] || 0}/5</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <StructureStep
+      cardStyle={card}
+      inputStyle={inputStyle}
+      quizName={quizName}
+      language={language}
+      defaultTimer={defaultTimer}
+      categoryCount={categoryCount}
+      catList={catList}
+      catLabel={catLabel}
+      onChangeName={setQuizName}
+      onChangeLanguage={(lang) => setLanguage(lang)}
+      onChangeTimer={(val) => setDefaultTimer(val)}
+    />
   );
 
   const questionsStep = (

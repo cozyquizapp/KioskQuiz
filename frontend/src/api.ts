@@ -355,4 +355,26 @@ export const fetchQuestionStat = async (questionId: string): Promise<{ stat: any
   return res.json();
 };
 
+// Studio Drafts (Quiz-Definitionen)
+export const fetchStudioDrafts = async (): Promise<{ ok: boolean; drafts: any[] }> => {
+  const res = await fetch(`${API_BASE}/studio/quizzes`);
+  if (!res.ok) throw new Error('Drafts konnten nicht geladen werden');
+  return res.json();
+};
+
+export const fetchStudioDraft = async (draftId: string): Promise<{ ok: boolean; draft: any }> => {
+  const res = await fetch(`${API_BASE}/studio/quizzes/${draftId}`);
+  if (!res.ok) throw new Error('Draft konnte nicht geladen werden');
+  return res.json();
+};
+
+export const publishStudioDraft = async (draft: any): Promise<{ ok: boolean; id?: string }> => {
+  const res = await fetch(`${API_BASE}/studio/quizzes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(draft)
+  });
+  if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
+  return res.json();
+};
 

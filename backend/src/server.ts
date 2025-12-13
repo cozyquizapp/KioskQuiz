@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import studioRoutes from './routes/studio';
 import {
   AnyQuestion,
   AnswerEntry,
@@ -56,6 +57,7 @@ app.get('/api/rooms/:roomCode', (req, res) => {
 });
 fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadRoot));
+app.use('/api/studio', studioRoutes);
 
 // usage tracking
 const usagePath = path.join(__dirname, 'data', 'questionUsage.json');
@@ -1391,8 +1393,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
-
 
 
 

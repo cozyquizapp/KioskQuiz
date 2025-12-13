@@ -9,6 +9,7 @@ import ModeratorPage from './pages/ModeratorPage';
 import IntroSlidesPage from './pages/IntroSlidesPage';
 import PresentationCreatorPage from './pages/PresentationCreatorPage';
 import StatsPage from './pages/StatsPage';
+import DraftImportPage from './pages/DraftImportPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -28,6 +29,7 @@ function App() {
       <Route path="/intro" element={<IntroSlidesPage />} />
       <Route path="/presentation-creator" element={<PresentationCreatorPage />} />
       <Route path="/stats" element={<StatsPage />} />
+      <Route path="/draft-import" element={<DraftImportPage />} />
       <Route path="*" element={<Navigate to="/team" replace />} />
     </Routes>
   );

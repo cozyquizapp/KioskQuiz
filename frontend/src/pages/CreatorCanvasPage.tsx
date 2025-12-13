@@ -63,6 +63,13 @@ export default function CreatorCanvasPage() {
   const [answerSize, setAnswerSize] = useState(16)
   const [showTimer, setShowTimer] = useState(true)
   const [showPoints, setShowPoints] = useState(true)
+  const [timerX, setTimerX] = useState(8)
+  const [timerY, setTimerY] = useState(8)
+  const [pointsX, setPointsX] = useState(85)
+  const [pointsY, setPointsY] = useState(8)
+  const [editTarget, setEditTarget] = useState<'question' | 'answer' | 'timer' | 'points'>('question')
+  const [questionText, setQuestionText] = useState('Frage-Text')
+  const [answerText, setAnswerText] = useState('Antwort-Text')
   const [qSearch, setQSearch] = useState('')
   const [qImageOnly, setQImageOnly] = useState(false)
   const [qMechanicOnly, setQMechanicOnly] = useState(false)
@@ -387,6 +394,35 @@ export default function CreatorCanvasPage() {
                   Details im Presentation Creator
                 </a>
               </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Elemente anklicken & verschieben</div>
+                <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 6 }}>Target wählen, dann in der Preview klicken.</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {(['question', 'answer', 'timer', 'points'] as const).map((target) => (
+                    <button
+                      key={target}
+                      style={{
+                        ...smallBtn(),
+                        background: editTarget === target ? '#7a5bff33' : 'rgba(255,255,255,0.08)',
+                        borderColor: editTarget === target ? '#7a5bff88' : 'rgba(255,255,255,0.16)',
+                      }}
+                      onClick={() => setEditTarget(target)}
+                    >
+                      {target}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginTop: 8 }}>
+                  <div style={field()}>
+                    <label>Frage-Text (Preview)</label>
+                    <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
+                  </div>
+                  <div style={field()}>
+                    <label>Antwort-Text (Preview)</label>
+                    <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
+                  </div>
+                </div>
+              </div>
             </section>
           )}
 
@@ -436,6 +472,24 @@ export default function CreatorCanvasPage() {
                     border: '1px dashed rgba(255,255,255,0.2)',
                     overflow: 'hidden',
                   }}
+                  onClick={(e) => {
+                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                    const relX = ((e.clientX - rect.left) / rect.width) * 100
+                    const relY = ((e.clientY - rect.top) / rect.height) * 100
+                    if (editTarget === 'question') {
+                      setLayoutX(Math.max(0, Math.min(100, relX)))
+                      setLayoutY(Math.max(0, Math.min(100, relY)))
+                    } else if (editTarget === 'answer') {
+                      setAnswerX(Math.max(0, Math.min(100, relX)))
+                      setAnswerY(Math.max(0, Math.min(100, relY)))
+                    } else if (editTarget === 'timer') {
+                      setTimerX(Math.max(0, Math.min(100, relX)))
+                      setTimerY(Math.max(0, Math.min(100, relY)))
+                    } else if (editTarget === 'points') {
+                      setPointsX(Math.max(0, Math.min(100, relX)))
+                      setPointsY(Math.max(0, Math.min(100, relY)))
+                    }
+                  }}
                 >
                   <div
                     style={{
@@ -444,10 +498,10 @@ export default function CreatorCanvasPage() {
                       top: `${layoutY}%`,
                       transform: 'translate(-0%, -0%)',
                       fontSize: layoutSize,
-                      fontWeight: 800,
-                    }}
-                  >
-                    Frage-Text
+                    fontWeight: 800,
+                  }}
+                >
+                    {questionText}
                   </div>
                   <div
                     style={{
@@ -455,19 +509,19 @@ export default function CreatorCanvasPage() {
                       left: `${answerX}%`,
                       top: `${answerY}%`,
                       transform: 'translate(-0%, -0%)',
-                      fontSize: answerSize,
-                      fontWeight: 700,
-                      color: '#a5f3fc',
-                    }}
-                  >
-                    Antwort
+                    fontSize: answerSize,
+                    fontWeight: 700,
+                    color: '#a5f3fc',
+                  }}
+                >
+                    {answerText}
                   </div>
                   {showTimer && (
                     <div
                       style={{
                         position: 'absolute',
-                        top: 8,
-                        left: 8,
+                        left: `${timerX}%`,
+                        top: `${timerY}%`,
                         padding: '6px 10px',
                         borderRadius: 10,
                         background: 'rgba(255,255,255,0.12)',
@@ -586,4 +640,3 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
-

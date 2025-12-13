@@ -13,6 +13,22 @@ export default function Preview() {
   }
 
   const total = draft.structure.categories.reduce((sum, c) => sum + c.questions, 0)
+  const slides: string[] = []
+
+  if (draft.structure.introAt === 'start') slides.push('Intro')
+  if (draft.structure.rulesAt === 'start') slides.push('Regeln')
+
+  draft.structure.categories.forEach((cat, index) => {
+    slides.push(`Kategorie ${index + 1}: ${cat.name}`)
+    for (let i = 1; i <= cat.questions; i += 1) {
+      slides.push(`Frage ${i} (${cat.name})`)
+    }
+    slides.push(`Antworten (${cat.name})`)
+  })
+
+  if (draft.structure.introAt === 'before-final') slides.push('Intro (vor Final)')
+  if (draft.structure.rulesAt === 'before-final') slides.push('Regeln (vor Final)')
+  slides.push('Finale / Abschluss')
 
   return (
     <div className="page">
@@ -55,6 +71,16 @@ export default function Preview() {
         {draft.structure.categories.map((c, idx) => (
           <div key={idx} className="pill">
             {c.name}: {c.questions} Fragen
+          </div>
+        ))}
+      </div>
+
+      <div className="section-title">Slide-Plan</div>
+      <div className="stack">
+        {slides.map((label, idx) => (
+          <div key={idx} className="step-chip">
+            <span>{idx + 1}.</span>
+            <span>{label}</span>
           </div>
         ))}
       </div>

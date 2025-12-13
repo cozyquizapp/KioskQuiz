@@ -79,7 +79,7 @@ export default function BaukastenPage() {
     question: true,
     answer: true,
     timer: true,
-    points: true,
+    points: false,
   })
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
@@ -98,7 +98,7 @@ export default function BaukastenPage() {
   const [pointsX, setPointsX] = useState(82)
   const [pointsY, setPointsY] = useState(16)
   const [showTimer, setShowTimer] = useState(true)
-  const [showPoints, setShowPoints] = useState(true)
+  const [showPoints, setShowPoints] = useState(false)
   const [editTarget, setEditTarget] = useState<'question' | 'answer' | 'timer' | 'points'>('question')
   const [dragging, setDragging] = useState<null | 'question' | 'answer' | 'timer' | 'points'>(null)
   const [resizing, setResizing] = useState<null | 'question' | 'answer'>(null)
@@ -348,6 +348,21 @@ export default function BaukastenPage() {
             <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
           </label>
           <div style={{ color: '#cbd5e1', fontSize: 12 }}>Ausgewaehlt: {selectedIds.length} | Treffer: {filteredQuestions.length}</div>
+          {selectedIds.length > 0 && (
+            <div style={{ display: 'grid', gap: 6, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', maxHeight: 160, overflow: 'auto' }}>
+              <div style={{ fontWeight: 700 }}>Auswahl</div>
+              {selectedIds.map((id) => {
+                const q = questions.find((qq) => qq.id === id)
+                if (!q) return null
+                return (
+                  <div key={id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#cbd5e1', gap: 8 }}>
+                    <span style={{ maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.text}</span>
+                    <span style={{ color: '#94a3b8' }}>{q.category}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )
     }

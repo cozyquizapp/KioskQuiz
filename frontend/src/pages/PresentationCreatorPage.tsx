@@ -395,6 +395,16 @@ const PresentationCreatorPage: React.FC = () => {
     setSelectedId(block.id);
   };
 
+  const resetBlocks = () => {
+    setBlocks([...defaultBlocks]);
+    setSelectedId(defaultBlocks[0]?.id ?? null);
+  };
+
+  const clearBlocks = () => {
+    setBlocks([]);
+    setSelectedId(null);
+  };
+
   const duplicateBlock = (id: string) => {
     const base = blocks.find((b) => b.id === id);
     if (!base) return;
@@ -664,6 +674,34 @@ const PresentationCreatorPage: React.FC = () => {
                     onClick={addBlock}
                   >
                     + Hinzufügen
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <button
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#f8fafc',
+                      cursor: 'pointer'
+                    }}
+                    onClick={resetBlocks}
+                  >
+                    Auf Standard setzen
+                  </button>
+                  <button
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(244,63,94,0.5)',
+                      background: 'rgba(244,63,94,0.12)',
+                      color: '#fca5a5',
+                      cursor: 'pointer'
+                    }}
+                    onClick={clearBlocks}
+                  >
+                    Alles leeren
                   </button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -11,7 +11,7 @@ const liveLinks: LinkItem[] = [
 ]
 
 const creationFlow: LinkItem[] = [
-  { path: '/creator-canvas', label: 'Creator Canvas', note: 'Alles in einem Flow (Struktur, Theme, Slides, Save)' },
+  { path: '/baukasten', label: 'Baukasten', note: 'Alles in einem Flow (Struktur, Theme, Slides, Save)' },
 ]
 
 const metaLinks: LinkItem[] = [{ path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }]

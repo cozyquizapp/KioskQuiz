@@ -9,6 +9,7 @@ import IntroSlidesPage from './pages/IntroSlidesPage';
 import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import CreatorCanvasPage from './pages/CreatorCanvasPage';
+import BaukastenPage from './pages/BaukastenPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -20,11 +21,12 @@ function App() {
       <Route path="/team" element={<TeamPage />} />
       <Route path="/beamer" element={<BeamerPage />} />
       <Route path="/beamer/:roomCode" element={<BeamerPage />} />
-      <Route path="/creator" element={<Navigate to="/creator-canvas" replace />} />
-      <Route path="/creator-v2" element={<Navigate to="/creator-canvas" replace />} />
-      <Route path="/creator-wizard" element={<Navigate to="/creator-canvas" replace />} />
-      <Route path="/creator-canvas" element={<CreatorCanvasPage />} />
-      <Route path="/creator-app" element={<Navigate to="/creator-canvas" replace />} />
+      <Route path="/creator" element={<Navigate to="/baukasten" replace />} />
+      <Route path="/creator-v2" element={<Navigate to="/baukasten" replace />} />
+      <Route path="/creator-wizard" element={<Navigate to="/baukasten" replace />} />
+      <Route path="/creator-canvas" element={<Navigate to="/baukasten" replace />} />
+      <Route path="/baukasten" element={<BaukastenPage />} />
+      <Route path="/creator-app" element={<Navigate to="/baukasten" replace />} />
       <Route path="/question-editor" element={<QuestionEditorPage />} />
       <Route path="/moderator" element={<ModeratorPage />} />
       <Route path="/intro" element={<IntroSlidesPage />} />

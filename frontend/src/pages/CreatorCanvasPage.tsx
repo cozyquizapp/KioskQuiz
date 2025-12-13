@@ -20,6 +20,7 @@ export default function CreatorCanvasPage() {
   const [font, setFont] = useState(draft?.theme.font || 'Inter')
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
   const [rules, setRules] = useState(draft?.structure.rulesAt || 'start')
+  const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
 
   const totalQuestions = useMemo(() => categories.reduce((s, c) => s + c.questions, 0), [categories])
 
@@ -35,7 +36,7 @@ export default function CreatorCanvasPage() {
         mode: 'standard',
       },
       filters: draft?.filters || [],
-      theme: { color: themeColor, background: bg, logoUrl: logo, font, animation: draft?.theme.animation || 'Slide' },
+      theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
       updatedAt: Date.now(),
     })
   }
@@ -180,6 +181,14 @@ export default function CreatorCanvasPage() {
                 <label>Font</label>
                 <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
               </div>
+              <div style={field()}>
+                <label>Animation</label>
+                <select value={animation} onChange={(e) => setAnimation(e.target.value)} style={input()}>
+                  <option value="Slide">Slide</option>
+                  <option value="Fade">Fade</option>
+                  <option value="Pop">Pop</option>
+                </select>
+              </div>
             </div>
             <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
               {bg && (
@@ -227,6 +236,35 @@ export default function CreatorCanvasPage() {
                 Intro: {intro} • Regeln: {rules} • Fragen: {totalQuestions}
               </div>
               <div style={{ marginTop: 6, color: '#cbd5e1' }}>Kategorien: {categories.map((c) => c.name).join(', ')}</div>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#e5e7eb' }}>Animation: {animation}</div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Slides (Reihenfolge)</div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                <div style={pill('#7a5bff')}>Intro ({intro})</div>
+                {categories.map((c, idx) => (
+                  <div key={idx} style={pill('#38bdf8')}>
+                    Kategorie {idx + 1}: {c.name} • {c.questions} Fragen
+                  </div>
+                ))}
+                <div style={pill('#22c55e')}>Regeln ({rules})</div>
+                <div style={pill('#f97316')}>Finale / Abschluss</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <a href="/draft-import" style={cta(themeColor)}>
+                Draft laden / spielen
+              </a>
+              <button
+                style={smallBtn()}
+                onClick={() => {
+                  persist()
+                  alert('Draft gespeichert.')
+                }}
+              >
+                Speichern
+              </button>
             </div>
           </section>
         </div>

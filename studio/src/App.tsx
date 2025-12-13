@@ -1,6 +1,7 @@
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import Creator from './pages/Creator'
 import Home from './pages/Home'
+import Import from './pages/Import'
 import Presentation from './pages/Presentation'
 import QuestionEditor from './pages/QuestionEditor'
 import Stats from './pages/Stats'
@@ -28,6 +29,9 @@ function App() {
             <NavLink to="/stats" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               Stats
             </NavLink>
+            <NavLink to="/import" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              Import
+            </NavLink>
           </nav>
         </header>
 
@@ -38,6 +42,7 @@ function App() {
             <Route path="/questions" element={<QuestionEditor />} />
             <Route path="/presentation" element={<Presentation />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/import" element={<Import />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>

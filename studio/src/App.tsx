@@ -2,6 +2,7 @@ import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import Creator from './pages/Creator'
 import Home from './pages/Home'
 import Import from './pages/Import'
+import Planner from './pages/Planner'
 import Presentation from './pages/Presentation'
 import PresentationDetail from './pages/PresentationDetail'
 import Preview from './pages/Preview'
@@ -35,6 +36,9 @@ function App() {
             <NavLink to="/import" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               Import
             </NavLink>
+            <NavLink to="/planner" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              Flow
+            </NavLink>
             <NavLink to="/preview" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               Preview
             </NavLink>
@@ -53,6 +57,7 @@ function App() {
             <Route path="/presentation/theme" element={<PresentationDetail />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/import" element={<Import />} />
+            <Route path="/planner" element={<Planner />} />
             <Route path="/preview" element={<Preview />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Home />} />

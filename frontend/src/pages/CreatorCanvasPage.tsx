@@ -436,6 +436,68 @@ export default function CreatorCanvasPage() {
                   </select>
                 </div>
               </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Visibility je Slide-Typ</div>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                  <div style={field()}>
+                    <label>Frage-Slide</label>
+                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={slideConfig.question.showTimer}
+                        onChange={(e) =>
+                          setSlideConfig((s) => ({ ...s, question: { ...s.question, showTimer: e.target.checked } }))
+                        }
+                      />{' '}
+                      Timer
+                    </label>
+                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={slideConfig.question.showPoints}
+                        onChange={(e) =>
+                          setSlideConfig((s) => ({ ...s, question: { ...s.question, showPoints: e.target.checked } }))
+                        }
+                      />{' '}
+                      Punkte
+                    </label>
+                  </div>
+                  <div style={field()}>
+                    <label>Antwort-Slide</label>
+                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={slideConfig.answer.showTimer}
+                        onChange={(e) =>
+                          setSlideConfig((s) => ({ ...s, answer: { ...s.answer, showTimer: e.target.checked } }))
+                        }
+                      />{' '}
+                      Timer
+                    </label>
+                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={slideConfig.answer.showPoints}
+                        onChange={(e) =>
+                          setSlideConfig((s) => ({ ...s, answer: { ...s.answer, showPoints: e.target.checked } }))
+                        }
+                      />{' '}
+                      Punkte
+                    </label>
+                  </div>
+                  <div style={field()}>
+                    <label>Intro</label>
+                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={slideConfig.intro.showRules}
+                        onChange={(e) => setSlideConfig((s) => ({ ...s, intro: { showRules: e.target.checked } }))}
+                      />{' '}
+                      Regeln zeigen
+                    </label>
+                  </div>
+                </div>
+              </div>
               <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
                 {bg && (
                   <div>
@@ -763,4 +825,8 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
-
+  const [slideConfig, setSlideConfig] = useState({
+    question: { showTimer: true, showPoints: true },
+    answer: { showTimer: true, showPoints: true },
+    intro: { showRules: true },
+  })

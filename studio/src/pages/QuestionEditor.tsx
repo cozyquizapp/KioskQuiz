@@ -53,6 +53,20 @@ export default function QuestionEditor() {
     [questions, requireImage],
   )
 
+  const duplicateStats = useMemo(() => {
+    const map = new Map<string, number>()
+    questions.forEach((q) => {
+      const key = q.text?.trim().toLowerCase() || ''
+      if (!key) return
+      map.set(key, (map.get(key) || 0) + 1)
+    })
+    let dupes = 0
+    map.forEach((count) => {
+      if (count > 1) dupes += count
+    })
+    return { total: dupes, entries: map }
+  }, [questions])
+
   return (
     <div className="page">
       <h1>Fragenbank</h1>
@@ -99,7 +113,7 @@ export default function QuestionEditor() {
       <div className="stack">
         <div className="pill">MC/Mechanik gesetzt</div>
         <div className="pill">Bilder/Audio vorhanden (falls benötigt) • {missingImageCount} ohne Bild</div>
-        <div className="pill">Keine Duplikate im aktuellen Quiz</div>
+        <div className="pill">Duplikat-Check (Text) • {duplicateStats.total} mögliche Duplikate</div>
         <div className="pill">Tags & Schwierigkeitsgrad gepflegt</div>
         <div className="pill">Frische Check • {staleCount} älter als {maxAgeDays} Tage</div>
       </div>

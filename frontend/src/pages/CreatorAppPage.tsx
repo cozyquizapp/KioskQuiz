@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 const tiles = [
+  { to: '/creator-canvas', title: 'Creator Canvas', desc: 'All-in-one Flow wie Canva' },
   { to: '/creator-wizard', title: 'Wizard', desc: 'Struktur & Fragen auswählen' },
   { to: '/presentation-creator', title: 'Präsentation', desc: 'Slides, Hintergrund, Offsets' },
   { to: '/question-editor', title: 'Fragen-Editor', desc: 'Bilder, Layout, Antworten' },

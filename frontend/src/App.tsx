@@ -11,6 +11,7 @@ import PresentationCreatorPage from './pages/PresentationCreatorPage';
 import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import CreatorAppPage from './pages/CreatorAppPage';
+import CreatorCanvasPage from './pages/CreatorCanvasPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -25,6 +26,7 @@ function App() {
       <Route path="/creator" element={<CreatorWizardPage />} />
       <Route path="/creator-v2" element={<Navigate to="/creator-wizard" replace />} />
       <Route path="/creator-wizard" element={<CreatorWizardPage />} />
+      <Route path="/creator-canvas" element={<CreatorCanvasPage />} />
       <Route path="/creator-app" element={<CreatorAppPage />} />
       <Route path="/question-editor" element={<QuestionEditorPage />} />
       <Route path="/moderator" element={<ModeratorPage />} />

@@ -81,6 +81,11 @@ export default function BaukastenPage() {
     timer: true,
     points: true,
   })
+  const themePresets = [
+    { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
+    { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
+    { name: 'Playful', color: '#f97316', bg: 'linear-gradient(135deg,#1d1b27,#312e81)', font: 'Nunito', animation: 'Pop' },
+  ]
 
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
@@ -351,6 +356,22 @@ export default function BaukastenPage() {
       return (
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ fontWeight: 800, fontSize: 18 }}>Theme</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {themePresets.map((p) => (
+              <button
+                key={p.name}
+                style={{ ...smallBtn(), background: `${p.color}22`, borderColor: `${p.color}77`, color: '#e2e8f0' }}
+                onClick={() => {
+                  setThemeColor(p.color)
+                  setBg(p.bg)
+                  setFont(p.font)
+                  setAnimation(p.animation as any)
+                }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
           <div style={field()}>
             <label>Primaerfarbe</label>
             <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} style={{ width: '100%' }} />

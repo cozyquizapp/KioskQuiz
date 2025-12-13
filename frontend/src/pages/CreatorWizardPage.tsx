@@ -14,14 +14,13 @@ import {
   setQuestionLayout
 } from '../api';
 
-type Step = 'base' | 'categories' | 'pool' | 'order' | 'review';
+type Step = 'structure' | 'questions' | 'presentation' | 'review';
 
-const steps: { key: Step; label: string }[] = [
-  { key: 'base', label: 'Grundlage' },
-  { key: 'categories', label: 'Kategorien' },
-  { key: 'pool', label: 'Fragen wählen' },
-  { key: 'order', label: 'Reihenfolge' },
-  { key: 'review', label: 'Review' }
+const steps: { key: Step; label: string; hint: string }[] = [
+  { key: 'structure', label: 'Grundstruktur', hint: 'Name, Sprache, Kategorien, Fragenanzahl' },
+  { key: 'questions', label: 'Fragen', hint: 'Auswählen, anpassen, Pflichtchecks' },
+  { key: 'presentation', label: 'Präsentation', hint: 'Intro/Regeln, Layout, Theme' },
+  { key: 'review', label: 'Review & Save', hint: 'Zusammenfassung & speichern' }
 ];
 
 const catList: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
@@ -82,7 +81,7 @@ const inputStyle: React.CSSProperties = {
 type CsvPreviewRow = { line: number; raw: string; id?: string; category?: string; mechanic?: string; valid: boolean; reason?: string };
 
 const CreatorWizardPage: React.FC = () => {
-  const [activeStep, setActiveStep] = useState<Step>('base');
+  const [activeStep, setActiveStep] = useState<Step>('structure');
   const [quizName, setQuizName] = useState('Cozy Kiosk Quiz');
   const [language, setLanguage] = useState<'de' | 'en' | 'both'>('de');
   const [defaultTimer, setDefaultTimer] = useState(30);
@@ -263,62 +262,63 @@ const CreatorWizardPage: React.FC = () => {
     setStatus(`${idsToAdd.length} Fragen aus CSV importiert`);
   };
 
-  const baseStep = (
-    <div style={card}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Quiz-Name</div>
-          <input style={inputStyle} value={quizName} onChange={(e) => setQuizName(e.target.value)} />
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Sprache</div>
-          <select
-            style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as 'de' | 'en' | 'both')}
-          >
-            <option value="de">Deutsch</option>
-            <option value="en">English</option>
-            <option value="both">Deutsch + English</option>
-          </select>
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Standard-Timer (Sek.)</div>
-          <input
-            type="number"
-            style={inputStyle}
-            value={defaultTimer}
-            min={5}
-            max={120}
-            onChange={(e) => setDefaultTimer(Number(e.target.value))}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const categoriesStep = (
-    <div style={card}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        {catList.map((cat) => (
-          <div
-            key={cat}
-            style={{
-              ...pill(categoryColors[cat]),
-              background: `${categoryColors[cat]}22`,
-              borderColor: `${categoryColors[cat]}55`
-            }}
-          >
-            <img src={categoryIcons[cat]} alt={cat} style={{ width: 20, height: 20 }} />
-            <span>{catLabel[cat]}</span>
-            <span style={{ marginLeft: 8, fontWeight: 800 }}>{categoryCount[cat] || 0}/5</span>
+  const structureStep = (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div style={card}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Quiz-Name</div>
+            <input style={inputStyle} value={quizName} onChange={(e) => setQuizName(e.target.value)} />
           </div>
-        ))}
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Sprache</div>
+            <select
+              style={{ ...inputStyle, background: '#101420', color: '#f8fafc' }}
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as 'de' | 'en' | 'both')}
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+              <option value="both">Deutsch + English</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Standard-Timer (Sek.)</div>
+            <input
+              type="number"
+              style={inputStyle}
+              value={defaultTimer}
+              min={5}
+              max={120}
+              onChange={(e) => setDefaultTimer(Number(e.target.value))}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div style={card}>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>Kategorien & Verteilung</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          {catList.map((cat) => (
+            <div
+              key={cat}
+              style={{
+                ...pill(categoryColors[cat]),
+                background: `${categoryColors[cat]}22`,
+                borderColor: `${categoryColors[cat]}55`
+              }}
+            >
+              <img src={categoryIcons[cat]} alt={cat} style={{ width: 20, height: 20 }} />
+              <span>{catLabel[cat]}</span>
+              <span style={{ marginLeft: 8, fontWeight: 800 }}>{categoryCount[cat] || 0}/5</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 
-  const poolStep = (
+  const questionsStep = (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={card}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -705,7 +705,7 @@ const CreatorWizardPage: React.FC = () => {
     </div>
   );
 
-  const orderStep = (
+  const presentationStep = (
     <div style={card}>
       {selectedQuestions.map((q) => (
         <div
@@ -958,10 +958,9 @@ const CreatorWizardPage: React.FC = () => {
       <h1 style={{ marginBottom: 12 }}>Quiz Wizard</h1>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.9fr', gap: 16 }}>
         <div>
-          {activeStep === 'base' && baseStep}
-          {activeStep === 'categories' && categoriesStep}
-          {activeStep === 'pool' && poolStep}
-          {activeStep === 'order' && orderStep}
+          {activeStep === 'structure' && structureStep}
+          {activeStep === 'questions' && questionsStep}
+          {activeStep === 'presentation' && presentationStep}
           {activeStep === 'review' && reviewStep}
         </div>
         {sidebar}

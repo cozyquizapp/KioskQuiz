@@ -3,6 +3,7 @@ import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
 import { Modal } from '../components/Modal'
+import { useRef } from 'react'
 
 type Category = { name: string; questions: number }
 
@@ -170,6 +171,8 @@ export default function CreatorCanvasPage() {
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
   const [rules, setRules] = useState(draft?.structure.rulesAt || 'start')
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
+  const [introText, setIntroText] = useState(draft?.structure.introText || 'Willkommen zum Cozy Kiosk Quiz!')
+  const [rulesText, setRulesText] = useState(draft?.structure.rulesText || 'Regeln kurz erklaeren')
   const [currentStep, setCurrentStep] = useState(0)
   const [questions, setQuestions] = useState<AnyQuestion[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -194,12 +197,21 @@ export default function CreatorCanvasPage() {
   const [editImage, setEditImage] = useState('')
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
-  const [dragging, setDragging] = useState<null | 'question' | 'answer' | 'timer' | 'points'>(null)
+  const [slideConfig, setSlideConfig] = useState({
+    question: { showTimer: true, showPoints: true },
+    answer: { showTimer: true, showPoints: true },
+    intro: { showRules: true },
+  })
   const [mechanicFilter, setMechanicFilter] = useState<string>('all')
   const [qSearch, setQSearch] = useState('')
   const [qImageOnly, setQImageOnly] = useState(false)
   const [qMechanicOnly, setQMechanicOnly] = useState(false)
   const [qCategory, setQCategory] = useState<string>('all')
+  const previewRef = useRef<HTMLDivElement | null>(null)
+  const [dragging, setDragging] = useState<null | 'question' | 'answer' | 'timer' | 'points'>(null)
+  const [resizing, setResizing] = useState<null | 'question' | 'answer'>(null)
+  const [resizeStartY, setResizeStartY] = useState(0)
+  const [resizeStartSize, setResizeStartSize] = useState(0)
 
   useEffect(() => {
     fetchQuestions()
@@ -240,6 +252,8 @@ export default function CreatorCanvasPage() {
         categories,
         introAt: intro as any,
         rulesAt: rules as any,
+        introText,
+        rulesText,
         mode: 'standard',
       },
       filters: draft?.filters || [],
@@ -286,6 +300,96 @@ export default function CreatorCanvasPage() {
       // ignore for now
     }
     setEditQuestion(null)
+  }
+
+  const snap = (val: number) => Math.min(95, Math.max(0, Math.round(val / 2) * 2))
+
+  const handlePreviewMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!previewRef.current) return
+    const rect = previewRef.current.getBoundingClientRect()
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100
+    const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    setDragging(editTarget)
+    setResizing(null)
+    if (editTarget === 'question') {
+      setLayoutX(snap(xPct))
+      setLayoutY(snap(yPct))
+    }
+    if (editTarget === 'answer') {
+      setAnswerX(snap(xPct))
+      setAnswerY(snap(yPct))
+    }
+    if (editTarget === 'timer') {
+      setTimerX(snap(xPct))
+      setTimerY(snap(yPct))
+    }
+    if (editTarget === 'points') {
+      setPointsX(snap(xPct))
+      setPointsY(snap(yPct))
+    }
+  }
+
+  const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((!dragging && !resizing) || !previewRef.current) return
+    const rect = previewRef.current.getBoundingClientRect()
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100
+    const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    if (dragging === 'question') {
+      setLayoutX(snap(xPct))
+      setLayoutY(snap(yPct))
+    }
+    if (dragging === 'answer') {
+      setAnswerX(snap(xPct))
+      setAnswerY(snap(yPct))
+    }
+    if (dragging === 'timer') {
+      setTimerX(snap(xPct))
+      setTimerY(snap(yPct))
+    }
+    if (dragging === 'points') {
+      setPointsX(snap(xPct))
+      setPointsY(snap(yPct))
+    }
+    if (resizing === 'question') {
+      const delta = yPct - resizeStartY
+      setLayoutSize(Math.max(12, Math.min(48, resizeStartSize + delta * 0.6)))
+    }
+    if (resizing === 'answer') {
+      const delta = yPct - resizeStartY
+      setAnswerSize(Math.max(12, Math.min(48, resizeStartSize + delta * 0.6)))
+    }
+  }
+
+  const handlePreviewMouseUp = () => {
+    setDragging(null)
+    setResizing(null)
+  }
+
+  const handleResizeMouseDown = (
+    e: React.MouseEvent<HTMLDivElement>,
+    target: 'question' | 'answer',
+  ) => {
+    e.stopPropagation()
+    if (!previewRef.current) return
+    const rect = previewRef.current.getBoundingClientRect()
+    const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    setResizing(target)
+    setResizeStartY(yPct)
+    setResizeStartSize(target === 'question' ? layoutSize : answerSize)
+  }
+
+  const getQuestionWarnings = (q: AnyQuestion) => {
+    const warnings: string[] = []
+    const hasImage = Boolean((q as any).imageUrl || (q as any).image)
+    const mech = (q as any).mixedMechanic
+    const updated = (q as any).updatedAt || (q as any).createdAt
+    if (q.category?.toLowerCase() === 'cheese' && !hasImage) warnings.push('Bild fehlt')
+    if (q.category?.toLowerCase() === 'mixed bag' && !mech) warnings.push('Mechanik fehlt')
+    if (updated) {
+      const days = (Date.now() - new Date(updated).getTime()) / (1000 * 60 * 60 * 24)
+      if (days > 60) warnings.push('Alt (>60T)')
+    }
+    return warnings
   }
 
   return (
@@ -437,6 +541,11 @@ export default function CreatorCanvasPage() {
                     ))}
                   </select>
                 </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={pill('#f97316')}>Warnung: kein Bild (Cheese)</div>
+                  <div style={pill('#22c55e')}>Warnung: Mechanik fehlt (Mixed Bag)</div>
+                  <div style={pill('#38bdf8')}>Frische: &gt; 60 Tage</div>
+                </div>
                 <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
                   {filteredQuestions.slice(0, 60).map((q) => (
                     <div
@@ -456,24 +565,25 @@ export default function CreatorCanvasPage() {
                       </div>
                       <div style={{ color: "#cbd5e1", fontSize: 12 }}>
                         {q.category} {(q as any).imageUrl || (q as any).image ? "* Bild" : ""} {(q as any).mixedMechanic ? "* Mechanik" : ""}
+                        {(() => {
+                          const warns = getQuestionWarnings(q)
+                          return warns.length ? ` | ${warns.join(' / ')}` : ''
+                        })()}
                       </div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         <button style={smallBtn()} onClick={() => openEdit(q)}>
                           Bearbeiten
                         </button>
-                        <a href="/question-editor" style={{ color: "#93c5fd", fontSize: 12 }}>
-                          Im Editor oeffnen
-                        </a>
                       </div>
                     </div>
                   ))}
                   {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
                 </div>
                 <div style={{ marginTop: 8, color: '#cbd5e1' }}>
-                  Ausgewaehlt: {selectedIds.length} • Treffer: {filteredQuestions.length}
+                  Ausgewaehlt: {selectedIds.length} | Treffer: {filteredQuestions.length}
                 </div>
                 <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>
-                  Tiefere Bearbeitung: <a href="/question-editor" style={{ color: '#93c5fd' }}>Question Editor oeffnen</a>
+                  Tipp: Warnungen in der Liste zeigen fehlende Bilder/Mechaniken oder alte Fragen.
                 </div>
                 {editQuestion && (
                   <Modal open={true} onClose={() => setEditQuestion(null)} title="Frage bearbeiten (Canvas)">
@@ -507,7 +617,7 @@ export default function CreatorCanvasPage() {
                         </button>
                       </div>
                       <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                        Hinweis: Speichert aktuell nur in der Canvas-Liste; Backend-Update bitte separat im Question Editor.
+                        Hinweis: Speichert im Canvas und schickt ein PUT ans Backend; tiefergehende Pflege weiter im Question Editor.
                       </div>
                     </div>
                   </Modal>
@@ -619,7 +729,7 @@ export default function CreatorCanvasPage() {
                   </div>
                 </div>
               </div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                 {bg && (
                   <div>
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>BG Preview</div>
@@ -632,6 +742,16 @@ export default function CreatorCanvasPage() {
                     <img src={logo} alt="logo" style={{ height: 80, objectFit: 'contain' }} />
                   </div>
                 )}
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ fontWeight: 700 }}>Intro & Regeln</div>
+                  <input value={introText} onChange={(e) => setIntroText(e.target.value)} style={input()} placeholder="Intro-Text" />
+                  <textarea
+                    value={rulesText}
+                    onChange={(e) => setRulesText(e.target.value)}
+                    style={{ ...input(), height: 80, resize: 'vertical' }}
+                    placeholder="Regeln"
+                  />
+                </div>
               </div>
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Frage-Text)</div>
@@ -674,13 +794,10 @@ export default function CreatorCanvasPage() {
                 <label style={{ color: '#cbd5e1', fontSize: 13 }}>
                   <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte anzeigen
                 </label>
-                <a href="/presentation-creator" style={cta(themeColor)}>
-                  Details im Presentation Creator
-                </a>
               </div>
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Elemente anklicken & verschieben</div>
-                <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 6 }}>Target wählen, dann in der Preview klicken.</div>
+                <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 6 }}>Target waehlen, dann im grossen Preview klicken & ziehen.</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(['question', 'answer', 'timer', 'points'] as const).map((target) => (
                     <button
@@ -705,6 +822,15 @@ export default function CreatorCanvasPage() {
                     <label>Antwort-Text (Preview)</label>
                     <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
                   </div>
+                  <div style={field()}>
+                    <label>Aktives Layer</label>
+                    <div style={{ color: '#cbd5e1', fontSize: 13 }}>
+                      {editTarget === 'question' && `Frage @ X:${layoutX}% Y:${layoutY}%`} 
+                      {editTarget === 'answer' && `Antwort @ X:${answerX}% Y:${answerY}%`} 
+                      {editTarget === 'timer' && `Timer @ X:${timerX}% Y:${timerY}%`} 
+                      {editTarget === 'points' && `Punkte @ X:${pointsX}% Y:${pointsY}%`}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -721,12 +847,15 @@ export default function CreatorCanvasPage() {
                   color: '#e5e7eb',
                   minHeight: 140,
                   position: 'relative',
+                  cursor: 'crosshair',
                 }}
+                ref={previewRef}
+                onMouseDown={handlePreviewMouseDown}
               >
                 {logo && <img src={logo} alt="logo" style={{ position: 'absolute', top: 12, right: 12, height: 50 }} />}
                 <div style={{ fontWeight: 800, fontSize: 18 }}>Titel: {name}</div>
                 <div style={{ marginTop: 6, color: '#cbd5e1' }}>
-                  Intro: {intro} â€¢ Regeln: {rules} â€¢ Fragen: {totalQuestions}
+                  Intro: {intro} | Regeln: {rules} | Fragen: {totalQuestions}
                 </div>
                 <div style={{ marginTop: 6, color: '#cbd5e1' }}>Kategorien: {categories.map((c) => c.name).join(', ')}</div>
                 <div style={{ marginTop: 8, fontSize: 12, color: '#e5e7eb' }}>Animation: {animation}</div>
@@ -737,7 +866,7 @@ export default function CreatorCanvasPage() {
                   <div style={pill('#7a5bff')}>Intro ({intro})</div>
                   {categories.map((c, idx) => (
                     <div key={idx} style={pill('#38bdf8')}>
-                      Kategorie {idx + 1}: {c.name} â€¢ {c.questions} Fragen
+                      Kategorie {idx + 1}: {c.name} | {c.questions} Fragen
                     </div>
                   ))}
                   <div style={pill('#22c55e')}>Regeln ({rules})</div>
@@ -747,16 +876,150 @@ export default function CreatorCanvasPage() {
 
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Slide-Preview</div>
-                <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-                  <SlidePreview
-                    title="Frage"
-                    bg="#0f172a"
-                    question={questionText}
-                    answer={answerText}
-                    showTimer={showTimer && slideConfig.question.showTimer}
-                    showPoints={showPoints && slideConfig.question.showPoints}
-                    layout={{ layoutX, layoutY, layoutSize, answerX, answerY, answerSize, timerX, timerY, pointsX, pointsY }}
-                  />
+                <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '300px 1fr', alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <div style={{ fontWeight: 700 }}>Layer</div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {[
+                        { key: 'question', label: 'Frage', visible: true },
+                        { key: 'answer', label: 'Antwort', visible: true },
+                        { key: 'timer', label: 'Timer', visible: showTimer && slideConfig.question.showTimer },
+                        { key: 'points', label: 'Punkte', visible: showPoints && slideConfig.question.showPoints },
+                      ].map((layer) => (
+                        <div
+                          key={layer.key}
+                          style={{
+                            ...pill(editTarget === layer.key ? '#7a5bff' : '#94a3b8'),
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => setEditTarget(layer.key as any)}
+                        >
+                          <span>{layer.label}</span>
+                          <span style={{ fontSize: 12, color: layer.visible ? '#e2e8f0' : '#94a3b8' }}>
+                            {layer.visible ? 'sichtbar' : 'aus'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Frage</div>
+                    <div
+                      ref={previewRef}
+                      onMouseDown={handlePreviewMouseDown}
+                      onMouseMove={handlePreviewMouseMove}
+                      onMouseUp={handlePreviewMouseUp}
+                      onMouseLeave={handlePreviewMouseUp}
+                      style={{
+                        position: 'relative',
+                        height: 260,
+                        borderRadius: 12,
+                        padding: 10,
+                        background: '#0f172a',
+                        overflow: 'hidden',
+                        cursor: dragging || resizing ? 'grabbing' : 'crosshair',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${layoutX}%`,
+                          top: `${layoutY}%`,
+                          transform: 'translate(-0%, -0%)',
+                          fontSize: layoutSize,
+                          fontWeight: 800,
+                          border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
+                          padding: 4,
+                        }}
+                      >
+                        {questionText}
+                        <div
+                          onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
+                          style={{
+                            position: 'absolute',
+                            right: -8,
+                            bottom: -8,
+                            width: 14,
+                            height: 14,
+                            borderRadius: 4,
+                            background: '#7a5bff',
+                            border: '1px solid rgba(255,255,255,0.4)',
+                            cursor: 'nwse-resize',
+                          }}
+                        />
+                      </div>
+                      {answerText && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${answerX}%`,
+                            top: `${answerY}%`,
+                            transform: 'translate(-0%, -0%)',
+                            fontSize: answerSize,
+                            fontWeight: 700,
+                            color: '#a5f3fc',
+                            border: editTarget === 'answer' ? '1px dashed #7a5bff' : 'none',
+                            padding: 4,
+                          }}
+                        >
+                          {answerText}
+                          <div
+                            onMouseDown={(e) => handleResizeMouseDown(e, 'answer')}
+                            style={{
+                              position: 'absolute',
+                              right: -8,
+                              bottom: -8,
+                              width: 14,
+                              height: 14,
+                              borderRadius: 4,
+                              background: '#7a5bff',
+                              border: '1px solid rgba(255,255,255,0.4)',
+                              cursor: 'nwse-resize',
+                            }}
+                          />
+                        </div>
+                      )}
+                      {showTimer && slideConfig.question.showTimer && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${timerX}%`,
+                            top: `${timerY}%`,
+                            padding: '6px 10px',
+                            borderRadius: 10,
+                            background: 'rgba(255,255,255,0.12)',
+                            color: '#e2e8f0',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            border: editTarget === 'timer' ? '1px dashed #7a5bff' : 'none',
+                          }}
+                        >
+                          Timer
+                        </div>
+                      )}
+                      {showPoints && slideConfig.question.showPoints && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${pointsX}%`,
+                            top: `${pointsY}%`,
+                            padding: '6px 10px',
+                            borderRadius: 10,
+                            background: 'rgba(255,255,255,0.12)',
+                            color: '#e2e8f0',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            border: editTarget === 'points' ? '1px dashed #7a5bff' : 'none',
+                          }}
+                        >
+                          Punkte
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>Klicken um zu setzen, Drag fuer Feintuning, Handle fuer Groesse.</div>
+                  </div>
                   <SlidePreview
                     title="Antwort"
                     bg="#0b1724"
@@ -769,8 +1032,8 @@ export default function CreatorCanvasPage() {
                   <SlidePreview
                     title="Intro"
                     bg="#111827"
-                    question="Intro"
-                    answer={slideConfig.intro.showRules ? 'Regeln anzeigen' : ''}
+                    question={introText}
+                    answer={slideConfig.intro.showRules ? rulesText : ''}
                     showTimer={false}
                     showPoints={false}
                     layout={{ layoutX: 10, layoutY: 20, layoutSize: 22, answerX: 10, answerY: 50, answerSize: 16, timerX: 0, timerY: 0, pointsX: 0, pointsY: 0 }}
@@ -785,12 +1048,45 @@ export default function CreatorCanvasPage() {
                 <button
                   style={smallBtn()}
                   onClick={() => {
+                    const data = {
+                      name,
+                      categories,
+                      intro,
+                      rules,
+                      introText,
+                      rulesText,
+                      theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
+                      selectedQuestionIds: selectedIds,
+                    }
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `${name.replace(/\s+/g, '-').toLowerCase() || 'quiz'}.json`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  }}
+                >
+                  Export JSON
+                </button>
+                <button
+                  style={smallBtn()}
+                  onClick={() => {
                     persist()
                     alert('Draft gespeichert.')
                   }}
                 >
                   Speichern
                 </button>
+                <a href="/moderator" style={smallBtn()}>
+                  Moderator
+                </a>
+                <a href="/beamer" style={smallBtn()}>
+                  Beamer
+                </a>
+                <a href="/team" style={smallBtn()}>
+                  Team
+                </a>
               </div>
             </section>
           )}
@@ -865,8 +1161,3 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
-  const [slideConfig, setSlideConfig] = useState({
-    question: { showTimer: true, showPoints: true },
-    answer: { showTimer: true, showPoints: true },
-    intro: { showRules: true },
-  })

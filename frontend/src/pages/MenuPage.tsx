@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 
 type LinkItem = { path: string; label: string; note?: string }
 
@@ -85,15 +85,15 @@ const MenuPage = () => {
             Cozy Kiosk Quiz | Navigation
           </div>
           <h1 style={{ margin: '10px 0 6px' }}>Schnellzugriff</h1>
-          <p style={{ margin: '0 0 6px', color: '#94a3b8' }}>Wähle den Bereich, den du öffnen willst.</p>
+          <p style={{ margin: '0 0 6px', color: '#94a3b8' }}>Waehle den Bereich, den du oeffnen willst.</p>
           <p style={{ margin: 0, color: '#cbd5e1', fontSize: 13 }}>
-            Falls direkte URLs nicht laden: erst diese Seite öffnen und hier auf den gewünschten Link klicken (SPA-Routing).
+            Falls direkte URLs nicht laden: erst diese Seite oeffnen und hier auf den gewuenschten Link klicken (SPA-Routing).
           </p>
         </div>
 
         <div style={{ display: 'grid', gap: 18 }}>
           <CardList title="Live spielen" links={liveLinks} />
-          <CardList title="Erstellen (Flow)" subtitle="Empfohlene Reihenfolge 1 → 4" links={creationFlow} />
+          <CardList title="Erstellen (Flow)" subtitle="Empfohlene Reihenfolge 1 -> 4" links={creationFlow} />
           <CardList title="Meta" subtitle="Auswertung & Zusatztools" links={metaLinks} />
         </div>
       </div>

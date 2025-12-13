@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadDraft, publishDraft, saveDraft } from '../services/quizzes'
+import { exportDraftFile, loadDraft, publishDraft, saveDraft } from '../services/quizzes'
 import type { CategoryBlock, StructureState, ThemeSettings } from '../types/quiz'
 
 const defaultStructure: StructureState = {
@@ -23,6 +23,7 @@ export default function Creator() {
   const [questionFilters] = useState<string[]>(quickFilters)
   const [theme, setTheme] = useState<ThemeSettings>({ font: 'Aktuell', color: '#5f4cf5', animation: 'Slide' })
   const [lastSaved, setLastSaved] = useState<number | null>(null)
+  const [name, setName] = useState('Neues Quiz')
 
   useEffect(() => {
     const draft = loadDraft()
@@ -30,13 +31,14 @@ export default function Creator() {
       setStructure(draft.structure)
       setTheme(draft.theme)
       setLastSaved(draft.updatedAt)
+      setName(draft.name)
     }
   }, [])
 
   useEffect(() => {
-    const draft = saveDraft({ structure, filters: questionFilters, theme })
+    const draft = saveDraft({ structure, filters: questionFilters, theme, name })
     setLastSaved(draft.updatedAt)
-  }, [structure, questionFilters, theme])
+  }, [structure, questionFilters, theme, name])
   const totalQuestions = useMemo(
     () => structure.categories.reduce((sum, cat) => sum + cat.questions, 0),
     [structure.categories],
@@ -72,6 +74,15 @@ export default function Creator() {
       <p>Geführter Flow in vier Phasen. Starte mit Struktur und arbeite dich vor.</p>
       <div className="muted-small">
         {lastSaved ? `Entwurf gespeichert: ${new Date(lastSaved).toLocaleTimeString()}` : 'Kein Entwurf geladen'}
+      </div>
+
+      <div className="section-title">Quiz-Titel</div>
+      <div className="form-grid">
+        <div className="field">
+          <label>Name</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+          <span className="muted-small">Für Export/Publish verwendet.</span>
+        </div>
       </div>
 
       <div className="stepper">
@@ -244,12 +255,21 @@ export default function Creator() {
             <button
               className="btn primary"
               onClick={() => {
-                const draft = saveDraft({ structure, filters: questionFilters, theme })
+                const draft = saveDraft({ structure, filters: questionFilters, theme, name })
                 publishDraft(draft)
                 setLastSaved(Date.now())
               }}
             >
               Quiz speichern
+            </button>
+            <button
+              className="btn"
+              onClick={() => {
+                const draft = saveDraft({ structure, filters: questionFilters, theme, name })
+                exportDraftFile(draft)
+              }}
+            >
+              JSON Export
             </button>
             <button className="btn">PDF/PNG export</button>
           </div>

@@ -25,5 +25,6 @@ export type QuizDraft = {
   structure: StructureState
   filters: string[]
   theme: ThemeSettings
+  description?: string
   updatedAt: number
 }

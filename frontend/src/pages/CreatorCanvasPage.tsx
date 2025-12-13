@@ -70,6 +70,8 @@ export default function CreatorCanvasPage() {
   const [editTarget, setEditTarget] = useState<'question' | 'answer' | 'timer' | 'points'>('question')
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
+  const [dragging, setDragging] = useState<null | 'question' | 'answer' | 'timer' | 'points'>(null)
+  const [mechanicFilter, setMechanicFilter] = useState<string>('all')
   const [qSearch, setQSearch] = useState('')
   const [qImageOnly, setQImageOnly] = useState(false)
   const [qMechanicOnly, setQMechanicOnly] = useState(false)
@@ -88,11 +90,22 @@ export default function CreatorCanvasPage() {
     return questions.filter((q) => {
       const matchesText = q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
       const matchesImage = qImageOnly ? Boolean((q as any).imageUrl || (q as any).image) : true
-      const matchesMech = qMechanicOnly ? Boolean((q as any).mixedMechanic) : true
+      const mech = (q as any).mixedMechanic
+      const matchesMech = qMechanicOnly ? Boolean(mech) : true
+      const matchesMechSelect = mechanicFilter === 'all' ? true : mech === mechanicFilter
       const matchesCategory = qCategory === 'all' ? true : q.category === qCategory
-      return matchesText && matchesImage && matchesMech && matchesCategory
+      return matchesText && matchesImage && matchesMech && matchesMechSelect && matchesCategory
     })
-  }, [questions, qSearch, qImageOnly, qMechanicOnly, qCategory])
+  }, [questions, qSearch, qImageOnly, qMechanicOnly, qCategory, mechanicFilter])
+
+  const mechanicOptions = useMemo(() => {
+    const set = new Set<string>()
+    questions.forEach((q) => {
+      const mech = (q as any).mixedMechanic
+      if (mech) set.add(mech)
+    })
+    return Array.from(set)
+  }, [questions])
 
   const persist = () => {
     savePlayDraft({
@@ -259,6 +272,14 @@ export default function CreatorCanvasPage() {
                   <label style={{ color: '#cbd5e1', fontSize: 13 }}>
                     <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
                   </label>
+                  <select style={input()} value={mechanicFilter} onChange={(e) => setMechanicFilter(e.target.value)}>
+                    <option value="all">Alle Mechaniken</option>
+                    {mechanicOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
                   {filteredQuestions.slice(0, 60).map((q) => (
@@ -472,10 +493,11 @@ export default function CreatorCanvasPage() {
                     border: '1px dashed rgba(255,255,255,0.2)',
                     overflow: 'hidden',
                   }}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                     const relX = ((e.clientX - rect.left) / rect.width) * 100
                     const relY = ((e.clientY - rect.top) / rect.height) * 100
+                    setDragging(editTarget)
                     if (editTarget === 'question') {
                       setLayoutX(Math.max(0, Math.min(100, relX)))
                       setLayoutY(Math.max(0, Math.min(100, relY)))
@@ -490,6 +512,27 @@ export default function CreatorCanvasPage() {
                       setPointsY(Math.max(0, Math.min(100, relY)))
                     }
                   }}
+                  onMouseMove={(e) => {
+                    if (!dragging) return
+                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                    const relX = ((e.clientX - rect.left) / rect.width) * 100
+                    const relY = ((e.clientY - rect.top) / rect.height) * 100
+                    if (dragging === 'question') {
+                      setLayoutX(Math.max(0, Math.min(100, relX)))
+                      setLayoutY(Math.max(0, Math.min(100, relY)))
+                    } else if (dragging === 'answer') {
+                      setAnswerX(Math.max(0, Math.min(100, relX)))
+                      setAnswerY(Math.max(0, Math.min(100, relY)))
+                    } else if (dragging === 'timer') {
+                      setTimerX(Math.max(0, Math.min(100, relX)))
+                      setTimerY(Math.max(0, Math.min(100, relY)))
+                    } else if (dragging === 'points') {
+                      setPointsX(Math.max(0, Math.min(100, relX)))
+                      setPointsY(Math.max(0, Math.min(100, relY)))
+                    }
+                  }}
+                  onMouseUp={() => setDragging(null)}
+                  onMouseLeave={() => setDragging(null)}
                 >
                   <div
                     style={{

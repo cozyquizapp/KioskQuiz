@@ -1,5 +1,9 @@
 import { CSSProperties } from 'react';
 import { theme } from '../theme';
+import { getDraftTheme } from '../utils/draft';
+
+const draftTheme = getDraftTheme();
+const primary = draftTheme?.color || '#6dd5fa';
 
 export const pageStyleTeam: CSSProperties = {
   position: 'relative',
@@ -7,7 +11,10 @@ export const pageStyleTeam: CSSProperties = {
   padding: '24px 14px 32px',
   overflow: 'hidden',
   color: 'white',
-  background: 'var(--bg) url("/background.png") center/cover fixed'
+  background: draftTheme?.background
+    ? `url(${draftTheme.background}) center/cover fixed`
+    : 'var(--bg) url("/background.png") center/cover fixed',
+  fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily
 };
 
 export const gridOverlay: CSSProperties = {
@@ -57,25 +64,28 @@ export const headerBarTeam: CSSProperties = {
   background: 'rgba(16,20,31,0.7)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
   backdropFilter: 'blur(16px)'
 };
 
 export const pillSmall: CSSProperties = {
   padding: '8px 12px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.06)',
+  background: primary ? `${primary}11` : 'rgba(255,255,255,0.06)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
   fontSize: 12,
-  fontWeight: 700
+  fontWeight: 700,
+  color: '#e2e8f0'
 };
 
 export const logoBadge: CSSProperties = {
   padding: '10px 12px',
   borderRadius: 12,
-  background: 'linear-gradient(135deg, #6dd5fa, #c471ed)',
+  background: primary
+    ? `linear-gradient(135deg, ${primary}, ${primary}cc)`
+    : 'linear-gradient(135deg, #6dd5fa, #c471ed)',
   color: '#0d0f14',
   fontWeight: 900,
   letterSpacing: '0.04em',

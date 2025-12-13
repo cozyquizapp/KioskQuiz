@@ -11,6 +11,7 @@ import {
   setLanguage as setLanguageApi
 } from '../api';
 import { theme } from '../theme';
+import { getDraftTheme } from '../utils/draft';
 import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
@@ -127,6 +128,7 @@ const COPY = {
 } as const;
 
 function TeamView({ roomCode }: TeamViewProps) {
+  const draftTheme = getDraftTheme();
   const [teamName, setTeamName] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -1206,15 +1208,17 @@ const handleSubmit = async () => {
         </button>
       )}
       <div style={footerLogo}>
-        {/* Logo entfernt, damit Bingo nicht verdeckt wird */}
+        <img
+          src={draftTheme?.logoUrl || '/cozy-logo.svg'}
+          alt="cozy"
+          style={{ width: 120, opacity: 0.8, objectFit: 'contain' }}
+        />
       </div>
     </div>
   );
 }
 
 export default TeamView;
-
-
 
 
 

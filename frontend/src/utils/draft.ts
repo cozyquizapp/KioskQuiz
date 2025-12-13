@@ -22,6 +22,8 @@ export type PlayDraft = {
   updatedAt: number
 }
 
+export const getDraftTheme = () => loadPlayDraft()?.theme;
+
 export function loadPlayDraft(): PlayDraft | null {
   try {
     const raw = localStorage.getItem(KEY)

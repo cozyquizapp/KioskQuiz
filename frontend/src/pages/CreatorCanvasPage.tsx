@@ -214,6 +214,7 @@ export default function CreatorCanvasPage() {
   const [resizeStartSize, setResizeStartSize] = useState(0)
   const [currentSlideId, setCurrentSlideId] = useState<string>('intro')
   const [showQuestionDrawer, setShowQuestionDrawer] = useState(false)
+  const [beamerPreview, setBeamerPreview] = useState(true)
 
   useEffect(() => {
     fetchQuestions()
@@ -412,7 +413,7 @@ export default function CreatorCanvasPage() {
         padding: '28px 18px',
       }}
     >
-      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gap: 14, gridTemplateColumns: '280px 1fr' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gap: 14, gridTemplateColumns: '260px 1fr' }}>
         <div style={sideCard()}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Schritte</div>
           <Stepper current={currentStep} onChange={setCurrentStep} />
@@ -442,7 +443,7 @@ export default function CreatorCanvasPage() {
           {currentStep === 0 && (
             <section style={card()}>
               <h2>Struktur</h2>
-              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                 <div style={field()}>
                   <label>Name</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} style={input()} />
@@ -783,7 +784,7 @@ export default function CreatorCanvasPage() {
                   </select>
                 </div>
               </div>
-              <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '220px 1fr 320px', gap: 12, alignItems: 'start' }}>
+              <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '240px 1.4fr 0.9fr', gap: 12, alignItems: 'start' }}>
                 <div style={{ display: 'grid', gap: 8 }}>
                   <div style={{ fontWeight: 800 }}>Slides</div>
                   <div style={{ display: 'grid', gap: 6 }}>
@@ -813,7 +814,8 @@ export default function CreatorCanvasPage() {
                     onMouseLeave={handlePreviewMouseUp}
                     style={{
                       position: 'relative',
-                      height: 320,
+                      width: '100%',
+                      aspectRatio: '16 / 9',
                       borderRadius: 12,
                       padding: 10,
                       background: bg ? `url(${bg}) center/cover` : '#0f172a',
@@ -956,6 +958,15 @@ export default function CreatorCanvasPage() {
                     <div style={field()}>
                       <label>Antwort-Text</label>
                       <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700 }}>Preview</div>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        <input type="radio" checked={beamerPreview} onChange={() => setBeamerPreview(true)} /> Beamer
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        <input type="radio" checked={!beamerPreview} onChange={() => setBeamerPreview(false)} /> Team
+                      </label>
                     </div>
                     <div style={{ display: 'grid', gap: 6 }}>
                       <div style={{ fontWeight: 700 }}>Elemente</div>
@@ -1117,24 +1128,24 @@ export default function CreatorCanvasPage() {
                       ))}
                     </div>
                   </div>
-                  <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8 }}>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Frage</div>
-                    <div
-                      ref={previewRef}
-                      onMouseDown={handlePreviewMouseDown}
-                      onMouseMove={handlePreviewMouseMove}
-                      onMouseUp={handlePreviewMouseUp}
-                      onMouseLeave={handlePreviewMouseUp}
-                      style={{
-                        position: 'relative',
-                        height: 260,
-                        borderRadius: 12,
-                        padding: 10,
-                        background: '#0f172a',
-                        overflow: 'hidden',
-                        cursor: dragging || resizing ? 'grabbing' : 'crosshair',
-                      }}
-                    >
+                    <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 6 }}>{beamerPreview ? 'Beamer-Preview' : 'Team-Preview'}</div>
+                      <div
+                        ref={previewRef}
+                        onMouseDown={handlePreviewMouseDown}
+                        onMouseMove={handlePreviewMouseMove}
+                        onMouseUp={handlePreviewMouseUp}
+                        onMouseLeave={handlePreviewMouseUp}
+                        style={{
+                          position: 'relative',
+                          height: 260,
+                          borderRadius: 12,
+                          padding: 10,
+                          background: bg ? `url(${bg}) center/cover` : beamerPreview ? '#0f172a' : '#0b1724',
+                          overflow: 'hidden',
+                          cursor: dragging || resizing ? 'grabbing' : 'crosshair',
+                        }}
+                      >
                       <div
                         style={{
                           position: 'absolute',

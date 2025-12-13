@@ -47,6 +47,8 @@ const smallBtn = () => ({
   fontWeight: 700,
 })
 
+const field = () => ({ display: 'flex', flexDirection: 'column', gap: 6 })
+
 export default function BaukastenPage() {
   const draft = loadPlayDraft()
   const [tab, setTab] = useState<'struktur' | 'fragen' | 'slides' | 'theme' | 'publish'>('slides')

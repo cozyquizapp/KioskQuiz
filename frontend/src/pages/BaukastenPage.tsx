@@ -86,6 +86,7 @@ export default function BaukastenPage() {
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
     { name: 'Playful', color: '#f97316', bg: 'linear-gradient(135deg,#1d1b27,#312e81)', font: 'Nunito', animation: 'Pop' },
   ]
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
@@ -494,11 +495,11 @@ export default function BaukastenPage() {
 
     // slides tab
     return (
-      <div style={{ display: 'grid', gap: 10 }}>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
-        <div style={{ color: '#cbd5e1' }}>Elemente auf der Bühne anklicken & verschieben, Feinjustierung per Slider.</div>
-        <div style={field()}>
-          <label>Frage-Text</label>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
+          <div style={{ color: '#cbd5e1' }}>Elemente auf der Bühne anklicken & verschieben, Feinjustierung per Slider.</div>
+          <div style={field()}>
+            <label>Frage-Text</label>
           <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
         </div>
         <div style={field()}>
@@ -530,48 +531,53 @@ export default function BaukastenPage() {
             Antwort Groesse
             <input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} />
           </label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-              <input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /> Timer
-            </label>
-            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-              <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte
-            </label>
-            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-              <input type="checkbox" checked={showAnswer} onChange={(e) => setShowAnswer(e.target.checked)} /> Antwort einblenden
-            </label>
-            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-              <input type="checkbox" checked={lockDrag} onChange={(e) => setLockDrag(e.target.checked)} /> Drag sperren
-            </label>
-            <div style={{ display: 'grid', gap: 4 }}>
-              <div style={{ fontWeight: 700 }}>Layer Sichtbarkeit</div>
-              {(['question', 'answer', 'timer', 'points'] as const).map((key) => (
-                <label key={key} style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  <input
-                    type="checkbox"
-                    checked={(layerVisibility as any)[key]}
-                    onChange={(e) => setLayerVisibility((s) => ({ ...s, [key]: e.target.checked }))}
-                  />{' '}
-                  {key} sichtbar
-                </label>
-              ))}
+          <button style={smallBtn()} onClick={() => setShowAdvanced((v) => !v)}>
+            {showAdvanced ? 'Advanced zuklappen' : 'Advanced anzeigen'}
+          </button>
+          {showAdvanced && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /> Timer
+              </label>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte
+              </label>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={showAnswer} onChange={(e) => setShowAnswer(e.target.checked)} /> Antwort einblenden
+              </label>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={lockDrag} onChange={(e) => setLockDrag(e.target.checked)} /> Drag sperren
+              </label>
+              <div style={{ display: 'grid', gap: 4 }}>
+                <div style={{ fontWeight: 700 }}>Layer Sichtbarkeit</div>
+                {(['question', 'answer', 'timer', 'points'] as const).map((key) => (
+                  <label key={key} style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={(layerVisibility as any)[key]}
+                      onChange={(e) => setLayerVisibility((s) => ({ ...s, [key]: e.target.checked }))}
+                    />{' '}
+                    {key} sichtbar
+                  </label>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {(['question', 'answer', 'timer', 'points'] as const).map((t) => (
+                  <button
+                    key={t}
+                    style={{
+                      ...smallBtn(),
+                      background: editTarget === t ? '#7a5bff33' : 'rgba(255,255,255,0.08)',
+                      borderColor: editTarget === t ? '#7a5bff88' : 'rgba(255,255,255,0.16)',
+                    }}
+                    onClick={() => setEditTarget(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {(['question', 'answer', 'timer', 'points'] as const).map((t) => (
-                <button
-                  key={t}
-                  style={{
-                    ...smallBtn(),
-                    background: editTarget === t ? '#7a5bff33' : 'rgba(255,255,255,0.08)',
-                    borderColor: editTarget === t ? '#7a5bff88' : 'rgba(255,255,255,0.16)',
-                  }}
-                  onClick={() => setEditTarget(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     )

@@ -11,10 +11,7 @@ const liveLinks: LinkItem[] = [
 ]
 
 const creationFlow: LinkItem[] = [
-  { path: '/creator-wizard', label: 'Creator Wizard', note: 'Schritt 1 – Struktur & Auswahl' },
-  { path: '/presentation-creator', label: 'Presentation Creator', note: 'Slides/Hintergrund/Offsets' },
-  { path: '/question-editor', label: 'Question Editor', note: 'Bilder, Layout, Antworten' },
-  { path: '/draft-import', label: 'Draft Import', note: 'Studio-Export laden (Theme/Struktur)' },
+  { path: '/creator-canvas', label: 'Creator Canvas', note: 'Alles in einem Flow (Struktur, Theme, Slides, Save)' },
 ]
 
 const metaLinks: LinkItem[] = [{ path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }]

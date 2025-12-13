@@ -29,6 +29,10 @@ export default function CreatorCanvasPage() {
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
   const [layoutSize, setLayoutSize] = useState(18)
+  const [qSearch, setQSearch] = useState('')
+  const [qImageOnly, setQImageOnly] = useState(false)
+  const [qMechanicOnly, setQMechanicOnly] = useState(false)
+  const [qCategory, setQCategory] = useState<string>('all')
 
   useEffect(() => {
     fetchQuestions()
@@ -37,6 +41,17 @@ export default function CreatorCanvasPage() {
   }, [])
 
   const totalQuestions = useMemo(() => categories.reduce((s, c) => s + c.questions, 0), [categories])
+
+  const filteredQuestions = useMemo(() => {
+    const term = qSearch.toLowerCase()
+    return questions.filter((q) => {
+      const matchesText = q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
+      const matchesImage = qImageOnly ? Boolean((q as any).imageUrl || (q as any).image) : true
+      const matchesMech = qMechanicOnly ? Boolean((q as any).mixedMechanic) : true
+      const matchesCategory = qCategory === 'all' ? true : q.category === qCategory
+      return matchesText && matchesImage && matchesMech && matchesCategory
+    })
+  }, [questions, qSearch, qImageOnly, qMechanicOnly, qCategory])
 
   const persist = () => {
     savePlayDraft({
@@ -197,8 +212,30 @@ export default function CreatorCanvasPage() {
             <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
               Wähle Fragen für dein Quiz. Filter/Checks kannst du im Question Editor vertiefen.
             </div>
+            <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 8 }}>
+              <input
+                style={input()}
+                placeholder="Suche nach Text/Kategorie"
+                value={qSearch}
+                onChange={(e) => setQSearch(e.target.value)}
+              />
+              <select style={input()} value={qCategory} onChange={(e) => setQCategory(e.target.value)}>
+                <option value="all">Alle Kategorien</option>
+                {[...new Set(questions.map((q) => q.category))].map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={qImageOnly} onChange={(e) => setQImageOnly(e.target.checked)} /> Nur mit Bild
+              </label>
+              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
+              </label>
+            </div>
             <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
-              {questions.slice(0, 50).map((q) => (
+              {filteredQuestions.slice(0, 60).map((q) => (
                 <label
                   key={q.id}
                   style={{
@@ -215,13 +252,15 @@ export default function CreatorCanvasPage() {
                     <div style={{ fontWeight: 700 }}>{q.text}</div>
                   </div>
                   <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                    {q.category} {q.imageUrl ? '• Bild' : ''}
+                    {q.category} {(q as any).imageUrl || (q as any).image ? '• Bild' : ''} {(q as any).mixedMechanic ? '• Mechanik' : ''}
                   </div>
                 </label>
               ))}
-              {questions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
+              {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
             </div>
-            <div style={{ marginTop: 8, color: '#cbd5e1' }}>Ausgewählt: {selectedIds.length}</div>
+            <div style={{ marginTop: 8, color: '#cbd5e1' }}>
+              Ausgewählt: {selectedIds.length} • Treffer: {filteredQuestions.length}
+            </div>
           </section>
           )}
 

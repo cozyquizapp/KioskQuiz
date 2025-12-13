@@ -212,6 +212,8 @@ export default function CreatorCanvasPage() {
   const [resizing, setResizing] = useState<null | 'question' | 'answer'>(null)
   const [resizeStartY, setResizeStartY] = useState(0)
   const [resizeStartSize, setResizeStartSize] = useState(0)
+  const [currentSlideId, setCurrentSlideId] = useState<string>('intro')
+  const [showQuestionDrawer, setShowQuestionDrawer] = useState(false)
 
   useEffect(() => {
     fetchQuestions()
@@ -220,6 +222,15 @@ export default function CreatorCanvasPage() {
   }, [])
 
   const totalQuestions = useMemo(() => categories.reduce((s, c) => s + c.questions, 0), [categories])
+
+  const slides = useMemo(() => {
+    const list: { id: string; title: string }[] = []
+    list.push({ id: 'intro', title: 'Intro' })
+    list.push({ id: 'rules', title: 'Regeln' })
+    categories.forEach((c, idx) => list.push({ id: `cat-${idx}`, title: `Kategorie ${idx + 1}: ${c.name}` }))
+    list.push({ id: 'final', title: 'Finale' })
+    return list
+  }, [categories])
 
   const filteredQuestions = useMemo(() => {
     const term = qSearch.toLowerCase()
@@ -511,6 +522,12 @@ export default function CreatorCanvasPage() {
                 <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
                   Filter/Checks kannst du im Question Editor vertiefen. Hier schnell picken/abwaehlen.
                 </div>
+                <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button style={smallBtn()} onClick={() => setShowQuestionDrawer(true)}>
+                    Fragen-Drawer oeffnen
+                  </button>
+                  <div style={{ color: '#cbd5e1', fontSize: 12 }}>Drawer zeigt denselben Picker als Overlay.</div>
+                </div>
                 <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 8 }}>
                   <input
                     style={input()}
@@ -585,6 +602,105 @@ export default function CreatorCanvasPage() {
                 <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>
                   Tipp: Warnungen in der Liste zeigen fehlende Bilder/Mechaniken oder alte Fragen.
                 </div>
+                {showQuestionDrawer && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.7)',
+                      zIndex: 2000,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 12,
+                    }}
+                    onClick={() => setShowQuestionDrawer(false)}
+                  >
+                    <div
+                      style={{
+                        width: 'min(960px, 100%)',
+                        maxHeight: '80vh',
+                        background: '#0f172a',
+                        borderRadius: 16,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        padding: 12,
+                        overflow: 'auto',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ fontWeight: 800 }}>Fragen-Drawer</div>
+                        <button style={smallBtn()} onClick={() => setShowQuestionDrawer(false)}>
+                          Schliessen
+                        </button>
+                      </div>
+                      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 8 }}>
+                        <input
+                          style={input()}
+                          placeholder="Suche nach Text/Kategorie"
+                          value={qSearch}
+                          onChange={(e) => setQSearch(e.target.value)}
+                        />
+                        <select style={input()} value={qCategory} onChange={(e) => setQCategory(e.target.value)}>
+                          <option value="all">Alle Kategorien</option>
+                          {[...new Set(questions.map((q) => q.category))].map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                        <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                          <input type="checkbox" checked={qImageOnly} onChange={(e) => setQImageOnly(e.target.checked)} /> Nur mit Bild
+                        </label>
+                        <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                          <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
+                        </label>
+                        <select style={input()} value={mechanicFilter} onChange={(e) => setMechanicFilter(e.target.value)}>
+                          <option value="all">Alle Mechaniken</option>
+                          {mechanicOptions.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ maxHeight: 400, overflow: 'auto', display: 'grid', gap: 8 }}>
+                        {filteredQuestions.slice(0, 80).map((q) => (
+                          <div
+                            key={q.id}
+                            style={{
+                              display: 'grid',
+                              gap: 6,
+                              padding: 10,
+                              borderRadius: 12,
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
+                              <div style={{ fontWeight: 700 }}>{q.text}</div>
+                            </div>
+                            <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                              {q.category} {(q as any).imageUrl || (q as any).image ? '* Bild' : ''}{' '}
+                              {(q as any).mixedMechanic ? '* Mechanik' : ''}
+                              {(() => {
+                                const warns = getQuestionWarnings(q)
+                                return warns.length ? ` | ${warns.join(' / ')}` : ''
+                              })()}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <button style={smallBtn()} onClick={() => openEdit(q)}>
+                                Bearbeiten
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {editQuestion && (
                   <Modal open={true} onClose={() => setEditQuestion(null)} title="Frage bearbeiten (Canvas)">
                     <div style={{ display: 'grid', gap: 10 }}>
@@ -667,168 +783,265 @@ export default function CreatorCanvasPage() {
                   </select>
                 </div>
               </div>
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Visibility je Slide-Typ</div>
-                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-                  <div style={field()}>
-                    <label>Frage-Slide</label>
-                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={slideConfig.question.showTimer}
-                        onChange={(e) =>
-                          setSlideConfig((s) => ({ ...s, question: { ...s.question, showTimer: e.target.checked } }))
-                        }
-                      />{' '}
-                      Timer
-                    </label>
-                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={slideConfig.question.showPoints}
-                        onChange={(e) =>
-                          setSlideConfig((s) => ({ ...s, question: { ...s.question, showPoints: e.target.checked } }))
-                        }
-                      />{' '}
-                      Punkte
-                    </label>
-                  </div>
-                  <div style={field()}>
-                    <label>Antwort-Slide</label>
-                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={slideConfig.answer.showTimer}
-                        onChange={(e) =>
-                          setSlideConfig((s) => ({ ...s, answer: { ...s.answer, showTimer: e.target.checked } }))
-                        }
-                      />{' '}
-                      Timer
-                    </label>
-                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={slideConfig.answer.showPoints}
-                        onChange={(e) =>
-                          setSlideConfig((s) => ({ ...s, answer: { ...s.answer, showPoints: e.target.checked } }))
-                        }
-                      />{' '}
-                      Punkte
-                    </label>
-                  </div>
-                  <div style={field()}>
-                    <label>Intro</label>
-                    <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={slideConfig.intro.showRules}
-                        onChange={(e) => setSlideConfig((s) => ({ ...s, intro: { showRules: e.target.checked } }))}
-                      />{' '}
-                      Regeln zeigen
-                    </label>
+              <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '220px 1fr 320px', gap: 12, alignItems: 'start' }}>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ fontWeight: 800 }}>Slides</div>
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {slides.map((s) => (
+                      <div
+                        key={s.id}
+                        style={{
+                          ...pill(currentSlideId === s.id ? '#7a5bff' : '#94a3b8'),
+                          cursor: 'pointer',
+                          borderColor: currentSlideId === s.id ? '#7a5bffcc' : 'rgba(255,255,255,0.16)',
+                        }}
+                        onClick={() => setCurrentSlideId(s.id)}
+                      >
+                        {s.title}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                {bg && (
-                  <div>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>BG Preview</div>
-                    <img src={bg} alt="bg" style={{ width: 180, height: 100, objectFit: 'cover', borderRadius: 12 }} />
-                  </div>
-                )}
-                {logo && (
-                  <div>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Logo Preview</div>
-                    <img src={logo} alt="logo" style={{ height: 80, objectFit: 'contain' }} />
-                  </div>
-                )}
-                <div style={{ display: 'grid', gap: 6 }}>
-                  <div style={{ fontWeight: 700 }}>Intro & Regeln</div>
-                  <input value={introText} onChange={(e) => setIntroText(e.target.value)} style={input()} placeholder="Intro-Text" />
-                  <textarea
-                    value={rulesText}
-                    onChange={(e) => setRulesText(e.target.value)}
-                    style={{ ...input(), height: 80, resize: 'vertical' }}
-                    placeholder="Regeln"
-                  />
-                </div>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Frage-Text)</div>
-                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    X (%)
-                    <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    Y (%)
-                    <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    Groesse (px)
-                    <input type="range" min={14} max={36} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                </div>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Antwort)</div>
-                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    X (%)
-                    <input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    Y (%)
-                    <input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                    Groesse (px)
-                    <input type="range" min={14} max={36} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} />
-                  </label>
-                </div>
-              </div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  <input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /> Timer anzeigen
-                </label>
-                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte anzeigen
-                </label>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Elemente anklicken & verschieben</div>
-                <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 6 }}>Target waehlen, dann im grossen Preview klicken & ziehen.</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {(['question', 'answer', 'timer', 'points'] as const).map((target) => (
-                    <button
-                      key={target}
+
+                <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, background: 'rgba(255,255,255,0.02)' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Canvas</div>
+                  <div
+                    ref={previewRef}
+                    onMouseDown={handlePreviewMouseDown}
+                    onMouseMove={handlePreviewMouseMove}
+                    onMouseUp={handlePreviewMouseUp}
+                    onMouseLeave={handlePreviewMouseUp}
+                    style={{
+                      position: 'relative',
+                      height: 320,
+                      borderRadius: 12,
+                      padding: 10,
+                      background: bg ? `url(${bg}) center/cover` : '#0f172a',
+                      overflow: 'hidden',
+                      cursor: dragging || resizing ? 'grabbing' : 'crosshair',
+                      border: '1px dashed rgba(255,255,255,0.2)',
+                    }}
+                  >
+                    {(dragging || resizing) && (
+                      <>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            background: 'rgba(122,91,255,0.4)',
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            background: 'rgba(122,91,255,0.4)',
+                          }}
+                        />
+                      </>
+                    )}
+                    <div
                       style={{
-                        ...smallBtn(),
-                        background: editTarget === target ? '#7a5bff33' : 'rgba(255,255,255,0.08)',
-                        borderColor: editTarget === target ? '#7a5bff88' : 'rgba(255,255,255,0.16)',
+                        position: 'absolute',
+                        left: `${layoutX}%`,
+                        top: `${layoutY}%`,
+                        transform: 'translate(-0%, -0%)',
+                        fontSize: layoutSize,
+                        fontWeight: 800,
+                        border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
+                        padding: 4,
+                        color: '#e2e8f0',
                       }}
-                      onClick={() => setEditTarget(target)}
                     >
-                      {target}
-                    </button>
-                  ))}
+                      {questionText}
+                      <div
+                        onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
+                        style={{
+                          position: 'absolute',
+                          right: -8,
+                          bottom: -8,
+                          width: 14,
+                          height: 14,
+                          borderRadius: 4,
+                          background: '#7a5bff',
+                          border: '1px solid rgba(255,255,255,0.4)',
+                          cursor: 'nwse-resize',
+                        }}
+                      />
+                    </div>
+                    {answerText && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${answerX}%`,
+                          top: `${answerY}%`,
+                          transform: 'translate(-0%, -0%)',
+                          fontSize: answerSize,
+                          fontWeight: 700,
+                          color: '#a5f3fc',
+                          border: editTarget === 'answer' ? '1px dashed #7a5bff' : 'none',
+                          padding: 4,
+                        }}
+                      >
+                        {answerText}
+                        <div
+                          onMouseDown={(e) => handleResizeMouseDown(e, 'answer')}
+                          style={{
+                            position: 'absolute',
+                            right: -8,
+                            bottom: -8,
+                            width: 14,
+                            height: 14,
+                            borderRadius: 4,
+                            background: '#7a5bff',
+                            border: '1px solid rgba(255,255,255,0.4)',
+                            cursor: 'nwse-resize',
+                          }}
+                        />
+                      </div>
+                    )}
+                    {showTimer && slideConfig.question.showTimer && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${timerX}%`,
+                          top: `${timerY}%`,
+                          padding: '6px 10px',
+                          borderRadius: 10,
+                          background: 'rgba(255,255,255,0.12)',
+                          color: '#e2e8f0',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          border: editTarget === 'timer' ? '1px dashed #7a5bff' : 'none',
+                        }}
+                      >
+                        Timer
+                      </div>
+                    )}
+                    {showPoints && slideConfig.question.showPoints && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${pointsX}%`,
+                          top: `${pointsY}%`,
+                          padding: '6px 10px',
+                          borderRadius: 10,
+                          background: 'rgba(255,255,255,0.12)',
+                          color: '#e2e8f0',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          border: editTarget === 'points' ? '1px dashed #7a5bff' : 'none',
+                        }}
+                      >
+                        Punkte
+                      </div>
+                    )}
+                    {logo && <img src={logo} alt="logo" style={{ position: 'absolute', top: 10, right: 10, height: 40 }} />}
+                  </div>
                 </div>
-                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginTop: 8 }}>
-                  <div style={field()}>
-                    <label>Frage-Text (Preview)</label>
-                    <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
-                  </div>
-                  <div style={field()}>
-                    <label>Antwort-Text (Preview)</label>
-                    <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
-                  </div>
-                  <div style={field()}>
-                    <label>Aktives Layer</label>
-                    <div style={{ color: '#cbd5e1', fontSize: 13 }}>
-                      {editTarget === 'question' && `Frage @ X:${layoutX}% Y:${layoutY}%`} 
-                      {editTarget === 'answer' && `Antwort @ X:${answerX}% Y:${answerY}%`} 
-                      {editTarget === 'timer' && `Timer @ X:${timerX}% Y:${timerY}%`} 
-                      {editTarget === 'points' && `Punkte @ X:${pointsX}% Y:${pointsY}%`}
+
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <div style={{ fontWeight: 800 }}>Eigenschaften</div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <div style={field()}>
+                      <label>Frage-Text</label>
+                      <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
+                    </div>
+                    <div style={field()}>
+                      <label>Antwort-Text</label>
+                      <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
+                    </div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={{ fontWeight: 700 }}>Elemente</div>
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                          <input
+                            type="checkbox"
+                            checked={slideConfig.question.showTimer}
+                            onChange={(e) =>
+                              setSlideConfig((s) => ({ ...s, question: { ...s.question, showTimer: e.target.checked } }))
+                            }
+                          />{' '}
+                          Timer (Frage)
+                        </label>
+                        <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                          <input
+                            type="checkbox"
+                            checked={slideConfig.question.showPoints}
+                            onChange={(e) =>
+                              setSlideConfig((s) => ({ ...s, question: { ...s.question, showPoints: e.target.checked } }))
+                            }
+                          />{' '}
+                          Punkte (Frage)
+                        </label>
+                        <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                          <input
+                            type="checkbox"
+                            checked={slideConfig.intro.showRules}
+                            onChange={(e) => setSlideConfig((s) => ({ ...s, intro: { showRules: e.target.checked } }))}
+                          />{' '}
+                          Regeln im Intro
+                        </label>
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 700 }}>Positionen</div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Frage X (%)
+                        <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Frage Y (%)
+                        <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Frage Groesse (px)
+                        <input type="range" min={14} max={48} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Antwort X (%)
+                        <input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Antwort Y (%)
+                        <input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Antwort Groesse (px)
+                        <input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Timer X (%)
+                        <input type="range" min={0} max={90} value={timerX} onChange={(e) => setTimerX(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Timer Y (%)
+                        <input type="range" min={0} max={90} value={timerY} onChange={(e) => setTimerY(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Punkte X (%)
+                        <input type="range" min={0} max={90} value={pointsX} onChange={(e) => setPointsX(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                      <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                        Punkte Y (%)
+                        <input type="range" min={0} max={90} value={pointsY} onChange={(e) => setPointsY(Number(e.target.value))} style={{ width: '100%' }} />
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={{ fontWeight: 700 }}>Intro & Regeln</div>
+                      <input value={introText} onChange={(e) => setIntroText(e.target.value)} style={input()} placeholder="Intro-Text" />
+                      <textarea
+                        value={rulesText}
+                        onChange={(e) => setRulesText(e.target.value)}
+                        style={{ ...input(), height: 80, resize: 'vertical' }}
+                        placeholder="Regeln"
+                      />
                     </div>
                   </div>
                 </div>

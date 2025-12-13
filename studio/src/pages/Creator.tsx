@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { exportDraftFile, loadDraft, publishDraft, saveDraft } from '../services/quizzes'
+import { uploadDraft } from '../services/api'
 import type { CategoryBlock, StructureState, ThemeSettings } from '../types/quiz'
 
 const defaultStructure: StructureState = {
@@ -254,10 +255,14 @@ export default function Creator() {
           <div className="actions">
             <button
               className="btn primary"
-              onClick={() => {
+              onClick={async () => {
                 const draft = saveDraft({ structure, filters: questionFilters, theme, name })
                 publishDraft(draft)
                 setLastSaved(Date.now())
+                const res = await uploadDraft(draft)
+                if (!res.ok) {
+                  setLastSaved((prev) => prev ?? Date.now())
+                }
               }}
             >
               Quiz speichern

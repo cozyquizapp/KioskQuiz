@@ -35,6 +35,9 @@ export default function Presentation() {
         <button className="btn primary" onClick={() => navigate('/presentation/theme')}>
           Thema bearbeiten
         </button>
+        <button className="btn" onClick={() => navigate('/settings')}>
+          API / Sync
+        </button>
       </div>
     </div>
   )

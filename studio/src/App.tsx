@@ -5,6 +5,7 @@ import Import from './pages/Import'
 import Presentation from './pages/Presentation'
 import PresentationDetail from './pages/PresentationDetail'
 import QuestionEditor from './pages/QuestionEditor'
+import Settings from './pages/Settings'
 import Stats from './pages/Stats'
 import './App.css'
 
@@ -33,6 +34,9 @@ function App() {
             <NavLink to="/import" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               Import
             </NavLink>
+            <NavLink to="/settings" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              Settings
+            </NavLink>
           </nav>
         </header>
 
@@ -45,6 +49,7 @@ function App() {
             <Route path="/presentation/theme" element={<PresentationDetail />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/import" element={<Import />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>

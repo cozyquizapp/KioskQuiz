@@ -21,6 +21,7 @@ import BeamerLobbyView from './BeamerLobbyView';
 import BeamerSlotView from './BeamerSlotView';
 import BeamerQuestionView from './BeamerQuestionView';
 import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
+import { loadPlayDraft } from '../utils/draft';
 
 type Lang = Language;
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
@@ -184,6 +185,7 @@ const pillRule: React.CSSProperties = {
 };
 
 const BeamerView = ({ roomCode }: BeamerProps) => {
+  const draftTheme = loadPlayDraft()?.theme;
   const [screen, setScreen] = useState<BaseScreen>('lobby');
   const [slotMeta, setSlotMeta] = useState<SlotTransitionMeta | null>(null);
   const [slotSequence, setSlotSequence] = useState<QuizCategory[]>([]);
@@ -667,6 +669,22 @@ useEffect(() => {
       ? Math.max(0, Math.min(1, remainingMs / timerDurationMs))
       : 0;
 
+  const pageStyle = useMemo(
+    () => ({
+      position: 'relative',
+      minHeight: '100vh',
+      background: draftTheme?.background ? undefined : 'var(--bg) url("/background.png") center/cover fixed',
+      backgroundImage: draftTheme?.background ? `url(${draftTheme.background})` : undefined,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: '#e2e8f0',
+      overflow: 'hidden',
+      padding: '28px 18px',
+      fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
+    }),
+    [draftTheme?.background, draftTheme?.font]
+  );
+
   const footerMeta =
     questionMeta &&
     t.footerMeta(
@@ -682,9 +700,10 @@ useEffect(() => {
 
   const cardColor = currentCategory ? categoryColors[currentCategory] ?? '#e1b75d' : '#e1b75d';
   const lobbyActiveColor =
-    viewMode === 'lobby' && categories.length > 0
+    draftTheme?.color ||
+    (viewMode === 'lobby' && categories.length > 0
       ? categoryColors[categories[highlightedCategoryIndex] as QuizCategory] ?? '#6dd5fa'
-      : '#6dd5fa';
+      : '#6dd5fa');
   const leftDecorationSrc =
     question && (question as any).decorationLeft
       ? DECORATION_ICONS[(question as any).decorationLeft as DecorationKey]
@@ -758,6 +777,11 @@ useEffect(() => {
     <main style={pageStyle}>
       {offlineBar(connectionStatus, language)}
       {toast && <div style={toastStyle}>{toast}</div>}
+      {draftTheme?.logoUrl && (
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 40 }}>
+          <img src={draftTheme.logoUrl} alt="Logo" style={{ maxHeight: 70, objectFit: 'contain' }} />
+        </div>
+      )}
       <div style={beamerAurora(lobbyActiveColor)} />
       <div style={beamerShell}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
@@ -940,15 +964,6 @@ useEffect(() => {
   );
 };
 
-const pageStyle: React.CSSProperties = {
-  position: 'relative',
-  minHeight: '100vh',
-  background: 'var(--bg) url("/background.png") center/cover fixed',
-  color: '#e2e8f0',
-  overflow: 'hidden',
-  padding: '28px 18px'
-};
-
 const beamerAurora = (color: string): React.CSSProperties => ({
   position: 'absolute',
   inset: 0,
@@ -1033,12 +1048,6 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
-
-
-
-
-
-
 
 
 

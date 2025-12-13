@@ -265,22 +265,26 @@ export default function CreatorCanvasPage() {
     setEditImage((q as any).imageUrl || (q as any).image || '')
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editQuestion) return
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === editQuestion.id
-          ? {
-              ...q,
-              text: editText,
-              category: editCategory,
-              mixedMechanic: editMechanic || undefined,
-              imageUrl: editImage || undefined,
-              answer: editAnswer || undefined,
-            }
-          : q,
-      ),
-    )
+    const updated = {
+      ...editQuestion,
+      text: editText,
+      category: editCategory,
+      mixedMechanic: editMechanic || undefined,
+      imageUrl: editImage || undefined,
+      answer: editAnswer || undefined,
+    }
+    setQuestions((prev) => prev.map((q) => (q.id === editQuestion.id ? updated : q)))
+    try {
+      await fetch('/api/questions/' + editQuestion.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      })
+    } catch {
+      // ignore for now
+    }
     setEditQuestion(null)
   }
 
@@ -866,4 +870,3 @@ const smallBtn = () => ({
     answer: { showTimer: true, showPoints: true },
     intro: { showRules: true },
   })
-

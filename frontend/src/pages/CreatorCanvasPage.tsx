@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
+import { AnyQuestion } from '@shared/quizTypes'
 
 type Category = { name: string; questions: number }
 
@@ -21,6 +23,18 @@ export default function CreatorCanvasPage() {
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
   const [rules, setRules] = useState(draft?.structure.rulesAt || 'start')
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
+  const [currentStep, setCurrentStep] = useState(0)
+  const [questions, setQuestions] = useState<AnyQuestion[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [layoutX, setLayoutX] = useState(10)
+  const [layoutY, setLayoutY] = useState(10)
+  const [layoutSize, setLayoutSize] = useState(18)
+
+  useEffect(() => {
+    fetchQuestions()
+      .then((res) => setQuestions(res.questions))
+      .catch(() => setQuestions([]))
+  }, [])
 
   const totalQuestions = useMemo(() => categories.reduce((s, c) => s + c.questions, 0), [categories])
 
@@ -45,6 +59,10 @@ export default function CreatorCanvasPage() {
     setCategories((prev) => [...prev, { name: `Kategorie ${prev.length + 1}`, questions: 5 }])
   }
 
+  const toggleQuestion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
   return (
     <div
       style={{
@@ -55,39 +73,49 @@ export default function CreatorCanvasPage() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gap: 14, gridTemplateColumns: '280px 1fr' }}>
-        <div
-          style={{
-            borderRadius: 16,
-            border: '1px solid rgba(255,255,255,0.12)',
-            background: 'rgba(255,255,255,0.04)',
-            padding: 14,
-            position: 'sticky',
-            top: 16,
-            height: 'fit-content',
-          }}
-        >
+        <div style={sideCard()}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Schritte</div>
           <div style={{ display: 'grid', gap: 8 }}>
-            <div style={pill('#7a5bff')}>1. Struktur</div>
-            <div style={pill('#38bdf8')}>2. Fragen</div>
-            <div style={pill('#f97316')}>3. Präsentation</div>
-            <div style={pill('#22c55e')}>4. Publish</div>
+            {['Struktur', 'Fragen', 'Präsentation', 'Publish'].map((label, idx) => (
+              <button
+                key={label}
+                style={{
+                  ...pill('#7a5bff'),
+                  justifyContent: 'flex-start',
+                  background: currentStep === idx ? '#7a5bff22' : 'rgba(255,255,255,0.05)',
+                  borderColor: currentStep === idx ? '#7a5bffcc' : 'rgba(255,255,255,0.12)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setCurrentStep(idx)}
+              >
+                {idx + 1}. {label}
+              </button>
+            ))}
           </div>
           <div style={{ marginTop: 12, fontSize: 12, color: '#cbd5e1' }}>
             Autosave speichert in den lokalen Draft (gleiches Theme wie Play-App).
           </div>
-          <button
-            style={cta(themeColor)}
-            onClick={() => {
-              persist()
-              alert('Draft gespeichert.')
-            }}
-          >
-            Speichern
-          </button>
+          <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+            <button
+              style={cta(themeColor)}
+              onClick={() => {
+                persist()
+                alert('Draft gespeichert.')
+              }}
+            >
+              Speichern
+            </button>
+            <button style={smallBtn()} onClick={() => setCurrentStep((s) => Math.min(3, s + 1))}>
+              Weiter
+            </button>
+            <button style={smallBtn()} onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}>
+              Zurück
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gap: 14 }}>
+          {currentStep === 0 && (
           <section style={card()}>
             <h2>Struktur</h2>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -161,7 +189,43 @@ export default function CreatorCanvasPage() {
               </div>
             </div>
           </section>
+          )}
 
+          {currentStep === 1 && (
+          <section style={card()}>
+            <h2>Fragen auswählen</h2>
+            <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
+              Wähle Fragen für dein Quiz. Filter/Checks kannst du im Question Editor vertiefen.
+            </div>
+            <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
+              {questions.slice(0, 50).map((q) => (
+                <label
+                  key={q.id}
+                  style={{
+                    display: 'grid',
+                    gap: 4,
+                    padding: 10,
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
+                    <div style={{ fontWeight: 700 }}>{q.text}</div>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                    {q.category} {q.imageUrl ? '• Bild' : ''}
+                  </div>
+                </label>
+              ))}
+              {questions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
+            </div>
+            <div style={{ marginTop: 8, color: '#cbd5e1' }}>Ausgewählt: {selectedIds.length}</div>
+          </section>
+          )}
+
+          {currentStep === 2 && (
           <section style={card()}>
             <h2>Präsentation & Branding</h2>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -204,8 +268,27 @@ export default function CreatorCanvasPage() {
                 </div>
               )}
             </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Frage-Text)</div>
+              <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  X (%)
+                  <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Y (%)
+                  <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Größe (px)
+                  <input type="range" min={14} max={36} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
+                </label>
+              </div>
+            </div>
           </section>
+          )}
 
+          {currentStep === 1 && (
           <section style={card()}>
             <h2>Fragen (Checks)</h2>
             <div style={{ color: '#cbd5e1' }}>
@@ -217,7 +300,9 @@ export default function CreatorCanvasPage() {
               <div style={pill('#38bdf8')}>Mechanik gesetzt (Mixed Bag)</div>
             </div>
           </section>
+          )}
 
+          {currentStep === 3 && (
           <section style={card()}>
             <h2>Preview</h2>
             <div
@@ -252,6 +337,33 @@ export default function CreatorCanvasPage() {
               </div>
             </div>
 
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Position-Preview</div>
+              <div
+                style={{
+                  position: 'relative',
+                  height: 180,
+                  borderRadius: 12,
+                  background: '#0f172a',
+                  border: '1px dashed rgba(255,255,255,0.2)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${layoutX}%`,
+                    top: `${layoutY}%`,
+                    transform: 'translate(-0%, -0%)',
+                    fontSize: layoutSize,
+                    fontWeight: 800,
+                  }}
+                >
+                  Frage-Text
+                </div>
+              </div>
+            </div>
+
             <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <a href="/draft-import" style={cta(themeColor)}>
                 Draft laden / spielen
@@ -267,6 +379,7 @@ export default function CreatorCanvasPage() {
               </button>
             </div>
           </section>
+          )}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
+import { Modal } from '../components/Modal'
 
 type Category = { name: string; questions: number }
 
@@ -68,6 +69,12 @@ export default function CreatorCanvasPage() {
   const [pointsX, setPointsX] = useState(85)
   const [pointsY, setPointsY] = useState(8)
   const [editTarget, setEditTarget] = useState<'question' | 'answer' | 'timer' | 'points'>('question')
+  const [editQuestion, setEditQuestion] = useState<AnyQuestion | null>(null)
+  const [editText, setEditText] = useState('')
+  const [editAnswer, setEditAnswer] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editMechanic, setEditMechanic] = useState('')
+  const [editImage, setEditImage] = useState('')
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
   const [dragging, setDragging] = useState<null | 'question' | 'answer' | 'timer' | 'points'>(null)
@@ -130,6 +137,34 @@ export default function CreatorCanvasPage() {
 
   const toggleQuestion = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const openEdit = (q: AnyQuestion) => {
+    setEditQuestion(q)
+    setEditText(q.text || '')
+    setEditAnswer((q as any).answer || '')
+    setEditCategory(q.category || '')
+    setEditMechanic((q as any).mixedMechanic || '')
+    setEditImage((q as any).imageUrl || (q as any).image || '')
+  }
+
+  const saveEdit = () => {
+    if (!editQuestion) return
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === editQuestion.id
+          ? {
+              ...q,
+              text: editText,
+              category: editCategory,
+              mixedMechanic: editMechanic || undefined,
+              imageUrl: editImage || undefined,
+              answer: editAnswer || undefined,
+            }
+          : q,
+      ),
+    )
+    setEditQuestion(null)
   }
 
   return (
@@ -283,25 +318,33 @@ export default function CreatorCanvasPage() {
                 </div>
                 <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
                   {filteredQuestions.slice(0, 60).map((q) => (
-                    <label
+                                        <div
                       key={q.id}
                       style={{
-                        display: 'grid',
-                        gap: 4,
+                        display: "grid",
+                        gap: 6,
                         padding: 10,
                         borderRadius: 12,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: selectedIds.includes(q.id) ? "#7a5bff22" : "rgba(255,255,255,0.03)",
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
                         <div style={{ fontWeight: 700 }}>{q.text}</div>
                       </div>
-                      <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                        {q.category} {(q as any).imageUrl || (q as any).image ? 'â€¢ Bild' : ''} {(q as any).mixedMechanic ? 'â€¢ Mechanik' : ''}
+                      <div style={{ color: "#cbd5e1", fontSize: 12 }}>
+                        {q.category} {(q as any).imageUrl || (q as any).image ? "* Bild" : ""} {(q as any).mixedMechanic ? "* Mechanik" : ""}
                       </div>
-                    </label>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button style={smallBtn()} onClick={() => openEdit(q)}>
+                          Bearbeiten
+                        </button>
+                        <a href="/question-editor" style={{ color: "#93c5fd", fontSize: 12 }}>
+                          Im Editor öffnen
+                        </a>
+                      </div>
+                    </div>
                   ))}
                   {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
                 </div>
@@ -683,3 +726,5 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
+
+

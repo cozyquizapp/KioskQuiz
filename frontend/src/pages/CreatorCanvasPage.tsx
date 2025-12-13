@@ -42,6 +42,123 @@ const Stepper = ({
   )
 }
 
+const SlidePreview = ({
+  title,
+  bg,
+  question,
+  answer,
+  showTimer,
+  showPoints,
+  layout,
+}: {
+  title: string
+  bg: string
+  question: string
+  answer: string
+  showTimer: boolean
+  showPoints: boolean
+  layout: {
+    layoutX: number
+    layoutY: number
+    layoutSize: number
+    answerX: number
+    answerY: number
+    answerSize: number
+    timerX: number
+    timerY: number
+    pointsX: number
+    pointsY: number
+  }
+}) => {
+  return (
+    <div
+      style={{
+        borderRadius: 12,
+        padding: 12,
+        background: bg,
+        border: '1px solid rgba(255,255,255,0.12)',
+        color: '#e5e7eb',
+        minHeight: 180,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>{title}</div>
+      <div
+        style={{
+          position: 'relative',
+          height: 140,
+          borderRadius: 10,
+          border: '1px dashed rgba(255,255,255,0.2)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: `${layout.layoutX}%`,
+            top: `${layout.layoutY}%`,
+            transform: 'translate(-0%, -0%)',
+            fontSize: layout.layoutSize,
+            fontWeight: 800,
+          }}
+        >
+          {question}
+        </div>
+        {answer && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${layout.answerX}%`,
+              top: `${layout.answerY}%`,
+              transform: 'translate(-0%, -0%)',
+              fontSize: layout.answerSize,
+              fontWeight: 700,
+              color: '#a5f3fc',
+            }}
+          >
+            {answer}
+          </div>
+        )}
+        {showTimer && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${layout.timerX}%`,
+              top: `${layout.timerY}%`,
+              padding: '6px 10px',
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.12)',
+              color: '#e2e8f0',
+              fontSize: 12,
+              fontWeight: 800,
+            }}
+          >
+            Timer
+          </div>
+        )}
+        {showPoints && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${layout.pointsX}%`,
+              top: `${layout.pointsY}%`,
+              padding: '6px 10px',
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.12)',
+              color: '#e2e8f0',
+              fontSize: 12,
+              fontWeight: 800,
+            }}
+          >
+            Punkte
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function CreatorCanvasPage() {
   const draft = loadPlayDraft()
   const [name, setName] = useState(draft?.name || 'Neues Quiz')
@@ -349,7 +466,7 @@ export default function CreatorCanvasPage() {
                   {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
                 </div>
                 <div style={{ marginTop: 8, color: '#cbd5e1' }}>
-                  Ausgewaehlt: {selectedIds.length} â€¢ Treffer: {filteredQuestions.length}
+                  Ausgewaehlt: {selectedIds.length} • Treffer: {filteredQuestions.length}
                 </div>
                 <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>
                   Tiefere Bearbeitung: <a href="/question-editor" style={{ color: '#93c5fd' }}>Question Editor oeffnen</a>
@@ -625,116 +742,35 @@ export default function CreatorCanvasPage() {
               </div>
 
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Position-Preview</div>
-                <div
-                  style={{
-                    position: 'relative',
-                    height: 180,
-                    borderRadius: 12,
-                    background: '#0f172a',
-                    border: '1px dashed rgba(255,255,255,0.2)',
-                    overflow: 'hidden',
-                  }}
-                  onMouseDown={(e) => {
-                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-                    const relX = ((e.clientX - rect.left) / rect.width) * 100
-                    const relY = ((e.clientY - rect.top) / rect.height) * 100
-                    setDragging(editTarget)
-                    if (editTarget === 'question') {
-                      setLayoutX(Math.max(0, Math.min(100, relX)))
-                      setLayoutY(Math.max(0, Math.min(100, relY)))
-                    } else if (editTarget === 'answer') {
-                      setAnswerX(Math.max(0, Math.min(100, relX)))
-                      setAnswerY(Math.max(0, Math.min(100, relY)))
-                    } else if (editTarget === 'timer') {
-                      setTimerX(Math.max(0, Math.min(100, relX)))
-                      setTimerY(Math.max(0, Math.min(100, relY)))
-                    } else if (editTarget === 'points') {
-                      setPointsX(Math.max(0, Math.min(100, relX)))
-                      setPointsY(Math.max(0, Math.min(100, relY)))
-                    }
-                  }}
-                  onMouseMove={(e) => {
-                    if (!dragging) return
-                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-                    const relX = ((e.clientX - rect.left) / rect.width) * 100
-                    const relY = ((e.clientY - rect.top) / rect.height) * 100
-                    if (dragging === 'question') {
-                      setLayoutX(Math.max(0, Math.min(100, relX)))
-                      setLayoutY(Math.max(0, Math.min(100, relY)))
-                    } else if (dragging === 'answer') {
-                      setAnswerX(Math.max(0, Math.min(100, relX)))
-                      setAnswerY(Math.max(0, Math.min(100, relY)))
-                    } else if (dragging === 'timer') {
-                      setTimerX(Math.max(0, Math.min(100, relX)))
-                      setTimerY(Math.max(0, Math.min(100, relY)))
-                    } else if (dragging === 'points') {
-                      setPointsX(Math.max(0, Math.min(100, relX)))
-                      setPointsY(Math.max(0, Math.min(100, relY)))
-                    }
-                  }}
-                  onMouseUp={() => setDragging(null)}
-                  onMouseLeave={() => setDragging(null)}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: `${layoutX}%`,
-                      top: `${layoutY}%`,
-                      transform: 'translate(-0%, -0%)',
-                      fontSize: layoutSize,
-                    fontWeight: 800,
-                  }}
-                >
-                    {questionText}
-                  </div>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: `${answerX}%`,
-                      top: `${answerY}%`,
-                      transform: 'translate(-0%, -0%)',
-                    fontSize: answerSize,
-                    fontWeight: 700,
-                    color: '#a5f3fc',
-                  }}
-                >
-                    {answerText}
-                  </div>
-                  {showTimer && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: `${timerX}%`,
-                        top: `${timerY}%`,
-                        padding: '6px 10px',
-                        borderRadius: 10,
-                        background: 'rgba(255,255,255,0.12)',
-                        color: '#e2e8f0',
-                        fontSize: 12,
-                        fontWeight: 800,
-                      }}
-                    >
-                      Timer
-                    </div>
-                  )}
-                  {showPoints && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        padding: '6px 10px',
-                        borderRadius: 10,
-                        background: 'rgba(255,255,255,0.12)',
-                        color: '#e2e8f0',
-                        fontSize: 12,
-                        fontWeight: 800,
-                      }}
-                    >
-                      Punkte
-                    </div>
-                  )}
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Slide-Preview</div>
+                <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+                  <SlidePreview
+                    title="Frage"
+                    bg="#0f172a"
+                    question={questionText}
+                    answer={answerText}
+                    showTimer={showTimer && slideConfig.question.showTimer}
+                    showPoints={showPoints && slideConfig.question.showPoints}
+                    layout={{ layoutX, layoutY, layoutSize, answerX, answerY, answerSize, timerX, timerY, pointsX, pointsY }}
+                  />
+                  <SlidePreview
+                    title="Antwort"
+                    bg="#0b1724"
+                    question={questionText}
+                    answer={answerText}
+                    showTimer={showTimer && slideConfig.answer.showTimer}
+                    showPoints={showPoints && slideConfig.answer.showPoints}
+                    layout={{ layoutX, layoutY, layoutSize, answerX, answerY, answerSize, timerX, timerY, pointsX, pointsY }}
+                  />
+                  <SlidePreview
+                    title="Intro"
+                    bg="#111827"
+                    question="Intro"
+                    answer={slideConfig.intro.showRules ? 'Regeln anzeigen' : ''}
+                    showTimer={false}
+                    showPoints={false}
+                    layout={{ layoutX: 10, layoutY: 20, layoutSize: 22, answerX: 10, answerY: 50, answerSize: 16, timerX: 0, timerY: 0, pointsX: 0, pointsY: 0 }}
+                  />
                 </div>
               </div>
 
@@ -830,3 +866,4 @@ const smallBtn = () => ({
     answer: { showTimer: true, showPoints: true },
     intro: { showRules: true },
   })
+

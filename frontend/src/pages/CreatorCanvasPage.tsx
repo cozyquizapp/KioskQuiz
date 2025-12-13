@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
+import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
-import { AnyQuestion } from '@shared/quizTypes'
 
 type Category = { name: string; questions: number }
 
@@ -11,6 +11,35 @@ const defaultCategories: Category[] = [
   { name: 'Cheese', questions: 5 },
   { name: 'Wildcard', questions: 5 },
 ]
+
+const Stepper = ({
+  current,
+  onChange,
+}: {
+  current: number
+  onChange: (idx: number) => void
+}) => {
+  const steps = ['Struktur', 'Fragen', 'Praesentation', 'Publish']
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      {steps.map((label, idx) => (
+        <button
+          key={label}
+          style={{
+            ...pill('#7a5bff'),
+            justifyContent: 'flex-start',
+            background: current === idx ? '#7a5bff22' : 'rgba(255,255,255,0.05)',
+            borderColor: current === idx ? '#7a5bffcc' : 'rgba(255,255,255,0.12)',
+            cursor: 'pointer',
+          }}
+          onClick={() => onChange(idx)}
+        >
+          {idx + 1}. {label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export default function CreatorCanvasPage() {
   const draft = loadPlayDraft()
@@ -29,6 +58,11 @@ export default function CreatorCanvasPage() {
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
   const [layoutSize, setLayoutSize] = useState(18)
+  const [answerX, setAnswerX] = useState(10)
+  const [answerY, setAnswerY] = useState(50)
+  const [answerSize, setAnswerSize] = useState(16)
+  const [showTimer, setShowTimer] = useState(true)
+  const [showPoints, setShowPoints] = useState(true)
   const [qSearch, setQSearch] = useState('')
   const [qImageOnly, setQImageOnly] = useState(false)
   const [qMechanicOnly, setQMechanicOnly] = useState(false)
@@ -90,23 +124,7 @@ export default function CreatorCanvasPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gap: 14, gridTemplateColumns: '280px 1fr' }}>
         <div style={sideCard()}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Schritte</div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {['Struktur', 'Fragen', 'Präsentation', 'Publish'].map((label, idx) => (
-              <button
-                key={label}
-                style={{
-                  ...pill('#7a5bff'),
-                  justifyContent: 'flex-start',
-                  background: currentStep === idx ? '#7a5bff22' : 'rgba(255,255,255,0.05)',
-                  borderColor: currentStep === idx ? '#7a5bffcc' : 'rgba(255,255,255,0.12)',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setCurrentStep(idx)}
-              >
-                {idx + 1}. {label}
-              </button>
-            ))}
-          </div>
+          <Stepper current={currentStep} onChange={setCurrentStep} />
           <div style={{ marginTop: 12, fontSize: 12, color: '#cbd5e1' }}>
             Autosave speichert in den lokalen Draft (gleiches Theme wie Play-App).
           </div>
@@ -124,306 +142,394 @@ export default function CreatorCanvasPage() {
               Weiter
             </button>
             <button style={smallBtn()} onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}>
-              Zurück
+              Zurueck
             </button>
           </div>
         </div>
 
         <div style={{ display: 'grid', gap: 14 }}>
           {currentStep === 0 && (
-          <section style={card()}>
-            <h2>Struktur</h2>
-            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-              <div style={field()}>
-                <label>Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} style={input()} />
+            <section style={card()}>
+              <h2>Struktur</h2>
+              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div style={field()}>
+                  <label>Name</label>
+                  <input value={name} onChange={(e) => setName(e.target.value)} style={input()} />
+                </div>
+                <div style={field()}>
+                  <label>Intro</label>
+                  <select value={intro} onChange={(e) => setIntro(e.target.value)} style={input()}>
+                    <option value="start">Am Anfang</option>
+                    <option value="before-final">Vor Finalrunde</option>
+                    <option value="off">Keine</option>
+                  </select>
+                </div>
+                <div style={field()}>
+                  <label>Regeln</label>
+                  <select value={rules} onChange={(e) => setRules(e.target.value)} style={input()}>
+                    <option value="start">Am Anfang</option>
+                    <option value="before-final">Vor Finalrunde</option>
+                    <option value="off">Keine</option>
+                  </select>
+                </div>
               </div>
-              <div style={field()}>
-                <label>Intro</label>
-                <select value={intro} onChange={(e) => setIntro(e.target.value)} style={input()}>
-                  <option value="start">Am Anfang</option>
-                  <option value="before-final">Vor Finalrunde</option>
-                  <option value="off">Keine</option>
-                </select>
-              </div>
-              <div style={field()}>
-                <label>Regeln</label>
-                <select value={rules} onChange={(e) => setRules(e.target.value)} style={input()}>
-                  <option value="start">Am Anfang</option>
-                  <option value="before-final">Vor Finalrunde</option>
-                  <option value="off">Keine</option>
-                </select>
-              </div>
-            </div>
-            <div style={{ marginTop: 10 }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Kategorien</div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {categories.map((cat, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 120px 60px',
-                      gap: 8,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <input
-                      style={input()}
-                      value={cat.name}
-                      onChange={(e) =>
-                        setCategories((prev) => prev.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))
-                      }
-                    />
-                    <input
-                      style={input()}
-                      type="number"
-                      min={1}
-                      value={cat.questions}
-                      onChange={(e) =>
-                        setCategories((prev) =>
-                          prev.map((c, i) => (i === idx ? { ...c, questions: Number(e.target.value) } : c)),
-                        )
-                      }
-                    />
-                    <button
-                      style={smallBtn()}
-                      onClick={() => setCategories((prev) => prev.filter((_, i) => i !== idx))}
-                      disabled={categories.length <= 1}
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Kategorien</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {categories.map((cat, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 120px 60px',
+                        gap: 8,
+                        alignItems: 'center',
+                      }}
                     >
-                      X
-                    </button>
-                  </div>
-                ))}
+                      <input
+                        style={input()}
+                        value={cat.name}
+                        onChange={(e) =>
+                          setCategories((prev) => prev.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))
+                        }
+                      />
+                      <input
+                        style={input()}
+                        type="number"
+                        min={1}
+                        value={cat.questions}
+                        onChange={(e) =>
+                          setCategories((prev) =>
+                            prev.map((c, i) => (i === idx ? { ...c, questions: Number(e.target.value) } : c)),
+                          )
+                        }
+                      />
+                      <button
+                        style={smallBtn()}
+                        onClick={() => setCategories((prev) => prev.filter((_, i) => i !== idx))}
+                        disabled={categories.length <= 1}
+                      >
+                        X
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 8, alignItems: 'center' }}>
+                  <button style={smallBtn()} onClick={addCategory}>
+                    + Kategorie
+                  </button>
+                  <div style={{ color: '#cbd5e1' }}>Gesamt: {totalQuestions} Fragen</div>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 8, alignItems: 'center' }}>
-                <button style={smallBtn()} onClick={addCategory}>
-                  + Kategorie
-                </button>
-                <div style={{ color: '#cbd5e1' }}>Gesamt: {totalQuestions} Fragen</div>
-              </div>
-            </div>
-          </section>
+            </section>
           )}
 
           {currentStep === 1 && (
-          <section style={card()}>
-            <h2>Fragen auswählen</h2>
-            <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
-              Wähle Fragen für dein Quiz. Filter/Checks kannst du im Question Editor vertiefen.
-            </div>
-            <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 8 }}>
-              <input
-                style={input()}
-                placeholder="Suche nach Text/Kategorie"
-                value={qSearch}
-                onChange={(e) => setQSearch(e.target.value)}
-              />
-              <select style={input()} value={qCategory} onChange={(e) => setQCategory(e.target.value)}>
-                <option value="all">Alle Kategorien</option>
-                {[...new Set(questions.map((q) => q.category))].map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                <input type="checkbox" checked={qImageOnly} onChange={(e) => setQImageOnly(e.target.checked)} /> Nur mit Bild
-              </label>
-              <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
-              </label>
-            </div>
-            <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
-              {filteredQuestions.slice(0, 60).map((q) => (
-                <label
-                  key={q.id}
-                  style={{
-                    display: 'grid',
-                    gap: 4,
-                    padding: 10,
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
-                    <div style={{ fontWeight: 700 }}>{q.text}</div>
-                  </div>
-                  <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                    {q.category} {(q as any).imageUrl || (q as any).image ? '• Bild' : ''} {(q as any).mixedMechanic ? '• Mechanik' : ''}
-                  </div>
-                </label>
-              ))}
-              {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
-            </div>
-            <div style={{ marginTop: 8, color: '#cbd5e1' }}>
-              Ausgewählt: {selectedIds.length} • Treffer: {filteredQuestions.length}
-            </div>
-          </section>
+            <>
+              <section style={card()}>
+                <h2>Fragen auswaehlen</h2>
+                <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
+                  Filter/Checks kannst du im Question Editor vertiefen. Hier schnell picken/abwaehlen.
+                </div>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 8 }}>
+                  <input
+                    style={input()}
+                    placeholder="Suche nach Text/Kategorie"
+                    value={qSearch}
+                    onChange={(e) => setQSearch(e.target.value)}
+                  />
+                  <select style={input()} value={qCategory} onChange={(e) => setQCategory(e.target.value)}>
+                    <option value="all">Alle Kategorien</option>
+                    {[...new Set(questions.map((q) => q.category))].map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    <input type="checkbox" checked={qImageOnly} onChange={(e) => setQImageOnly(e.target.checked)} /> Nur mit Bild
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
+                  </label>
+                </div>
+                <div style={{ maxHeight: 320, overflow: 'auto', display: 'grid', gap: 8 }}>
+                  {filteredQuestions.slice(0, 60).map((q) => (
+                    <label
+                      key={q.id}
+                      style={{
+                        display: 'grid',
+                        gap: 4,
+                        padding: 10,
+                        borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
+                        <div style={{ fontWeight: 700 }}>{q.text}</div>
+                      </div>
+                      <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                        {q.category} {(q as any).imageUrl || (q as any).image ? 'â€¢ Bild' : ''} {(q as any).mixedMechanic ? 'â€¢ Mechanik' : ''}
+                      </div>
+                    </label>
+                  ))}
+                  {filteredQuestions.length === 0 && <div style={{ color: '#cbd5e1' }}>Keine Fragen geladen.</div>}
+                </div>
+                <div style={{ marginTop: 8, color: '#cbd5e1' }}>
+                  Ausgewaehlt: {selectedIds.length} â€¢ Treffer: {filteredQuestions.length}
+                </div>
+                <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 12 }}>
+                  Tiefere Bearbeitung: <a href="/question-editor" style={{ color: '#93c5fd' }}>Question Editor oeffnen</a>
+                </div>
+              </section>
+
+              <section style={card()}>
+                <h2>Checks</h2>
+                <div style={{ color: '#cbd5e1' }}>
+                  Empfohlene Pflichtpruefungen: Bildpflicht (Cheese), Mechanik (Mixed Bag), Frische (60/90 Tage), Duplikate.
+                </div>
+                <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                  <div style={pill('#f97316')}>Bildpflicht fuer Bild-Runden</div>
+                  <div style={pill('#22c55e')}>Frische: alte Fragen (&gt;60/90 Tage) ersetzen</div>
+                  <div style={pill('#38bdf8')}>Mechanik gesetzt (Mixed Bag)</div>
+                </div>
+              </section>
+            </>
           )}
 
           {currentStep === 2 && (
-          <section style={card()}>
-            <h2>Präsentation & Branding</h2>
-            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-              <div style={field()}>
-                <label>Primärfarbe</label>
-                <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} style={{ width: '100%' }} />
-              </div>
-              <div style={field()}>
-                <label>Hintergrund (URL)</label>
-                <input value={bg} onChange={(e) => setBg(e.target.value)} style={input()} placeholder="https://..." />
-              </div>
-              <div style={field()}>
-                <label>Logo (URL)</label>
-                <input value={logo} onChange={(e) => setLogo(e.target.value)} style={input()} placeholder="https://..." />
-              </div>
-              <div style={field()}>
-                <label>Font</label>
-                <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
-              </div>
-              <div style={field()}>
-                <label>Animation</label>
-                <select value={animation} onChange={(e) => setAnimation(e.target.value)} style={input()}>
-                  <option value="Slide">Slide</option>
-                  <option value="Fade">Fade</option>
-                  <option value="Pop">Pop</option>
-                </select>
-              </div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-              {bg && (
-                <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>BG Preview</div>
-                  <img src={bg} alt="bg" style={{ width: 180, height: 100, objectFit: 'cover', borderRadius: 12 }} />
+            <section style={card()}>
+              <h2>Praesentation & Branding</h2>
+              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div style={field()}>
+                  <label>Primaerfarbe</label>
+                  <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} style={{ width: '100%' }} />
                 </div>
-              )}
-              {logo && (
-                <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>Logo Preview</div>
-                  <img src={logo} alt="logo" style={{ height: 80, objectFit: 'contain' }} />
+                <div style={field()}>
+                  <label>Hintergrund (URL)</label>
+                  <input value={bg} onChange={(e) => setBg(e.target.value)} style={input()} placeholder="https://..." />
                 </div>
-              )}
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Frage-Text)</div>
-              <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  X (%)
-                  <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
-                </label>
-                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  Y (%)
-                  <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
-                </label>
-                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                  Größe (px)
-                  <input type="range" min={14} max={36} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
-                </label>
+                <div style={field()}>
+                  <label>Logo (URL)</label>
+                  <input value={logo} onChange={(e) => setLogo(e.target.value)} style={input()} placeholder="https://..." />
+                </div>
+                <div style={field()}>
+                  <label>Font</label>
+                  <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
+                </div>
+                <div style={field()}>
+                  <label>Animation</label>
+                  <select value={animation} onChange={(e) => setAnimation(e.target.value)} style={input()}>
+                    <option value="Slide">Slide</option>
+                    <option value="Fade">Fade</option>
+                    <option value="Pop">Pop</option>
+                  </select>
+                </div>
               </div>
-            </div>
-          </section>
-          )}
-
-          {currentStep === 1 && (
-          <section style={card()}>
-            <h2>Fragen (Checks)</h2>
-            <div style={{ color: '#cbd5e1' }}>
-              Nutze den Question Editor für Bildpflicht, Frische, Duplikate. Hier nur ein kurzer Hinweisblock.
-            </div>
-            <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-              <div style={pill('#f97316')}>Bildpflicht für Bild-Runden</div>
-              <div style={pill('#22c55e')}>Frische: alte Fragen (&gt;60/90 Tage) ersetzen</div>
-              <div style={pill('#38bdf8')}>Mechanik gesetzt (Mixed Bag)</div>
-            </div>
-          </section>
+              <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+                {bg && (
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>BG Preview</div>
+                    <img src={bg} alt="bg" style={{ width: 180, height: 100, objectFit: 'cover', borderRadius: 12 }} />
+                  </div>
+                )}
+                {logo && (
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Logo Preview</div>
+                    <img src={logo} alt="logo" style={{ height: 80, objectFit: 'contain' }} />
+                  </div>
+                )}
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Frage-Text)</div>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    X (%)
+                    <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Y (%)
+                    <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Groesse (px)
+                    <input type="range" min={14} max={36} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                </div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Element-Positionen (Antwort)</div>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    X (%)
+                    <input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Y (%)
+                    <input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Groesse (px)
+                    <input type="range" min={14} max={36} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} />
+                  </label>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  <input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /> Timer anzeigen
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte anzeigen
+                </label>
+                <a href="/presentation-creator" style={cta(themeColor)}>
+                  Details im Presentation Creator
+                </a>
+              </div>
+            </section>
           )}
 
           {currentStep === 3 && (
-          <section style={card()}>
-            <h2>Preview</h2>
-            <div
-              style={{
-                borderRadius: 12,
-                padding: 16,
-                background: bg ? `url(${bg}) center/cover` : 'linear-gradient(135deg, #111827, #0b1224)',
-                color: '#e5e7eb',
-                minHeight: 140,
-                position: 'relative',
-              }}
-            >
-              {logo && <img src={logo} alt="logo" style={{ position: 'absolute', top: 12, right: 12, height: 50 }} />}
-              <div style={{ fontWeight: 800, fontSize: 18 }}>Titel: {name}</div>
-              <div style={{ marginTop: 6, color: '#cbd5e1' }}>
-                Intro: {intro} • Regeln: {rules} • Fragen: {totalQuestions}
-              </div>
-              <div style={{ marginTop: 6, color: '#cbd5e1' }}>Kategorien: {categories.map((c) => c.name).join(', ')}</div>
-              <div style={{ marginTop: 8, fontSize: 12, color: '#e5e7eb' }}>Animation: {animation}</div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Slides (Reihenfolge)</div>
-              <div style={{ display: 'grid', gap: 6 }}>
-                <div style={pill('#7a5bff')}>Intro ({intro})</div>
-                {categories.map((c, idx) => (
-                  <div key={idx} style={pill('#38bdf8')}>
-                    Kategorie {idx + 1}: {c.name} • {c.questions} Fragen
-                  </div>
-                ))}
-                <div style={pill('#22c55e')}>Regeln ({rules})</div>
-                <div style={pill('#f97316')}>Finale / Abschluss</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Position-Preview</div>
+            <section style={card()}>
+              <h2>Preview & Publish</h2>
               <div
                 style={{
-                  position: 'relative',
-                  height: 180,
                   borderRadius: 12,
-                  background: '#0f172a',
-                  border: '1px dashed rgba(255,255,255,0.2)',
-                  overflow: 'hidden',
+                  padding: 16,
+                  background: bg ? `url(${bg}) center/cover` : 'linear-gradient(135deg, #111827, #0b1224)',
+                  color: '#e5e7eb',
+                  minHeight: 140,
+                  position: 'relative',
                 }}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: `${layoutX}%`,
-                    top: `${layoutY}%`,
-                    transform: 'translate(-0%, -0%)',
-                    fontSize: layoutSize,
-                    fontWeight: 800,
-                  }}
-                >
-                  Frage-Text
+                {logo && <img src={logo} alt="logo" style={{ position: 'absolute', top: 12, right: 12, height: 50 }} />}
+                <div style={{ fontWeight: 800, fontSize: 18 }}>Titel: {name}</div>
+                <div style={{ marginTop: 6, color: '#cbd5e1' }}>
+                  Intro: {intro} â€¢ Regeln: {rules} â€¢ Fragen: {totalQuestions}
+                </div>
+                <div style={{ marginTop: 6, color: '#cbd5e1' }}>Kategorien: {categories.map((c) => c.name).join(', ')}</div>
+                <div style={{ marginTop: 8, fontSize: 12, color: '#e5e7eb' }}>Animation: {animation}</div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Slides (Reihenfolge)</div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div style={pill('#7a5bff')}>Intro ({intro})</div>
+                  {categories.map((c, idx) => (
+                    <div key={idx} style={pill('#38bdf8')}>
+                      Kategorie {idx + 1}: {c.name} â€¢ {c.questions} Fragen
+                    </div>
+                  ))}
+                  <div style={pill('#22c55e')}>Regeln ({rules})</div>
+                  <div style={pill('#f97316')}>Finale / Abschluss</div>
                 </div>
               </div>
-            </div>
 
-            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a href="/draft-import" style={cta(themeColor)}>
-                Draft laden / spielen
-              </a>
-              <button
-                style={smallBtn()}
-                onClick={() => {
-                  persist()
-                  alert('Draft gespeichert.')
-                }}
-              >
-                Speichern
-              </button>
-            </div>
-          </section>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Position-Preview</div>
+                <div
+                  style={{
+                    position: 'relative',
+                    height: 180,
+                    borderRadius: 12,
+                    background: '#0f172a',
+                    border: '1px dashed rgba(255,255,255,0.2)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: `${layoutX}%`,
+                      top: `${layoutY}%`,
+                      transform: 'translate(-0%, -0%)',
+                      fontSize: layoutSize,
+                      fontWeight: 800,
+                    }}
+                  >
+                    Frage-Text
+                  </div>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: `${answerX}%`,
+                      top: `${answerY}%`,
+                      transform: 'translate(-0%, -0%)',
+                      fontSize: answerSize,
+                      fontWeight: 700,
+                      color: '#a5f3fc',
+                    }}
+                  >
+                    Antwort
+                  </div>
+                  {showTimer && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        padding: '6px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(255,255,255,0.12)',
+                        color: '#e2e8f0',
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      Timer
+                    </div>
+                  )}
+                  {showPoints && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        padding: '6px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(255,255,255,0.12)',
+                        color: '#e2e8f0',
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      Punkte
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <a href="/draft-import" style={cta(themeColor)}>
+                  Draft laden / spielen
+                </a>
+                <button
+                  style={smallBtn()}
+                  onClick={() => {
+                    persist()
+                    alert('Draft gespeichert.')
+                  }}
+                >
+                  Speichern
+                </button>
+              </div>
+            </section>
           )}
         </div>
       </div>
     </div>
   )
 }
+
+const sideCard = () => ({
+  borderRadius: 16,
+  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.04)',
+  padding: 14,
+  position: 'sticky',
+  top: 16,
+  height: 'fit-content',
+})
 
 const card = () => ({
   borderRadius: 16,
@@ -452,6 +558,9 @@ const pill = (color: string) => ({
   background: `${color}22`,
   color: '#e2e8f0',
   fontWeight: 700,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
 })
 
 const cta = (color: string) => ({
@@ -464,6 +573,9 @@ const cta = (color: string) => ({
   color: '#0b1020',
   fontWeight: 800,
   cursor: 'pointer',
+  textAlign: 'center',
+  textDecoration: 'none',
+  display: 'inline-block',
 })
 
 const smallBtn = () => ({
@@ -474,3 +586,4 @@ const smallBtn = () => ({
   color: '#e2e8f0',
   cursor: 'pointer',
 })
+

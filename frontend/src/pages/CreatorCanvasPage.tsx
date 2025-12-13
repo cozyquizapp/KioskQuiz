@@ -173,7 +173,7 @@ export default function CreatorCanvasPage() {
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
   const [introText, setIntroText] = useState(draft?.structure.introText || 'Willkommen zum Cozy Kiosk Quiz!')
   const [rulesText, setRulesText] = useState(draft?.structure.rulesText || 'Regeln kurz erklaeren')
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentTab, setCurrentTab] = useState<'struktur' | 'fragen' | 'slides' | 'theme' | 'publish'>('slides')
   const [questions, setQuestions] = useState<AnyQuestion[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [layoutX, setLayoutX] = useState(10)

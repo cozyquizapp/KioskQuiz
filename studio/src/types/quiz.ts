@@ -9,6 +9,8 @@ export type ThemeSettings = {
   font: string
   color: string
   animation: string
+  background?: string
+  logoUrl?: string
 }
 
 export type StructureState = {

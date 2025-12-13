@@ -3,6 +3,7 @@ import Creator from './pages/Creator'
 import Home from './pages/Home'
 import Import from './pages/Import'
 import Presentation from './pages/Presentation'
+import PresentationDetail from './pages/PresentationDetail'
 import QuestionEditor from './pages/QuestionEditor'
 import Stats from './pages/Stats'
 import './App.css'
@@ -41,6 +42,7 @@ function App() {
             <Route path="/creator" element={<Creator />} />
             <Route path="/questions" element={<QuestionEditor />} />
             <Route path="/presentation" element={<Presentation />} />
+            <Route path="/presentation/theme" element={<PresentationDetail />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/import" element={<Import />} />
             <Route path="*" element={<Home />} />

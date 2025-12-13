@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const controls = [
   'Layouts pro Slide-Typ (Frage, Antwort, Kategorie-Bumper, Intro/Regeln)',
   'Farben & Hintergründe (Bilder, Videos, Verläufe)',
@@ -7,6 +9,7 @@ const controls = [
 ]
 
 export default function Presentation() {
+  const navigate = useNavigate()
   return (
     <div className="page">
       <h1>Präsentation</h1>
@@ -26,6 +29,12 @@ export default function Presentation() {
         <div className="pill">Live-Preview im Browser</div>
         <div className="pill">PNG/PDF Export für Offline/Whiteboard</div>
         <div className="pill">Themen speichern & wiederverwenden</div>
+      </div>
+
+      <div className="actions">
+        <button className="btn primary" onClick={() => navigate('/presentation/theme')}>
+          Thema bearbeiten
+        </button>
       </div>
     </div>
   )

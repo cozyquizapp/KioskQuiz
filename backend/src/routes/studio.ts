@@ -1,7 +1,33 @@
 import { Router, Request, Response } from 'express'
+import fs from 'fs'
+import path from 'path'
 import { QuizDraft } from '../types/studio'
 
-const drafts: QuizDraft[] = []
+const DATA_DIR = path.join(__dirname, '..', 'data')
+const STORE_PATH = path.join(DATA_DIR, 'studioDrafts.json')
+
+let drafts: QuizDraft[] = []
+
+const loadDrafts = () => {
+  try {
+    if (fs.existsSync(STORE_PATH)) {
+      drafts = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'))
+    }
+  } catch {
+    drafts = []
+  }
+}
+
+const persistDrafts = () => {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true })
+    fs.writeFileSync(STORE_PATH, JSON.stringify(drafts, null, 2), 'utf-8')
+  } catch {
+    // ignore
+  }
+}
+
+loadDrafts()
 
 const router = Router()
 
@@ -16,6 +42,7 @@ router.post('/quizzes', (req: Request, res: Response) => {
   } else {
     drafts.push(draft)
   }
+  persistDrafts()
   return res.json({ ok: true, id: draft.id, updatedAt: Date.now() })
 })
 

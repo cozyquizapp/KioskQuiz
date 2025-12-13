@@ -50,3 +50,27 @@ export async function uploadDraft(draft: unknown) {
     return { ok: false, message: 'Upload fehlgeschlagen' }
   }
 }
+
+export type QuestionSummary = {
+  id: string
+  category: string
+  text: string
+  hasImage?: boolean
+  lastUsedAt?: string | null
+}
+
+export async function fetchQuestionsApi(): Promise<{ ok: boolean; questions: QuestionSummary[] }> {
+  const cfg = loadApiConfig()
+  if (!cfg?.baseUrl) {
+    return { ok: false, questions: [] }
+  }
+  try {
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/api/questions`)
+    if (!res.ok) throw new Error('failed')
+    const data = await res.json()
+    return { ok: true, questions: data.questions ?? [] }
+  } catch (e) {
+    console.error('Fragen konnten nicht geladen werden', e)
+    return { ok: false, questions: [] }
+  }
+}

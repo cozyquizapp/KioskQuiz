@@ -1,14 +1,6 @@
-import { useMemo, useState } from 'react'
-
-type CategoryBlock = { name: string; questions: number }
-
-type StructureState = {
-  rounds: number
-  categories: CategoryBlock[]
-  introAt: 'start' | 'before-final' | 'off'
-  rulesAt: 'start' | 'before-final' | 'off'
-  mode: 'standard' | 'bingo' | 'mixed'
-}
+import { useEffect, useMemo, useState } from 'react'
+import { loadDraft, publishDraft, saveDraft } from '../services/quizzes'
+import type { CategoryBlock, StructureState, ThemeSettings } from '../types/quiz'
 
 const defaultStructure: StructureState = {
   rounds: 4,
@@ -29,7 +21,22 @@ export default function Creator() {
   const [step, setStep] = useState(0)
   const [structure, setStructure] = useState<StructureState>(defaultStructure)
   const [questionFilters] = useState<string[]>(quickFilters)
-  const [theme, setTheme] = useState({ font: 'Aktuell', color: '#5f4cf5', animation: 'Slide' })
+  const [theme, setTheme] = useState<ThemeSettings>({ font: 'Aktuell', color: '#5f4cf5', animation: 'Slide' })
+  const [lastSaved, setLastSaved] = useState<number | null>(null)
+
+  useEffect(() => {
+    const draft = loadDraft()
+    if (draft) {
+      setStructure(draft.structure)
+      setTheme(draft.theme)
+      setLastSaved(draft.updatedAt)
+    }
+  }, [])
+
+  useEffect(() => {
+    const draft = saveDraft({ structure, filters: questionFilters, theme })
+    setLastSaved(draft.updatedAt)
+  }, [structure, questionFilters, theme])
   const totalQuestions = useMemo(
     () => structure.categories.reduce((sum, cat) => sum + cat.questions, 0),
     [structure.categories],
@@ -63,6 +70,9 @@ export default function Creator() {
     <div className="page">
       <h1>Quiz Creator</h1>
       <p>Geführter Flow in vier Phasen. Starte mit Struktur und arbeite dich vor.</p>
+      <div className="muted-small">
+        {lastSaved ? `Entwurf gespeichert: ${new Date(lastSaved).toLocaleTimeString()}` : 'Kein Entwurf geladen'}
+      </div>
 
       <div className="stepper">
         {steps.map((label, i) => (
@@ -231,7 +241,16 @@ export default function Creator() {
             </div>
           </div>
           <div className="actions">
-            <button className="btn primary">Quiz speichern</button>
+            <button
+              className="btn primary"
+              onClick={() => {
+                const draft = saveDraft({ structure, filters: questionFilters, theme })
+                publishDraft(draft)
+                setLastSaved(Date.now())
+              }}
+            >
+              Quiz speichern
+            </button>
             <button className="btn">PDF/PNG export</button>
           </div>
         </>

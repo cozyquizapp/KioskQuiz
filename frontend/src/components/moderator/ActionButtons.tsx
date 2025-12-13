@@ -26,6 +26,7 @@ type ActionButtonsProps = {
   setActionState: React.Dispatch<React.SetStateAction<ActionState>>;
   doAction: (fn: () => Promise<any>, msg?: string) => Promise<void>;
   setToast: (msg: string | null) => void;
+  primaryColor?: string;
 };
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -42,7 +43,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   actionState,
   setActionState,
   doAction,
-  setToast
+  setToast,
+  primaryColor
 }) => {
   if (viewPhase === 'pre') {
     return (
@@ -65,9 +67,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             }}
             style={{
               ...inputStyle,
-              background: '#0f172a',
+              background: primaryColor ? `${primaryColor}11` : '#0f172a',
               color: '#f8fafc',
-              border: '1px solid rgba(255,255,255,0.16)'
+              border: primaryColor ? `1px solid ${primaryColor}55` : '1px solid rgba(255,255,255,0.16)'
             }}
           >
             {quizzes.map((q) => (
@@ -79,11 +81,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           <button
             style={{
               ...inputStyle,
-              background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+              background: primaryColor
+                ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
+                : 'linear-gradient(135deg, #63e5ff, #60a5fa)',
               color: '#0b1020',
               cursor: 'pointer',
               opacity: actionState.quiz ? 0.7 : 1,
-              border: '1px solid rgba(99,229,255,0.5)',
+              border: primaryColor ? `1px solid ${primaryColor}88` : '1px solid rgba(99,229,255,0.5)',
               boxShadow: 'none'
             }}
             onClick={() =>

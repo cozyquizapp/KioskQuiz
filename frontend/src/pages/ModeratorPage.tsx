@@ -30,6 +30,7 @@ import TeamsList from '../components/moderator/TeamsList';
 import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
 import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
+import { loadPlayDraft } from '../utils/draft';
 
 type AnswersState = {
   answers: Record<string, (AnswerEntry & { answer?: unknown })>;
@@ -117,6 +118,7 @@ const pillStyle = (tone: 'setup' | 'live' | 'eval' | 'final'): React.CSSProperti
 const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span style={pillStyle(tone)}>{text}</span>;
 
 const ModeratorPage: React.FC = () => {
+  const draftTheme = loadPlayDraft()?.theme;
   const [roomCode, setRoomCode] = useState('MAIN');
   const [language, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('moderatorLanguage');
@@ -389,6 +391,7 @@ const ModeratorPage: React.FC = () => {
       setActionState={setActionState}
       doAction={doAction}
       setToast={setToast}
+      primaryColor={draftTheme?.color}
     />
   );
 
@@ -396,12 +399,14 @@ const ModeratorPage: React.FC = () => {
     <main
       style={{
         minHeight: '100vh',
-        background:
-          'url(/background.png) center/cover fixed, radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.2), transparent 34%), radial-gradient(circle at 78% 8%, rgba(56, 189, 248, 0.16), transparent 36%), linear-gradient(180deg, #0b0f1a 0%, #0c111c 100%)',
+        background: draftTheme?.background
+          ? `url(${draftTheme.background}) center/cover fixed`
+          : 'url(/background.png) center/cover fixed, radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.2), transparent 34%), radial-gradient(circle at 78% 8%, rgba(56, 189, 248, 0.16), transparent 36%), linear-gradient(180deg, #0b0f1a 0%, #0c111c 100%)',
         color: '#e2e8f0',
         padding: 12,
         maxWidth: 1100,
-        margin: '0 auto'
+        margin: '0 auto',
+        fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
       <div
@@ -888,5 +893,3 @@ const ModeratorPage: React.FC = () => {
 };
 
 export default ModeratorPage;
-
-

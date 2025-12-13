@@ -203,6 +203,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
+  const [showLastQuestion, setShowLastQuestion] = useState(true);
   const previousQuestionRef = useRef<AnyQuestion | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [toast, setToast] = useState<string | null>(null);
@@ -348,6 +349,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     }
     previousQuestionRef.current = question;
   }, [question, lastQuestion]);
+
+  useEffect(() => {
+    if (lastQuestion) setShowLastQuestion(true);
+  }, [lastQuestion]);
 
   // initial fetch
   useEffect(() => {
@@ -871,7 +876,7 @@ useEffect(() => {
           </div>
         )}
       </div>
-      {lastQuestion && (
+      {lastQuestion && showLastQuestion && (
         <div
           style={{
             position: 'fixed',
@@ -894,7 +899,42 @@ useEffect(() => {
               Kategorie: {getCategoryLabel(lastQuestion.category as QuizCategory)}
             </div>
           )}
+          <button
+            style={{
+              marginTop: 10,
+              padding: '6px 10px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.18)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#e5e7eb',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+            onClick={() => setShowLastQuestion(false)}
+          >
+            Overlay ausblenden
+          </button>
         </div>
+      )}
+      {lastQuestion && !showLastQuestion && (
+        <button
+          style={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            padding: '10px 12px',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.16)',
+            background: 'rgba(0,0,0,0.65)',
+            color: '#e2e8f0',
+            fontWeight: 800,
+            cursor: 'pointer',
+            zIndex: 35
+          }}
+          onClick={() => setShowLastQuestion(true)}
+        >
+          Letzte Frage anzeigen
+        </button>
       )}
     </main>
   );
@@ -993,8 +1033,6 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
-
-
 
 
 

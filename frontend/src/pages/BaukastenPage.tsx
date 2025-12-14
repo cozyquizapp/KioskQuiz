@@ -124,6 +124,8 @@ export default function BaukastenPage() {
   const [showThemeBox, setShowThemeBox] = useState(false)
   const [showPublishBox, setShowPublishBox] = useState(false)
   const [slideText, setSlideText] = useState<Record<string, { questionDe?: string; questionEn?: string; answerDe?: string; answerEn?: string }>>({})
+  const [slideTransitions, setSlideTransitions] = useState<Record<string, string>>({})
+  const [slotResult, setSlotResult] = useState<string | null>(null)
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
@@ -161,11 +163,35 @@ export default function BaukastenPage() {
       .catch(() => setQuestions([]))
   }, [])
 
+  const selectedByCategory = useMemo(() => {
+    const map: Record<string, AnyQuestion[]> = {}
+    selectedIds.forEach((id) => {
+      const q = questions.find((qq) => qq.id === id)
+      if (!q?.category) return
+      if (!map[q.category]) map[q.category] = []
+      map[q.category].push(q)
+    })
+    return map
+  }, [selectedIds, questions])
   const totalQuestions = useMemo(() => categories.reduce((s, c) => s + c.questions, 0), [categories])
-  const slides = useMemo(
-    () => [{ id: 'intro', title: 'Intro' }, { id: 'rules', title: 'Regeln' }, ...categories.map((c, i) => ({ id: `cat-${i}`, title: c.name }))],
-    [categories],
-  )
+  const slides = useMemo(() => {
+    const base: { id: string; title: string; category?: string; questionId?: string }[] = [
+      { id: 'intro', title: 'Intro' },
+      { id: 'rules', title: 'Regeln' },
+    ]
+    categories.forEach((c, i) => {
+      const list = selectedByCategory[c.name] || []
+      if (!list.length) {
+        base.push({ id: `cat-${i}-0`, title: `${c.name} 1`, category: c.name })
+      } else {
+        list.forEach((q, idx) => {
+          base.push({ id: `cat-${i}-${idx}`, title: `${c.name} ${idx + 1}`, category: c.name, questionId: q.id })
+        })
+      }
+    })
+    base.push({ id: 'final', title: 'Finale / Abschluss' })
+    return base
+  }, [categories, selectedByCategory])
 
   const filteredQuestions = useMemo(() => {
     const term = qSearch.toLowerCase()
@@ -182,16 +208,14 @@ export default function BaukastenPage() {
       return matchesText && matchesCat && matchesImg && matchesMech
     })
   }, [questions, qSearch, qCategory, qImageOnly, qMechanicOnly])
-  const selectedByCategory = useMemo(() => {
-    const map: Record<string, AnyQuestion[]> = {}
-    selectedIds.forEach((id) => {
-      const q = questions.find((qq) => qq.id === id)
-      if (!q?.category) return
-      if (!map[q.category]) map[q.category] = []
-      map[q.category].push(q)
+
+  useEffect(() => {
+    slides.forEach((s) => {
+      if (s.questionId && !slideQuestions[s.id]) {
+        setSlideQuestions((prev) => ({ ...prev, [s.id]: s.questionId as string }))
+      }
     })
-    return map
-  }, [selectedIds, questions])
+  }, [slides, slideQuestions])
 
   const activeQuestionId = slideQuestions[currentSlideId]
   const activeQuestion = questions.find((q) => q.id === activeQuestionId)
@@ -276,6 +300,7 @@ export default function BaukastenPage() {
       theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
       textDefaults: { de: { question: questionText, answer: answerText }, en: { question: questionTextEn, answer: answerTextEn } },
       slideText,
+      slideTransitions,
       currentLang,
       updatedAt: Date.now(),
     })
@@ -505,9 +530,9 @@ export default function BaukastenPage() {
     // slides tab
     return (
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 style={{ ...smallBtn(), background: languageMode === 'de' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
                 onClick={() => {
@@ -551,7 +576,20 @@ export default function BaukastenPage() {
                   </button>
                 </div>
               )}
+              <button
+                style={{ ...smallBtn(), background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)' }}
+                onClick={() => {
+                  const catSlides = slides.filter((s) => s.category)
+                  if (!catSlides.length) return
+                  const pick = catSlides[Math.floor(Math.random() * catSlides.length)]
+                  setCurrentSlideId(pick.id)
+                  setSlotResult(pick.title)
+                }}
+              >
+                Slotmachine
+              </button>
             </div>
+            {slotResult && <div style={{ fontSize: 12, color: '#cbd5e1' }}>Zufall: {slotResult}</div>}
           </div>
           <div style={{ color: '#cbd5e1' }}>Elemente auf der Buehne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
@@ -614,6 +652,18 @@ export default function BaukastenPage() {
                 />
               </div>
             )}
+          </div>
+          <div style={field()}>
+            <label>Transition / Animation</label>
+            <select
+              style={input()}
+              value={slideTransitions[currentSlideId] || animation}
+              onChange={(e) => setSlideTransitions((s) => ({ ...s, [currentSlideId]: e.target.value }))}
+            >
+              <option value="Slide">Slide</option>
+              <option value="Fade">Fade</option>
+              <option value="Pop">Pop</option>
+            </select>
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>

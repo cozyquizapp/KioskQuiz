@@ -17,5 +17,7 @@ export type QuizDraft = {
     background?: string
     logoUrl?: string
   }
+  layout?: Record<string, any>
+  selectedQuestionIds?: string[]
   updatedAt: number
 }

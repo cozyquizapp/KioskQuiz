@@ -377,3 +377,27 @@ export const publishStudioDraft = async (draft: any): Promise<{ ok: boolean; id?
   if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
   return res.json();
 };
+
+// Published Quizzes (für Moderator/Beamer auswählbar)
+export const publishQuiz = async (payload: {
+  id: string;
+  name: string;
+  questionIds: string[];
+  theme?: any;
+  layout?: any;
+  language?: string;
+}) => {
+  const res = await fetch(`${API_BASE}/quizzes/publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Quiz konnte nicht veroeffentlicht werden');
+  return res.json();
+};
+
+export const listPublishedQuizzes = async () => {
+  const res = await fetch(`${API_BASE}/quizzes/published`);
+  if (!res.ok) throw new Error('Veröffentlichte Quizzes konnten nicht geladen werden');
+  return res.json() as Promise<{ quizzes: { id: string; name: string; questionIds: string[]; theme?: any; layout?: any; language?: string }[] }>;
+};

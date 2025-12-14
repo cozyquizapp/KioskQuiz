@@ -186,6 +186,48 @@ app.post('/api/quizzes/:quizId/layout', (req, res) => {
   res.json({ ok: true, layout: quizLayoutMap[quizId] });
 });
 
+// Published quizzes (playable)
+const publishedQuizzesPath = path.join(__dirname, 'data', 'publishedQuizzes.json');
+type PublishedQuiz = {
+  id: string;
+  name: string;
+  questionIds: string[];
+  theme?: any;
+  layout?: any;
+  language?: string;
+};
+let publishedQuizzes: PublishedQuiz[] = [];
+try {
+  if (fs.existsSync(publishedQuizzesPath)) {
+    publishedQuizzes = JSON.parse(fs.readFileSync(publishedQuizzesPath, 'utf-8'));
+  }
+} catch {
+  publishedQuizzes = [];
+}
+const persistPublished = () => {
+  try {
+    fs.writeFileSync(publishedQuizzesPath, JSON.stringify(publishedQuizzes, null, 2), 'utf-8');
+  } catch {
+    // ignore
+  }
+};
+
+app.get('/api/quizzes/published', (_req, res) => {
+  res.json({ quizzes: publishedQuizzes });
+});
+
+app.post('/api/quizzes/publish', (req, res) => {
+  const payload = req.body as PublishedQuiz;
+  if (!payload?.id || !payload?.name || !Array.isArray(payload.questionIds)) {
+    return res.status(400).json({ error: 'id, name, questionIds erforderlich' });
+  }
+  const existingIdx = publishedQuizzes.findIndex((q) => q.id === payload.id);
+  if (existingIdx >= 0) publishedQuizzes[existingIdx] = payload;
+  else publishedQuizzes.push(payload);
+  persistPublished();
+  res.json({ ok: true, quiz: payload });
+});
+
 // --- Stats Endpoints (minimal) ----------------------------------------------
 app.get('/api/stats/leaderboard', (_req, res) => {
   const runs = statsState.runs.slice(-10).reverse();
@@ -1425,7 +1467,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
 
 
 

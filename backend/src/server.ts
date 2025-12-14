@@ -204,6 +204,10 @@ try {
 } catch {
   publishedQuizzes = [];
 }
+// load published into quizzes map
+publishedQuizzes.forEach((q) => {
+  quizzes.set(q.id, { id: q.id, name: q.name, mode: 'ordered', questionIds: q.questionIds, meta: { language: q.language as any } });
+});
 const persistPublished = () => {
   try {
     fs.writeFileSync(publishedQuizzesPath, JSON.stringify(publishedQuizzes, null, 2), 'utf-8');
@@ -224,6 +228,11 @@ app.post('/api/quizzes/publish', (req, res) => {
   const existingIdx = publishedQuizzes.findIndex((q) => q.id === payload.id);
   if (existingIdx >= 0) publishedQuizzes[existingIdx] = payload;
   else publishedQuizzes.push(payload);
+  quizzes.set(payload.id, { id: payload.id, name: payload.name, mode: 'ordered', questionIds: payload.questionIds, meta: { language: payload.language as any } });
+  if (payload.layout || payload.theme) {
+    quizLayoutMap[payload.id] = { overrides: { layout: payload.layout, theme: payload.theme } };
+    persistQuizLayouts();
+  }
   persistPublished();
   res.json({ ok: true, quiz: payload });
 });
@@ -1467,7 +1476,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
 
 
 

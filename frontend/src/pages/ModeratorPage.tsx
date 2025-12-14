@@ -18,7 +18,8 @@ import {
   postQuestionStats,
   postRunStats,
   fetchLeaderboard,
-  fetchHealth
+  fetchHealth,
+  listPublishedQuizzes
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
@@ -172,16 +173,24 @@ const ModeratorPage: React.FC = () => {
     if (saved) setRoomCode(saved);
     if (savedQuiz) setSelectedQuiz(savedQuiz);
     if (savedLang === 'de' || savedLang === 'en') setLang(savedLang);
-    // preload quizzes
-    fetchQuizzes()
-      .then((res) => {
-        setQuizzes(res.quizzes || []);
-        if (res.quizzes?.length && !selectedQuiz) {
-          const fallback = savedQuiz && res.quizzes.find((q) => q.id === savedQuiz)?.id;
-          setSelectedQuiz(fallback || res.quizzes[0].id);
+    // preload quizzes (default + published)
+    const loadQuizzes = async () => {
+      try {
+        const [res, pub] = await Promise.all([fetchQuizzes(), listPublishedQuizzes().catch(() => ({ quizzes: [] }))]);
+        const merged: QuizTemplate[] = [
+          ...(res.quizzes || []),
+          ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds }))
+        ];
+        setQuizzes(merged);
+        if (merged.length && !selectedQuiz) {
+          const fallback = savedQuiz && merged.find((q) => q.id === savedQuiz)?.id;
+          setSelectedQuiz(fallback || merged[0].id);
         }
-      })
-      .catch(() => undefined);
+      } catch {
+        // ignore
+      }
+    };
+    loadQuizzes();
   }, [selectedQuiz]);
 
   useEffect(() => {

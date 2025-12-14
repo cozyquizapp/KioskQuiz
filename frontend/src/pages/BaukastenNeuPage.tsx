@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnyQuestion } from "@shared/quizTypes";
-import { fetchQuestions } from "../api";
+import { fetchQuestions, publishQuiz } from "../api";
 import { loadPlayDraft, savePlayDraft } from "../utils/draft";
 
 const card = {
@@ -291,6 +291,26 @@ export default function BaukastenNeuPage() {
   const teamLink = `${window.location.origin}/team`;
   const moderatorLink = `${window.location.origin}/moderator`;
   const qr = (url: string) => `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}`;
+  const handlePublish = async () => {
+    if (!selected.length) {
+      alert("Bitte Fragen auswaehlen, bevor du veroeffentlichst.");
+      return;
+    }
+    const payload = {
+      id: name.trim().toLowerCase().replace(/\s+/g, "-") || "quiz",
+      name,
+      questionIds: selected,
+      theme: { name: themeName, color: accent, background: bg, slotSpinMs, slotHoldMs, slotIntervalMs, slotScale },
+      layout: { layoutX, layoutY, layoutSize, answerX, answerY, answerSize, timerX, timerY, pointsX, pointsY, showTimer, showPoints, timerSize, pointsSize },
+      language,
+    };
+    try {
+      await publishQuiz(payload);
+      alert("Quiz veroeffentlicht. Im Moderator auswählbar.");
+    } catch (e) {
+      alert("Publish fehlgeschlagen: " + (e as Error).message);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0b0f1a", color: "#e2e8f0", padding: 16 }}>
@@ -773,8 +793,9 @@ export default function BaukastenNeuPage() {
                 </div>
                 <div style={{ ...card, background: "rgba(255,255,255,0.02)" }}>
                   <div style={{ fontWeight: 700, marginBottom: 6 }}>Publish / Links</div>
-                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "grid", gap: 8 }}>
                     <button style={pill("Draft speichern")} onClick={persist}>Speichern</button>
+                    <button style={pill("Publish Quiz")} onClick={handlePublish}>Publish</button>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8 }}>
                       <div style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 12, color: "#94a3b8" }}>Beamer</div>

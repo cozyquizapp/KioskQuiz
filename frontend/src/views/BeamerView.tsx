@@ -30,7 +30,8 @@ type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'a
 type BeamerProps = { roomCode: string };
 
 const SLOT_ITEM_HEIGHT = 70;
-const SLOT_SPIN_DURATION = 1400;
+const SLOT_SPIN_DURATION = 2400;
+const SLOT_EXIT_HOLD = 1200;
 
 const translations = {
   de: {
@@ -454,7 +455,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
           setQuestionPhase('answering');
           setQuestionFlyIn(true);
           requestAnimationFrame(() => setQuestionFlyIn(false));
-        }, 520);
+        }, SLOT_EXIT_HOLD);
         return;
       }
       setQuestion(payload.question);
@@ -1048,8 +1049,6 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
-
-
 
 
 

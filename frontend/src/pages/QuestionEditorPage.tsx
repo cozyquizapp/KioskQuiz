@@ -14,11 +14,11 @@ import { categoryIcons } from '../categoryAssets';
 
 const catList: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
 const catLabel: Record<QuizCategory, string> = {
-  Schaetzchen: 'SchÃ¤tzchen',
+  Schaetzchen: 'Schaetzchen',
   'Mu-Cho': 'Mu-Cho',
   Stimmts: "Stimmt's?",
   Cheese: 'Cheese',
-  GemischteTuete: 'Gemischte TÃ¼te'
+  GemischteTuete: 'Gemischte Tuete'
 };
 
 const badge = (color: string, inverted?: boolean): React.CSSProperties => ({
@@ -80,6 +80,10 @@ const QuestionEditorPage: React.FC = () => {
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   }, [questions, filterCat, search]);
 
+  const totalCount = questions.length;
+  const filteredCount = filtered.length;
+  const customCount = questions.filter((q: any) => q.isCustom).length;
+
   const handleMixedChange = async (id: string, value: MixedMechanicId | 'none') => {
     setStatus(null);
     try {
@@ -98,9 +102,9 @@ const QuestionEditorPage: React.FC = () => {
     try {
       await setQuestionMeta(id, { answer: value });
       setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, answer: value } : q)));
-      setStatus('Lösung gespeichert');
+      setStatus('Loesung gespeichert');
     } catch {
-      setStatus('Lösung konnte nicht gespeichert werden');
+      setStatus('Loesung konnte nicht gespeichert werden');
     }
   };
 
@@ -222,8 +226,13 @@ const QuestionEditorPage: React.FC = () => {
           <div style={badge('#7c8cff', true)}>Question Editor</div>
           <h2 style={{ margin: '10px 0 4px' }}>Fragen verwalten</h2>
           <div style={{ color: '#94a3b8' }}>
-            Mixed-Mechanik fÃ¼r Gemischte TÃ¼te setzen und Bilder fÃ¼r Cheese/Bildfragen verwalten.
+            Mixed-Mechanik fuer Gemischte Tuete setzen und Bilder fuer Cheese/Bildfragen verwalten.
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+          <span style={{ ...badge('#7c8cff', true) }}>Gesamt: {totalCount}</span>
+          <span style={{ ...badge('#22c55e', true) }}>Gefiltert: {filteredCount}</span>
+          <span style={{ ...badge('#fbbf24', true) }}>Custom: {customCount}</span>
         </div>
         <div style={{ display: 'flex', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
           <input
@@ -240,33 +249,31 @@ const QuestionEditorPage: React.FC = () => {
               color: '#e2e8f0'
             }}
           />
-          <select
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value as QuizCategory | 'ALL')}
-            style={{
-              width: 180,
-              padding: 10,
-              borderRadius: 10,
-              border: '1px solid #2d3748',
-              background: '#111827',
-              color: '#f8fafc'
-            }}
-          >
-            <option value="ALL">Alle Kategorien</option>
-            {catList.map((cat) => (
-              <option key={cat} value={cat}>
-                {catLabel[cat]}
-              </option>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {(['ALL', ...catList] as (QuizCategory | 'ALL')[]).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat)}
+                style={{
+                  ...badge(filterCat === cat ? '#7c8cff' : '#ffffff', true),
+                  border: filterCat === cat ? '1px solid #7c8cff' : '1px solid rgba(255,255,255,0.2)',
+                  cursor: 'pointer'
+                }}
+              >
+                {cat === 'ALL' ? 'Alle' : catLabel[cat]}
+              </button>
             ))}
-          </select>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e2e8f0' }}>
-            <input
-              type="checkbox"
-              checked={filterCustomOnly}
-              onChange={(e) => setFilterCustomOnly(e.target.checked)}
-            />
-            Nur Custom
-          </label>
+            <button
+              onClick={() => setFilterCustomOnly((v) => !v)}
+              style={{
+                ...badge(filterCustomOnly ? '#fbbf24' : '#ffffff', true),
+                border: filterCustomOnly ? '1px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer'
+              }}
+            >
+              Nur Custom
+            </button>
+          </div>
           <button
             onClick={load}
             style={{
@@ -283,7 +290,7 @@ const QuestionEditorPage: React.FC = () => {
             Custom Export
           </button>
         </div>
-        {status && <div style={{ marginBottom: 10, color: '#7c8cff' }}>{status}</div>}
+{status && <div style={{ marginBottom: 10, color: '#7c8cff' }}>{status}</div>}
         {loading && <div>Loading ...</div>}
         {error && <div style={{ color: '#f87171' }}>{error}</div>}
         <div style={{ display: 'grid', gap: 12 }}>
@@ -334,7 +341,7 @@ const QuestionEditorPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: 10, fontWeight: 800, fontSize: 18 }}>{q.question}</div>
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>Lösung:</label>
+                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>Loesung:</label>
                   <input
                     type="text"
                     value={answerDrafts[q.id] ?? (q as any).answer ?? ''}
@@ -357,7 +364,7 @@ const QuestionEditorPage: React.FC = () => {
                     onClick={() => handleAnswerSave(q.id, answerDrafts[q.id] ?? ((q as any).answer ?? ''))}
                     style={{ ...badge('#7c8cff'), cursor: 'pointer' }}
                   >
-                    Lösung speichern
+                    Loesung speichern
                   </button>
                   {(q as any).answer && (
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>Aktuell: {(q as any).answer}</span>
@@ -469,4 +476,3 @@ const QuestionEditorPage: React.FC = () => {
 };
 
 export default QuestionEditorPage;
-

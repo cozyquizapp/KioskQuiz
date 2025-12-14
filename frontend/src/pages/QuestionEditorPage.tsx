@@ -244,53 +244,95 @@ const QuestionEditorPage: React.FC = () => {
           <span style={{ ...badge('#22c55e', true) }}>Gefiltert: {filteredCount}</span>
           <span style={{ ...badge('#fbbf24', true) }}>Custom: {customCount}</span>
         </div>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-          <input
-            placeholder="Suche..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: 240,
-              padding: 10,
-              borderRadius: 10,
-              border: '1px solid #2d3748',
-              background: '#0f172a',
-              color: '#e2e8f0'
-            }}
-          />
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'grid', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              placeholder="Suche..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: 1,
+                minWidth: 240,
+                padding: 10,
+                borderRadius: 10,
+                border: '1px solid #2d3748',
+                background: '#0f172a',
+                color: '#e2e8f0'
+              }}
+            />
+            <button
+              onClick={load}
+              style={{
+                ...badge('#7c8cff'),
+                cursor: 'pointer'
+              }}
+            >
+              Refresh
+            </button>
+            <button
+              onClick={handleExportCustom}
+              style={{ ...badge('#ffffff', true), cursor: 'pointer' }}
+            >
+              Custom Export
+            </button>
+          </div>
+          <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))' }}>
             {(['ALL', ...catList] as (QuizCategory | 'ALL')[]).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setFilterCat(cat)}
                 style={{
-                  ...badge(filterCat === cat ? '#7c8cff' : '#ffffff', true),
-                  border: filterCat === cat ? '1px solid #7c8cff' : '1px solid rgba(255,255,255,0.2)',
+                  padding: 12,
+                  borderRadius: 12,
+                  border: filterCat === cat ? '1px solid #7c8cff' : '1px solid rgba(255,255,255,0.16)',
+                  background: filterCat === cat ? 'rgba(124,140,255,0.12)' : 'rgba(255,255,255,0.04)',
+                  color: '#e2e8f0',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <span>{cat === 'ALL' ? 'Alle Kategorien' : catLabel[cat]}</span>
+                {filterCat === cat && <span style={{ fontSize: 12, color: '#7c8cff' }}>aktiv</span>}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))' }}>
+            <button
+              onClick={() => setFilterCatalog('ALL')}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                border: filterCatalog === 'ALL' ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.16)',
+                background: filterCatalog === 'ALL' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
+                color: '#e2e8f0',
+                textAlign: 'left',
+                cursor: 'pointer'
+              }}
+            >
+              Alle Kataloge
+            </button>
+            {catalogs.map((c) => (
+              <button
+                key={c}
+                onClick={() => setFilterCatalog(c)}
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  border: filterCatalog === c ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.16)',
+                  background: filterCatalog === c ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
+                  color: '#e2e8f0',
+                  textAlign: 'left',
                   cursor: 'pointer'
                 }}
               >
-                {cat === 'ALL' ? 'Alle' : catLabel[cat]}
+                {c}
               </button>
             ))}
-            <select
-              value={filterCatalog}
-              onChange={(e) => setFilterCatalog(e.target.value)}
-              style={{
-                padding: 10,
-                borderRadius: 10,
-                border: '1px solid #2d3748',
-                background: '#111827',
-                color: '#f8fafc'
-              }}
-            >
-              <option value="ALL">Alle Kataloge</option>
-              {catalogs.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={() => setFilterCustomOnly((v) => !v)}
               style={{
@@ -301,22 +343,57 @@ const QuestionEditorPage: React.FC = () => {
             >
               Nur Custom
             </button>
+            {bulkSelection.size > 0 && (
+              <>
+                <input
+                  placeholder="Katalog fuer Auswahl"
+                  value={catalogDrafts['__bulk__'] ?? ''}
+                  onChange={(e) =>
+                    setCatalogDrafts((prev) => ({
+                      ...prev,
+                      ['__bulk__']: e.target.value
+                    }))
+                  }
+                  style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    border: '1px solid #2d3748',
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    minWidth: 200
+                  }}
+                />
+                <button
+                  style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                  onClick={async () => {
+                    const catalogId = (catalogDrafts['__bulk__'] ?? '').trim() || 'default';
+                    try {
+                      await Promise.all(
+                        Array.from(bulkSelection).map((id) => setQuestionMeta(id, { catalogId }))
+                      );
+                      setStatus('Katalog fuer Auswahl gespeichert');
+                      setQuestions((prev) =>
+                        prev.map((q) =>
+                          bulkSelection.has(q.id) ? ({ ...(q as any), catalogId } as AnyQuestion) : q
+                        )
+                      );
+                      setBulkSelection(new Set());
+                    } catch {
+                      setStatus('Katalog konnte nicht gespeichert werden');
+                    }
+                  }}
+                >
+                  Katalog auf Auswahl setzen ({bulkSelection.size})
+                </button>
+                <button
+                  style={{ ...badge('#ffffff', true), cursor: 'pointer' }}
+                  onClick={() => setBulkSelection(new Set())}
+                >
+                  Auswahl leeren
+                </button>
+              </>
+            )}
           </div>
-          <button
-            onClick={load}
-            style={{
-              ...badge('#7c8cff'),
-              cursor: 'pointer'
-            }}
-          >
-            Refresh
-          </button>
-          <button
-            onClick={handleExportCustom}
-            style={{ ...badge('#ffffff', true), cursor: 'pointer' }}
-          >
-            Custom Export
-          </button>
         </div>
 {status && <div style={{ marginBottom: 10, color: '#7c8cff' }}>{status}</div>}
         {loading && <div>Loading ...</div>}

@@ -81,12 +81,21 @@ export default function BaukastenPage() {
     timer: true,
     points: false,
   })
+  const [layerLock, setLayerLock] = useState({
+    question: false,
+    answer: false,
+    timer: false,
+    points: false,
+  })
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
     { name: 'Playful', color: '#f97316', bg: 'linear-gradient(135deg,#1d1b27,#312e81)', font: 'Nunito', animation: 'Pop' },
+    { name: 'Clean', color: '#ffffff', bg: 'linear-gradient(135deg,#f8fafc,#e2e8f0)', font: 'Inter', animation: 'Fade' },
+    { name: 'Bold', color: '#0ea5e9', bg: 'linear-gradient(135deg,#111827,#0b1224)', font: 'Montserrat', animation: 'Slide' },
   ]
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
@@ -159,6 +168,8 @@ export default function BaukastenPage() {
       theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
       updatedAt: Date.now(),
     })
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 1600)
   }
 
   const toggleQuestion = (id: string) => {
@@ -184,6 +195,7 @@ export default function BaukastenPage() {
     const rect = previewRef.current.getBoundingClientRect()
     const xPct = ((e.clientX - rect.left) / rect.width) * 100
     const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    if ((layerLock as any)[editTarget]) return
     setDragging(editTarget)
     setResizing(null)
     if (editTarget === 'question') {

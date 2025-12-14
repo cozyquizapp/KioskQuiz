@@ -16,6 +16,9 @@ type BeamerSlotViewProps = {
   slotOffset: number;
   slotRolling: boolean;
   exiting?: boolean;
+  spinIntervalMs?: number;
+  totalSpinMs?: number;
+  scale?: number;
   getCategoryLabel: (key: QuizCategory, lang: Lang) => string;
   getCategoryDescription: (key: QuizCategory, lang: Lang) => string;
 };
@@ -31,6 +34,9 @@ const BeamerSlotView: React.FC<BeamerSlotViewProps> = ({
   slotOffset,
   slotRolling,
   exiting = false,
+  spinIntervalMs = 260,
+  totalSpinMs = 5000,
+  scale = 1,
   getCategoryLabel,
   getCategoryDescription
 }) => {
@@ -63,12 +69,12 @@ const BeamerSlotView: React.FC<BeamerSlotViewProps> = ({
         idx = (idx + 1) % slotSequence.length;
         setCurrentCat(slotSequence[idx] as QuizCategory);
         setFlip((f) => !f);
-      }, 260);
+      }, spinIntervalMs);
       const timeout = setTimeout(() => {
         clearInterval(interval);
         setCurrentCat(slotMeta.categoryId);
         setShowFinal(true);
-      }, 5000);
+      }, totalSpinMs);
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
@@ -92,8 +98,8 @@ const BeamerSlotView: React.FC<BeamerSlotViewProps> = ({
           boxShadow: slotRolling ? '0 16px 34px rgba(0,0,0,0.25)' : `0 20px 40px ${accent}55`,
           opacity: animate ? (exiting ? 0 : 1) : 0,
           transform: animate
-            ? `translateY(${exiting ? -60 : 0}px) rotateX(${slotRolling ? 10 : 0}deg) scale(${slotRolling ? 1.02 : 1})`
-            : 'translateY(24px) rotateX(28deg) scale(0.96)',
+            ? `translateY(${exiting ? -60 : 0}px) rotateX(${slotRolling ? 10 : 0}deg) scale(${(slotRolling ? 1.02 : 1) * scale})`
+            : `translateY(24px) rotateX(28deg) scale(${0.96 * scale})`,
           transition:
             'opacity 360ms cubic-bezier(0.18, 0.82, 0.22, 1), transform 460ms cubic-bezier(0.18, 0.82, 0.22, 1), box-shadow 320ms ease-out',
           perspective: 800

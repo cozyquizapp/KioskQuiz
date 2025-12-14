@@ -30,8 +30,6 @@ type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'a
 type BeamerProps = { roomCode: string };
 
 const SLOT_ITEM_HEIGHT = 70;
-const SLOT_SPIN_DURATION = 2400;
-const SLOT_EXIT_HOLD = 1200;
 
 const translations = {
   de: {
@@ -187,6 +185,10 @@ const pillRule: React.CSSProperties = {
 
 const BeamerView = ({ roomCode }: BeamerProps) => {
   const draftTheme = loadPlayDraft()?.theme;
+  const slotSpinMs = (draftTheme as any)?.slotSpinMs ?? 2400;
+  const slotHoldMs = (draftTheme as any)?.slotHoldMs ?? 1200;
+  const slotIntervalMs = (draftTheme as any)?.slotIntervalMs ?? 260;
+  const slotScale = (draftTheme as any)?.slotScale ?? 1;
   const [screen, setScreen] = useState<BaseScreen>('lobby');
   const [slotMeta, setSlotMeta] = useState<SlotTransitionMeta | null>(null);
   const [slotSequence, setSlotSequence] = useState<QuizCategory[]>([]);
@@ -455,7 +457,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
           setQuestionPhase('answering');
           setQuestionFlyIn(true);
           requestAnimationFrame(() => setQuestionFlyIn(false));
-        }, SLOT_EXIT_HOLD);
+        }, slotHoldMs);
         return;
       }
       setQuestion(payload.question);
@@ -554,7 +556,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     slotTimeoutRef.current = window.setTimeout(() => {
       setSlotRolling(false);
       // keep slot view visible until the actual question payload arrives
-    }, SLOT_SPIN_DURATION);
+    }, slotSpinMs);
 
     return () => {
       if (slotTimeoutRef.current) {
@@ -868,6 +870,9 @@ useEffect(() => {
               exiting={slotExiting}
               getCategoryLabel={getCategoryLabel}
               getCategoryDescription={getCategoryDescription}
+              spinIntervalMs={slotIntervalMs}
+              totalSpinMs={slotSpinMs}
+              scale={slotScale}
             />
           </div>
         )}
@@ -1049,11 +1054,6 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
-
-
-
-
-
 
 
 

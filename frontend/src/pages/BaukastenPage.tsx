@@ -126,7 +126,10 @@ export default function BaukastenPage() {
   const [showPublishBox, setShowPublishBox] = useState(false)
   const [slideText, setSlideText] = useState<Record<string, { questionDe?: string; questionEn?: string; answerDe?: string; answerEn?: string }>>({})
   const [slideTransitions, setSlideTransitions] = useState<Record<string, string>>({})
-  const [slotResult, setSlotResult] = useState<string | null>(null)
+  const [slotSpinMs, setSlotSpinMs] = useState<number>((draft?.theme as any)?.slotSpinMs || 2400)
+  const [slotHoldMs, setSlotHoldMs] = useState<number>((draft?.theme as any)?.slotHoldMs || 1200)
+  const [slotIntervalMs, setSlotIntervalMs] = useState<number>((draft?.theme as any)?.slotIntervalMs || 260)
+  const [slotScale, setSlotScale] = useState<number>((draft?.theme as any)?.slotScale || 1)
   const themePresets = [
     { name: 'Cozy Beamer', color: '#7a5bff', bg: defaultBg, font: 'Inter', animation: 'Slide' },
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
@@ -292,7 +295,7 @@ export default function BaukastenPage() {
         mode: 'standard',
       },
       filters: draft?.filters || [],
-      theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
+      theme: { color: themeColor, background: bg, logoUrl: logo, font, animation, slotSpinMs, slotHoldMs, slotIntervalMs, slotScale },
       textDefaults: { de: { question: questionText, answer: answerText }, en: { question: questionTextEn, answer: answerTextEn } },
       slideText,
       slideTransitions,
@@ -573,21 +576,6 @@ export default function BaukastenPage() {
                     </div>
                   )}
                 </div>
-              </div>
-              <div style={{ display: 'grid', gap: 6, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-                <button
-                  style={{ ...smallBtn(), background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)' }}
-                  onClick={() => {
-                    const catSlides = slides.filter((s) => s.category)
-                    if (!catSlides.length) return
-                    const pick = catSlides[Math.floor(Math.random() * catSlides.length)]
-                    setCurrentSlideId(pick.id)
-                    setSlotResult(pick.title)
-                  }}
-                >
-                  Slotmachine
-                </button>
-                {slotResult && <div style={{ fontSize: 12, color: '#cbd5e1', padding: '10px 12px' }}>Zufall: {slotResult}</div>}
               </div>
             </div>
           <div style={{ color: '#cbd5e1' }}>Elemente auf der Buehne anklicken & verschieben, Feinjustierung per Slider.</div>
@@ -965,6 +953,34 @@ export default function BaukastenPage() {
                       />
                     </>
                   )}
+                </div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ fontWeight: 700 }}>Slotmachine (Beamer)</div>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Spin-Dauer (ms)
+                    <input type="number" min={500} max={8000} value={slotSpinMs} onChange={(e) => setSlotSpinMs(Number(e.target.value) || 0)} style={input()} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Hold-Dauer vor Frage (ms)
+                    <input type="number" min={200} max={5000} value={slotHoldMs} onChange={(e) => setSlotHoldMs(Number(e.target.value) || 0)} style={input()} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Schritt-Intervall (ms)
+                    <input type="number" min={80} max={800} value={slotIntervalMs} onChange={(e) => setSlotIntervalMs(Number(e.target.value) || 0)} style={input()} />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    Slot-Größe (Scale)
+                    <input
+                      type="range"
+                      min={0.7}
+                      max={1.3}
+                      step={0.05}
+                      value={slotScale}
+                      onChange={(e) => setSlotScale(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{slotScale.toFixed(2)}x</div>
+                  </label>
                 </div>
               </div>
             </details>

@@ -369,17 +369,34 @@ export default function BaukastenNeuPage() {
                   .filter(isMixedAllowed)
                   .filter((q) => (katalogName === "Alle Kataloge" ? true : (q as any).catalogId === katalogName))
                   .slice(0, 120)
-                  .map((q) => (
-                  <div key={q.id} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, background: selected.includes(q.id) ? "rgba(122,91,255,0.12)" : "rgba(255,255,255,0.02)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
-                      <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(q as any).text || (q as any).question}</div>
-                      <input type="checkbox" checked={selected.includes(q.id)} onChange={() => toggleSelect(q.id)} />
-                    </div>
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>{q.category}</div>
-                    <div style={{ fontSize: 11, color: "#cbd5e1" }}>Katalog: {(q as any).catalogId || "default"}</div>
-                    {q.category === "Mixed Bag" && <div style={{ fontSize: 11, color: "#22c55e" }}>Mechanik: {(q as any).mixedMechanic || (q as any).mechanic || "keine"}</div>}
-                  </div>
-                ))}
+                  .map((q) => {
+                    const isSel = selected.includes(q.id);
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => toggleSelect(q.id)}
+                        style={{
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 12,
+                          padding: 10,
+                          background: isSel ? "rgba(122,91,255,0.12)" : "rgba(255,255,255,0.02)",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          width: "100%"
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                          <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {(q as any).text || (q as any).question}
+                          </div>
+                          <div style={{ fontSize: 12, color: isSel ? "#7a5bff" : "#94a3b8" }}>{isSel ? "ausgewählt" : "anwählen"}</div>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#94a3b8" }}>{q.category}</div>
+                        <div style={{ fontSize: 11, color: "#cbd5e1" }}>Katalog: {(q as any).catalogId || "default"}</div>
+                        {q.category === "Mixed Bag" && <div style={{ fontSize: 11, color: "#22c55e" }}>Mechanik: {(q as any).mixedMechanic || (q as any).mechanic || "keine"}</div>}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}

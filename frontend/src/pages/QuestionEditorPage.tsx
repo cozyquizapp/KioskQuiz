@@ -53,6 +53,7 @@ const QuestionEditorPage: React.FC = () => {
   const [filterCustomOnly, setFilterCustomOnly] = useState(false);
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
   const [catalogDrafts, setCatalogDrafts] = useState<Record<string, string>>({});
+  const [mediaSlotsDrafts, setMediaSlotsDrafts] = useState<Record<string, number>>({});
 
   const load = () => {
     setLoading(true);
@@ -431,6 +432,7 @@ const QuestionEditorPage: React.FC = () => {
                   {(q as any).answer && (
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>Aktuell: {(q as any).answer}</span>
                   )}
+                  {q.mediaSlots && <span style={{ fontSize: 12, color: '#94a3b8' }}>Media-Slots: {q.mediaSlots.count}</span>}
                 </div>
                 {hasImage && (
                   <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -456,28 +458,68 @@ const QuestionEditorPage: React.FC = () => {
                   </div>
                 )}
                 <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  {isGemTuete && (
-                    <select
-                      value={(q.mixedMechanic as string) ?? 'none'}
-                      onChange={(e) => handleMixedChange(q.id, e.target.value as MixedMechanicId | 'none')}
-                      style={{
-                        padding: 10,
-                        borderRadius: 10,
-                        border: '1px solid #2d3748',
-                        background: '#111827',
-                        color: '#f8fafc',
-                        minWidth: 200
-                      }}
-                    >
-                      <option value="none">Mechanik wÃ¤hlen</option>
-                      <option value="sortieren">Sortieren / Reihenfolge</option>
-                      <option value="praezise-antwort">PrÃ¤zise Antwort</option>
-                      <option value="wer-bietet-mehr">Wer bietet mehr?</option>
-                      <option value="eine-falsch">Eine ist falsch</option>
-                      <option value="three-clue-race">Drei Hinweise</option>
-                      <option value="vier-woerter-eins">Vier WÃ¶rter â€“ eins</option>
-                    </select>
-                  )}
+                  {isGemTuete && (<>
+                      <select
+                        value={(q.mixedMechanic as string) ?? 'none'}
+                        onChange={(e) => handleMixedChange(q.id, e.target.value as MixedMechanicId | 'none')}
+                        style={{
+                          padding: 10,
+                          borderRadius: 10,
+                          border: '1px solid #2d3748',
+                          background: '#111827',
+                          color: '#f8fafc',
+                          minWidth: 200
+                        }}
+                      >
+                        <option value="none">Mechanik waehlen</option>
+                        <option value="sortieren">Sortieren / Reihenfolge</option>
+                        <option value="praezise-antwort">Praezise Antwort</option>
+                        <option value="wer-bietet-mehr">Wer bietet mehr?</option>
+                        <option value="eine-falsch">Eine ist falsch</option>
+                        <option value="three-clue-race">Drei Hinweise</option>
+                        <option value="vier-woerter-eins">Vier Woerter - eins</option>
+                      </select>
+                      <label style={{ fontSize: 12, color: '#cbd5e1' }}>Media-Slots (1-6):</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={6}
+                        value={mediaSlotsDrafts[q.id] ?? q.mediaSlots?.count ?? 0}
+                        onChange={(e) =>
+                          setMediaSlotsDrafts((prev) => ({
+                            ...prev,
+                            [q.id]: Number(e.target.value) || 0
+                          }))
+                        }
+                        style={{
+                          width: 80,
+                          padding: 8,
+                          borderRadius: 8,
+                          border: '1px solid #2d3748',
+                          background: '#0f172a',
+                          color: '#e2e8f0'
+                        }}
+                      />
+                      <button
+                        style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                        onClick={async () => {
+                          const count = mediaSlotsDrafts[q.id] ?? q.mediaSlots?.count ?? 0;
+                          try {
+                            await setQuestionMeta(q.id, { mediaSlots: { count } });
+                            setStatus('Media-Slots gespeichert');
+                            setQuestions((prev) =>
+                              prev.map((qq) =>
+                                qq.id === q.id ? ({ ...(qq as any), mediaSlots: { count } } as AnyQuestion) : qq
+                              )
+                            );
+                          } catch {
+                            setStatus('Media-Slots konnten nicht gespeichert werden');
+                          }
+                        }}
+                      >
+                        Slots speichern
+                      </button>
+                    </>)}
                   <button
                     onClick={() => triggerUpload(q.id)}
                     style={{ ...badge(color), cursor: 'pointer' }}

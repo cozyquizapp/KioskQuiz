@@ -95,6 +95,7 @@ export interface BaseQuestion {
   lastUsedAt?: string | null; // ISO-String des letzten Einsatzes
   catalogId?: string; // optionaler Katalog/Tag
   tags?: string[];
+  mediaSlots?: { count: number; urls?: string[] }; // z. B. Mixed Bag: Anzahl Bilder
 }
 
 export interface EstimateQuestion extends BaseQuestion {
@@ -271,7 +272,6 @@ export type TeamShowQuestionPayload = {
 
 export type AdminNextQuestionPayload = { roomCode: string };
 export type TeamReadyPayload = { roomCode: string; teamId: string; isReady: boolean };
-
 
 
 

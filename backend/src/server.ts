@@ -243,7 +243,15 @@ customQuestions.forEach((q) => {
 
 // overrides (z. B. mixedMechanic)
 const questionOverridesPath = path.join(__dirname, 'data', 'questionOverrides.json');
-type QuestionOverride = { mixedMechanic?: string | null; imageOffsetX?: number; imageOffsetY?: number; logoOffsetX?: number; logoOffsetY?: number; catalogId?: string | null };
+type QuestionOverride = {
+  mixedMechanic?: string | null;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  logoOffsetX?: number;
+  logoOffsetY?: number;
+  catalogId?: string | null;
+  mediaSlots?: { count: number; urls?: string[] } | null;
+};
 let questionOverrideMap: Record<string, QuestionOverride> = {};
 try {
   if (fs.existsSync(questionOverridesPath)) {
@@ -402,6 +410,9 @@ const applyOverrides = (question: AnyQuestion): AnyQuestion => {
     q = { ...q, catalogId: override.catalogId || 'default' };
   } else if (!(q as any).catalogId) {
     q = { ...q, catalogId: 'default' };
+  }
+  if (override?.mediaSlots) {
+    q = { ...q, mediaSlots: override.mediaSlots || undefined };
   }
   if (
     override &&
@@ -649,6 +660,13 @@ app.get('/api/questions/custom', (_req, res) => {
     return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom: true };
   });
   res.json({ questions: mapped });
+});
+
+// Katalogliste
+app.get('/api/catalogs', (_req, res) => {
+  const set = new Set<string>();
+  [...questions, ...customQuestions].forEach((q) => set.add((q as any).catalogId || 'default'));
+  res.json({ catalogs: Array.from(set).sort() });
 });
 
 app.get('/api/questions/custom/export', (_req, res) => {
@@ -1246,7 +1264,7 @@ app.post('/api/rooms/:roomCode/language', (req, res) => {
 // Frage-Metadaten setzen (z. B. mixedMechanic)
 app.post('/api/questions/:id/meta', (req, res) => {
   const { id } = req.params;
-  const { mixedMechanic, catalogId } = req.body as { mixedMechanic?: string | null; catalogId?: string | null };
+  const { mixedMechanic, catalogId, mediaSlots } = req.body as { mixedMechanic?: string | null; catalogId?: string | null; mediaSlots?: { count?: number; urls?: string[] } | null };
   if (!id || !questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
   const question = questionById.get(id)!;
   if (mixedMechanic && question.category !== 'GemischteTuete') {
@@ -1256,6 +1274,10 @@ app.post('/api/questions/:id/meta', (req, res) => {
   questionOverrideMap[id].mixedMechanic = mixedMechanic ?? null;
   if (catalogId !== undefined) {
     questionOverrideMap[id].catalogId = catalogId || null;
+  }
+  if (mediaSlots) {
+    const count = typeof mediaSlots.count === 'number' ? Math.max(1, Math.min(6, Math.round(mediaSlots.count))) : undefined;
+    questionOverrideMap[id].mediaSlots = { count: count ?? mediaSlots.urls?.length ?? 0, urls: mediaSlots.urls };
   }
   persistQuestionOverrides();
   return res.json({ ok: true, override: questionOverrideMap[id] });
@@ -1312,6 +1334,7 @@ app.post('/api/questions', (req, res) => {
     points: Number(points) || 1,
     createdAt: Date.now(),
     catalogId: (rest as any)?.catalogId || 'default',
+    mediaSlots: (rest as any)?.mediaSlots,
     ...(rest as any)
   };
   customQuestions.push(created);
@@ -1402,12 +1425,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
-
-
-
-
-
 
 
 

@@ -246,7 +246,7 @@ export const deleteQuestionImage = async (questionId: string) => {
 // Frage-Metadaten (z. B. mixedMechanic, answer) setzen
 export const setQuestionMeta = async (
   questionId: string,
-  payload: { mixedMechanic?: string | null; answer?: unknown; catalogId?: string | null }
+  payload: { mixedMechanic?: string | null; answer?: unknown; catalogId?: string | null; mediaSlots?: { count?: number; urls?: string[] } | null }
 ) => {
   const res = await fetch(`${API_BASE}/questions/${questionId}/meta`, {
     method: 'POST',

@@ -67,8 +67,14 @@ export default function BaukastenPage() {
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
   const [introText, setIntroText] = useState(draft?.structure.introText || 'Willkommen zum Cozy Kiosk Quiz!')
   const [rulesText, setRulesText] = useState(draft?.structure.rulesText || 'Regeln kurz erklaeren')
+  const [introTextEn, setIntroTextEn] = useState((draft as any)?.structure?.introTextEn || 'Welcome to Cozy Kiosk Quiz!')
+  const [rulesTextEn, setRulesTextEn] = useState((draft as any)?.structure?.rulesTextEn || 'Rules in short')
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
+  const [questionTextEn, setQuestionTextEn] = useState('Question text')
+  const [answerTextEn, setAnswerTextEn] = useState('Answer text')
+  const [languageMode, setLanguageMode] = useState<'de' | 'en' | 'dual'>(((draft as any)?.languageMode as any) || 'de')
+  const [currentLang, setCurrentLang] = useState<'de' | 'en'>((((draft as any)?.languageMode as any) || 'de') === 'en' ? 'en' : 'de')
   const [slideQuestions, setSlideQuestions] = useState<Record<string, string>>({})
   const [slideLayouts, setSlideLayouts] = useState<
     Record<
@@ -117,6 +123,7 @@ export default function BaukastenPage() {
   const [showPreview, setShowPreview] = useState(true)
   const [showThemeBox, setShowThemeBox] = useState(false)
   const [showPublishBox, setShowPublishBox] = useState(false)
+  const [slideText, setSlideText] = useState<Record<string, { questionDe?: string; questionEn?: string; answerDe?: string; answerEn?: string }>>({})
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
@@ -188,11 +195,31 @@ export default function BaukastenPage() {
 
   const activeQuestionId = slideQuestions[currentSlideId]
   const activeQuestion = questions.find((q) => q.id === activeQuestionId)
-  const displayQuestion = (activeQuestion as any)?.text || (activeQuestion as any)?.question || questionText
+  const slideOverride = slideText[currentSlideId] || {}
+  const displayQuestion =
+    currentLang === 'en'
+      ? slideOverride.questionEn ||
+        (activeQuestion as any)?.textEn ||
+        (activeQuestion as any)?.questionEn ||
+        questionTextEn ||
+        (activeQuestion as any)?.text ||
+        (activeQuestion as any)?.question ||
+        questionText
+      : slideOverride.questionDe || (activeQuestion as any)?.text || (activeQuestion as any)?.question || questionText
   const displayAnswer =
-    (activeQuestion as any)?.answer ||
-    (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
-    answerText
+    currentLang === 'en'
+      ? slideOverride.answerEn ||
+        (activeQuestion as any)?.answerEn ||
+        (activeQuestion as any)?.correctOptionEn ||
+        (Array.isArray((activeQuestion as any)?.optionsEn) && (activeQuestion as any)?.optionsEn[(activeQuestion as any)?.correctIndexEn]) ||
+        answerTextEn ||
+        (activeQuestion as any)?.answer ||
+        (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
+        answerText
+      : slideOverride.answerDe ||
+        (activeQuestion as any)?.answer ||
+        (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
+        answerText
 
   useEffect(() => {
     const l = slideLayouts[currentSlideId]
@@ -233,6 +260,7 @@ export default function BaukastenPage() {
     savePlayDraft({
       id: draft?.id || 'draft-baukasten',
       name,
+      languageMode,
       structure: {
         rounds: 4,
         categories,
@@ -240,10 +268,15 @@ export default function BaukastenPage() {
         rulesAt: rules as any,
         introText,
         rulesText,
+        introTextEn,
+        rulesTextEn,
         mode: 'standard',
       },
       filters: draft?.filters || [],
       theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
+      textDefaults: { de: { question: questionText, answer: answerText }, en: { question: questionTextEn, answer: answerTextEn } },
+      slideText,
+      currentLang,
       updatedAt: Date.now(),
     })
     setShowToast(true)
@@ -472,7 +505,54 @@ export default function BaukastenPage() {
     // slides tab
     return (
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button
+                style={{ ...smallBtn(), background: languageMode === 'de' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                onClick={() => {
+                  setLanguageMode('de')
+                  setCurrentLang('de')
+                }}
+              >
+                DE
+              </button>
+              <button
+                style={{ ...smallBtn(), background: languageMode === 'en' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                onClick={() => {
+                  setLanguageMode('en')
+                  setCurrentLang('en')
+                }}
+              >
+                EN
+              </button>
+              <button
+                style={{ ...smallBtn(), background: languageMode === 'dual' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                onClick={() => {
+                  setLanguageMode('dual')
+                  setCurrentLang((prev) => (prev === 'de' ? 'de' : 'en'))
+                }}
+              >
+                Dual
+              </button>
+              {languageMode === 'dual' && (
+                <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
+                  <button
+                    style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'de' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
+                    onClick={() => setCurrentLang('de')}
+                  >
+                    View DE
+                  </button>
+                  <button
+                    style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'en' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
+                    onClick={() => setCurrentLang('en')}
+                  >
+                    View EN
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           <div style={{ color: '#cbd5e1' }}>Elemente auf der Buehne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
             <label>Frage zuordnen (aktuelle Slide)</label>
@@ -493,13 +573,47 @@ export default function BaukastenPage() {
               })}
             </select>
           </div>
-          <div style={field()}>
-            <label>Frage-Text</label>
-          <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
-          </div>
-          <div style={field()}>
-            <label>Antwort-Text</label>
-          <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div style={field()}>
+              <label>Frage-Text (DE)</label>
+              <input
+                value={slideOverride.questionDe ?? ''}
+                placeholder={(activeQuestion as any)?.text || questionText}
+                onChange={(e) => setSlideText((s) => ({ ...s, [currentSlideId]: { ...(s[currentSlideId] || {}), questionDe: e.target.value } }))}
+                style={input()}
+              />
+            </div>
+            {(languageMode === 'en' || languageMode === 'dual') && (
+              <div style={field()}>
+                <label>Frage-Text (EN)</label>
+                <input
+                  value={slideOverride.questionEn ?? ''}
+                  placeholder={(activeQuestion as any)?.textEn || questionTextEn}
+                  onChange={(e) => setSlideText((s) => ({ ...s, [currentSlideId]: { ...(s[currentSlideId] || {}), questionEn: e.target.value } }))}
+                  style={input()}
+                />
+              </div>
+            )}
+            <div style={field()}>
+              <label>Antwort-Text (DE)</label>
+              <input
+                value={slideOverride.answerDe ?? ''}
+                placeholder={(activeQuestion as any)?.answer || answerText}
+                onChange={(e) => setSlideText((s) => ({ ...s, [currentSlideId]: { ...(s[currentSlideId] || {}), answerDe: e.target.value } }))}
+                style={input()}
+              />
+            </div>
+            {(languageMode === 'en' || languageMode === 'dual') && (
+              <div style={field()}>
+                <label>Antwort-Text (EN)</label>
+                <input
+                  value={slideOverride.answerEn ?? ''}
+                  placeholder={(activeQuestion as any)?.answerEn || answerTextEn}
+                  onChange={(e) => setSlideText((s) => ({ ...s, [currentSlideId]: { ...(s[currentSlideId] || {}), answerEn: e.target.value } }))}
+                  style={input()}
+                />
+              </div>
+            )}
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>
@@ -793,6 +907,17 @@ export default function BaukastenPage() {
                     style={{ ...input(), height: 80, resize: 'vertical' }}
                     placeholder="Regeln"
                   />
+                  {(languageMode === 'en' || languageMode === 'dual') && (
+                    <>
+                      <input value={introTextEn} onChange={(e) => setIntroTextEn(e.target.value)} style={input()} placeholder="Intro text (EN)" />
+                      <textarea
+                        value={rulesTextEn}
+                        onChange={(e) => setRulesTextEn(e.target.value)}
+                        style={{ ...input(), height: 80, resize: 'vertical' }}
+                        placeholder="Rules (EN)"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -938,7 +1063,10 @@ export default function BaukastenPage() {
               </div>
             </div>
             <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, background: 'rgba(255,255,255,0.02)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Canvas</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ fontWeight: 700 }}>Canvas</div>
+                <div style={{ fontSize: 12, color: '#cbd5e1' }}>Sprache: {currentLang.toUpperCase()}</div>
+              </div>
               <div
                 ref={previewRef}
                 onMouseDown={handleStageMouseDown}

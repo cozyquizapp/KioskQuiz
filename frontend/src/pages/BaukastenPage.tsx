@@ -66,6 +66,26 @@ export default function BaukastenPage() {
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
   const [slideQuestions, setSlideQuestions] = useState<Record<string, string>>({})
+  const [slideLayouts, setSlideLayouts] = useState<
+    Record<
+      string,
+      Partial<{
+        layoutX: number
+        layoutY: number
+        layoutSize: number
+        answerX: number
+        answerY: number
+        answerSize: number
+        timerX: number
+        timerY: number
+        pointsX: number
+        pointsY: number
+        showTimer: boolean
+        showPoints: boolean
+        showAnswer: boolean
+      }>
+    >
+  >({})
 
   const [questions, setQuestions] = useState<AnyQuestion[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -164,6 +184,32 @@ export default function BaukastenPage() {
     (activeQuestion as any)?.answer ||
     (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
     answerText
+
+  useEffect(() => {
+    const l = slideLayouts[currentSlideId]
+    if (l) {
+      if (l.layoutX !== undefined) setLayoutX(l.layoutX)
+      if (l.layoutY !== undefined) setLayoutY(l.layoutY)
+      if (l.layoutSize !== undefined) setLayoutSize(l.layoutSize)
+      if (l.answerX !== undefined) setAnswerX(l.answerX)
+      if (l.answerY !== undefined) setAnswerY(l.answerY)
+      if (l.answerSize !== undefined) setAnswerSize(l.answerSize)
+      if (l.timerX !== undefined) setTimerX(l.timerX)
+      if (l.timerY !== undefined) setTimerY(l.timerY)
+      if (l.pointsX !== undefined) setPointsX(l.pointsX)
+      if (l.pointsY !== undefined) setPointsY(l.pointsY)
+      if (l.showTimer !== undefined) setShowTimer(l.showTimer)
+      if (l.showPoints !== undefined) setShowPoints(l.showPoints)
+      if (l.showAnswer !== undefined) setShowAnswer(l.showAnswer)
+    }
+  }, [currentSlideId, slideLayouts])
+
+  const saveLayoutPartial = (partial: Partial<typeof slideLayouts[string]>) => {
+    setSlideLayouts((prev) => ({
+      ...prev,
+      [currentSlideId]: { ...(prev[currentSlideId] || {}), ...partial },
+    }))
+  }
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     selectedIds.forEach((id) => {
@@ -248,26 +294,34 @@ export default function BaukastenPage() {
     if (dragging === 'question') {
       setLayoutX(snap(xPct))
       setLayoutY(snap(yPct))
+      saveLayoutPartial({ layoutX: snap(xPct), layoutY: snap(yPct) })
     }
     if (dragging === 'answer') {
       setAnswerX(snap(xPct))
       setAnswerY(snap(yPct))
+      saveLayoutPartial({ answerX: snap(xPct), answerY: snap(yPct) })
     }
     if (dragging === 'timer') {
       setTimerX(snap(xPct))
       setTimerY(snap(yPct))
+      saveLayoutPartial({ timerX: snap(xPct), timerY: snap(yPct) })
     }
     if (dragging === 'points') {
       setPointsX(snap(xPct))
       setPointsY(snap(yPct))
+      saveLayoutPartial({ pointsX: snap(xPct), pointsY: snap(yPct) })
     }
     if (resizing === 'question') {
       const delta = yPct - resizeStartY
-      setLayoutSize(Math.max(12, Math.min(60, resizeStartSize + delta * 0.6)))
+      const next = Math.max(12, Math.min(60, resizeStartSize + delta * 0.6))
+      setLayoutSize(next)
+      saveLayoutPartial({ layoutSize: next })
     }
     if (resizing === 'answer') {
       const delta = yPct - resizeStartY
-      setAnswerSize(Math.max(12, Math.min(60, resizeStartSize + delta * 0.6)))
+      const next = Math.max(12, Math.min(60, resizeStartSize + delta * 0.6))
+      setAnswerSize(next)
+      saveLayoutPartial({ answerSize: next })
     }
   }
 
@@ -565,41 +619,131 @@ export default function BaukastenPage() {
           <div style={{ display: 'grid', gap: 6 }}>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>
               Frage X (%)
-              <input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} />
+              <input
+                type="range"
+                min={0}
+                max={80}
+                value={layoutX}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setLayoutX(v)
+                  saveLayoutPartial({ layoutX: v })
+                }}
+                style={{ width: '100%' }}
+              />
             </label>
-          <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-            Frage Y (%)
-            <input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} />
-          </label>
-          <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-            Frage Groesse
-            <input type="range" min={14} max={48} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} />
-          </label>
-          <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-            Antwort X (%)
-            <input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} />
-          </label>
-          <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-            Antwort Y (%)
-            <input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} />
-          </label>
-          <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-            Antwort Groesse
-            <input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} />
-          </label>
+            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Frage Y (%)
+              <input
+                type="range"
+                min={0}
+                max={80}
+                value={layoutY}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setLayoutY(v)
+                  saveLayoutPartial({ layoutY: v })
+                }}
+                style={{ width: '100%' }}
+              />
+            </label>
+            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Frage Groesse
+              <input
+                type="range"
+                min={14}
+                max={48}
+                value={layoutSize}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setLayoutSize(v)
+                  saveLayoutPartial({ layoutSize: v })
+                }}
+                style={{ width: '100%' }}
+              />
+            </label>
+            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Antwort X (%)
+              <input
+                type="range"
+                min={0}
+                max={80}
+                value={answerX}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setAnswerX(v)
+                  saveLayoutPartial({ answerX: v })
+                }}
+                style={{ width: '100%' }}
+              />
+            </label>
+            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Antwort Y (%)
+              <input
+                type="range"
+                min={0}
+                max={80}
+                value={answerY}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setAnswerY(v)
+                  saveLayoutPartial({ answerY: v })
+                }}
+                style={{ width: '100%' }}
+              />
+            </label>
+            <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+              Antwort Groesse
+              <input
+                type="range"
+                min={14}
+                max={48}
+                value={answerSize}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setAnswerSize(v)
+                  saveLayoutPartial({ answerSize: v })
+                }}
+                style={{ width: '100%' }}
+              />
+            </label>
           <button style={smallBtn()} onClick={() => setShowAdvanced((v) => !v)}>
             {showAdvanced ? 'Advanced zuklappen' : 'Advanced anzeigen'}
           </button>
           {showAdvanced && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                <input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /> Timer
+                <input
+                  type="checkbox"
+                  checked={showTimer}
+                  onChange={(e) => {
+                    setShowTimer(e.target.checked)
+                    saveLayoutPartial({ showTimer: e.target.checked })
+                  }}
+                />{' '}
+                Timer
               </label>
               <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                <input type="checkbox" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} /> Punkte
+                <input
+                  type="checkbox"
+                  checked={showPoints}
+                  onChange={(e) => {
+                    setShowPoints(e.target.checked)
+                    saveLayoutPartial({ showPoints: e.target.checked })
+                  }}
+                />{' '}
+                Punkte
               </label>
               <label style={{ color: '#cbd5e1', fontSize: 13 }}>
-                <input type="checkbox" checked={showAnswer} onChange={(e) => setShowAnswer(e.target.checked)} /> Antwort einblenden
+                <input
+                  type="checkbox"
+                  checked={showAnswer}
+                  onChange={(e) => {
+                    setShowAnswer(e.target.checked)
+                    saveLayoutPartial({ showAnswer: e.target.checked })
+                  }}
+                />{' '}
+                Antwort einblenden
               </label>
               <label style={{ color: '#cbd5e1', fontSize: 13 }}>
                 <input type="checkbox" checked={lockDrag} onChange={(e) => setLockDrag(e.target.checked)} /> Drag sperren

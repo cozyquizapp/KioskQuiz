@@ -841,14 +841,22 @@ export default function BaukastenPage() {
           <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Slots / Kategorien</div>
             <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-              <div style={{ ...pill('#7a5bff'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+              <div
+                style={{ ...pill('#7a5bff'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}
+                onClick={() => setTab('slides')}
+              >
                 Intro / Regeln
               </div>
-              {categories.map((c) => {
+              {categories.map((c, idx) => {
                 const list = selectedByCategory[c.name] || []
+                const slideId = `cat-${idx}`
                 return (
                   <div
                     key={c.name}
+                    onClick={() => {
+                      setCurrentSlideId(slideId)
+                      setTab('slides')
+                    }}
                     style={{
                       borderRadius: 12,
                       border: '1px solid rgba(255,255,255,0.12)',
@@ -856,6 +864,7 @@ export default function BaukastenPage() {
                       padding: 10,
                       display: 'grid',
                       gap: 6,
+                      cursor: 'pointer',
                     }}
                   >
                     <div style={{ fontWeight: 700 }}>{c.name}</div>
@@ -873,7 +882,10 @@ export default function BaukastenPage() {
                   </div>
                 )
               })}
-              <div style={{ ...pill('#f97316'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+              <div
+                style={{ ...pill('#f97316'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}
+                onClick={() => setTab('slides')}
+              >
                 Finale / Abschluss
               </div>
             </div>

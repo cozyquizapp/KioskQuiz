@@ -134,7 +134,10 @@ export default function BaukastenPage() {
   const filteredQuestions = useMemo(() => {
     const term = qSearch.toLowerCase()
     return questions.filter((q) => {
-      const matchesText = q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
+      const matchesText =
+        (q as any).text?.toLowerCase().includes(term) ||
+        (q as any).question?.toLowerCase().includes(term) ||
+        q.category?.toLowerCase().includes(term)
       const matchesCat = qCategory === 'all' ? true : q.category === qCategory
       const hasImg = Boolean((q as any).imageUrl || (q as any).image)
       const matchesImg = qImageOnly ? hasImg : true
@@ -156,8 +159,11 @@ export default function BaukastenPage() {
 
   const activeQuestionId = slideQuestions[currentSlideId]
   const activeQuestion = questions.find((q) => q.id === activeQuestionId)
-  const displayQuestion = activeQuestion?.text || questionText
-  const displayAnswer = (activeQuestion as any)?.answer || answerText
+  const displayQuestion = (activeQuestion as any)?.text || (activeQuestion as any)?.question || questionText
+  const displayAnswer =
+    (activeQuestion as any)?.answer ||
+    (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
+    answerText
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     selectedIds.forEach((id) => {
@@ -386,7 +392,9 @@ export default function BaukastenPage() {
                 if (!q) return null
                 return (
                   <div key={id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#cbd5e1', gap: 8 }}>
-                    <span style={{ maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.text}</span>
+                    <span style={{ maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {(q as any).text || (q as any).question}
+                    </span>
                     <span style={{ color: '#94a3b8' }}>{q.category}</span>
                   </div>
                 )
@@ -907,9 +915,9 @@ export default function BaukastenPage() {
                     </div>
                     <div style={{ display: 'grid', gap: 4 }}>
                       {list.slice(0, 4).map((q) => (
-                        <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          • {q.text}
-                        </div>
+                      <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        • {(q as any).text || (q as any).question}
+                      </div>
                       ))}
                       {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>… {list.length - 4} weitere</div>}
                     </div>
@@ -1007,7 +1015,7 @@ export default function BaukastenPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
-                    <div style={{ fontWeight: 700 }}>{q.text}</div>
+                    <div style={{ fontWeight: 700 }}>{(q as any).text || (q as any).question || 'Ohne Text'}</div>
                   </div>
                   <div style={{ color: '#cbd5e1', fontSize: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <span>{q.category}</span>

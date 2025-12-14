@@ -12,6 +12,7 @@ const defaultCategories: Category[] = [
   { name: 'Cheese', questions: 5 },
   { name: 'Wildcard', questions: 5 },
 ]
+const defaultBg = 'radial-gradient(circle at 20% 20%, #1a1f39 0%, #0d0f14 55%)'
 
 const pill = (color: string) => ({
   padding: '8px 12px',
@@ -61,7 +62,7 @@ export default function BaukastenPage() {
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
   const [rules, setRules] = useState(draft?.structure.rulesAt || 'start')
   const [themeColor, setThemeColor] = useState(draft?.theme.color || '#7a5bff')
-  const [bg, setBg] = useState(draft?.theme.background || '')
+  const [bg, setBg] = useState(draft?.theme.background || defaultBg)
   const [logo, setLogo] = useState(draft?.theme.logoUrl || '')
   const [font, setFont] = useState(draft?.theme.font || 'Inter')
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
@@ -127,6 +128,7 @@ export default function BaukastenPage() {
   const [slideTransitions, setSlideTransitions] = useState<Record<string, string>>({})
   const [slotResult, setSlotResult] = useState<string | null>(null)
   const themePresets = [
+    { name: 'Cozy Beamer', color: '#7a5bff', bg: defaultBg, font: 'Inter', animation: 'Slide' },
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
     { name: 'Playful', color: '#f97316', bg: 'linear-gradient(135deg,#1d1b27,#312e81)', font: 'Nunito', animation: 'Pop' },
@@ -220,30 +222,23 @@ export default function BaukastenPage() {
   const activeQuestionId = slideQuestions[currentSlideId]
   const activeQuestion = questions.find((q) => q.id === activeQuestionId)
   const slideOverride = slideText[currentSlideId] || {}
-  const displayQuestion =
-    currentLang === 'en'
-      ? slideOverride.questionEn ||
-        (activeQuestion as any)?.textEn ||
-        (activeQuestion as any)?.questionEn ||
-        questionTextEn ||
-        (activeQuestion as any)?.text ||
-        (activeQuestion as any)?.question ||
-        questionText
-      : slideOverride.questionDe || (activeQuestion as any)?.text || (activeQuestion as any)?.question || questionText
-  const displayAnswer =
-    currentLang === 'en'
-      ? slideOverride.answerEn ||
-        (activeQuestion as any)?.answerEn ||
-        (activeQuestion as any)?.correctOptionEn ||
-        (Array.isArray((activeQuestion as any)?.optionsEn) && (activeQuestion as any)?.optionsEn[(activeQuestion as any)?.correctIndexEn]) ||
-        answerTextEn ||
-        (activeQuestion as any)?.answer ||
-        (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
-        answerText
-      : slideOverride.answerDe ||
-        (activeQuestion as any)?.answer ||
-        (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
-        answerText
+  const questionDe = slideOverride.questionDe || (activeQuestion as any)?.text || (activeQuestion as any)?.question || questionText
+  const questionEn =
+    slideOverride.questionEn || (activeQuestion as any)?.textEn || (activeQuestion as any)?.questionEn || questionTextEn || questionDe
+  const answerDe =
+    slideOverride.answerDe ||
+    (activeQuestion as any)?.answer ||
+    (Array.isArray((activeQuestion as any)?.options) && (activeQuestion as any)?.options[(activeQuestion as any)?.correctIndex]) ||
+    answerText
+  const answerEn =
+    slideOverride.answerEn ||
+    (activeQuestion as any)?.answerEn ||
+    (activeQuestion as any)?.correctOptionEn ||
+    (Array.isArray((activeQuestion as any)?.optionsEn) && (activeQuestion as any)?.optionsEn[(activeQuestion as any)?.correctIndexEn]) ||
+    answerTextEn ||
+    answerDe
+  const displayQuestion = languageMode === 'dual' ? questionDe : currentLang === 'en' ? questionEn : questionDe
+  const displayAnswer = languageMode === 'dual' ? answerDe : currentLang === 'en' ? answerEn : answerDe
 
   useEffect(() => {
     const l = slideLayouts[currentSlideId]
@@ -1142,28 +1137,29 @@ export default function BaukastenPage() {
                   </>
                 )}
                 {layerVisibility.question && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: `${layoutX}%`,
-                    top: `${layoutY}%`,
-                    transform: 'translate(-0%, -0%)',
-                    fontSize: layoutSize,
-                    fontWeight: 800,
-                    color: '#e2e8f0',
-                    border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
-                    padding: 4,
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation()
-                    if (layerLock.question) return
-                    setEditTarget('question')
-                  }}
-                >
-                  {displayQuestion}
                   <div
-                    onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
                     style={{
+                      position: 'absolute',
+                      left: `${layoutX}%`,
+                      top: `${layoutY}%`,
+                      transform: 'translate(-0%, -0%)',
+                      fontSize: layoutSize,
+                      fontWeight: 800,
+                      color: '#e2e8f0',
+                      border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
+                      padding: 4,
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      if (layerLock.question) return
+                      setEditTarget('question')
+                    }}
+                  >
+                    <div>{questionDe}</div>
+                    {languageMode === 'dual' && <div style={{ fontSize: layoutSize * 0.7, color: '#a5f3fc' }}>{questionEn}</div>}
+                    <div
+                      onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
+                      style={{
                         position: 'absolute',
                         right: -8,
                         bottom: -8,
@@ -1191,7 +1187,8 @@ export default function BaukastenPage() {
                       padding: 4,
                     }}
                   >
-                    {displayAnswer}
+                    <div>{answerDe}</div>
+                    {languageMode === 'dual' && <div style={{ fontSize: answerSize * 0.7, color: '#cbd5e1' }}>{answerEn}</div>}
                     <div
                       onMouseDown={(e) => {
                         e.stopPropagation()

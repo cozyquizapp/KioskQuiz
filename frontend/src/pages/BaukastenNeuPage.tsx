@@ -122,6 +122,9 @@ export default function BaukastenNeuPage() {
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Fragen waehlen</div>
               <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
                 <button onClick={loadQuestions} style={pill('Katalog laden')}>Katalog laden</button>
+                <button style={pill('Frageneditor')} onClick={() => (window.location.href = '/question-editor')}>
+                  Fragenkatalog öffnen
+                </button>
                 <div style={{ ...pill('Mixed Bag Mechanik'), display: 'flex', gap: 6 }}>
                   <span>Mechanik:</span>
                   <select value={mixedMechanic} onChange={(e) => setMixedMechanic(e.target.value)} style={input()}>
@@ -190,13 +193,45 @@ export default function BaukastenNeuPage() {
                   </label>
                 </div>
               </div>
+              <div style={{ marginTop: 12, display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>
+                <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: '#0d0f14' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview Beamer</div>
+                  <div
+                    style={{
+                      background: bg,
+                      borderRadius: 16,
+                      padding: 16,
+                      minHeight: 140,
+                      border: `1px solid ${accent}55`,
+                      boxShadow: `0 18px 40px ${accent}33`,
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: accent, fontWeight: 800, textTransform: 'uppercase' }}>Kategorie</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, margin: '6px 0', color: '#f8fafc' }}>Frage-Text</div>
+                    <div style={{ height: 8, borderRadius: 999, background: '#111827', overflow: 'hidden' }}>
+                      <div style={{ width: '60%', height: '100%', background: accent }} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: '#0d0f14' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview Team</div>
+                  <div style={{ borderRadius: 12, padding: 14, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    <div style={{ fontSize: 14, color: '#e2e8f0', fontWeight: 700 }}>Frage</div>
+                    <div style={{ fontSize: 12, color: '#cbd5e1', margin: '4px 0 10px' }}>Antwort eingeben...</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <div style={{ padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: 12 }}>Option A</div>
+                      <div style={{ padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: 12 }}>Option B</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {step === 4 && (
             <div style={card}>
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Slides (Design)</div>
-              <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 8 }}>Hier nur Layout/Design anpassen. Inhalte kommen aus den gew hlten Fragen.</div>
+              <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 8 }}>Hier nur Layout/Design anpassen. Inhalte kommen aus den gewaehlt en Fragen.</div>
               <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
                 {selectedQuestions.map((q) => (
                   <div key={q.id} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
@@ -213,5 +248,4 @@ export default function BaukastenNeuPage() {
     </div>
   )
 }
-
 

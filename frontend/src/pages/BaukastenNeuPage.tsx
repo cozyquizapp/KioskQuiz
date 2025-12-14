@@ -46,7 +46,7 @@ export default function BaukastenNeuPage() {
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);
   const [selected, setSelected] = useState<string[]>(draft?.selectedQuestionIds || []);
   const [mixedMechanic, setMixedMechanic] = useState((draft as any)?.structure?.mixedMechanic || "Connect Five");
-  const [katalogName, setKatalogName] = useState("Standard-Katalog");
+  const [katalogName, setKatalogName] = useState("Alle Kataloge");
 
   const [themePreset, setThemePreset] = useState<"CozyBeamer" | "Custom">("CozyBeamer");
   const [bg, setBg] = useState((draft?.theme as any)?.background || "radial-gradient(circle at 20% 20%, #1a1f39 0%, #0d0f14 55%)");
@@ -153,6 +153,11 @@ export default function BaukastenNeuPage() {
   };
 
   const selectedQuestions = useMemo(() => questions.filter((q) => selected.includes(q.id)), [questions, selected]);
+  const catalogs = useMemo(() => {
+    const set = new Set<string>();
+    questions.forEach((q) => set.add((q as any).catalogId || "default"));
+    return Array.from(set).sort();
+  }, [questions]);
 
   const toggleSelect = (id: string) => {
     setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
@@ -341,10 +346,10 @@ export default function BaukastenNeuPage() {
                 <div style={{ ...pill(katalogName), display: "flex", alignItems: "center", gap: 6 }}>
                   <span>Katalog:</span>
                   <select value={katalogName} onChange={(e) => setKatalogName(e.target.value)} style={input()}>
-                    <option>Standard-Katalog</option>
-                    <option>Bilder-Katalog</option>
-                    <option>Audio/Video-Katalog</option>
-                    <option>Custom (Import)</option>
+                    <option>Alle Kataloge</option>
+                    {catalogs.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
                 <button onClick={loadQuestions} style={pill("Katalog laden")}>Katalog laden</button>
@@ -360,13 +365,18 @@ export default function BaukastenNeuPage() {
                 </div>
               </div>
               <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
-                {questions.filter(isMixedAllowed).slice(0, 60).map((q) => (
+                {questions
+                  .filter(isMixedAllowed)
+                  .filter((q) => (katalogName === "Alle Kataloge" ? true : (q as any).catalogId === katalogName))
+                  .slice(0, 120)
+                  .map((q) => (
                   <div key={q.id} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, background: selected.includes(q.id) ? "rgba(122,91,255,0.12)" : "rgba(255,255,255,0.02)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
                       <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(q as any).text || (q as any).question}</div>
                       <input type="checkbox" checked={selected.includes(q.id)} onChange={() => toggleSelect(q.id)} />
                     </div>
                     <div style={{ fontSize: 12, color: "#94a3b8" }}>{q.category}</div>
+                    <div style={{ fontSize: 11, color: "#cbd5e1" }}>Katalog: {(q as any).catalogId || "default"}</div>
                     {q.category === "Mixed Bag" && <div style={{ fontSize: 11, color: "#22c55e" }}>Mechanik: {(q as any).mixedMechanic || (q as any).mechanic || "keine"}</div>}
                   </div>
                 ))}

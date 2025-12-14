@@ -246,7 +246,7 @@ export const deleteQuestionImage = async (questionId: string) => {
 // Frage-Metadaten (z. B. mixedMechanic, answer) setzen
 export const setQuestionMeta = async (
   questionId: string,
-  payload: { mixedMechanic?: string | null; answer?: unknown }
+  payload: { mixedMechanic?: string | null; answer?: unknown; catalogId?: string | null }
 ) => {
   const res = await fetch(`${API_BASE}/questions/${questionId}/meta`, {
     method: 'POST',
@@ -377,4 +377,3 @@ export const publishStudioDraft = async (draft: any): Promise<{ ok: boolean; id?
   if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
   return res.json();
 };
-

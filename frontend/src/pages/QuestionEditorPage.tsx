@@ -42,6 +42,7 @@ const QuestionEditorPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<QuizCategory | 'ALL'>('ALL');
+  const [filterCatalog, setFilterCatalog] = useState<string>('ALL');
   const [status, setStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadTarget, setUploadTarget] = useState<string | null>(null);
@@ -51,6 +52,7 @@ const QuestionEditorPage: React.FC = () => {
   >({});
   const [filterCustomOnly, setFilterCustomOnly] = useState(false);
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
+  const [catalogDrafts, setCatalogDrafts] = useState<Record<string, string>>({});
 
   const load = () => {
     setLoading(true);
@@ -71,6 +73,7 @@ const QuestionEditorPage: React.FC = () => {
     const term = search.toLowerCase();
     return questions
       .filter((q: any) => (filterCat === 'ALL' ? true : q.category === filterCat))
+      .filter((q: any) => (filterCatalog === 'ALL' ? true : (q.catalogId || 'default') === filterCatalog))
       .filter((q: any) => (filterCustomOnly ? q.isCustom : true))
       .filter((q) =>
         term
@@ -78,7 +81,13 @@ const QuestionEditorPage: React.FC = () => {
           : true
       )
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-  }, [questions, filterCat, search]);
+  }, [questions, filterCat, search, filterCatalog, filterCustomOnly]);
+
+  const catalogs = useMemo(() => {
+    const set = new Set<string>();
+    questions.forEach((q) => set.add((q as any).catalogId || 'default'));
+    return Array.from(set).sort();
+  }, [questions]);
 
   const totalCount = questions.length;
   const filteredCount = filtered.length;
@@ -249,7 +258,7 @@ const QuestionEditorPage: React.FC = () => {
               color: '#e2e8f0'
             }}
           />
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {(['ALL', ...catList] as (QuizCategory | 'ALL')[]).map((cat) => (
               <button
                 key={cat}
@@ -263,6 +272,24 @@ const QuestionEditorPage: React.FC = () => {
                 {cat === 'ALL' ? 'Alle' : catLabel[cat]}
               </button>
             ))}
+            <select
+              value={filterCatalog}
+              onChange={(e) => setFilterCatalog(e.target.value)}
+              style={{
+                padding: 10,
+                borderRadius: 10,
+                border: '1px solid #2d3748',
+                background: '#111827',
+                color: '#f8fafc'
+              }}
+            >
+              <option value="ALL">Alle Kataloge</option>
+              {catalogs.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => setFilterCustomOnly((v) => !v)}
               style={{
@@ -330,6 +357,7 @@ const QuestionEditorPage: React.FC = () => {
                     )}
                     <span style={badge(color)}>{catLabel[q.category]}</span>
                     <span style={badge('#ffffff', true)}>{q.mechanic}</span>
+                    <span style={badge('#7c8cff', true)}>Katalog: {(q as any).catalogId || 'default'}</span>
                     {isGemTuete && q.mixedMechanic && (
                       <span style={badge(color, true)}>Mechanik: {q.mixedMechanic}</span>
                     )}
@@ -365,6 +393,40 @@ const QuestionEditorPage: React.FC = () => {
                     style={{ ...badge('#7c8cff'), cursor: 'pointer' }}
                   >
                     Loesung speichern
+                  </button>
+                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>Katalog:</label>
+                  <input
+                    type="text"
+                    value={catalogDrafts[q.id] ?? (q as any).catalogId ?? 'default'}
+                    onChange={(e) =>
+                      setCatalogDrafts((prev) => ({
+                        ...prev,
+                        [q.id]: e.target.value
+                      }))
+                    }
+                    style={{
+                      minWidth: 160,
+                      padding: 8,
+                      borderRadius: 8,
+                      border: '1px solid #2d3748',
+                      background: '#0f172a',
+                      color: '#e2e8f0'
+                    }}
+                  />
+                  <button
+                    style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                    onClick={async () => {
+                      const catalogId = (catalogDrafts[q.id] ?? (q as any).catalogId ?? 'default').trim() || 'default';
+                      try {
+                        await setQuestionMeta(q.id, { catalogId });
+                        setStatus('Katalog gespeichert');
+                        setQuestions((prev) => prev.map((qq) => (qq.id === q.id ? { ...(qq as any), catalogId } : qq)));
+                      } catch {
+                        setStatus('Katalog konnte nicht gespeichert werden');
+                      }
+                    }}
+                  >
+                    Katalog speichern
                   </button>
                   {(q as any).answer && (
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>Aktuell: {(q as any).answer}</span>

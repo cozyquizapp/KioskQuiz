@@ -243,7 +243,7 @@ customQuestions.forEach((q) => {
 
 // overrides (z. B. mixedMechanic)
 const questionOverridesPath = path.join(__dirname, 'data', 'questionOverrides.json');
-type QuestionOverride = { mixedMechanic?: string | null; imageOffsetX?: number; imageOffsetY?: number; logoOffsetX?: number; logoOffsetY?: number };
+type QuestionOverride = { mixedMechanic?: string | null; imageOffsetX?: number; imageOffsetY?: number; logoOffsetX?: number; logoOffsetY?: number; catalogId?: string | null };
 let questionOverrideMap: Record<string, QuestionOverride> = {};
 try {
   if (fs.existsSync(questionOverridesPath)) {
@@ -397,6 +397,11 @@ const applyOverrides = (question: AnyQuestion): AnyQuestion => {
   const override = questionOverrideMap[question.id];
   if (override?.mixedMechanic) {
     q = { ...q, mixedMechanic: override.mixedMechanic as any };
+  }
+  if (override?.catalogId !== undefined) {
+    q = { ...q, catalogId: override.catalogId || 'default' };
+  } else if (!(q as any).catalogId) {
+    q = { ...q, catalogId: 'default' };
   }
   if (
     override &&
@@ -1241,7 +1246,7 @@ app.post('/api/rooms/:roomCode/language', (req, res) => {
 // Frage-Metadaten setzen (z. B. mixedMechanic)
 app.post('/api/questions/:id/meta', (req, res) => {
   const { id } = req.params;
-  const { mixedMechanic } = req.body as { mixedMechanic?: string | null };
+  const { mixedMechanic, catalogId } = req.body as { mixedMechanic?: string | null; catalogId?: string | null };
   if (!id || !questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
   const question = questionById.get(id)!;
   if (mixedMechanic && question.category !== 'GemischteTuete') {
@@ -1249,6 +1254,9 @@ app.post('/api/questions/:id/meta', (req, res) => {
   }
   if (!questionOverrideMap[id]) questionOverrideMap[id] = {};
   questionOverrideMap[id].mixedMechanic = mixedMechanic ?? null;
+  if (catalogId !== undefined) {
+    questionOverrideMap[id].catalogId = catalogId || null;
+  }
   persistQuestionOverrides();
   return res.json({ ok: true, override: questionOverrideMap[id] });
 });
@@ -1303,6 +1311,7 @@ app.post('/api/questions', (req, res) => {
     question,
     points: Number(points) || 1,
     createdAt: Date.now(),
+    catalogId: (rest as any)?.catalogId || 'default',
     ...(rest as any)
   };
   customQuestions.push(created);
@@ -1393,10 +1402,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
-
-
-
 
 
 

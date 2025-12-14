@@ -54,6 +54,7 @@ const QuestionEditorPage: React.FC = () => {
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
   const [catalogDrafts, setCatalogDrafts] = useState<Record<string, string>>({});
   const [mediaSlotsDrafts, setMediaSlotsDrafts] = useState<Record<string, number>>({});
+  const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
 
   const load = () => {
     setLoading(true);
@@ -443,7 +444,24 @@ const QuestionEditorPage: React.FC = () => {
                       <span style={badge('#ffffff', true)}>Genutzt in: {q.usedIn.join(', ')}</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, color: '#94a3b8' }}>ID: {q.id}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>ID: {q.id}</div>
+                    <button
+                      onClick={() =>
+                        setBulkSelection((prev) => {
+                          const next = new Set(prev);
+                          next.has(q.id) ? next.delete(q.id) : next.add(q.id);
+                          return next;
+                        })
+                      }
+                      style={{
+                        ...badge(bulkSelection.has(q.id) ? '#22c55e' : '#ffffff', true),
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {bulkSelection.has(q.id) ? 'In Auswahl' : 'Zur Auswahl'}
+                    </button>
+                  </div>
                 </div>
                 <div style={{ marginTop: 10, fontWeight: 800, fontSize: 18 }}>{q.question}</div>
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

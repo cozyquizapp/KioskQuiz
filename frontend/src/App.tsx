@@ -10,6 +10,7 @@ import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import CreatorCanvasPage from './pages/CreatorCanvasPage';
 import BaukastenPage from './pages/BaukastenPage';
+import BaukastenNeuPage from './pages/BaukastenNeuPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -26,6 +27,7 @@ function App() {
       <Route path="/creator-wizard" element={<Navigate to="/baukasten" replace />} />
       <Route path="/creator-canvas" element={<Navigate to="/baukasten" replace />} />
       <Route path="/baukasten" element={<BaukastenPage />} />
+      <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
       <Route path="/creator-app" element={<Navigate to="/baukasten" replace />} />
       <Route path="/question-editor" element={<QuestionEditorPage />} />
       <Route path="/moderator" element={<ModeratorPage />} />

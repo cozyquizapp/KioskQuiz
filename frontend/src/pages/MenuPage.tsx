@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 type LinkItem = { path: string; label: string; note?: string }
 
@@ -12,7 +12,7 @@ const liveLinks: LinkItem[] = [
 
 const creationFlow: LinkItem[] = [
   { path: '/baukasten', label: 'Baukasten', note: 'Alles in einem Flow (Struktur, Theme, Slides, Publish)' },
-  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: 'Älterer Flow, falls gebraucht' },
+  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: '�lterer Flow, falls gebraucht' },
 ]
 
 const metaLinks: LinkItem[] = [{ path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }]
@@ -103,3 +103,4 @@ const MenuPage = () => {
 }
 
 export default MenuPage
+

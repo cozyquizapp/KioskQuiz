@@ -48,6 +48,10 @@ const smallBtn = () => ({
 })
 
 const field = () => ({ display: 'flex', flexDirection: 'column', gap: 6 })
+const truncate = (str?: string, n = 32) => {
+  if (!str) return ''
+  return str.length > n ? str.slice(0, n) + '…' : str
+}
 
 export default function BaukastenPage() {
   const draft = loadPlayDraft()
@@ -857,7 +861,14 @@ export default function BaukastenPage() {
                   }}
                   onClick={() => setCurrentSlideId(s.id)}
                 >
-                  {s.title}
+                  <div style={{ display: 'grid', gap: 2 }}>
+                    <div>{s.title}</div>
+                    {slideQuestions[s.id] && (
+                      <div style={{ fontSize: 11, color: '#cbd5e1' }}>
+                        {truncate((questions.find((q) => q.id === slideQuestions[s.id]) as any)?.text || (questions.find((q) => q.id === slideQuestions[s.id]) as any)?.question, 26)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1175,6 +1186,17 @@ export default function BaukastenPage() {
                           ))
                         : null
                     })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      style={smallBtn()}
+                      onClick={() => {
+                        setSlideQuestions((s) => ({ ...s, [currentSlideId]: q.id }))
+                        setTab('slides')
+                      }}
+                    >
+                      Auf aktuelle Slide setzen
+                    </button>
                   </div>
                 </div>
               ))}

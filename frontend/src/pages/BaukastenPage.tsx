@@ -1107,10 +1107,11 @@ export default function BaukastenPage() {
                       </div>
                       <div style={{ display: 'grid', gap: 2, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 13, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</div>
-                        <div style={{ fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 11, color: qText ? '#94a3b8' : '#f97316', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {qText ? truncate(qText, 60) : 'Keine Frage zugeordnet'}
                         </div>
                       </div>
+                      {!qText && <div style={{ fontSize: 10, color: '#f97316', padding: '2px 6px', borderRadius: 999, border: '1px solid rgba(249,115,22,0.5)' }}>Fehlt</div>}
                     </div>
                   )
                 })}

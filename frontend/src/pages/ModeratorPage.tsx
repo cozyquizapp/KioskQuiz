@@ -139,6 +139,8 @@ const ModeratorPage: React.FC = () => {
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
   const lastReportedQuestionId = React.useRef<string | null>(null);
+  const [slotHoldMs, setSlotHoldMs] = useState(2400);
+  const [slotExitMs, setSlotExitMs] = useState(1200);
   const [actionState, setActionState] = useState<{
     quiz: boolean;
     next: boolean;

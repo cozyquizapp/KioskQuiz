@@ -55,7 +55,7 @@ const truncate = (str?: string, n = 32) => {
 
 export default function BaukastenPage() {
   const draft = loadPlayDraft()
-  const [tab, setTab] = useState<'struktur' | 'fragen' | 'slides' | 'theme' | 'publish'>('slides')
+  const [tab, setTab] = useState<'struktur' | 'fragen' | 'slides'>('slides')
   const [name, setName] = useState(draft?.name || 'Neues Quiz')
   const [categories, setCategories] = useState<Category[]>(draft?.structure.categories || defaultCategories)
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
@@ -114,6 +114,9 @@ export default function BaukastenPage() {
   })
   const [currentSlideId, setCurrentSlideId] = useState<string>('intro')
   const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(true)
+  const [showThemeBox, setShowThemeBox] = useState(false)
+  const [showPublishBox, setShowPublishBox] = useState(false)
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
@@ -466,131 +469,6 @@ export default function BaukastenPage() {
       )
     }
 
-    if (tab === 'theme') {
-      return (
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Theme</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {themePresets.map((p) => (
-              <button
-                key={p.name}
-                style={{ ...smallBtn(), background: `${p.color}22`, borderColor: `${p.color}77`, color: '#e2e8f0' }}
-                onClick={() => {
-                  setThemeColor(p.color)
-                  setBg(p.bg)
-                  setFont(p.font)
-                  setAnimation(p.animation as any)
-                }}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-          <div style={field()}>
-            <label>Primaerfarbe</label>
-            <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} style={{ width: '100%' }} />
-          </div>
-          <div style={field()}>
-            <label>Hintergrund (URL)</label>
-            <input value={bg} onChange={(e) => setBg(e.target.value)} style={input()} placeholder="https://..." />
-          </div>
-          <div style={field()}>
-            <label>Logo (URL)</label>
-            <input value={logo} onChange={(e) => setLogo(e.target.value)} style={input()} placeholder="https://..." />
-          </div>
-          <div style={field()}>
-            <label>Font</label>
-            <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
-          </div>
-          <div style={field()}>
-            <label>Animation</label>
-            <select value={animation} onChange={(e) => setAnimation(e.target.value)} style={input()}>
-              <option value="Slide">Slide</option>
-              <option value="Fade">Fade</option>
-              <option value="Pop">Pop</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {bg && (
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>BG Preview</div>
-                <img src={bg} alt="bg" style={{ width: 160, height: 90, objectFit: 'cover', borderRadius: 10 }} />
-              </div>
-            )}
-            {logo && (
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>Logo Preview</div>
-                <img src={logo} alt="logo" style={{ height: 60, objectFit: 'contain' }} />
-              </div>
-            )}
-          </div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            <div style={{ fontWeight: 700 }}>Intro & Regeln</div>
-            <input value={introText} onChange={(e) => setIntroText(e.target.value)} style={input()} placeholder="Intro-Text" />
-            <textarea
-              value={rulesText}
-              onChange={(e) => setRulesText(e.target.value)}
-              style={{ ...input(), height: 80, resize: 'vertical' }}
-              placeholder="Regeln"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    if (tab === 'publish') {
-      return (
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Publish</div>
-          <div style={{ color: '#cbd5e1' }}>Titel: {name}</div>
-          <div style={{ color: '#cbd5e1' }}>Intro: {intro} | Regeln: {rules}</div>
-          <div style={{ color: '#cbd5e1' }}>Fragen: {totalQuestions}</div>
-          <div style={{ color: '#cbd5e1' }}>Kategorien: {categories.map((c) => `${c.name} (${c.questions})`).join(', ')}</div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            <button style={smallBtn()} onClick={persist}>
-              Speichern
-            </button>
-            <button
-              style={smallBtn()}
-              onClick={() => {
-                const data = {
-                  name,
-                  categories,
-                  intro,
-                  rules,
-                  introText,
-                  rulesText,
-                  theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
-                  selectedQuestionIds: selectedIds,
-                }
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `${name.replace(/\s+/g, '-').toLowerCase() || 'quiz'}.json`
-                a.click()
-                URL.revokeObjectURL(url)
-              }}
-            >
-              Export JSON
-            </button>
-            <a href="/draft-import" style={smallBtn()}>
-              Draft laden
-            </a>
-            <a href="/moderator" style={smallBtn()}>
-              Moderator
-            </a>
-            <a href="/beamer" style={smallBtn()}>
-              Beamer
-            </a>
-            <a href="/team" style={smallBtn()}>
-              Team
-            </a>
-          </div>
-        </div>
-      )
-    }
-
     // slides tab
     return (
         <div style={{ display: 'grid', gap: 10 }}>
@@ -860,6 +738,117 @@ export default function BaukastenPage() {
               </div>
             </div>
           )}
+          <div style={{ display: 'grid', gap: 6 }}>
+            <button style={smallBtn()} onClick={() => setShowThemeBox((v) => !v)}>
+              {showThemeBox ? 'Theme einklappen' : 'Theme / Branding'}
+            </button>
+            {showThemeBox && (
+              <div style={{ display: 'grid', gap: 8, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {themePresets.map((p) => (
+                    <button
+                      key={p.name}
+                      style={{ ...smallBtn(), background: `${p.color}22`, borderColor: `${p.color}77`, color: '#e2e8f0' }}
+                      onClick={() => {
+                        setThemeColor(p.color)
+                        setBg(p.bg)
+                        setFont(p.font)
+                        setAnimation(p.animation as any)
+                      }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+                <div style={field()}>
+                  <label>Primaerfarbe</label>
+                  <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} style={{ width: '100%' }} />
+                </div>
+                <div style={field()}>
+                  <label>Hintergrund (URL)</label>
+                  <input value={bg} onChange={(e) => setBg(e.target.value)} style={input()} placeholder="https://..." />
+                </div>
+                <div style={field()}>
+                  <label>Logo (URL)</label>
+                  <input value={logo} onChange={(e) => setLogo(e.target.value)} style={input()} placeholder="https://..." />
+                </div>
+                <div style={field()}>
+                  <label>Font</label>
+                  <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
+                </div>
+                <div style={field()}>
+                  <label>Animation</label>
+                  <select value={animation} onChange={(e) => setAnimation(e.target.value)} style={input()}>
+                    <option value="Slide">Slide</option>
+                    <option value="Fade">Fade</option>
+                    <option value="Pop">Pop</option>
+                  </select>
+                </div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ fontWeight: 700 }}>Intro & Regeln</div>
+                  <input value={introText} onChange={(e) => setIntroText(e.target.value)} style={input()} placeholder="Intro-Text" />
+                  <textarea
+                    value={rulesText}
+                    onChange={(e) => setRulesText(e.target.value)}
+                    style={{ ...input(), height: 80, resize: 'vertical' }}
+                    placeholder="Regeln"
+                  />
+                </div>
+              </div>
+            )}
+            <button style={smallBtn()} onClick={() => setShowPublishBox((v) => !v)}>
+              {showPublishBox ? 'Publish einklappen' : 'Publish / Export'}
+            </button>
+            {showPublishBox && (
+              <div style={{ display: 'grid', gap: 8, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+                <div style={{ color: '#cbd5e1' }}>Titel: {name}</div>
+                <div style={{ color: '#cbd5e1' }}>Intro: {intro} | Regeln: {rules}</div>
+                <div style={{ color: '#cbd5e1' }}>Fragen: {totalQuestions}</div>
+                <div style={{ color: '#cbd5e1' }}>Kategorien: {categories.map((c) => `${c.name} (${c.questions})`).join(', ')}</div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <button style={smallBtn()} onClick={persist}>
+                    Speichern
+                  </button>
+                  <button
+                    style={smallBtn()}
+                    onClick={() => {
+                      const data = {
+                        name,
+                        categories,
+                        intro,
+                        rules,
+                        introText,
+                        rulesText,
+                        theme: { color: themeColor, background: bg, logoUrl: logo, font, animation },
+                        selectedQuestionIds: selectedIds,
+                      }
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `${name.replace(/\\s+/g, '-').toLowerCase() || 'quiz'}.json`
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                  >
+                    Export JSON
+                  </button>
+                  <a href="/draft-import" style={smallBtn()}>
+                    Draft laden
+                  </a>
+                  <a href="/moderator" style={smallBtn()}>
+                    Moderator
+                  </a>
+                  <a href="/beamer" style={smallBtn()}>
+                    Beamer
+                  </a>
+                  <a href="/team" style={smallBtn()}>
+                    Team
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -886,7 +875,7 @@ export default function BaukastenPage() {
         >
           <div style={{ fontWeight: 800, marginBottom: 8 }}>Baukasten</div>
           <div style={{ display: 'grid', gap: 8 }}>
-            {(['struktur', 'fragen', 'slides', 'theme', 'publish'] as const).map((t) => (
+            {(['struktur', 'fragen', 'slides'] as const).map((t) => (
               <button
                 key={t}
                 style={{
@@ -913,29 +902,40 @@ export default function BaukastenPage() {
         </div>
 
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 10, alignItems: 'start' }}>
-            <div style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 10, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gap: 8 }}>
               <div style={{ fontWeight: 800 }}>Slides</div>
-              {slides.map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    ...pill(currentSlideId === s.id ? '#7a5bff' : '#38bdf8'),
-                    cursor: 'pointer',
-                    borderColor: currentSlideId === s.id ? '#7a5bffcc' : 'rgba(255,255,255,0.16)',
-                  }}
-                  onClick={() => setCurrentSlideId(s.id)}
-                >
-                  <div style={{ display: 'grid', gap: 2 }}>
-                    <div>{s.title}</div>
-                    {slideQuestions[s.id] && (
-                      <div style={{ fontSize: 11, color: '#cbd5e1' }}>
-                        {truncate((questions.find((q) => q.id === slideQuestions[s.id]) as any)?.text || (questions.find((q) => q.id === slideQuestions[s.id]) as any)?.question, 26)}
+              <div style={{ display: 'grid', gap: 8 }}>
+                {slides.map((s) => {
+                  const qid = slideQuestions[s.id]
+                  const qText = qid ? (questions.find((q) => q.id === qid) as any)?.text || (questions.find((q) => q.id === qid) as any)?.question : ''
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        borderRadius: 12,
+                        padding: 8,
+                        border: `1px solid ${currentSlideId === s.id ? themeColor : 'rgba(255,255,255,0.12)'}`,
+                        background: currentSlideId === s.id ? 'rgba(122,91,255,0.08)' : 'rgba(255,255,255,0.03)',
+                        cursor: 'pointer',
+                        display: 'grid',
+                        gap: 6,
+                      }}
+                      onClick={() => setCurrentSlideId(s.id)}
+                    >
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.title}</div>
+                        <div style={{ height: 80, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: '#0f172a', padding: 8, overflow: 'hidden' }}>
+                          <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.3 }}>
+                            {truncate(qText || displayQuestion, 70) || 'Keine Frage zugeordnet'}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>{qText ? truncate(qText, 40) : 'leer'}</div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
             <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>Canvas</div>
@@ -1100,23 +1100,28 @@ export default function BaukastenPage() {
               </div>
             </div>
           </div>
-          <div style={{ marginTop: 10, display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-            <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Beamer</div>
-              <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: `1px solid ${themeColor}33` }}>
-                <div style={{ fontSize: layoutSize, fontWeight: 800, color: '#e2e8f0', marginBottom: 6 }}>{displayQuestion}</div>
-                {showAnswer && <div style={{ fontSize: answerSize, fontWeight: 700, color: '#a5f3fc' }}>{displayAnswer}</div>}
+          <button style={smallBtn()} onClick={() => setShowPreview((v) => !v)}>
+            {showPreview ? 'Preview verstecken' : 'Preview zeigen'}
+          </button>
+          {showPreview && (
+            <div style={{ marginTop: 10, display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+              <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Beamer</div>
+                <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: `1px solid ${themeColor}33` }}>
+                  <div style={{ fontSize: layoutSize, fontWeight: 800, color: '#e2e8f0', marginBottom: 6 }}>{displayQuestion}</div>
+                  {showAnswer && <div style={{ fontSize: answerSize, fontWeight: 700, color: '#a5f3fc' }}>{displayAnswer}</div>}
+                </div>
+              </div>
+              <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Team</div>
+                <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: '1px dashed rgba(255,255,255,0.2)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{name}</div>
+                  <div style={{ fontSize: 14, color: '#cbd5e1', marginBottom: 4 }}>{displayQuestion}</div>
+                  {showAnswer && <div style={{ fontSize: 13, color: '#a5f3fc' }}>{displayAnswer}</div>}
+                </div>
               </div>
             </div>
-            <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Team</div>
-              <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: '1px dashed rgba(255,255,255,0.2)' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{name}</div>
-                <div style={{ fontSize: 14, color: '#cbd5e1', marginBottom: 4 }}>{displayQuestion}</div>
-                {showAnswer && <div style={{ fontSize: 13, color: '#a5f3fc' }}>{displayAnswer}</div>}
-              </div>
-            </div>
-          </div>
+          )}
           <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Slots / Kategorien</div>
             <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>

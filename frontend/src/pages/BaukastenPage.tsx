@@ -141,6 +141,16 @@ export default function BaukastenPage() {
       return matchesText && matchesCat && matchesImg && matchesMech
     })
   }, [questions, qSearch, qCategory, qImageOnly, qMechanicOnly])
+  const selectedByCategory = useMemo(() => {
+    const map: Record<string, AnyQuestion[]> = {}
+    selectedIds.forEach((id) => {
+      const q = questions.find((qq) => qq.id === id)
+      if (!q?.category) return
+      if (!map[q.category]) map[q.category] = []
+      map[q.category].push(q)
+    })
+    return map
+  }, [selectedIds, questions])
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     selectedIds.forEach((id) => {
@@ -825,6 +835,46 @@ export default function BaukastenPage() {
                     {t}
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ fontWeight: 800, marginBottom: 6 }}>Slots / Kategorien</div>
+            <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              <div style={{ ...pill('#7a5bff'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+                Intro / Regeln
+              </div>
+              {categories.map((c) => {
+                const list = selectedByCategory[c.name] || []
+                return (
+                  <div
+                    key={c.name}
+                    style={{
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.04)',
+                      padding: 10,
+                      display: 'grid',
+                      gap: 6,
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{c.name}</div>
+                    <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                      {list.length} / {c.questions} ausgewählt
+                    </div>
+                    <div style={{ display: 'grid', gap: 4 }}>
+                      {list.slice(0, 4).map((q) => (
+                        <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          • {q.text}
+                        </div>
+                      ))}
+                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>… {list.length - 4} weitere</div>}
+                    </div>
+                  </div>
+                )
+              })}
+              <div style={{ ...pill('#f97316'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+                Finale / Abschluss
               </div>
             </div>
           </div>

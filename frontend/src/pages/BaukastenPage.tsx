@@ -669,8 +669,16 @@ export default function BaukastenPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 10, alignItems: 'start' }}>
             <div style={{ display: 'grid', gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Slides</div>
-              {slides.map((s, idx) => (
-                <div key={s.id} style={{ ...pill(idx === 0 ? '#7a5bff' : '#38bdf8'), cursor: 'pointer' }}>
+              {slides.map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    ...pill(currentSlideId === s.id ? '#7a5bff' : '#38bdf8'),
+                    cursor: 'pointer',
+                    borderColor: currentSlideId === s.id ? '#7a5bffcc' : 'rgba(255,255,255,0.16)',
+                  }}
+                  onClick={() => setCurrentSlideId(s.id)}
+                >
                   {s.title}
                 </div>
               ))}

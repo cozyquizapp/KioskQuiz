@@ -573,6 +573,19 @@ export default function BaukastenPage() {
                   </label>
                 ))}
               </div>
+              <div style={{ display: 'grid', gap: 4 }}>
+                <div style={{ fontWeight: 700 }}>Layer Lock</div>
+                {(['question', 'answer', 'timer', 'points'] as const).map((key) => (
+                  <label key={key} style={{ color: '#cbd5e1', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={(layerLock as any)[key]}
+                      onChange={(e) => setLayerLock((s) => ({ ...s, [key]: e.target.checked }))}
+                    />{' '}
+                    {key} sperren
+                  </label>
+                ))}
+              </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {(['question', 'answer', 'timer', 'points'] as const).map((t) => (
                   <button

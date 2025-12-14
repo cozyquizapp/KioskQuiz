@@ -65,6 +65,7 @@ export default function BaukastenPage() {
   const [rulesText, setRulesText] = useState(draft?.structure.rulesText || 'Regeln kurz erklaeren')
   const [questionText, setQuestionText] = useState('Frage-Text')
   const [answerText, setAnswerText] = useState('Antwort-Text')
+  const [slideQuestions, setSlideQuestions] = useState<Record<string, string>>({})
 
   const [questions, setQuestions] = useState<AnyQuestion[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -152,6 +153,11 @@ export default function BaukastenPage() {
     })
     return map
   }, [selectedIds, questions])
+
+  const activeQuestionId = slideQuestions[currentSlideId]
+  const activeQuestion = questions.find((q) => q.id === activeQuestionId)
+  const displayQuestion = activeQuestion?.text || questionText
+  const displayAnswer = (activeQuestion as any)?.answer || answerText
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     selectedIds.forEach((id) => {
@@ -522,13 +528,32 @@ export default function BaukastenPage() {
           <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
           <div style={{ color: '#cbd5e1' }}>Elemente auf der Bühne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
+            <label>Frage zuordnen (aktuelle Slide)</label>
+            <select
+              style={input()}
+              value={activeQuestionId || ''}
+              onChange={(e) => setSlideQuestions((s) => ({ ...s, [currentSlideId]: e.target.value || undefined }))}
+            >
+              <option value="">Keine</option>
+              {selectedIds.map((id) => {
+                const q = questions.find((qq) => qq.id === id)
+                if (!q) return null
+                return (
+                  <option key={id} value={id}>
+                    {q.text?.slice(0, 60)} ({q.category})
+                  </option>
+                )
+              })}
+            </select>
+          </div>
+          <div style={field()}>
             <label>Frage-Text</label>
           <input value={questionText} onChange={(e) => setQuestionText(e.target.value)} style={input()} />
-        </div>
-        <div style={field()}>
-          <label>Antwort-Text</label>
+          </div>
+          <div style={field()}>
+            <label>Antwort-Text</label>
           <input value={answerText} onChange={(e) => setAnswerText(e.target.value)} style={input()} />
-        </div>
+          </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>
               Frage X (%)
@@ -716,10 +741,10 @@ export default function BaukastenPage() {
                     position: 'absolute',
                     left: `${layoutX}%`,
                     top: `${layoutY}%`,
-                      transform: 'translate(-0%, -0%)',
-                      fontSize: layoutSize,
-                      fontWeight: 800,
-                      color: '#e2e8f0',
+                    transform: 'translate(-0%, -0%)',
+                    fontSize: layoutSize,
+                    fontWeight: 800,
+                    color: '#e2e8f0',
                     border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
                     padding: 4,
                   }}
@@ -729,7 +754,7 @@ export default function BaukastenPage() {
                     setEditTarget('question')
                   }}
                 >
-                  {questionText}
+                  {displayQuestion}
                   <div
                     onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
                     style={{
@@ -760,7 +785,7 @@ export default function BaukastenPage() {
                       padding: 4,
                     }}
                   >
-                    {answerText}
+                    {displayAnswer}
                     <div
                       onMouseDown={(e) => {
                         e.stopPropagation()

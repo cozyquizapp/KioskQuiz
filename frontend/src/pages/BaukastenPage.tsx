@@ -692,23 +692,28 @@ export default function BaukastenPage() {
                   </>
                 )}
                 {layerVisibility.question && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: `${layoutX}%`,
-                      top: `${layoutY}%`,
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${layoutX}%`,
+                    top: `${layoutY}%`,
                       transform: 'translate(-0%, -0%)',
                       fontSize: layoutSize,
                       fontWeight: 800,
                       color: '#e2e8f0',
-                      border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
-                      padding: 4,
-                    }}
-                  >
-                    {questionText}
-                    <div
-                      onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
-                      style={{
+                    border: editTarget === 'question' ? '1px dashed #7a5bff' : 'none',
+                    padding: 4,
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    if (layerLock.question) return
+                    setEditTarget('question')
+                  }}
+                >
+                  {questionText}
+                  <div
+                    onMouseDown={(e) => handleResizeMouseDown(e, 'question')}
+                    style={{
                         position: 'absolute',
                         right: -8,
                         bottom: -8,
@@ -738,7 +743,12 @@ export default function BaukastenPage() {
                   >
                     {answerText}
                     <div
-                      onMouseDown={(e) => handleResizeMouseDown(e, 'answer')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                        if (layerLock.answer) return
+                        setEditTarget('answer')
+                        handleResizeMouseDown(e, 'answer')
+                      }}
                       style={{
                         position: 'absolute',
                         right: -8,
@@ -767,6 +777,11 @@ export default function BaukastenPage() {
                       fontWeight: 800,
                       border: editTarget === 'timer' ? '1px dashed #7a5bff' : 'none',
                     }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      if (layerLock.timer) return
+                      setEditTarget('timer')
+                    }}
                   >
                     Timer
                   </div>
@@ -784,6 +799,11 @@ export default function BaukastenPage() {
                       fontSize: 12,
                       fontWeight: 800,
                       border: editTarget === 'points' ? '1px dashed #7a5bff' : 'none',
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      if (layerLock.points) return
+                      setEditTarget('points')
                     }}
                   >
                     Punkte

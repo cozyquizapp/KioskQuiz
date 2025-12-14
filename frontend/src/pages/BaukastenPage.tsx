@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import type { MouseEvent as ReactMouseEvent, DragEvent as ReactDragEvent } from 'react'
 import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
@@ -50,7 +50,7 @@ const smallBtn = () => ({
 const field = () => ({ display: 'flex', flexDirection: 'column', gap: 6 })
 const truncate = (str?: string, n = 32) => {
   if (!str) return ''
-  return str.length > n ? str.slice(0, n) + 'â€¦' : str
+  return str.length > n ? `${str.slice(0, n)}...` : str
 }
 
 export default function BaukastenPage() {
@@ -113,6 +113,7 @@ export default function BaukastenPage() {
     points: false,
   })
   const [currentSlideId, setCurrentSlideId] = useState<string>('intro')
+  const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null)
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },
@@ -405,6 +406,7 @@ export default function BaukastenPage() {
             <button style={smallBtn()} onClick={() => setShowDrawer(true)}>
               Fragen-Drawer oeffnen
             </button>
+            <div style={{ fontSize: 12, color: '#cbd5e1' }}>Tipp: Karte greifen und auf Slot ziehen oder per Button einer Slide zuweisen.</div>
             <div style={{ display: 'grid', gap: 6, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}>
               <div style={{ fontWeight: 700 }}>Soll/Ist je Kategorie</div>
               {categories.map((c) => {
@@ -442,7 +444,7 @@ export default function BaukastenPage() {
           <label style={{ color: '#cbd5e1', fontSize: 13 }}>
             <input type="checkbox" checked={qMechanicOnly} onChange={(e) => setQMechanicOnly(e.target.checked)} /> Mechanik gesetzt
           </label>
-          <div style={{ color: '#cbd5e1', fontSize: 12 }}>Ausgewaehlt: {selectedIds.length} | Treffer: {filteredQuestions.length}</div>
+          <div style={{ color: '#cbd5e1', fontSize: 12 }}>ausgewaehlt: {selectedIds.length} | Treffer: {filteredQuestions.length}</div>
           {selectedIds.length > 0 && (
             <div style={{ display: 'grid', gap: 6, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', maxHeight: 160, overflow: 'auto' }}>
               <div style={{ fontWeight: 700 }}>Auswahl</div>
@@ -593,7 +595,7 @@ export default function BaukastenPage() {
     return (
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
-          <div style={{ color: '#cbd5e1' }}>Elemente auf der BÃ¼hne anklicken & verschieben, Feinjustierung per Slider.</div>
+          <div style={{ color: '#cbd5e1' }}>Elemente auf der Buehne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
             <label>Frage zuordnen (aktuelle Slide)</label>
             <select
@@ -753,6 +755,68 @@ export default function BaukastenPage() {
               <label style={{ color: '#cbd5e1', fontSize: 13 }}>
                 <input type="checkbox" checked={lockDrag} onChange={(e) => setLockDrag(e.target.checked)} /> Drag sperren
               </label>
+              <div style={{ display: 'grid', gap: 6, width: '100%' }}>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Timer X (%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={90}
+                    value={timerX}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      setTimerX(v)
+                      saveLayoutPartial({ timerX: v })
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Timer Y (%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={80}
+                    value={timerY}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      setTimerY(v)
+                      saveLayoutPartial({ timerY: v })
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Punkte X (%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={90}
+                    value={pointsX}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      setPointsX(v)
+                      saveLayoutPartial({ pointsX: v })
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+                <label style={{ color: '#cbd5e1', fontSize: 13 }}>
+                  Punkte Y (%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={80}
+                    value={pointsY}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      setPointsY(v)
+                      saveLayoutPartial({ pointsY: v })
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+              </div>
               <div style={{ display: 'grid', gap: 4 }}>
                 <div style={{ fontWeight: 700 }}>Layer Sichtbarkeit</div>
                 {(['question', 'answer', 'timer', 'points'] as const).map((key) => (
@@ -1036,6 +1100,23 @@ export default function BaukastenPage() {
               </div>
             </div>
           </div>
+          <div style={{ marginTop: 10, display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+            <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Beamer</div>
+              <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: `1px solid ${themeColor}33` }}>
+                <div style={{ fontSize: layoutSize, fontWeight: 800, color: '#e2e8f0', marginBottom: 6 }}>{displayQuestion}</div>
+                {showAnswer && <div style={{ fontSize: answerSize, fontWeight: 700, color: '#a5f3fc' }}>{displayAnswer}</div>}
+              </div>
+            </div>
+            <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Preview: Team</div>
+              <div style={{ borderRadius: 10, padding: 12, background: '#0f172a', minHeight: 120, border: '1px dashed rgba(255,255,255,0.2)' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{name}</div>
+                <div style={{ fontSize: 14, color: '#cbd5e1', marginBottom: 4 }}>{displayQuestion}</div>
+                {showAnswer && <div style={{ fontSize: 13, color: '#a5f3fc' }}>{displayAnswer}</div>}
+              </div>
+            </div>
+          </div>
           <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Slots / Kategorien</div>
             <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -1058,7 +1139,9 @@ export default function BaukastenPage() {
                     onDragOver={(e) => {
                       if (!dragQuestionId) return
                       e.preventDefault()
+                      setHoveredSlotId(slideId)
                     }}
+                    onDragLeave={() => setHoveredSlotId(null)}
                     onDrop={(e) => {
                       e.preventDefault()
                       if (!dragQuestionId) return
@@ -1066,10 +1149,11 @@ export default function BaukastenPage() {
                       setCurrentSlideId(slideId)
                       setTab('slides')
                       setDragQuestionId(null)
+                      setHoveredSlotId(null)
                     }}
                     style={{
                       borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.12)',
+                      border: hoveredSlotId === slideId ? `1px solid ${themeColor}` : '1px solid rgba(255,255,255,0.12)',
                       background: 'rgba(255,255,255,0.04)',
                       padding: 10,
                       display: 'grid',
@@ -1079,15 +1163,15 @@ export default function BaukastenPage() {
                   >
                     <div style={{ fontWeight: 700 }}>{c.name}</div>
                     <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                      {list.length} / {c.questions} ausgewÃ¤hlt
+                      {list.length} / {c.questions} ausgewaehlt
                     </div>
                     <div style={{ display: 'grid', gap: 4 }}>
                       {list.slice(0, 4).map((q) => (
-                      <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        â€¢ {(q as any).text || (q as any).question}
-                      </div>
+                        <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          - {(q as any).text || (q as any).question}
+                        </div>
                       ))}
-                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>â€¦ {list.length - 4} weitere</div>}
+                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>+ {list.length - 4} weitere</div>}
                     </div>
                   </div>
                 )

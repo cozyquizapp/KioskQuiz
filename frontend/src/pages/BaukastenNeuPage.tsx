@@ -39,6 +39,7 @@ export default function BaukastenNeuPage() {
   const [questions, setQuestions] = useState<AnyQuestion[]>([])
   const [selected, setSelected] = useState<string[]>([])
   const [mixedMechanic, setMixedMechanic] = useState('Connect Five')
+  const [katalogName, setKatalogName] = useState('Standard-Katalog')
 
   const [themePreset, setThemePreset] = useState<'CozyBeamer' | 'Custom'>('CozyBeamer')
   const [bg, setBg] = useState('radial-gradient(circle at 20% 20%, #1a1f39 0%, #0d0f14 55%)')
@@ -60,6 +61,12 @@ export default function BaukastenNeuPage() {
 
   const toggleSelect = (id: string) => {
     setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  }
+
+  const isMixedAllowed = (q: AnyQuestion) => {
+    if (q.category !== 'Mixed Bag') return true
+    const mech = (q as any).mixedMechanic || (q as any).mechanic || ''
+    return mech.toLowerCase() === mixedMechanic.toLowerCase()
   }
 
   return (
@@ -120,7 +127,16 @@ export default function BaukastenNeuPage() {
           {step === 2 && (
             <div style={card}>
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Fragen waehlen</div>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ ...pill(katalogName), display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Katalog:</span>
+                  <select value={katalogName} onChange={(e) => setKatalogName(e.target.value)} style={input()}>
+                    <option>Standard-Katalog</option>
+                    <option>Bilder-Katalog</option>
+                    <option>Audio/Video-Katalog</option>
+                    <option>Custom (Import)</option>
+                  </select>
+                </div>
                 <button onClick={loadQuestions} style={pill('Katalog laden')}>Katalog laden</button>
                 <button style={pill('Frageneditor')} onClick={() => (window.location.href = '/question-editor')}>
                   Fragenkatalog öffnen
@@ -136,15 +152,23 @@ export default function BaukastenNeuPage() {
                 </div>
               </div>
               <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
-                {questions.slice(0, 60).map((q) => (
-                  <div key={q.id} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: selected.includes(q.id) ? 'rgba(122,91,255,0.12)' : 'rgba(255,255,255,0.02)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-                      <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(q as any).text || (q as any).question}</div>
-                      <input type="checkbox" checked={selected.includes(q.id)} onChange={() => toggleSelect(q.id)} />
+                {questions
+                  .filter(isMixedAllowed)
+                  .slice(0, 60)
+                  .map((q) => (
+                    <div key={q.id} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: selected.includes(q.id) ? 'rgba(122,91,255,0.12)' : 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+                        <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(q as any).text || (q as any).question}</div>
+                        <input type="checkbox" checked={selected.includes(q.id)} onChange={() => toggleSelect(q.id)} />
+                      </div>
+                      <div style={{ fontSize: 12, color: '#94a3b8' }}>{q.category}</div>
+                      {q.category === 'Mixed Bag' && (
+                        <div style={{ fontSize: 11, color: '#22c55e' }}>
+                          Mechanik: {(q as any).mixedMechanic || (q as any).mechanic || 'keine'}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{q.category}</div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}
@@ -248,4 +272,3 @@ export default function BaukastenNeuPage() {
     </div>
   )
 }
-

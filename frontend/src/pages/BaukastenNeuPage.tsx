@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
+import { loadPlayDraft, savePlayDraft } from '../utils/draft'
 
 const card = {
   background: 'rgba(12,16,26,0.9)',
@@ -147,7 +148,7 @@ export default function BaukastenNeuPage() {
                 </div>
                 <button onClick={loadQuestions} style={pill('Katalog laden')}>Katalog laden</button>
                 <button style={pill('Frageneditor')} onClick={() => (window.location.href = '/question-editor')}>
-                  Fragenkatalog öffnen
+                  Fragenkatalog Ã¶ffnen
                 </button>
                 <div style={{ ...pill('Mixed Bag Mechanik'), display: 'flex', gap: 6 }}>
                   <span>Mechanik:</span>
@@ -363,10 +364,10 @@ export default function BaukastenNeuPage() {
                 <div style={{ display: 'grid', gap: 6 }}>
                   <label>Frage X (%)<input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} /></label>
                   <label>Frage Y (%)<input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} /></label>
-                  <label>Frage Größe<input type="range" min={14} max={48} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Frage GrÃ¶ÃŸe<input type="range" min={14} max={48} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
                   <label>Antwort X (%)<input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} /></label>
                   <label>Antwort Y (%)<input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} /></label>
-                  <label>Antwort Größe<input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Antwort GrÃ¶ÃŸe<input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
                   <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                     <button style={pill('Speichern')} onClick={() => alert('Speichern (Draft) folgt noch')}>Speichern</button>
                     <button

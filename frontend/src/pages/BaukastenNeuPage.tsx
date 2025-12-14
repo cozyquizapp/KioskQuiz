@@ -44,6 +44,8 @@ export default function BaukastenNeuPage() {
   const [themePreset, setThemePreset] = useState<'CozyBeamer' | 'Custom'>('CozyBeamer')
   const [bg, setBg] = useState('radial-gradient(circle at 20% 20%, #1a1f39 0%, #0d0f14 55%)')
   const [accent, setAccent] = useState('#fbbf24')
+  const [themeName, setThemeName] = useState('Cozy Beamer')
+  const [savedThemes, setSavedThemes] = useState<{ name: string; bg: string; accent: string }[]>([])
 
   const [slotSpinMs, setSlotSpinMs] = useState(2400)
   const [slotHoldMs, setSlotHoldMs] = useState(1200)
@@ -51,6 +53,12 @@ export default function BaukastenNeuPage() {
   const [slotScale, setSlotScale] = useState(1)
 
   const [slides, setSlides] = useState<{ id: string; title: string; questionId?: string }[]>([])
+  const [layoutX, setLayoutX] = useState(10)
+  const [layoutY, setLayoutY] = useState(10)
+  const [layoutSize, setLayoutSize] = useState(22)
+  const [answerX, setAnswerX] = useState(10)
+  const [answerY, setAnswerY] = useState(52)
+  const [answerSize, setAnswerSize] = useState(18)
 
   const loadQuestions = async () => {
     const res = await fetchQuestions()
@@ -184,6 +192,41 @@ export default function BaukastenNeuPage() {
                   Custom
                 </button>
               </div>
+              <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', marginBottom: 10 }}>
+                <div style={{ ...pill('Theme-Name'), display: 'grid', gap: 6, borderRadius: 12 }}>
+                  <label>Name</label>
+                  <input value={themeName} onChange={(e) => setThemeName(e.target.value)} style={input()} />
+                  <button
+                    style={pill('Theme speichern')}
+                    onClick={() => {
+                      if (!themeName.trim()) return
+                      setSavedThemes((prev) => [{ name: themeName.trim(), bg, accent }, ...prev.filter((t) => t.name !== themeName.trim())])
+                    }}
+                  >
+                    Speichern
+                  </button>
+                </div>
+                <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.03)' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Gespeicherte Themes</div>
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {savedThemes.length === 0 && <div style={{ color: '#94a3b8', fontSize: 13 }}>Noch keine Themes gespeichert.</div>}
+                    {savedThemes.map((t) => (
+                      <button
+                        key={t.name}
+                        style={{ ...pill(t.name), justifyContent: 'flex-start', width: '100%' }}
+                        onClick={() => {
+                          setThemeName(t.name)
+                          setBg(t.bg)
+                          setAccent(t.accent)
+                          setThemePreset('Custom')
+                        }}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               {themePreset === 'Custom' && (
                 <div style={{ display: 'grid', gap: 8 }}>
                   <div>
@@ -256,7 +299,104 @@ export default function BaukastenNeuPage() {
             <div style={card}>
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Slides (Design)</div>
               <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 8 }}>Hier nur Layout/Design anpassen. Inhalte kommen aus den gewaehlt en Fragen.</div>
-              <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
+              <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr', alignItems: 'start' }}>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>Canvas Preview</div>
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      aspectRatio: '16 / 9',
+                      borderRadius: 14,
+                      padding: 12,
+                      background: bg,
+                      border: `1px solid ${accent}55`,
+                      boxShadow: `0 14px 36px ${accent}33`,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: `${layoutX}%`,
+                        top: `${layoutY}%`,
+                        transform: 'translate(-0%, -0%)',
+                        color: '#f8fafc',
+                        fontWeight: 800,
+                        fontSize: layoutSize,
+                        maxWidth: '80%',
+                      }}
+                    >
+                      Frage-Text
+                    </div>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: `${answerX}%`,
+                        top: `${answerY}%`,
+                        transform: 'translate(-0%, -0%)',
+                        color: '#a5f3fc',
+                        fontWeight: 700,
+                        fontSize: answerSize,
+                        maxWidth: '80%',
+                      }}
+                    >
+                      Antwort-Text
+                    </div>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: 12,
+                        padding: '6px 10px',
+                        borderRadius: 999,
+                        background: 'rgba(0,0,0,0.4)',
+                        color: '#e2e8f0',
+                        fontSize: 12,
+                        border: `1px solid ${accent}55`,
+                      }}
+                    >
+                      11s
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <label>Frage X (%)<input type="range" min={0} max={80} value={layoutX} onChange={(e) => setLayoutX(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Frage Y (%)<input type="range" min={0} max={80} value={layoutY} onChange={(e) => setLayoutY(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Frage Größe<input type="range" min={14} max={48} value={layoutSize} onChange={(e) => setLayoutSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Antwort X (%)<input type="range" min={0} max={80} value={answerX} onChange={(e) => setAnswerX(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Antwort Y (%)<input type="range" min={0} max={80} value={answerY} onChange={(e) => setAnswerY(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <label>Antwort Größe<input type="range" min={14} max={48} value={answerSize} onChange={(e) => setAnswerSize(Number(e.target.value))} style={{ width: '100%' }} /></label>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                    <button style={pill('Speichern')} onClick={() => alert('Speichern (Draft) folgt noch')}>Speichern</button>
+                    <button
+                      style={pill('Export JSON')}
+                      onClick={() => {
+                        const data = {
+                          name,
+                          rounds,
+                          categories,
+                          language,
+                          mixedMechanic,
+                          theme: { bg, accent, slotSpinMs, slotHoldMs, slotIntervalMs, slotScale },
+                          layout: { layoutX, layoutY, layoutSize, answerX, answerY, answerSize },
+                          selectedQuestionIds: selected,
+                        }
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `${name.replace(/\\s+/g, '-').toLowerCase() || 'quiz'}.json`
+                        a.click()
+                        URL.revokeObjectURL(url)
+                      }}
+                    >
+                      Export JSON
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', marginTop: 10 }}>
                 {selectedQuestions.map((q) => (
                   <div key={q.id} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>{(q as any).text || (q as any).question}</div>

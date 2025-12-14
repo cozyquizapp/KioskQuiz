@@ -524,68 +524,72 @@ export default function BaukastenPage() {
 
     // slides tab
     return (
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                style={{ ...smallBtn(), background: languageMode === 'de' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
-                onClick={() => {
-                  setLanguageMode('de')
-                  setCurrentLang('de')
-                }}
-              >
-                DE
-              </button>
-              <button
-                style={{ ...smallBtn(), background: languageMode === 'en' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
-                onClick={() => {
-                  setLanguageMode('en')
-                  setCurrentLang('en')
-                }}
-              >
-                EN
-              </button>
-              <button
-                style={{ ...smallBtn(), background: languageMode === 'dual' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
-                onClick={() => {
-                  setLanguageMode('dual')
-                  setCurrentLang((prev) => (prev === 'de' ? 'de' : 'en'))
-                }}
-              >
-                Dual
-              </button>
-              {languageMode === 'dual' && (
-                <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                   <button
-                    style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'de' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
-                    onClick={() => setCurrentLang('de')}
+                    style={{ ...smallBtn(), background: languageMode === 'de' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                    onClick={() => {
+                      setLanguageMode('de')
+                      setCurrentLang('de')
+                    }}
                   >
-                    View DE
+                    DE
                   </button>
                   <button
-                    style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'en' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
-                    onClick={() => setCurrentLang('en')}
+                    style={{ ...smallBtn(), background: languageMode === 'en' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                    onClick={() => {
+                      setLanguageMode('en')
+                      setCurrentLang('en')
+                    }}
                   >
-                    View EN
+                    EN
                   </button>
+                  <button
+                    style={{ ...smallBtn(), background: languageMode === 'dual' ? '#7a5bff33' : 'rgba(255,255,255,0.08)' }}
+                    onClick={() => {
+                      setLanguageMode('dual')
+                      setCurrentLang((prev) => (prev === 'de' ? 'de' : 'en'))
+                    }}
+                  >
+                    Dual
+                  </button>
+                  {languageMode === 'dual' && (
+                    <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
+                      <button
+                        style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'de' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
+                        onClick={() => setCurrentLang('de')}
+                      >
+                        View DE
+                      </button>
+                      <button
+                        style={{ ...smallBtn(), padding: '8px 10px', background: currentLang === 'en' ? '#22c55e33' : 'rgba(255,255,255,0.08)' }}
+                        onClick={() => setCurrentLang('en')}
+                      >
+                        View EN
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-              <button
-                style={{ ...smallBtn(), background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)' }}
-                onClick={() => {
-                  const catSlides = slides.filter((s) => s.category)
-                  if (!catSlides.length) return
-                  const pick = catSlides[Math.floor(Math.random() * catSlides.length)]
-                  setCurrentSlideId(pick.id)
-                  setSlotResult(pick.title)
-                }}
-              >
-                Slotmachine
-              </button>
+              </div>
+              <div style={{ display: 'grid', gap: 6, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                <button
+                  style={{ ...smallBtn(), background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)' }}
+                  onClick={() => {
+                    const catSlides = slides.filter((s) => s.category)
+                    if (!catSlides.length) return
+                    const pick = catSlides[Math.floor(Math.random() * catSlides.length)]
+                    setCurrentSlideId(pick.id)
+                    setSlotResult(pick.title)
+                  }}
+                >
+                  Slotmachine
+                </button>
+                {slotResult && <div style={{ fontSize: 12, color: '#cbd5e1', padding: '10px 12px' }}>Zufall: {slotResult}</div>}
+              </div>
             </div>
-            {slotResult && <div style={{ fontSize: 12, color: '#cbd5e1' }}>Zufall: {slotResult}</div>}
-          </div>
           <div style={{ color: '#cbd5e1' }}>Elemente auf der Buehne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
             <label>Frage zuordnen (aktuelle Slide)</label>
@@ -898,11 +902,9 @@ export default function BaukastenPage() {
             </div>
           )}
           <div style={{ display: 'grid', gap: 6 }}>
-            <button style={smallBtn()} onClick={() => setShowThemeBox((v) => !v)}>
-              {showThemeBox ? 'Theme einklappen' : 'Theme / Branding'}
-            </button>
-            {showThemeBox && (
-              <div style={{ display: 'grid', gap: 8, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+            <details style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 8, background: 'rgba(255,255,255,0.03)' }} open={false}>
+              <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Theme / Branding</summary>
+              <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {themePresets.map((p) => (
                     <button
@@ -965,12 +967,10 @@ export default function BaukastenPage() {
                   )}
                 </div>
               </div>
-            )}
-            <button style={smallBtn()} onClick={() => setShowPublishBox((v) => !v)}>
-              {showPublishBox ? 'Publish einklappen' : 'Publish / Export'}
-            </button>
-            {showPublishBox && (
-              <div style={{ display: 'grid', gap: 8, padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+            </details>
+            <details style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 8, background: 'rgba(255,255,255,0.03)' }} open={false}>
+              <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Publish / Export</summary>
+              <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
                 <div style={{ color: '#cbd5e1' }}>Titel: {name}</div>
                 <div style={{ color: '#cbd5e1' }}>Intro: {intro} | Regeln: {rules}</div>
                 <div style={{ color: '#cbd5e1' }}>Fragen: {totalQuestions}</div>
@@ -1017,7 +1017,7 @@ export default function BaukastenPage() {
                   </a>
                 </div>
               </div>
-            )}
+            </details>
           </div>
         </div>
       </div>
@@ -1045,18 +1045,24 @@ export default function BaukastenPage() {
         >
           <div style={{ fontWeight: 800, marginBottom: 8 }}>Baukasten</div>
           <div style={{ display: 'grid', gap: 8 }}>
-            {(['struktur', 'fragen', 'slides'] as const).map((t) => (
+            {(
+              [
+                { key: 'struktur', label: '1. Struktur' },
+                { key: 'fragen', label: '2. Fragen' },
+                { key: 'slides', label: '3. Slides & Publish' },
+              ] as const
+            ).map((t) => (
               <button
-                key={t}
+                key={t.key}
                 style={{
-                  ...pill(tab === t ? '#7a5bff' : '#94a3b8'),
+                  ...pill(tab === (t.key as any) ? '#7a5bff' : '#94a3b8'),
                   justifyContent: 'flex-start',
                   cursor: 'pointer',
-                  borderColor: tab === t ? '#7a5bffcc' : 'rgba(255,255,255,0.16)',
+                  borderColor: tab === (t.key as any) ? '#7a5bffcc' : 'rgba(255,255,255,0.16)',
                 }}
-                onClick={() => setTab(t)}
+                onClick={() => setTab(t.key as any)}
               >
-                {t}
+                {t.label}
               </button>
             ))}
           </div>
@@ -1072,35 +1078,38 @@ export default function BaukastenPage() {
         </div>
 
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 10, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 10, alignItems: 'start' }}>
             <div style={{ display: 'grid', gap: 8 }}>
               <div style={{ fontWeight: 800 }}>Slides</div>
-              <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gap: 6 }}>
                 {slides.map((s) => {
                   const qid = slideQuestions[s.id]
-                  const qText = qid ? (questions.find((q) => q.id === qid) as any)?.text || (questions.find((q) => q.id === qid) as any)?.question : ''
+                  const q = qid ? questions.find((qq) => qq.id === qid) : undefined
+                  const qText = q ? (q as any).text || (q as any).question : ''
                   return (
                     <div
                       key={s.id}
                       style={{
-                        borderRadius: 12,
-                        padding: 8,
+                        borderRadius: 10,
+                        padding: '6px 8px',
                         border: `1px solid ${currentSlideId === s.id ? themeColor : 'rgba(255,255,255,0.12)'}`,
                         background: currentSlideId === s.id ? 'rgba(122,91,255,0.08)' : 'rgba(255,255,255,0.03)',
                         cursor: 'pointer',
-                        display: 'grid',
-                        gap: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        minHeight: 48,
                       }}
                       onClick={() => setCurrentSlideId(s.id)}
                     >
-                      <div style={{ display: 'grid', gap: 4 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.title}</div>
-                        <div style={{ height: 80, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: '#0f172a', padding: 8, overflow: 'hidden' }}>
-                          <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.3 }}>
-                            {truncate(qText || displayQuestion, 70) || 'Keine Frage zugeordnet'}
-                          </div>
+                      <div style={{ width: 54, height: 34, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: '#0f172a', display: 'grid', placeItems: 'center', fontSize: 11, color: '#94a3b8' }}>
+                        {s.category ? s.title : 'Intro'}
+                      </div>
+                      <div style={{ display: 'grid', gap: 2, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {qText ? truncate(qText, 60) : 'Keine Frage zugeordnet'}
                         </div>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>{qText ? truncate(qText, 40) : 'leer'}</div>
                       </div>
                     </div>
                   )
@@ -1299,16 +1308,11 @@ export default function BaukastenPage() {
           )}
           <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Slots / Kategorien</div>
-            <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-              <div
-                style={{ ...pill('#7a5bff'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}
-                onClick={() => setTab('slides')}
-              >
-                Intro / Regeln
-              </div>
+            <div style={{ display: 'grid', gap: 6 }}>
               {categories.map((c, idx) => {
                 const list = selectedByCategory[c.name] || []
-                const slideId = `cat-${idx}`
+                const slideId = `cat-${idx}-0`
+                const text = list[0] ? (list[0] as any).text || (list[0] as any).question : 'Keine Frage zugeordnet'
                 return (
                   <div
                     key={c.name}
@@ -1332,36 +1336,27 @@ export default function BaukastenPage() {
                       setHoveredSlotId(null)
                     }}
                     style={{
-                      borderRadius: 12,
+                      borderRadius: 10,
                       border: hoveredSlotId === slideId ? `1px solid ${themeColor}` : '1px solid rgba(255,255,255,0.12)',
-                      background: 'rgba(255,255,255,0.04)',
-                      padding: 10,
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '8px 10px',
                       display: 'grid',
-                      gap: 6,
+                      gridTemplateColumns: '1fr auto',
+                      alignItems: 'center',
+                      gap: 8,
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ fontWeight: 700 }}>{c.name}</div>
-                    <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                      {list.length} / {c.questions} ausgewaehlt
+                    <div style={{ display: 'grid', gap: 4, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>{c.name}</div>
+                      <div style={{ color: '#cbd5e1', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{truncate(text, 70)}</div>
                     </div>
-                    <div style={{ display: 'grid', gap: 4 }}>
-                      {list.slice(0, 4).map((q) => (
-                        <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          - {(q as any).text || (q as any).question}
-                        </div>
-                      ))}
-                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>+ {list.length - 4} weitere</div>}
+                    <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>
+                      {list.length} / {c.questions}
                     </div>
                   </div>
                 )
               })}
-              <div
-                style={{ ...pill('#f97316'), borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}
-                onClick={() => setTab('slides')}
-              >
-                Finale / Abschluss
-              </div>
             </div>
           </div>
         </div>

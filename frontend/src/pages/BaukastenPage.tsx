@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+﻿import { useEffect, useMemo, useState, useRef } from 'react'
+import type { MouseEvent as ReactMouseEvent, DragEvent as ReactDragEvent } from 'react'
 import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
@@ -50,7 +50,7 @@ const smallBtn = () => ({
 const field = () => ({ display: 'flex', flexDirection: 'column', gap: 6 })
 const truncate = (str?: string, n = 32) => {
   if (!str) return ''
-  return str.length > n ? str.slice(0, n) + '…' : str
+  return str.length > n ? str.slice(0, n) + 'â€¦' : str
 }
 
 export default function BaukastenPage() {
@@ -122,6 +122,7 @@ export default function BaukastenPage() {
   ]
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [dragQuestionId, setDragQuestionId] = useState<string | null>(null)
 
   const [layoutX, setLayoutX] = useState(10)
   const [layoutY, setLayoutY] = useState(10)
@@ -592,7 +593,7 @@ export default function BaukastenPage() {
     return (
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ fontWeight: 800, fontSize: 18 }}>Slides</div>
-          <div style={{ color: '#cbd5e1' }}>Elemente auf der Bühne anklicken & verschieben, Feinjustierung per Slider.</div>
+          <div style={{ color: '#cbd5e1' }}>Elemente auf der BÃ¼hne anklicken & verschieben, Feinjustierung per Slider.</div>
           <div style={field()}>
             <label>Frage zuordnen (aktuelle Slide)</label>
             <select
@@ -1054,6 +1055,18 @@ export default function BaukastenPage() {
                       setCurrentSlideId(slideId)
                       setTab('slides')
                     }}
+                    onDragOver={(e) => {
+                      if (!dragQuestionId) return
+                      e.preventDefault()
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      if (!dragQuestionId) return
+                      setSlideQuestions((s) => ({ ...s, [slideId]: dragQuestionId }))
+                      setCurrentSlideId(slideId)
+                      setTab('slides')
+                      setDragQuestionId(null)
+                    }}
                     style={{
                       borderRadius: 12,
                       border: '1px solid rgba(255,255,255,0.12)',
@@ -1066,15 +1079,15 @@ export default function BaukastenPage() {
                   >
                     <div style={{ fontWeight: 700 }}>{c.name}</div>
                     <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                      {list.length} / {c.questions} ausgewählt
+                      {list.length} / {c.questions} ausgewÃ¤hlt
                     </div>
                     <div style={{ display: 'grid', gap: 4 }}>
                       {list.slice(0, 4).map((q) => (
                       <div key={q.id} style={{ fontSize: 12, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        • {(q as any).text || (q as any).question}
+                        â€¢ {(q as any).text || (q as any).question}
                       </div>
                       ))}
-                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>… {list.length - 4} weitere</div>}
+                      {list.length > 4 && <div style={{ color: '#94a3b8', fontSize: 12 }}>â€¦ {list.length - 4} weitere</div>}
                     </div>
                   </div>
                 )
@@ -1167,6 +1180,9 @@ export default function BaukastenPage() {
                     border: '1px solid rgba(255,255,255,0.12)',
                     background: selectedIds.includes(q.id) ? '#7a5bff22' : 'rgba(255,255,255,0.03)',
                   }}
+                  draggable
+                  onDragStart={() => setDragQuestionId(q.id)}
+                  onDragEnd={() => setDragQuestionId(null)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />

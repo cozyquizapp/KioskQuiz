@@ -111,54 +111,70 @@ export const questions: AnyQuestion[] = [
     correctIndex: 1
   },
 
-  // Stimmt’s (True/False)
+
+  // Stimmts? (Betting 10 Punkte auf A/B/C)
   {
     id: 'q-tf-1',
     category: 'Stimmts',
-    mechanic: 'trueFalse',
+    mechanic: 'betting',
     question: 'Die ISS umrundet die Erde in ca. 90 Minuten.',
     questionEn: 'The ISS orbits Earth in about 90 minutes.',
     points: 1,
-    isTrue: true
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10
   },
   {
     id: 'q-tf-2',
     category: 'Stimmts',
-    mechanic: 'trueFalse',
-    question: 'Bienen können UV-Licht sehen.',
+    mechanic: 'betting',
+    question: 'Bienen koennen UV-Licht sehen.',
     questionEn: 'Bees can see ultraviolet light.',
     points: 1,
-    isTrue: true
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10
   },
   {
     id: 'q-tf-3',
     category: 'Stimmts',
-    mechanic: 'trueFalse',
-    question: 'Der Viktoriasee ist der größte See der Welt.',
+    mechanic: 'betting',
+    question: 'Der Viktoriasee ist der groesste See der Welt.',
     questionEn: 'Lake Victoria is the largest lake in the world.',
     points: 1,
-    isTrue: false
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 1,
+    pointsPool: 10
   },
   {
     id: 'q-tf-4',
     category: 'Stimmts',
-    mechanic: 'trueFalse',
+    mechanic: 'betting',
     question: 'Der Mensch hat mehr Gene als eine Tomate.',
     questionEn: 'Humans have more genes than a tomato.',
     points: 2,
-    isTrue: false
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 1,
+    pointsPool: 10
   },
   {
     id: 'q-tf-5',
     category: 'Stimmts',
-    mechanic: 'trueFalse',
-    question: 'Es gibt mehr Sterne im Universum als Sandkörner auf der Erde.',
+    mechanic: 'betting',
+    question: 'Es gibt mehr Sterne im Universum als Sandkoerner auf der Erde.',
     questionEn: 'There are more stars in the universe than grains of sand on Earth.',
     points: 2,
-    isTrue: true
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10
   },
 
-  // Cheese (Image)
+  // Cheese (Image) (Image)
   {
     id: 'q-img-1',
     category: 'Cheese',

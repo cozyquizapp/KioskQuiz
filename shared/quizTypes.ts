@@ -52,6 +52,7 @@ export type MechanicType =
   | 'trueFalse'
   | 'imageQuestion'
   | 'sortItems'
+  | 'betting'
   | 'custom';
 
 export type DecorationKey =
@@ -132,12 +133,21 @@ export interface SortItemsQuestion extends BaseQuestion {
   hintEn?: string;
 }
 
+export interface BettingQuestion extends BaseQuestion {
+  mechanic: 'betting'; // Punkte verteilen auf drei Optionen
+  options: string[]; // genau 3
+  optionsEn?: string[];
+  correctIndex: number;
+  pointsPool?: number; // default 10
+}
+
 export type AnyQuestion =
   | EstimateQuestion
   | MultipleChoiceQuestion
   | TrueFalseQuestion
   | ImageQuestion
-  | SortItemsQuestion;
+  | SortItemsQuestion
+  | BettingQuestion;
 
 export interface Team {
   id: string;
@@ -272,6 +282,5 @@ export type TeamShowQuestionPayload = {
 
 export type AdminNextQuestionPayload = { roomCode: string };
 export type TeamReadyPayload = { roomCode: string; teamId: string; isReady: boolean };
-
 
 

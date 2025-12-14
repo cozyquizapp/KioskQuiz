@@ -90,7 +90,11 @@ const COPY = {
     markError: 'Du kannst ein Feld nur nach einer richtigen Antwort markieren.',
     kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
     estimateBest: 'Ihr wart am naechsten dran!',
-    estimateWorse: 'Leider weiter weg als das beste Team.'
+    estimateWorse: 'Leider weiter weg als das beste Team.',
+    betHint: (pool: number) => `Verteile genau ${pool} Punkte auf A/B/C.`,
+    betRemaining: (remaining: number) =>
+      remaining === 0 ? 'Alle Punkte verteilt.' : `${remaining} Punkt(e) uebrig.`,
+    betInvalid: 'Bitte genau 10 Punkte verteilen.'
   },
   en: {
     send: 'Submit answer',
@@ -121,6 +125,10 @@ const COPY = {
       correct === null ? 'Result' : correct ? 'Correct!' : 'Incorrect',
     estimateBest: 'You were the closest!',
     estimateWorse: 'Further off than the best team.',
+    betHint: (pool: number) => `Spread exactly ${pool} points across A/B/C.`,
+    betRemaining: (remaining: number) =>
+      remaining === 0 ? 'All points allocated.' : `${remaining} point(s) left.`,
+    betInvalid: 'Please allocate the full 10 points.',
     loginError: 'Please join first.',
     markError: 'You can only mark a field after a correct answer.',
     kicked: 'You were removed by the admin. Please rejoin.'
@@ -133,7 +141,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<any | null>(null);
-  const [answer, setAnswer] = useState<string>('');
+  const [answer, setAnswer] = useState<any>('');
+  const [bettingPoints, setBettingPoints] = useState<[number, number, number]>([0, 0, 0]);
   const [message, setMessage] = useState<string | null>(null);
   const [board, setBoard] = useState<BingoBoard>([]);
   const [phase, setPhase] = useState<Phase>('notJoined');
@@ -258,6 +267,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         localStorage.setItem('teamLanguage', payload.language);
       }
       if (payload.question) {
+        resetInputs();
         setQuestion(payload.question);
         setQuestionMeta(payload.questionMeta);
         setPhase(
@@ -276,6 +286,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         setShowBingoPanel(false);
         setCanMarkBingo(false);
       } else {
+        resetInputs();
         setQuestion(null);
         setQuestionMeta(null);
         setPhase(teamId ? 'waitingForQuestion' : 'notJoined');
@@ -292,10 +303,10 @@ function TeamView({ roomCode }: TeamViewProps) {
 
     socket.on('team:show-question', ({ question: q }) => {
       if (!teamId) return;
+      resetInputs();
       setQuestion(q);
       setPhase('answering');
       setAllowReadyToggle(false);
-      setAnswer('');
       setAnswerSubmitted(false);
       setResultMessage(null);
       setResultCorrect(null);
@@ -411,14 +422,21 @@ function TeamView({ roomCode }: TeamViewProps) {
     </div>
   );
 
+  const resetInputs = () => {
+    setAnswer('');
+    setBettingPoints([0, 0, 0]);
+  };
+
   const loadQuestion = async () => {
     const data = await fetchCurrentQuestion(roomCode);
     setQuestion(data.question);
     if (data.question) {
+      resetInputs();
       setPhase('answering');
       setResultMessage(null);
       setAllowReadyToggle(false);
     } else {
+      resetInputs();
       setPhase('waitingForQuestion');
       setResultMessage(null);
       setAllowReadyToggle(true);
@@ -664,8 +682,20 @@ const handleSubmit = async () => {
     }
     if (!canAnswer) return;
     try {
-      await submitAnswer(roomCode, teamId, answer);
-      setAnswerSubmitted(true);
+      if (question?.mechanic === 'betting') {
+        const pool = (question as any).pointsPool ?? 10;
+        const sum = bettingPoints.reduce((a, b) => a + b, 0);
+        if (sum !== pool) {
+          setMessage(t('betInvalid'));
+          return;
+        }
+        await submitAnswer(roomCode, teamId, bettingPoints);
+        setAnswerSubmitted(true);
+        setAnswer(bettingPoints);
+      } else {
+        await submitAnswer(roomCode, teamId, answer);
+        setAnswerSubmitted(true);
+      }
       setPhase('waitingForResult');
       setAllowReadyToggle(false);
       setTransitioning(true);
@@ -724,6 +754,76 @@ const handleSubmit = async () => {
                 {opt}
               </button>
             ))}
+          </div>
+        );
+      }
+      case 'betting': {
+        const opts = (question as any).options ?? ['A', 'B', 'C'];
+        const pool = (question as any).pointsPool ?? 10;
+        const total = bettingPoints.reduce((a, b) => a + b, 0);
+        const remaining = pool - total;
+        const updateBet = (idx: number, value: number) => {
+          const clean = Math.max(0, Math.min(pool, Math.round(value)));
+          const next = [...bettingPoints] as [number, number, number];
+          next[idx] = clean;
+          const sum = next.reduce((a, b) => a + b, 0);
+          if (sum > pool) {
+            const overflow = sum - pool;
+            next[idx] = Math.max(0, clean - overflow);
+          }
+          setBettingPoints(next);
+        };
+        const letters = ['A', 'B', 'C'];
+        return (
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ color: 'var(--muted)', fontWeight: 700 }}>{t('betHint')(pool)}</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {opts.slice(0, 3).map((opt: string, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: `1px solid ${accent}55`,
+                    background: 'rgba(255,255,255,0.06)'
+                  }}
+                >
+                  <div style={{ ...pillLabel, background: `${accent}22`, color: '#e2e8f0' }}>{letters[idx]}</div>
+                  <div style={{ color: '#e2e8f0', fontWeight: 700 }}>{opt}</div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={pool}
+                    value={bettingPoints[idx] ?? 0}
+                    onChange={(e) => updateBet(idx, Number(e.target.value))}
+                    disabled={!canAnswer}
+                    style={{
+                      width: 70,
+                      padding: '8px 10px',
+                      borderRadius: 10,
+                      border: `1px solid ${accent}55`,
+                      background: 'rgba(0,0,0,0.35)',
+                      color: '#e2e8f0',
+                      fontWeight: 800,
+                      textAlign: 'center'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                color: remaining === 0 ? '#22c55e' : remaining < 0 ? '#f87171' : '#fbbf24',
+                fontWeight: 800,
+                textAlign: 'right'
+              }}
+            >
+              {t('betRemaining')(remaining)}
+            </div>
           </div>
         );
       }
@@ -1219,16 +1319,6 @@ const handleSubmit = async () => {
 }
 
 export default TeamView;
-
-
-
-
-
-
-
-
-
-
 
 
 

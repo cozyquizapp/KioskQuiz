@@ -583,6 +583,10 @@ const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
     const idx = Number(answer);
     return idx === (question as any).correctIndex;
   }
+  if (question.mechanic === 'betting') {
+    // Bewertung erfolgt in evaluateCurrentQuestion; hier keine Einzelpruefung
+    return false;
+  }
   if (question.mechanic === 'trueFalse') {
     const boolVal = String(answer).toLowerCase() === 'true';
     return boolVal === (question as any).isTrue;
@@ -622,6 +626,11 @@ const formatSolution = (question: AnyQuestion, language: Language): string | und
       (question as any).optionsEn,
       language
     );
+    return Array.isArray(opts) ? opts[idx] : undefined;
+  }
+  if (question.mechanic === 'betting') {
+    const idx = (question as any).correctIndex;
+    const opts = combineArray((question as any).options ?? [], (question as any).optionsEn, language);
     return Array.isArray(opts) ? opts[idx] : undefined;
   }
   if (question.mechanic === 'trueFalse') {
@@ -669,6 +678,22 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       const p = parsed.find((x) => x.teamId === teamId);
       const isCorrect = p ? p.diff === minDiff : false;
       room.answers[teamId] = { ...ans, isCorrect, deviation: p?.diff ?? null, bestDeviation };
+    });
+  } else if (question.mechanic === 'betting') {
+    const correctIdx = (question as any).correctIndex ?? 0;
+    const pool = (question as any).pointsPool ?? 10;
+    // answer.value erwartet array length >= correctIdx+1
+    const scores = Object.entries(room.answers).map(([teamId, ans]) => {
+      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
+      const pts = Number(arr[correctIdx] ?? 0);
+      return { teamId, pts: Number.isFinite(pts) ? pts : 0 };
+    });
+    const maxPts = scores.reduce((m, s) => Math.max(m, s.pts), 0);
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const entry = scores.find((s) => s.teamId === teamId);
+      const pts = entry ? entry.pts : 0;
+      const isCorrect = maxPts > 0 ? pts === maxPts : false;
+      room.answers[teamId] = { ...ans, isCorrect, betPoints: pts, betPool: pool };
     });
   } else {
     Object.entries(room.answers).forEach(([teamId, ans]) => {
@@ -1476,9 +1501,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
-
-
-
 
 
 

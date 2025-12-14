@@ -87,6 +87,7 @@ export default function BaukastenPage() {
     timer: false,
     points: false,
   })
+  const [currentSlideId, setCurrentSlideId] = useState<string>('intro')
   const themePresets = [
     { name: 'Neon', color: '#7a5bff', bg: 'linear-gradient(135deg,#0f172a,#1f2937)', font: 'Inter', animation: 'Slide' },
     { name: 'Minimal', color: '#38bdf8', bg: 'linear-gradient(135deg,#0b1224,#0f172a)', font: 'Poppins', animation: 'Fade' },

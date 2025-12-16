@@ -38,8 +38,8 @@ const BingoPrintPage = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 30% 20%, rgba(103, 232, 249, 0.08), transparent 45%), radial-gradient(circle at 80% 10%, rgba(244, 114, 182, 0.08), transparent 36%), #0a0d14',
-        color: '#e2e8f0',
+        background: '#f8fafc',
+        color: '#0f172a',
         padding: '18px 18px 80px',
         fontFamily: 'Inter, system-ui, sans-serif'
       }}
@@ -110,62 +110,57 @@ const BingoPrintPage = () => {
             key={idx}
             className="sheet"
             style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
-              borderRadius: 16,
-              padding: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 16px 40px rgba(0,0,0,0.35)'
+              background: '#ffffff',
+              borderRadius: 14,
+              padding: 10,
+              border: '1px solid rgba(15,23,42,0.08)',
+              boxShadow: '0 8px 18px rgba(0,0,0,0.06)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <div
                 style={{
                   padding: '6px 12px',
                   borderRadius: 999,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(15,23,42,0.12)',
+                  background: 'rgba(148,163,184,0.12)',
                   fontWeight: 800,
-                  letterSpacing: '0.04em'
+                  letterSpacing: '0.04em',
+                  color: '#0f172a'
                 }}
               >
                 Bingo #{idx + 1}
               </div>
-              <div style={{ color: '#94a3b8', fontWeight: 700, fontSize: 12 }}>5 Kategorien · 25 Felder</div>
+              <div style={{ color: '#475569', fontWeight: 700, fontSize: 12 }}>5 Kategorien · 25 Felder</div>
             </div>
             <div style={{ position: 'relative', padding: 4 }}>
               <div style={bingoGridStyle}>
                 {board.map((cell, cellIdx) => {
                   const color = categoryColors[cell.category] ?? theme.colors.card;
-                  const label = categoryLabels[cell.category]?.de ?? cell.category;
                   const icon = categoryIcons[cell.category];
                   return (
                     <div
                       key={cellIdx}
                       style={{
                         aspectRatio: '1 / 1',
-                        borderRadius: 10,
-                        border: '1px solid rgba(0,0,0,0.25)',
+                        borderRadius: 12,
+                        border: '1px solid rgba(15,23,42,0.08)',
                         background: color,
-                        color: '#0d0f14',
-                        fontWeight: 900,
                         position: 'relative',
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        textAlign: 'center',
-                        padding: 6,
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)'
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22)'
                       }}
                     >
                       {icon && (
                         <img
                           src={icon}
                           alt=""
-                          style={{ position: 'absolute', inset: 6, opacity: 0.16, objectFit: 'contain' }}
+                          style={{ position: 'absolute', inset: 10, opacity: 0.28, objectFit: 'contain' }}
                         />
                       )}
-                      <span style={{ position: 'relative', zIndex: 1, fontSize: 14 }}>{label}</span>
                     </div>
                   );
                 })}

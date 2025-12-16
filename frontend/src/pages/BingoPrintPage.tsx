@@ -29,7 +29,7 @@ const bingoGridStyle: React.CSSProperties = {
 
 const BingoPrintPage = () => {
   const [version, setVersion] = useState(0);
-  const boards = useMemo(() => Array.from({ length: 8 }, generateBoard), [version]);
+  const boards = useMemo(() => Array.from({ length: 16 }, generateBoard), [version]);
 
   const handleShuffle = () => setVersion((v) => v + 1);
   const handlePrint = () => window.print();

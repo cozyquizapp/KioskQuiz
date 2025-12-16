@@ -50,9 +50,17 @@ const BingoPrintPage = () => {
           @page { size: A4 landscape; margin: 10mm; }
           .no-print { display: none !important; }
           body { background: white !important; }
-          .sheet { break-inside: avoid; page-break-inside: avoid; }
-          .print-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-          .sheet:nth-child(2n) { break-after: page; page-break-after: always; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .print-grid { display: block !important; }
+          .sheet {
+            display: inline-block !important;
+            width: calc(50% - 8mm) !important;
+            margin: 0 4mm 8mm 4mm !important;
+            vertical-align: top !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .sheet:nth-of-type(2n) { page-break-after: always; break-after: page; }
         }
         `}
       </style>

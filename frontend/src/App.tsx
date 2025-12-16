@@ -9,6 +9,7 @@ import IntroSlidesPage from './pages/IntroSlidesPage';
 import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import BaukastenNeuPage from './pages/BaukastenNeuPage';
+import BingoPrintPage from './pages/BingoPrintPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -30,6 +31,7 @@ function App() {
       <Route path="/question-editor" element={<QuestionEditorPage />} />
       <Route path="/moderator" element={<ModeratorPage />} />
       <Route path="/intro" element={<IntroSlidesPage />} />
+      <Route path="/bingo" element={<BingoPrintPage />} />
       <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
       <Route path="/stats" element={<StatsPage />} />
       <Route path="/draft-import" element={<DraftImportPage />} />

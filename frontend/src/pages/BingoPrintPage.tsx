@@ -47,9 +47,12 @@ const BingoPrintPage = () => {
       <style>
         {`
         @media print {
+          @page { size: A4 landscape; margin: 10mm; }
           .no-print { display: none !important; }
           body { background: white !important; }
           .sheet { break-inside: avoid; page-break-inside: avoid; }
+          .print-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          .sheet:nth-child(2n) { break-after: page; page-break-after: always; }
         }
         `}
       </style>
@@ -99,9 +102,10 @@ const BingoPrintPage = () => {
       </header>
 
       <div
+        className="print-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
           gap: 16
         }}
       >
@@ -117,22 +121,6 @@ const BingoPrintPage = () => {
               boxShadow: '0 8px 18px rgba(0,0,0,0.06)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <div
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  border: '1px solid rgba(15,23,42,0.12)',
-                  background: 'rgba(148,163,184,0.12)',
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                  color: '#0f172a'
-                }}
-              >
-                Bingo #{idx + 1}
-              </div>
-              <div style={{ color: '#475569', fontWeight: 700, fontSize: 12 }}>5 Kategorien · 25 Felder</div>
-            </div>
             <div style={{ position: 'relative', padding: 4 }}>
               <div style={bingoGridStyle}>
                 {board.map((cell, cellIdx) => {

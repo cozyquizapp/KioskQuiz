@@ -1,14 +1,14 @@
 import { QuizCategory } from '@shared/quizTypes';
 
 export const categoryColors: Record<QuizCategory, string> = {
-  // Orange
-  Schaetzchen: '#e4a73e',
+  // Gelb
+  Schaetzchen: '#f3c367',
   // Blau
-  'Mu-Cho': '#5f8fb2',
-  // Grün
-  Stimmts: '#3f9a4d',
+  'Mu-Cho': '#9fbfd3',
+  // Gruen
+  Stimmts: '#72ac78',
   // Lavendel
-  Cheese: '#b678e3',
-  // Rot/Magenta
-  GemischteTuete: '#c44952'
+  Cheese: '#e2a9f1',
+  // Rot
+  GemischteTuete: '#d85f58'
 };

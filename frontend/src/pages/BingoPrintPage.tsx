@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { jsPDF } from 'jspdf';
 import { BingoBoard, QuizCategory } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
@@ -22,66 +23,153 @@ const generateBoard = (): BingoBoard => {
 const bingoGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-  gap: 6,
+  gap: 10,
   width: '100%',
   height: '100%'
+};
+
+const imageCache = new Map<string, HTMLImageElement>();
+
+const loadIcon = async (src: string) => {
+  if (imageCache.has(src)) return imageCache.get(src)!;
+  return new Promise<HTMLImageElement>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imageCache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => resolve(img);
+    img.src = src;
+  });
+};
+
+const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, radius: number) => {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + size - radius, y);
+  ctx.quadraticCurveTo(x + size, y, x + size, y + radius);
+  ctx.lineTo(x + size, y + size - radius);
+  ctx.quadraticCurveTo(x + size, y + size, x + size - radius, y + size);
+  ctx.lineTo(x + radius, y + size);
+  ctx.quadraticCurveTo(x, y + size, x, y + size - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+};
+
+const drawCell = async (
+  ctx: CanvasRenderingContext2D,
+  cell: BingoBoard[number],
+  x: number,
+  y: number,
+  size: number
+) => {
+  const color = categoryColors[cell.category] ?? theme.colors.card;
+  const radius = Math.max(24, size * 0.16);
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.fillStyle = color;
+  drawRoundedRect(ctx, x, y, size, radius);
+  ctx.fill();
+
+  const sheen = ctx.createLinearGradient(x, y, x + size, y + size);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.16)');
+  sheen.addColorStop(1, 'rgba(0,0,0,0.05)');
+  ctx.fillStyle = sheen;
+  ctx.fill();
+
+  ctx.lineWidth = Math.max(2, size * 0.012);
+  ctx.strokeStyle = 'rgba(15,23,42,0.14)';
+  ctx.stroke();
+
+  const iconUrl = categoryIcons[cell.category];
+  if (iconUrl) {
+    const icon = await loadIcon(iconUrl);
+    const inset = Math.max(18, size * 0.12);
+    const iconSize = size - inset * 2;
+    ctx.globalAlpha = 0.96;
+    ctx.drawImage(icon, x + inset, y + inset, iconSize, iconSize);
+  }
+
+  ctx.restore();
+};
+
+const renderBoardCanvas = async (board: BingoBoard, size: number, padding = 36) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  const cellSize = (size - padding * 2) / 5;
+  ctx.clearRect(0, 0, size, size);
+
+  for (let i = 0; i < board.length; i += 1) {
+    const x = padding + (i % 5) * cellSize;
+    const y = padding + Math.floor(i / 5) * cellSize;
+    // eslint-disable-next-line no-await-in-loop
+    await drawCell(ctx, board[i], x, y, cellSize);
+  }
+
+  return canvas;
+};
+
+const renderSingleCellCanvas = async (cell: BingoBoard[number], size: number) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  ctx.clearRect(0, 0, size, size);
+  await drawCell(ctx, cell, 0, 0, size);
+  return canvas;
+};
+
+const renderBackCanvas = async (size: number, logoSrc: string) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  const border = Math.max(24, size * 0.03);
+  ctx.lineWidth = border;
+  ctx.strokeStyle = '#000000';
+  ctx.strokeRect(border / 2, border / 2, size - border, size - border);
+
+  if (logoSrc) {
+    const logo = await loadIcon(logoSrc);
+    const inset = size * 0.18;
+    const logoSize = size - inset * 2;
+    ctx.globalAlpha = 0.12;
+    ctx.drawImage(logo, inset, inset, logoSize, logoSize);
+  }
+
+  return canvas;
 };
 
 const BingoPrintPage = () => {
   const [version, setVersion] = useState(0);
   const boards = useMemo(() => Array.from({ length: 16 }, generateBoard), [version]);
+  const printPages = useMemo(
+    () => boards.flatMap((board) => [{ kind: 'front' as const, board }, { kind: 'back' as const, board }]),
+    [boards]
+  );
 
   const handleShuffle = () => setVersion((v) => v + 1);
   const handlePrint = () => window.print();
 
   const exportBoardPng = async (board: BingoBoard, idx: number) => {
-    const size = 1200;
-    const padding = 24;
-    const cellSize = (size - padding * 2) / 5;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, size, size);
-
-    for (let i = 0; i < board.length; i += 1) {
-      const cell = board[i];
-      const x = padding + (i % 5) * cellSize;
-      const y = padding + Math.floor(i / 5) * cellSize;
-      const color = categoryColors[cell.category] ?? '#d6a2ff';
-      ctx.fillStyle = color;
-      const r = 28;
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + cellSize - r, y);
-      ctx.quadraticCurveTo(x + cellSize, y, x + cellSize, y + r);
-      ctx.lineTo(x + cellSize, y + cellSize - r);
-      ctx.quadraticCurveTo(x + cellSize, y + cellSize, x + cellSize - r, y + cellSize);
-      ctx.lineTo(x + r, y + cellSize);
-      ctx.quadraticCurveTo(x, y + cellSize, x, y + cellSize - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.fill();
-
-      const iconUrl = categoryIcons[cell.category];
-      if (iconUrl) {
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise<void>((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            ctx.save();
-            ctx.globalAlpha = 0.32;
-            ctx.drawImage(img, x + 12, y + 12, cellSize - 24, cellSize - 24);
-            ctx.restore();
-            resolve();
-          };
-          img.onerror = () => resolve();
-          img.src = iconUrl;
-        });
-      }
-    }
+    const canvas = await renderBoardCanvas(board, 2400, 48);
+    if (!canvas) return;
 
     canvas.toBlob((blob) => {
       if (!blob) return;
@@ -91,6 +179,54 @@ const BingoPrintPage = () => {
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }, 'image/png');
+  };
+
+  const exportBoardPdf = async (board: BingoBoard, idx: number) => {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const targetSize = Math.min(pageWidth - 14, pageHeight - 28);
+
+    for (let i = 0; i < board.length; i += 1) {
+      const canvas = await renderSingleCellCanvas(board[i], 2400);
+      const dataUrl = canvas.toDataURL('image/png');
+      const x = (pageWidth - targetSize) / 2;
+      const y = (pageHeight - targetSize) / 2;
+      pdf.addImage(dataUrl, 'PNG', x, y, targetSize, targetSize, undefined, 'FAST');
+      if (i < board.length - 1) pdf.addPage();
+    }
+
+    pdf.save(`bingo-felder-${idx + 1}.pdf`);
+  };
+
+  const exportBackPdf = async (idx: number) => {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const targetSize = Math.min(pageWidth - 14, pageHeight - 28);
+
+    const canvas = await renderBackCanvas(2400, '/logo.png');
+    const dataUrl = canvas.toDataURL('image/png');
+    const x = (pageWidth - targetSize) / 2;
+    const y = (pageHeight - targetSize) / 2;
+    pdf.addImage(dataUrl, 'PNG', x, y, targetSize, targetSize, undefined, 'FAST');
+
+    pdf.save(`bingo-back-${idx + 1}.pdf`);
+  };
+
+  const exportStandaloneBackPdf = async () => {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const targetSize = Math.min(pageWidth - 14, pageHeight - 28);
+
+    const canvas = await renderBackCanvas(2400, '/logo.png');
+    const dataUrl = canvas.toDataURL('image/png');
+    const x = (pageWidth - targetSize) / 2;
+    const y = (pageHeight - targetSize) / 2;
+    pdf.addImage(dataUrl, 'PNG', x, y, targetSize, targetSize, undefined, 'FAST');
+
+    pdf.save('bingo-back.pdf');
   };
 
   return (
@@ -106,20 +242,32 @@ const BingoPrintPage = () => {
       <style>
         {`
         @media print {
-          @page { size: A4 landscape; margin: 10mm; }
+          @page { size: A4 portrait; margin: 8mm; }
           .no-print { display: none !important; }
           body { background: white !important; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-grid { display: block !important; }
           .sheet {
-            display: inline-block !important;
-            width: calc(50% - 8mm) !important;
-            margin: 0 4mm 8mm 4mm !important;
-            vertical-align: top !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
+            display: block !important;
+            width: 100% !important;
+            margin: 0 0 10mm 0 !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            page-break-after: always !important;
+            break-after: page !important;
           }
-          .sheet:nth-of-type(2n) { page-break-after: always; break-after: page; }
+          .sheet-back {
+            display: block !important;
+            break-before: page !important;
+            page-break-before: always !important;
+            break-after: page !important;
+            page-break-after: always !important;
+          }
+        }
+        @media screen {
+          .sheet-back {
+            display: none;
+          }
         }
         `}
       </style>
@@ -165,8 +313,85 @@ const BingoPrintPage = () => {
           >
             Drucken / PDF
           </button>
+          <button
+            className="no-print"
+            onClick={exportStandaloneBackPdf}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(15,23,42,0.18)',
+              background: '#111827',
+              color: '#e5e7eb',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            Back PDF
+          </button>
         </div>
       </header>
+
+      <section
+        className="no-print"
+        style={{
+          marginBottom: 20,
+          background: '#fff',
+          borderRadius: 14,
+          padding: 14,
+          border: '1px solid rgba(15,23,42,0.08)',
+          boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          flexWrap: 'wrap'
+        }}
+      >
+        <div
+          style={{
+            width: 160,
+            height: 160,
+            border: '8px solid #000',
+            borderRadius: 18,
+            position: 'relative',
+            overflow: 'hidden',
+            background: '#fff',
+            flexShrink: 0
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="Back Logo"
+            style={{
+              position: 'absolute',
+              inset: '18%',
+              objectFit: 'contain',
+              opacity: 0.12,
+              mixBlendMode: 'multiply'
+            }}
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Rückseite (Back)</div>
+          <div style={{ color: '#64748b', marginBottom: 10 }}>
+            Schwarzer Rahmen, transparentes Logo, gleiche Größe wie das Bingofeld. PDF als einzelne A4-Seite.
+          </div>
+          <button
+            onClick={exportStandaloneBackPdf}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(15,23,42,0.12)',
+              background: '#111827',
+              color: '#e5e7eb',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 10px 18px rgba(0,0,0,0.12)'
+            }}
+          >
+            Back PDF Download
+          </button>
+        </div>
+      </section>
 
       <div
         className="print-grid"
@@ -176,69 +401,150 @@ const BingoPrintPage = () => {
           gap: 16
         }}
       >
-        {boards.map((board, idx) => (
-          <div
-            key={idx}
-            className="sheet"
-            style={{
-              background: '#ffffff',
-              borderRadius: 14,
-              padding: 10,
-              border: '1px solid rgba(15,23,42,0.08)',
-              boxShadow: '0 8px 18px rgba(0,0,0,0.06)'
-            }}
-          >
-            <div style={{ position: 'relative', padding: 4 }}>
-              <div style={bingoGridStyle}>
-                {board.map((cell, cellIdx) => {
-                  const color = categoryColors[cell.category] ?? theme.colors.card;
-                  const icon = categoryIcons[cell.category];
-                  return (
-                    <div
-                      key={cellIdx}
-                      style={{
-                        aspectRatio: '1 / 1',
-                        borderRadius: 12,
-                        border: '1px solid rgba(15,23,42,0.08)',
-                        background: color,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22)'
-                      }}
-                    >
-                      {icon && (
-                        <img
-                          src={icon}
-                          alt=""
-                          style={{ position: 'absolute', inset: 10, opacity: 0.28, objectFit: 'contain' }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+        {printPages.map((page, idx) =>
+          page.kind === 'front' ? (
+            <div
+              key={`front-${idx}`}
+              className="sheet"
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                padding: 14,
+                border: '1px solid rgba(15,23,42,0.08)',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.06)'
+              }}
+            >
+              <div style={{ position: 'relative', padding: 4 }}>
+                <div style={bingoGridStyle}>
+                  {page.board.map((cell, cellIdx) => {
+                    const color = categoryColors[cell.category] ?? theme.colors.card;
+                    const icon = categoryIcons[cell.category];
+                    return (
+                      <div
+                        key={cellIdx}
+                        style={{
+                          aspectRatio: '1 / 1',
+                          borderRadius: 12,
+                          border: '1px solid rgba(15,23,42,0.08)',
+                          background: color,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 12px 26px rgba(0,0,0,0.08)'
+                        }}
+                      >
+                        {icon && (
+                          <img
+                            src={icon}
+                            alt=""
+                            style={{
+                              position: 'absolute',
+                              inset: 10,
+                              opacity: 0.94,
+                              objectFit: 'contain',
+                              imageRendering: 'high-quality',
+                              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.18))'
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="no-print" style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => exportBoardPng(page.board, Math.floor(idx / 2))}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(15,23,42,0.12)',
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  PNG Download
+                </button>
+                <button
+                  onClick={() => exportBoardPdf(page.board, Math.floor(idx / 2))}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(15,23,42,0.12)',
+                    background: '#f59e0b',
+                    color: '#0f172a',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    marginLeft: 8,
+                    boxShadow: '0 10px 18px rgba(0,0,0,0.12)'
+                  }}
+                >
+                  PDF (A4 Einzelfelder)
+                </button>
+                <button
+                  onClick={() => exportBackPdf(Math.floor(idx / 2))}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(15,23,42,0.12)',
+                    background: '#111827',
+                    color: '#e5e7eb',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    marginLeft: 8,
+                    boxShadow: '0 10px 18px rgba(0,0,0,0.12)'
+                  }}
+                >
+                  PDF Back
+                </button>
               </div>
             </div>
-            <div className="no-print" style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => exportBoardPng(board, idx)}
+          ) : (
+            <div
+              key={`back-${idx}`}
+              className="sheet sheet-back"
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                padding: 14,
+                border: '1px solid rgba(15,23,42,0.08)',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div
                 style={{
-                  padding: '8px 10px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(15,23,42,0.12)',
-                  background: '#0f172a',
-                  color: '#e2e8f0',
-                  fontWeight: 800,
-                  cursor: 'pointer'
+                  width: 'calc(100% - 32mm)',
+                  maxWidth: '180mm',
+                  aspectRatio: '1 / 1',
+                  border: '8px solid #000',
+                  borderRadius: 18,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: '#fff'
                 }}
               >
-                PNG Download
-              </button>
+                <img
+                  src="/logo.png"
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    inset: '18%',
+                    objectFit: 'contain',
+                    opacity: 0.1,
+                    mixBlendMode: 'multiply'
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   );

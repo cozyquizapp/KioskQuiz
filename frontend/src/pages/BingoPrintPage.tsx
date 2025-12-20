@@ -28,6 +28,10 @@ const bingoGridStyle: React.CSSProperties = {
   height: '100%'
 };
 
+const sheetSize = '180mm';
+const sheetMaxWidth = 'calc(100% - 20mm)';
+const sheetPadding = 8;
+
 const imageCache = new Map<string, HTMLImageElement>();
 
 const loadIcon = async (src: string) => {
@@ -250,8 +254,9 @@ const BingoPrintPage = () => {
           .print-grid { display: block !important; }
           .sheet {
             display: block !important;
-            width: 100% !important;
-            margin: 0 0 10mm 0 !important;
+            width: ${sheetSize} !important;
+            max-width: ${sheetMaxWidth} !important;
+            margin: 0 auto 10mm auto !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
             page-break-after: always !important;
@@ -259,6 +264,9 @@ const BingoPrintPage = () => {
           }
           .sheet-back {
             display: block !important;
+            width: ${sheetSize} !important;
+            max-width: ${sheetMaxWidth} !important;
+            margin: 0 auto 10mm auto !important;
             break-before: page !important;
             page-break-before: always !important;
             break-after: page !important;
@@ -414,13 +422,16 @@ const BingoPrintPage = () => {
               style={{
                 background: '#ffffff',
                 borderRadius: 16,
-                padding: 14,
+                padding: sheetPadding,
                 border: '1px solid rgba(15,23,42,0.08)',
-                boxShadow: '0 8px 18px rgba(0,0,0,0.06)'
+                boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
+                width: sheetSize,
+                maxWidth: sheetMaxWidth,
+                margin: '0 auto'
               }}
             >
-              <div style={{ position: 'relative', padding: 4 }}>
-                <div style={bingoGridStyle}>
+              <div style={{ position: 'relative', padding: 0, width: '100%', aspectRatio: '1 / 1' }}>
+                <div style={{ ...bingoGridStyle, width: '100%', height: '100%' }}>
                   {page.board.map((cell, cellIdx) => {
                     const color = categoryColors[cell.category] ?? theme.colors.card;
                     const icon = categoryIcons[cell.category];
@@ -515,18 +526,20 @@ const BingoPrintPage = () => {
               style={{
                 background: '#ffffff',
                 borderRadius: 16,
-                padding: 14,
+                padding: 12,
                 border: '1px solid rgba(15,23,42,0.08)',
                 boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                width: sheetSize,
+                maxWidth: sheetMaxWidth,
+                margin: '0 auto'
               }}
             >
               <div
                 style={{
-                  width: 'calc(100% - 32mm)',
-                  maxWidth: '180mm',
+                  width: '100%',
                   aspectRatio: '1 / 1',
                   border: '8px solid #000',
                   borderRadius: 18,

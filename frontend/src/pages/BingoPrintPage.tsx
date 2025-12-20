@@ -147,10 +147,11 @@ const renderBackCanvas = async (size: number, logoSrc: string) => {
 
   if (logoSrc) {
     const logo = await loadIcon(logoSrc);
-    const inset = size * 0.18;
-    const logoSize = size - inset * 2;
+    const logoScale = 0.64;
+    const logoSize = size * logoScale;
+    const offset = (size - logoSize) / 2;
     ctx.globalAlpha = 0.12;
-    ctx.drawImage(logo, inset, inset, logoSize, logoSize);
+    ctx.drawImage(logo, offset, offset, logoSize, logoSize);
   }
 
   return canvas;
@@ -363,7 +364,11 @@ const BingoPrintPage = () => {
             alt="Back Logo"
             style={{
               position: 'absolute',
-              inset: '18%',
+              top: '50%',
+              left: '50%',
+              width: '64%',
+              height: '64%',
+              transform: 'translate(-50%, -50%)',
               objectFit: 'contain',
               opacity: 0.12,
               mixBlendMode: 'multiply'
@@ -535,7 +540,11 @@ const BingoPrintPage = () => {
                   alt=""
                   style={{
                     position: 'absolute',
-                    inset: '18%',
+                    top: '50%',
+                    left: '50%',
+                    width: '64%',
+                    height: '64%',
+                    transform: 'translate(-50%, -50%)',
                     objectFit: 'contain',
                     opacity: 0.1,
                     mixBlendMode: 'multiply'

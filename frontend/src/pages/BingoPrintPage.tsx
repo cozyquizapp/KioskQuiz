@@ -254,9 +254,6 @@ const BingoPrintPage = () => {
             border: none !important;
             background: white !important;
           }
-          .bingo-grid {
-            gap: 0 !important;
-          }
           .bingo-cell {
             border: none !important;
             box-shadow: none !important;

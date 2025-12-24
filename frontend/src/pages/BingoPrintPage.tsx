@@ -25,12 +25,14 @@ const bingoGridStyle: React.CSSProperties = {
   gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
   gap: 10,
   width: '100%',
-  height: '100%'
+  height: '100%',
+  backgroundColor: '#ffffff'
 };
 
 const sheetSize = '180mm';
 const sheetMaxWidth = 'calc(100% - 20mm)';
 const sheetPadding = 8;
+const backPrintOffsetMm = 1;
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -280,6 +282,9 @@ const BingoPrintPage = () => {
             margin: 0 auto 10mm auto !important;
             break-after: page !important;
             page-break-after: always !important;
+          }
+          .sheet-back .back-face {
+            transform: translateY(${backPrintOffsetMm}mm);
           }
         }
         @media screen {
@@ -539,19 +544,16 @@ const BingoPrintPage = () => {
                 padding: sheetPadding,
                 border: '1px solid rgba(15,23,42,0.08)',
                 boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 width: sheetSize,
                 maxWidth: sheetMaxWidth,
                 margin: '0 auto'
               }}
             >
               <div
+                className="back-face"
                 style={{
                   width: '100%',
                   aspectRatio: '1 / 1',
-      
                   borderRadius: 18,
                   position: 'relative',
                   overflow: 'hidden',

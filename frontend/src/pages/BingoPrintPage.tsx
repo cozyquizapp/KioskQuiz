@@ -251,6 +251,15 @@ const BingoPrintPage = () => {
           .sheet,
           .sheet-back {
             box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+          }
+          .bingo-grid {
+            gap: 0 !important;
+          }
+          .bingo-cell {
+            border: none !important;
+            box-shadow: none !important;
           }
           @page { size: A4 portrait; margin: 8mm; }
           .no-print { display: none !important; }
@@ -434,12 +443,13 @@ const BingoPrintPage = () => {
               }}
             >
               <div style={{ position: 'relative', padding: 0, width: '100%', aspectRatio: '1 / 1' }}>
-                <div style={{ ...bingoGridStyle, width: '100%', height: '100%' }}>
+                <div className="bingo-grid" style={{ ...bingoGridStyle, width: '100%', height: '100%' }}>
                   {page.board.map((cell, cellIdx) => {
                     const color = categoryColors[cell.category] ?? theme.colors.card;
                     const icon = categoryIcons[cell.category];
                     return (
                       <div
+                        className="bingo-cell"
                         key={cellIdx}
                         style={{
                           aspectRatio: '1 / 1',
@@ -529,7 +539,7 @@ const BingoPrintPage = () => {
               style={{
                 background: '#ffffff',
                 borderRadius: 16,
-                padding: 12,
+                padding: sheetPadding,
                 border: '1px solid rgba(15,23,42,0.08)',
                 boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
                 display: 'flex',

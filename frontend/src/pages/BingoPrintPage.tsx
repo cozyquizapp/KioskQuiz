@@ -144,11 +144,6 @@ const renderBackCanvas = async (size: number, logoSrc: string) => {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size, size);
 
-  const border = Math.max(24, size * 0.03);
-  ctx.lineWidth = border;
-  ctx.strokeStyle = '#000000';
-  ctx.strokeRect(border / 2, border / 2, size - border, size - border);
-
   if (logoSrc) {
     const logo = await loadIcon(logoSrc);
     const logoScale = 0.64;
@@ -236,9 +231,9 @@ const BingoPrintPage = () => {
 
   return (
     <div
+      className="bingo-print-page"
       style={{
         minHeight: '100vh',
-        background: '#f8fafc',
         color: '#0f172a',
         padding: '18px 18px 80px',
         fontFamily: 'Inter, system-ui, sans-serif'
@@ -246,7 +241,17 @@ const BingoPrintPage = () => {
     >
       <style>
         {`
+        .bingo-print-page {
+          background: #f8fafc;
+        }
         @media print {
+          .bingo-print-page {
+            background: white !important;
+          }
+          .sheet,
+          .sheet-back {
+            box-shadow: none !important;
+          }
           @page { size: A4 portrait; margin: 8mm; }
           .no-print { display: none !important; }
           body { background: white !important; }
@@ -359,7 +364,7 @@ const BingoPrintPage = () => {
           style={{
             width: 160,
             height: 160,
-            border: '8px solid #000',
+
             borderRadius: 18,
             position: 'relative',
             overflow: 'hidden',
@@ -386,7 +391,7 @@ const BingoPrintPage = () => {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Rückseite (Back)</div>
           <div style={{ color: '#64748b', marginBottom: 10 }}>
-            Schwarzer Rahmen, transparentes Logo, gleiche Größe wie das Bingofeld. PDF als einzelne A4-Seite.
+            Weißer Hintergrund, transparentes Logo, gleiche Größe wie das Bingofeld. PDF als einzelne A4-Seite.
           </div>
           <button
             onClick={exportStandaloneBackPdf}
@@ -541,7 +546,7 @@ const BingoPrintPage = () => {
                 style={{
                   width: '100%',
                   aspectRatio: '1 / 1',
-                  border: '8px solid #000',
+      
                   borderRadius: 18,
                   position: 'relative',
                   overflow: 'hidden',

@@ -272,8 +272,6 @@ const BingoPrintPage = () => {
             width: ${sheetSize} !important;
             max-width: ${sheetMaxWidth} !important;
             margin: 0 auto 10mm auto !important;
-            break-before: page !important;
-            page-break-before: always !important;
             break-after: page !important;
             page-break-after: always !important;
           }

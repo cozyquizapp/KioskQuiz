@@ -26,7 +26,7 @@ export const CATEGORY_CONFIG: Record<QuizCategory, CategoryConfig> = {
   Stimmts: {
     label: 'Stimmts?',
     labelEn: 'Fake Finder',
-    icon: '/categories/stimmts_logo.png',
+    icon: '/categories/punktlandung_logo.png',
     color: '#72ac78',
     short: 'ST'
   },

@@ -29,10 +29,30 @@ const bingoGridStyle: React.CSSProperties = {
   backgroundColor: '#ffffff'
 };
 
+const frameBorderColor = 'rgba(15,23,42,0.15)';
+const boardFrameStyle: React.CSSProperties = {
+  width: '100%',
+  aspectRatio: '1 / 1',
+  borderRadius: 24,
+  border: `1.5px solid ${frameBorderColor}`,
+  padding: 14,
+  boxSizing: 'border-box',
+  background: '#ffffff',
+  position: 'relative',
+  overflow: 'hidden',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45), 0 16px 32px rgba(15,23,42,0.08)'
+};
+const backFrameStyle: React.CSSProperties = {
+  ...boardFrameStyle,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
+
 const sheetSize = '180mm';
 const sheetMaxWidth = 'calc(100% - 20mm)';
 const sheetPadding = 8;
-const backPrintOffsetMm = 1;
+const backPrintOffsetMm = 0;
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -61,6 +81,22 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, si
   ctx.quadraticCurveTo(x, y + size, x, y + size - radius);
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+};
+
+const drawBoardFrame = (ctx: CanvasRenderingContext2D, size: number) => {
+  const margin = Math.max(size * 0.012, 28);
+  const frameSize = size - margin * 2;
+  const frameRadius = Math.max(size * 0.04, 48);
+  const strokeWidth = Math.max(size * 0.0035, 5);
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  drawRoundedRect(ctx, margin, margin, frameSize, frameRadius);
+  ctx.fill();
+  ctx.lineWidth = strokeWidth;
+  ctx.strokeStyle = frameBorderColor;
+  ctx.stroke();
+  ctx.restore();
 };
 
 const drawCell = async (
@@ -117,8 +153,12 @@ const renderBoardCanvas = async (board: BingoBoard, size: number, padding = 36) 
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
 
-  const cellSize = (size - padding * 2) / 5;
   ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+  drawBoardFrame(ctx, size);
+
+  const cellSize = (size - padding * 2) / 5;
 
   for (let i = 0; i < board.length; i += 1) {
     const x = padding + (i % 5) * cellSize;
@@ -152,6 +192,7 @@ const renderBackCanvas = async (size: number, logoSrc: string) => {
   ctx.clearRect(0, 0, size, size);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size, size);
+  drawBoardFrame(ctx, size);
 
   if (logoSrc) {
     const logo = await loadIcon(logoSrc);
@@ -451,7 +492,7 @@ const BingoPrintPage = () => {
                 margin: '0 auto'
               }}
             >
-              <div style={{ position: 'relative', padding: 0, width: '100%', aspectRatio: '1 / 1' }}>
+              <div style={boardFrameStyle}>
                 <div className="bingo-grid" style={{ ...bingoGridStyle, width: '100%', height: '100%' }}>
                   {page.board.map((cell, cellIdx) => {
                     const color = categoryColors[cell.category] ?? theme.colors.card;
@@ -561,30 +602,17 @@ const BingoPrintPage = () => {
                 margin: '0 auto'
               }}
             >
-              <div
-                className="back-face"
-                style={{
-                  width: '100%',
-                  aspectRatio: '1 / 1',
-                  borderRadius: 18,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: '#fff'
-                }}
-              >
+              <div className="back-face" style={backFrameStyle}>
                 <img
                   src="/logo.png"
                   alt=""
                   style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    width: '64%',
-                    height: '64%',
-                    transform: 'translate(-50%, -50%)',
+                    width: '70%',
+                    height: '70%',
                     objectFit: 'contain',
                     opacity: 0.1,
-                    mixBlendMode: 'multiply'
+                    mixBlendMode: 'multiply',
+                    pointerEvents: 'none'
                   }}
                 />
               </div>

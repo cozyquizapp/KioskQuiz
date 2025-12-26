@@ -297,6 +297,7 @@ const BingoPrintPage = () => {
         @media print {
           .bingo-print-page {
             background: white !important;
+            padding: 0 !important;
           }
           .sheet,
           .sheet-back {

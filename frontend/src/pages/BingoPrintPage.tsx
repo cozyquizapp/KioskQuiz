@@ -95,9 +95,16 @@ const drawCell = async (
   if (iconUrl) {
     const icon = await loadIcon(iconUrl);
     const inset = Math.max(18, size * 0.12);
-    const iconSize = size - inset * 2;
+    const iconBounds = size - inset * 2;
+    const naturalWidth = icon.naturalWidth || icon.width || 1;
+    const naturalHeight = icon.naturalHeight || icon.height || 1;
+    const scale = Math.min(iconBounds / naturalWidth, iconBounds / naturalHeight);
+    const drawWidth = naturalWidth * scale;
+    const drawHeight = naturalHeight * scale;
+    const offsetX = x + (size - drawWidth) / 2;
+    const offsetY = y + (size - drawHeight) / 2;
     ctx.globalAlpha = 0.96;
-    ctx.drawImage(icon, x + inset, y + inset, iconSize, iconSize);
+    ctx.drawImage(icon, offsetX, offsetY, drawWidth, drawHeight);
   }
 
   ctx.restore();
@@ -472,11 +479,16 @@ const BingoPrintPage = () => {
                             alt=""
                             style={{
                               position: 'absolute',
-                              inset: 10,
+                              top: '50%',
+                              left: '50%',
+                              width: '74%',
+                              height: '74%',
+                              transform: 'translate(-50%, -50%)',
                               opacity: 0.94,
                               objectFit: 'contain',
                               imageRendering: 'high-quality',
-                              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.18))'
+                              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.18))',
+                              pointerEvents: 'none'
                             }}
                           />
                         )}

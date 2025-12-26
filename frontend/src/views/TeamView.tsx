@@ -977,7 +977,17 @@ const handleSubmit = async () => {
                   <img
                     src={icon}
                     alt=""
-                    style={{ position: 'absolute', inset: 10, opacity: 0.26, objectFit: 'contain' }}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: '70%',
+                      height: '70%',
+                      transform: 'translate(-50%, -50%)',
+                      opacity: 0.26,
+                      objectFit: 'contain',
+                      pointerEvents: 'none'
+                    }}
                   />
                 )}
                 <span style={{ position: 'relative', zIndex: 1 }}>{cell.marked ? 'X' : ''}</span>

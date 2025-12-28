@@ -17,13 +17,20 @@ export const SOCKET_URL =
 const SOCKET_PATH = '/socket.io';
 
 // Stellt eine Socket.IO-Verbindung her und joint den angegebenen Raum
-export const connectToRoom = (roomCode: string): Socket => {
-  const socket = io(SOCKET_URL, {
+const createSocket = () =>
+  io(SOCKET_URL, {
     path: SOCKET_PATH,
     transports: ['websocket', 'polling']
   });
+
+export const connectToRoom = (roomCode?: string): Socket => {
+  const socket = createSocket();
   socket.on('connect', () => {
-    socket.emit('joinRoom', roomCode);
+    if (roomCode) {
+      socket.emit('joinRoom', roomCode);
+    }
   });
   return socket;
 };
+
+export const connectControlSocket = (): Socket => createSocket();

@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { connectToRoom } from '../socket';
-import { AnswerEntry, AnyQuestion, QuestionMeta, QuestionPhase, SyncStatePayload, Team } from '@shared/quizTypes';
+import {
+  AnswerEntry,
+  AnyQuestion,
+  QuestionMeta,
+  QuestionPhase,
+  SyncStatePayload,
+  Team,
+  StateUpdatePayload,
+  CozyGameState,
+  PotatoState,
+  BlitzState
+} from '@shared/quizTypes';
 import { fetchAnswers } from '../api';
 
 type SocketEvents = {
@@ -11,6 +22,11 @@ type SocketEvents = {
   answers?: Record<string, AnswerEntry & { answer?: unknown }>;
   teams?: Record<string, Team>;
   solution?: string;
+  gameState?: CozyGameState;
+  scores?: StateUpdatePayload['scores'];
+  teamsConnected?: number;
+  potato?: PotatoState | null;
+  blitz?: BlitzState | null;
 };
 
 export const useQuizSocket = (roomCode: string) => {
@@ -114,6 +130,20 @@ export const useQuizSocket = (roomCode: string) => {
     const onTimerStarted = ({ endsAt }: { endsAt: number }) =>
       setEvents((prev) => ({ ...prev, timerEndsAt: endsAt }));
     const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null }));
+    const onStateUpdate = (payload: StateUpdatePayload) => {
+      setEvents((prev) => ({
+        ...prev,
+        currentQuestion:
+          payload.currentQuestion !== undefined ? payload.currentQuestion : prev.currentQuestion,
+        questionPhase: payload.phase,
+        timerEndsAt: payload.timer?.endsAt ?? prev.timerEndsAt,
+        gameState: payload.state,
+        scores: payload.scores,
+        teamsConnected: payload.teamsConnected,
+        potato: payload.potato ?? prev.potato,
+        blitz: payload.blitz ?? prev.blitz
+      }));
+    };
 
     socket.on('syncState', onSync);
     socket.on('beamer:show-question', onBeamerQuestion);
@@ -126,6 +156,7 @@ export const useQuizSocket = (roomCode: string) => {
     socket.on('evaluation:revealed', onEvaluationRevealed);
     socket.on('timerStarted', onTimerStarted);
     socket.on('timerStopped', onTimerStopped);
+    socket.on('server:stateUpdate', onStateUpdate);
 
     return () => {
       active = false;
@@ -140,6 +171,7 @@ export const useQuizSocket = (roomCode: string) => {
       socket.off('evaluation:revealed', onEvaluationRevealed);
       socket.off('timerStarted', onTimerStarted);
       socket.off('timerStopped', onTimerStopped);
+      socket.off('server:stateUpdate', onStateUpdate);
       socket.disconnect();
     };
   }, [roomCode]);

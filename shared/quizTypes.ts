@@ -214,35 +214,6 @@ export interface QuizTemplate {
   categories?: Record<QuizCategory, CategoryConfig>;
 }
 
-export type PotatoPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'ROUND_END' | 'DONE';
-
-export interface PotatoConflict {
-  type: 'duplicate' | 'similar';
-  answer: string;
-  normalized: string;
-  conflictingAnswer?: string | null;
-}
-
-export interface PotatoState {
-  phase: PotatoPhase;
-  pool: string[];
-  bans: Record<string, string[]>;
-  banLimits: Record<string, number>;
-  selectedThemes: string[];
-  roundIndex: number;
-  turnOrder: string[];
-  activeTeamId: string | null;
-  lives: Record<string, number>;
-  usedAnswers: string[];
-  usedAnswersNormalized: string[];
-  deadline?: number | null;
-  turnStartedAt?: number | null;
-  turnDurationMs?: number | null;
-  currentTheme?: string | null;
-  lastWinnerId?: string | null;
-  pendingConflict?: PotatoConflict | null;
-}
-
 export interface BingoCell {
   category: QuizCategory;
   marked: boolean;
@@ -294,6 +265,56 @@ export type CozyGameState =
   | 'POTATO'
   | 'AWARDS';
 
+export type PotatoPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'ROUND_END' | 'DONE';
+
+export interface PotatoConflict {
+  type: 'duplicate' | 'similar';
+  answer: string;
+  normalized: string;
+  conflictingAnswer?: string | null;
+}
+
+export interface PotatoState {
+  phase: PotatoPhase;
+  pool: string[];
+  bans: Record<string, string[]>;
+  banLimits: Record<string, number>;
+  selectedThemes: string[];
+  roundIndex: number;
+  turnOrder: string[];
+  activeTeamId: string | null;
+  lives: Record<string, number>;
+  usedAnswers: string[];
+  usedAnswersNormalized: string[];
+  deadline?: number | null;
+  turnStartedAt?: number | null;
+  turnDurationMs?: number | null;
+  currentTheme?: string | null;
+  lastWinnerId?: string | null;
+  pendingConflict?: PotatoConflict | null;
+}
+
+export type BlitzPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'SET_END' | 'DONE';
+
+export interface BlitzSetResult {
+  correctCount: number;
+  pointsAwarded: number;
+}
+
+export interface BlitzState {
+  phase: BlitzPhase;
+  pool: string[];
+  bans: Record<string, string[]>;
+  banLimits: Record<string, number>;
+  selectedThemes: string[];
+  setIndex: number;
+  deadline?: number | null;
+  theme?: string | null;
+  items: string[];
+  submissions: string[];
+  results: Record<string, BlitzSetResult>;
+}
+
 export type SyncStatePayload = {
   screen: ScreenState;
   language: Language;
@@ -313,6 +334,7 @@ export type StateUpdatePayload = {
   scores: Array<{ id: string; name: string; score: number }>;
   teamsConnected: number;
   potato?: PotatoState | null;
+  blitz?: BlitzState | null;
 };
 
 // Event-Payloads (optional gemeinsame Nutzung)

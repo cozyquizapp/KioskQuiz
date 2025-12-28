@@ -7,15 +7,44 @@ import { categoryIcons } from '../categoryAssets';
 import { theme } from '../theme';
 
 const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
+const baseBingoCategories: QuizCategory[] = categories.flatMap((c) => Array.from({ length: 5 }, () => c));
 
-const generateBoard = (): BingoBoard => {
-  const pool: QuizCategory[] = [];
-  categories.forEach((c) => {
-    for (let i = 0; i < 5; i += 1) pool.push(c);
-  });
+const hasTripleSequence = (pool: QuizCategory[]) => {
+  const idx = (row: number, col: number) => row * 5 + col;
+  for (let row = 0; row < 5; row += 1) {
+    for (let col = 0; col <= 2; col += 1) {
+      const a = pool[idx(row, col)];
+      const b = pool[idx(row, col + 1)];
+      const c = pool[idx(row, col + 2)];
+      if (a === b && b === c) return true;
+    }
+  }
+  for (let col = 0; col < 5; col += 1) {
+    for (let row = 0; row <= 2; row += 1) {
+      const a = pool[idx(row, col)];
+      const b = pool[idx(row + 1, col)];
+      const c = pool[idx(row + 2, col)];
+      if (a === b && b === c) return true;
+    }
+  }
+  return false;
+};
+
+const shuffleCategories = () => {
+  const pool = [...baseBingoCategories];
   for (let i = pool.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+};
+
+const generateBoard = (): BingoBoard => {
+  let pool = shuffleCategories();
+  let attempts = 0;
+  while (hasTripleSequence(pool) && attempts < 200) {
+    pool = shuffleCategories();
+    attempts += 1;
   }
   return pool.map((category) => ({ category, marked: false }));
 };

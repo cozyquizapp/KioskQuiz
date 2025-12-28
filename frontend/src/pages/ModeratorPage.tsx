@@ -147,7 +147,9 @@ const ModeratorPage: React.FC = () => {
   const [potatoBanDrafts, setPotatoBanDrafts] = useState<Record<string, string>>({});
   const [potatoAnswerInput, setPotatoAnswerInput] = useState('');
   const [potatoWinnerDraft, setPotatoWinnerDraft] = useState('');
-  const [potatoTick, setPotatoTick] = useState(0);
+  const [blitzThemeInput, setBlitzThemeInput] = useState('');
+  const [blitzBanDrafts, setBlitzBanDrafts] = useState<Record<string, string>>({});
+  const [countdownTick, setCountdownTick] = useState(0);
   const lastReportedQuestionId = React.useRef<string | null>(null);
   const [slotHoldMs, setSlotHoldMs] = useState(2400);
   const [slotExitMs, setSlotExitMs] = useState(1200);
@@ -172,6 +174,7 @@ const ModeratorPage: React.FC = () => {
     questionPhase: socketQuestionPhase,
     scores: socketScores,
     potato,
+    blitz,
     emit: socketEmit
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
@@ -304,7 +307,7 @@ const ModeratorPage: React.FC = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
+    const id = window.setInterval(() => setCountdownTick((tick) => tick + 1), 500);
     return () => window.clearInterval(id);
   }, []);
 
@@ -491,6 +494,39 @@ const ModeratorPage: React.FC = () => {
     emitPotatoEvent('host:potatoSubmitTurn', { verdict });
   };
 
+  const emitBlitzEvent = (
+    eventName:
+      | 'host:startBlitz'
+      | 'host:banBlitzTheme'
+      | 'host:confirmBlitzThemes'
+      | 'host:blitzStartSet'
+      | 'host:lockBlitzSet'
+      | 'host:revealBlitzSet'
+      | 'host:nextBlitzSet'
+      | 'host:finishBlitz',
+    payload?: Record<string, unknown>,
+    onSuccess?: () => void
+  ) => {
+    if (!roomCode) {
+      setToast('Roomcode fehlt');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+        return;
+      }
+      onSuccess?.();
+    });
+  };
+
   const answersCount = Object.keys(answers?.answers || {}).length;
   const teamsCount = Object.keys(answers?.teams || {}).length;
   const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
@@ -512,10 +548,16 @@ const ModeratorPage: React.FC = () => {
   const potatoTimeLeft = useMemo(() => {
     if (!potatoDeadline) return null;
     return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
-  }, [potatoDeadline, potatoTick]);
+  }, [potatoDeadline, countdownTick]);
   const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
   const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
   const potatoConflict = potato?.pendingConflict ?? null;
+  const blitzDeadline = blitz?.deadline ?? null;
+  const blitzTimeLeft = useMemo(() => {
+    if (!blitzDeadline) return null;
+    return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
+  }, [blitzDeadline, countdownTick]);
+  const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
 
   const numericStats = useMemo(() => {
     if (!answers) return null;
@@ -1118,6 +1160,238 @@ const ModeratorPage: React.FC = () => {
     );
   };
 
+  const renderBlitzControls = () => {
+    const phase = blitz?.phase ?? 'IDLE';
+    const pool = blitz?.pool ?? [];
+    const selected = blitz?.selectedThemes ?? [];
+    const banLimits = blitz?.banLimits ?? {};
+    const bans = blitz?.bans ?? {};
+    const submissions = blitz?.submissions ?? [];
+    const results = blitz?.results ?? {};
+    const setIndex = blitz?.setIndex ?? -1;
+    const currentTheme = blitz?.theme;
+    const showPanel = Boolean(roomCode) && (phase !== 'IDLE' || (meta?.globalIndex ?? 0) >= 9);
+    if (!showPanel) return null;
+
+    const renderBanRow = (teamId: string, teamName: string) => {
+      const limit = banLimits[teamId] ?? 0;
+      const used = bans[teamId]?.length ?? 0;
+      const disabled = limit === 0 || used >= limit;
+      return (
+        <div
+          key={`blitz-ban-${teamId}`}
+          style={{
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 12,
+            padding: 10,
+            display: 'grid',
+            gap: 6
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <strong>{teamName}</strong>
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>
+              {used}/{limit}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+            {bans[teamId]?.join(', ') || 'Keine Bans'}
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <select
+              value={blitzBanDrafts[teamId] ?? ''}
+              onChange={(e) =>
+                setBlitzBanDrafts((prev) => ({
+                  ...prev,
+                  [teamId]: e.target.value
+                }))
+              }
+              disabled={disabled}
+              style={{ ...inputStyle, flex: '1 1 160px', minWidth: 160 }}
+            >
+              <option value="">Theme wählen</option>
+              {pool.map((theme) => (
+                <option key={`${teamId}-${theme}`} value={theme}>
+                  {theme}
+                </option>
+              ))}
+            </select>
+            <button
+              style={{ ...inputStyle, width: 'auto' }}
+              disabled={disabled}
+              onClick={() => emitBlitzEvent('host:banBlitzTheme', { teamId, theme: blitzBanDrafts[teamId] })}
+            >
+              Bann setzen
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+          <div>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Blitz Battle</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              Phase: {phase} · Set {Math.max(0, setIndex + 1)}/{Math.max(3, selected.length || 3)}
+            </div>
+          </div>
+          {blitzTimeLeft !== null && phase === 'PLAYING' && (
+            <span
+              style={{
+                ...statChip,
+                borderColor: 'rgba(56,189,248,0.5)',
+                background: 'rgba(56,189,248,0.12)',
+                color: '#bae6fd'
+              }}
+            >
+              {blitzTimeLeft}s
+            </span>
+          )}
+        </div>
+
+        {phase === 'IDLE' && (
+          <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
+            <textarea
+              value={blitzThemeInput}
+              onChange={(e) => setBlitzThemeInput(e.target.value)}
+              style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }}
+              placeholder="Eigene Themen (optional)"
+            />
+            <button
+              style={{
+                ...inputStyle,
+                background: 'linear-gradient(135deg, #fde68a, #f97316)',
+                color: '#1f1305'
+              }}
+              onClick={() =>
+                emitBlitzEvent(
+                  'host:startBlitz',
+                  blitzThemeInput.trim() ? { themesText: blitzThemeInput } : {},
+                  () => setBlitzThemeInput('')
+                )
+              }
+            >
+              BLITZ STARTEN
+            </button>
+          </div>
+        )}
+
+        {(phase === 'BANNING' || phase === 'SET_END') && selected.length === 0 && (
+          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+            <div style={{ fontWeight: 700 }}>Verfügbare Themen</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {pool.map((theme) => (
+                <span key={theme} style={statChip}>
+                  {theme}
+                </span>
+              ))}
+              {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {scoreboard.map((entry) => renderBanRow(entry.id, entry.name))}
+            </div>
+            <button
+              style={{ ...inputStyle, width: 'auto' }}
+              onClick={() => emitBlitzEvent('host:confirmBlitzThemes')}
+            >
+              Themen auslosen
+            </button>
+          </div>
+        )}
+
+        {selected.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Ausgewählte Themen</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {selected.map((theme, idx) => (
+                <span
+                  key={`blitz-theme-${theme}-${idx}`}
+                  style={{
+                    ...statChip,
+                    background: idx === setIndex ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
+                    borderColor: idx === setIndex ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)'
+                  }}
+                >
+                  {idx + 1}. {theme}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {phase === 'PLAYING' && (
+          <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+            <div style={{ fontWeight: 700 }}>
+              Set {Math.max(1, setIndex + 1)} · Thema: {currentTheme || '-'}
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              Einsendungen: {submissions.length}/{scoreboard.length}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                style={{ ...inputStyle, width: 'auto' }}
+                onClick={() => emitBlitzEvent('host:lockBlitzSet')}
+              >
+                Set sperren
+              </button>
+              <button
+                style={{ ...inputStyle, width: 'auto' }}
+                onClick={() => emitBlitzEvent('host:revealBlitzSet')}
+              >
+                Ergebnisse berechnen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase !== 'PLAYING' && Object.keys(results || {}).length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Set-Ergebnis</div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {scoreboard.map((entry) => (
+                <div
+                  key={`blitz-result-${entry.id}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr auto auto',
+                    gap: 10,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    padding: '8px 10px'
+                  }}
+                >
+                  <span>{entry.name}</span>
+                  <span>{results[entry.id]?.correctCount ?? 0}/5</span>
+                  <span style={{ fontWeight: 700 }}>+{results[entry.id]?.pointsAwarded ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {phase === 'SET_END' && setIndex < blitzSetTotal && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              style={{ ...inputStyle, width: 'auto' }}
+              onClick={() => emitBlitzEvent('host:blitzStartSet')}
+            >
+              {setIndex < 0 ? 'Set starten' : 'Nächstes Set starten'}
+            </button>
+          </div>
+        )}
+        {phase === 'DONE' && (
+          <div style={{ marginTop: 12 }}>
+            <span style={{ ...statChip, background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)' }}>
+              Blitz abgeschlossen
+            </span>
+          </div>
+        )}
+      </section>
+    );
+  };
+
   return (
     <main
       style={{
@@ -1427,6 +1701,7 @@ const ModeratorPage: React.FC = () => {
     </div>
 
     {renderPotatoControls()}
+    {renderBlitzControls()}
 
     {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}
     {toast && (

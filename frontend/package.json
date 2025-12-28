@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "jspdf": "^3.0.4",
+    "quiz-monorepo": "file:..",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",

@@ -9,6 +9,7 @@ import {
   StateUpdatePayload,
   CozyGameState,
   Team,
+  BlitzState,
   PotatoState
 } from '@shared/quizTypes';
 import {
@@ -179,6 +180,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
+  const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
+  const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
+  const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [potatoTick, setPotatoTick] = useState(0);
   const savedIdRef = useRef<string | null>(null);
 
@@ -271,6 +275,18 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!potatoState?.deadline) return null;
     return Math.max(0, Math.ceil((potatoState.deadline - Date.now()) / 1000));
   }, [potatoState?.deadline, potatoTick]);
+  const blitzCountdown = useMemo(() => {
+    if (!blitzState?.deadline) return null;
+    return Math.max(0, Math.ceil((blitzState.deadline - Date.now()) / 1000));
+  }, [blitzState?.deadline, timerTick]);
+
+  useEffect(() => {
+    if (!teamId) return;
+    setBlitzSubmitted(Boolean(blitzState?.submissions?.includes(teamId)));
+    if (blitzState?.phase !== 'PLAYING') {
+      setBlitzAnswers(['', '', '', '', '']);
+    }
+  }, [teamId, blitzState]);
 
   const handleReconnect = () => {
     setConnectionStatus('connecting');
@@ -375,6 +391,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.potato !== undefined) {
         setPotatoState(payload.potato ?? null);
+      }
+      if (payload.blitz !== undefined) {
+        setBlitzState(payload.blitz ?? null);
       }
       if (payload.currentQuestion !== undefined) {
         if (payload.currentQuestion) {
@@ -996,8 +1015,8 @@ const handleSubmit = async () => {
     }
   };
 
-  const renderShowResult = () => (
-    <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
+const renderShowResult = () => (
+  <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
       <div style={pillLabel}>
         {isFinal
           ? language === 'de'
@@ -1267,9 +1286,125 @@ const handleSubmit = async () => {
 
         {renderScoreboardBlock()}
       </div>
+  );
+};
+
+  const submitBlitzAnswers = () => {
+    if (!teamId || !socketRef.current) return;
+    socketRef.current.emit(
+      'team:submitBlitzAnswers',
+      { roomCode, teamId, answers: blitzAnswers },
+      (resp?: { ok?: boolean; error?: string }) => {
+        if (!resp?.ok && resp?.error) {
+          setToast(resp.error);
+          setTimeout(() => setToast(null), 2000);
+        } else {
+          setBlitzSubmitted(true);
+        }
+      }
     );
   };
 
+  const renderBlitzStage = () => {
+    if (!blitzState) {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</div>
+          <p style={mutedText}>{language === 'de' ? 'Host bereitet gerade den Blitz vor.' : 'Host is preparing the blitz round.'}</p>
+        </div>
+      );
+    }
+    const canAnswer = blitzState.phase === 'PLAYING' && !blitzSubmitted;
+    const results = blitzState.results || {};
+    const themeLabel = blitzState.theme || '—';
+    return (
+      <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
+        <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
+          <span>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</span>
+          <span>
+            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 · {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
+          </span>
+        </div>
+        {blitzState.phase === 'PLAYING' ? (
+          <>
+            <div style={{ fontSize: 14, color: '#cbd5e1' }}>
+              {language === 'de' ? 'Gib fünf Antworten ein.' : 'Enter five answers.'}
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {blitzAnswers.map((value, idx) => (
+                <input
+                  key={`blitz-input-${idx}`}
+                  style={inputStyle}
+                  value={value}
+                  disabled={!canAnswer}
+                  placeholder={`${idx + 1}. ${language === 'de' ? 'Antwort' : 'Answer'}`}
+                  onChange={(e) =>
+                    setBlitzAnswers((prev) => {
+                      const next = [...prev];
+                      next[idx] = e.target.value;
+                      return next;
+                    })
+                  }
+                />
+              ))}
+            </div>
+            <button
+              style={{
+                ...primaryButton,
+                marginTop: 8,
+                opacity: canAnswer ? 1 : 0.6,
+                cursor: canAnswer ? 'pointer' : 'not-allowed'
+              }}
+              disabled={!canAnswer}
+              onClick={submitBlitzAnswers}
+            >
+              {blitzSubmitted
+                ? language === 'de'
+                  ? 'Eingeloggt'
+                  : 'Submitted'
+                : language === 'de'
+                ? 'Antworten senden'
+                : 'Submit answers'}
+            </button>
+            {blitzCountdown !== null && (
+              <div style={{ ...pillLabel, marginTop: 4 }}>
+                {language === 'de' ? 'Restzeit' : 'Time left'}: {blitzCountdown}s
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 14, color: '#cbd5e1' }}>
+              {language === 'de'
+                ? 'Set abgeschlossen. Warte auf das nächste.'
+                : 'Set finished. Waiting for the next one.'}
+            </div>
+            {Object.keys(results).length > 0 && (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {scoreboard.map((entry) => (
+                  <div
+                    key={`blitz-score-${entry.id}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto auto',
+                      gap: 10,
+                      padding: '8px 10px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.12)'
+                    }}
+                  >
+                    <span>{entry.name}</span>
+                    <span>{results[entry.id]?.correctCount ?? 0}/5</span>
+                    <span style={{ fontWeight: 700 }}>+{results[entry.id]?.pointsAwarded ?? 0}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
   const renderBingo = () => {
     if (board.length !== 25) return null;
     const show = canMarkBingo || showBingoPanel;
@@ -1464,6 +1599,9 @@ const handleSubmit = async () => {
   );
 
   const renderByPhase = () => {
+    if (gameState === 'BLITZ') {
+      return renderBlitzStage();
+    }
     if (gameState === 'POTATO') {
       return renderPotatoStage();
     }

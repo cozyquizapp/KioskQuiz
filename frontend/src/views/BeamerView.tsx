@@ -12,7 +12,8 @@ import {
   Language,
   StateUpdatePayload,
   CozyGameState,
-  PotatoState
+  PotatoState,
+  BlitzState
 } from '@shared/quizTypes';
 import { fetchCurrentQuestion, fetchLanguage, fetchTimer, QuestionMeta } from '../api';
 import { connectToRoom } from '../socket';
@@ -224,6 +225,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [potato, setPotato] = useState<PotatoState | null>(null);
+  const [blitz, setBlitz] = useState<BlitzState | null>(null);
   const [potatoTick, setPotatoTick] = useState(0);
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
   const [showLastQuestion, setShowLastQuestion] = useState(true);
@@ -539,6 +541,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       if (payload.potato !== undefined) {
         setPotato(payload.potato ?? null);
       }
+      if (payload.blitz !== undefined) {
+        setBlitz(payload.blitz ?? null);
+      }
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
@@ -697,11 +702,16 @@ useEffect(() => {
   const isScoreboardState =
     gameState === 'SCOREBOARD' || gameState === 'SCOREBOARD_PAUSE' || gameState === 'AWARDS';
   const isPotatoStage = gameState === 'POTATO' && potato;
+  const isBlitzStage = gameState === 'BLITZ' && blitz;
   const sortedScoreTeams = [...teams].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const potatoCountdown = useMemo(() => {
     if (!potato?.deadline) return null;
     return Math.max(0, Math.ceil((potato.deadline - Date.now()) / 1000));
   }, [potato?.deadline, potatoTick]);
+  const blitzCountdown = useMemo(() => {
+    if (!blitz?.deadline) return null;
+    return Math.max(0, Math.ceil((blitz.deadline - Date.now()) / 1000));
+  }, [blitz?.deadline, potatoTick]);
 
   const activeCategory = categories[highlightedCategoryIndex] ?? categories[0];
   const readyCount = teams.filter((tTeam) => tTeam.isReady).length;
@@ -1128,6 +1138,92 @@ useEffect(() => {
     );
   };
 
+  const renderBlitzView = () => {
+    if (!blitz) return renderScoreboard();
+    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
+    const submissions = blitz.submissions?.length ?? 0;
+    const results = blitz.results || {};
+    return (
+      <div style={cardFrame}>
+        <div
+          style={{
+            borderRadius: 32,
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'linear-gradient(135deg, rgba(14,17,32,0.92), rgba(13,16,26,0.85))',
+            padding: '26px 24px',
+            minHeight: 280
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 28, fontWeight: 900 }}>Blitz Battle</div>
+            <div style={{ ...pillRule, borderColor: 'rgba(59,130,246,0.4)', background: 'rgba(59,130,246,0.15)' }}>
+              Set {setLabel}
+            </div>
+          </div>
+          <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
+            {language === 'de' ? 'Thema' : 'Theme'}: {blitz.theme || '-'}
+          </div>
+          {blitz.phase === 'PLAYING' ? (
+            <>
+              <div style={{ marginTop: 6, color: '#cbd5e1' }}>
+                {language === 'de'
+                  ? 'Antworten werden gesammelt.'
+                  : 'Collecting answers...'}
+              </div>
+              <div style={{ marginTop: 6, color: '#94a3b8' }}>
+                {language === 'de'
+                  ? `Eingänge: ${submissions}/${teams.length}`
+                  : `Submissions: ${submissions}/${teams.length}`}
+              </div>
+              {blitzCountdown !== null && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(59,130,246,0.4)',
+                    background: 'rgba(59,130,246,0.14)'
+                  }}
+                >
+                  ⏱ {blitzCountdown}s
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ marginTop: 8, fontWeight: 700 }}>
+                {language === 'de' ? 'Set-Ergebnis' : 'Set result'}
+              </div>
+              <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                {sortedScoreTeams.map((team) => (
+                  <div
+                    key={`blitz-result-${team.id}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto auto',
+                      gap: 12,
+                      padding: '10px 12px',
+                      borderRadius: 16,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(0,0,0,0.35)'
+                    }}
+                  >
+                    <span>{team.name}</span>
+                    <span>{results[team.id]?.correctCount ?? 0}/5</span>
+                    <span style={{ fontWeight: 900 }}>+{results[team.id]?.pointsAwarded ?? 0}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main style={pageStyle}>
       {offlineBar(connectionStatus, language)}
@@ -1188,7 +1284,9 @@ useEffect(() => {
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
-        {isPotatoStage ? (
+        {isBlitzStage ? (
+          renderBlitzView()
+        ) : isPotatoStage ? (
           renderPotatoView()
         ) : isScoreboardState ? (
           renderScoreboard()

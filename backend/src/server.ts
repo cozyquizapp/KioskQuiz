@@ -20,7 +20,10 @@ import {
   SyncStatePayload,
   StateUpdatePayload,
   PotatoState,
-  PotatoConflict
+  PotatoConflict,
+  BlitzState,
+  BlitzPhase,
+  BlitzSetResult
 } from '../../shared/quizTypes';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
@@ -137,6 +140,18 @@ type RoomState = {
   potatoCurrentTheme: string | null;
   potatoLastConflict: PotatoConflict | null;
   segmentTwoBaselineScores: Record<string, number> | null;
+  blitzPool: string[];
+  blitzBans: Record<string, string[]>;
+  blitzBanLimits: Record<string, number>;
+  blitzSelectedThemes: string[];
+  blitzSetIndex: number;
+  blitzPhase: BlitzPhase;
+  blitzDeadlineAt: number | null;
+  blitzTheme: string | null;
+  blitzItems: string[];
+  blitzAnswersByTeam: Record<string, string[]>;
+  blitzResultsByTeam: Record<string, BlitzSetResult>;
+  blitzSubmittedTeamIds: string[];
 };
 
 const rooms = new Map<string, RoomState>();
@@ -380,7 +395,19 @@ const ensureRoom = (roomCode: string): RoomState => {
       potatoLastWinnerId: null,
       potatoCurrentTheme: null,
       potatoLastConflict: null,
-      segmentTwoBaselineScores: null
+      segmentTwoBaselineScores: null,
+      blitzPool: [],
+      blitzBans: {},
+      blitzBanLimits: {},
+      blitzSelectedThemes: [],
+      blitzSetIndex: -1,
+      blitzPhase: 'IDLE',
+      blitzDeadlineAt: null,
+      blitzTheme: null,
+      blitzItems: [],
+      blitzAnswersByTeam: {},
+      blitzResultsByTeam: {},
+      blitzSubmittedTeamIds: []
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -429,6 +456,25 @@ const sanitizeThemeList = (input: unknown): string[] => {
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_LENGTH = 4;
 const POTATO_SIMILARITY_THRESHOLD = 0.85;
+
+const BLITZ_SETS = 3;
+const BLITZ_ITEMS_PER_SET = 5;
+const BLITZ_ANSWER_TIME_MS = 30000;
+const DEFAULT_BLITZ_THEMES = [
+  'Musik',
+  'Filme',
+  'Serien',
+  'Städte',
+  'Sportarten',
+  'Snacks',
+  'Schauspieler',
+  'Cartoons',
+  'Videospiele',
+  'Tiere'
+];
+
+const generateBlitzItems = (theme: string) =>
+  Array.from({ length: BLITZ_ITEMS_PER_SET }).map((_, idx) => `${theme} ${idx + 1}`);
 
 const generateRoomCode = () => {
   let code = '';
@@ -595,6 +641,140 @@ const finishPotatoStage = (room: RoomState) => {
   setPotatoActiveTeam(room, null);
   room.potatoLastConflict = null;
   applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
+};
+
+const resetBlitzCollections = (room: RoomState) => {
+  room.blitzAnswersByTeam = {};
+  room.blitzResultsByTeam = {};
+  room.blitzSubmittedTeamIds = [];
+};
+
+const startBlitzSet = (room: RoomState) => {
+  if (room.blitzPhase === 'PLAYING') throw new Error('Blitz-Set läuft bereits');
+  if (room.blitzSelectedThemes.length < BLITZ_SETS) {
+    throw new Error('Nicht genug Blitz-Themen ausgewählt');
+  }
+  if (room.blitzSetIndex >= BLITZ_SETS - 1) {
+    throw new Error('Alle Blitz-Sets wurden gespielt');
+  }
+  const nextIndex = room.blitzSetIndex + 1;
+  room.blitzSetIndex = nextIndex;
+  room.blitzTheme = room.blitzSelectedThemes[nextIndex] ?? null;
+  room.blitzItems = generateBlitzItems(room.blitzTheme || `Set ${nextIndex + 1}`);
+  resetBlitzCollections(room);
+  room.blitzPhase = 'PLAYING';
+  room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
+};
+
+const lockBlitzSet = (room: RoomState) => {
+  if (room.blitzPhase !== 'PLAYING') return;
+  room.blitzPhase = 'SET_END';
+  room.blitzDeadlineAt = null;
+};
+
+const enforceBlitzDeadline = (room: RoomState) => {
+  if (room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
+    lockBlitzSet(room);
+  }
+};
+
+const computeBlitzResults = (room: RoomState) => {
+  if (!room.blitzItems.length) throw new Error('Keine Blitz-Items gesetzt');
+  const normalizedSolutions = room.blitzItems.map((item) => normalizeText(item));
+  const teamIds = Object.keys(room.teams);
+  const provisional: Record<string, BlitzSetResult> = {};
+  teamIds.forEach((teamId) => {
+    const answers = room.blitzAnswersByTeam[teamId] ?? [];
+    let correctCount = 0;
+    const matched = new Set<number>();
+    answers.slice(0, BLITZ_ITEMS_PER_SET).forEach((answer) => {
+      const normalized = normalizeText(answer);
+      let bestIdx = -1;
+      let bestScore = 0;
+      normalizedSolutions.forEach((solution, idx) => {
+        if (matched.has(idx)) return;
+        const score = similarityScore(solution, normalized);
+        if (score >= POTATO_SIMILARITY_THRESHOLD && score > bestScore) {
+          bestScore = score;
+          bestIdx = idx;
+        }
+      });
+      if (bestIdx >= 0) {
+        matched.add(bestIdx);
+        correctCount += 1;
+      }
+    });
+    provisional[teamId] = { correctCount, pointsAwarded: 0 };
+  });
+
+  const standings = teamIds
+    .map((teamId) => ({
+      teamId,
+      correct: provisional[teamId]?.correctCount ?? 0
+    }))
+    .sort((a, b) => b.correct - a.correct);
+
+  const activeTeams = standings.filter((entry) => room.teams[entry.teamId]);
+  const teamCount = activeTeams.length;
+  if (teamCount <= 1) {
+    room.blitzResultsByTeam = provisional;
+    room.blitzPhase = 'SET_END';
+    room.blitzDeadlineAt = null;
+    return;
+  }
+
+  if (teamCount <= 2) {
+    const [first, second] = activeTeams;
+    if (!first) return;
+    if (!second || first.correct === second.correct) {
+      provisional[first.teamId].pointsAwarded = 1;
+      if (second) provisional[second.teamId].pointsAwarded = 1;
+      if (room.teams[first.teamId]) room.teams[first.teamId].score = (room.teams[first.teamId].score ?? 0) + 1;
+      if (second && room.teams[second.teamId])
+        room.teams[second.teamId].score = (room.teams[second.teamId].score ?? 0) + 1;
+    } else if (first.correct > second.correct) {
+      provisional[first.teamId].pointsAwarded = 2;
+      if (room.teams[first.teamId]) room.teams[first.teamId].score = (room.teams[first.teamId].score ?? 0) + 2;
+    } else {
+      provisional[second.teamId].pointsAwarded = 2;
+      if (room.teams[second.teamId]) room.teams[second.teamId].score = (room.teams[second.teamId].score ?? 0) + 2;
+    }
+    room.blitzResultsByTeam = provisional;
+    room.blitzPhase = 'SET_END';
+    room.blitzDeadlineAt = null;
+    if (room.blitzSetIndex >= BLITZ_SETS - 1) {
+      finishBlitzStage(room);
+    }
+    return;
+  }
+
+  let currentPlace = 1;
+  for (let i = 0; i < activeTeams.length; ) {
+    const same = activeTeams.filter((entry) => entry.correct === activeTeams[i].correct);
+    const points = currentPlace === 1 ? 2 : currentPlace === 2 ? 1 : 0;
+    same.forEach((entry) => {
+      provisional[entry.teamId].pointsAwarded = points;
+      if (points > 0 && room.teams[entry.teamId]) {
+        room.teams[entry.teamId].score = (room.teams[entry.teamId].score ?? 0) + points;
+      }
+    });
+    i += same.length;
+    currentPlace += same.length;
+    if (currentPlace > 2) break;
+  }
+  room.blitzResultsByTeam = provisional;
+  room.blitzPhase = 'SET_END';
+  room.blitzDeadlineAt = null;
+  if (room.blitzSetIndex >= BLITZ_SETS - 1) {
+    finishBlitzStage(room);
+  }
+};
+
+const finishBlitzStage = (room: RoomState) => {
+  room.blitzPhase = 'DONE';
+  room.blitzDeadlineAt = null;
+  room.blitzTheme = null;
+  applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
 };
 
 const baseBingoCategories: QuizCategory[] = (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).flatMap(
@@ -891,6 +1071,18 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.potatoCurrentTheme = null;
   room.potatoLastConflict = null;
   room.segmentTwoBaselineScores = null;
+  room.blitzPhase = 'IDLE';
+  room.blitzPool = [];
+  room.blitzBans = {};
+  room.blitzBanLimits = {};
+  room.blitzSelectedThemes = [];
+  room.blitzSetIndex = -1;
+  room.blitzDeadlineAt = null;
+  room.blitzTheme = null;
+  room.blitzItems = [];
+  room.blitzAnswersByTeam = {};
+  room.blitzResultsByTeam = {};
+  room.blitzSubmittedTeamIds = [];
   applyRoomState(room, { type: 'START_SESSION' });
   broadcastTeamsReady(room);
   broadcastState(room);
@@ -1052,6 +1244,22 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           lastWinnerId: room.potatoLastWinnerId,
           pendingConflict: room.potatoLastConflict
         };
+  const blitz: BlitzState | null =
+    room.blitzPhase === 'IDLE'
+      ? null
+      : {
+          phase: room.blitzPhase,
+          pool: room.blitzPool,
+          bans: room.blitzBans,
+          banLimits: room.blitzBanLimits,
+          selectedThemes: room.blitzSelectedThemes,
+          setIndex: room.blitzSetIndex,
+          deadline: room.blitzDeadlineAt,
+          theme: room.blitzTheme,
+          items: room.blitzItems,
+          submissions: room.blitzSubmittedTeamIds,
+          results: room.blitzResultsByTeam
+        };
   return {
     roomCode: room.roomCode,
     state: room.gameState,
@@ -1064,7 +1272,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
       score: team.score ?? 0
     })),
     teamsConnected: Object.keys(room.teams).length,
-    potato
+    potato,
+    blitz
   };
 };
 
@@ -2183,6 +2392,151 @@ io.on('connection', (socket: Socket) => {
       broadcastState(room);
     });
   });
+
+  socket.on(
+    'host:startBlitz',
+    (
+      payload: { roomCode?: string; themes?: string[]; themesText?: string },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        const parsed =
+          sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
+        const pool = parsed.length >= BLITZ_SETS ? parsed : DEFAULT_BLITZ_THEMES.slice();
+        if (pool.length < BLITZ_SETS) {
+          throw new Error('Mindestens drei Themen erforderlich');
+        }
+        room.blitzPool = pool;
+        room.blitzBans = {};
+        room.blitzBanLimits = computePotatoBanLimits(room);
+        room.blitzSelectedThemes = [];
+        room.blitzSetIndex = -1;
+        room.blitzPhase = 'BANNING';
+        room.blitzDeadlineAt = null;
+        room.blitzTheme = null;
+        room.blitzItems = [];
+        resetBlitzCollections(room);
+        applyRoomState(room, { type: 'FORCE', next: 'BLITZ' });
+        broadcastState(room);
+        return { pool: room.blitzPool };
+      });
+    }
+  );
+
+  socket.on(
+    'host:banBlitzTheme',
+    (payload: { roomCode?: string; teamId?: string; theme?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.blitzPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        const limit = room.blitzBanLimits[payload.teamId] ?? 0;
+        if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
+        const bans = room.blitzBans[payload.teamId] ?? [];
+        if (bans.length >= limit) throw new Error('Ban-Limit erreicht');
+        const themeName = (payload?.theme || '').trim();
+        if (!themeName) throw new Error('Theme fehlt');
+        const index = room.blitzPool.findIndex(
+          (entry) => entry.toLowerCase() === themeName.toLowerCase()
+        );
+        if (index === -1) throw new Error('Theme nicht verfügbar');
+        const actualTheme = room.blitzPool.splice(index, 1)[0];
+        room.blitzBans[payload.teamId] = [...bans, actualTheme];
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:confirmBlitzThemes', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzPhase !== 'BANNING' && room.blitzPhase !== 'SET_END') {
+        throw new Error('Themes können aktuell nicht gesetzt werden');
+      }
+      if (room.blitzPool.length < BLITZ_SETS) {
+        throw new Error('Nicht genug Themen übrig');
+      }
+      const shuffled = [...room.blitzPool].sort(() => Math.random() - 0.5);
+      room.blitzSelectedThemes = shuffled.slice(0, BLITZ_SETS);
+      room.blitzSetIndex = -1;
+      room.blitzPhase = 'SET_END';
+      room.blitzDeadlineAt = null;
+      resetBlitzCollections(room);
+      broadcastState(room);
+      return { selected: room.blitzSelectedThemes };
+    });
+  });
+
+  socket.on('host:blitzStartSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      startBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:lockBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      enforceBlitzDeadline(room);
+      lockBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:revealBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzPhase === 'PLAYING') {
+        lockBlitzSet(room);
+      }
+      if (room.blitzPhase !== 'SET_END') throw new Error('Set noch nicht abgeschlossen');
+      computeBlitzResults(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:nextBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzSetIndex >= BLITZ_SETS - 1) {
+        throw new Error('Alle Sets gespielt');
+      }
+      startBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:finishBlitz', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      finishBlitzStage(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'team:submitBlitzAnswers',
+    (
+      payload: { roomCode?: string; teamId?: string; answers?: string[] },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        enforceBlitzDeadline(room);
+        if (room.blitzPhase !== 'PLAYING') throw new Error('Blitz ist nicht aktiv');
+        if (room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
+          lockBlitzSet(room);
+          broadcastState(room);
+          throw new Error('Zeit abgelaufen');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) {
+          throw new Error('Team unbekannt');
+        }
+        const answers = Array.isArray(payload.answers) ? payload.answers : [];
+        room.blitzAnswersByTeam[payload.teamId] = answers
+          .map((value) => String(value ?? '').slice(0, 120))
+          .slice(0, BLITZ_ITEMS_PER_SET);
+        if (!room.blitzSubmittedTeamIds.includes(payload.teamId)) {
+          room.blitzSubmittedTeamIds = [...room.blitzSubmittedTeamIds, payload.teamId];
+        }
+        broadcastState(room);
+        return { submitted: true };
+      });
+    }
+  );
 
   socket.on('beamer:show-rules', (roomCode: string) => {
     const room = ensureRoom(roomCode);

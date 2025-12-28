@@ -13,6 +13,7 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "multer": "^2.0.2",
+    "quiz-monorepo": "file:..",
     "socket.io": "^4.7.5",
     "uuid": "^9.0.1"
   },

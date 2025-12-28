@@ -1,11 +1,12 @@
 import React from 'react';
 import { QuizTemplate } from '@shared/quizTypes';
-import { startNextQuestion, startTimer, stopTimer, revealAnswers, useQuiz, fetchTimer } from '../../api';
+import { startTimer, stopTimer, useQuiz, fetchTimer } from '../../api';
 import { ViewPhase } from './types';
 
 type ActionState = {
   quiz: boolean;
   next: boolean;
+  lock: boolean;
   timerStart: boolean;
   timerStop: boolean;
   reveal: boolean;
@@ -27,6 +28,9 @@ type ActionButtonsProps = {
   doAction: (fn: () => Promise<any>, msg?: string) => Promise<void>;
   setToast: (msg: string | null) => void;
   primaryColor?: string;
+  onNext?: () => Promise<void> | void;
+  onLock?: () => Promise<void> | void;
+  onReveal?: () => Promise<void> | void;
 };
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -44,7 +48,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   setActionState,
   doAction,
   setToast,
-  primaryColor
+  primaryColor,
+  onNext,
+  onLock,
+  onReveal
 }) => {
   if (viewPhase === 'pre') {
     return (
@@ -255,15 +262,20 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onClick={() =>
           doAction(async () => {
             setActionState((s) => ({ ...s, next: true }));
-            await startNextQuestion(roomCode);
-            await startTimer(roomCode, timerSeconds);
-            setTimeout(() => {
-              fetchTimer(roomCode)
-                .then((t) => {
-                  if (!t?.timer?.endsAt) setToast('Timer nicht aktiv? Bitte pruefen.');
-                })
-                .catch(() => setToast('Timer-Status unbekannt'));
-            }, 800);
+            if (onNext) {
+              await onNext();
+            } else {
+              // TODO(LEGACY): Remove REST fallback once host:next is standard everywhere.
+              await fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' });
+              await startTimer(roomCode, timerSeconds);
+              setTimeout(() => {
+                fetchTimer(roomCode)
+                  .then((t) => {
+                    if (!t?.timer?.endsAt) setToast('Timer nicht aktiv? Bitte pruefen.');
+                  })
+                  .catch(() => setToast('Timer-Status unbekannt'));
+              }, 800);
+            }
           }, 'Naechste Frage gestartet').finally(() => setActionState((s) => ({ ...s, next: false })))
         }
         disabled={actionState.next}
@@ -335,12 +347,46 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onClick={() =>
           doAction(async () => {
             setActionState((s) => ({ ...s, reveal: true }));
-            await revealAnswers(roomCode);
+            if (onReveal) {
+              await onReveal();
+            } else {
+              // TODO(LEGACY): remove REST fallback once host:reveal used überall
+              await fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' });
+            }
           }, 'Aufloesung gesendet').finally(() => setActionState((s) => ({ ...s, reveal: false })))
         }
         disabled={actionState.reveal}
       >
         {actionState.reveal ? 'Sendet ...' : 'Aufloesen / Senden'}
+      </button>
+      <button
+        style={{
+          ...inputStyle,
+          background: 'linear-gradient(135deg, #fde047, #facc15)',
+          color: '#0b1020',
+          cursor: 'pointer',
+          height: 56,
+          fontSize: 15,
+          opacity: 1,
+          border: '1px solid rgba(245,158,11,0.55)',
+          boxShadow: 'none'
+        }}
+        title="Antworten sperren"
+        aria-label="Antworten sperren"
+        onClick={() =>
+          doAction(async () => {
+            setActionState((s) => ({ ...s, lock: true }));
+            if (onLock) {
+              await onLock();
+            } else {
+              // TODO(LEGACY): fallback stopTimer approximates locking
+              await stopTimer(roomCode);
+            }
+          }, 'Antworten gesperrt').finally(() => setActionState((s) => ({ ...s, lock: false })))
+        }
+        disabled={actionState.lock}
+      >
+        {actionState.lock ? 'Sperrt ...' : 'Antworten sperren'}
       </button>
     </section>
   );

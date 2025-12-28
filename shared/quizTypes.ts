@@ -191,6 +191,7 @@ export interface QuizMeta {
   defaultAnswerType?: 'text' | 'number' | 'multipleChoice';
   useBingo?: boolean;
   notes?: string;
+  language?: Language; // TODO(LEGACY): remove when quiz language stored elsewhere
 }
 
 export interface CategoryConfig {
@@ -211,6 +212,35 @@ export interface QuizTemplate {
   questionIds: string[]; // genau 25 IDs, 5 pro Kategorie
   meta?: QuizMeta;
   categories?: Record<QuizCategory, CategoryConfig>;
+}
+
+export type PotatoPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'ROUND_END' | 'DONE';
+
+export interface PotatoConflict {
+  type: 'duplicate' | 'similar';
+  answer: string;
+  normalized: string;
+  conflictingAnswer?: string | null;
+}
+
+export interface PotatoState {
+  phase: PotatoPhase;
+  pool: string[];
+  bans: Record<string, string[]>;
+  banLimits: Record<string, number>;
+  selectedThemes: string[];
+  roundIndex: number;
+  turnOrder: string[];
+  activeTeamId: string | null;
+  lives: Record<string, number>;
+  usedAnswers: string[];
+  usedAnswersNormalized: string[];
+  deadline?: number | null;
+  turnStartedAt?: number | null;
+  turnDurationMs?: number | null;
+  currentTheme?: string | null;
+  lastWinnerId?: string | null;
+  pendingConflict?: PotatoConflict | null;
 }
 
 export interface BingoCell {
@@ -235,6 +265,8 @@ export interface AnswerEntry {
   isCorrect?: boolean;
   deviation?: number | null; // fÃ¼r SchÃ¤tzfragen
   bestDeviation?: number | null;
+  betPoints?: number;
+  betPool?: number;
 }
 
 export interface QuestionMeta {
@@ -250,6 +282,18 @@ export interface QuestionMeta {
 export type ScreenState = 'lobby' | 'slot' | 'question' | 'finished';
 export type QuestionPhase = 'idle' | 'slot' | 'answering' | 'evaluated' | 'revealed';
 
+export type CozyGameState =
+  | 'LOBBY'
+  | 'INTRO'
+  | 'Q_ACTIVE'
+  | 'Q_LOCKED'
+  | 'Q_REVEAL'
+  | 'SCOREBOARD'
+  | 'BLITZ'
+  | 'SCOREBOARD_PAUSE'
+  | 'POTATO'
+  | 'AWARDS';
+
 export type SyncStatePayload = {
   screen: ScreenState;
   language: Language;
@@ -258,6 +302,17 @@ export type SyncStatePayload = {
   question: AnyQuestion | null;
   questionMeta: QuestionMeta | null;
   slotMeta?: SlotTransitionMeta | null;
+};
+
+export type StateUpdatePayload = {
+  roomCode: string;
+  state: CozyGameState;
+  phase: QuestionPhase;
+  currentQuestion: AnyQuestion | null;
+  timer: { endsAt: number | null; running: boolean };
+  scores: Array<{ id: string; name: string; score: number }>;
+  teamsConnected: number;
+  potato?: PotatoState | null;
 };
 
 // Event-Payloads (optional gemeinsame Nutzung)

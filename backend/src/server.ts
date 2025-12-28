@@ -17,15 +17,26 @@ import {
   ScreenState,
   SlotTransitionMeta,
   Team,
-  SyncStatePayload
+  SyncStatePayload,
+  StateUpdatePayload,
+  PotatoState,
+  PotatoConflict
 } from '../../shared/quizTypes';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
-import { QuizMeta, Language } from '../../shared/quizTypes';
+import { QuizMeta, Language, PotatoPhase } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
+import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import { DEBUG, DEFAULT_QUESTION_TIME, ROOM_IDLE_CLEANUP_MS, SLOT_DURATION_MS } from './constants';
 import { INTRO_SLIDES } from './config/introSlides';
+import {
+  applyGameAction,
+  INITIAL_GAME_STATE,
+  CozyGameState,
+  isQuestionInputOpen,
+  GameStateAction
+} from './game/stateMachine';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -106,6 +117,26 @@ type RoomState = {
   questionPhase: QuestionPhase;
   lastActivityAt: number;
   language: Language;
+  gameState: CozyGameState;
+  stateHistory: CozyGameState[];
+  potatoPool: string[];
+  potatoBans: Record<string, string[]>;
+  potatoBanLimits: Record<string, number>;
+  potatoSelectedThemes: string[];
+  potatoRoundIndex: number;
+  potatoTurnOrder: string[];
+  potatoLives: Record<string, number>;
+  potatoUsedAnswers: string[];
+  potatoUsedAnswersNormalized: string[];
+  potatoActiveTeamId: string | null;
+  potatoPhase: PotatoPhase;
+  potatoDeadlineAt: number | null;
+  potatoTurnStartedAt: number | null;
+  potatoTurnDurationMs: number;
+  potatoLastWinnerId: string | null;
+  potatoCurrentTheme: string | null;
+  potatoLastConflict: PotatoConflict | null;
+  segmentTwoBaselineScores: Record<string, number> | null;
 };
 
 const rooms = new Map<string, RoomState>();
@@ -329,7 +360,27 @@ const ensureRoom = (roomCode: string): RoomState => {
       screen: 'lobby',
       questionPhase: 'idle',
       lastActivityAt: Date.now(),
-      language: 'de'
+      language: 'de',
+      gameState: INITIAL_GAME_STATE,
+      stateHistory: [INITIAL_GAME_STATE],
+      potatoPool: [],
+      potatoBans: {},
+      potatoBanLimits: {},
+      potatoSelectedThemes: [],
+      potatoRoundIndex: -1,
+      potatoTurnOrder: [],
+      potatoLives: {},
+      potatoUsedAnswers: [],
+      potatoUsedAnswersNormalized: [],
+      potatoActiveTeamId: null,
+      potatoPhase: 'IDLE',
+      potatoDeadlineAt: null,
+      potatoTurnStartedAt: null,
+      potatoTurnDurationMs: POTATO_ANSWER_TIME_MS,
+      potatoLastWinnerId: null,
+      potatoCurrentTheme: null,
+      potatoLastConflict: null,
+      segmentTwoBaselineScores: null
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -345,16 +396,249 @@ const log = (roomCode: string, message: string, ...args: unknown[]) => {
   console.log(`[${roomCode}] ${message}`, ...args);
 };
 
-const generateBingoBoard = (): BingoBoard => {
-  const categories: QuizCategory[] = [];
-  (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).forEach((c) => {
-    for (let i = 0; i < 5; i += 1) categories.push(c);
-  });
-  for (let i = categories.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [categories[i], categories[j]] = [categories[j], categories[i]];
+const POTATO_ROUNDS = 3;
+const POTATO_ANSWER_TIME_MS = 5000;
+const DEFAULT_POTATO_THEMES = [
+  'Songs mit Städtenamen',
+  'Filme aus den 90ern',
+  'Berühmte Duos',
+  'Kartoffelgerichte',
+  'Sportarten mit Ball',
+  'Wörter mit Doppelbuchstaben',
+  'Fragen zu Europa',
+  'Süßigkeitenmarken',
+  'Fabelwesen',
+  'Berge in Europa'
+]; // TODO(LEGACY): durch echtes Themen-Set ersetzen
+const sanitizeThemeList = (input: unknown): string[] => {
+  if (Array.isArray(input)) {
+    return Array.from(
+      new Set(
+        input
+          .map((val) => String(val ?? '').trim())
+          .filter((val) => val.length > 0)
+      )
+    );
   }
-  return categories.map((cat) => ({ category: cat, marked: false }));
+  if (typeof input === 'string') {
+    return sanitizeThemeList(input.split(/\r?\n/));
+  }
+  return [];
+};
+
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ROOM_CODE_LENGTH = 4;
+const POTATO_SIMILARITY_THRESHOLD = 0.85;
+
+const generateRoomCode = () => {
+  let code = '';
+  for (let i = 0; i < ROOM_CODE_LENGTH; i += 1) {
+    const idx = Math.floor(Math.random() * ROOM_CODE_CHARS.length);
+    code += ROOM_CODE_CHARS[idx];
+  }
+  return code;
+};
+
+const createRoomCode = () => {
+  let code = generateRoomCode();
+  while (rooms.has(code)) {
+    code = generateRoomCode();
+  }
+  return code;
+};
+
+const getSegmentTwoGain = (room: RoomState, teamId: string) => {
+  const baseline = room.segmentTwoBaselineScores?.[teamId];
+  const current = room.teams[teamId]?.score ?? 0;
+  if (baseline === undefined || baseline === null) return 0;
+  return current - baseline;
+};
+
+const compareTeamsWithTieBreak = (
+  room: RoomState,
+  a: Team,
+  b: Team,
+  direction: 'asc' | 'desc'
+) => {
+  const dir = direction === 'asc' ? 1 : -1;
+  const scoreDiff = ((a.score ?? 0) - (b.score ?? 0)) * dir;
+  if (scoreDiff !== 0) return scoreDiff;
+  const gainDiff = (getSegmentTwoGain(room, a.id) - getSegmentTwoGain(room, b.id)) * dir;
+  if (gainDiff !== 0) return gainDiff;
+  return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+};
+
+const getTeamsByScore = (room: RoomState, direction: 'asc' | 'desc' = 'desc') =>
+  Object.values(room.teams).sort((a, b) => compareTeamsWithTieBreak(room, a, b, direction));
+
+const computePotatoBanLimits = (room: RoomState): Record<string, number> => {
+  const teams = getTeamsByScore(room, 'desc');
+  const limits: Record<string, number> = {};
+  if (teams.length <= 1) return limits;
+  if (teams.length === 2) {
+    limits[teams[0].id] = 2;
+    limits[teams[1].id] = 1;
+    return limits;
+  }
+  if (teams.length >= 3 && teams.length <= 6) {
+    teams.forEach((t, idx) => {
+      limits[t.id] = 1;
+      if (idx === 0) limits[t.id] = 2;
+    });
+    return limits;
+  }
+  teams.forEach((team, idx) => {
+    if (idx === 0) limits[team.id] = 2;
+    else if (idx === 1 || idx === 2) limits[team.id] = 1;
+    else limits[team.id] = 0;
+  });
+  return limits;
+};
+
+const alivePotatoTeams = (room: RoomState) =>
+  room.potatoTurnOrder.filter((teamId) => (room.potatoLives[teamId] ?? 0) > 0);
+
+const assignPotatoTurnOrder = (room: RoomState) => {
+  const teamsDesc = getTeamsByScore(room, 'desc');
+  if (teamsDesc.length <= 2) {
+    room.potatoTurnOrder = teamsDesc.map((t) => t.id);
+    return;
+  }
+  room.potatoTurnOrder = getTeamsByScore(room, 'asc').map((t) => t.id);
+};
+
+const initialPotatoLives = (room: RoomState) => {
+  const teamCount = Object.keys(room.teams).length;
+  const lives: Record<string, number> = {};
+  Object.keys(room.teams).forEach((teamId) => {
+    lives[teamId] = teamCount <= 2 ? 1 : 2;
+  });
+  return lives;
+};
+
+const setPotatoActiveTeam = (room: RoomState, teamId: string | null) => {
+  room.potatoActiveTeamId = teamId;
+  if (teamId) {
+    room.potatoTurnStartedAt = Date.now();
+    room.potatoDeadlineAt = room.potatoTurnStartedAt + POTATO_ANSWER_TIME_MS;
+    room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
+  } else {
+    room.potatoTurnStartedAt = null;
+    room.potatoDeadlineAt = null;
+  }
+};
+
+const setFirstPotatoTurn = (room: RoomState) => {
+  const alive = alivePotatoTeams(room);
+  setPotatoActiveTeam(room, alive[0] ?? null);
+};
+
+const advancePotatoTurn = (room: RoomState) => {
+  const alive = alivePotatoTeams(room);
+  if (!alive.length) {
+    setPotatoActiveTeam(room, null);
+    return;
+  }
+  const currentIdx = alive.indexOf(room.potatoActiveTeamId ?? '');
+  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
+  setPotatoActiveTeam(room, alive[nextIdx]);
+  room.potatoLastConflict = null;
+};
+
+const completePotatoRound = (room: RoomState, winnerId: string | null) => {
+  room.potatoPhase = 'ROUND_END';
+  setPotatoActiveTeam(room, null);
+  room.potatoLastConflict = null;
+  room.potatoLastWinnerId = winnerId;
+  if (winnerId && room.teams[winnerId]) {
+    room.teams[winnerId].score = (room.teams[winnerId].score ?? 0) + 3;
+  }
+};
+
+const applyPotatoStrike = (room: RoomState, teamId: string) => {
+  if (!room.potatoLives[teamId]) return;
+  room.potatoLives[teamId] = Math.max(0, room.potatoLives[teamId] - 1);
+  room.potatoLastConflict = null;
+  const alive = alivePotatoTeams(room);
+  if (alive.length <= 1) {
+    completePotatoRound(room, alive[0] ?? null);
+    return;
+  }
+  advancePotatoTurn(room);
+};
+
+const startPotatoRound = (room: RoomState) => {
+  if (room.potatoSelectedThemes.length === 0) {
+    throw new Error('Keine Themen für Heisse Kartoffel ausgewählt');
+  }
+  if (room.potatoRoundIndex >= POTATO_ROUNDS - 1) {
+    throw new Error('Alle Runden wurden bereits gespielt');
+  }
+  const nextIndex = room.potatoRoundIndex + 1;
+  if (!room.potatoSelectedThemes[nextIndex]) {
+    throw new Error('Nicht genug Themen vorhanden');
+  }
+  room.potatoRoundIndex = nextIndex;
+  room.potatoPhase = 'PLAYING';
+  assignPotatoTurnOrder(room);
+  room.potatoLives = initialPotatoLives(room);
+  room.potatoUsedAnswers = [];
+  room.potatoUsedAnswersNormalized = [];
+  room.potatoCurrentTheme = room.potatoSelectedThemes[nextIndex] ?? null;
+  room.potatoLastConflict = null;
+  room.potatoActiveTeamId = null;
+  setFirstPotatoTurn(room);
+};
+
+const finishPotatoStage = (room: RoomState) => {
+  room.potatoPhase = 'DONE';
+  setPotatoActiveTeam(room, null);
+  room.potatoLastConflict = null;
+  applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
+};
+
+const baseBingoCategories: QuizCategory[] = (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).flatMap(
+  (c) => Array.from({ length: 5 }, () => c)
+);
+
+const hasTripleSequence = (categories: QuizCategory[]) => {
+  const idx = (row: number, col: number) => row * 5 + col;
+  for (let row = 0; row < 5; row += 1) {
+    for (let col = 0; col <= 2; col += 1) {
+      const a = categories[idx(row, col)];
+      const b = categories[idx(row, col + 1)];
+      const c = categories[idx(row, col + 2)];
+      if (a === b && b === c) return true;
+    }
+  }
+  for (let col = 0; col < 5; col += 1) {
+    for (let row = 0; row <= 2; row += 1) {
+      const a = categories[idx(row, col)];
+      const b = categories[idx(row + 1, col)];
+      const c = categories[idx(row + 2, col)];
+      if (a === b && b === c) return true;
+    }
+  }
+  return false;
+};
+
+const shuffleCategories = () => {
+  const pool = [...baseBingoCategories];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+};
+
+const generateBingoBoard = (): BingoBoard => {
+  let candidate = shuffleCategories();
+  let attempts = 0;
+  while (hasTripleSequence(candidate) && attempts < 200) {
+    candidate = shuffleCategories();
+    attempts += 1;
+  }
+  return candidate.map((cat) => ({ category: cat, marked: false }));
 };
 
 const computeCategoryTotals = (order: string[]): Record<QuizCategory, number> => {
@@ -564,6 +848,86 @@ const broadcastTeamsReady = (room: RoomState) => {
   io.to(room.roomCode).emit('teamsReady', { teams: teamsArr });
 };
 
+const ensureSegmentTwoBaseline = (room: RoomState) => {
+  if (room.segmentTwoBaselineScores || room.askedQuestionIds.length <= 10) return;
+  room.segmentTwoBaselineScores = {};
+  Object.values(room.teams).forEach((team) => {
+    room.segmentTwoBaselineScores![team.id] = team.score ?? 0;
+  });
+};
+
+const configureRoomForQuiz = (room: RoomState, quizId: string) => {
+  const template = quizzes.get(quizId);
+  if (!template) throw new Error('Quiz template not found');
+  const questionIds =
+    template.mode === 'random'
+      ? [...template.questionIds].sort(() => Math.random() - 0.5)
+      : [...template.questionIds];
+
+  room.quizId = quizId;
+  room.questionOrder = [...questionIds];
+  room.remainingQuestionIds = [...questionIds];
+  room.askedQuestionIds = [];
+  room.currentQuestionId = null;
+  room.answers = {};
+  room.timerEndsAt = null;
+  room.screen = 'lobby';
+  room.questionPhase = 'answering';
+  room.potatoPhase = 'IDLE';
+  room.potatoPool = [];
+  room.potatoBans = {};
+  room.potatoBanLimits = {};
+  room.potatoSelectedThemes = [];
+  room.potatoRoundIndex = -1;
+  room.potatoTurnOrder = [];
+  room.potatoLives = {};
+  room.potatoUsedAnswers = [];
+  room.potatoUsedAnswersNormalized = [];
+  room.potatoActiveTeamId = null;
+  room.potatoDeadlineAt = null;
+  room.potatoTurnStartedAt = null;
+  room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
+  room.potatoLastWinnerId = null;
+  room.potatoCurrentTheme = null;
+  room.potatoLastConflict = null;
+  room.segmentTwoBaselineScores = null;
+  applyRoomState(room, { type: 'START_SESSION' });
+  broadcastTeamsReady(room);
+  broadcastState(room);
+  return questionIds.length;
+};
+
+const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string) => {
+  const cleanName = teamName.trim();
+  if (!cleanName) throw new Error('teamName missing');
+
+  if (teamId && room.teams[teamId]) {
+    room.teams[teamId].name = cleanName;
+    if (!room.teamBoards[teamId]) room.teamBoards[teamId] = generateBingoBoard();
+    broadcastTeamsReady(room);
+    broadcastState(room);
+    return { team: room.teams[teamId], board: room.teamBoards[teamId], created: false };
+  }
+
+  const existingByName = Object.values(room.teams).find((t) => t.name === cleanName);
+  if (existingByName) {
+    if (!room.teamBoards[existingByName.id]) room.teamBoards[existingByName.id] = generateBingoBoard();
+    broadcastTeamsReady(room);
+    broadcastState(room);
+    return { team: existingByName, board: room.teamBoards[existingByName.id], created: false };
+  }
+
+  const newTeam: Team = { id: uuid(), name: cleanName, score: 0, isReady: false };
+  room.teams[newTeam.id] = newTeam;
+  room.teamBoards[newTeam.id] = generateBingoBoard();
+  if (room.segmentTwoBaselineScores) {
+    room.segmentTwoBaselineScores[newTeam.id] = newTeam.score ?? 0;
+  }
+  broadcastTeamsReady(room);
+  broadcastState(room);
+  return { team: newTeam, board: room.teamBoards[newTeam.id], created: true };
+};
+
 const normalizeString = (value: unknown) =>
   String(value ?? '')
     .trim()
@@ -653,11 +1017,71 @@ const formatSolution = (question: AnyQuestion, language: Language): string | und
 
 const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => question;
 
+const applyRoomState = (room: RoomState, action: GameStateAction) => {
+  const next = applyGameAction(room.gameState, action);
+  if (next !== room.gameState) {
+    room.gameState = next;
+    room.stateHistory = [...room.stateHistory.slice(-9), next];
+  }
+  return room.gameState;
+};
+
+const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
+  const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+  const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
+  const sanitized = localized ? sanitizeQuestionForTeams(localized) : null;
+  const potato: PotatoState | null =
+    room.potatoPhase === 'IDLE'
+      ? null
+      : {
+          phase: room.potatoPhase,
+          pool: room.potatoPool,
+          bans: room.potatoBans,
+          banLimits: room.potatoBanLimits,
+          selectedThemes: room.potatoSelectedThemes,
+          roundIndex: room.potatoRoundIndex,
+          turnOrder: room.potatoTurnOrder,
+          activeTeamId: room.potatoActiveTeamId,
+          lives: room.potatoLives,
+          usedAnswers: room.potatoUsedAnswers,
+          usedAnswersNormalized: room.potatoUsedAnswersNormalized,
+          deadline: room.potatoDeadlineAt,
+          turnStartedAt: room.potatoTurnStartedAt,
+          turnDurationMs: room.potatoTurnDurationMs,
+          currentTheme: room.potatoCurrentTheme,
+          lastWinnerId: room.potatoLastWinnerId,
+          pendingConflict: room.potatoLastConflict
+        };
+  return {
+    roomCode: room.roomCode,
+    state: room.gameState,
+    phase: room.questionPhase,
+    currentQuestion: sanitized,
+    timer: { endsAt: room.timerEndsAt, running: Boolean(room.timerEndsAt) },
+    scores: Object.values(room.teams).map((team) => ({
+      id: team.id,
+      name: team.name,
+      score: team.score ?? 0
+    })),
+    teamsConnected: Object.keys(room.teams).length,
+    potato
+  };
+};
+
+const broadcastState = (room: RoomState) => {
+  io.to(room.roomCode).emit('server:stateUpdate', buildStateUpdatePayload(room));
+};
+const broadcastStateByCode = (roomCode: string) => {
+  const room = rooms.get(roomCode);
+  if (room) broadcastState(room);
+};
+
 const evaluateCurrentQuestion = (room: RoomState): boolean => {
   if (!room.currentQuestionId) return false;
   if (room.questionPhase === 'evaluated' || room.questionPhase === 'revealed') return false;
   const question = questionById.get(room.currentQuestionId);
   if (!question) return false;
+  applyRoomState(room, { type: 'HOST_LOCK' });
 
   let bestDeviation: number | null = null;
   if (question.mechanic === 'estimate') {
@@ -704,6 +1128,7 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
   room.questionPhase = 'evaluated';
   room.timerEndsAt = null;
   const solution = formatSolution(question, room.language);
+  broadcastState(room);
   io.to(room.roomCode).emit('evaluation:started');
   io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
   io.to(room.roomCode).emit('timerStopped');
@@ -842,24 +1267,10 @@ app.post('/api/rooms/:roomCode/use-quiz', (req, res) => {
 
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  const template = quizzes.get(quizId)!;
-  const questionIds =
-    template.mode === 'random'
-      ? [...template.questionIds].sort(() => Math.random() - 0.5)
-      : [...template.questionIds];
+  const remaining = configureRoomForQuiz(room, quizId);
 
-  room.quizId = quizId;
-  room.questionOrder = [...questionIds];
-  room.remainingQuestionIds = [...questionIds];
-  room.askedQuestionIds = [];
-  room.currentQuestionId = null;
-  room.answers = {};
-  room.screen = 'lobby';
-  room.questionPhase = 'answering';
-  broadcastTeamsReady(room);
-
-  io.to(roomCode).emit('quizSelected', { quizId, remaining: room.remainingQuestionIds.length });
-  return res.json({ ok: true, quizId, remaining: room.remainingQuestionIds.length });
+  io.to(roomCode).emit('quizSelected', { quizId, remaining }); // TODO(LEGACY): remove when stateUpdate adopted
+  return res.json({ ok: true, quizId, remaining });
 });
 
 const startQuestionWithSlot = (
@@ -880,8 +1291,11 @@ const startQuestionWithSlot = (
   room.answers = {};
   room.timerEndsAt = null;
   room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
+  ensureSegmentTwoBaseline(room);
   room.screen = 'slot';
   room.questionPhase = 'answering';
+  applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
+  broadcastState(room);
 
   const askedInCategory = room.askedQuestionIds.filter(
     (id) => questionById.get(id)?.category === questionWithImage.category
@@ -910,6 +1324,7 @@ const startQuestionWithSlot = (
     });
     io.to(room.roomCode).emit('beamer:show-question', { question: localized, meta });
     io.to(room.roomCode).emit('team:show-question', { question: sanitizeQuestionForTeams(localized) });
+    broadcastState(room);
   }, SLOT_DURATION_MS);
 
   if (res) {
@@ -921,20 +1336,63 @@ const startQuestionWithSlot = (
   }
 };
 
+const runNextQuestion = (room: RoomState) => {
+  if (!room.quizId || room.remainingQuestionIds.length === 0) {
+    throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
+  }
+  const nextId = room.remainingQuestionIds.shift();
+  if (!nextId) {
+    throw new Error('Keine naechste Frage gefunden');
+  }
+  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
+  Object.values(room.teams).forEach((t) => (t.isReady = false));
+  broadcastTeamsReady(room);
+  return { questionId: nextId, remaining: room.remainingQuestionIds.length };
+};
+
+const revealAnswersForRoom = (room: RoomState) => {
+  if (!room.currentQuestionId) throw new Error('Keine aktive Frage');
+  const question = questionById.get(room.currentQuestionId);
+  if (!question) throw new Error('Frage nicht gefunden');
+
+  if (room.questionPhase === 'answering') {
+    evaluateCurrentQuestion(room);
+  }
+  if (room.questionPhase === 'revealed') {
+    return { answers: room.answers, teams: room.teams };
+  }
+
+  applyRoomState(room, { type: 'HOST_REVEAL' });
+  const points = (question as any).points ?? 1;
+  Object.entries(room.answers).forEach(([teamId, ans]) => {
+    const isCorrect = ans.isCorrect ?? evaluateAnswer(question, ans.value);
+    const deviation = ans.deviation ?? null;
+    const bestDeviation = ans.bestDeviation ?? null;
+    room.answers[teamId] = { ...ans, isCorrect, deviation, bestDeviation };
+    if (isCorrect && room.teams[teamId]) {
+      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + points;
+    }
+    io.to(room.roomCode).emit('teamResult', { teamId, isCorrect, deviation, bestDeviation });
+  });
+
+  room.questionPhase = 'revealed';
+  broadcastState(room);
+  io.to(room.roomCode).emit('scoreUpdated'); // TODO(LEGACY): scoreboard now via stateUpdate
+  io.to(room.roomCode).emit('evaluation:revealed');
+  return { answers: room.answers, teams: room.teams };
+};
+
 app.post('/api/rooms/:roomCode/next-question', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  if (!room.quizId || room.remainingQuestionIds.length === 0) {
-    return res.status(400).json({ error: 'Keine Fragen mehr oder kein Quiz gesetzt' });
+  try {
+    const result = runNextQuestion(room);
+    if (res.headersSent) return;
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
   }
-  const nextId = room.remainingQuestionIds.shift();
-  if (!nextId) {
-    return res.status(400).json({ error: 'Keine naechste Frage gefunden' });
-  }
-  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length, res);
-  Object.values(room.teams).forEach((t) => (t.isReady = false));
-  broadcastTeamsReady(room);
 });
 
 app.post('/api/rooms/:roomCode/start-question', (req, res) => {
@@ -966,6 +1424,7 @@ app.post('/api/rooms/:roomCode/slot-intro', (req, res) => {
   const slotMeta = buildSlotMeta(localized, Math.max(0, askedInCategory - 1), totalInCategory, room.language);
   log(room.roomCode, `Slot intro only for question ${questionId}`);
   io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
+  broadcastState(room);
   res.json({ ok: true, slotMeta });
 });
 
@@ -975,6 +1434,8 @@ app.post('/api/rooms/:roomCode/show-intro', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
   room.screen = 'intro' as ScreenState;
+  applyRoomState(room, { type: 'FORCE', next: 'INTRO' });
+  broadcastState(room);
   io.to(room.roomCode).emit('beamer:show-intro', { slides: INTRO_SLIDES });
   res.json({ ok: true });
 });
@@ -999,28 +1460,13 @@ app.post('/api/rooms/:roomCode/join', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
 
-  // Rejoin explizit per teamId erlauben
-  if (teamId && room.teams[teamId]) {
-    room.teams[teamId].name = teamName;
-    if (!room.teamBoards[teamId]) room.teamBoards[teamId] = generateBingoBoard();
-    broadcastTeamsReady(room);
-    return res.json({ team: room.teams[teamId], roomCode, board: room.teamBoards[teamId] });
+  try {
+    const result = joinTeamToRoom(room, teamName, teamId);
+    const payload = { team: result.team, roomCode, board: result.board };
+    return result.created ? res.status(201).json(payload) : res.json(payload);
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
   }
-
-  // Falls Name bereits existiert: bestehendes Team zurückgeben (für Rejoin per Name)
-  const existingByName = Object.values(room.teams).find((t) => t.name === teamName);
-  if (existingByName) {
-    if (!room.teamBoards[existingByName.id]) room.teamBoards[existingByName.id] = generateBingoBoard();
-    broadcastTeamsReady(room);
-    return res.json({ team: existingByName, roomCode, board: room.teamBoards[existingByName.id] });
-  }
-
-  // Immer neues Team anlegen (keine Wiederverwendung nur nach Name)
-  const newTeam: Team = { id: uuid(), name: teamName, score: 0, isReady: false };
-  room.teams[newTeam.id] = newTeam;
-  room.teamBoards[newTeam.id] = generateBingoBoard();
-  broadcastTeamsReady(room);
-  return res.status(201).json({ team: newTeam, roomCode, board: room.teamBoards[newTeam.id] });
 });
 
 // Antworten (speichern, keine Auto-Evaluation)
@@ -1031,10 +1477,13 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   touchRoom(room);
   if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
   if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
+  if (!isQuestionInputOpen(room.gameState)) {
+    return res.status(400).json({ error: 'Antworten aktuell nicht erlaubt' });
+  }
 
   room.answers[teamId] = { value: answer };
   io.to(roomCode).emit('answerReceived', { teamId });
-  io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true });
+  io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
 
   const teamCount = Object.keys(room.teams).length;
   const answerCount = Object.keys(room.answers).length;
@@ -1044,6 +1493,7 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
     evaluateCurrentQuestion(room);
   }
 
+  broadcastState(room);
   return res.json({ ok: true });
 });
 
@@ -1075,34 +1525,12 @@ app.post('/api/rooms/:roomCode/reveal', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
-  const question = questionById.get(room.currentQuestionId);
-  if (!question) return res.status(400).json({ error: 'Frage nicht gefunden' });
-
-  // Falls noch nicht ausgewertet, zuerst bewerten
-  if (room.questionPhase === 'answering') {
-    evaluateCurrentQuestion(room);
+  try {
+    const payload = revealAnswersForRoom(room);
+    return res.json({ ok: true, ...payload });
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
   }
-  if (room.questionPhase === 'revealed') {
-    return res.json({ ok: true, answers: room.answers, teams: room.teams });
-  }
-
-  const points = (question as any).points ?? 1;
-  Object.entries(room.answers).forEach(([teamId, ans]) => {
-    const isCorrect = ans.isCorrect ?? evaluateAnswer(question, ans.value);
-    const deviation = ans.deviation ?? null;
-    const bestDeviation = ans.bestDeviation ?? null;
-    room.answers[teamId] = { ...ans, isCorrect, deviation, bestDeviation };
-    if (isCorrect && room.teams[teamId]) {
-      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + points;
-    }
-    io.to(roomCode).emit('teamResult', { teamId, isCorrect, deviation, bestDeviation });
-  });
-
-  room.questionPhase = 'revealed';
-  io.to(roomCode).emit('scoreUpdated');
-  io.to(roomCode).emit('evaluation:revealed');
-  return res.json({ ok: true, answers: room.answers, teams: room.teams });
 });
 
 app.get('/api/rooms/:roomCode/answers', (req, res) => {
@@ -1128,6 +1556,7 @@ app.delete('/api/rooms/:roomCode/teams/:teamId', (req, res) => {
 
   broadcastTeamsReady(room);
   io.to(roomCode).emit('teamKicked', { teamId });
+  broadcastState(room);
 
   return res.json({ ok: true });
 });
@@ -1152,10 +1581,12 @@ app.post('/api/rooms/:roomCode/answers/override', (req, res) => {
     }
 
     io.to(roomCode).emit('teamResult', { teamId, isCorrect });
-    io.to(roomCode).emit('scoreUpdated');
+    io.to(roomCode).emit('scoreUpdated'); // TODO(LEGACY)
+    broadcastState(room);
     return res.json({ ok: true });
   }
 
+  broadcastState(room);
   return res.json({ ok: true });
 });
 
@@ -1181,7 +1612,8 @@ app.post('/api/rooms/:roomCode/bingo/mark', (req, res) => {
   }
 
   board[cellIndex].marked = true;
-  io.to(roomCode).emit('bingoUpdated', { teamId, board });
+  io.to(roomCode).emit('bingoUpdated', { teamId, board }); // TODO(LEGACY)
+  broadcastState(room);
   return res.json({ ok: true, board });
 });
 
@@ -1297,6 +1729,7 @@ app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
   const endsAt = Date.now() + secs * 1000;
   room.timerEndsAt = endsAt;
   io.to(roomCode).emit('timerStarted', { endsAt });
+  broadcastState(room);
   return res.json({ ok: true, endsAt });
 });
 
@@ -1308,6 +1741,7 @@ app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
   io.to(roomCode).emit('timerStopped');
    // automatisches Bewerten, wenn noch nicht erfolgt
   evaluateCurrentQuestion(room);
+  broadcastState(room);
   return res.json({ ok: true });
 });
 
@@ -1334,6 +1768,7 @@ app.post('/api/rooms/:roomCode/language', (req, res) => {
   room.language = language;
   touchRoom(room);
   io.to(roomCode).emit('languageChanged', { language });
+  broadcastState(room);
   return res.json({ ok: true, language });
 });
 
@@ -1453,6 +1888,300 @@ io.on('connection', (socket: Socket) => {
     const room = ensureRoom(roomCode);
     const snapshot = buildSyncState(room);
     socket.emit('syncState', snapshot);
+    socket.emit('server:stateUpdate', buildStateUpdatePayload(room));
+  });
+  socket.on(
+    'host:createSession',
+    (
+      payload: { quizId?: string; language?: Language },
+      ack?: (resp: { ok: boolean; roomCode?: string; error?: string }) => void
+    ) => {
+      try {
+        const { quizId, language } = payload || {};
+        if (!quizId || !quizzes.has(quizId)) throw new Error('quizId fehlt oder unbekannt');
+        const code = createRoomCode();
+        const room = ensureRoom(code);
+        if (language === 'de' || language === 'en' || language === 'both') {
+          room.language = language;
+        }
+        configureRoomForQuiz(room, quizId);
+        respond(ack, { ok: true, roomCode: code, state: buildStateUpdatePayload(room) });
+      } catch (err) {
+        respond(ack, { ok: false, error: (err as Error).message });
+      }
+    }
+  );
+
+  socket.on(
+    'team:join',
+    (
+      payload: { roomCode?: string; teamName?: string; teamId?: string },
+      ack?: (resp: { ok: boolean; error?: string; team?: Team; board?: BingoBoard }) => void
+    ) => {
+      try {
+        const { roomCode, teamName, teamId } = payload || {};
+        if (!roomCode || !teamName) throw new Error('roomCode oder teamName fehlt');
+        const room = ensureRoom(roomCode);
+        touchRoom(room);
+        const result = joinTeamToRoom(room, teamName, teamId);
+        respond(ack, { ok: true, team: result.team, board: result.board });
+      } catch (err) {
+        respond(ack, { ok: false, error: (err as Error).message });
+      }
+    }
+  );
+
+  const withRoom = (
+    roomCode: string | undefined,
+    ack: unknown,
+    handler: (room: RoomState) => unknown
+  ) => {
+    if (!roomCode) {
+      respond(ack, { ok: false, error: 'roomCode fehlt' });
+      return;
+    }
+    const room = ensureRoom(roomCode);
+    touchRoom(room);
+    try {
+      const result = handler(room);
+      respond(ack, { ok: true, ...((result || {}) as object) });
+    } catch (err) {
+      respond(ack, { ok: false, error: (err as Error).message });
+    }
+  };
+
+  socket.on('host:next', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => runNextQuestion(room));
+  });
+
+  socket.on('host:lock', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      const success = evaluateCurrentQuestion(room);
+      return { locked: success };
+    });
+  });
+
+  socket.on('host:reveal', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => revealAnswersForRoom(room));
+  });
+
+  socket.on(
+    'host:startPotato',
+    (
+      payload: { roomCode?: string; themes?: string[]; themesText?: string },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        const parsed =
+          sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
+        const pool =
+          parsed.length >= POTATO_ROUNDS ? parsed : DEFAULT_POTATO_THEMES.slice();
+        if (pool.length < POTATO_ROUNDS) {
+          throw new Error('Mindestens drei Themen erforderlich');
+        }
+        room.potatoPool = pool;
+        room.potatoBans = {};
+        room.potatoBanLimits = computePotatoBanLimits(room);
+        room.potatoSelectedThemes = [];
+        room.potatoRoundIndex = -1;
+        room.potatoTurnOrder = [];
+        room.potatoLives = {};
+        room.potatoUsedAnswers = [];
+        room.potatoUsedAnswersNormalized = [];
+        room.potatoActiveTeamId = null;
+        room.potatoPhase = 'BANNING';
+        room.potatoDeadlineAt = null;
+        room.potatoTurnStartedAt = null;
+        room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
+        room.potatoLastWinnerId = null;
+        room.potatoCurrentTheme = null;
+        room.potatoLastConflict = null;
+        applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
+        broadcastState(room);
+        return { pool: room.potatoPool };
+      });
+    }
+  );
+
+  socket.on(
+    'host:banPotatoTheme',
+    (payload: { roomCode?: string; teamId?: string; theme?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        const limit = room.potatoBanLimits[payload.teamId] ?? 0;
+        if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
+        const current = room.potatoBans[payload.teamId] ?? [];
+        if (current.length >= limit) throw new Error('Ban-Limit erreicht');
+        const themeName = (payload?.theme || '').trim();
+        if (!themeName) throw new Error('Theme fehlt');
+        const index = room.potatoPool.findIndex(
+          (t) => t.toLowerCase() === themeName.toLowerCase()
+        );
+        if (index === -1) throw new Error('Theme nicht verfügbar');
+        const actualTheme = room.potatoPool.splice(index, 1)[0];
+        room.potatoBans[payload.teamId] = [...current, actualTheme];
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:confirmPotatoThemes', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.potatoPhase !== 'BANNING' && room.potatoPhase !== 'ROUND_END') {
+        throw new Error('Themes können aktuell nicht gesetzt werden');
+      }
+      if (room.potatoPool.length < POTATO_ROUNDS) {
+        throw new Error('Nicht genug Themen übrig');
+      }
+      const shuffled = [...room.potatoPool].sort(() => Math.random() - 0.5);
+      room.potatoSelectedThemes = shuffled.slice(0, POTATO_ROUNDS);
+      room.potatoPhase = 'ROUND_END';
+      room.potatoRoundIndex = -1;
+      room.potatoCurrentTheme = null;
+      room.potatoUsedAnswers = [];
+      room.potatoUsedAnswersNormalized = [];
+      room.potatoLives = {};
+      room.potatoTurnOrder = [];
+      room.potatoLastConflict = null;
+      setPotatoActiveTeam(room, null);
+      broadcastState(room);
+      return { selected: room.potatoSelectedThemes };
+    });
+  });
+
+  socket.on('host:potatoStartRound', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      startPotatoRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:potatoSubmitTurn',
+    (
+      payload: {
+        roomCode?: string;
+        answer?: string;
+        verdict: 'correct' | 'strike';
+        override?: boolean;
+      },
+      ack
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'PLAYING') throw new Error('Keine aktive Runde');
+        if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
+        if (payload.verdict === 'correct') {
+          const answer = (payload.answer || '').trim();
+          if (!answer) throw new Error('Antwort fehlt');
+          if (room.potatoDeadlineAt && Date.now() > room.potatoDeadlineAt) {
+            applyPotatoStrike(room, room.potatoActiveTeamId);
+          } else {
+            const normalized = normalizeText(answer);
+            const duplicateIdx = room.potatoUsedAnswersNormalized.findIndex(
+              (entry) => entry === normalized
+            );
+            if (duplicateIdx >= 0 && !payload.override) {
+              room.potatoLastConflict = {
+                type: 'duplicate',
+                answer,
+                normalized,
+                conflictingAnswer: room.potatoUsedAnswers[duplicateIdx] ?? null
+              };
+              broadcastState(room);
+              throw new Error('Antwort wurde bereits genannt');
+            }
+            if (duplicateIdx === -1 && !payload.override) {
+              let bestIdx = -1;
+              let bestScore = 0;
+              room.potatoUsedAnswersNormalized.forEach((entry, idx) => {
+                const score = similarityScore(entry, normalized);
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestIdx = idx;
+                }
+              });
+              if (bestIdx >= 0 && bestScore >= POTATO_SIMILARITY_THRESHOLD) {
+                room.potatoLastConflict = {
+                  type: 'similar',
+                  answer,
+                  normalized,
+                  conflictingAnswer: room.potatoUsedAnswers[bestIdx] ?? null
+                };
+                broadcastState(room);
+                throw new Error('Antwort ist sehr ähnlich zu einer bestehenden');
+              }
+            }
+            room.potatoLastConflict = null;
+            room.potatoUsedAnswers = [...room.potatoUsedAnswers, answer];
+            room.potatoUsedAnswersNormalized = [
+              ...room.potatoUsedAnswersNormalized,
+              normalized
+            ];
+            advancePotatoTurn(room);
+          }
+        } else {
+          applyPotatoStrike(room, room.potatoActiveTeamId);
+        }
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:potatoStrikeActive', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
+      applyPotatoStrike(room, room.potatoActiveTeamId);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:potatoNextTurn', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      advancePotatoTurn(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:potatoEndRound',
+    (payload: { roomCode?: string; winnerId?: string | null }, ack) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'PLAYING') {
+          throw new Error('Runde ist nicht aktiv');
+        }
+        const winnerId =
+          payload?.winnerId && room.teams[payload.winnerId] ? payload.winnerId : null;
+        if (!winnerId) {
+          const alive = alivePotatoTeams(room);
+          if (!alive.length) throw new Error('Kein Team verfügbar');
+          completePotatoRound(room, alive[0]);
+        } else {
+          completePotatoRound(room, winnerId);
+        }
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:potatoNextRound', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.potatoPhase !== 'ROUND_END') {
+        throw new Error('Runde ist noch aktiv');
+      }
+      if (room.potatoRoundIndex >= POTATO_ROUNDS - 1) {
+        throw new Error('Alle Runden abgeschlossen');
+      }
+      startPotatoRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:potatoFinish', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      finishPotatoStage(room);
+      broadcastState(room);
+    });
   });
 
   socket.on('beamer:show-rules', (roomCode: string) => {
@@ -1468,6 +2197,7 @@ io.on('connection', (socket: Socket) => {
     if (!team) return;
     team.isReady = isReady;
     broadcastTeamsReady(room);
+    broadcastState(room);
   });
 });
 
@@ -1505,3 +2235,9 @@ listenWithFallback(PORT, 3);
 
 
 
+type AckFn<T = unknown> = (payload: T) => void;
+const respond = <T>(ack: unknown, payload: T) => {
+  if (typeof ack === 'function') {
+    (ack as AckFn<T>)(payload);
+  }
+};

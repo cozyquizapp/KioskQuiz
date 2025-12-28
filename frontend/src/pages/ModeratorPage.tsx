@@ -470,7 +470,10 @@ const ModeratorPage: React.FC = () => {
       () => setPotatoWinnerDraft('')
     );
 
-  const handlePotatoSubmit = (verdict: 'correct' | 'strike') => {
+  const handlePotatoSubmit = (
+    verdict: 'correct' | 'strike',
+    options?: { override?: boolean }
+  ) => {
     if (verdict === 'correct') {
       const trimmed = potatoAnswerInput.trim();
       if (!trimmed) {
@@ -480,7 +483,7 @@ const ModeratorPage: React.FC = () => {
       }
       emitPotatoEvent(
         'host:potatoSubmitTurn',
-        { verdict, answer: trimmed },
+        { verdict, answer: trimmed, override: options?.override },
         () => setPotatoAnswerInput('')
       );
       return;
@@ -511,6 +514,8 @@ const ModeratorPage: React.FC = () => {
     return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
   }, [potatoDeadline, potatoTick]);
   const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
+  const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
+  const potatoConflict = potato?.pendingConflict ?? null;
 
   const numericStats = useMemo(() => {
     if (!answers) return null;
@@ -845,6 +850,18 @@ const ModeratorPage: React.FC = () => {
               <div style={{ fontSize: 12, color: '#cbd5e1' }}>
                 Aktives Team: {activeTeamName || '—'} · Used Answers: {usedAnswers.length}
               </div>
+              {potatoDeadlinePassed && (
+                <span
+                  style={{
+                    ...statChip,
+                    borderColor: 'rgba(248,113,113,0.5)',
+                    color: '#fecaca',
+                    background: 'rgba(248,113,113,0.14)'
+                  }}
+                >
+                  TIMEOUT – bitte entscheiden
+                </span>
+              )}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {turnOrder.map((teamId) => (
                   <span
@@ -934,6 +951,55 @@ const ModeratorPage: React.FC = () => {
               {usedAnswers.length > 0 && (
                 <div style={{ fontSize: 12, color: '#94a3b8' }}>
                   Letzte Antworten: {usedAnswers.slice(-5).join(', ')}
+                </div>
+              )}
+              {potatoConflict && (
+                <div
+                  style={{
+                    border: '1px solid rgba(248,113,113,0.45)',
+                    borderRadius: 12,
+                    padding: 10,
+                    background: 'rgba(248,113,113,0.08)',
+                    color: '#fecaca',
+                    display: 'grid',
+                    gap: 6
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>
+                    {potatoConflict.type === 'duplicate' ? 'DUPLIKAT' : 'ÄHNLICH'} erkannt
+                  </div>
+                  <div style={{ fontSize: 13 }}>
+                    „{potatoConflict.answer}“
+                    {potatoConflict.conflictingAnswer
+                      ? ` vs. „${potatoConflict.conflictingAnswer}“`
+                      : ''}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      style={{
+                        ...inputStyle,
+                        width: 'auto',
+                        background: 'rgba(34,197,94,0.25)',
+                        border: '1px solid rgba(34,197,94,0.5)',
+                        color: '#bbf7d0'
+                      }}
+                      onClick={() => handlePotatoSubmit('correct', { override: true })}
+                    >
+                      Trotzdem akzeptieren
+                    </button>
+                    <button
+                      style={{
+                        ...inputStyle,
+                        width: 'auto',
+                        background: 'rgba(239,68,68,0.2)',
+                        border: '1px solid rgba(239,68,68,0.4)',
+                        color: '#fecdd3'
+                      }}
+                      onClick={() => handlePotatoSubmit('strike')}
+                    >
+                      Strike vergeben
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

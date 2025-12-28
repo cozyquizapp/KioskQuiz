@@ -994,11 +994,32 @@ useEffect(() => {
                     : language === 'both'
                     ? 'Team am Zug / Active team'
                     : 'Active team'}
-                  : {activeTeamName || '—'}
+                  : {activeTeamName || '-'}
                 </div>
-                <div style={{ fontSize: 16, color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
-                  {potatoCountdown !== null ? `${potatoCountdown}s · ${infoCopy}` : infoCopy}
+                <div
+                  style={{
+                    fontSize: 16,
+                    color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1'
+                  }}
+                >
+                  {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s · ${infoCopy}` : infoCopy}
                 </div>
+                {potatoCountdown !== null && potatoCountdown <= 0 && (
+                  <div
+                    style={{
+                      ...pillRule,
+                      background: 'rgba(248,113,113,0.18)',
+                      borderColor: 'rgba(248,113,113,0.4)',
+                      color: '#fecaca'
+                    }}
+                  >
+                    {language === 'de'
+                      ? 'Zeit abgelaufen!'
+                      : language === 'both'
+                      ? 'Zeit abgelaufen / Time is up!'
+                      : 'Time is up!'}
+                  </div>
+                )}
                 <div style={{ display: 'grid', gap: 6 }}>
                   {turnOrder.map((teamId) => (
                     <div

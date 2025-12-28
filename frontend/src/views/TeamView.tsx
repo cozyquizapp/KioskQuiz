@@ -1,6 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnyQuestion, MultipleChoiceQuestion, SortItemsQuestion, BingoBoard, Language } from '@shared/quizTypes';
+import {
+  AnyQuestion,
+  MultipleChoiceQuestion,
+  SortItemsQuestion,
+  BingoBoard,
+  Language,
+  StateUpdatePayload,
+  CozyGameState,
+  Team,
+  PotatoState
+} from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
   joinRoom,
@@ -166,6 +176,10 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
   const [isFinal, setIsFinal] = useState(false);
+  const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
+  const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
+  const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
+  const [potatoTick, setPotatoTick] = useState(0);
   const savedIdRef = useRef<string | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
@@ -173,6 +187,25 @@ function TeamView({ roomCode }: TeamViewProps) {
   const recoveringRef = useRef(false);
   const [reconnectKey, setReconnectKey] = useState(0);
   const storageKey = (suffix: string) => `team:${roomCode}:${suffix}`;
+  useEffect(() => {
+    if (gameState === 'Q_ACTIVE') {
+      setPhase('answering');
+    } else if (gameState === 'Q_LOCKED') {
+      setPhase('waitingForResult');
+    } else if (gameState === 'Q_REVEAL') {
+      setPhase('showResult');
+    } else if (teamId) {
+      setPhase('waitingForQuestion');
+    } else {
+      setPhase('notJoined');
+    }
+  }, [gameState, teamId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
+    return () => window.clearInterval(id);
+  }, []);
 
   // inject animations once
   useEffect(() => {
@@ -223,6 +256,21 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     return (COPY as any)[language]?.[key] ?? COPY.de[key];
   };
+  const scoreboardLookup = useMemo(() => {
+    const map: Record<string, { name: string; score: number }> = {};
+    scoreboard.forEach((entry) => {
+      map[entry.id] = { name: entry.name, score: entry.score ?? 0 };
+    });
+    return map;
+  }, [scoreboard]);
+  const sortedScoreboard = useMemo(
+    () => [...scoreboard].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
+    [scoreboard]
+  );
+  const potatoCountdown = useMemo(() => {
+    if (!potatoState?.deadline) return null;
+    return Math.max(0, Math.ceil((potatoState.deadline - Date.now()) / 1000));
+  }, [potatoState?.deadline, potatoTick]);
 
   const handleReconnect = () => {
     setConnectionStatus('connecting');
@@ -320,6 +368,28 @@ function TeamView({ roomCode }: TeamViewProps) {
       setTimerDuration(remaining || 30);
     });
     socket.on('timerStopped', () => setTimerEndsAt(null));
+    const onStateUpdate = (payload: StateUpdatePayload) => {
+      setGameState(payload.state);
+      if (payload.scores) {
+        setScoreboard(payload.scores);
+      }
+      if (payload.potato !== undefined) {
+        setPotatoState(payload.potato ?? null);
+      }
+      if (payload.currentQuestion !== undefined) {
+        if (payload.currentQuestion) {
+          setQuestion(payload.currentQuestion);
+          setPhase('answering');
+        } else if (teamId) {
+          setPhase('waitingForQuestion');
+          setQuestion(null);
+        }
+      }
+      if (payload.timer) {
+        setTimerEndsAt(payload.timer.endsAt);
+      }
+    };
+    socket.on('server:stateUpdate', onStateUpdate);
 
     socket.on('evaluation:started', () => {
       setPhase('waitingForResult');
@@ -370,6 +440,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     });
 
     return () => {
+      socket.off('server:stateUpdate', onStateUpdate);
       socket.disconnect();
     };
   }, [roomCode, teamId, language, reconnectKey]);
@@ -450,7 +521,28 @@ function TeamView({ roomCode }: TeamViewProps) {
         setMessage(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
         return;
       }
-      const data = await joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined);
+      const socket = socketRef.current;
+      const payload = await new Promise<{ team: Team; board?: BingoBoard }>((resolve, reject) => {
+        if (!socket) {
+          // TODO(LEGACY): remove REST fallback once socket join stabilisiert
+          joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined)
+            .then((res) => resolve(res))
+            .catch(reject);
+          return;
+        }
+        socket.emit(
+          'team:join',
+          { roomCode, teamName: cleanName, teamId: useSavedId ? savedIdRef.current ?? undefined : undefined },
+          (resp?: { ok: boolean; error?: string; team?: Team; board?: BingoBoard }) => {
+            if (!resp?.ok || !resp?.team) {
+              reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
+            } else {
+              resolve({ team: resp.team, board: resp.board });
+            }
+          }
+        );
+      });
+      const data = payload;
       setTeamId(data.team.id);
       localStorage.setItem(storageKey('name'), cleanName);
       localStorage.setItem(storageKey('id'), data.team.id);
@@ -586,6 +678,21 @@ function TeamView({ roomCode }: TeamViewProps) {
           )}
         </div>
       </div>
+      {isLocked && (
+        <div
+          style={{
+            marginTop: 8,
+            padding: '8px 12px',
+            borderRadius: 10,
+            border: '1px solid rgba(250,204,21,0.4)',
+            background: 'rgba(250,204,21,0.12)',
+            color: '#facc15',
+            fontWeight: 700
+          }}
+        >
+          {language === 'de' ? 'Antworten sind gesperrt.' : 'Answers are locked.'}
+        </div>
+      )}
         <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question ?? t('waitingMsg')}</h2>
       {(() => {
         const q: any = question;
@@ -680,7 +787,10 @@ const handleSubmit = async () => {
         return;
       }
     }
-    if (!canAnswer) return;
+    if (!canAnswer) {
+      setMessage(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
+      return;
+    }
     try {
       if (question?.mechanic === 'betting') {
         const pool = (question as any).pointsPool ?? 10;
@@ -913,6 +1023,248 @@ const handleSubmit = async () => {
     </div>
   );
 
+  const renderPotatoStage = () => {
+    if (!teamId) return renderNotJoined();
+    const heading =
+      language === 'en'
+        ? 'Hot Potato Final'
+        : language === 'both'
+        ? 'Heisse Kartoffel / Hot Potato'
+        : 'Heisse Kartoffel Finale';
+    if (!potatoState) {
+      return (
+        <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
+          <div style={pillLabel}>{heading}</div>
+          <p style={{ ...mutedText, margin: 0 }}>
+            {language === 'en'
+              ? 'Final stage is being prepared. Stay ready!'
+              : language === 'both'
+              ? 'Finale wird vorbereitet / Final stage is being prepared.'
+              : 'Finale wird vorbereitet. Bleibt bereit!'}
+          </p>
+        </div>
+      );
+    }
+    const roundTotal = potatoState.selectedThemes?.length ?? 0;
+    const phase = potatoState.phase;
+    const roundLabel =
+      roundTotal > 0 && potatoState.roundIndex >= 0
+        ? `${potatoState.roundIndex + 1}/${roundTotal}`
+        : roundTotal > 0
+        ? `0/${roundTotal}`
+        : language === 'en'
+        ? 'Setup'
+        : 'Vorbereitung';
+    const activeTeamName = potatoState.activeTeamId
+      ? scoreboardLookup[potatoState.activeTeamId]?.name || potatoState.activeTeamId
+      : null;
+    const lives = potatoState.lives || {};
+    const turnOrder = potatoState.turnOrder.length ? potatoState.turnOrder : Object.keys(lives);
+    const bans = potatoState.bans || {};
+    const banLimits = potatoState.banLimits || {};
+    const selectedThemes = potatoState.selectedThemes || [];
+    const lastWinner =
+      potatoState.lastWinnerId && scoreboardLookup[potatoState.lastWinnerId]
+        ? scoreboardLookup[potatoState.lastWinnerId].name
+        : potatoState.lastWinnerId || null;
+    const infoCopy =
+      language === 'en'
+        ? 'Max. 5 seconds per answer · duplicates = strike.'
+        : language === 'both'
+        ? 'Max. 5 Sekunden pro Antwort / Max. 5 seconds per answer. Doppelte Antworten verlieren ein Leben.'
+        : 'Max. 5 Sekunden pro Antwort. Doppelte Antworten verlieren ein Leben.';
+    const renderScoreboardBlock = () => (
+      <div style={{ marginTop: 10 }}>
+        <div style={pillLabel}>{language === 'en' ? 'Scoreboard' : language === 'both' ? 'Scoreboard / Punkte' : 'Scoreboard'}</div>
+        <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
+          {sortedScoreboard.length === 0 && (
+            <div style={{ ...mutedText, textAlign: 'center' }}>
+              {language === 'en' ? 'No teams yet.' : language === 'both' ? 'Noch keine Teams / No teams yet.' : 'Noch keine Teams.'}
+            </div>
+          )}
+          {sortedScoreboard.map((entry, idx) => (
+            <div
+              key={`potato-score-${entry.id}`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(2,6,23,0.6)'
+              }}
+            >
+              <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+              <span>{entry.name}</span>
+              <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+    const renderThemes = () => (
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {selectedThemes.map((theme, idx) => {
+          const done = potatoState.roundIndex >= idx;
+          const current = potatoState.roundIndex === idx;
+          return (
+            <span
+              key={`potato-theme-${idx}`}
+              style={{
+                ...pillSmall,
+                background: current ? 'rgba(251,191,36,0.18)' : done ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.06)',
+                border: current
+                  ? '1px solid rgba(251,191,36,0.45)'
+                  : done
+                  ? '1px solid rgba(34,197,94,0.35)'
+                  : '1px solid rgba(255,255,255,0.12)',
+                color: '#e2e8f0'
+              }}
+            >
+              {theme}
+            </span>
+          );
+        })}
+        {selectedThemes.length === 0 && <span style={{ ...mutedText }}>{language === 'en' ? 'Themes pending...' : 'Themen folgen...'}</span>}
+      </div>
+    );
+    const renderLives = () => (
+      <div style={{ display: 'grid', gap: 6 }}>
+        {turnOrder.map((teamId) => {
+          const livesLeft = lives[teamId] ?? (Object.keys(lives).length <= 2 ? 1 : 2);
+          return (
+            <div
+              key={`potato-life-${teamId}`}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 10px',
+                borderRadius: 12,
+                border: teamId === potatoState.activeTeamId ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(15,23,42,0.65)'
+              }}
+            >
+              <span>{scoreboardLookup[teamId]?.name || teamId}</span>
+              <span style={{ fontWeight: 800 }}>{'❤'.repeat(Math.max(1, livesLeft))}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+
+    return (
+      <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
+        <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
+          <span>{heading}</span>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+            {language === 'en' ? 'Round' : 'Runde'} {roundLabel}
+          </span>
+        </div>
+
+        {phase === 'BANNING' && (
+          <>
+            <p style={mutedText}>
+              {language === 'de'
+                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
+                : language === 'both'
+                ? 'Teams bannen Themen / Teams are banning topics.'
+                : 'Teams are banning topics before the final.'}
+            </p>
+            {renderThemes()}
+            <div style={{ display: 'grid', gap: 6 }}>
+              {sortedScoreboard.map((team) => {
+                const limit = banLimits[team.id] ?? 0;
+                return (
+                  <div
+                    key={`ban-${team.id}`}
+                    style={{
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      padding: '8px 10px',
+                      background: 'rgba(2,6,23,0.6)'
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{team.name}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                      {language === 'en' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({limit}):
+                      {' '}
+                      {bans[team.id]?.length ? bans[team.id].join(', ') : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {phase === 'PLAYING' && (
+          <>
+            <div style={{ ...pillLabel, justifyContent: 'flex-start', gap: 8 }}>
+              <span>{language === 'en' ? 'Topic' : language === 'both' ? 'Thema / Topic' : 'Thema'}:</span>
+              <strong>{potatoState.currentTheme || '—'}</strong>
+            </div>
+            <div style={{ fontWeight: 700 }}>
+              {language === 'en' ? 'Active team' : language === 'both' ? 'Team am Zug / Active team' : 'Team am Zug'}:{' '}
+              {activeTeamName || '—'}
+            </div>
+            <div style={{ color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
+              {potatoCountdown !== null
+                ? `${potatoCountdown}s · ${infoCopy}`
+                : infoCopy}
+            </div>
+            {renderLives()}
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'en'
+                ? `${potatoState.usedAnswers?.length || 0} answers already used.`
+                : language === 'both'
+                ? `${potatoState.usedAnswers?.length || 0} Antworten genutzt / answers used.`
+                : `${potatoState.usedAnswers?.length || 0} Antworten bereits genutzt.`}
+            </div>
+          </>
+        )}
+
+        {phase === 'ROUND_END' && (
+          <>
+            <div style={{ fontWeight: 700 }}>
+              {language === 'en'
+                ? 'Round finished'
+                : language === 'both'
+                ? 'Runde beendet / Round finished'
+                : 'Runde beendet'}
+            </div>
+            {lastWinner && (
+              <div style={{ color: '#bbf7d0', fontWeight: 700 }}>
+                {language === 'en' ? 'Winner' : language === 'both' ? 'Sieger / Winner' : 'Sieger'}: {lastWinner}
+              </div>
+            )}
+            {renderThemes()}
+            <p style={mutedText}>
+              {language === 'en'
+                ? 'Host prepares the next round.'
+                : language === 'both'
+                ? 'Host startet gleich die nächste Runde / Host prepares next round.'
+                : 'Host bereitet die nächste Runde vor.'}
+            </p>
+          </>
+        )}
+
+        {phase === 'DONE' && (
+          <div style={{ fontWeight: 700 }}>
+            {language === 'en'
+              ? 'Hot Potato finished. Await the awards!'
+              : language === 'both'
+              ? 'Finale beendet – Awards gleich / Hot Potato finished.'
+              : 'Heisse Kartoffel beendet – Awards gleich!'}
+          </div>
+        )}
+
+        {renderScoreboardBlock()}
+      </div>
+    );
+  };
+
   const renderBingo = () => {
     if (board.length !== 25) return null;
     const show = canMarkBingo || showBingoPanel;
@@ -1107,6 +1459,9 @@ const handleSubmit = async () => {
   );
 
   const renderByPhase = () => {
+    if (gameState === 'POTATO') {
+      return renderPotatoStage();
+    }
     if (showBingoPanel || canMarkBingo) {
       return renderBingo();
     }
@@ -1149,7 +1504,8 @@ const handleSubmit = async () => {
       ? Math.max(0, Math.min(100, (remainingSeconds / timerDuration) * 100))
       : 0;
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
-  const canAnswer = phase === 'answering' && !timeUp;
+  const canAnswer = gameState === 'Q_ACTIVE' && phase === 'answering' && !timeUp;
+  const isLocked = gameState === 'Q_LOCKED';
   const hasTimer = Boolean(
     question &&
     timerEndsAt &&

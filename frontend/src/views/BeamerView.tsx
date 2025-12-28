@@ -9,7 +9,10 @@ import {
   SlotTransitionMeta,
   Team,
   SyncStatePayload,
-  Language
+  Language,
+  StateUpdatePayload,
+  CozyGameState,
+  PotatoState
 } from '@shared/quizTypes';
 import { fetchCurrentQuestion, fetchLanguage, fetchTimer, QuestionMeta } from '../api';
 import { connectToRoom } from '../socket';
@@ -26,6 +29,18 @@ import { loadPlayDraft } from '../utils/draft';
 type Lang = Language;
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
 type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'answer' | 'intro';
+const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
+  switch (state) {
+    case 'INTRO':
+      return 'intro';
+    case 'Q_ACTIVE':
+    case 'Q_LOCKED':
+    case 'Q_REVEAL':
+      return 'question';
+    default:
+      return 'lobby';
+  }
+};
 
 type BeamerProps = { roomCode: string };
 
@@ -190,6 +205,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const slotIntervalMs = (draftTheme as any)?.slotIntervalMs ?? 260;
   const slotScale = (draftTheme as any)?.slotScale ?? 1;
   const [screen, setScreen] = useState<BaseScreen>('lobby');
+  const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [slotMeta, setSlotMeta] = useState<SlotTransitionMeta | null>(null);
   const [slotSequence, setSlotSequence] = useState<QuizCategory[]>([]);
   const [slotOffset, setSlotOffset] = useState(0);
@@ -207,6 +223,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [solution, setSolution] = useState<string | undefined>(undefined);
   const [teams, setTeams] = useState<Team[]>([]);
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
+  const [potato, setPotato] = useState<PotatoState | null>(null);
+  const [potatoTick, setPotatoTick] = useState(0);
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
   const [showLastQuestion, setShowLastQuestion] = useState(true);
   const previousQuestionRef = useRef<AnyQuestion | null>(null);
@@ -344,6 +362,15 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   useEffect(() => {
     connectionStatusRef.current = connectionStatus;
   }, [connectionStatus]);
+
+  useEffect(() => {
+    if (gameState !== 'POTATO') {
+      setPotatoTick(0);
+      return undefined;
+    }
+    const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
+    return () => window.clearInterval(id);
+  }, [gameState]);
 
   useEffect(() => {
     const prev = previousQuestionRef.current;
@@ -490,6 +517,30 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setRemainingMs(0);
       setTimerDurationMs(null);
     });
+    const onStateUpdate = (payload: StateUpdatePayload) => {
+      setGameState(payload.state);
+      setScreen(mapStateToScreenState(payload.state));
+      if (payload.scores?.length) {
+        setTeams(
+          payload.scores.map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            score: entry.score
+          }))
+        );
+      }
+      if (payload.currentQuestion !== undefined) {
+        setQuestion(payload.currentQuestion);
+      }
+      if (payload.timer) {
+        setTimerEndsAt(payload.timer.endsAt);
+        setTimerDurationMs(payload.timer.endsAt ? payload.timer.endsAt - Date.now() : null);
+      }
+      if (payload.potato !== undefined) {
+        setPotato(payload.potato ?? null);
+      }
+    };
+    socket.on('server:stateUpdate', onStateUpdate);
 
     socket.on('languageChanged', ({ language: lang }: { language: Lang }) => {
       setLanguage(lang);
@@ -529,6 +580,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     return () => {
+      socket.off('server:stateUpdate', onStateUpdate);
       socket.disconnect();
     };
   }, [roomCode, language, reconnectNonce]);
@@ -641,6 +693,15 @@ useEffect(() => {
       : screen === 'question'
       ? 'question'
       : 'lobby';
+
+  const isScoreboardState =
+    gameState === 'SCOREBOARD' || gameState === 'SCOREBOARD_PAUSE' || gameState === 'AWARDS';
+  const isPotatoStage = gameState === 'POTATO' && potato;
+  const sortedScoreTeams = [...teams].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const potatoCountdown = useMemo(() => {
+    if (!potato?.deadline) return null;
+    return Math.max(0, Math.ceil((potato.deadline - Date.now()) / 1000));
+  }, [potato?.deadline, potatoTick]);
 
   const activeCategory = categories[highlightedCategoryIndex] ?? categories[0];
   const readyCount = teams.filter((tTeam) => tTeam.isReady).length;
@@ -776,6 +837,276 @@ useEffect(() => {
     );
   };
 
+  const renderScoreboard = () => (
+    <div style={cardFrame}>
+      {/* TODO(DESIGN_LATER): Scoreboard styling */}
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 900,
+          marginBottom: 16,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase'
+        }}
+      >
+        {language === 'de' ? 'Scoreboard' : 'Scoreboard'}
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {sortedScoreTeams.length === 0 && (
+          <div style={{ color: '#94a3b8' }}>
+            {language === 'de' ? 'Noch keine Teams' : 'No teams yet'}
+          </div>
+        )}
+        {sortedScoreTeams.map((team, idx) => (
+          <div
+            key={team.id}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto',
+              gap: 12,
+              alignItems: 'center',
+              padding: '10px 14px',
+              borderRadius: 14,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.25)'
+            }}
+          >
+            <span style={{ fontSize: 18, fontWeight: 800 }}>{idx + 1}.</span>
+            <span style={{ fontSize: 20, fontWeight: 700 }}>{team.name}</span>
+            <span style={{ fontSize: 20, fontWeight: 900 }}>{team.score ?? 0}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  const renderPotatoView = () => {
+    if (!potato) return renderScoreboard();
+    const roundTotal = potato.selectedThemes?.length ?? 0;
+    const roundLabel =
+      roundTotal > 0 && potato.roundIndex >= 0 ? `${potato.roundIndex + 1}/${roundTotal}` : roundTotal > 0 ? `0/${roundTotal}` : '—';
+    const activeTeamName = potato.activeTeamId
+      ? teams.find((t) => t.id === potato.activeTeamId)?.name || potato.activeTeamId
+      : null;
+    const bans = potato.bans || {};
+    const banLimits = potato.banLimits || {};
+    const selectedThemes = potato.selectedThemes || [];
+    const lives = potato.lives || {};
+    const turnOrder = potato.turnOrder.length ? potato.turnOrder : Object.keys(lives);
+    const lastWinner =
+      potato.lastWinnerId && teams.find((t) => t.id === potato.lastWinnerId)
+        ? teams.find((t) => t.id === potato.lastWinnerId)?.name
+        : potato.lastWinnerId || null;
+    const infoCopy =
+      language === 'de'
+        ? 'Max. 5 Sekunden pro Antwort · doppelte Antworten = Strike.'
+        : language === 'both'
+        ? 'Max. 5 Sekunden / max. 5 seconds. Duplicate answers = strike.'
+        : 'Max. 5 seconds per answer · duplicate answers = strike.';
+    return (
+      <div style={cardFrame}>
+        <div
+          style={{
+            borderRadius: 32,
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'linear-gradient(140deg, rgba(13,15,20,0.94), rgba(14,17,27,0.85))',
+            padding: '28px 26px',
+            minHeight: 320,
+            boxShadow: '0 30px 64px rgba(0,0,0,0.55)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 14,
+              flexWrap: 'wrap',
+              gap: 10
+            }}
+          >
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.06em' }}>
+              {language === 'de'
+                ? 'Heisse Kartoffel'
+                : language === 'both'
+                ? 'Heisse Kartoffel / Hot Potato'
+                : 'Hot Potato'}
+            </div>
+            <div style={{ ...pillRule, borderColor: 'rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.12)' }}>
+              Runde {roundLabel}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {potato.phase === 'BANNING' && (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  {language === 'de'
+                    ? 'Teams bannen noch Themen'
+                    : language === 'both'
+                    ? 'Teams bannen Themen / teams ban topics'
+                    : 'Teams are banning topics'}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {selectedThemes.length > 0 ? (
+                    selectedThemes.map((theme, idx) => (
+                      <span key={`beamer-theme-${idx}`} style={{ ...pillRule, fontSize: 14 }}>
+                        {theme}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>
+                      {language === 'de' ? 'Themen werden vorbereitet.' : 'Topics will be drawn soon.'}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {sortedScoreTeams.map((team) => (
+                    <div
+                      key={`ban-show-${team.id}`}
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 16,
+                        padding: '10px 12px',
+                        background: 'rgba(0,0,0,0.35)',
+                        display: 'grid',
+                        gap: 4
+                      }}
+                    >
+                      <div style={{ fontWeight: 800 }}>{team.name}</div>
+                      <div style={{ fontSize: 14, color: '#cbd5e1' }}>
+                        {language === 'de' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({banLimits[team.id] ?? 0}):
+                        {' '}
+                        {bans[team.id]?.length ? bans[team.id].join(', ') : '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {potato.phase === 'PLAYING' && (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>
+                  {language === 'de' ? 'Thema' : language === 'both' ? 'Thema / Topic' : 'Topic'}:{' '}
+                  {potato.currentTheme || '—'}
+                </div>
+                <div style={{ fontSize: 16, color: '#cbd5e1' }}>
+                  {language === 'de'
+                    ? 'Aktives Team'
+                    : language === 'both'
+                    ? 'Team am Zug / Active team'
+                    : 'Active team'}
+                  : {activeTeamName || '—'}
+                </div>
+                <div style={{ fontSize: 16, color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
+                  {potatoCountdown !== null ? `${potatoCountdown}s · ${infoCopy}` : infoCopy}
+                </div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {turnOrder.map((teamId) => (
+                    <div
+                      key={`turn-${teamId}`}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 14,
+                        border:
+                          teamId === potato.activeTeamId
+                            ? '1px solid rgba(251,191,36,0.45)'
+                            : '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(0,0,0,0.35)'
+                      }}
+                    >
+                      <span style={{ fontWeight: 700 }}>{teams.find((t) => t.id === teamId)?.name || teamId}</span>
+                      <span style={{ fontWeight: 800 }}>{'❤'.repeat(Math.max(1, lives[teamId] ?? 0))}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 14, color: '#94a3b8' }}>
+                  {language === 'de'
+                    ? `${potato.usedAnswers?.length || 0} Antworten wurden schon genannt.`
+                    : language === 'both'
+                    ? `${potato.usedAnswers?.length || 0} Antworten wurden genannt / answers used.`
+                    : `${potato.usedAnswers?.length || 0} answers already used.`}
+                </div>
+              </>
+            )}
+            {potato.phase === 'ROUND_END' && (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>
+                  {language === 'de'
+                    ? 'Runde beendet'
+                    : language === 'both'
+                    ? 'Runde beendet / Round finished'
+                    : 'Round finished'}
+                </div>
+                {lastWinner && (
+                  <div style={{ fontSize: 18, color: '#bbf7d0', fontWeight: 800 }}>
+                    {language === 'de' ? 'Sieger' : language === 'both' ? 'Sieger / Winner' : 'Winner'}: {lastWinner}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {selectedThemes.map((theme, idx) => (
+                    <span
+                      key={`done-theme-${idx}`}
+                      style={{
+                        ...pillRule,
+                        background: idx <= potato.roundIndex ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.08)',
+                        borderColor: idx <= potato.roundIndex ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.14)'
+                      }}
+                    >
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ fontSize: 16, color: '#cbd5e1' }}>
+                  {language === 'de'
+                    ? 'Moderator startet gleich die nächste Runde.'
+                    : language === 'both'
+                    ? 'Moderator startet gleich / Host starts next round soon.'
+                    : 'Host will start the next round soon.'}
+                </div>
+              </>
+            )}
+            {potato.phase === 'DONE' && (
+              <div style={{ fontSize: 20, fontWeight: 800 }}>
+                {language === 'de'
+                  ? 'Finale abgeschlossen. Awards folgen!'
+                  : language === 'both'
+                  ? 'Finale abgeschlossen / Final complete.'
+                  : 'Final complete. Awards incoming.'}
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 18 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>
+              {language === 'de' ? 'Scoreboard' : 'Scoreboard'}
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {sortedScoreTeams.map((team, idx) => (
+                <div
+                  key={`score-potato-${team.id}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    gap: 12,
+                    padding: '10px 12px',
+                    borderRadius: 16,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(0,0,0,0.4)'
+                  }}
+                >
+                  <span style={{ fontWeight: 900 }}>{idx + 1}.</span>
+                  <span style={{ fontWeight: 700 }}>{team.name}</span>
+                  <span style={{ fontWeight: 900 }}>{team.score ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main style={pageStyle}>
       {offlineBar(connectionStatus, language)}
@@ -819,7 +1150,6 @@ useEffect(() => {
             )}
           </span>
         </div>
-        {viewMode === 'intro' && renderIntro()}
         {connectionStuck && (
           <div
             style={{
@@ -837,73 +1167,82 @@ useEffect(() => {
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
-        {viewMode === 'lobby' && (
-          <BeamerLobbyView
-            t={t}
-            language={language}
-            roomCode={roomCode}
-            readyCount={readyCount}
-            teamsCount={teams.length || 0}
-            categories={categories}
-            highlightedCategoryIndex={highlightedCategoryIndex}
-            categoryColors={categoryColors}
-            categoryIcons={categoryIcons}
-            categoryProgress={categoryProgress}
-            categoryTotals={categoryTotals}
-            getCategoryLabel={getCategoryLabel}
-            getCategoryDescription={getCategoryDescription}
-          />
-        )}
+        {isPotatoStage ? (
+          renderPotatoView()
+        ) : isScoreboardState ? (
+          renderScoreboard()
+        ) : (
+          <>
+            {viewMode === 'intro' && renderIntro()}
+            {viewMode === 'lobby' && (
+              <BeamerLobbyView
+                t={t}
+                language={language}
+                roomCode={roomCode}
+                readyCount={readyCount}
+                teamsCount={teams.length || 0}
+                categories={categories}
+                highlightedCategoryIndex={highlightedCategoryIndex}
+                categoryColors={categoryColors}
+                categoryIcons={categoryIcons}
+                categoryProgress={categoryProgress}
+                categoryTotals={categoryTotals}
+                getCategoryLabel={getCategoryLabel}
+                getCategoryDescription={getCategoryDescription}
+              />
+            )}
 
-        {viewMode === 'categorySlot' && slotMeta && (
-          <div style={cardFrame}>
-            <BeamerSlotView
-              t={t}
-              language={language}
-              slotMeta={slotMeta}
-              categories={categories}
-              categoryColors={categoryColors}
-              categoryIcons={categoryIcons}
-              slotSequence={slotSequence}
-              slotOffset={slotOffset}
-              slotRolling={slotRolling}
-              exiting={slotExiting}
-              getCategoryLabel={getCategoryLabel}
-              getCategoryDescription={getCategoryDescription}
-              spinIntervalMs={slotIntervalMs}
-              totalSpinMs={slotSpinMs}
-              scale={slotScale}
-            />
-          </div>
-        )}
+            {viewMode === 'categorySlot' && slotMeta && (
+              <div style={cardFrame}>
+                <BeamerSlotView
+                  t={t}
+                  language={language}
+                  slotMeta={slotMeta}
+                  categories={categories}
+                  categoryColors={categoryColors}
+                  categoryIcons={categoryIcons}
+                  slotSequence={slotSequence}
+                  slotOffset={slotOffset}
+                  slotRolling={slotRolling}
+                  exiting={slotExiting}
+                  getCategoryLabel={getCategoryLabel}
+                  getCategoryDescription={getCategoryDescription}
+                  spinIntervalMs={slotIntervalMs}
+                  totalSpinMs={slotSpinMs}
+                  scale={slotScale}
+                />
+              </div>
+            )}
 
-        {(viewMode === 'question' || viewMode === 'calculating' || viewMode === 'answer') && (
-          <div
-            style={{
-              ...cardFrame,
-              opacity: questionFlyIn ? 0 : 1,
-              transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
-              transition: 'opacity 420ms ease, transform 420ms ease'
-            }}
-          >
-            <BeamerQuestionView
-              showCalculating={showCalculating}
-              showAnswer={showAnswer}
-              categoryLabel={categoryLabel}
-              questionMeta={questionMeta}
-              timerText={timerText}
-              progress={progress}
-              hasTimer={Boolean(timerEndsAt)}
-              question={question}
-              questionText={questionText}
-              t={t}
-              solution={solution}
-              footerMeta={footerMeta}
-              cardColor={cardColor}
-              leftDecorationSrc={leftDecorationSrc}
-              rightDecorationSrc={rightDecorationSrc}
-            />
-          </div>
+            {(viewMode === 'question' || viewMode === 'calculating' || viewMode === 'answer') && (
+              <div
+                style={{
+                  ...cardFrame,
+                  opacity: questionFlyIn ? 0 : 1,
+                  transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
+                  transition: 'opacity 420ms ease, transform 420ms ease'
+                }}
+              >
+                <BeamerQuestionView
+                  showCalculating={showCalculating}
+                  showAnswer={showAnswer}
+                  categoryLabel={categoryLabel}
+                  questionMeta={questionMeta}
+                  timerText={timerText}
+                  progress={progress}
+                  hasTimer={Boolean(timerEndsAt)}
+                  question={question}
+                  questionText={questionText}
+                  t={t}
+                  solution={solution}
+                  footerMeta={footerMeta}
+                  cardColor={cardColor}
+                  leftDecorationSrc={leftDecorationSrc}
+                  rightDecorationSrc={rightDecorationSrc}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
       {lastQuestion && showLastQuestion && (

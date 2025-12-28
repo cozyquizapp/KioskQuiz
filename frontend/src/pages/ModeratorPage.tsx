@@ -3,8 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   fetchCurrentQuestion,
   fetchQuestions,
-  startNextQuestion,
-  revealAnswers,
   startTimer,
   stopTimer,
   setLanguage,
@@ -32,6 +30,7 @@ import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
 import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
 import { loadPlayDraft } from '../utils/draft';
+import { connectControlSocket } from '../socket';
 
 type AnswersState = {
   answers: Record<string, (AnswerEntry & { answer?: unknown })>;
@@ -120,7 +119,12 @@ const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span 
 
 const ModeratorPage: React.FC = () => {
   const draftTheme = loadPlayDraft()?.theme;
-  const [roomCode, setRoomCode] = useState('MAIN');
+  const getStoredRoom = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('moderatorRoom') || '';
+  };
+  const [roomCode, setRoomCode] = useState<string>(() => getStoredRoom());
+  const [roomInput, setRoomInput] = useState<string>(() => getStoredRoom());
   const [language, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('moderatorLanguage');
     return saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
@@ -139,18 +143,26 @@ const ModeratorPage: React.FC = () => {
   const [viewPhase, setViewPhase] = useState<ViewPhase>('pre');
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
+  const [potatoThemeInput, setPotatoThemeInput] = useState('');
+  const [potatoBanDrafts, setPotatoBanDrafts] = useState<Record<string, string>>({});
+  const [potatoAnswerInput, setPotatoAnswerInput] = useState('');
+  const [potatoWinnerDraft, setPotatoWinnerDraft] = useState('');
+  const [potatoTick, setPotatoTick] = useState(0);
   const lastReportedQuestionId = React.useRef<string | null>(null);
   const [slotHoldMs, setSlotHoldMs] = useState(2400);
   const [slotExitMs, setSlotExitMs] = useState(1200);
   const [actionState, setActionState] = useState<{
     quiz: boolean;
     next: boolean;
+    lock: boolean;
     timerStart: boolean;
     timerStop: boolean;
     reveal: boolean;
-  }>({ quiz: false, next: false, timerStart: false, timerStop: false, reveal: false });
+  }>({ quiz: false, next: false, lock: false, timerStart: false, timerStop: false, reveal: false });
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>('');
+  const [creatingSession, setCreatingSession] = useState(false);
+  const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const {
     currentQuestion: socketQuestion,
     questionMeta: socketMeta,
@@ -158,6 +170,8 @@ const ModeratorPage: React.FC = () => {
     teams: socketTeams,
     solution: socketSolution,
     questionPhase: socketQuestionPhase,
+    scores: socketScores,
+    potato,
     emit: socketEmit
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
@@ -165,15 +179,30 @@ const ModeratorPage: React.FC = () => {
     setViewPhase(phase);
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('roomCode');
+    if (code) {
+      setRoomCode(code.toUpperCase());
+      setRoomInput(code.toUpperCase());
+    }
+  }, []);
+
+  useEffect(() => {
+    const socket = connectControlSocket();
+    controlSocketRef.current = socket;
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   // Load initial question + question list (for meta)
   useEffect(() => {
-    const saved = localStorage.getItem('moderatorRoom');
     const savedQuiz = localStorage.getItem('moderatorSelectedQuiz');
     const savedLang = localStorage.getItem('moderatorLanguage');
-    if (saved) setRoomCode(saved);
-    if (savedQuiz) setSelectedQuiz(savedQuiz);
-    if (savedLang === 'de' || savedLang === 'en') setLang(savedLang);
-    // preload quizzes (default + published)
+    if (savedLang === 'de' || savedLang === 'en' || savedLang === 'both') setLang(savedLang);
+    if (savedQuiz) setSelectedQuiz((prev) => prev || savedQuiz);
     const loadQuizzes = async () => {
       try {
         const [res, pub] = await Promise.all([fetchQuizzes(), listPublishedQuizzes().catch(() => ({ quizzes: [] }))]);
@@ -182,16 +211,19 @@ const ModeratorPage: React.FC = () => {
           ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds }))
         ];
         setQuizzes(merged);
-        if (merged.length && !selectedQuiz) {
-          const fallback = savedQuiz && merged.find((q) => q.id === savedQuiz)?.id;
-          setSelectedQuiz(fallback || merged[0].id);
+        if (merged.length) {
+          setSelectedQuiz((prev) => {
+            if (prev) return prev;
+            const fallback = savedQuiz && merged.find((q) => q.id === savedQuiz)?.id;
+            return fallback || merged[0].id;
+          });
         }
       } catch {
         // ignore
       }
     };
     loadQuizzes();
-  }, [selectedQuiz]);
+  }, []);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -270,6 +302,12 @@ const ModeratorPage: React.FC = () => {
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
+    return () => window.clearInterval(id);
+  }, []);
+
   const doAction = async (fn: () => Promise<any>, msg?: string) => {
     try {
       await fn();
@@ -281,9 +319,198 @@ const ModeratorPage: React.FC = () => {
     }
   };
 
+  const handleRoomConnect = () => {
+    const code = roomInput.trim().toUpperCase();
+    if (!code) {
+      setToast('Roomcode fehlt');
+      return;
+    }
+    setRoomCode(code);
+    localStorage.setItem('moderatorRoom', code);
+  };
+
+  const handleCreateSession = () => {
+    if (!selectedQuiz) {
+      setToast('Bitte zuerst ein Quiz auswählen');
+      return;
+    }
+    const socket = controlSocketRef.current;
+    if (!socket) return;
+    setCreatingSession(true);
+    socket.emit(
+      'host:createSession',
+      { quizId: selectedQuiz, language },
+      (resp?: { ok: boolean; roomCode?: string; error?: string }) => {
+        setCreatingSession(false);
+        if (!resp?.ok || !resp.roomCode) {
+          setToast(resp?.error || 'Session konnte nicht erstellt werden');
+          return;
+        }
+        setRoomCode(resp.roomCode);
+        setRoomInput(resp.roomCode);
+        localStorage.setItem('moderatorRoom', resp.roomCode);
+      }
+    );
+  };
+
+  const sendHostCommand = (
+    eventName: 'host:next' | 'host:lock' | 'host:reveal',
+    onSuccess?: () => void
+  ) => {
+    if (!roomCode) {
+      setToast('Kein aktiver Roomcode');
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      return;
+    }
+    const keyMap = {
+      'host:next': 'next',
+      'host:lock': 'lock',
+      'host:reveal': 'reveal'
+    } as const;
+    const key = keyMap[eventName];
+    setActionState((prev) => ({ ...prev, [key]: true }));
+    socketEmit(eventName, { roomCode }, (resp?: { ok: boolean; error?: string }) => {
+      setActionState((prev) => ({ ...prev, [key]: false }));
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        return;
+      }
+      onSuccess?.();
+    });
+  };
+
+  const handleNextQuestion = () => {
+    sendHostCommand('host:next', async () => {
+      await loadCurrentQuestion();
+      await loadAnswers();
+    });
+  };
+
+  const handleLockQuestion = () => {
+    sendHostCommand('host:lock', async () => {
+      await loadAnswers();
+    });
+  };
+
+  const handleReveal = () => {
+    sendHostCommand('host:reveal', async () => {
+      await loadAnswers();
+    });
+  };
+
+  const emitPotatoEvent = (
+    eventName:
+      | 'host:startPotato'
+      | 'host:banPotatoTheme'
+      | 'host:confirmPotatoThemes'
+      | 'host:potatoStartRound'
+      | 'host:potatoSubmitTurn'
+      | 'host:potatoStrikeActive'
+      | 'host:potatoNextTurn'
+      | 'host:potatoEndRound'
+      | 'host:potatoNextRound'
+      | 'host:potatoFinish',
+    payload?: Record<string, unknown>,
+    onSuccess?: () => void
+  ) => {
+    if (!roomCode) {
+      setToast('Roomcode fehlt');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+        return;
+      }
+      onSuccess?.();
+    });
+  };
+
+  const handlePotatoStart = () => {
+    const text = potatoThemeInput.trim();
+    emitPotatoEvent(
+      'host:startPotato',
+      text ? { themesText: text } : {},
+      () => setPotatoThemeInput('')
+    );
+  };
+
+  const handlePotatoBan = (teamId: string) => {
+    const selection = (potatoBanDrafts[teamId] || '').trim();
+    if (!selection) {
+      setToast('Bitte zuerst ein Thema auswählen');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitPotatoEvent('host:banPotatoTheme', { teamId, theme: selection }, () =>
+      setPotatoBanDrafts((prev) => ({ ...prev, [teamId]: '' }))
+    );
+  };
+
+  const handlePotatoConfirmThemes = () => emitPotatoEvent('host:confirmPotatoThemes');
+  const handlePotatoStartRound = () => emitPotatoEvent('host:potatoStartRound');
+  const handlePotatoNextRound = () => emitPotatoEvent('host:potatoNextRound');
+  const handlePotatoFinish = () => emitPotatoEvent('host:potatoFinish');
+  const handlePotatoNextTurn = () => emitPotatoEvent('host:potatoNextTurn');
+  const handlePotatoStrike = () => emitPotatoEvent('host:potatoStrikeActive');
+  const handlePotatoEndRound = () =>
+    emitPotatoEvent(
+      'host:potatoEndRound',
+      potatoWinnerDraft ? { winnerId: potatoWinnerDraft } : {},
+      () => setPotatoWinnerDraft('')
+    );
+
+  const handlePotatoSubmit = (verdict: 'correct' | 'strike') => {
+    if (verdict === 'correct') {
+      const trimmed = potatoAnswerInput.trim();
+      if (!trimmed) {
+        setToast('Antwort fehlt');
+        setTimeout(() => setToast(null), 2000);
+        return;
+      }
+      emitPotatoEvent(
+        'host:potatoSubmitTurn',
+        { verdict, answer: trimmed },
+        () => setPotatoAnswerInput('')
+      );
+      return;
+    }
+    emitPotatoEvent('host:potatoSubmitTurn', { verdict });
+  };
+
   const answersCount = Object.keys(answers?.answers || {}).length;
   const teamsCount = Object.keys(answers?.teams || {}).length;
   const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
+  const scoreboard = useMemo(
+    () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
+    [socketScores]
+  );
+  const teamLookup = useMemo(() => {
+    const map: Record<string, { name: string; score: number }> = {};
+    scoreboard.forEach((entry) => {
+      map[entry.id] = { name: entry.name, score: entry.score ?? 0 };
+    });
+    Object.entries(answers?.teams || {}).forEach(([id, team]) => {
+      map[id] = { name: team?.name ?? map[id]?.name ?? 'Team', score: map[id]?.score ?? (team as any)?.score ?? 0 };
+    });
+    return map;
+  }, [answers, scoreboard]);
+  const potatoDeadline = potato?.deadline ?? null;
+  const potatoTimeLeft = useMemo(() => {
+    if (!potatoDeadline) return null;
+    return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
+  }, [potatoDeadline, potatoTick]);
+  const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
 
   const numericStats = useMemo(() => {
     if (!answers) return null;
@@ -403,8 +630,427 @@ const ModeratorPage: React.FC = () => {
       doAction={doAction}
       setToast={setToast}
       primaryColor={draftTheme?.color}
+      onNext={handleNextQuestion}
+      onLock={handleLockQuestion}
+      onReveal={handleReveal}
     />
   );
+
+  const renderPotatoControls = () => {
+    const shouldShow =
+      Boolean(roomCode) && (potato || (meta?.globalIndex ?? 0) >= 19 || scoreboard.length > 0);
+    if (!shouldShow) return null;
+    const phase = potato?.phase ?? 'IDLE';
+    const selectedThemes = potato?.selectedThemes ?? [];
+    const banLimits = potato?.banLimits ?? {};
+    const bans = potato?.bans ?? {};
+    const pool = potato?.pool ?? [];
+    const lives = potato?.lives ?? {};
+    const turnOrder = potato?.turnOrder ?? [];
+    const usedAnswers = potato?.usedAnswers ?? [];
+    const isRoundEnd = phase === 'ROUND_END';
+    const isPlaying = phase === 'PLAYING';
+    const isBanning = phase === 'BANNING';
+    const roundsPlayed = potato?.roundIndex ?? -1;
+    const firstRoundPending = isRoundEnd && roundsPlayed < 0;
+    const allRoundsComplete =
+      isRoundEnd && potatoRoundsTotal > 0 && roundsPlayed >= potatoRoundsTotal - 1;
+    const activeTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato.activeTeamId : null;
+    const lastWinnerName = potato?.lastWinnerId ? teamLookup[potato.lastWinnerId]?.name || potato.lastWinnerId : null;
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        {/* TODO(DESIGN_LATER): polish potato admin layout */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            flexWrap: 'wrap'
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Finale · Heisse Kartoffel</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              Phase: {phase}{' '}
+              {potatoRoundsTotal > 0 && `| Runde ${(roundsPlayed >= 0 ? roundsPlayed + 1 : 0)}/${potatoRoundsTotal}`}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {potatoTimeLeft !== null && isPlaying && (
+              <span
+                style={{
+                  ...statChip,
+                  borderColor: 'rgba(248,113,113,0.45)',
+                  color: '#fecaca',
+                  background: 'rgba(248,113,113,0.12)'
+                }}
+              >
+                Restzeit {potatoTimeLeft}s
+              </span>
+            )}
+            {selectedThemes.length > 0 && (
+              <span style={{ ...statChip, background: 'rgba(255,255,255,0.08)' }}>
+                Themen: {selectedThemes.join(', ')}
+              </span>
+            )}
+      </div>
+    </div>
+
+        <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+          {!potato && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ color: '#94a3b8', fontSize: 13 }}>
+                Nach Frage 20 kannst du hier die Heisse Kartoffel starten. Optional kannst du eigene Themen (eine pro Zeile)
+                einfügen, sonst nutzen wir das Standard-Set.
+              </div>
+              <textarea
+                value={potatoThemeInput}
+                onChange={(e) => setPotatoThemeInput(e.target.value)}
+                style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                placeholder="Optional: Eigene Themen pro Zeile"
+              />
+              <button
+                style={{
+                  ...inputStyle,
+                  background: 'linear-gradient(135deg, #fbbf24, #fb923c)',
+                  border: '1px solid rgba(251,146,60,0.5)',
+                  color: '#1f1305',
+                  cursor: 'pointer'
+                }}
+                onClick={handlePotatoStart}
+              >
+                FINAL: HEISSE KARTOFFEL STARTEN
+              </button>
+            </div>
+          )}
+
+          {potato && isBanning && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ fontWeight: 700 }}>Bans setzen · {pool.length} Themen noch frei</div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  flexWrap: 'wrap',
+                  fontSize: 12,
+                  color: '#cbd5e1'
+                }}
+              >
+                {pool.map((theme) => (
+                  <span key={theme} style={statChip}>
+                    {theme}
+                  </span>
+                ))}
+                {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen mehr verfügbar</span>}
+              </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {scoreboard.map((team) => {
+                  const limit = banLimits[team.id] ?? 0;
+                  if (limit <= 0) {
+                    return (
+                      <div
+                        key={team.id}
+                        style={{
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 12,
+                          padding: 10,
+                          opacity: 0.6
+                        }}
+                      >
+                        <div style={{ fontWeight: 700 }}>{team.name}</div>
+                        <div style={{ fontSize: 12, color: '#94a3b8' }}>Keine Bans für dieses Team</div>
+                      </div>
+                    );
+                  }
+                  const used = bans[team.id]?.length ?? 0;
+                  const exhausted = used >= limit;
+                  return (
+                    <div
+                      key={team.id}
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 12,
+                        padding: 10,
+                        display: 'grid',
+                        gap: 6
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 700 }}>{team.name}</div>
+                        <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                          {used}/{limit} genutzt
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                        Bans: {bans[team.id]?.join(', ') || '—'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <select
+                          value={potatoBanDrafts[team.id] ?? ''}
+                          onChange={(e) =>
+                            setPotatoBanDrafts((prev) => ({ ...prev, [team.id]: e.target.value }))
+                          }
+                          disabled={exhausted || pool.length === 0}
+                          style={{ ...inputStyle, flex: '1 1 220px', minWidth: 180 }}
+                        >
+                          <option value="">Thema wählen</option>
+                          {pool.map((theme) => (
+                            <option key={`${team.id}-${theme}`} value={theme}>
+                              {theme}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          style={{
+                            ...inputStyle,
+                            width: 'auto',
+                            background: exhausted ? 'rgba(15,23,42,0.35)' : 'rgba(37,99,235,0.2)',
+                            border: '1px solid rgba(96,165,250,0.5)',
+                            color: '#bfdbfe',
+                            cursor: exhausted ? 'not-allowed' : 'pointer'
+                          }}
+                          disabled={exhausted}
+                          onClick={() => handlePotatoBan(team.id)}
+                        >
+                          Bann setzen
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                style={{
+                  ...inputStyle,
+                  width: 'auto',
+                  background: 'rgba(59,130,246,0.18)',
+                  border: '1px solid rgba(59,130,246,0.4)',
+                  color: '#bfdbfe',
+                  cursor: 'pointer'
+                }}
+                onClick={handlePotatoConfirmThemes}
+              >
+                Themen auslosen und Reihenfolge festlegen
+              </button>
+            </div>
+          )}
+
+          {potato && isPlaying && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ fontWeight: 700 }}>
+                Runde {Math.max(1, roundsPlayed + 1)} / {Math.max(1, potatoRoundsTotal)} · Thema:{' '}
+                {potato.currentTheme || 'n/a'}
+              </div>
+              <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                Aktives Team: {activeTeamName || '—'} · Used Answers: {usedAnswers.length}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {turnOrder.map((teamId) => (
+                  <span
+                    key={teamId}
+                    style={{
+                      ...statChip,
+                      background: teamId === potato.activeTeamId ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
+                      borderColor: teamId === potato.activeTeamId ? 'rgba(129,140,248,0.45)' : 'rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    {teamLookup[teamId]?.name || teamId} · Leben {lives[teamId] ?? '-'}
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  value={potatoAnswerInput}
+                  onChange={(e) => setPotatoAnswerInput(e.target.value)}
+                  placeholder="Antwort des Teams"
+                  style={{ ...inputStyle, flex: '1 1 220px', minWidth: 200 }}
+                />
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'rgba(34,197,94,0.18)',
+                    border: '1px solid rgba(34,197,94,0.45)',
+                    color: '#bbf7d0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handlePotatoSubmit('correct')}
+                >
+                  Antwort OK
+                </button>
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'rgba(239,68,68,0.18)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    color: '#fecdd3',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handlePotatoSubmit('strike')}
+                >
+                  Strike
+                </button>
+                <button
+                  style={{ ...inputStyle, width: 'auto' }}
+                  onClick={handlePotatoNextTurn}
+                >
+                  Nächster Zug
+                </button>
+                <button
+                  style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.18)' }}
+                  onClick={handlePotatoStrike}
+                >
+                  Leben -1
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select
+                  value={potatoWinnerDraft}
+                  onChange={(e) => setPotatoWinnerDraft(e.target.value)}
+                  style={{ ...inputStyle, flex: '1 1 200px', minWidth: 180 }}
+                >
+                  <option value="">Sieger wählen (optional)</option>
+                  {turnOrder.map((teamId) => (
+                    <option key={`winner-${teamId}`} value={teamId}>
+                      {teamLookup[teamId]?.name || teamId}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #fcd34d, #f97316)',
+                    color: '#1f1305',
+                    cursor: 'pointer'
+                  }}
+                  onClick={handlePotatoEndRound}
+                >
+                  Runde abschließen (+3 Punkte)
+                </button>
+              </div>
+              {usedAnswers.length > 0 && (
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                  Letzte Antworten: {usedAnswers.slice(-5).join(', ')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {potato && isRoundEnd && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ fontWeight: 700 }}>
+                {firstRoundPending
+                  ? 'Bans erledigt · Themes bereit.'
+                  : allRoundsComplete
+                  ? 'Alle Runden abgeschlossen.'
+                  : `Runde ${roundsPlayed + 1} beendet.`}
+              </div>
+              {lastWinnerName && (
+                <div style={{ fontSize: 12, color: '#cbd5e1' }}>Sieger Runde: {lastWinnerName}</div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {selectedThemes.map((theme, idx) => {
+                  const done = idx <= roundsPlayed;
+                  return (
+                    <span
+                      key={`theme-${theme}-${idx}`}
+                      style={{
+                        ...statChip,
+                        background: done ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.05)',
+                        borderColor: done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'
+                      }}
+                    >
+                      {theme}
+                    </span>
+                  );
+                })}
+                {selectedThemes.length === 0 && (
+                  <span style={{ color: '#94a3b8', fontSize: 12 }}>Noch keine Themen ausgewählt</span>
+                )}
+              </div>
+              {firstRoundPending && (
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #93c5fd, #3b82f6)',
+                    color: '#0b1020',
+                    cursor: 'pointer'
+                  }}
+                  onClick={handlePotatoStartRound}
+                >
+                  Runde 1 starten
+                </button>
+              )}
+              {!firstRoundPending && !allRoundsComplete && (
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #6ee7b7, #3b82f6)',
+                    color: '#0b1020',
+                    cursor: 'pointer'
+                  }}
+                  onClick={handlePotatoNextRound}
+                >
+                  Nächste Runde starten
+                </button>
+              )}
+              {allRoundsComplete && (
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #fcd34d, #f97316)',
+                    color: '#1f1305',
+                    cursor: 'pointer'
+                  }}
+                  onClick={handlePotatoFinish}
+                >
+                  Finale abschließen · weiter zu Awards
+                </button>
+              )}
+            </div>
+          )}
+
+          {potato && potato.phase === 'DONE' && (
+            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+              Heisse Kartoffel abgeschlossen. Warte auf Awards oder wechsle zum Scoreboard.
+            </div>
+          )}
+        </div>
+
+        {scoreboard.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Scoreboard</div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {scoreboard.map((entry, idx) => (
+                <div
+                  key={`potato-score-${entry.id}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(0,0,0,0.3)'
+                  }}
+                >
+                  <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+                  <span>{entry.name}</span>
+                  <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  };
 
   return (
     <main
@@ -465,7 +1111,57 @@ const ModeratorPage: React.FC = () => {
                   {pill(phaseLabel, 'setup')}
                 </div>
               </div>
-              <input value={roomCode} onChange={(e) => setRoomCode(e.target.value)} style={inputStyle} />
+              <div style={{ display: 'grid', gap: 6 }}>
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>Aktueller Roomcode</div>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 24,
+                    letterSpacing: '0.3em',
+                    border: '1px dashed rgba(255,255,255,0.12)',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    textAlign: 'center'
+                  }}
+                >
+                  {roomCode || '----'}
+                </div>
+              </div>
+              <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                {/* TODO(DESIGN_LATER): Replace this utilitarian block with proper setup UI */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    value={roomInput}
+                    onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                    placeholder="Roomcode eingeben"
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <button
+                    style={{
+                      ...inputStyle,
+                      width: 'auto',
+                      background: 'rgba(255,255,255,0.08)',
+                      cursor: 'pointer'
+                    }}
+                    onClick={handleRoomConnect}
+                  >
+                    Verbinden
+                  </button>
+                </div>
+                <button
+                  style={{
+                    ...inputStyle,
+                    background: 'linear-gradient(135deg, #fde68a, #f97316)',
+                    color: '#1f1105',
+                    cursor: creatingSession ? 'wait' : 'pointer',
+                    opacity: creatingSession ? 0.7 : 1
+                  }}
+                  disabled={creatingSession || !selectedQuiz}
+                  onClick={handleCreateSession}
+                >
+                  {creatingSession ? 'Session wird erstellt ...' : 'Neue Session starten'}
+                </button>
+              </div>
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <select
                 value={language}
@@ -489,7 +1185,13 @@ const ModeratorPage: React.FC = () => {
                     border: '1px solid rgba(99,229,255,0.5)',
                     boxShadow: '0 18px 38px rgba(96,165,250,0.35)'
                   }}
-                  onClick={() => doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt')}
+                  onClick={() => {
+                    if (!roomCode) {
+                      setToast('Roomcode fehlt');
+                      return;
+                    }
+                    doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt');
+                  }}
                 >
                   Sprache setzen
                 </button>
@@ -655,11 +1357,13 @@ const ModeratorPage: React.FC = () => {
               )}
             </div>
           )}
-        </div>
       </div>
+    </div>
 
-      {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}
-      {toast && (
+    {renderPotatoControls()}
+
+    {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}
+    {toast && (
         <div
           style={{
             position: 'fixed',

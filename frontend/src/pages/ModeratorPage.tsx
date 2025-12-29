@@ -183,6 +183,7 @@ function ModeratorPage(): React.ReactElement {
   const [selectedQuiz, setSelectedQuiz] = useState<string>('');
   const [creatingSession, setCreatingSession] = useState(false);
   const [showJoinScreen, setShowJoinScreen] = useState(false);
+  const [showSessionSetup, setShowSessionSetup] = useState(false);
 
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const {
@@ -522,11 +523,7 @@ function ModeratorPage(): React.ReactElement {
   };
   const handleRoomReset = () => {
     if (SINGLE_SESSION_MODE) {
-      setRoomCode(DEFAULT_ROOM_CODE);
-      setRoomInput(DEFAULT_ROOM_CODE);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
-      }
+      setShowSessionSetup(true);
       setShowJoinScreen(false);
       return;
     }
@@ -558,6 +555,7 @@ function ModeratorPage(): React.ReactElement {
         setRoomInput(nextCode);
         localStorage.setItem('moderatorRoom', nextCode);
         setShowJoinScreen(true);
+        setShowSessionSetup(false);
       }
     );
   };
@@ -2378,7 +2376,7 @@ const renderCozyStagePanel = () => {
               )}
             </div>
           </div>
-          {roomCode ? (
+          {roomCode && !showSessionSetup ? (
             <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={statChip}>Sprache: {language.toUpperCase()}</span>
               <button
@@ -2429,20 +2427,22 @@ const renderCozyStagePanel = () => {
           ) : (
             <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
               {/* TODO(DESIGN_LATER): separate Session-Setup screen */}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <input
-                  value={roomInput}
-                  onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                  placeholder="Roomcode eingeben"
-                  style={{ ...inputStyle, flex: 1 }}
-                />
-                <button
-                  style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
-                  onClick={handleRoomConnect}
-                >
-                  Verbinden
-                </button>
-              </div>
+              {(!SINGLE_SESSION_MODE || !roomCode) && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    value={roomInput}
+                    onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                    placeholder="Roomcode eingeben"
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <button
+                    style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                    onClick={handleRoomConnect}
+                  >
+                    Verbinden
+                  </button>
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <select
                   value={selectedQuiz}
@@ -2485,6 +2485,19 @@ const renderCozyStagePanel = () => {
                 >
                   {creatingSession ? 'Session wird erstellt ...' : 'Neue Session starten'}
                 </button>
+                {roomCode && (
+                  <button
+                    style={{
+                      ...inputStyle,
+                      width: 'auto',
+                      background: 'rgba(255,255,255,0.04)',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setShowSessionSetup(false)}
+                  >
+                    Abbrechen
+                  </button>
+                )}
               </div>
             </div>
           )}

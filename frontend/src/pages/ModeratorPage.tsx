@@ -2251,7 +2251,7 @@ const renderCozyStagePanel = () => {
     const beamerDisplay = beamerLink ? beamerLink.replace(/^https?:\/\//i, '') : '';
     const teamQr = teamLink ? buildQrUrl(teamLink) : '';
     const beamerQr = beamerLink ? buildQrUrl(beamerLink) : '';
-    const connected = teamsConnected ?? joinScreenTeams.length;
+    const connected = socketTeamsConnected ?? joinScreenTeams.length;
     return (
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>

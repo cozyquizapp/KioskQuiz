@@ -77,6 +77,99 @@ export interface MediaBlock {
   alt?: string;
 }
 
+export type CozyQuestionType = 'MU_CHO' | 'SCHAETZCHEN' | 'STIMMTS' | 'CHEESE' | 'BUNTE_TUETE';
+
+export interface BunteTueteListItem {
+  id: string;
+  label: string;
+  description?: string;
+  mediaUrl?: string;
+}
+
+export interface BunteTueteTop5Payload {
+  kind: 'top5';
+  prompt: string;
+  items: BunteTueteListItem[];
+  correctOrder: string[];
+  scoringMode?: 'position' | 'contains';
+  maxPoints?: number;
+}
+
+export interface BunteTuetePrecisionStep {
+  label: string;
+  acceptedAnswers: string[];
+  points: number;
+}
+
+export interface BunteTuetePrecisionPayload {
+  kind: 'precision';
+  prompt: string;
+  ladder: BunteTuetePrecisionStep[];
+  similarityThreshold?: number;
+  maxPoints?: number;
+}
+
+export interface BunteTueteOneOfEightPayload {
+  kind: 'oneOfEight';
+  prompt: string;
+  statements: Array<{ id: string; text: string; isFalse?: boolean }>;
+  chooseMode?: 'letter' | 'id';
+  maxPoints?: number;
+}
+
+export interface BunteTueteOrderPayload {
+  kind: 'order';
+  prompt: string;
+  items: BunteTueteListItem[];
+  criteriaOptions: Array<{ id: string; label: string; direction?: 'asc' | 'desc' | 'custom'; description?: string }>;
+  defaultCriteriaId?: string;
+  correctByCriteria: Record<string, string[]>;
+  partialPoints?: number;
+  fullPoints?: number;
+  maxPoints?: number;
+}
+
+export type BunteTuetePayload =
+  | BunteTueteTop5Payload
+  | BunteTuetePrecisionPayload
+  | BunteTueteOneOfEightPayload
+  | BunteTueteOrderPayload;
+
+export interface BunteTueteTop5Submission {
+  kind: 'top5';
+  order: string[];
+}
+
+export interface BunteTuetePrecisionSubmission {
+  kind: 'precision';
+  text: string;
+}
+
+export interface BunteTueteOneOfEightSubmission {
+  kind: 'oneOfEight';
+  choiceId: string;
+}
+
+export interface BunteTueteOrderSubmission {
+  kind: 'order';
+  order: string[];
+  criteriaId?: string;
+}
+
+export type BunteTueteSubmission =
+  | BunteTueteTop5Submission
+  | BunteTuetePrecisionSubmission
+  | BunteTueteOneOfEightSubmission
+  | BunteTueteOrderSubmission;
+
+export type CozyAnswerValue =
+  | string
+  | number
+  | string[]
+  | number[]
+  | BunteTueteSubmission
+  | null;
+
 export interface BaseQuestion {
   id: string;
   category: QuizCategory;
@@ -97,6 +190,9 @@ export interface BaseQuestion {
   catalogId?: string; // optionaler Katalog/Tag
   tags?: string[];
   mediaSlots?: { count: number; urls?: string[] }; // z. B. Mixed Bag: Anzahl Bilder
+  type?: CozyQuestionType;
+  bunteTuete?: BunteTuetePayload | null;
+  segmentIndex?: number | null;
 }
 
 export interface EstimateQuestion extends BaseQuestion {
@@ -141,13 +237,19 @@ export interface BettingQuestion extends BaseQuestion {
   pointsPool?: number; // default 10
 }
 
+export interface BunteTueteQuestion extends BaseQuestion {
+  type?: 'BUNTE_TUETE';
+  bunteTuete: BunteTuetePayload;
+}
+
 export type AnyQuestion =
   | EstimateQuestion
   | MultipleChoiceQuestion
   | TrueFalseQuestion
   | ImageQuestion
   | SortItemsQuestion
-  | BettingQuestion;
+  | BettingQuestion
+  | BunteTueteQuestion;
 
 export interface Team {
   id: string;
@@ -205,13 +307,31 @@ export interface CategoryConfig {
 
 export type Language = 'de' | 'en' | 'both';
 
+export interface QuizBlitzItem {
+  id: string;
+  prompt?: string;
+  mediaUrl?: string;
+  answer: string;
+  aliases?: string[];
+}
+
+export interface QuizBlitzTheme {
+  id: string;
+  title: string;
+  items: QuizBlitzItem[];
+}
+
 export interface QuizTemplate {
   id: string;
   name: string;
   mode: QuizMode;
-  questionIds: string[]; // genau 25 IDs, 5 pro Kategorie
+  questionIds: string[]; // Cozy Quiz 60 nutzt 20 Fragen; Legacy-Templates ggf. 25
   meta?: QuizMeta;
   categories?: Record<QuizCategory, CategoryConfig>;
+  blitz?: {
+    pool: QuizBlitzTheme[];
+  } | null;
+  potatoPool?: string[] | null;
 }
 
 export interface BingoCell {
@@ -231,6 +351,13 @@ export interface TimerState {
   running: boolean;
 }
 
+export interface AnswerTieBreaker {
+  label: string;
+  primary: number;
+  secondary?: number;
+  detail?: string;
+}
+
 export interface AnswerEntry {
   value: unknown;
   isCorrect?: boolean;
@@ -238,6 +365,10 @@ export interface AnswerEntry {
   bestDeviation?: number | null;
   betPoints?: number;
   betPool?: number;
+  awardedPoints?: number | null;
+  awardedDetail?: string | null;
+  autoGraded?: boolean;
+  tieBreaker?: AnswerTieBreaker | null;
 }
 
 export interface QuestionMeta {
@@ -296,6 +427,17 @@ export interface PotatoState {
 
 export type BlitzPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'SET_END' | 'DONE';
 
+export interface BlitzThemeOption {
+  id: string;
+  title: string;
+}
+
+export interface BlitzItemView {
+  id: string;
+  prompt?: string | null;
+  mediaUrl?: string | null;
+}
+
 export interface BlitzSetResult {
   correctCount: number;
   pointsAwarded: number;
@@ -303,14 +445,14 @@ export interface BlitzSetResult {
 
 export interface BlitzState {
   phase: BlitzPhase;
-  pool: string[];
+  pool: BlitzThemeOption[];
   bans: Record<string, string[]>;
   banLimits: Record<string, number>;
-  selectedThemes: string[];
+  selectedThemes: BlitzThemeOption[];
   setIndex: number;
   deadline?: number | null;
-  theme?: string | null;
-  items: string[];
+  theme?: BlitzThemeOption | null;
+  items: BlitzItemView[];
   submissions: string[];
   results: Record<string, BlitzSetResult>;
 }
@@ -333,9 +475,22 @@ export type StateUpdatePayload = {
   timer: { endsAt: number | null; running: boolean };
   scores: Array<{ id: string; name: string; score: number }>;
   teamsConnected: number;
+  questionProgress?: { asked: number; total: number };
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
+  results?: AnswerAwardSnapshot[];
+  warnings?: string[];
 };
+
+export interface AnswerAwardSnapshot {
+  teamId: string;
+  teamName?: string;
+  answer?: unknown;
+  isCorrect?: boolean;
+  awardedPoints?: number | null;
+  awardedDetail?: string | null;
+  tieBreaker?: AnswerTieBreaker | null;
+}
 
 // Event-Payloads (optional gemeinsame Nutzung)
 export type BeamerShowSlotTransitionPayload = SlotTransitionMeta;

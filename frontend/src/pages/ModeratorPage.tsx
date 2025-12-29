@@ -175,6 +175,9 @@ const ModeratorPage: React.FC = () => {
     scores: socketScores,
     potato,
     blitz,
+    gameState: socketGameState,
+    questionProgress: socketQuestionProgress,
+    warnings: socketWarnings,
     emit: socketEmit
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
@@ -464,6 +467,24 @@ const ModeratorPage: React.FC = () => {
   const handlePotatoStartRound = () => emitPotatoEvent('host:potatoStartRound');
   const handlePotatoNextRound = () => emitPotatoEvent('host:potatoNextRound');
   const handlePotatoFinish = () => emitPotatoEvent('host:potatoFinish');
+  const handleShowAwards = () => {
+    if (!roomCode) {
+      setToast('Roomcode fehlt');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit('host:showAwards', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+      }
+    });
+  };
   const handlePotatoNextTurn = () => emitPotatoEvent('host:potatoNextTurn');
   const handlePotatoStrike = () => emitPotatoEvent('host:potatoStrikeActive');
   const handlePotatoEndRound = () =>
@@ -534,6 +555,13 @@ const ModeratorPage: React.FC = () => {
     () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
     [socketScores]
   );
+  const questionProgress = socketQuestionProgress;
+  const askedCount =
+    questionProgress?.asked ??
+    (meta?.globalIndex ?? (question ? 1 : 0));
+  const totalQuestions = questionProgress?.total ?? meta?.globalTotal ?? 20;
+  const isScoreboardState = socketGameState === 'SCOREBOARD';
+  const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE';
   const teamLookup = useMemo(() => {
     const map: Record<string, { name: string; score: number }> = {};
     scoreboard.forEach((entry) => {
@@ -544,6 +572,8 @@ const ModeratorPage: React.FC = () => {
     });
     return map;
   }, [answers, scoreboard]);
+  const blitzPhase = blitz?.phase ?? 'IDLE';
+  const potatoPhase = potato?.phase ?? 'IDLE';
   const potatoDeadline = potato?.deadline ?? null;
   const potatoTimeLeft = useMemo(() => {
     if (!potatoDeadline) return null;
@@ -558,6 +588,11 @@ const ModeratorPage: React.FC = () => {
     return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
   }, [blitzDeadline, countdownTick]);
   const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
+
+  const structuralWarnings = useMemo(
+    () => (socketWarnings || []).filter((entry): entry is string => Boolean(entry)),
+    [socketWarnings]
+  );
 
   const numericStats = useMemo(() => {
     if (!answers) return null;
@@ -1170,7 +1205,7 @@ const ModeratorPage: React.FC = () => {
     const results = blitz?.results ?? {};
     const setIndex = blitz?.setIndex ?? -1;
     const currentTheme = blitz?.theme;
-    const showPanel = Boolean(roomCode) && (phase !== 'IDLE' || (meta?.globalIndex ?? 0) >= 9);
+    const showPanel = Boolean(roomCode) && (phase !== 'IDLE' || askedCount >= 9);
     if (!showPanel) return null;
 
     const renderBanRow = (teamId: string, teamName: string) => {
@@ -1211,15 +1246,17 @@ const ModeratorPage: React.FC = () => {
             >
               <option value="">Theme wählen</option>
               {pool.map((theme) => (
-                <option key={`${teamId}-${theme}`} value={theme}>
-                  {theme}
+                <option key={`${teamId}-${theme.id}`} value={theme.id}>
+                  {theme.title}
                 </option>
               ))}
             </select>
             <button
               style={{ ...inputStyle, width: 'auto' }}
               disabled={disabled}
-              onClick={() => emitBlitzEvent('host:banBlitzTheme', { teamId, theme: blitzBanDrafts[teamId] })}
+              onClick={() =>
+                emitBlitzEvent('host:banBlitzTheme', { teamId, themeId: blitzBanDrafts[teamId], theme: blitzBanDrafts[teamId] })
+              }
             >
               Bann setzen
             </button>
@@ -1283,8 +1320,8 @@ const ModeratorPage: React.FC = () => {
             <div style={{ fontWeight: 700 }}>Verfügbare Themen</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {pool.map((theme) => (
-                <span key={theme} style={statChip}>
-                  {theme}
+                <span key={theme.id} style={statChip}>
+                  {theme.title}
                 </span>
               ))}
               {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
@@ -1307,14 +1344,14 @@ const ModeratorPage: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {selected.map((theme, idx) => (
                 <span
-                  key={`blitz-theme-${theme}-${idx}`}
+                  key={`blitz-theme-${theme.id}-${idx}`}
                   style={{
                     ...statChip,
                     background: idx === setIndex ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
                     borderColor: idx === setIndex ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)'
                   }}
                 >
-                  {idx + 1}. {theme}
+                  {idx + 1}. {theme.title}
                 </span>
               ))}
             </div>
@@ -1324,10 +1361,41 @@ const ModeratorPage: React.FC = () => {
         {phase === 'PLAYING' && (
           <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
             <div style={{ fontWeight: 700 }}>
-              Set {Math.max(1, setIndex + 1)} · Thema: {currentTheme || '-'}
+              Set {Math.max(1, setIndex + 1)} · Thema: {currentTheme?.title || '-'}
             </div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               Einsendungen: {submissions.length}/{scoreboard.length}
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gap: 8,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
+              }}
+            >
+              {(blitz?.items ?? []).map((item, idx) => (
+                <div
+                  key={item.id || `blitz-item-${idx}`}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    padding: 10,
+                    background: 'rgba(0,0,0,0.25)',
+                    display: 'grid',
+                    gap: 6
+                  }}
+                >
+                  <div style={{ fontWeight: 700 }}>Item {idx + 1}</div>
+                  {item.mediaUrl && (
+                    <img
+                      src={item.mediaUrl}
+                      alt={item.prompt || `Blitz Item ${idx + 1}`}
+                      style={{ width: '100%', borderRadius: 10, objectFit: 'cover', maxHeight: 140 }}
+                    />
+                  )}
+                  {item.prompt && <div style={{ fontSize: 12, color: '#cbd5e1' }}>{item.prompt}</div>}
+                </div>
+              ))}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
@@ -1388,6 +1456,68 @@ const ModeratorPage: React.FC = () => {
             </span>
           </div>
         )}
+      </section>
+    );
+  };
+
+  const renderStageShortcuts = () => {
+    const ctas: React.ReactNode[] = [];
+    if (isScoreboardState && askedCount === 10 && blitzPhase === 'IDLE') {
+      ctas.push(
+        <button
+          key="cta-blitz"
+          style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#1f1305' }}
+          onClick={() => emitBlitzEvent('host:startBlitz')}
+        >
+          BLITZ STARTEN
+        </button>
+      );
+      ctas.push(
+        <button
+          key="cta-segment-two"
+          style={{ ...inputStyle, width: 'auto', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(96,165,250,0.4)', color: '#bfdbfe' }}
+          onClick={handleNextQuestion}
+        >
+          Weiter zu Frage 11
+        </button>
+      );
+    }
+    if (isScoreboardPauseState && blitzPhase === 'DONE') {
+      ctas.push(
+        <button
+          key="cta-resume"
+          style={{ ...inputStyle, width: 'auto', background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.4)', color: '#a7f3d0' }}
+          onClick={handleNextQuestion}
+        >
+          Segment 2 starten
+        </button>
+      );
+    }
+    if (isScoreboardState && askedCount >= totalQuestions && potatoPhase === 'IDLE') {
+      ctas.push(
+        <button
+          key="cta-potato"
+          style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fbbf24, #fb923c)', color: '#1f1305' }}
+          onClick={handlePotatoStart}
+        >
+          FINAL: HEISSE KARTOFFEL
+        </button>
+      );
+      ctas.push(
+        <button
+          key="cta-awards"
+          style={{ ...inputStyle, width: 'auto', background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.4)', color: '#bfdbfe' }}
+          onClick={handleShowAwards}
+        >
+          Awards / Ende
+        </button>
+      );
+    }
+    if (!ctas.length) return null;
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Stage Actions</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{ctas}</div>
       </section>
     );
   };
@@ -1637,7 +1767,26 @@ const ModeratorPage: React.FC = () => {
         </div>
 
         {renderActions()}
+        {renderStageShortcuts()}
       </div>
+
+      {structuralWarnings.length > 0 && (
+        <section
+          style={{
+            ...card,
+            marginTop: 8,
+            border: '1px solid rgba(251,191,36,0.45)',
+            background: 'rgba(120,53,15,0.35)'
+          }}
+        >
+          <div style={{ fontWeight: 800, color: '#fbbf24', marginBottom: 6 }}>Content-Warnungen</div>
+          <ul style={{ margin: 0, paddingLeft: 18, color: '#fde68a', fontSize: 13 }}>
+            {structuralWarnings.map((warning, idx) => (
+              <li key={`${warning}-${idx}`}>{warning}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Stats Panels */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 10 }}>

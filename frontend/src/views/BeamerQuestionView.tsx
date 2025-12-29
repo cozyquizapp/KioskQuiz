@@ -1,5 +1,5 @@
 ﻿import * as React from 'react';
-import { AnyQuestion } from '@shared/quizTypes';
+import { AnyQuestion, BunteTuetePayload } from '@shared/quizTypes';
 import { QuestionMeta } from '../api';
 
 type BeamerQuestionViewProps = {
@@ -66,6 +66,83 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     ? timerText
     : t.noTimer;
 
+  const renderBunteContent = () => {
+    const payload = (question as any)?.bunteTuete as BunteTuetePayload | undefined;
+    if (!payload) return null;
+    if (payload.kind === 'top5' || payload.kind === 'order') {
+      return (
+        <div style={{ marginTop: 16 }}>
+          <div
+            style={{
+              ...pill,
+              fontSize: 11,
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
+          >
+            {payload.kind === 'top5' ? 'Top 5' : 'Ordnen'}
+          </div>
+          <ol style={{ margin: '8px 0 0', paddingInlineStart: 20 }}>
+            {payload.items.map((item) => (
+              <li key={item.id} style={{ marginBottom: 4 }}>
+                {item.label}
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+    }
+    if (payload.kind === 'oneOfEight') {
+      return (
+        <div style={{ marginTop: 16 }}>
+          <div
+            style={{
+              ...pill,
+              fontSize: 11,
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
+          >
+            8 Dinge – 1 falsch
+          </div>
+          <div style={{ marginTop: 6, display: 'grid', gap: 6 }}>
+            {payload.statements.map((statement) => (
+              <div key={statement.id} style={{ fontSize: 16, color: '#e2e8f0' }}>
+                <strong style={{ marginRight: 6 }}>{statement.id}.</strong>
+                {statement.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (payload.kind === 'precision') {
+      return (
+        <div style={{ marginTop: 16, color: '#e2e8f0' }}>
+          <div
+            style={{
+              ...pill,
+              fontSize: 11,
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
+          >
+            Präzisionsleiter
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 18 }}>{payload.prompt}</p>
+          <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+            {payload.ladder.map((step) => (
+              <div key={step.label} style={{ fontSize: 14, color: '#cbd5e1' }}>
+                {step.label}: +{step.points}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <section style={sectionStyle}>
       {leftDecorationSrc && <img src={leftDecorationSrc} alt="" style={decorationLeft} />}
@@ -106,6 +183,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
             />
           </div>
         )}
+        {renderBunteContent()}
 
         {showAnswer && (
           <div style={answerBlock}>

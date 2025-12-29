@@ -1143,6 +1143,8 @@ useEffect(() => {
     const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
     const submissions = blitz.submissions?.length ?? 0;
     const results = blitz.results || {};
+    const items = blitz.items || [];
+    const themeName = blitz.theme?.title || '-';
     return (
       <div style={cardFrame}>
         <div
@@ -1161,7 +1163,7 @@ useEffect(() => {
             </div>
           </div>
           <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
-            {language === 'de' ? 'Thema' : 'Theme'}: {blitz.theme || '-'}
+            {language === 'de' ? 'Thema' : 'Theme'}: {themeName}
           </div>
           {blitz.phase === 'PLAYING' ? (
             <>
@@ -1174,6 +1176,39 @@ useEffect(() => {
                 {language === 'de'
                   ? `Eingänge: ${submissions}/${teams.length}`
                   : `Submissions: ${submissions}/${teams.length}`}
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: 'grid',
+                  gap: 12,
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
+                }}
+              >
+                {items.map((item, idx) => (
+                  <div
+                    key={`blitz-card-${item.id || idx}`}
+                    style={{
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 18,
+                      padding: '12px 14px',
+                      background: 'rgba(15,18,28,0.55)',
+                      minHeight: 120,
+                      display: 'grid',
+                      gap: 6
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>Item {idx + 1}</div>
+                    {item.mediaUrl && (
+                      <img
+                        src={item.mediaUrl}
+                        alt={item.prompt || `Blitz Item ${idx + 1}`}
+                        style={{ width: '100%', borderRadius: 12, objectFit: 'cover', maxHeight: 140 }}
+                      />
+                    )}
+                    {item.prompt && <div style={{ fontSize: 13, color: '#cbd5e1' }}>{item.prompt}</div>}
+                  </div>
+                ))}
               </div>
               {blitzCountdown !== null && (
                 <div

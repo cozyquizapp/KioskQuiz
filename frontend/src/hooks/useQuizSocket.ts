@@ -27,6 +27,9 @@ type SocketEvents = {
   teamsConnected?: number;
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
+  questionProgress?: StateUpdatePayload['questionProgress'];
+  results?: StateUpdatePayload['results'];
+  warnings?: string[];
 };
 
 export const useQuizSocket = (roomCode: string) => {
@@ -141,7 +144,10 @@ export const useQuizSocket = (roomCode: string) => {
         scores: payload.scores,
         teamsConnected: payload.teamsConnected,
         potato: payload.potato ?? prev.potato,
-        blitz: payload.blitz ?? prev.blitz
+        blitz: payload.blitz ?? prev.blitz,
+        questionProgress: payload.questionProgress ?? prev.questionProgress,
+        results: payload.results ?? prev.results,
+        warnings: payload.warnings ?? prev.warnings
       }));
     };
 

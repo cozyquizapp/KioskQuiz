@@ -10,7 +10,8 @@ import {
   CozyGameState,
   Team,
   BlitzState,
-  PotatoState
+  PotatoState,
+  BunteTuetePayload
 } from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
@@ -154,6 +155,11 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [questionMeta, setQuestionMeta] = useState<any | null>(null);
   const [answer, setAnswer] = useState<any>('');
   const [bettingPoints, setBettingPoints] = useState<[number, number, number]>([0, 0, 0]);
+  const [bunteTop5Order, setBunteTop5Order] = useState<string[]>([]);
+  const [buntePrecisionText, setBuntePrecisionText] = useState('');
+  const [bunteOneChoice, setBunteOneChoice] = useState('');
+  const [bunteOrderSelection, setBunteOrderSelection] = useState<string[]>([]);
+  const [bunteOrderCriteria, setBunteOrderCriteria] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [board, setBoard] = useState<BingoBoard>([]);
   const [phase, setPhase] = useState<Phase>('notJoined');
@@ -177,6 +183,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
   const [isFinal, setIsFinal] = useState(false);
+  const [resultPoints, setResultPoints] = useState<number | null>(null);
+  const [resultDetail, setResultDetail] = useState<string | null>(null);
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
@@ -210,6 +218,26 @@ function TeamView({ roomCode }: TeamViewProps) {
     const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!question || question.type !== 'BUNTE_TUETE' || !question.bunteTuete) {
+      setBunteTop5Order([]);
+      setBunteOrderSelection([]);
+      return;
+    }
+    const payload = question.bunteTuete as BunteTuetePayload;
+    if (payload.kind === 'top5') {
+      setBunteTop5Order((prev) =>
+        prev.length === payload.items.length ? prev : Array(payload.items.length).fill('')
+      );
+    }
+    if (payload.kind === 'order') {
+      setBunteOrderSelection((prev) =>
+        prev.length === payload.items.length ? prev : Array(payload.items.length).fill('')
+      );
+      setBunteOrderCriteria(payload.defaultCriteriaId ?? payload.criteriaOptions?.[0]?.id ?? null);
+    }
+  }, [question?.id]);
 
   // inject animations once
   useEffect(() => {
@@ -407,6 +435,14 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (payload.timer) {
         setTimerEndsAt(payload.timer.endsAt);
       }
+      if (payload.results && teamId) {
+        const entry = payload.results.find((res) => res.teamId === teamId);
+        if (entry) {
+          if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
+          else setResultPoints(null);
+          setResultDetail(entry.awardedDetail ?? null);
+        }
+      }
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
@@ -427,26 +463,41 @@ function TeamView({ roomCode }: TeamViewProps) {
             setResultMessage(t('estimateWorse'));
           }
         }
+        if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
+        if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
         // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
         setPhase('showResult');
       }
     });
-    socket.on('teamResult', ({ teamId: tId, isCorrect, deviation, bestDeviation, solution: sol }) => {
-      if (tId !== teamId) return;
-      setResultCorrect(Boolean(isCorrect));
-      if (deviation !== undefined && bestDeviation !== undefined) {
-        setResultMessage(
-          deviation === bestDeviation ? t('estimateBest') : t('estimateWorse')
-        );
+    socket.on(
+      'teamResult',
+      ({
+        teamId: tId,
+        isCorrect,
+        deviation,
+        bestDeviation,
+        solution: sol,
+        awardedPoints,
+        awardedDetail
+      }) => {
+        if (tId !== teamId) return;
+        setResultCorrect(Boolean(isCorrect));
+        if (deviation !== undefined && bestDeviation !== undefined) {
+          setResultMessage(
+            deviation === bestDeviation ? t('estimateBest') : t('estimateWorse')
+          );
+        }
+        setPhase('showResult');
+        if (isCorrect) {
+          setCanMarkBingo(true);
+          setShowBingoPanel(true);
+        }
+        if (typeof awardedPoints === 'number') setResultPoints(awardedPoints);
+        if (awardedDetail) setResultDetail(awardedDetail);
+        if (sol) setSolution(sol);
+        setIsFinal(true);
       }
-      setPhase('showResult');
-      if (isCorrect) {
-        setCanMarkBingo(true);
-        setShowBingoPanel(true);
-      }
-      if (sol) setSolution(sol);
-      setIsFinal(true);
-    });
+    );
     socket.on('teamKicked', ({ teamId: kicked }) => {
       if (kicked === teamId) {
         setMessage(t('kicked'));
@@ -515,6 +566,24 @@ function TeamView({ roomCode }: TeamViewProps) {
   const resetInputs = () => {
     setAnswer('');
     setBettingPoints([0, 0, 0]);
+    setBunteTop5Order([]);
+    setBuntePrecisionText('');
+    setBunteOneChoice('');
+    setBunteOrderSelection([]);
+    setBunteOrderCriteria(null);
+    setResultPoints(null);
+    setResultDetail(null);
+  };
+
+  const applyRankingSelection = (current: string[], index: number, value: string) => {
+    const next = [...current];
+    next[index] = value;
+    if (value) {
+      next.forEach((entry, idx) => {
+        if (idx !== index && entry === value) next[idx] = '';
+      });
+    }
+    return next;
   };
 
   const loadQuestion = async () => {
@@ -739,6 +808,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div style={{ marginTop: 10 }} />
       )}
       <div style={{ marginTop: 10 }}>{renderInput(accentColor)}</div>
+      {renderBunteDetails()}
       {timeUp && (
         <p style={{ color: '#ef4444', fontWeight: 700, marginTop: 8 }}>
           Leider ist die Zeit schon vorbei.
@@ -811,6 +881,7 @@ const handleSubmit = async () => {
       return;
     }
     try {
+      const isBunteQuestion = question?.type === 'BUNTE_TUETE' && question?.bunteTuete;
       if (question?.mechanic === 'betting') {
         const pool = (question as any).pointsPool ?? 10;
         const sum = bettingPoints.reduce((a, b) => a + b, 0);
@@ -821,6 +892,11 @@ const handleSubmit = async () => {
         await submitAnswer(roomCode, teamId, bettingPoints);
         setAnswerSubmitted(true);
         setAnswer(bettingPoints);
+      } else if (isBunteQuestion) {
+        const payload = buildBunteSubmission(question.bunteTuete as BunteTuetePayload);
+        if (!payload) return;
+        await submitAnswer(roomCode, teamId, payload);
+        setAnswerSubmitted(true);
       } else {
         await submitAnswer(roomCode, teamId, answer);
         setAnswerSubmitted(true);
@@ -837,6 +913,45 @@ const handleSubmit = async () => {
           : 'Could not send answer. Please check connection.'
       );
     }
+  };
+
+  const buildBunteSubmission = (payload: BunteTuetePayload | undefined) => {
+    if (!question || !payload) return null;
+    if (payload.kind === 'top5') {
+      const values = bunteTop5Order;
+      if (values.length !== payload.items.length || values.some((val) => !val)) {
+        setMessage(language === 'de' ? 'Bitte alle Positionen wählen.' : 'Please fill all positions.');
+        return null;
+      }
+      return { kind: 'top5', order: values };
+    }
+    if (payload.kind === 'precision') {
+      if (!buntePrecisionText.trim()) {
+        setMessage(language === 'de' ? 'Bitte Antwort eingeben.' : 'Please enter an answer.');
+        return null;
+      }
+      return { kind: 'precision', text: buntePrecisionText.trim() };
+    }
+    if (payload.kind === 'oneOfEight') {
+      if (!bunteOneChoice) {
+        setMessage(language === 'de' ? 'Bitte eine Option wählen.' : 'Please choose an option.');
+        return null;
+      }
+      return { kind: 'oneOfEight', choiceId: bunteOneChoice };
+    }
+    if (payload.kind === 'order') {
+      const values = bunteOrderSelection;
+      if (values.length !== payload.items.length || values.some((val) => !val)) {
+        setMessage(language === 'de' ? 'Bitte jede Position belegen.' : 'Please fill every position.');
+        return null;
+      }
+      return {
+        kind: 'order',
+        order: values,
+        criteriaId: bunteOrderCriteria ?? undefined
+      };
+    }
+    return null;
   };
 
   const handleMarkCell = async (cellIndex: number) => {
@@ -860,8 +975,172 @@ const handleSubmit = async () => {
     }
   };
 
+  const renderBunteInput = (payload: BunteTuetePayload, accent: string) => {
+    if (payload.kind === 'top5') {
+      return (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {payload.items.map((item, idx) => (
+            <div key={item.id} style={{ display: 'grid', gap: 4 }}>
+              <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                {language === 'de' ? 'Position' : 'Position'} {idx + 1}
+              </label>
+              <select
+                value={bunteTop5Order[idx] ?? ''}
+                onChange={(e) =>
+                  setBunteTop5Order((prev) => applyRankingSelection(prev, idx, e.target.value))
+                }
+                disabled={!canAnswer}
+                style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
+              >
+                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                {payload.items.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (payload.kind === 'precision') {
+      return (
+        <input
+          style={inputStyle}
+          placeholder={language === 'de' ? 'Antwort eingeben' : 'Enter answer'}
+          value={buntePrecisionText}
+          onChange={(e) => setBuntePrecisionText(e.target.value)}
+          disabled={!canAnswer}
+        />
+      );
+    }
+    if (payload.kind === 'oneOfEight') {
+      return (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {payload.statements.map((statement) => {
+            const selected = bunteOneChoice === statement.id;
+            return (
+              <button
+                key={statement.id}
+                type="button"
+                onClick={() => setBunteOneChoice(statement.id)}
+                disabled={!canAnswer}
+                style={{
+                  ...choiceButton,
+                  justifyContent: 'flex-start',
+                  border: `1px solid ${selected ? accent : 'rgba(255,255,255,0.08)'}`,
+                  background: selected ? `${accent}22` : 'rgba(255,255,255,0.04)',
+                  color: '#e2e8f0',
+                  cursor: canAnswer ? 'pointer' : 'not-allowed'
+                }}
+              >
+                <span style={{ fontWeight: 800, marginRight: 6 }}>{statement.id}</span>
+                <span>{statement.text}</span>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+    if (payload.kind === 'order') {
+      return (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {payload.criteriaOptions?.length > 1 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {payload.criteriaOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setBunteOrderCriteria(option.id)}
+                  style={{
+                    ...pillSmall,
+                    borderColor: bunteOrderCriteria === option.id ? accent : 'rgba(255,255,255,0.14)',
+                    background:
+                      bunteOrderCriteria === option.id ? `${accent}22` : 'rgba(255,255,255,0.05)',
+                    color: '#e2e8f0'
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {payload.items.map((item, idx) => (
+            <div key={item.id} style={{ display: 'grid', gap: 4 }}>
+              <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                {language === 'de' ? 'Position' : 'Position'} {idx + 1}
+              </label>
+              <select
+                value={bunteOrderSelection[idx] ?? ''}
+                onChange={(e) =>
+                  setBunteOrderSelection((prev) => applyRankingSelection(prev, idx, e.target.value))
+                }
+                disabled={!canAnswer}
+                style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
+              >
+                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                {payload.items.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderBunteDetails = () => {
+    if (!question || question.type !== 'BUNTE_TUETE' || !question.bunteTuete) {
+      return null;
+    }
+    const payload = question.bunteTuete as BunteTuetePayload;
+    if (payload.kind === 'top5' || payload.kind === 'order') {
+      return (
+        <div style={{ marginTop: 12 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Liste' : 'List'}</div>
+          <ol style={{ margin: '6px 0 0', paddingInlineStart: 18, color: '#cbd5e1' }}>
+            {payload.items.map((item) => (
+              <li key={item.id} style={{ marginBottom: 4 }}>
+                {item.label}
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+    }
+    if (payload.kind === 'oneOfEight') {
+      return (
+        <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Aussagen' : 'Statements'}</div>
+          {payload.statements.map((statement) => (
+            <div key={statement.id} style={{ fontSize: 14, color: '#cbd5e1' }}>
+              <strong style={{ marginRight: 6 }}>{statement.id}.</strong> {statement.text}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (payload.kind === 'precision') {
+      return (
+        <div style={{ marginTop: 12, color: '#cbd5e1' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Hinweis' : 'Hint'}</div>
+          <p style={{ margin: '4px 0 0' }}>{payload.prompt}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const renderInput = (accent: string) => {
     if (!question) return null;
+    if (question.type === 'BUNTE_TUETE' && question.bunteTuete) {
+      return renderBunteInput(question.bunteTuete as BunteTuetePayload, accent);
+    }
     switch (question.mechanic) {
       case 'multipleChoice': {
         const q = question as MultipleChoiceQuestion;
@@ -1034,6 +1313,12 @@ const renderShowResult = () => (
         {t('resultTitle')(resultCorrect)}
       </p>
       {resultMessage && <p style={{ margin: 0, color: 'var(--muted)' }}>{resultMessage}</p>}
+      {resultPoints !== null && (
+        <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
+          {language === 'de' ? 'Punkte' : 'Points'}: {resultPoints}
+          {resultDetail ? ` · ${resultDetail}` : ''}
+        </p>
+      )}
       {solution && (
         <p style={{ margin: '8px 0 0', color: '#e2e8f0', fontWeight: 700 }}>
           {language === 'de' ? 'Loesung:' : 'Solution:'} {solution}
@@ -1316,7 +1601,8 @@ const renderShowResult = () => (
     }
     const canAnswer = blitzState.phase === 'PLAYING' && !blitzSubmitted;
     const results = blitzState.results || {};
-    const themeLabel = blitzState.theme || '—';
+    const themeLabel = blitzState.theme?.title || '—';
+    const blitzItems = blitzState.items || [];
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
@@ -1330,23 +1616,40 @@ const renderShowResult = () => (
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
               {language === 'de' ? 'Gib fünf Antworten ein.' : 'Enter five answers.'}
             </div>
-            <div style={{ display: 'grid', gap: 6 }}>
-              {blitzAnswers.map((value, idx) => (
-                <input
-                  key={`blitz-input-${idx}`}
-                  style={inputStyle}
-                  value={value}
-                  disabled={!canAnswer}
-                  placeholder={`${idx + 1}. ${language === 'de' ? 'Antwort' : 'Answer'}`}
-                  onChange={(e) =>
-                    setBlitzAnswers((prev) => {
-                      const next = [...prev];
-                      next[idx] = e.target.value;
-                      return next;
-                    })
-                  }
-                />
-              ))}
+            <div style={{ display: 'grid', gap: 8 }}>
+              {blitzAnswers.map((value, idx) => {
+                const item = blitzItems[idx];
+                const inputId = `blitz-input-${idx}`;
+                return (
+                  <div key={inputId} style={{ display: 'grid', gap: 4 }}>
+                    <label htmlFor={inputId} style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      {language === 'de' ? 'Item' : 'Item'} {idx + 1}
+                      {item?.prompt ? ` · ${item.prompt}` : ''}
+                    </label>
+                    {item?.mediaUrl && (
+                      <img
+                        src={item.mediaUrl}
+                        alt={item.prompt || `Blitz Item ${idx + 1}`}
+                        style={{ width: '100%', borderRadius: 12, maxHeight: 140, objectFit: 'cover' }}
+                      />
+                    )}
+                    <input
+                      id={inputId}
+                      style={inputStyle}
+                      value={value}
+                      disabled={!canAnswer}
+                      placeholder={`${language === 'de' ? 'Antwort' : 'Answer'} ${idx + 1}`}
+                      onChange={(e) =>
+                        setBlitzAnswers((prev) => {
+                          const next = [...prev];
+                          next[idx] = e.target.value;
+                          return next;
+                        })
+                      }
+                    />
+                  </div>
+                );
+              })}
             </div>
             <button
               style={{

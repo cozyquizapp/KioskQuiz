@@ -10,6 +10,7 @@ import studioRoutes from './routes/studio';
 import {
   AnyQuestion,
   AnswerEntry,
+  AnswerTieBreaker,
   BingoBoard,
   QuestionPhase,
   QuizCategory,
@@ -23,7 +24,17 @@ import {
   PotatoConflict,
   BlitzState,
   BlitzPhase,
-  BlitzSetResult
+  BlitzSetResult,
+  BlitzThemeOption,
+  BlitzItemView,
+  QuizBlitzTheme,
+  QuizBlitzItem,
+  CozyQuestionType,
+  BunteTueteSubmission,
+  BunteTueteTop5Submission,
+  BunteTuetePrecisionSubmission,
+  BunteTueteOneOfEightSubmission,
+  BunteTueteOrderSubmission
 } from '../../shared/quizTypes';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
@@ -140,18 +151,22 @@ type RoomState = {
   potatoCurrentTheme: string | null;
   potatoLastConflict: PotatoConflict | null;
   segmentTwoBaselineScores: Record<string, number> | null;
-  blitzPool: string[];
+  presetPotatoPool: string[];
+  blitzPool: BlitzThemeOption[];
+  blitzThemeLibrary: Record<string, QuizBlitzTheme>;
   blitzBans: Record<string, string[]>;
   blitzBanLimits: Record<string, number>;
-  blitzSelectedThemes: string[];
+  blitzSelectedThemes: BlitzThemeOption[];
   blitzSetIndex: number;
   blitzPhase: BlitzPhase;
   blitzDeadlineAt: number | null;
-  blitzTheme: string | null;
-  blitzItems: string[];
+  blitzTheme: BlitzThemeOption | null;
+  blitzItems: BlitzItemView[];
+  blitzItemSolutions: { id: string; answer: string; aliases: string[] }[];
   blitzAnswersByTeam: Record<string, string[]>;
   blitzResultsByTeam: Record<string, BlitzSetResult>;
   blitzSubmittedTeamIds: string[];
+  validationWarnings: string[];
 };
 
 const rooms = new Map<string, RoomState>();
@@ -396,7 +411,9 @@ const ensureRoom = (roomCode: string): RoomState => {
       potatoCurrentTheme: null,
       potatoLastConflict: null,
       segmentTwoBaselineScores: null,
+      presetPotatoPool: [],
       blitzPool: [],
+      blitzThemeLibrary: {},
       blitzBans: {},
       blitzBanLimits: {},
       blitzSelectedThemes: [],
@@ -405,9 +422,11 @@ const ensureRoom = (roomCode: string): RoomState => {
       blitzDeadlineAt: null,
       blitzTheme: null,
       blitzItems: [],
+      blitzItemSolutions: [],
       blitzAnswersByTeam: {},
       blitzResultsByTeam: {},
-      blitzSubmittedTeamIds: []
+      blitzSubmittedTeamIds: [],
+      validationWarnings: []
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -456,6 +475,7 @@ const sanitizeThemeList = (input: unknown): string[] => {
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_LENGTH = 4;
 const POTATO_SIMILARITY_THRESHOLD = 0.85;
+const BLITZ_SIMILARITY_THRESHOLD = 0.85;
 
 const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
@@ -473,8 +493,59 @@ const DEFAULT_BLITZ_THEMES = [
   'Tiere'
 ];
 
-const generateBlitzItems = (theme: string) =>
-  Array.from({ length: BLITZ_ITEMS_PER_SET }).map((_, idx) => `${theme} ${idx + 1}`);
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const buildLegacyBlitzTheme = (title: string): QuizBlitzTheme => {
+  const slug = slugify(title) || `theme-${Date.now()}`;
+  const items: QuizBlitzItem[] = Array.from({ length: BLITZ_ITEMS_PER_SET }).map((_, idx) => ({
+    id: `${slug}-${idx + 1}`,
+    prompt: `${title} ${idx + 1}`,
+    answer: `${title} ${idx + 1}`,
+    aliases: []
+  }));
+  return { id: slug, title, items };
+};
+
+const toBlitzOption = (theme: QuizBlitzTheme): BlitzThemeOption => ({
+  id: theme.id,
+  title: theme.title
+});
+
+const normalizeBlitzTheme = (theme: QuizBlitzTheme, fallbackIndex = 0): QuizBlitzTheme => {
+  const safeTitle = theme.title?.trim() || `Blitz-Thema ${fallbackIndex + 1}`;
+  const baseId = theme.id?.trim() || `${slugify(safeTitle)}-${fallbackIndex}`;
+  const normalizedItems = (theme.items || []).map((item, idx) => ({
+    ...item,
+    id: item.id?.trim() || `${baseId}-${idx + 1}`
+  }));
+  return { ...theme, id: baseId, title: safeTitle, items: normalizedItems };
+};
+
+const selectBlitzItems = (
+  theme: QuizBlitzTheme
+): { views: BlitzItemView[]; solutions: { id: string; answer: string; aliases: string[] }[] } => {
+  const pool = theme.items && theme.items.length > 0 ? [...theme.items] : buildLegacyBlitzTheme(theme.title).items;
+  const extended: QuizBlitzItem[] = [];
+  while (extended.length < BLITZ_ITEMS_PER_SET) {
+    extended.push(...pool);
+  }
+  const chosen = extended.slice(0, BLITZ_ITEMS_PER_SET);
+  const views: BlitzItemView[] = chosen.map((item) => ({
+    id: item.id,
+    prompt: item.prompt ?? null,
+    mediaUrl: item.mediaUrl ?? null
+  }));
+  const solutions = chosen.map((item) => ({
+    id: item.id,
+    answer: item.answer,
+    aliases: item.aliases ?? []
+  }));
+  return { views, solutions };
+};
 
 const generateRoomCode = () => {
   let code = '';
@@ -660,7 +731,24 @@ const startBlitzSet = (room: RoomState) => {
   const nextIndex = room.blitzSetIndex + 1;
   room.blitzSetIndex = nextIndex;
   room.blitzTheme = room.blitzSelectedThemes[nextIndex] ?? null;
-  room.blitzItems = generateBlitzItems(room.blitzTheme || `Set ${nextIndex + 1}`);
+  const themeDef = room.blitzTheme ? room.blitzThemeLibrary[room.blitzTheme.id] : null;
+  if (!themeDef) {
+    const fallback = buildLegacyBlitzTheme(room.blitzTheme?.title || `Set ${nextIndex + 1}`);
+    room.blitzThemeLibrary[fallback.id] = fallback;
+  }
+  const resolvedTheme = room.blitzTheme ? room.blitzThemeLibrary[room.blitzTheme.id] : null;
+  if (resolvedTheme) {
+    const { views, solutions } = selectBlitzItems(resolvedTheme);
+    room.blitzItems = views;
+    room.blitzItemSolutions = solutions;
+  } else {
+    const placeholder = buildLegacyBlitzTheme(room.blitzTheme?.title || `Set ${nextIndex + 1}`);
+    const { views, solutions } = selectBlitzItems(placeholder);
+    room.blitzItems = views;
+    room.blitzItemSolutions = solutions;
+    room.blitzThemeLibrary[placeholder.id] = placeholder;
+    room.blitzTheme = toBlitzOption(placeholder);
+  }
   resetBlitzCollections(room);
   room.blitzPhase = 'PLAYING';
   room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
@@ -680,27 +768,18 @@ const enforceBlitzDeadline = (room: RoomState) => {
 
 const computeBlitzResults = (room: RoomState) => {
   if (!room.blitzItems.length) throw new Error('Keine Blitz-Items gesetzt');
-  const normalizedSolutions = room.blitzItems.map((item) => normalizeText(item));
   const teamIds = Object.keys(room.teams);
   const provisional: Record<string, BlitzSetResult> = {};
   teamIds.forEach((teamId) => {
     const answers = room.blitzAnswersByTeam[teamId] ?? [];
     let correctCount = 0;
-    const matched = new Set<number>();
-    answers.slice(0, BLITZ_ITEMS_PER_SET).forEach((answer) => {
+    answers.slice(0, BLITZ_ITEMS_PER_SET).forEach((answer, idx) => {
+      const solution = room.blitzItemSolutions[idx];
+      if (!solution) return;
       const normalized = normalizeText(answer);
-      let bestIdx = -1;
-      let bestScore = 0;
-      normalizedSolutions.forEach((solution, idx) => {
-        if (matched.has(idx)) return;
-        const score = similarityScore(solution, normalized);
-        if (score >= POTATO_SIMILARITY_THRESHOLD && score > bestScore) {
-          bestScore = score;
-          bestIdx = idx;
-        }
-      });
-      if (bestIdx >= 0) {
-        matched.add(bestIdx);
+      const variants = [solution.answer, ...(solution.aliases || [])].map((entry) => normalizeText(entry));
+      const bestScore = variants.reduce((max, candidate) => Math.max(max, similarityScore(candidate, normalized)), 0);
+      if (bestScore >= BLITZ_SIMILARITY_THRESHOLD) {
         correctCount += 1;
       }
     });
@@ -774,6 +853,8 @@ const finishBlitzStage = (room: RoomState) => {
   room.blitzPhase = 'DONE';
   room.blitzDeadlineAt = null;
   room.blitzTheme = null;
+  room.blitzItems = [];
+  room.blitzItemSolutions = [];
   applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
 };
 
@@ -1055,6 +1136,7 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.questionPhase = 'answering';
   room.potatoPhase = 'IDLE';
   room.potatoPool = [];
+  room.presetPotatoPool = sanitizeThemeList(template.potatoPool ?? []);
   room.potatoBans = {};
   room.potatoBanLimits = {};
   room.potatoSelectedThemes = [];
@@ -1072,7 +1154,12 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.potatoLastConflict = null;
   room.segmentTwoBaselineScores = null;
   room.blitzPhase = 'IDLE';
-  room.blitzPool = [];
+  const normalizedThemes = (template.blitz?.pool || []).map((theme, idx) => normalizeBlitzTheme(theme, idx));
+  room.blitzThemeLibrary = normalizedThemes.reduce<Record<string, QuizBlitzTheme>>((acc, theme) => {
+    acc[theme.id] = theme;
+    return acc;
+  }, {});
+  room.blitzPool = normalizedThemes.map(toBlitzOption);
   room.blitzBans = {};
   room.blitzBanLimits = {};
   room.blitzSelectedThemes = [];
@@ -1080,9 +1167,11 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.blitzDeadlineAt = null;
   room.blitzTheme = null;
   room.blitzItems = [];
+  room.blitzItemSolutions = [];
   room.blitzAnswersByTeam = {};
   room.blitzResultsByTeam = {};
   room.blitzSubmittedTeamIds = [];
+  recomputeRoomWarnings(room);
   applyRoomState(room, { type: 'START_SESSION' });
   broadcastTeamsReady(room);
   broadcastState(room);
@@ -1124,6 +1213,247 @@ const normalizeString = (value: unknown) =>
   String(value ?? '')
     .trim()
     .toLowerCase();
+
+const getQuestionType = (question: AnyQuestion): CozyQuestionType => {
+  if ((question as any).type) return (question as any).type as CozyQuestionType;
+  switch (question.mechanic) {
+    case 'estimate':
+      return 'SCHAETZCHEN';
+    case 'betting':
+    case 'trueFalse':
+      return 'STIMMTS';
+    case 'imageQuestion':
+      return 'CHEESE';
+    default:
+      return 'MU_CHO';
+  }
+};
+
+const getQuestionPoints = (room: RoomState, question: AnyQuestion): number => {
+  const raw = Number((question as any).points);
+  if (Number.isFinite(raw) && raw > 0) return raw;
+  const segmentIndex = (question as any).segmentIndex;
+  if (segmentIndex === 0) return 1;
+  if (segmentIndex === 1) return 2;
+  const orderIndex = room.questionOrder.findIndex((id) => id === question.id);
+  if (orderIndex >= 0 && orderIndex >= 10) return 2;
+  return 1;
+};
+
+const getBunteMaxAward = (question: AnyQuestion, fallback: number): number => {
+  const payload = (question as any)?.bunteTuete;
+  if (payload && typeof payload.maxPoints === 'number' && payload.maxPoints > 0) {
+    return payload.maxPoints;
+  }
+  const segmentIndex = (question as any).segmentIndex;
+  if (segmentIndex === 0) return 2;
+  if (segmentIndex === 1) return 3;
+  return fallback;
+};
+
+const effectivePotatoPool = (room: RoomState) =>
+  room.potatoPool.length ? room.potatoPool : room.presetPotatoPool;
+
+const recomputeRoomWarnings = (room: RoomState) => {
+  const warnings: string[] = [];
+  const potatoSize = effectivePotatoPool(room).length;
+  if (potatoSize > 0 && potatoSize < 14) {
+    warnings.push(`Potato-Pool enthält nur ${potatoSize} Themen (>=14 empfohlen).`);
+  }
+  const blitzSize = room.blitzPool.length || Object.keys(room.blitzThemeLibrary || {}).length;
+  if (blitzSize > 0 && blitzSize < 14) {
+    warnings.push(`Blitz-Pool enthält nur ${blitzSize} Themen (>=14 empfohlen).`);
+  }
+  room.validationWarnings = warnings;
+};
+
+const validateQuestionStructure = (question: AnyQuestion): string[] => {
+  const issues: string[] = [];
+  if (question.mechanic === 'sortItems') {
+    const correctOrder = (question as any).correctOrder;
+    if (!Array.isArray(correctOrder) || correctOrder.length === 0) {
+      issues.push('Sortierfrage ohne gültige correctOrder.');
+    }
+  }
+  if (question.mechanic === 'estimate' && (question as any).targetValue === undefined) {
+    issues.push('Schätzfrage ohne targetValue.');
+  }
+  if ((question as any).type === 'BUNTE_TUETE' && (question as any).bunteTuete) {
+    const payload = (question as any).bunteTuete;
+    if (payload.kind === 'top5') {
+      if (!Array.isArray(payload.items) || payload.items.length < 5) {
+        issues.push('TOP5 benötigt mindestens 5 Items.');
+      }
+      if (!Array.isArray(payload.correctOrder) || payload.correctOrder.length !== payload.items.length) {
+        issues.push('TOP5 hat keine vollständige correctOrder.');
+      }
+    } else if (payload.kind === 'precision') {
+      if (!Array.isArray(payload.ladder) || payload.ladder.length === 0) {
+        issues.push('Precision-Ladder benötigt mindestens einen Step.');
+      } else if (!payload.ladder.every((step: { acceptedAnswers: string[] }) => Array.isArray(step.acceptedAnswers) && step.acceptedAnswers.length > 0)) {
+        issues.push('Precision-Ladder enthält Steps ohne akzeptierte Antworten.');
+      }
+    } else if (payload.kind === 'oneOfEight') {
+      if (!Array.isArray(payload.statements) || payload.statements.length < 8) {
+        issues.push('8-Dinge-Variante benötigt 8 Aussagen.');
+      }
+      if (!payload.statements.some((stmt: { isFalse?: boolean }) => stmt.isFalse)) {
+        issues.push('8-Dinge-Variante markiert keine falsche Aussage.');
+      }
+    } else if (payload.kind === 'order') {
+      if (!Array.isArray(payload.items) || payload.items.length === 0) {
+        issues.push('Ordnen-Variante benötigt Items.');
+      }
+      if (!Array.isArray(payload.criteriaOptions) || payload.criteriaOptions.length === 0) {
+        issues.push('Ordnen-Variante benötigt mindestens ein Kriterium.');
+      }
+      if (!payload.correctByCriteria || !Object.keys(payload.correctByCriteria).length) {
+        issues.push('Ordnen-Variante ohne correctByCriteria.');
+      } else {
+        Object.entries(payload.correctByCriteria).forEach(([criteriaId, sequence]) => {
+          if (!Array.isArray(sequence) || (payload.items && sequence.length !== payload.items.length)) {
+            issues.push(`Ordnen-Kriterium ${criteriaId} hat keine vollständige Reihenfolge.`);
+          }
+        });
+      }
+    }
+  }
+  return issues;
+};
+
+type BunteEvaluationResult = {
+  awardedPoints: number;
+  awardedDetail: string | null;
+  isCorrect: boolean;
+  tieBreaker?: AnswerTieBreaker | null;
+};
+
+const evaluateBunteSubmission = (
+  question: AnyQuestion,
+  submission: unknown,
+  maxPoints: number
+): BunteEvaluationResult => {
+  const setup = (question as any).bunteTuete;
+  const payload = submission as BunteTueteSubmission;
+  if (!setup || !payload || typeof payload !== 'object' || payload.kind !== setup.kind) {
+    return { awardedPoints: 0, awardedDetail: 'Keine gültige Eingabe', isCorrect: false, tieBreaker: null };
+  }
+  const segmentCap = getBunteMaxAward(question, maxPoints);
+  const safeMax = Math.max(1, Math.min(maxPoints, segmentCap));
+  if (setup.kind === 'top5') {
+    const submission = payload as BunteTueteTop5Submission;
+    const order = Array.isArray(submission.order) ? submission.order : [];
+    const target =
+      Array.isArray(setup.correctOrder) && setup.correctOrder.length > 0
+        ? setup.correctOrder
+        : setup.items?.map((item: any) => item.id) ?? [];
+    if (!target.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
+    if (setup.scoringMode === 'contains') {
+      const hits = Array.from(new Set(order.filter(Boolean))).filter((id) => target.includes(id)).length;
+      let positionMatches = 0;
+      target.forEach((correctId: string, idx: number) => {
+        if (order[idx] === correctId) positionMatches += 1;
+      });
+      const points = Math.min(safeMax, hits);
+      return {
+        awardedPoints: points,
+        awardedDetail: `Pos ${positionMatches}/${target.length}, enthält ${hits}/${target.length}`,
+        isCorrect: hits >= target.length,
+        tieBreaker: {
+          label: 'TOP5',
+          primary: positionMatches,
+          secondary: hits,
+          detail: 'Positionen vor Contains'
+        }
+      };
+    }
+    let matches = 0;
+    target.forEach((correctId: string, idx: number) => {
+      if (order[idx] === correctId) matches += 1;
+    });
+    const points = Math.min(safeMax, matches);
+    return {
+      awardedPoints: points,
+      awardedDetail: `${matches}/${target.length} Positionen`,
+      isCorrect: matches >= target.length,
+      tieBreaker: {
+        label: 'TOP5',
+        primary: matches,
+        secondary: matches,
+        detail: 'Positionen'
+      }
+    };
+  }
+  if (setup.kind === 'precision') {
+    const submission = payload as BunteTuetePrecisionSubmission;
+    const text = typeof submission.text === 'string' ? submission.text.trim() : '';
+    if (!text) return { awardedPoints: 0, awardedDetail: 'Keine Antwort', isCorrect: false };
+    const normalized = normalizeText(text);
+    const threshold = typeof setup.similarityThreshold === 'number' ? setup.similarityThreshold : 0.85;
+    let bestPoints = 0;
+    let bestLabel: string | null = null;
+    (setup.ladder || []).forEach((step: { label: string; acceptedAnswers: string[]; points: number }) => {
+      (step.acceptedAnswers || []).forEach((candidate) => {
+        const score = similarityScore(normalized, normalizeText(candidate));
+        if (score >= threshold && step.points > bestPoints) {
+          bestPoints = Math.min(step.points, safeMax);
+          bestLabel = step.label;
+        }
+      });
+    });
+    return {
+      awardedPoints: bestPoints,
+      awardedDetail: bestLabel ? `Treffer: ${bestLabel}` : null,
+      isCorrect: bestPoints >= safeMax,
+      tieBreaker: null
+    };
+  }
+  if (setup.kind === 'oneOfEight') {
+    const submission = payload as BunteTueteOneOfEightSubmission;
+    const selection = typeof submission.choiceId === 'string' ? submission.choiceId.trim() : '';
+    const falseStatement = (setup.statements || []).find((stmt: { id: string; isFalse?: boolean }) => stmt.isFalse);
+    const isMatch =
+      Boolean(falseStatement) &&
+      selection &&
+      selection.toLowerCase() === String(falseStatement?.id ?? '').toLowerCase();
+    return {
+      awardedPoints: isMatch ? safeMax : 0,
+      awardedDetail: selection ? `Gewählt: ${selection.toUpperCase()}` : null,
+      isCorrect: Boolean(isMatch),
+      tieBreaker: null
+    };
+  }
+  if (setup.kind === 'order') {
+    const submission = payload as BunteTueteOrderSubmission;
+    const selectedCriteria =
+      submission.criteriaId || setup.defaultCriteriaId || Object.keys(setup.correctByCriteria || {})[0];
+    const expected = (setup.correctByCriteria || {})[selectedCriteria] || [];
+    const order = Array.isArray(submission.order) ? submission.order : [];
+    let matches = 0;
+    expected.forEach((val: string, idx: number) => {
+      if (order[idx] === val) matches += 1;
+    });
+    let points = Math.min(safeMax, matches * (setup.partialPoints ?? 1));
+    const isCorrect = expected.length > 0 && matches === expected.length;
+    if (isCorrect && typeof setup.fullPoints === 'number') {
+      points = Math.min(setup.fullPoints, safeMax);
+    }
+    return {
+      awardedPoints: points,
+      awardedDetail: expected.length ? `${matches}/${expected.length} Positionen` : null,
+      isCorrect,
+      tieBreaker: expected.length
+        ? {
+            label: 'ORDNEN',
+            primary: matches,
+            secondary: expected.length,
+            detail: 'Positionen korrekt'
+          }
+        : null
+    };
+  }
+  return { awardedPoints: 0, awardedDetail: null, isCorrect: false, tieBreaker: null };
+};
 
 const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
   if (!question) return false;
@@ -1260,6 +1590,22 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           submissions: room.blitzSubmittedTeamIds,
           results: room.blitzResultsByTeam
         };
+  const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
+  const results = includeResults
+    ? Object.entries(room.answers).map(([teamId, entry]) => ({
+        teamId,
+        teamName: room.teams[teamId]?.name ?? teamId,
+        answer: entry.value,
+        isCorrect: entry.isCorrect,
+        awardedPoints: entry.awardedPoints ?? null,
+        awardedDetail: entry.awardedDetail ?? null,
+        tieBreaker: entry.tieBreaker ?? null
+      }))
+    : undefined;
+  const warnings = [
+    ...room.validationWarnings,
+    ...(localized ? validateQuestionStructure(localized) : [])
+  ];
   return {
     roomCode: room.roomCode,
     state: room.gameState,
@@ -1272,8 +1618,11 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
       score: team.score ?? 0
     })),
     teamsConnected: Object.keys(room.teams).length,
+    questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
     potato,
-    blitz
+    blitz,
+    results,
+    warnings: warnings.length ? warnings : undefined
   };
 };
 
@@ -1291,10 +1640,9 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
   const question = questionById.get(room.currentQuestionId);
   if (!question) return false;
   applyRoomState(room, { type: 'HOST_LOCK' });
+  const basePoints = getQuestionPoints(room, question);
 
-  let bestDeviation: number | null = null;
   if (question.mechanic === 'estimate') {
-    // Ermittelt das Team mit der geringsten Abweichung
     const parsed = Object.entries(room.answers).map(([teamId, ans]) => {
       const num = Number(String(ans.value ?? '').replace(',', '.'));
       return {
@@ -1306,31 +1654,67 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       };
     });
     const minDiff = parsed.reduce((m, p) => Math.min(m, p.diff), Number.POSITIVE_INFINITY);
-    bestDeviation = Number.isFinite(minDiff) ? minDiff : null;
+    const bestDeviation = Number.isFinite(minDiff) ? minDiff : null;
     Object.entries(room.answers).forEach(([teamId, ans]) => {
       const p = parsed.find((x) => x.teamId === teamId);
       const isCorrect = p ? p.diff === minDiff : false;
-      room.answers[teamId] = { ...ans, isCorrect, deviation: p?.diff ?? null, bestDeviation };
+      const awardedPoints = isCorrect ? basePoints : 0;
+      const deviation = p?.diff ?? null;
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect,
+        deviation,
+        bestDeviation,
+        awardedPoints,
+                awardedDetail:
+          deviation !== null && Number.isFinite(deviation) ? `Diff ${Math.round(deviation * 100) / 100}` : null,
+        autoGraded: true,
+        tieBreaker:
+          deviation !== null && Number.isFinite(deviation)
+            ? { label: 'DIFF', primary: deviation, detail: 'Naeher dran gewinnt' }
+            : null
+      };
     });
   } else if (question.mechanic === 'betting') {
     const correctIdx = (question as any).correctIndex ?? 0;
     const pool = (question as any).pointsPool ?? 10;
-    // answer.value erwartet array length >= correctIdx+1
-    const scores = Object.entries(room.answers).map(([teamId, ans]) => {
-      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
-      const pts = Number(arr[correctIdx] ?? 0);
-      return { teamId, pts: Number.isFinite(pts) ? pts : 0 };
-    });
-    const maxPts = scores.reduce((m, s) => Math.max(m, s.pts), 0);
     Object.entries(room.answers).forEach(([teamId, ans]) => {
-      const entry = scores.find((s) => s.teamId === teamId);
-      const pts = entry ? entry.pts : 0;
-      const isCorrect = maxPts > 0 ? pts === maxPts : false;
-      room.answers[teamId] = { ...ans, isCorrect, betPoints: pts, betPool: pool };
+      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
+      const ptsRaw = Number(arr[correctIdx] ?? 0);
+      const awardedPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect: awardedPoints > 0,
+        betPoints: awardedPoints,
+        betPool: pool,
+        awardedPoints,
+        awardedDetail: `${awardedPoints}/${pool} Punkte`,
+        autoGraded: true,
+        tieBreaker: null
+      };
+    });
+  } else if (getQuestionType(question) === 'BUNTE_TUETE') {
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const evaluation = evaluateBunteSubmission(question, ans.value, basePoints);
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect: evaluation.isCorrect,
+        awardedPoints: evaluation.awardedPoints,
+        awardedDetail: evaluation.awardedDetail,
+        autoGraded: true,
+        tieBreaker: evaluation.tieBreaker ?? null
+      };
     });
   } else {
     Object.entries(room.answers).forEach(([teamId, ans]) => {
-      room.answers[teamId] = { ...ans, isCorrect: evaluateAnswer(question, ans.value) };
+      const isCorrect = evaluateAnswer(question, ans.value);
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect,
+        awardedPoints: isCorrect ? basePoints : 0,
+        autoGraded: true,
+        tieBreaker: null
+      };
     });
   }
 
@@ -1559,6 +1943,32 @@ const runNextQuestion = (room: RoomState) => {
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };
 };
 
+const shouldShowSegmentScoreboard = (room: RoomState) => {
+  const askedCount = room.askedQuestionIds.length;
+  return askedCount === 10 || askedCount === 20 || room.remainingQuestionIds.length === 0;
+};
+
+const handleHostNextAdvance = (room: RoomState) => {
+  if (room.gameState === 'Q_REVEAL' && shouldShowSegmentScoreboard(room)) {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'SCOREBOARD') {
+    if (room.remainingQuestionIds.length === 0) {
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    return runNextQuestion(room);
+  }
+  if (room.gameState === 'SCOREBOARD_PAUSE') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    return runNextQuestion(room);
+  }
+  return runNextQuestion(room);
+};
+
 const revealAnswersForRoom = (room: RoomState) => {
   if (!room.currentQuestionId) throw new Error('Keine aktive Frage');
   const question = questionById.get(room.currentQuestionId);
@@ -1572,16 +1982,35 @@ const revealAnswersForRoom = (room: RoomState) => {
   }
 
   applyRoomState(room, { type: 'HOST_REVEAL' });
-  const points = (question as any).points ?? 1;
+  const basePoints = getQuestionPoints(room, question);
   Object.entries(room.answers).forEach(([teamId, ans]) => {
     const isCorrect = ans.isCorrect ?? evaluateAnswer(question, ans.value);
     const deviation = ans.deviation ?? null;
     const bestDeviation = ans.bestDeviation ?? null;
-    room.answers[teamId] = { ...ans, isCorrect, deviation, bestDeviation };
-    if (isCorrect && room.teams[teamId]) {
-      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + points;
+    const awardedPoints =
+      ans.awardedPoints !== undefined && ans.awardedPoints !== null
+        ? ans.awardedPoints
+        : isCorrect
+        ? basePoints
+        : 0;
+    room.answers[teamId] = {
+      ...ans,
+      isCorrect,
+      deviation,
+      bestDeviation,
+      awardedPoints
+    };
+    if (awardedPoints > 0 && room.teams[teamId]) {
+      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + awardedPoints;
     }
-    io.to(room.roomCode).emit('teamResult', { teamId, isCorrect, deviation, bestDeviation });
+    io.to(room.roomCode).emit('teamResult', {
+      teamId,
+      isCorrect,
+      deviation,
+      bestDeviation,
+      awardedPoints,
+      awardedDetail: room.answers[teamId].awardedDetail ?? null
+    });
   });
 
   room.questionPhase = 'revealed';
@@ -2160,7 +2589,7 @@ io.on('connection', (socket: Socket) => {
   };
 
   socket.on('host:next', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => runNextQuestion(room));
+    withRoom(payload?.roomCode, ack, (room) => handleHostNextAdvance(room));
   });
 
   socket.on('host:lock', (payload: { roomCode?: string }, ack) => {
@@ -2183,8 +2612,11 @@ io.on('connection', (socket: Socket) => {
       withRoom(payload?.roomCode, ack, (room) => {
         const parsed =
           sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
-        const pool =
-          parsed.length >= POTATO_ROUNDS ? parsed : DEFAULT_POTATO_THEMES.slice();
+        const fallbackPool =
+          room.presetPotatoPool.length >= POTATO_ROUNDS
+            ? [...room.presetPotatoPool]
+            : DEFAULT_POTATO_THEMES.slice();
+        const pool = parsed.length >= POTATO_ROUNDS ? parsed : fallbackPool;
         if (pool.length < POTATO_ROUNDS) {
           throw new Error('Mindestens drei Themen erforderlich');
         }
@@ -2205,6 +2637,7 @@ io.on('connection', (socket: Socket) => {
         room.potatoLastWinnerId = null;
         room.potatoCurrentTheme = null;
         room.potatoLastConflict = null;
+        recomputeRoomWarnings(room);
         applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
         broadcastState(room);
         return { pool: room.potatoPool };
@@ -2230,6 +2663,7 @@ io.on('connection', (socket: Socket) => {
         if (index === -1) throw new Error('Theme nicht verfügbar');
         const actualTheme = room.potatoPool.splice(index, 1)[0];
         room.potatoBans[payload.teamId] = [...current, actualTheme];
+        recomputeRoomWarnings(room);
         broadcastState(room);
       });
     }
@@ -2393,6 +2827,13 @@ io.on('connection', (socket: Socket) => {
     });
   });
 
+  socket.on('host:showAwards', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
+      broadcastState(room);
+    });
+  });
+
   socket.on(
     'host:startBlitz',
     (
@@ -2400,13 +2841,34 @@ io.on('connection', (socket: Socket) => {
       ack?: AckFn
     ) => {
       withRoom(payload?.roomCode, ack, (room) => {
-        const parsed =
+        const requested = Array.isArray(payload?.themes)
+          ? payload?.themes.map((entry) => String(entry))
+          : [];
+        const resolvedRequested = requested
+          .map((id) => room.blitzThemeLibrary[id])
+          .filter((theme): theme is QuizBlitzTheme => Boolean(theme));
+        const fallbackNames =
           sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
-        const pool = parsed.length >= BLITZ_SETS ? parsed : DEFAULT_BLITZ_THEMES.slice();
-        if (pool.length < BLITZ_SETS) {
-          throw new Error('Mindestens drei Themen erforderlich');
+        let definitions: QuizBlitzTheme[] = [];
+        if (resolvedRequested.length >= BLITZ_SETS) {
+          definitions = resolvedRequested;
+        } else if (Object.keys(room.blitzThemeLibrary).length >= BLITZ_SETS) {
+          definitions = Object.values(room.blitzThemeLibrary);
+        } else {
+          const legacyNames = fallbackNames.length >= BLITZ_SETS ? fallbackNames : DEFAULT_BLITZ_THEMES.slice();
+          if (legacyNames.length < BLITZ_SETS) {
+            throw new Error('Mindestens drei Themen erforderlich');
+          }
+          definitions = legacyNames.map((title, idx) => {
+            // TODO(LEGACY): Replace placeholder Blitz content with curated assets when Studio supports it.
+            return buildLegacyBlitzTheme(title || `Legacy ${idx + 1}`);
+          });
         }
-        room.blitzPool = pool;
+        const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
+        normalizedDefs.forEach((theme) => {
+          room.blitzThemeLibrary[theme.id] = theme;
+        });
+        room.blitzPool = normalizedDefs.map(toBlitzOption);
         room.blitzBans = {};
         room.blitzBanLimits = computePotatoBanLimits(room);
         room.blitzSelectedThemes = [];
@@ -2415,7 +2877,9 @@ io.on('connection', (socket: Socket) => {
         room.blitzDeadlineAt = null;
         room.blitzTheme = null;
         room.blitzItems = [];
+        room.blitzItemSolutions = [];
         resetBlitzCollections(room);
+        recomputeRoomWarnings(room);
         applyRoomState(room, { type: 'FORCE', next: 'BLITZ' });
         broadcastState(room);
         return { pool: room.blitzPool };
@@ -2425,7 +2889,7 @@ io.on('connection', (socket: Socket) => {
 
   socket.on(
     'host:banBlitzTheme',
-    (payload: { roomCode?: string; teamId?: string; theme?: string }, ack?: AckFn) => {
+    (payload: { roomCode?: string; teamId?: string; theme?: string; themeId?: string }, ack?: AckFn) => {
       withRoom(payload?.roomCode, ack, (room) => {
         if (room.blitzPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
@@ -2433,14 +2897,15 @@ io.on('connection', (socket: Socket) => {
         if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
         const bans = room.blitzBans[payload.teamId] ?? [];
         if (bans.length >= limit) throw new Error('Ban-Limit erreicht');
-        const themeName = (payload?.theme || '').trim();
-        if (!themeName) throw new Error('Theme fehlt');
+        const themeKey = (payload?.themeId || payload?.theme || '').trim();
+        if (!themeKey) throw new Error('Theme fehlt');
         const index = room.blitzPool.findIndex(
-          (entry) => entry.toLowerCase() === themeName.toLowerCase()
+          (entry) => entry.id === themeKey || entry.title.toLowerCase() === themeKey.toLowerCase()
         );
         if (index === -1) throw new Error('Theme nicht verfügbar');
         const actualTheme = room.blitzPool.splice(index, 1)[0];
-        room.blitzBans[payload.teamId] = [...bans, actualTheme];
+        room.blitzBans[payload.teamId] = [...bans, actualTheme.title];
+        recomputeRoomWarnings(room);
         broadcastState(room);
       });
     }

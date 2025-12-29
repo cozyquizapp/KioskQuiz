@@ -808,6 +808,7 @@ function ModeratorPage(): React.ReactElement {
     });
   }
 
+  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
   const answersCount = Object.keys(answers?.answers || {}).length;
   const teamsCount = connectedTeams || Object.keys(answers?.teams || {}).length;
   const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
@@ -815,7 +816,6 @@ function ModeratorPage(): React.ReactElement {
     () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
     [socketScores]
   );
-  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
   const scoreboardOverlayForced = socketScoreboardOverlayForced ?? false;
   const questionProgressSnapshot =
     socketQuestionProgress ??

@@ -679,7 +679,7 @@ function ModeratorPage(): React.ReactElement {
     });
   }
 
-  const emitPotatoEvent = (
+  function emitPotatoEvent(
     eventName:
       | 'host:startPotato'
       | 'host:banPotatoTheme'
@@ -694,7 +694,7 @@ function ModeratorPage(): React.ReactElement {
       | 'host:potatoOverrideAttempt',
     payload?: Record<string, unknown>,
     onSuccess?: () => void
-  ) => {
+  ) {
     if (!roomCode) {
       setToast('Roomcode fehlt');
       setTimeout(() => setToast(null), 2000);
@@ -713,7 +713,7 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
-  };
+  }
 
   const handlePotatoStart = () => {
     const text = potatoThemeInput.trim();
@@ -798,7 +798,7 @@ function ModeratorPage(): React.ReactElement {
     emitPotatoEvent('host:potatoOverrideAttempt', { attemptId, action });
   };
 
-  const emitBlitzEvent = (
+  function emitBlitzEvent(
     eventName:
       | 'host:startBlitz'
       | 'host:banBlitzTheme'
@@ -810,7 +810,7 @@ function ModeratorPage(): React.ReactElement {
       | 'host:finishBlitz',
     payload?: Record<string, unknown>,
     onSuccess?: () => void
-  ) => {
+  ) {
     if (!roomCode) {
       setToast('Roomcode fehlt');
       setTimeout(() => setToast(null), 2000);
@@ -829,7 +829,7 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
-  };
+  }
 
   const answersCount = Object.keys(answers?.answers || {}).length;
   const teamsCount = Object.keys(answers?.teams || {}).length;

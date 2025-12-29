@@ -134,7 +134,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
   return TYPING_TAGS.has(tagName);
 };
 
-const ModeratorPage: React.FC = () => {
+function ModeratorPage(): React.ReactElement {
   const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
     if (SINGLE_SESSION_MODE) return DEFAULT_ROOM_CODE;
@@ -3130,6 +3130,6 @@ const renderCozyStagePanel = () => {
       )}
     </main>
   );
-};
+}
 
 export default ModeratorPage;

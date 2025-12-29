@@ -323,6 +323,17 @@ export interface QuizBlitzTheme {
   items: QuizBlitzItem[];
 }
 
+export type CozyPotatoThemeInput =
+  | string
+  | {
+      id?: string;
+      title?: string;
+      allowedAnswers?: string[];
+      aliases?: Record<string, string[]>;
+      allowedNormalized?: string[];
+      aliasNormalized?: string[];
+    };
+
 export interface QuizTemplate {
   id: string;
   name: string;
@@ -333,7 +344,7 @@ export interface QuizTemplate {
   blitz?: {
     pool: QuizBlitzTheme[];
   } | null;
-  potatoPool?: string[] | null;
+  potatoPool?: CozyPotatoThemeInput[] | null;
   enableBingo?: boolean;
 }
 
@@ -360,7 +371,7 @@ export interface CozyQuizDraft {
   meta: CozyQuizMeta;
   questions: AnyQuestion[];
   blitz: { pool: QuizBlitzTheme[] };
-  potatoPool: string[];
+  potatoPool: CozyPotatoThemeInput[];
   enableBingo?: boolean;
   createdAt: number;
   updatedAt: number;
@@ -439,6 +450,19 @@ export interface PotatoConflict {
   conflictingAnswer?: string | null;
 }
 
+export type PotatoVerdict = 'ok' | 'dup' | 'invalid' | 'timeout' | 'pending';
+
+export interface PotatoAttempt {
+  id: string;
+  teamId: string;
+  text: string;
+  normalized: string;
+  verdict: PotatoVerdict;
+  reason?: string;
+  at: number;
+  overridden?: boolean;
+}
+
 export interface PotatoState {
   phase: PotatoPhase;
   pool: string[];
@@ -451,6 +475,7 @@ export interface PotatoState {
   lives: Record<string, number>;
   usedAnswers: string[];
   usedAnswersNormalized: string[];
+  lastAttempt?: PotatoAttempt | null;
   deadline?: number | null;
   turnStartedAt?: number | null;
   turnDurationMs?: number | null;
@@ -515,6 +540,10 @@ export type StateUpdatePayload = {
   results?: AnswerAwardSnapshot[];
   warnings?: string[];
   supportsBingo?: boolean;
+  config?: {
+    potatoAutopilot: boolean;
+    potatoTimeoutAutostrike: boolean;
+  };
 };
 
 export interface AnswerAwardSnapshot {

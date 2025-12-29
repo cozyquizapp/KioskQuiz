@@ -195,11 +195,18 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [potatoTick, setPotatoTick] = useState(0);
+  const [potatoInput, setPotatoInput] = useState('');
+  const [potatoSubmitting, setPotatoSubmitting] = useState(false);
+  const [potatoError, setPotatoError] = useState<string | null>(null);
+  const [showPotatoOkToast, setShowPotatoOkToast] = useState(false);
   const savedIdRef = useRef<string | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const recoveringRef = useRef(false);
+  const potatoInputRef = useRef<HTMLInputElement | null>(null);
+  const lastPotatoActiveRef = useRef<string | null>(null);
+  const potatoToastTimeoutRef = useRef<number | null>(null);
   const [reconnectKey, setReconnectKey] = useState(0);
   const storageKey = (suffix: string) => `team:${roomCode}:${suffix}`;
   useEffect(() => {
@@ -215,6 +222,65 @@ function TeamView({ roomCode }: TeamViewProps) {
       setPhase('notJoined');
     }
   }, [gameState, teamId]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setPotatoSubmitting(false);
+      lastPotatoActiveRef.current = null;
+      return;
+    }
+    const activeId = potatoState?.activeTeamId ?? null;
+    const wasActive = lastPotatoActiveRef.current === teamId;
+    const isActive = activeId === teamId;
+    const lastAttempt = potatoState?.lastAttempt ?? null;
+
+    if (isActive && activeId !== lastPotatoActiveRef.current && potatoInputRef.current) {
+      potatoInputRef.current.focus();
+      setPotatoError(null);
+    }
+
+    if (!isActive && wasActive) {
+      setPotatoSubmitting(false);
+      setPotatoInput('');
+    }
+
+    if (lastAttempt && lastAttempt.teamId === teamId) {
+      if (potatoSubmitting) {
+        setPotatoSubmitting(false);
+      }
+      if (lastAttempt.verdict === 'ok') {
+        setPotatoInput('');
+        setPotatoError(null);
+      }
+    }
+
+    if (!potatoState || potatoState.phase !== 'PLAYING') {
+      setPotatoSubmitting(false);
+    }
+
+    lastPotatoActiveRef.current = activeId;
+  }, [
+    potatoState?.activeTeamId,
+    potatoState?.lastAttempt?.id,
+    potatoState?.lastAttempt?.verdict,
+    potatoState?.phase,
+    teamId,
+    potatoSubmitting
+  ]);
+
+  useEffect(() => {
+    if (!teamId) return;
+    const attempt = potatoState?.lastAttempt;
+    if (attempt && attempt.teamId === teamId && attempt.verdict === 'ok') {
+      setShowPotatoOkToast(true);
+      if (potatoToastTimeoutRef.current) {
+        window.clearTimeout(potatoToastTimeoutRef.current);
+      }
+      potatoToastTimeoutRef.current = window.setTimeout(() => setShowPotatoOkToast(false), 800);
+    } else if (attempt && attempt.teamId === teamId && attempt.verdict !== 'pending') {
+      setShowPotatoOkToast(false);
+    }
+  }, [potatoState?.lastAttempt?.id, potatoState?.lastAttempt?.verdict, teamId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -278,6 +344,15 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, [roomCode]);
 
+  useEffect(
+    () => () => {
+      if (potatoToastTimeoutRef.current) {
+        window.clearTimeout(potatoToastTimeoutRef.current);
+      }
+    },
+    []
+  );
+
   const t = <K extends keyof (typeof COPY)['de']>(key: K) => {
     const deVal = COPY.de[key] as any;
     const enVal = (COPY.en as any)[key] as any;
@@ -290,6 +365,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
     }
     return (COPY as any)[language]?.[key] ?? COPY.de[key];
+  };
+  const inlineCopy = (de: string, en: string) => {
+    if (language === 'en') return en;
+    if (language === 'both') return `${de} / ${en}`;
+    return de;
   };
   const scoreboardLookup = useMemo(() => {
     const map: Record<string, { name: string; score: number }> = {};
@@ -306,6 +386,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!potatoState?.deadline) return null;
     return Math.max(0, Math.ceil((potatoState.deadline - Date.now()) / 1000));
   }, [potatoState?.deadline, potatoTick]);
+  const potatoDeadlinePassed = potatoCountdown !== null && potatoCountdown <= 0;
   const blitzCountdown = useMemo(() => {
     if (!blitzState?.deadline) return null;
     return Math.max(0, Math.ceil((blitzState.deadline - Date.now()) / 1000));
@@ -471,7 +552,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
-        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
+        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. Ã¼ber teamResult.
         setPhase('showResult');
       }
     });
@@ -915,7 +996,7 @@ const handleSubmit = async () => {
     } catch (err) {
       setMessage(
         language === 'de'
-          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prüfen.'
+          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prÃ¼fen.'
           : 'Could not send answer. Please check connection.'
       );
     }
@@ -926,7 +1007,7 @@ const handleSubmit = async () => {
     if (payload.kind === 'top5') {
       const values = bunteTop5Order;
       if (values.length !== payload.items.length || values.some((val) => !val)) {
-        setMessage(language === 'de' ? 'Bitte alle Positionen wählen.' : 'Please fill all positions.');
+        setMessage(language === 'de' ? 'Bitte alle Positionen wÃ¤hlen.' : 'Please fill all positions.');
         return null;
       }
       return { kind: 'top5', order: values };
@@ -940,7 +1021,7 @@ const handleSubmit = async () => {
     }
     if (payload.kind === 'oneOfEight') {
       if (!bunteOneChoice) {
-        setMessage(language === 'de' ? 'Bitte eine Option wählen.' : 'Please choose an option.');
+        setMessage(language === 'de' ? 'Bitte eine Option wÃ¤hlen.' : 'Please choose an option.');
         return null;
       }
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
@@ -998,7 +1079,7 @@ const handleSubmit = async () => {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'WÃ¤hlen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1085,7 +1166,7 @@ const handleSubmit = async () => {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'WÃ¤hlen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1322,7 +1403,7 @@ const renderShowResult = () => (
       {resultPoints !== null && (
         <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
           {language === 'de' ? 'Punkte' : 'Points'}: {resultPoints}
-          {resultDetail ? ` · ${resultDetail}` : ''}
+          {resultDetail ? ` Â· ${resultDetail}` : ''}
         </p>
       )}
       {solution && (
@@ -1379,10 +1460,69 @@ const renderShowResult = () => (
         : potatoState.lastWinnerId || null;
     const infoCopy =
       language === 'en'
-        ? 'Max. 5 seconds per answer · duplicates = strike.'
+        ? 'Max. 5 seconds per answer Â· duplicates = strike.'
         : language === 'both'
         ? 'Max. 5 Sekunden pro Antwort / Max. 5 seconds per answer. Doppelte Antworten verlieren ein Leben.'
         : 'Max. 5 Sekunden pro Antwort. Doppelte Antworten verlieren ein Leben.';
+    const usedAnswers = potatoState.usedAnswers || [];
+    const isActiveTeam = potatoState.activeTeamId === teamId;
+    const ownAttempt =
+      potatoState.lastAttempt && potatoState.lastAttempt.teamId === teamId ? potatoState.lastAttempt : null;
+    const relevantConflict =
+      ownAttempt && potatoState.pendingConflict && potatoState.pendingConflict.answer === ownAttempt.text
+        ? potatoState.pendingConflict
+        : null;
+    const attemptLabel = ownAttempt
+      ? {
+          ok: inlineCopy('OK', 'OK'),
+          dup: inlineCopy('DUPLIKAT', 'DUPLICATE'),
+          invalid: inlineCopy('UNGUELTIG', 'INVALID'),
+          timeout: inlineCopy('TIMEOUT', 'TIMEOUT'),
+          pending: inlineCopy('PRUEFUNG', 'CHECKING')
+        }[ownAttempt.verdict]
+      : null;
+    const attemptTone = ownAttempt
+      ? {
+          ok: '#22c55e',
+          dup: '#fbbf24',
+          invalid: '#f87171',
+          timeout: '#f87171',
+          pending: '#cbd5e1'
+        }[ownAttempt.verdict]
+      : '#cbd5e1';
+    const attemptMessage = (() => {
+      if (!ownAttempt) return null;
+      if (ownAttempt.verdict === 'ok') {
+        return inlineCopy('Sitzt! Weitergeben.', 'Locked in! Keep it moving.');
+      }
+      if (ownAttempt.verdict === 'dup') {
+        const conflictText =
+          relevantConflict?.conflictingAnswer || inlineCopy('eine frühere Antwort', 'an earlier answer');
+        if (ownAttempt.reason === 'similar') {
+          return inlineCopy(`Sehr aehnlich zu ${conflictText}.`, `Very similar to ${conflictText}.`);
+        }
+        return inlineCopy(`Schon genannt: ${conflictText}.`, `Already used: ${conflictText}.`);
+      }
+      if (ownAttempt.verdict === 'invalid') {
+        if (ownAttempt.reason === 'not-listed') {
+          return inlineCopy(
+            'Nicht auf der Themenliste. Moderator entscheidet.',
+            'Not on the theme list. Moderator decides.'
+          );
+        }
+        if (ownAttempt.reason === 'empty') {
+          return inlineCopy('Bitte gib etwas ein.', 'Please enter something.');
+        }
+        if (ownAttempt.reason === 'rejected') {
+          return inlineCopy('Moderator hat abgelehnt.', 'Moderator rejected this answer.');
+        }
+        return inlineCopy('Ungueltig. Bitte neu versuchen.', 'Invalid, please try again.');
+      }
+      if (ownAttempt.verdict === 'timeout') {
+        return inlineCopy('Zu spaet. Leben in Gefahr.', 'Too late. Life is in danger.');
+      }
+      return inlineCopy('Wird geprüft ...', 'Checking attempt ...');
+    })();
     const renderScoreboardBlock = () => (
       <div style={{ marginTop: 10 }}>
         <div style={pillLabel}>{language === 'en' ? 'Scoreboard' : language === 'both' ? 'Scoreboard / Punkte' : 'Scoreboard'}</div>
@@ -1457,7 +1597,7 @@ const renderShowResult = () => (
               }}
             >
               <span>{scoreboardLookup[teamId]?.name || teamId}</span>
-              <span style={{ fontWeight: 800 }}>{'❤'.repeat(Math.max(1, livesLeft))}</span>
+              <span style={{ fontWeight: 800 }}>{'â¤'.repeat(Math.max(1, livesLeft))}</span>
             </div>
           );
         })}
@@ -1477,7 +1617,7 @@ const renderShowResult = () => (
           <>
             <p style={mutedText}>
               {language === 'de'
-                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
+                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen Ã¼brig bleiben.'
                 : language === 'both'
                 ? 'Teams bannen Themen / Teams are banning topics.'
                 : 'Teams are banning topics before the final.'}
@@ -1500,7 +1640,7 @@ const renderShowResult = () => (
                     <div style={{ fontSize: 12, color: '#94a3b8' }}>
                       {language === 'en' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({limit}):
                       {' '}
-                      {bans[team.id]?.length ? bans[team.id].join(', ') : '—'}
+                      {bans[team.id]?.length ? bans[team.id].join(', ') : 'â'}
                     </div>
                   </div>
                 );
@@ -1513,30 +1653,161 @@ const renderShowResult = () => (
           <>
             <div style={{ ...pillLabel, justifyContent: 'flex-start', gap: 8 }}>
               <span>{language === 'en' ? 'Topic' : language === 'both' ? 'Thema / Topic' : 'Thema'}:</span>
-              <strong>{potatoState.currentTheme || '—'}</strong>
+              <strong>{potatoState.currentTheme || 'â'}</strong>
             </div>
             <div style={{ fontWeight: 700 }}>
               {language === 'en' ? 'Active team' : language === 'both' ? 'Team am Zug / Active team' : 'Team am Zug'}:{' '}
-              {activeTeamName || '—'}
+              {activeTeamName || 'â'}
             </div>
             <div style={{ color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
-              {potatoCountdown !== null
-                ? `${Math.max(0, potatoCountdown)}s · ${infoCopy}`
-                : infoCopy}
+              {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s Â· ${infoCopy}` : infoCopy}
             </div>
-            {potatoCountdown !== null && potatoCountdown <= 0 && (
-              <div style={{ ...pillSmall, background: 'rgba(248,113,113,0.18)', borderColor: 'rgba(248,113,113,0.4)', color: '#fecaca' }}>
+            {potatoDeadlinePassed && (
+              <div
+                style={{
+                  ...pillSmall,
+                  background: 'rgba(248,113,113,0.18)',
+                  borderColor: 'rgba(248,113,113,0.4)',
+                  color: '#fecaca'
+                }}
+              >
                 {language === 'en' ? 'Time is up!' : language === 'both' ? 'Zeit abgelaufen / Time is up!' : 'Zeit abgelaufen!'}
               </div>
             )}
             {renderLives()}
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'en'
-                ? `${potatoState.usedAnswers?.length || 0} answers already used.`
+                ? `${usedAnswers.length} answers already used.`
                 : language === 'both'
-                ? `${potatoState.usedAnswers?.length || 0} Antworten genutzt / answers used.`
-                : `${potatoState.usedAnswers?.length || 0} Antworten bereits genutzt.`}
+                ? `${usedAnswers.length} Antworten genutzt / answers used.`
+                : `${usedAnswers.length} Antworten bereits genutzt.`}
             </div>
+            {isActiveTeam ? (
+              <div style={{ display: 'grid', gap: 6 }}>
+                <label style={{ fontSize: 12, color: '#cbd5e1' }}>
+                  {language === 'en' ? 'Your answer' : language === 'both' ? 'Deine Antwort / Your answer' : 'Deine Antwort'}
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  <input
+                    ref={potatoInputRef}
+                    style={{ ...inputStyle, flex: 1, minWidth: 200 }}
+                    value={potatoInput}
+                    disabled={potatoSubmitting || potatoDeadlinePassed}
+                    onChange={(e) => setPotatoInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitPotatoAnswer();
+                      }
+                    }}
+                    placeholder={inlineCopy('Antwort eintippen ...', 'Type your answer ...')}
+                  />
+                  <button
+                    style={{
+                      ...primaryButton,
+                      opacity: potatoSubmitting ? 0.7 : 1,
+                      minWidth: 130
+                    }}
+                    disabled={potatoSubmitting || potatoDeadlinePassed}
+                    onClick={submitPotatoAnswer}
+                  >
+                    {potatoSubmitting
+                      ? inlineCopy('Sende...', 'Sending...')
+                      : inlineCopy('Antwort senden', 'Submit answer')}
+                  </button>
+                </div>
+                {showPotatoOkToast && (
+                  <div
+                    style={{
+                      ...pillSmall,
+                      background: 'rgba(34,197,94,0.15)',
+                      borderColor: 'rgba(34,197,94,0.45)',
+                      color: '#bbf7d0',
+                      width: 'fit-content'
+                    }}
+                  >
+                    {inlineCopy('✅ Gültig!', '✅ Accepted!')}
+                  </div>
+                )}
+                {ownAttempt && (
+                  <div
+                    style={{
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 12,
+                      padding: '8px 10px',
+                      background: 'rgba(15,23,42,0.6)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                      <strong style={{ color: '#e2e8f0' }}>"{ownAttempt.text || 'â'}"</strong>
+                      {attemptLabel && (
+                        <span
+                          style={{
+                            ...pillSmall,
+                            background: 'transparent',
+                            borderColor: attemptTone,
+                            color: attemptTone
+                          }}
+                        >
+                          {attemptLabel}
+                        </span>
+                      )}
+                    </div>
+                    {attemptMessage && (
+                      <p style={{ margin: '6px 0 0', color: '#cbd5e1', fontSize: 13 }}>{attemptMessage}</p>
+                    )}
+                  </div>
+                )}
+                {potatoError && (
+                  <div style={{ color: '#fca5a5', fontSize: 13, fontWeight: 600 }}>{potatoError}</div>
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  padding: '8px 10px',
+                  background: 'rgba(2,6,23,0.5)',
+                  color: '#e2e8f0',
+                  fontSize: 13,
+                  fontWeight: 600
+                }}
+              >
+                {activeTeamName
+                  ? inlineCopy(
+                      `${activeTeamName} ist dran. Bereit halten!`,
+                      `${activeTeamName} is on the clock. Stand by!`
+                    )
+                  : inlineCopy('Ein anderes Team ist am Zug.', 'Another team is on the clock.')}
+              </div>
+            )}
+            {usedAnswers.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ ...pillLabel }}>
+                  {language === 'en'
+                    ? 'Already used'
+                    : language === 'both'
+                    ? 'Schon genannt / Already used'
+                    : 'Schon genannt'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                  {usedAnswers.map((answer, idx) => (
+                    <span
+                      key={`potato-used-${idx}`}
+                      style={{
+                        ...pillSmall,
+                        background: 'rgba(148,163,184,0.18)',
+                        borderColor: 'rgba(148,163,184,0.4)',
+                        color: '#e2e8f0'
+                      }}
+                    >
+                      {answer}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -1559,8 +1830,8 @@ const renderShowResult = () => (
               {language === 'en'
                 ? 'Host prepares the next round.'
                 : language === 'both'
-                ? 'Host startet gleich die nächste Runde / Host prepares next round.'
-                : 'Host bereitet die nächste Runde vor.'}
+                ? 'Host startet gleich die nÃ¤chste Runde / Host prepares next round.'
+                : 'Host bereitet die nÃ¤chste Runde vor.'}
             </p>
           </>
         )}
@@ -1570,8 +1841,8 @@ const renderShowResult = () => (
             {language === 'en'
               ? 'Hot Potato finished. Await the awards!'
               : language === 'both'
-              ? 'Finale beendet – Awards gleich / Hot Potato finished.'
-              : 'Heisse Kartoffel beendet – Awards gleich!'}
+              ? 'Finale beendet â Awards gleich / Hot Potato finished.'
+              : 'Heisse Kartoffel beendet â Awards gleich!'}
           </div>
         )}
 
@@ -1596,6 +1867,41 @@ const renderShowResult = () => (
     );
   };
 
+  const submitPotatoAnswer = () => {
+    if (!teamId || !socketRef.current) return;
+    if (!potatoState || potatoState.phase !== 'PLAYING') {
+      setPotatoError(inlineCopy('Finale ist noch nicht aktiv.', 'Final stage has not started yet.'));
+      return;
+    }
+    if (potatoState.activeTeamId !== teamId) {
+      setPotatoError(
+        inlineCopy('Nur das aktive Team darf antworten.', 'Only the active team may answer right now.')
+      );
+      return;
+    }
+    if (potatoCountdown !== null && potatoCountdown <= 0) {
+      setPotatoError(inlineCopy('Zeit ist abgelaufen.', 'Time is up.'));
+      return;
+    }
+    const trimmed = potatoInput.trim();
+    if (!trimmed) {
+      setPotatoError(inlineCopy('Bitte gib eine Antwort ein.', 'Please enter an answer.'));
+      return;
+    }
+    setPotatoSubmitting(true);
+    setPotatoError(null);
+    socketRef.current.emit(
+      'team:submitPotatoAnswer',
+      { roomCode, teamId, text: trimmed },
+      (resp?: { error?: string }) => {
+        if (resp?.error) {
+          setPotatoSubmitting(false);
+          setPotatoError(resp.error);
+        }
+      }
+    );
+  };
+
   const renderBlitzStage = () => {
     if (!blitzState) {
       return (
@@ -1607,20 +1913,20 @@ const renderShowResult = () => (
     }
     const canAnswer = blitzState.phase === 'PLAYING' && !blitzSubmitted;
     const results = blitzState.results || {};
-    const themeLabel = blitzState.theme?.title || '—';
+    const themeLabel = blitzState.theme?.title || 'â';
     const blitzItems = blitzState.items || [];
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
           <span>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</span>
           <span>
-            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 · {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
+            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 Â· {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
           </span>
         </div>
         {blitzState.phase === 'PLAYING' ? (
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
-              {language === 'de' ? 'Gib fünf Antworten ein.' : 'Enter five answers.'}
+              {language === 'de' ? 'Gib fÃ¼nf Antworten ein.' : 'Enter five answers.'}
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {blitzAnswers.map((value, idx) => {
@@ -1630,7 +1936,7 @@ const renderShowResult = () => (
                   <div key={inputId} style={{ display: 'grid', gap: 4 }}>
                     <label htmlFor={inputId} style={{ fontSize: 12, color: '#cbd5e1' }}>
                       {language === 'de' ? 'Item' : 'Item'} {idx + 1}
-                      {item?.prompt ? ` · ${item.prompt}` : ''}
+                      {item?.prompt ? ` Â· ${item.prompt}` : ''}
                     </label>
                     {item?.mediaUrl && (
                       <img
@@ -1685,7 +1991,7 @@ const renderShowResult = () => (
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
               {language === 'de'
-                ? 'Set abgeschlossen. Warte auf das nächste.'
+                ? 'Set abgeschlossen. Warte auf das nÃ¤chste.'
                 : 'Set finished. Waiting for the next one.'}
             </div>
             {Object.keys(results).length > 0 && (
@@ -1736,7 +2042,7 @@ const renderShowResult = () => (
             }}
             onClick={() => setShowBingoPanel(false)}
           >
-            {language === 'de' ? 'Bingofeld schließen' : 'Close bingo board'}
+            {language === 'de' ? 'Bingofeld schlieÃen' : 'Close bingo board'}
           </button>
         </div>
         <div
@@ -1811,7 +2117,7 @@ const renderShowResult = () => (
         </h3>
         <p style={{ ...mutedText, margin: 0 }}>
           {language === 'de'
-            ? 'Wählt ein freies Feld der aktuellen Kategorie.'
+            ? 'WÃ¤hlt ein freies Feld der aktuellen Kategorie.'
             : 'Pick a free cell of the current category.'}
         </p>
       </div>
@@ -1826,9 +2132,9 @@ const renderShowResult = () => (
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: 12 }}>{language === 'en' ? 'Language' : 'Sprache'}</span>
         {([
-          { key: 'de', label: 'DE', flag: '🇩🇪' },
-          { key: 'en', label: 'EN', flag: '🇬🇧' },
-          { key: 'both', label: 'DE+EN', flag: '🌐' }
+          { key: 'de', label: 'DE', flag: 'ð©ðª' },
+          { key: 'en', label: 'EN', flag: 'ð¬ð§' },
+          { key: 'both', label: 'DE+EN', flag: 'ð' }
         ] as { key: Language; label: string; flag: string }[]).map((opt) => (
           <button
             key={opt.key}
@@ -1997,7 +2303,7 @@ const renderShowResult = () => (
             <Link
               to="/menu"
               style={{ textDecoration: 'none', color: 'inherit' }}
-              title={language === 'de' ? 'Menü öffnen' : 'Open menu'}
+              title={language === 'de' ? 'MenÃ¼ Ã¶ffnen' : 'Open menu'}
             >
               <div
                 style={{
@@ -2061,7 +2367,7 @@ const renderShowResult = () => (
                 }}
                 onClick={() => setShowBingoPanel(true)}
               >
-                {language === 'de' ? 'Bingofeld öffnen' : 'Open bingo board'}
+                {language === 'de' ? 'Bingofeld Ã¶ffnen' : 'Open bingo board'}
               </button>
             )}
           </div>
@@ -2124,7 +2430,7 @@ const renderShowResult = () => (
         >
           {canMarkBingo
             ? language === 'de'
-              ? 'Bingofeld öffnen'
+              ? 'Bingofeld Ã¶ffnen'
               : 'Open bingo board'
             : 'Bingofeld'}
         </button>

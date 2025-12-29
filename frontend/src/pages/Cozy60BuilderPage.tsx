@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AnyQuestion,
   CozyQuestionType,
+  CozyPotatoThemeInput,
   CozyQuizDraft,
   Language,
   QuizBlitzTheme
@@ -32,6 +33,93 @@ const typeOptions: { label: string; value: CozyQuestionType }[] = [
   { label: 'Cheese (Bildfrage)', value: 'CHEESE' },
   { label: 'Bunte Tuete', value: 'BUNTE_TUETE' }
 ];
+
+type BuilderPotatoTheme = {
+  id: string;
+  title: string;
+  strict: boolean;
+  allowedAnswersText: string;
+  aliasesText: string;
+};
+
+const slugify = (value: string) =>
+  value
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const linesFromText = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+const aliasesRecordToText = (aliases?: Record<string, string[]>) => {
+  if (!aliases) return '';
+  const lines: string[] = [];
+  Object.entries(aliases).forEach(([canonical, list]) => {
+    list.forEach((alias) => lines.push(`${alias} = ${canonical}`));
+  });
+  return lines.join('\n');
+};
+
+const parseAliasesText = (text: string) => {
+  const map: Record<string, string[]> = {};
+  linesFromText(text).forEach((line) => {
+    const [aliasRaw, canonicalRaw] = line.split('=');
+    if (!aliasRaw || !canonicalRaw) return;
+    const alias = aliasRaw.trim();
+    const canonical = canonicalRaw.trim();
+    if (!alias || !canonical) return;
+    const bucket = map[canonical] ?? [];
+    if (!bucket.includes(alias)) bucket.push(alias);
+    map[canonical] = bucket;
+  });
+  return map;
+};
+
+const builderThemeFromEntry = (entry: CozyPotatoThemeInput, idx: number): BuilderPotatoTheme => {
+  if (typeof entry === 'string') {
+    const safeTitle = entry.trim() || `Thema ${idx + 1}`;
+    return {
+      id: slugify(safeTitle) || `potato-theme-${idx + 1}`,
+      title: safeTitle,
+      strict: false,
+      allowedAnswersText: '',
+      aliasesText: ''
+    };
+  }
+  const title = (entry.title ?? entry.id ?? `Thema ${idx + 1}`).trim();
+  const allowed = Array.isArray(entry.allowedAnswers) ? entry.allowedAnswers : [];
+  const aliases = (entry as any).aliases as Record<string, string[]> | undefined;
+  const strict = Boolean((allowed?.length ?? 0) > 0 || (aliases && Object.keys(aliases).length > 0));
+  return {
+    id: entry.id ?? (slugify(title) || `potato-theme-${idx + 1}`),
+    title,
+    strict,
+    allowedAnswersText: allowed.join('\n'),
+    aliasesText: aliasesRecordToText(aliases)
+  };
+};
+
+const serializeBuilderTheme = (theme: BuilderPotatoTheme): CozyPotatoThemeInput => {
+  const baseId = theme.id?.trim() || slugify(theme.title) || `potato-theme-${Date.now()}`;
+  const base = {
+    id: baseId,
+    title: theme.title.trim() || `Thema ${baseId}`
+  };
+  if (!theme.strict) {
+    return base;
+  }
+  const allowedAnswers = linesFromText(theme.allowedAnswersText);
+  const aliases = parseAliasesText(theme.aliasesText);
+  return {
+    ...base,
+    allowedAnswers,
+    aliases: Object.keys(aliases).length ? aliases : undefined
+  };
+};
 
 const questionTemplateForSlot = (slotIndex: number, existingId: string, type: CozyQuestionType): AnyQuestion => {
   const slot = COZY_SLOT_TEMPLATE[slotIndex] ?? COZY_SLOT_TEMPLATE[0];
@@ -174,6 +262,47 @@ const Cozy60BuilderPage = () => {
     } catch (err) {
       setError((err as Error).message);
     }
+  };
+
+  const updatePotatoTheme = (index: number, updater: (theme: BuilderPotatoTheme) => BuilderPotatoTheme) => {
+    updateDraft((prev) => {
+      const pool = prev.potatoPool.slice();
+      if (!pool[index]) return prev;
+      const builder = builderThemeFromEntry(pool[index], index);
+      const next = serializeBuilderTheme(updater(builder));
+      pool[index] = next;
+      return { ...prev, potatoPool: pool };
+    });
+  };
+
+  const handlePotatoThemeMove = (index: number, direction: -1 | 1) => {
+    updateDraft((prev) => {
+      const pool = prev.potatoPool.slice();
+      const target = index + direction;
+      if (target < 0 || target >= pool.length) return prev;
+      const temp = pool[target];
+      pool[target] = pool[index];
+      pool[index] = temp;
+      return { ...prev, potatoPool: pool };
+    });
+  };
+
+  const handlePotatoThemeDelete = (index: number) => {
+    updateDraft((prev) => {
+      const pool = prev.potatoPool.filter((_, idx) => idx !== index);
+      return { ...prev, potatoPool: pool };
+    });
+  };
+
+  const handlePotatoThemeAdd = () => {
+    updateDraft((prev) => {
+      const title = `Thema ${prev.potatoPool.length + 1}`;
+      const id = `${slugify(title)}-${Date.now().toString(36)}`;
+      return {
+        ...prev,
+        potatoPool: [...prev.potatoPool, { id, title }]
+      };
+    });
   };
 
   const currentQuestion = draft?.questions[selectedSlot];
@@ -435,28 +564,97 @@ const Cozy60BuilderPage = () => {
               </section>
             )}
             {tab === 'potato' && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 720 }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  Potato Themen (ein Thema pro Zeile)
-                  <textarea
-                    rows={12}
-                    value={draft.potatoPool.join('\n')}
-                    onChange={(e) =>
-                      updateDraft((prev) => ({
-                        ...prev,
-                        potatoPool: Array.from(
-                          new Set(
-                            e.target.value
-                              .split(/\\r?\\n/)
-                              .map((entry) => entry.trim())
-                              .filter(Boolean)
-                          )
-                        )
-                      }))
-                    }
-                    style={{ padding: 8, borderRadius: 6 }}
-                  />
-                </label>
+              <section style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 860 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong>Potato Themen</strong>
+                  <button onClick={handlePotatoThemeAdd}>Neues Thema</button>
+                </div>
+                {draft.potatoPool.length === 0 && <p>Keine Themen vorhanden.</p>}
+                {draft.potatoPool.map((entry, idx) => {
+                  const theme = builderThemeFromEntry(entry, idx);
+                  const allowedCount = linesFromText(theme.allowedAnswersText).length;
+                  const aliasCount = linesFromText(theme.aliasesText).length;
+                  return (
+                    <div
+                      key={`${theme.id}-${idx}`}
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 10,
+                        padding: 12,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <label style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          Titel
+                          <input
+                            value={theme.title}
+                            onChange={(e) => updatePotatoTheme(idx, (prev) => ({ ...prev, title: e.target.value }))}
+                            style={{ padding: 8, borderRadius: 6 }}
+                          />
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <input
+                            type="checkbox"
+                            checked={theme.strict}
+                            onChange={(e) => updatePotatoTheme(idx, (prev) => ({ ...prev, strict: e.target.checked }))}
+                          />
+                          Strict (Truth-List)
+                        </label>
+                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => handlePotatoThemeMove(idx, -1)}
+                            disabled={idx === 0}
+                            style={{ opacity: idx === 0 ? 0.5 : 1 }}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => handlePotatoThemeMove(idx, 1)}
+                            disabled={idx === draft.potatoPool.length - 1}
+                            style={{ opacity: idx === draft.potatoPool.length - 1 ? 0.5 : 1 }}
+                          >
+                            ↓
+                          </button>
+                          <button onClick={() => handlePotatoThemeDelete(idx)}>Löschen</button>
+                        </div>
+                      </div>
+                      {theme.strict ? (
+                        <>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Allowed Answers (eine pro Zeile)
+                            <textarea
+                              rows={3}
+                              value={theme.allowedAnswersText}
+                              onChange={(e) =>
+                                updatePotatoTheme(idx, (prev) => ({ ...prev, allowedAnswersText: e.target.value }))
+                              }
+                              style={{ padding: 8, borderRadius: 6 }}
+                            />
+                            <small>{allowedCount} erlaubte Antworten</small>
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Aliases (alias = canonical)
+                            <textarea
+                              rows={3}
+                              value={theme.aliasesText}
+                              onChange={(e) =>
+                                updatePotatoTheme(idx, (prev) => ({ ...prev, aliasesText: e.target.value }))
+                              }
+                              style={{ padding: 8, borderRadius: 6, fontFamily: 'monospace' }}
+                              placeholder="NYC = New York City"
+                            />
+                            <small>{aliasCount} Alias-Zuordnungen</small>
+                          </label>
+                        </>
+                      ) : (
+                        <small>Offenes Thema · jede eindeutige Antwort ist erlaubt.</small>
+                      )}
+                    </div>
+                  );
+                })}
                 <small>
                   {draft.potatoPool.length} Themen - Empfehlung {'>= 14'}
                 </small>

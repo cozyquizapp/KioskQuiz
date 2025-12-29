@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   fetchCurrentQuestion,
@@ -32,6 +32,9 @@ import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
 import { loadPlayDraft } from '../utils/draft';
 import { connectControlSocket } from '../socket';
 import { featureFlags } from '../config/features';
+
+const DEFAULT_ROOM_CODE = featureFlags.singleSessionRoomCode || 'MAIN';
+const SINGLE_SESSION_MODE = featureFlags.singleSessionMode;
 
 type AnswersState = {
   answers: Record<string, (AnswerEntry & { answer?: unknown })>;
@@ -121,9 +124,29 @@ const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span 
 const buildQrUrl = (url: string, size = 180) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
 
+const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+
+const isTypingTarget = (target: EventTarget | null): boolean => {
+  if (!target) return false;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tagName = target.tagName.toUpperCase();
+  return TYPING_TAGS.has(tagName);
+};
+
+const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
+  const key = (event.key || '').toLowerCase();
+  const code = (event.code || '').toLowerCase();
+  return combos.some((combo) => {
+    const normalized = combo.toLowerCase();
+    return normalized === key || normalized === code;
+  });
+};
+
 const ModeratorPage: React.FC = () => {
   const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
+    if (SINGLE_SESSION_MODE) return DEFAULT_ROOM_CODE;
     if (typeof window === 'undefined') return '';
     return localStorage.getItem('moderatorRoom') || '';
   };
@@ -186,7 +209,8 @@ const ModeratorPage: React.FC = () => {
     warnings: socketWarnings,
     timerEndsAt: socketTimerEndsAt,
     teamsConnected: socketTeamsConnected,
-    emit: socketEmit
+    emit: socketEmit,
+    config: socketConfig
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
     setUserViewPhase(phase);
@@ -194,7 +218,7 @@ const ModeratorPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (SINGLE_SESSION_MODE || typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get('roomCode');
     if (code) {
@@ -202,6 +226,11 @@ const ModeratorPage: React.FC = () => {
       setRoomInput(code.toUpperCase());
     }
   }, []);
+  useEffect(() => {
+    if (!SINGLE_SESSION_MODE || typeof window === 'undefined') return;
+    localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
+  }, []);
+
 
   useEffect(() => {
     const socket = connectControlSocket();
@@ -210,6 +239,167 @@ const ModeratorPage: React.FC = () => {
       socket.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleBlitzAction = () => {
+      if (!roomCode) return;
+      if (blitzPhase === 'IDLE') {
+        if ((isScoreboardState || isScoreboardPauseState) && askedCount >= 10) {
+          emitBlitzEvent('host:startBlitz');
+        }
+        return;
+      }
+      if (blitzPhase === 'BANNING') {
+        emitBlitzEvent('host:confirmBlitzThemes');
+        return;
+      }
+      if (blitzPhase === 'PLAYING') {
+        emitBlitzEvent('host:lockBlitzSet');
+        return;
+      }
+      if (blitzPhase === 'SET_END') {
+        if (!blitzResultsCount) {
+          emitBlitzEvent('host:revealBlitzSet');
+          return;
+        }
+        const moreSets = blitzSelectedCount === 0 || blitzSetIndex < blitzSelectedCount - 1;
+        if (moreSets) {
+          emitBlitzEvent('host:blitzStartSet');
+        } else {
+          emitBlitzEvent('host:finishBlitz');
+        }
+        return;
+      }
+      if (blitzPhase === 'DONE') {
+        emitBlitzEvent('host:finishBlitz');
+      }
+    };
+
+    const handlePotatoAction = () => {
+      if (!roomCode) return;
+      if (!potato || potatoPhase === 'IDLE') {
+        if ((isScoreboardState || isScoreboardPauseState) && askedCount >= totalQuestions) {
+          handlePotatoStart();
+        }
+        return;
+      }
+      if (potatoPhase === 'BANNING') {
+        handlePotatoConfirmThemes();
+        return;
+      }
+      if (potatoPhase === 'PLAYING') {
+        if (potatoConflict) {
+          handlePotatoStrike();
+        } else {
+          handlePotatoNextTurn();
+        }
+        return;
+      }
+      if (potatoPhase === 'ROUND_END') {
+        if (hasWinnerDraft) {
+          handlePotatoEndRound();
+          return;
+        }
+        if (potatoFirstRoundPending) {
+          handlePotatoStartRound();
+          return;
+        }
+        if (!potatoAllRoundsComplete) {
+          handlePotatoNextRound();
+          return;
+        }
+        handlePotatoFinish();
+        return;
+      }
+      if (potatoPhase === 'DONE') {
+        handlePotatoFinish();
+      }
+    };
+
+    const handleScoreboardAction = () => {
+      if (!roomCode) return;
+      if (normalizedGameState === 'AWARDS') {
+        handleShowAwards();
+        return;
+      }
+      if (normalizedGameState === 'SCOREBOARD' || normalizedGameState === 'SCOREBOARD_PAUSE') {
+        handleNextQuestion();
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
+      if (!roomCode || showJoinScreen) return;
+
+      if (matchesHotkey(event, ['f13', 'digit1', 'numpad1', '1'])) {
+        event.preventDefault();
+        handleNextQuestion();
+        return;
+      }
+      if (matchesHotkey(event, ['f14', 'digit2', 'numpad2', '2'])) {
+        event.preventDefault();
+        handleLockQuestion();
+        return;
+      }
+      if (matchesHotkey(event, ['f15', 'digit3', 'numpad3', '3'])) {
+        event.preventDefault();
+        handleReveal();
+        return;
+      }
+      if (matchesHotkey(event, ['f16', 'digit4', 'numpad4', '4'])) {
+        event.preventDefault();
+        handleBlitzAction();
+        return;
+      }
+      if (matchesHotkey(event, ['f17', 'digit5', 'numpad5', '5'])) {
+        event.preventDefault();
+        handlePotatoAction();
+        return;
+      }
+      if (matchesHotkey(event, ['f18', 'digit6', 'numpad6', '6'])) {
+        event.preventDefault();
+        handleScoreboardAction();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    roomCode,
+    showJoinScreen,
+    handleNextQuestion,
+    handleLockQuestion,
+    handleReveal,
+    emitBlitzEvent,
+    blitzPhase,
+    blitzResultsCount,
+    blitzSelectedCount,
+    blitzSetIndex,
+    isScoreboardState,
+    isScoreboardPauseState,
+    askedCount,
+    totalQuestions,
+    potatoPhase,
+    potatoConflict,
+    potatoRoundsTotal,
+    potatoFirstRoundPending,
+    potatoAllRoundsComplete,
+    handlePotatoStart,
+    handlePotatoConfirmThemes,
+    handlePotatoNextTurn,
+    handlePotatoStrike,
+    handlePotatoStartRound,
+    handlePotatoNextRound,
+    handlePotatoFinish,
+    handlePotatoEndRound,
+    hasWinnerDraft,
+    normalizedGameState,
+    handleShowAwards,
+    potato
+  ]);
+
 
   useEffect(() => {
     if (!roomCode) {
@@ -344,6 +534,15 @@ const ModeratorPage: React.FC = () => {
   };
 
   const handleRoomConnect = () => {
+    if (SINGLE_SESSION_MODE) {
+      setRoomCode(DEFAULT_ROOM_CODE);
+      setRoomInput(DEFAULT_ROOM_CODE);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
+      }
+      setShowJoinScreen(false);
+      return;
+    }
     const code = roomInput.trim().toUpperCase();
     if (!code) {
       setToast('Roomcode fehlt');
@@ -354,6 +553,15 @@ const ModeratorPage: React.FC = () => {
     localStorage.setItem('moderatorRoom', code);
   };
   const handleRoomReset = () => {
+    if (SINGLE_SESSION_MODE) {
+      setRoomCode(DEFAULT_ROOM_CODE);
+      setRoomInput(DEFAULT_ROOM_CODE);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
+      }
+      setShowJoinScreen(false);
+      return;
+    }
     setRoomCode('');
     setRoomInput('');
     localStorage.removeItem('moderatorRoom');
@@ -377,9 +585,10 @@ const ModeratorPage: React.FC = () => {
           setToast(resp?.error || 'Session konnte nicht erstellt werden');
           return;
         }
-        setRoomCode(resp.roomCode);
-        setRoomInput(resp.roomCode);
-        localStorage.setItem('moderatorRoom', resp.roomCode);
+        const nextCode = resp.roomCode || DEFAULT_ROOM_CODE;
+        setRoomCode(nextCode);
+        setRoomInput(nextCode);
+        localStorage.setItem('moderatorRoom', nextCode);
         setShowJoinScreen(true);
       }
     );
@@ -481,7 +690,8 @@ const ModeratorPage: React.FC = () => {
       | 'host:potatoNextTurn'
       | 'host:potatoEndRound'
       | 'host:potatoNextRound'
-      | 'host:potatoFinish',
+      | 'host:potatoFinish'
+      | 'host:potatoOverrideAttempt',
     payload?: Record<string, unknown>,
     onSuccess?: () => void
   ) => {
@@ -578,6 +788,16 @@ const ModeratorPage: React.FC = () => {
     emitPotatoEvent('host:potatoSubmitTurn', { verdict });
   };
 
+  const handlePotatoOverrideAttempt = (action: 'accept' | 'acceptDuplicate' | 'reject') => {
+    const attemptId = potato?.lastAttempt?.id;
+    if (!attemptId) {
+      setToast('Kein Versuch zum Uebersteuern');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitPotatoEvent('host:potatoOverrideAttempt', { attemptId, action });
+  };
+
   const emitBlitzEvent = (
     eventName:
       | 'host:startBlitz'
@@ -619,11 +839,16 @@ const ModeratorPage: React.FC = () => {
     [socketScores]
   );
   const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
-  const questionProgress = socketQuestionProgress;
-  const askedCount =
-    questionProgress?.asked ??
-    (meta?.globalIndex ?? (question ? 1 : 0));
-  const totalQuestions = questionProgress?.total ?? meta?.globalTotal ?? 20;
+  const questionProgressSnapshot =
+    socketQuestionProgress ??
+    (meta
+      ? {
+          asked: meta.globalIndex ?? (question ? 1 : 0),
+          total: meta.globalTotal ?? 20
+        }
+      : { asked: question ? 1 : 0, total: 20 });
+  const askedCount = questionProgressSnapshot?.asked ?? meta?.globalIndex ?? (question ? 1 : 0);
+  const totalQuestions = questionProgressSnapshot?.total ?? meta?.globalTotal ?? 20;
   const isScoreboardState = socketGameState === 'SCOREBOARD';
   const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE';
   const teamLookup = useMemo(() => {
@@ -646,12 +871,23 @@ const ModeratorPage: React.FC = () => {
   const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
   const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
   const potatoConflict = potato?.pendingConflict ?? null;
+  const potatoRoundIndex = potato?.roundIndex ?? -1;
+  const potatoFirstRoundPending = potatoPhase === 'ROUND_END' && potatoRoundIndex < 0;
+  const potatoAllRoundsComplete =
+    potatoPhase === 'ROUND_END' && potatoRoundsTotal > 0 && potatoRoundIndex >= potatoRoundsTotal - 1;
+  const hasWinnerDraft = Boolean(potatoWinnerDraft && potatoWinnerDraft.trim());
+  const potatoAutopilotEnabled = socketConfig?.potatoAutopilot ?? true;
+  const potatoTimeoutAutostrikeEnabled = socketConfig?.potatoTimeoutAutostrike ?? false;
+  const showPotatoConfigBadges = socketGameState === 'POTATO';
   const blitzDeadline = blitz?.deadline ?? null;
   const blitzTimeLeft = useMemo(() => {
     if (!blitzDeadline) return null;
     return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
   }, [blitzDeadline, countdownTick]);
   const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
+  const blitzSetIndex = blitz?.setIndex ?? -1;
+  const blitzSelectedCount = blitz?.selectedThemes?.length ?? 0;
+  const blitzResultsCount = Object.keys(blitz?.results ?? {}).length;
   const questionTimerSecondsLeft = useMemo(() => {
     if (!socketTimerEndsAt) return null;
     return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
@@ -726,10 +962,12 @@ const ModeratorPage: React.FC = () => {
   }, [socketTeams, answers]);
 
   const joinLinks = useMemo(() => {
-    if (!roomCode) return null;
+    const effectiveRoom = roomCode || (SINGLE_SESSION_MODE ? DEFAULT_ROOM_CODE : '');
+    if (!effectiveRoom && !SINGLE_SESSION_MODE) return null;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const normalizedOrigin = origin?.replace(/\/$/, '') || '';
-    const buildPath = (path: string) => `${normalizedOrigin}${path}?roomCode=${roomCode}`;
+    const buildPath = (path: string) =>
+      SINGLE_SESSION_MODE ? `${normalizedOrigin}${path}` : `${normalizedOrigin}${path}?roomCode=${effectiveRoom}`;
     return {
       team: buildPath('/team'),
       beamer: buildPath('/beamer')
@@ -858,6 +1096,47 @@ const ModeratorPage: React.FC = () => {
       isRoundEnd && potatoRoundsTotal > 0 && roundsPlayed >= potatoRoundsTotal - 1;
     const activeTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato.activeTeamId : null;
     const lastWinnerName = potato?.lastWinnerId ? teamLookup[potato.lastWinnerId]?.name || potato.lastWinnerId : null;
+    const lastAttempt = potato?.lastAttempt ?? null;
+    const lastAttemptTeamName = lastAttempt ? teamLookup[lastAttempt.teamId]?.name || lastAttempt.teamId : null;
+    const relevantConflict =
+      lastAttempt && potatoConflict && potatoConflict.answer === lastAttempt.text ? potatoConflict : null;
+    const lastAttemptVerdictLabel = lastAttempt
+      ? {
+          ok: 'OK',
+          dup: 'DUPLIKAT',
+          invalid: 'UNGUELTIG',
+          timeout: 'TIMEOUT',
+          pending: 'PRUEFUNG'
+        }[lastAttempt.verdict]
+      : null;
+    const lastAttemptTone = lastAttempt
+      ? {
+          ok: 'rgba(34,197,94,0.85)',
+          dup: 'rgba(250,204,21,0.85)',
+          invalid: 'rgba(248,113,113,0.85)',
+          timeout: 'rgba(248,113,113,0.85)',
+          pending: '#cbd5e1'
+        }[lastAttempt.verdict]
+      : '#cbd5e1';
+    const lastAttemptMessage = (() => {
+      if (!lastAttempt) return null;
+      if (lastAttempt.verdict === 'ok') return 'Automatisch akzeptiert.';
+      if (lastAttempt.verdict === 'dup') {
+        if (lastAttempt.reason === 'similar') {
+          return `Sehr aehnlich zu ${relevantConflict?.conflictingAnswer || 'bestehender Antwort'}.`;
+        }
+        return `Schon genannt: ${relevantConflict?.conflictingAnswer || 'eine andere Antwort'}.`;
+      }
+      if (lastAttempt.verdict === 'invalid') {
+        if (lastAttempt.reason === 'not-listed') return 'Nicht in der Themenliste.';
+        if (lastAttempt.reason === 'empty') return 'Team hat nichts eingegeben.';
+        if (lastAttempt.reason === 'rejected') return 'Bereits abgelehnt.';
+        return 'Ungueltig.';
+      }
+      if (lastAttempt.verdict === 'timeout') return 'Zeitlimit ueberschritten.';
+      return 'Wird aktuell geprueft.';
+    })();
+    const canOverrideAttempt = Boolean(lastAttempt && lastAttempt.verdict !== 'ok');
     return (
       <section style={{ ...card, marginTop: 12 }}>
         {/* TODO(DESIGN_LATER): polish potato admin layout */}
@@ -895,8 +1174,32 @@ const ModeratorPage: React.FC = () => {
                 Themen: {selectedThemes.join(', ')}
               </span>
             )}
-      </div>
-    </div>
+          </div>
+        </div>
+        {showPotatoConfigBadges && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+            <span
+              style={{
+                ...statChip,
+                borderColor: potatoAutopilotEnabled ? 'rgba(34,197,94,0.45)' : 'rgba(248,113,113,0.45)',
+                color: potatoAutopilotEnabled ? '#bbf7d0' : '#fecaca',
+                background: potatoAutopilotEnabled ? 'rgba(34,197,94,0.12)' : 'rgba(248,113,113,0.12)'
+              }}
+            >
+              Autopilot: {potatoAutopilotEnabled ? 'AN' : 'AUS'}
+            </span>
+            <span
+              style={{
+                ...statChip,
+                borderColor: potatoTimeoutAutostrikeEnabled ? 'rgba(251,191,36,0.4)' : 'rgba(148,163,184,0.4)',
+                color: potatoTimeoutAutostrikeEnabled ? '#fcd34d' : '#cbd5e1',
+                background: potatoTimeoutAutostrikeEnabled ? 'rgba(251,191,36,0.12)' : 'rgba(148,163,184,0.12)'
+              }}
+            >
+              Timeout-Strike: {potatoTimeoutAutostrikeEnabled ? 'AN' : 'AUS'}
+            </span>
+          </div>
+        )}
 
         <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
           {!potato && (
@@ -1044,7 +1347,7 @@ const ModeratorPage: React.FC = () => {
                 {potato.currentTheme || 'n/a'}
               </div>
               <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-                Aktives Team: {activeTeamName || '—'} · Used Answers: {usedAnswers.length}
+                Aktives Team: {activeTeamName || '—'} · Antworten bisher: {usedAnswers.length}
               </div>
               {potatoDeadlinePassed && (
                 <span
@@ -1072,43 +1375,146 @@ const ModeratorPage: React.FC = () => {
                   </span>
                 ))}
               </div>
+              {usedAnswers.length > 0 && (
+                <div style={{ display: 'grid', gap: 4 }}>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>Schon genannt</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {usedAnswers.map((answer, idx) => (
+                      <span
+                        key={`potato-used-admin-${idx}`}
+                        style={{
+                          ...statChip,
+                          background: 'rgba(148,163,184,0.16)',
+                          borderColor: 'rgba(148,163,184,0.35)',
+                          color: '#e2e8f0'
+                        }}
+                      >
+                        {answer}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {lastAttempt && (
+                <div
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 12,
+                    padding: 12,
+                    display: 'grid',
+                    gap: 6,
+                    background: 'rgba(15,23,42,0.55)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                    <div style={{ fontWeight: 700 }}>
+                      {lastAttemptTeamName || lastAttempt.teamId} · {new Date(lastAttempt.at).toLocaleTimeString()}
+                    </div>
+                    {lastAttemptVerdictLabel && (
+                      <span
+                        style={{
+                          ...statChip,
+                          borderColor: lastAttemptTone,
+                          color: lastAttemptTone,
+                          background: 'transparent'
+                        }}
+                      >
+                        {lastAttemptVerdictLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13 }}>
+                    Antwort: <strong>"{lastAttempt.text || '—'}"</strong>
+                  </div>
+                  {relevantConflict && (
+                    <div style={{ fontSize: 12, color: '#fde68a' }}>
+                      Konflikt mit {relevantConflict.conflictingAnswer || 'anderer Antwort'}
+                    </div>
+                  )}
+                  {lastAttemptMessage && <div style={{ fontSize: 13, color: '#cbd5e1' }}>{lastAttemptMessage}</div>}
+                  {canOverrideAttempt && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        style={{
+                          ...inputStyle,
+                          width: 'auto',
+                          background: 'rgba(34,197,94,0.25)',
+                          border: '1px solid rgba(34,197,94,0.45)',
+                          color: '#bbf7d0'
+                        }}
+                        onClick={() => handlePotatoOverrideAttempt('accept')}
+                      >
+                        Akzeptieren
+                      </button>
+                      {lastAttempt.verdict === 'dup' && (
+                        <button
+                          style={{
+                            ...inputStyle,
+                            width: 'auto',
+                            background: 'rgba(250,204,21,0.18)',
+                            border: '1px solid rgba(250,204,21,0.4)',
+                            color: '#fef9c3'
+                          }}
+                          onClick={() => handlePotatoOverrideAttempt('acceptDuplicate')}
+                        >
+                          Duplikat akzeptieren
+                        </button>
+                      )}
+                      <button
+                        style={{
+                          ...inputStyle,
+                          width: 'auto',
+                          background: 'rgba(248,113,113,0.18)',
+                          border: '1px solid rgba(248,113,113,0.4)',
+                          color: '#fecaca'
+                        }}
+                        onClick={() => handlePotatoOverrideAttempt('reject')}
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <input
-                  value={potatoAnswerInput}
-                  onChange={(e) => setPotatoAnswerInput(e.target.value)}
-                  placeholder="Antwort des Teams"
-                  style={{ ...inputStyle, flex: '1 1 220px', minWidth: 200 }}
-                />
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'rgba(34,197,94,0.18)',
-                    border: '1px solid rgba(34,197,94,0.45)',
-                    color: '#bbf7d0',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handlePotatoSubmit('correct')}
-                >
-                  Antwort OK
-                </button>
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'rgba(239,68,68,0.18)',
-                    border: '1px solid rgba(239,68,68,0.4)',
-                    color: '#fecdd3',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handlePotatoSubmit('strike')}
-                >
-                  Strike
-                </button>
-                <button
-                  style={{ ...inputStyle, width: 'auto' }}
-                  onClick={handlePotatoNextTurn}
-                >
+                {featureFlags.showLegacyPanels && (
+                  <>
+                    {/* TODO(LEGACY): Host typed potato answers fallback */}
+                    <input
+                      value={potatoAnswerInput}
+                      onChange={(e) => setPotatoAnswerInput(e.target.value)}
+                      placeholder="Antwort des Teams"
+                      style={{ ...inputStyle, flex: '1 1 220px', minWidth: 200 }}
+                    />
+                    <button
+                      style={{
+                        ...inputStyle,
+                        width: 'auto',
+                        background: 'rgba(34,197,94,0.18)',
+                        border: '1px solid rgba(34,197,94,0.45)',
+                        color: '#bbf7d0',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handlePotatoSubmit('correct')}
+                    >
+                      Antwort OK
+                    </button>
+                    <button
+                      style={{
+                        ...inputStyle,
+                        width: 'auto',
+                        background: 'rgba(239,68,68,0.18)',
+                        border: '1px solid rgba(239,68,68,0.4)',
+                        color: '#fecdd3',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handlePotatoSubmit('strike')}
+                    >
+                      Strike
+                    </button>
+                  </>
+                )}
+                <button style={{ ...inputStyle, width: 'auto' }} onClick={handlePotatoNextTurn}>
                   Nächster Zug
                 </button>
                 <button
@@ -1144,12 +1550,7 @@ const ModeratorPage: React.FC = () => {
                   Runde abschließen (+3 Punkte)
                 </button>
               </div>
-              {usedAnswers.length > 0 && (
-                <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                  Letzte Antworten: {usedAnswers.slice(-5).join(', ')}
-                </div>
-              )}
-              {potatoConflict && (
+              {featureFlags.showLegacyPanels && potatoConflict && (
                 <div
                   style={{
                     border: '1px solid rgba(248,113,113,0.45)',
@@ -1166,9 +1567,7 @@ const ModeratorPage: React.FC = () => {
                   </div>
                   <div style={{ fontSize: 13 }}>
                     „{potatoConflict.answer}“
-                    {potatoConflict.conflictingAnswer
-                      ? ` vs. „${potatoConflict.conflictingAnswer}“`
-                      : ''}
+                    {potatoConflict.conflictingAnswer ? ` vs. „${potatoConflict.conflictingAnswer}“` : ''}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button
@@ -1787,7 +2186,42 @@ const ModeratorPage: React.FC = () => {
     );
   };
 
-  const renderCozyStagePanel = () => {
+  const renderHotkeyLegend = () => {
+  if (!featureFlags.showLegacyPanels) return null;
+  if (!roomCode) return null;
+  const shortcuts = [
+    { combo: 'F13 / 1', text: 'Next stage' },
+    { combo: 'F14 / 2', text: 'Lock answers' },
+    { combo: 'F15 / 3', text: 'Reveal' },
+    { combo: 'F16 / 4', text: 'Blitz action (context)' },
+    { combo: 'F17 / 5', text: 'Potato action (context)' },
+    { combo: 'F18 / 6', text: 'Scoreboard / Awards' }
+  ];
+  return (
+    <section style={{ ...card, marginTop: 12 }}>
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>Shortcuts</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {shortcuts.map((entry) => (
+          <span
+            key={entry.combo}
+            style={{
+              ...statChip,
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.08)',
+              borderColor: 'rgba(255,255,255,0.08)',
+              color: '#cbd5e1'
+            }}
+          >
+            {entry.combo} - {entry.text}
+          </span>
+        ))}
+      </div>
+      <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>Stream Deck: send F13-F18 or digits 1-6.</div>
+    </section>
+  );
+};
+
+const renderCozyStagePanel = () => {
     if (!roomCode) return null;
     if (normalizedGameState === 'BLITZ') return renderBlitzControls();
     if (normalizedGameState === 'POTATO') return renderPotatoControls();
@@ -2112,6 +2546,8 @@ const ModeratorPage: React.FC = () => {
       {warningsPanel}
 
       {scoreboardPanel}
+
+      {renderHotkeyLegend()}
 
     </>
 

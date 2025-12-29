@@ -31,6 +31,7 @@ type SocketEvents = {
   results?: StateUpdatePayload['results'];
   warnings?: string[];
   supportsBingo?: boolean;
+  config?: StateUpdatePayload['config'];
 };
 
 export const useQuizSocket = (roomCode: string) => {
@@ -149,7 +150,8 @@ export const useQuizSocket = (roomCode: string) => {
         questionProgress: payload.questionProgress ?? prev.questionProgress,
         results: payload.results ?? prev.results,
         warnings: payload.warnings ?? prev.warnings,
-        supportsBingo: payload.supportsBingo ?? prev.supportsBingo
+        supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
+        config: payload.config ?? prev.config
       }));
     };
 

@@ -660,24 +660,24 @@ function ModeratorPage(): React.ReactElement {
     });
   };
 
-  const handleNextQuestion = () => {
+  function handleNextQuestion() {
     sendHostCommand('host:next', async () => {
       await loadCurrentQuestion();
       await loadAnswers();
     });
-  };
+  }
 
-  const handleLockQuestion = () => {
+  function handleLockQuestion() {
     sendHostCommand('host:lock', async () => {
       await loadAnswers();
     });
-  };
+  }
 
-  const handleReveal = () => {
+  function handleReveal() {
     sendHostCommand('host:reveal', async () => {
       await loadAnswers();
     });
-  };
+  }
 
   const emitPotatoEvent = (
     eventName:

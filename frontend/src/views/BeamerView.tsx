@@ -26,6 +26,8 @@ import BeamerSlotView from './BeamerSlotView';
 import BeamerQuestionView from './BeamerQuestionView';
 import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
 import { loadPlayDraft } from '../utils/draft';
+import { featureFlags } from '../config/features';
+import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 
 type Lang = Language;
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
@@ -46,6 +48,15 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
 type BeamerProps = { roomCode: string };
 
 const SLOT_ITEM_HEIGHT = 70;
+
+type FrameBaseProps = {
+  scene: string;
+  leftLabel: string;
+  leftHint?: string;
+  progressText?: string;
+  progressValue?: number | null;
+  timerText?: string;
+};
 
 const translations = {
   de: {
@@ -226,6 +237,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [potato, setPotato] = useState<PotatoState | null>(null);
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
+  const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [potatoTick, setPotatoTick] = useState(0);
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
   const [showLastQuestion, setShowLastQuestion] = useState(true);
@@ -533,6 +545,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.currentQuestion !== undefined) {
         setQuestion(payload.currentQuestion);
+        if (payload.currentQuestion) {
+          setAnswerResults(null);
+        }
       }
       if (payload.timer) {
         setTimerEndsAt(payload.timer.endsAt);
@@ -543,6 +558,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.blitz !== undefined) {
         setBlitz(payload.blitz ?? null);
+      }
+      if (payload.results !== undefined) {
+        setAnswerResults(payload.results ?? null);
       }
     };
     socket.on('server:stateUpdate', onStateUpdate);
@@ -686,7 +704,7 @@ useEffect(() => {
     }
   }, [slotMeta]);
 
-  const viewMode: BeamerViewMode =
+  const rawViewMode: BeamerViewMode =
     screen === 'intro'
       ? 'intro'
       : screen === 'slot' && slotMeta
@@ -698,12 +716,30 @@ useEffect(() => {
       : screen === 'question'
       ? 'question'
       : 'lobby';
+  const viewMode: BeamerViewMode =
+    !featureFlags.showLegacyCategories && rawViewMode === 'categorySlot' ? 'question' : rawViewMode;
 
   const isScoreboardState =
     gameState === 'SCOREBOARD' || gameState === 'SCOREBOARD_PAUSE' || gameState === 'AWARDS';
   const isPotatoStage = gameState === 'POTATO' && potato;
   const isBlitzStage = gameState === 'BLITZ' && blitz;
   const sortedScoreTeams = [...teams].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const teamNameLookup = useMemo(() => {
+    const map: Record<string, string> = {};
+    teams.forEach((t) => {
+      map[t.id] = t.name;
+    });
+    return map;
+  }, [teams]);
+  const revealResultRows = useMemo(() => {
+    if (!answerResults?.length) return [];
+    return [...answerResults]
+      .map((entry) => ({
+        ...entry,
+        displayName: teamNameLookup[entry.teamId] || entry.teamName || entry.teamId
+      }))
+      .sort((a, b) => (b.awardedPoints ?? 0) - (a.awardedPoints ?? 0));
+  }, [answerResults, teamNameLookup]);
   const potatoCountdown = useMemo(() => {
     if (!potato?.deadline) return null;
     return Math.max(0, Math.ceil((potato.deadline - Date.now()) / 1000));
@@ -712,6 +748,15 @@ useEffect(() => {
     if (!blitz?.deadline) return null;
     return Math.max(0, Math.ceil((blitz.deadline - Date.now()) / 1000));
   }, [blitz?.deadline, potatoTick]);
+  const totalQuestions = questionProgress?.total ?? questionMeta?.globalTotal ?? 20;
+  const rawRoundIndex = questionMeta?.globalIndex ?? questionProgress?.asked ?? 0;
+  const currentRoundNumber =
+    gameState === 'Q_ACTIVE' || gameState === 'Q_LOCKED' || gameState === 'Q_REVEAL'
+      ? questionMeta?.globalIndex ?? (rawRoundIndex > 0 ? rawRoundIndex : 1)
+      : rawRoundIndex;
+  const normalizedRound = Math.max(1, Math.min(totalQuestions || 20, currentRoundNumber || 1));
+  const progressValue = totalQuestions ? Math.min(1, normalizedRound / totalQuestions) : null;
+  const progressText = totalQuestions ? `${normalizedRound}/${totalQuestions}` : undefined;
 
   const activeCategory = categories[highlightedCategoryIndex] ?? categories[0];
   const readyCount = teams.filter((tTeam) => tTeam.isReady).length;
@@ -725,6 +770,9 @@ useEffect(() => {
   const categoryIndex =
     questionMeta?.categoryIndex ??
     (currentCategory ? Math.max(1, categoryProgress[currentCategory] || 1) : 1);
+  const headerLeftLabel = draftTheme?.title || 'Cozy Quiz 60';
+  const headerLeftHint = roomCode ? `Room ${roomCode}` : undefined;
+  const headerTimerText = timerEndsAt ? `${formatSeconds(remainingMs)}s` : undefined;
 
   const questionText =
     question && language === 'en' && (question as any)?.questionEn
@@ -889,6 +937,585 @@ useEffect(() => {
       </div>
     </div>
   );
+  const renderLobbyScene = () => (
+    <BeamerLobbyView
+      t={t}
+      language={language}
+      roomCode={roomCode}
+      readyCount={readyCount}
+      teamsCount={teams.length || 0}
+      categories={featureFlags.showLegacyCategories ? categories : []}
+      highlightedCategoryIndex={highlightedCategoryIndex}
+      categoryColors={categoryColors}
+      categoryIcons={categoryIcons}
+      categoryProgress={categoryProgress}
+      categoryTotals={categoryTotals}
+      getCategoryLabel={getCategoryLabel}
+      getCategoryDescription={getCategoryDescription}
+    />
+  );
+  const renderQuestionFrame = () => (
+    <div
+      style={{
+        ...cardFrame,
+        opacity: questionFlyIn ? 0 : 1,
+        transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
+        transition: 'opacity 420ms ease, transform 420ms ease'
+      }}
+    >
+      <BeamerQuestionView
+        showCalculating={showCalculating}
+        showAnswer={showAnswer}
+        categoryLabel={categoryLabel}
+        questionMeta={questionMeta}
+        timerText={timerText}
+        progress={progress}
+        hasTimer={Boolean(timerEndsAt)}
+        question={question}
+        questionText={questionText}
+        t={t}
+        solution={solution}
+        footerMeta={footerMeta}
+        cardColor={cardColor}
+        leftDecorationSrc={leftDecorationSrc}
+        rightDecorationSrc={rightDecorationSrc}
+      />
+    </div>
+  );
+  const renderCozyScoreboardGrid = (
+    entries: Array<{ id: string; name: string; score?: number | null }>,
+    options?: { highlightTop?: boolean; detailMap?: Record<string, string | null | undefined> }
+  ): JSX.Element => {
+    if (!entries.length) {
+      return (
+        <div className="beamer-intro-card">
+          <h2>{language === 'de' ? 'Noch keine Teams' : 'No teams yet'}</h2>
+          <p>{language === 'de' ? 'Wartet auf Beitritte.' : 'Waiting for teams to join.'}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="beamer-scoreboard-grid">
+        {entries.map((entry, idx) => (
+          <BeamerScoreboardCard
+            key={`cozy-score-${entry.id}-${idx}`}
+            rank={idx + 1}
+            name={entry.name}
+            score={entry.score ?? 0}
+            detail={options?.detailMap?.[entry.id] ?? null}
+            highlight={Boolean(options?.highlightTop && idx < 3)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const renderCozyIntroContent = (): JSX.Element => {
+    const copy =
+      language === 'de'
+        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen für Cozy Quiz 60.']
+        : language === 'both'
+        ? ['Teams beitreten / join teams.', 'Host setzt Sprache / selects language.', 'Get ready for Cozy Quiz 60.']
+        : ['Teams join and check names.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
+    const connectedInfo =
+      readyCount > 0
+        ? `${readyCount}/${teams.length || 0} ${language === 'de' ? 'bereit' : language === 'both' ? 'bereit / ready' : 'ready'}`
+        : `${teams.length || 0} ${language === 'de' ? 'Teams verbunden' : language === 'both' ? 'verbunden / connected' : 'teams connected'}`;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-intro-card">
+          <h2>{language === 'de' ? 'Session startet gleich' : language === 'both' ? 'Session startet / starting soon' : 'Session starts soon'}</h2>
+          <p>{connectedInfo}</p>
+        </div>
+        <div className="beamer-list">
+          {copy.map((text) => (
+            <span key={`intro-line-${text}`}>{text}</span>
+          ))}
+        </div>
+        {sortedScoreTeams.length > 0 && (
+          <>
+            <div className="beamer-label">
+              {language === 'de'
+                ? 'Teams im Raum'
+                : language === 'both'
+                ? 'Teams im Raum / Teams in room'
+                : 'Teams in room'}
+            </div>
+            {renderCozyScoreboardGrid(sortedScoreTeams.slice(0, 6))}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const getQuestionPromptText = (): string | undefined => {
+    if (!question) return undefined;
+    const q: any = question;
+    if (language === 'both' && q.promptEn) {
+      return `${q.prompt ?? ''}${q.promptEn ? ` / ${q.promptEn}` : ''}`;
+    }
+    if (language === 'en' && q.promptEn) return q.promptEn;
+    if (q.prompt) return q.prompt;
+    if (q.bunteTuete?.prompt) return q.bunteTuete.prompt;
+    return undefined;
+  };
+
+  const renderQuestionCardGrid = (): JSX.Element | null => {
+    if (!question) return null;
+    const q: any = question;
+    const mcOptions =
+      language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
+    if (Array.isArray(mcOptions) && mcOptions.length) {
+      return (
+        <div className="beamer-grid">
+          {mcOptions.map((opt: string, idx: number) => (
+            <div className="beamer-card" key={`opt-${idx}`}>
+              <strong>{String.fromCharCode(65 + idx)}.</strong> {opt}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const bunte = q.bunteTuete;
+    if (bunte?.items?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.items.map((item: any) => (
+            <div className="beamer-card" key={item.id || item.label}>
+              {item.label || item.text || item.prompt || item.id}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (bunte?.statements?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.statements.map((statement: any) => (
+            <div className="beamer-card" key={statement.id}>
+              <strong>{statement.id}.</strong> {statement.text}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (bunte?.ladder?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.ladder.map((step: any) => (
+            <div className="beamer-card" key={step.label}>
+              <strong>{step.label}</strong>
+              <span>{language === 'de' ? `${step.points} Punkte` : `${step.points} pts`}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderRevealResultsSection = (): JSX.Element | null => {
+    if (!revealResultRows.length) return null;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-label">
+          {language === 'de' ? 'Teamwertung' : language === 'both' ? 'Teamwertung / Team results' : 'Team results'}
+        </div>
+        <div className="beamer-scoreboard-grid">
+          {revealResultRows.map((entry, idx) => {
+            const pointsLabel =
+              typeof entry.awardedPoints === 'number'
+                ? `${entry.awardedPoints >= 0 ? '+' : ''}${entry.awardedPoints}`
+                : entry.awardedDetail || '';
+            const detailLabel = entry.awardedDetail
+              ? entry.awardedDetail
+              : entry.isCorrect
+              ? language === 'de'
+                ? 'Richtig'
+                : 'Correct'
+              : language === 'de'
+              ? 'Offen'
+              : 'Pending';
+            return (
+              <BeamerScoreboardCard
+                key={`result-${entry.teamId}-${idx}`}
+                rank={idx + 1}
+                name={entry.displayName || entry.teamId}
+                score={pointsLabel}
+                detail={detailLabel}
+                highlight={Boolean(entry.isCorrect)}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCozyBlitzContent = (): JSX.Element | null => {
+    if (!blitz) return null;
+    const detailMap: Record<string, string> = {};
+    Object.entries(blitz.results || {}).forEach(([teamId, stats]) => {
+      detailMap[teamId] = `${stats.correctCount ?? 0}/5, +${stats.pointsAwarded ?? 0}`;
+    });
+    const submissions = blitz.submissions?.length ?? 0;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-question-main">
+          <div className="beamer-question-category">
+            {language === 'de' ? 'Blitz-Thema' : language === 'both' ? 'Blitz-Thema / Theme' : 'Theme'}
+          </div>
+          <div className="beamer-question-text">{blitz.theme?.title || '-'}</div>
+          <div className="beamer-list">
+            <span>
+              {language === 'de'
+                ? `Eingänge ${submissions}/${teams.length}`
+                : `Submissions ${submissions}/${teams.length}`}
+            </span>
+            {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
+          </div>
+        </div>
+        {blitz.items?.length ? (
+          <div className="beamer-grid">
+            {blitz.items.map((item, idx) => (
+              <div className="beamer-card" key={item.id || idx}>
+                <strong>{language === 'de' ? `Item ${idx + 1}` : `Item ${idx + 1}`}</strong>
+                {item.mediaUrl && <img src={item.mediaUrl} alt={item.prompt || `Blitz ${idx + 1}`} />}
+                {item.prompt && <span>{item.prompt}</span>}
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {Object.keys(blitz.results || {}).length > 0 && (
+          <>
+            <div className="beamer-label">
+              {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+            </div>
+            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderCozyPotatoContent = (): JSX.Element | null => {
+    if (!potato) return null;
+    const turnOrder = potato.turnOrder.length ? potato.turnOrder : Object.keys(potato.lives || {});
+    const lives = potato.lives || {};
+    const activeName = potato.activeTeamId ? teamNameLookup[potato.activeTeamId] || potato.activeTeamId : null;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-question-main">
+          <div className="beamer-question-category">
+            {language === 'de' ? 'Aktuelles Thema' : language === 'both' ? 'Thema / Theme' : 'Theme'}
+          </div>
+          <div className="beamer-question-text">{potato.currentTheme || '-'}</div>
+          <div className="beamer-list">
+            {activeName && (
+              <span>
+                {language === 'de'
+                  ? `Dran: ${activeName}`
+                  : language === 'both'
+                  ? `Dran / Up: ${activeName}`
+                  : `Up: ${activeName}`}
+              </span>
+            )}
+            {potatoCountdown !== null && <span className="beamer-countdown">{potatoCountdown}s</span>}
+            {potato.usedAnswers && (
+              <span>
+                {language === 'de'
+                  ? `${potato.usedAnswers.length} Antworten genannt`
+                  : `${potato.usedAnswers.length} answers used`}
+              </span>
+            )}
+          </div>
+          {potato.pendingConflict && (
+            <span className="beamer-conflict-badge">
+              {potato.pendingConflict.type === 'duplicate'
+                ? language === 'de'
+                  ? 'Duplikat'
+                  : 'Duplicate'
+                : language === 'de'
+                ? 'Konflikt'
+                : 'Conflict'}
+            </span>
+          )}
+        </div>
+        <div className="beamer-grid">
+          {turnOrder.map((teamId) => {
+            const name = teamNameLookup[teamId] || teamId;
+            const livesCount = lives[teamId] ?? 0;
+            const hearts = livesCount > 0 ? `${livesCount}x` : '-';
+            return (
+              <div className={`beamer-card${teamId === potato.activeTeamId ? ' highlight' : ''}`} key={`life-${teamId}`}>
+                <strong>{name}</strong>
+                <span>{hearts}</span>
+              </div>
+            );
+          })}
+        </div>
+        {potato.selectedThemes?.length ? (
+          <div className="beamer-grid">
+            {potato.selectedThemes.map((theme, idx) => (
+              <div className="beamer-card" key={`theme-${idx}`}>
+                {theme}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderCozyAwardsContent = (): JSX.Element => (
+    <div className="beamer-stack">
+      <div className="beamer-intro-card">
+        <h2>{language === 'de' ? 'Siegerehrung' : language === 'both' ? 'Siegerehrung / Awards' : 'Awards'}</h2>
+        <p>
+          {language === 'de'
+            ? 'Top Teams des Abends'
+            : language === 'both'
+            ? 'Top Teams des Abends / Top teams tonight'
+            : 'Top teams tonight'}
+        </p>
+      </div>
+      {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+    </div>
+  );
+  const renderCozyScene = () => {
+    const sceneKey = `${gameState}-${question?.id ?? 'none'}-${blitz?.phase ?? 'idle'}-${potato?.phase ?? 'idle'}`;
+    const baseFrameProps: FrameBaseProps = {
+      scene: (gameState || 'lobby').toLowerCase(),
+      leftLabel: headerLeftLabel,
+      leftHint: headerLeftHint,
+      progressText,
+      progressValue,
+      timerText: headerTimerText
+    };
+    const badgeInfo =
+      gameState === 'BLITZ'
+        ? { label: `SET ${(blitz?.setIndex ?? -1) + 1}/3`, tone: 'accent' as const }
+        : gameState === 'POTATO'
+        ? { label: language === 'de' ? 'Finale' : 'Final', tone: 'warning' as const }
+        : gameState === 'AWARDS'
+        ? { label: 'FINAL', tone: 'success' as const }
+        : totalQuestions
+        ? { label: `Segment ${normalizedRound <= 10 ? 1 : 2}`, tone: normalizedRound <= 10 ? 'muted' : 'accent' as const }
+        : undefined;
+    const questionTitle = `RUNDE ${normalizedRound}/${totalQuestions || 20}`;
+    const questionSubtitle = categoryLabel ? `${categoryLabel} ${categoryIndex}/${categoryTotal}` : undefined;
+    const promptText = getQuestionPromptText();
+    const mediaUrl =
+      (question as any)?.media?.url ||
+      (question as any)?.mediaUrl ||
+      (question as any)?.imageUrl ||
+      (question as any)?.image ||
+      null;
+    const questionTextLocalized =
+      language === 'both'
+        ? `${question?.question ?? ''}${question?.questionEn ? ` / ${question.questionEn}` : ''}`
+        : language === 'en'
+        ? question?.questionEn ?? question?.question
+        : question?.question ?? question?.questionEn ?? '';
+
+    const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => (
+      <BeamerFrame
+        key={`${sceneKey}-${phase}`}
+        {...baseFrameProps}
+        title={questionTitle}
+        subtitle={questionSubtitle}
+        badgeLabel={badgeInfo?.label}
+        badgeTone={badgeInfo?.tone}
+        footerMessage={
+          phase === 'active'
+            ? language === 'de'
+              ? 'Antworten jetzt möglich'
+              : language === 'both'
+              ? 'Antworten möglich / Answers open'
+              : 'Answers open'
+            : phase === 'locked'
+            ? language === 'de'
+              ? 'Antwortfenster geschlossen'
+              : language === 'both'
+              ? 'Antworten geschlossen / Locked'
+              : 'Answers locked'
+            : language === 'de'
+            ? 'Auflösung'
+            : language === 'both'
+            ? 'Auflösung / Reveal'
+            : 'Reveal'
+        }
+        status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
+      >
+        {question ? (
+          <>
+            <div className="beamer-question-layout">
+              <div className="beamer-question-main">
+                {categoryLabel && <div className="beamer-question-category">{categoryLabel}</div>}
+                <div className="beamer-question-text">{questionTextLocalized}</div>
+                {promptText && <div className="beamer-hint">{promptText}</div>}
+                {phase === 'reveal' && solution && (
+                  <div className="beamer-question-solution">
+                    {language === 'de'
+                      ? `Lösung: ${solution}`
+                      : language === 'both'
+                      ? `Lösung / Solution: ${solution}`
+                      : `Solution: ${solution}`}
+                  </div>
+                )}
+              </div>
+              {mediaUrl && (
+                <div className="beamer-question-media">
+                  <img src={mediaUrl} alt="" />
+                </div>
+              )}
+            </div>
+            {renderQuestionCardGrid()}
+            {phase === 'reveal' && renderRevealResultsSection()}
+          </>
+        ) : (
+          <div className="beamer-intro-card">
+            <h2>{language === 'de' ? 'Keine Frage aktiv' : 'No active question'}</h2>
+            <p>{language === 'de' ? 'Moderator startet gleich weiter.' : 'Host will continue shortly.'}</p>
+          </div>
+        )}
+      </BeamerFrame>
+    );
+
+    const renderScoreboardFrame = (mode: 'scoreboard' | 'pause') => (
+      <BeamerFrame
+        key={`${sceneKey}-${mode}`}
+        {...baseFrameProps}
+        title={mode === 'pause' ? 'PAUSE' : 'ZWISCHENSTAND'}
+        subtitle={language === 'de' ? 'Aktuelle Punkte' : 'Current points'}
+        badgeLabel={badgeInfo?.label}
+        badgeTone={badgeInfo?.tone}
+        footerMessage={
+          mode === 'pause'
+            ? language === 'de'
+              ? 'Kurze Pause – gleich geht es weiter.'
+              : 'Short break – back soon.'
+            : language === 'de'
+            ? 'Zwischenstand anzeigen'
+            : 'Showing standings'
+        }
+        status="info"
+      >
+        {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: mode === 'scoreboard' })}
+      </BeamerFrame>
+    );
+
+    const renderBlitzFrame = () => (
+      <BeamerFrame
+        key={`${sceneKey}-blitz`}
+        {...baseFrameProps}
+        title="BLITZ BATTLE"
+        subtitle={blitz?.theme?.title || (language === 'de' ? 'Schnelle Runde' : 'Fast round')}
+        badgeLabel={`SET ${(blitz?.setIndex ?? -1) + 1}/3`}
+        badgeTone="accent"
+        footerMessage={
+          blitz?.phase === 'PLAYING'
+            ? language === 'de'
+              ? '30 Sekunden Antworten'
+              : '30 seconds to answer'
+            : language === 'de'
+            ? 'Set Ergebnis'
+            : 'Set result'
+        }
+        status={blitz?.phase === 'PLAYING' ? 'active' : 'info'}
+      >
+        {renderCozyBlitzContent()}
+      </BeamerFrame>
+    );
+
+    const renderPotatoFrame = () => (
+      <BeamerFrame
+        key={`${sceneKey}-potato`}
+        {...baseFrameProps}
+        title="HEISSE KARTOFFEL"
+        subtitle={language === 'de' ? 'Finale Stage' : 'Final stage'}
+        badgeLabel={language === 'de' ? 'FINAL' : 'FINAL'}
+        badgeTone="warning"
+        footerMessage={
+          potato?.phase === 'PLAYING'
+            ? language === 'de'
+              ? '5 Sekunden pro Antwort'
+              : '5 seconds per answer'
+            : language === 'de'
+            ? 'Moderator entscheidet'
+            : 'Host resolving'
+        }
+        status="active"
+      >
+        {renderCozyPotatoContent()}
+      </BeamerFrame>
+    );
+
+    const renderAwardsFrame = () => (
+      <BeamerFrame
+        key={`${sceneKey}-awards`}
+        {...baseFrameProps}
+        title="SIEGEREHRUNG"
+        subtitle={language === 'de' ? 'Finales Ranking' : 'Final ranking'}
+        badgeLabel="FINAL"
+        badgeTone="success"
+        footerMessage={language === 'de' ? 'Glückwunsch an alle Teams' : 'Congrats to all teams'}
+        status="final"
+      >
+        {renderCozyAwardsContent()}
+      </BeamerFrame>
+    );
+
+    switch (gameState) {
+      case 'INTRO':
+      case 'LOBBY':
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-intro`}
+            {...baseFrameProps}
+            title="WILLKOMMEN"
+            subtitle={language === 'de' ? 'Moderator bereitet alles vor' : 'Host is getting ready'}
+            badgeLabel="LOBBY"
+            badgeTone="muted"
+            footerMessage={language === 'de' ? 'Teams jetzt verbinden' : 'Teams can join now'}
+            status="info"
+          >
+            {renderCozyIntroContent()}
+          </BeamerFrame>
+        );
+      case 'Q_ACTIVE':
+        return renderQuestionFrameCozy('active');
+      case 'Q_LOCKED':
+        return renderQuestionFrameCozy('locked');
+      case 'Q_REVEAL':
+        return renderQuestionFrameCozy('reveal');
+      case 'SCOREBOARD':
+        return renderScoreboardFrame('scoreboard');
+      case 'SCOREBOARD_PAUSE':
+        return renderScoreboardFrame('pause');
+      case 'BLITZ':
+        return renderBlitzFrame();
+      case 'POTATO':
+        return renderPotatoFrame();
+      case 'AWARDS':
+        return renderAwardsFrame();
+      default:
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-fallback`}
+            {...baseFrameProps}
+            title="ZWISCHENSTAND"
+            subtitle={language === 'de' ? 'Status' : 'Status'}
+            badgeLabel={badgeInfo?.label}
+            badgeTone={badgeInfo?.tone}
+            footerMessage={language === 'de' ? 'Warten auf den nächsten Schritt' : 'Waiting for next step'}
+            status="info"
+          >
+            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+          </BeamerFrame>
+        );
+    }
+  };
   const renderPotatoView = () => {
     if (!potato) return renderScoreboard();
     const roundTotal = potato.selectedThemes?.length ?? 0;
@@ -1319,7 +1946,9 @@ useEffect(() => {
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
-        {isBlitzStage ? (
+        {featureFlags.isCozyMode ? (
+          renderCozyScene()
+        ) : isBlitzStage ? (
           renderBlitzView()
         ) : isPotatoStage ? (
           renderPotatoView()
@@ -1328,25 +1957,9 @@ useEffect(() => {
         ) : (
           <>
             {viewMode === 'intro' && renderIntro()}
-            {viewMode === 'lobby' && (
-              <BeamerLobbyView
-                t={t}
-                language={language}
-                roomCode={roomCode}
-                readyCount={readyCount}
-                teamsCount={teams.length || 0}
-                categories={categories}
-                highlightedCategoryIndex={highlightedCategoryIndex}
-                categoryColors={categoryColors}
-                categoryIcons={categoryIcons}
-                categoryProgress={categoryProgress}
-                categoryTotals={categoryTotals}
-                getCategoryLabel={getCategoryLabel}
-                getCategoryDescription={getCategoryDescription}
-              />
-            )}
+            {viewMode === 'lobby' && renderLobbyScene()}
 
-            {viewMode === 'categorySlot' && slotMeta && (
+            {featureFlags.showLegacyCategories && viewMode === 'categorySlot' && slotMeta && (
               <div style={cardFrame}>
                 <BeamerSlotView
                   t={t}
@@ -1368,34 +1981,7 @@ useEffect(() => {
               </div>
             )}
 
-            {(viewMode === 'question' || viewMode === 'calculating' || viewMode === 'answer') && (
-              <div
-                style={{
-                  ...cardFrame,
-                  opacity: questionFlyIn ? 0 : 1,
-                  transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
-                  transition: 'opacity 420ms ease, transform 420ms ease'
-                }}
-              >
-                <BeamerQuestionView
-                  showCalculating={showCalculating}
-                  showAnswer={showAnswer}
-                  categoryLabel={categoryLabel}
-                  questionMeta={questionMeta}
-                  timerText={timerText}
-                  progress={progress}
-                  hasTimer={Boolean(timerEndsAt)}
-                  question={question}
-                  questionText={questionText}
-                  t={t}
-                  solution={solution}
-                  footerMeta={footerMeta}
-                  cardColor={cardColor}
-                  leftDecorationSrc={leftDecorationSrc}
-                  rightDecorationSrc={rightDecorationSrc}
-                />
-              </div>
-            )}
+            {(viewMode === 'question' || viewMode === 'calculating' || viewMode === 'answer') && renderQuestionFrame()}
           </>
         )}
       </div>

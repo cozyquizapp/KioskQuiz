@@ -1,0 +1,386 @@
+:root {
+  --beamer-surface: rgba(6, 9, 18, 0.86);
+  --beamer-border: rgba(255, 255, 255, 0.08);
+  --beamer-soft: rgba(255, 255, 255, 0.06);
+  --beamer-text: #f8fafc;
+  --beamer-muted: #cbd5e1;
+  --beamer-accent: linear-gradient(135deg, #7dd3fc, #6366f1);
+}
+
+.beamer-frame {
+  width: min(1200px, 95vw);
+  min-height: calc(100vh - 80px);
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 32px;
+  border: 1px solid var(--beamer-border);
+  background: linear-gradient(180deg, rgba(13, 16, 30, 0.94), rgba(6, 8, 16, 0.88));
+  color: var(--beamer-text);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.55);
+  animation: beamerFade 0.45s ease;
+}
+
+.beamer-frame.scene-blitz {
+  background: linear-gradient(160deg, rgba(21, 26, 52, 0.96), rgba(13, 17, 30, 0.9));
+}
+
+.beamer-frame.scene-potato {
+  background: linear-gradient(160deg, rgba(38, 20, 12, 0.95), rgba(10, 6, 4, 0.9));
+}
+
+.beamer-frame.scene-scoreboard,
+.beamer-frame.scene-scoreboard_pause {
+  background: linear-gradient(160deg, rgba(10, 24, 38, 0.95), rgba(4, 10, 16, 0.9));
+}
+
+.beamer-frame-progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.beamer-frame-progress-inner {
+  height: 100%;
+  background: var(--beamer-accent);
+  transition: width 280ms ease;
+}
+
+.beamer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.beamer-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.beamer-label {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--beamer-muted);
+}
+
+.beamer-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.beamer-header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.beamer-header-title {
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.beamer-header-subtitle {
+  margin-top: 6px;
+  font-size: 16px;
+  color: var(--beamer-muted);
+}
+
+.beamer-header-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  min-width: 120px;
+}
+
+.beamer-header-progress,
+.beamer-header-timer {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.beamer-frame-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.beamer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  font-weight: 700;
+}
+
+.beamer-footer.status-active {
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #86efac;
+}
+
+.beamer-footer.status-locked {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+}
+
+.beamer-footer.status-final {
+  border-color: rgba(248, 191, 36, 0.4);
+  color: #fcd34d;
+}
+
+.beamer-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.beamer-badge.tone-accent {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+}
+
+.beamer-badge.tone-warning {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.16);
+  color: #fcd34d;
+}
+
+.beamer-badge.tone-success {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(34, 197, 94, 0.16);
+  color: #bbf7d0;
+}
+
+.beamer-badge.tone-muted {
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+}
+
+.beamer-question-layout {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.beamer-question-main {
+  flex: 1;
+  min-width: 280px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.beamer-question-category {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--beamer-muted);
+}
+
+.beamer-question-text {
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.beamer-question-solution {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fcd34d;
+}
+
+.beamer-question-media {
+  flex: 0 0 320px;
+  max-width: 360px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beamer-question-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.beamer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.beamer-card {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.beamer-card.highlight {
+  border-color: rgba(251, 191, 36, 0.4);
+  box-shadow: 0 16px 34px rgba(251, 191, 36, 0.2);
+}
+
+.beamer-card img {
+  width: 100%;
+  border-radius: 14px;
+  object-fit: cover;
+  max-height: 180px;
+}
+
+.beamer-scoreboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.beamer-score-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.beamer-score-card.highlight {
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 12px 32px rgba(251, 191, 36, 0.25);
+}
+
+.beamer-score-rank {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.beamer-score-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.beamer-score-name {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.beamer-score-detail {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.beamer-score-value {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.beamer-intro-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.beamer-intro-card h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.beamer-intro-card p {
+  margin: 0;
+  color: var(--beamer-muted);
+}
+
+.beamer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16px;
+  color: var(--beamer-muted);
+}
+
+.beamer-conflict-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(248, 113, 113, 0.18);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.beamer-countdown {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.beamer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@keyframes beamerFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

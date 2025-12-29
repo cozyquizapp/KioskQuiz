@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 type LinkItem = { path: string; label: string; note?: string }
 
@@ -11,13 +11,14 @@ const liveLinks: LinkItem[] = [
 ]
 
 const creationFlow: LinkItem[] = [
+  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Blitz/Potato pflegen' },
   { path: '/Baukasten Neu_neu', label: 'Baukasten Neu', note: 'Alles in einem Flow (Struktur, Theme, Slides, Publish)' },
-  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: '�lterer Flow, falls gebraucht' },
+  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: '?lterer Flow, falls gebraucht' },
 ]
 
 const metaLinks: LinkItem[] = [
   { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' },
-  { path: '/bingo', label: 'Bingo-Print', note: '8 zufällige Bingofelder als PDF/Print' },
+  { path: '/bingo', label: 'Bingo-Print', note: '8 zuf?llige Bingofelder als PDF/Print' },
 ]
 
 const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string; links: LinkItem[] }) => (

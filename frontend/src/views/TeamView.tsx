@@ -63,6 +63,7 @@ import {
   timerPill,
   questionStyleTeam
 } from './teamStyles';
+import { featureFlags } from '../config/features';
 
 type Phase = 'notJoined' | 'waitingForQuestion' | 'answering' | 'waitingForResult' | 'showResult';
 
@@ -171,6 +172,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [transitioning, setTransitioning] = useState(false);
   const [canMarkBingo, setCanMarkBingo] = useState(false);
   const [showBingoPanel, setShowBingoPanel] = useState(false);
+  const [supportsBingo, setSupportsBingo] = useState(false);
+  const bingoEnabled = featureFlags.showBingo && supportsBingo;
   const [timerTick, setTimerTick] = useState(0);
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('teamLanguage');
@@ -442,6 +445,9 @@ function TeamView({ roomCode }: TeamViewProps) {
           else setResultPoints(null);
           setResultDetail(entry.awardedDetail ?? null);
         }
+      }
+      if (typeof payload.supportsBingo === 'boolean') {
+        setSupportsBingo(payload.supportsBingo);
       }
     };
     socket.on('server:stateUpdate', onStateUpdate);
@@ -1709,6 +1715,7 @@ const renderShowResult = () => (
     );
   };
   const renderBingo = () => {
+    if (!bingoEnabled) return null;
     if (board.length !== 25) return null;
     const show = canMarkBingo || showBingoPanel;
     if (!show) return null;
@@ -1794,19 +1801,22 @@ const renderShowResult = () => (
     );
   };
 
-  const renderBingoPrompt = () => (
-    <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '20px 18px' }}>
-      <div style={pillLabel}>{t('bingoTitle')}</div>
-      <h3 style={{ ...heading, marginBottom: 6 }}>
-        {language === 'de' ? 'Richtig! Setzt jetzt euer Feld.' : 'Correct! Place your bingo mark.'}
-      </h3>
-      <p style={{ ...mutedText, margin: 0 }}>
-        {language === 'de'
-          ? 'Wählt ein freies Feld der aktuellen Kategorie.'
-          : 'Pick a free cell of the current category.'}
-      </p>
-    </div>
-  );
+  const renderBingoPrompt = () => {
+    if (!bingoEnabled) return null;
+    return (
+      <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '20px 18px' }}>
+        <div style={pillLabel}>{t('bingoTitle')}</div>
+        <h3 style={{ ...heading, marginBottom: 6 }}>
+          {language === 'de' ? 'Richtig! Setzt jetzt euer Feld.' : 'Correct! Place your bingo mark.'}
+        </h3>
+        <p style={{ ...mutedText, margin: 0 }}>
+          {language === 'de'
+            ? 'Wählt ein freies Feld der aktuellen Kategorie.'
+            : 'Pick a free cell of the current category.'}
+        </p>
+      </div>
+    );
+  };
 
   const renderNotJoined = () => (
     <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
@@ -1908,10 +1918,10 @@ const renderShowResult = () => (
     if (gameState === 'POTATO') {
       return renderPotatoStage();
     }
-    if (showBingoPanel || canMarkBingo) {
+    if (bingoEnabled && (showBingoPanel || canMarkBingo)) {
       return renderBingo();
     }
-    if (canMarkBingo && isFinal) {
+    if (bingoEnabled && canMarkBingo && isFinal) {
       return renderBingoPrompt();
     }
     switch (phase) {
@@ -2038,7 +2048,7 @@ const renderShowResult = () => (
                 {timeUp ? t('timerDoneLabel') : t('timerActiveLabel')}
               </Pill>
             )}
-            {board.length === 25 && !showBingoPanel && (
+            {bingoEnabled && board.length === 25 && !showBingoPanel && (
               <button
                 style={{
                   ...primaryButton,
@@ -2059,7 +2069,7 @@ const renderShowResult = () => (
 
         {renderByPhase()}
 
-        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
+        {featureFlags.showLegacyPanels && teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
           <PrimaryButton
             style={{
               marginTop: 12,
@@ -2082,7 +2092,7 @@ const renderShowResult = () => (
               : 'Unser Team ist bereit'}
           </PrimaryButton>
         )}
-        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (
+        {featureFlags.showLegacyPanels && teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (
           <p style={{ marginTop: 6, color: '#f97316', fontWeight: 700 }}>
             {language === 'both'
               ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden. / Not connected to server (${SOCKET_URL}). Please reconnect.`
@@ -2092,7 +2102,7 @@ const renderShowResult = () => (
           </p>
         )}
       </div>
-      {board.length === 25 && !showBingoPanel && (
+      {bingoEnabled && board.length === 25 && !showBingoPanel && (
         <button
           onClick={() => setShowBingoPanel((v) => (canMarkBingo ? true : !v))}
           style={{

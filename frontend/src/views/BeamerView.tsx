@@ -1,4 +1,4 @@
-Ôªøimport { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import {
   AnyQuestion,
@@ -48,6 +48,7 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
 type BeamerProps = { roomCode: string };
 
 const SLOT_ITEM_HEIGHT = 70;
+const buildQrUrl = (url: string) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
 
 type FrameBaseProps = {
   scene: string;
@@ -61,12 +62,12 @@ type FrameBaseProps = {
 const translations = {
   de: {
     lobbyTitle: "Gleich geht's los.",
-    lobbySubtitle: 'Macht es euch gem√ºtlich - der Admin legt gleich los.',
+    lobbySubtitle: 'Macht es euch gemuetlich - der Moderator legt gleich los.',
     codeLabel: 'Code',
     languageLabel: 'Sprache',
-    waitingForHost: 'Warten auf Admin ...',
+    waitingForHost: 'Warten auf Moderator ...',
     teamsInRoom: 'Teams im Raum',
-    waitingForQuestion: 'Warten auf Admin ...',
+    waitingForQuestion: 'Warten auf Moderator ...',
     timeLeft: (s: number) => `${s}s`,
     timeUp: 'Zeit abgelaufen',
     noTimer: 'Kein Timer aktiv',
@@ -75,7 +76,7 @@ const translations = {
     answerFallback: 'Antwort wird eingeblendet.',
     slotTitle: 'Naechste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
-    mixedMechanic: 'Gemischte T√É¬ºte - Sondermechanik.',
+    mixedMechanic: 'Gemischte T√ºte - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
     footerMeta: (
       globalIndex: number,
@@ -588,7 +589,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('answersEvaluated', ({ solution: sol }: { solution?: string }) => {
       setSolution(sol);
       setEvaluating(false);
-      setAnswerVisible(true); // L√É¬∂sung direkt einblenden
+      setAnswerVisible(true); // L√∂sung direkt einblenden
       setQuestionPhase('evaluated');
     });
 
@@ -641,7 +642,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [categories, slotMeta]);
 
-  // roT√É¬ºte lobby category highlights
+  // roT√ºte lobby category highlights
   useEffect(() => {
     if (categories.length === 0) return;
     if (screen !== 'lobby') return;
@@ -937,23 +938,106 @@ useEffect(() => {
       </div>
     </div>
   );
-  const renderLobbyScene = () => (
-    <BeamerLobbyView
-      t={t}
-      language={language}
-      roomCode={roomCode}
-      readyCount={readyCount}
-      teamsCount={teams.length || 0}
-      categories={featureFlags.showLegacyCategories ? categories : []}
-      highlightedCategoryIndex={highlightedCategoryIndex}
-      categoryColors={categoryColors}
-      categoryIcons={categoryIcons}
-      categoryProgress={categoryProgress}
-      categoryTotals={categoryTotals}
-      getCategoryLabel={getCategoryLabel}
-      getCategoryDescription={getCategoryDescription}
-    />
-  );
+  const renderLobbyScene = () => {
+    if (featureFlags.isCozyMode && !featureFlags.showLegacyCategories) {
+      const steps =
+        language === 'de'
+          ? ['QR scannen oder Code eingeben.', 'Moderator waehlt Sprache & Quiz.', 'Bereit fuer Cozy Quiz 60.']
+          : language === 'both'
+          ? ['QR scannen / scan QR code.', 'Moderator waehlt Sprache / selects language.', 'Bereit fuer Cozy Quiz 60 / Get ready.']
+          : ['Scan QR or enter the room code.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
+      const connectedInfo =
+        readyCount > 0
+          ? `${readyCount}/${teams.length || 0} ${language === 'de' ? 'bereit' : language === 'both' ? 'bereit / ready' : 'ready'}`
+          : `${teams.length || 0} ${
+              language === 'de' ? 'Teams verbunden' : language === 'both' ? 'Teams verbunden / connected' : 'teams connected'
+            }`;
+      const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
+      return (
+        <BeamerFrame
+          scene="lobby"
+          leftLabel={headerLeftLabel}
+          leftHint={headerLeftHint}
+          title={language === 'de' ? 'Room offen' : language === 'both' ? 'Room offen / room open' : 'Room open'}
+          subtitle={
+            language === 'de'
+              ? 'Moderator startet gleich'
+              : language === 'both'
+              ? 'Moderator startet / host starts soon'
+              : 'Moderator starts soon'
+          }
+          badgeLabel="LOBBY"
+          badgeTone="muted"
+          progressText={progressText}
+          progressValue={progressValue}
+          timerText={headerTimerText}
+          footerMessage={
+            language === 'de'
+              ? 'Teams via QR oder Code beitreten lassen'
+              : language === 'both'
+              ? 'Teams via QR / Code beitreten lassen'
+              : 'Let teams join via QR or code'
+          }
+          status="info"
+          rightNode={
+            teamJoinQr ? (
+              <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+                <img
+                  src={teamJoinQr}
+                  alt="Team QR"
+                  style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 6 }}
+                />
+                <div>{joinDisplay}</div>
+              </div>
+            ) : undefined
+          }
+        >
+          <div className="beamer-stack">
+            <div className="beamer-intro-card">
+              <h2>{language === 'de' ? 'Room Code' : language === 'both' ? 'Room Code / Code' : 'Room code'}</h2>
+              <p style={{ fontSize: 48, fontWeight: 800 }}>{roomCode || '----'}</p>
+              <p>{connectedInfo}</p>
+            </div>
+            <div className="beamer-list">
+              {steps.map((textLine) => (
+                <span key={`lobby-line-${textLine}`}>{textLine}</span>
+              ))}
+            </div>
+            {sortedScoreTeams.length > 0 && (
+              <>
+                <div className="beamer-label">
+                  {language === 'de'
+                    ? 'Teams im Raum'
+                    : language === 'both'
+                    ? 'Teams im Raum / Teams in room'
+                    : 'Teams in room'}
+                </div>
+                {renderCozyScoreboardGrid(sortedScoreTeams.slice(0, 6))}
+              </>
+            )}
+          </div>
+        </BeamerFrame>
+      );
+    }
+    return (
+      <BeamerLobbyView
+        t={t}
+        language={language}
+        roomCode={roomCode}
+        readyCount={readyCount}
+        teamsCount={teams.length || 0}
+        categories={featureFlags.showLegacyCategories ? categories : []}
+        highlightedCategoryIndex={highlightedCategoryIndex}
+        categoryColors={categoryColors}
+        categoryIcons={categoryIcons}
+        categoryProgress={categoryProgress}
+        categoryTotals={categoryTotals}
+        getCategoryLabel={getCategoryLabel}
+        getCategoryDescription={getCategoryDescription}
+      />
+    );
+  };
+
   const renderQuestionFrame = () => (
     <div
       style={{
@@ -1013,7 +1097,7 @@ useEffect(() => {
   const renderCozyIntroContent = (): JSX.Element => {
     const copy =
       language === 'de'
-        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen f√ºr Cozy Quiz 60.']
+        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen f¸r Cozy Quiz 60.']
         : language === 'both'
         ? ['Teams beitreten / join teams.', 'Host setzt Sprache / selects language.', 'Get ready for Cozy Quiz 60.']
         : ['Teams join and check names.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
@@ -1169,7 +1253,7 @@ useEffect(() => {
           <div className="beamer-list">
             <span>
               {language === 'de'
-                ? `Eing√§nge ${submissions}/${teams.length}`
+                ? `Eing‰nge ${submissions}/${teams.length}`
                 : `Submissions ${submissions}/${teams.length}`}
             </span>
             {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
@@ -1329,9 +1413,9 @@ useEffect(() => {
         footerMessage={
           phase === 'active'
             ? language === 'de'
-              ? 'Antworten jetzt m√∂glich'
+              ? 'Antworten jetzt mˆglich'
               : language === 'both'
-              ? 'Antworten m√∂glich / Answers open'
+              ? 'Antworten mˆglich / Answers open'
               : 'Answers open'
             : phase === 'locked'
             ? language === 'de'
@@ -1340,9 +1424,9 @@ useEffect(() => {
               ? 'Antworten geschlossen / Locked'
               : 'Answers locked'
             : language === 'de'
-            ? 'Aufl√∂sung'
+            ? 'Auflˆsung'
             : language === 'both'
-            ? 'Aufl√∂sung / Reveal'
+            ? 'Auflˆsung / Reveal'
             : 'Reveal'
         }
         status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
@@ -1357,9 +1441,9 @@ useEffect(() => {
                 {phase === 'reveal' && solution && (
                   <div className="beamer-question-solution">
                     {language === 'de'
-                      ? `L√∂sung: ${solution}`
+                      ? `Lˆsung: ${solution}`
                       : language === 'both'
-                      ? `L√∂sung / Solution: ${solution}`
+                      ? `Lˆsung / Solution: ${solution}`
                       : `Solution: ${solution}`}
                   </div>
                 )}
@@ -1393,8 +1477,8 @@ useEffect(() => {
         footerMessage={
           mode === 'pause'
             ? language === 'de'
-              ? 'Kurze Pause ‚Äì gleich geht es weiter.'
-              : 'Short break ‚Äì back soon.'
+              ? 'Kurze Pause ñ gleich geht es weiter.'
+              : 'Short break ñ back soon.'
             : language === 'de'
             ? 'Zwischenstand anzeigen'
             : 'Showing standings'
@@ -1459,7 +1543,7 @@ useEffect(() => {
         subtitle={language === 'de' ? 'Finales Ranking' : 'Final ranking'}
         badgeLabel="FINAL"
         badgeTone="success"
-        footerMessage={language === 'de' ? 'Gl√ºckwunsch an alle Teams' : 'Congrats to all teams'}
+        footerMessage={language === 'de' ? 'Gl¸ckwunsch an alle Teams' : 'Congrats to all teams'}
         status="final"
       >
         {renderCozyAwardsContent()}
@@ -1508,7 +1592,7 @@ useEffect(() => {
             subtitle={language === 'de' ? 'Status' : 'Status'}
             badgeLabel={badgeInfo?.label}
             badgeTone={badgeInfo?.tone}
-            footerMessage={language === 'de' ? 'Warten auf den n√§chsten Schritt' : 'Waiting for next step'}
+            footerMessage={language === 'de' ? 'Warten auf den n‰chsten Schritt' : 'Waiting for next step'}
             status="info"
           >
             {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
@@ -1520,7 +1604,7 @@ useEffect(() => {
     if (!potato) return renderScoreboard();
     const roundTotal = potato.selectedThemes?.length ?? 0;
     const roundLabel =
-      roundTotal > 0 && potato.roundIndex >= 0 ? `${potato.roundIndex + 1}/${roundTotal}` : roundTotal > 0 ? `0/${roundTotal}` : '‚Äî';
+      roundTotal > 0 && potato.roundIndex >= 0 ? `${potato.roundIndex + 1}/${roundTotal}` : roundTotal > 0 ? `0/${roundTotal}` : 'ó';
     const activeTeamName = potato.activeTeamId
       ? teams.find((t) => t.id === potato.activeTeamId)?.name || potato.activeTeamId
       : null;
@@ -1535,10 +1619,10 @@ useEffect(() => {
         : potato.lastWinnerId || null;
     const infoCopy =
       language === 'de'
-        ? 'Max. 5 Sekunden pro Antwort ¬∑ doppelte Antworten = Strike.'
+        ? 'Max. 5 Sekunden pro Antwort ∑ doppelte Antworten = Strike.'
         : language === 'both'
         ? 'Max. 5 Sekunden / max. 5 seconds. Duplicate answers = strike.'
-        : 'Max. 5 seconds per answer ¬∑ duplicate answers = strike.';
+        : 'Max. 5 seconds per answer ∑ duplicate answers = strike.';
     return (
       <div style={cardFrame}>
         <div
@@ -1612,7 +1696,7 @@ useEffect(() => {
                       <div style={{ fontSize: 14, color: '#cbd5e1' }}>
                         {language === 'de' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({banLimits[team.id] ?? 0}):
                         {' '}
-                        {bans[team.id]?.length ? bans[team.id].join(', ') : '‚Äî'}
+                        {bans[team.id]?.length ? bans[team.id].join(', ') : 'ó'}
                       </div>
                     </div>
                   ))}
@@ -1623,7 +1707,7 @@ useEffect(() => {
               <>
                 <div style={{ fontSize: 20, fontWeight: 800 }}>
                   {language === 'de' ? 'Thema' : language === 'both' ? 'Thema / Topic' : 'Topic'}:{' '}
-                  {potato.currentTheme || '‚Äî'}
+                  {potato.currentTheme || 'ó'}
                 </div>
                 <div style={{ fontSize: 16, color: '#cbd5e1' }}>
                   {language === 'de'
@@ -1639,7 +1723,7 @@ useEffect(() => {
                     color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1'
                   }}
                 >
-                  {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s ¬∑ ${infoCopy}` : infoCopy}
+                  {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s ∑ ${infoCopy}` : infoCopy}
                 </div>
                 {potatoCountdown !== null && potatoCountdown <= 0 && (
                   <div
@@ -1675,7 +1759,7 @@ useEffect(() => {
                       }}
                     >
                       <span style={{ fontWeight: 700 }}>{teams.find((t) => t.id === teamId)?.name || teamId}</span>
-                      <span style={{ fontWeight: 800 }}>{'‚ù§'.repeat(Math.max(1, lives[teamId] ?? 0))}</span>
+                      <span style={{ fontWeight: 800 }}>{'?'.repeat(Math.max(1, lives[teamId] ?? 0))}</span>
                     </div>
                   ))}
                 </div>
@@ -1718,7 +1802,7 @@ useEffect(() => {
                 </div>
                 <div style={{ fontSize: 16, color: '#cbd5e1' }}>
                   {language === 'de'
-                    ? 'Moderator startet gleich die n√§chste Runde.'
+                    ? 'Moderator startet gleich die n‰chste Runde.'
                     : language === 'both'
                     ? 'Moderator startet gleich / Host starts next round soon.'
                     : 'Host will start the next round soon.'}
@@ -1801,7 +1885,7 @@ useEffect(() => {
               </div>
               <div style={{ marginTop: 6, color: '#94a3b8' }}>
                 {language === 'de'
-                  ? `Eing√§nge: ${submissions}/${teams.length}`
+                  ? `Eing‰nge: ${submissions}/${teams.length}`
                   : `Submissions: ${submissions}/${teams.length}`}
               </div>
               <div
@@ -1850,7 +1934,7 @@ useEffect(() => {
                     background: 'rgba(59,130,246,0.14)'
                   }}
                 >
-                  ‚è± {blitzCountdown}s
+                  ? {blitzCountdown}s
                 </div>
               )}
             </>
@@ -1942,7 +2026,7 @@ useEffect(() => {
             }}
           >
             {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend pr√ºfen. / No connection for >5s. Check Wi-Fi/backend.'
+              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend pr¸fen. / No connection for >5s. Check Wi-Fi/backend.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}

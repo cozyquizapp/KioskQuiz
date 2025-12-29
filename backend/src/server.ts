@@ -34,8 +34,13 @@ import {
   BunteTueteTop5Submission,
   BunteTuetePrecisionSubmission,
   BunteTueteOneOfEightSubmission,
-  BunteTueteOrderSubmission
+  BunteTueteOrderSubmission,
+  BunteTuetePayload,
+  CozyQuizDraft,
+  CozyQuizMeta,
+  CozyQuestionSlotTemplate
 } from '../../shared/quizTypes';
+import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
@@ -126,6 +131,7 @@ type RoomState = {
   remainingQuestionIds: string[];
   askedQuestionIds: string[];
   teamBoards: Record<string, BingoBoard>;
+  bingoEnabled: boolean;
   timerEndsAt: number | null;
   screen: ScreenState;
   questionPhase: QuestionPhase;
@@ -256,6 +262,10 @@ type PublishedQuiz = {
   theme?: any;
   layout?: any;
   language?: string;
+  meta?: QuizMeta | null;
+  blitz?: { pool: QuizBlitzTheme[] } | null;
+  potatoPool?: string[] | null;
+  enableBingo?: boolean;
 };
 let publishedQuizzes: PublishedQuiz[] = [];
 try {
@@ -267,7 +277,24 @@ try {
 }
 // load published into quizzes map
 publishedQuizzes.forEach((q) => {
-  quizzes.set(q.id, { id: q.id, name: q.name, mode: 'ordered', questionIds: q.questionIds, meta: { language: q.language as any } });
+  const meta: QuizMeta = q.meta
+    ? { ...q.meta }
+    : q.language
+    ? { language: q.language as Language }
+    : {};
+  if (!meta.language && q.language) {
+    meta.language = q.language as Language;
+  }
+  quizzes.set(q.id, {
+    id: q.id,
+    name: q.name,
+    mode: 'ordered',
+    questionIds: q.questionIds,
+    meta,
+    blitz: q.blitz ?? null,
+    potatoPool: q.potatoPool ?? null,
+    enableBingo: q.enableBingo ?? false
+  });
 });
 const persistPublished = () => {
   try {
@@ -275,6 +302,45 @@ const persistPublished = () => {
   } catch {
     // ignore
   }
+};
+
+const upsertPublishedQuiz = (payload: PublishedQuiz) => {
+  const stored: PublishedQuiz = {
+    ...payload,
+    meta: payload.meta ?? (payload.language ? { language: payload.language as Language } : null),
+    language: payload.language ?? payload.meta?.language
+  };
+  const idx = publishedQuizzes.findIndex((q) => q.id === stored.id);
+  if (idx >= 0) publishedQuizzes[idx] = stored;
+  else publishedQuizzes.push(stored);
+
+  const meta: QuizMeta =
+    stored.meta && typeof stored.meta === 'object'
+      ? { ...stored.meta }
+      : stored.language
+      ? { language: stored.language as Language }
+      : {};
+  if (!meta.language && stored.language) {
+    meta.language = stored.language as Language;
+  }
+
+  quizzes.set(stored.id, {
+    id: stored.id,
+    name: stored.name,
+    mode: 'ordered',
+    questionIds: stored.questionIds,
+    meta,
+    blitz: stored.blitz ?? null,
+    potatoPool: stored.potatoPool ?? null,
+    enableBingo: stored.enableBingo ?? false
+  });
+
+  if (stored.layout || stored.theme) {
+    quizLayoutMap[stored.id] = { overrides: { layout: stored.layout, theme: stored.theme } };
+    persistQuizLayouts();
+  }
+  persistPublished();
+  return stored;
 };
 
 app.get('/api/quizzes/published', (_req, res) => {
@@ -286,17 +352,332 @@ app.post('/api/quizzes/publish', (req, res) => {
   if (!payload?.id || !payload?.name || !Array.isArray(payload.questionIds)) {
     return res.status(400).json({ error: 'id, name, questionIds erforderlich' });
   }
-  const existingIdx = publishedQuizzes.findIndex((q) => q.id === payload.id);
-  if (existingIdx >= 0) publishedQuizzes[existingIdx] = payload;
-  else publishedQuizzes.push(payload);
-  quizzes.set(payload.id, { id: payload.id, name: payload.name, mode: 'ordered', questionIds: payload.questionIds, meta: { language: payload.language as any } });
-  if (payload.layout || payload.theme) {
-    quizLayoutMap[payload.id] = { overrides: { layout: payload.layout, theme: payload.theme } };
-    persistQuizLayouts();
-  }
-  persistPublished();
-  res.json({ ok: true, quiz: payload });
+  const stored = upsertPublishedQuiz(payload);
+  res.json({ ok: true, quiz: stored });
 });
+
+const BLITZ_SETS = 3;
+const BLITZ_ITEMS_PER_SET = 5;
+const BLITZ_ANSWER_TIME_MS = 30000;
+
+// Cozy60 Studio Drafts / Builder
+const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
+let cozyDrafts: CozyQuizDraft[] = [];
+try {
+  if (fs.existsSync(cozyDraftsPath)) {
+    cozyDrafts = JSON.parse(fs.readFileSync(cozyDraftsPath, 'utf-8'));
+  }
+} catch {
+  cozyDrafts = [];
+}
+const persistCozyDrafts = () => {
+  try {
+    fs.writeFileSync(cozyDraftsPath, JSON.stringify(cozyDrafts, null, 2), 'utf-8');
+  } catch {
+    // ignore persistence issues, builder kann erneut speichern
+  }
+};
+
+const BLITZ_PLACEHOLDER_TITLES = [
+  'City Skylines',
+  'Snack Attack',
+  'Pop Lyrics',
+  'Streaming Gesichter',
+  'Travel Icons',
+  'Retro Games',
+  'Sport Flash',
+  'Emoji Stories',
+  'Logo Guessing',
+  'Fashion Notes',
+  'Nature Closeups',
+  'Art Classics',
+  'World Records',
+  'Random Mix'
+];
+
+const buildPlaceholderBlitzPool = (draftId: string): QuizBlitzTheme[] =>
+  BLITZ_PLACEHOLDER_TITLES.map((title, themeIdx) => ({
+    id: `${draftId}-blitz-${themeIdx + 1}`,
+    title,
+    items: Array.from({ length: BLITZ_ITEMS_PER_SET }).map((_, itemIdx) => ({
+      id: `${draftId}-blitz-${themeIdx + 1}-${itemIdx + 1}`,
+      prompt: `Motiv ${itemIdx + 1}`,
+      answer: '',
+      aliases: []
+    }))
+  }));
+
+const buildPlaceholderPotatoPool = () => [...DEFAULT_POTATO_THEMES];
+
+const ensureCozyMeta = (meta?: Partial<CozyQuizMeta>): CozyQuizMeta => ({
+  title: meta?.title?.trim() || 'Neues Cozy Quiz 60',
+  language: meta?.language ?? 'de',
+  date: typeof meta?.date === 'number' ? meta.date : Date.now(),
+  description: meta?.description?.trim() || null
+});
+
+const createBuntePayloadForSlot = (slot: CozyQuestionSlotTemplate, baseId: string, defaultPoints: number): BunteTuetePayload => {
+  const maxPoints = slot.segmentIndex === 0 ? Math.max(defaultPoints, 2) : Math.max(defaultPoints, 3);
+  if (slot.bunteKind === 'precision') {
+    return {
+      kind: 'precision',
+      prompt: 'Praezisiere eure Antwort. Ladder von exakt bis grob.',
+      ladder: [
+        { label: 'Exakt', acceptedAnswers: [''], points: maxPoints },
+        { label: 'Nah dran', acceptedAnswers: [''], points: Math.max(1, maxPoints - 1) }
+      ],
+      similarityThreshold: 0.82,
+      maxPoints
+    };
+  }
+  if (slot.bunteKind === 'oneOfEight') {
+    const statements = Array.from({ length: 8 }).map((_, idx) => ({
+      id: String.fromCharCode(65 + idx),
+      text: `Statement ${idx + 1}`,
+      isFalse: idx === 0
+    }));
+    return {
+      kind: 'oneOfEight',
+      prompt: 'Sieben Aussagen stimmen, eine ist falsch.',
+      statements,
+      chooseMode: 'id',
+      maxPoints
+    };
+  }
+  if (slot.bunteKind === 'order') {
+    const items = Array.from({ length: 4 }).map((_, idx) => ({
+      id: `${baseId}-item-${idx + 1}`,
+      label: `Item ${idx + 1}`
+    }));
+    const criteriaId = 'default';
+    return {
+      kind: 'order',
+      prompt: 'Ordnet die Items nach dem gewaehlten Kriterium.',
+      items,
+      criteriaOptions: [{ id: criteriaId, label: 'Standard', direction: 'asc' }],
+      defaultCriteriaId: criteriaId,
+      correctByCriteria: {
+        [criteriaId]: items.map((item) => item.id)
+      },
+      partialPoints: Math.max(1, Math.floor(maxPoints / 2)),
+      fullPoints: maxPoints,
+      maxPoints
+    };
+  }
+  // default to Top5
+  const items = Array.from({ length: 5 }).map((_, idx) => ({
+    id: `${baseId}-top-${idx + 1}`,
+    label: `Option ${idx + 1}`
+  }));
+  return {
+    kind: 'top5',
+    prompt: 'Ordnet die fuenf Eintraege. 1 = oberste Position.',
+    items,
+    correctOrder: items.map((item) => item.id),
+    scoringMode: 'position',
+    maxPoints
+  };
+};
+
+const createQuestionFromSlot = (slot: CozyQuestionSlotTemplate, draftId: string): AnyQuestion => {
+  const questionId = `${draftId}-q${String(slot.index + 1).padStart(2, '0')}`;
+  const baseQuestion = {
+    id: questionId,
+    question: slot.label,
+    points: slot.defaultPoints,
+    segmentIndex: slot.segmentIndex
+  };
+  if (slot.type === 'MU_CHO') {
+    return {
+      ...baseQuestion,
+      category: 'Mu-Cho',
+      mechanic: 'multipleChoice',
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      correctIndex: 0
+    } as AnyQuestion;
+  }
+  if (slot.type === 'SCHAETZCHEN') {
+    return {
+      ...baseQuestion,
+      category: 'Schaetzchen',
+      mechanic: 'estimate',
+      targetValue: 0,
+      unit: ''
+    } as AnyQuestion;
+  }
+  if (slot.type === 'STIMMTS') {
+    return {
+      ...baseQuestion,
+      category: 'Stimmts',
+      mechanic: 'betting',
+      options: ['Option A', 'Option B', 'Option C'],
+      correctIndex: 0,
+      pointsPool: 10
+    } as AnyQuestion;
+  }
+  if (slot.type === 'CHEESE') {
+    return {
+      ...baseQuestion,
+      category: 'Cheese',
+      mechanic: 'imageQuestion',
+      answer: '',
+      imageUrl: ''
+    } as AnyQuestion;
+  }
+  return {
+    ...baseQuestion,
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    bunteTuete: createBuntePayloadForSlot(slot, questionId, slot.defaultPoints)
+  } as AnyQuestion;
+};
+
+const buildDefaultCozyQuestions = (draftId: string): AnyQuestion[] =>
+  COZY_SLOT_TEMPLATE.map((slot) => createQuestionFromSlot(slot, draftId));
+
+const hydrateCozyDraft = (draft: CozyQuizDraft): CozyQuizDraft => ({
+  ...draft,
+  meta: ensureCozyMeta(draft.meta),
+  questions: Array.isArray(draft.questions) && draft.questions.length === 20 ? draft.questions : buildDefaultCozyQuestions(draft.id),
+  blitz: draft.blitz && Array.isArray(draft.blitz.pool) ? draft.blitz : { pool: buildPlaceholderBlitzPool(draft.id) },
+  potatoPool: Array.isArray(draft.potatoPool) ? draft.potatoPool : buildPlaceholderPotatoPool(),
+  enableBingo: Boolean(draft.enableBingo),
+  status: draft.status || 'draft',
+  createdAt: draft.createdAt || Date.now(),
+  updatedAt: draft.updatedAt || Date.now(),
+  lastPublishedAt: draft.lastPublishedAt ?? null
+});
+
+cozyDrafts = cozyDrafts.map((draft) => hydrateCozyDraft(draft));
+
+const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
+  const id = `cozy-draft-${uuid().slice(0, 8)}`;
+  const now = Date.now();
+  return {
+    id,
+    meta: ensureCozyMeta(meta),
+    questions: buildDefaultCozyQuestions(id),
+    blitz: { pool: buildPlaceholderBlitzPool(id) },
+    potatoPool: buildPlaceholderPotatoPool(),
+    enableBingo: false,
+    createdAt: now,
+    updatedAt: now,
+    status: 'draft',
+    lastPublishedAt: null
+  };
+};
+
+const summarizeCozyDraft = (draft: CozyQuizDraft) => ({
+  id: draft.id,
+  title: draft.meta.title,
+  language: draft.meta.language,
+  date: draft.meta.date ?? null,
+  status: draft.status,
+  updatedAt: draft.updatedAt,
+  createdAt: draft.createdAt,
+  questionCount: draft.questions.length,
+  potatoCount: draft.potatoPool.length,
+  blitzThemes: draft.blitz?.pool.length ?? 0
+});
+
+const sanitizeCozyQuestions = (draftId: string, payload?: AnyQuestion[]): AnyQuestion[] => {
+  const fallback = buildDefaultCozyQuestions(draftId);
+  if (!Array.isArray(payload) || payload.length !== COZY_SLOT_TEMPLATE.length) {
+    return fallback;
+  }
+  return payload.map((entry, idx) => {
+    const fallbackQuestion = fallback[idx];
+    if (!entry || typeof entry !== 'object') return fallbackQuestion;
+    const merged = {
+      ...fallbackQuestion,
+      ...(entry as AnyQuestion)
+    } as AnyQuestion;
+    const rawId = (entry as AnyQuestion).id;
+    merged.id = typeof rawId === 'string' && rawId.trim() ? rawId.trim() : fallbackQuestion.id;
+    merged.points = Number((entry as any)?.points) || fallbackQuestion.points;
+    (merged as any).segmentIndex = COZY_SLOT_TEMPLATE[idx].segmentIndex;
+    if (!(entry as any)?.bunteTuete && fallbackQuestion && (fallbackQuestion as any).bunteTuete) {
+      (merged as any).bunteTuete = (fallbackQuestion as any).bunteTuete;
+    }
+    return merged;
+  });
+};
+
+const sanitizeBlitzPool = (draftId: string, pool?: QuizBlitzTheme[] | null): QuizBlitzTheme[] => {
+  const fallbackPool = buildPlaceholderBlitzPool(draftId);
+  if (!Array.isArray(pool) || !pool.length) {
+    return fallbackPool;
+  }
+  return pool.map((theme, idx) => {
+    const fallback = fallbackPool[idx] || fallbackPool[idx % fallbackPool.length];
+    const baseId = typeof theme?.id === 'string' && theme.id.trim() ? theme.id.trim() : `${draftId}-blitz-${idx + 1}`;
+    const baseTitle = theme?.title?.trim() || fallback.title || `Blitz-Thema ${idx + 1}`;
+    const sourceItems = Array.isArray(theme?.items) && theme.items.length ? theme.items : fallback.items;
+    const normalizedItems: QuizBlitzItem[] = sourceItems
+      .slice(0, BLITZ_ITEMS_PER_SET)
+      .map((item, itemIdx) => ({
+        id: typeof item?.id === 'string' && item.id.trim() ? item.id.trim() : `${baseId}-${itemIdx + 1}`,
+        prompt: typeof item?.prompt === 'string' ? item.prompt : fallback.items[itemIdx]?.prompt ?? `Motiv ${itemIdx + 1}`,
+        mediaUrl: typeof item?.mediaUrl === 'string' ? item.mediaUrl : fallback.items[itemIdx]?.mediaUrl,
+        answer: typeof item?.answer === 'string' ? item.answer : '',
+        aliases: Array.isArray(item?.aliases) ? item.aliases.filter((alias): alias is string => typeof alias === 'string') : []
+      }));
+    while (normalizedItems.length < BLITZ_ITEMS_PER_SET) {
+      const fillerIdx = normalizedItems.length;
+      normalizedItems.push({
+        id: `${baseId}-${fillerIdx + 1}`,
+        prompt: `Motiv ${fillerIdx + 1}`,
+        answer: '',
+        aliases: []
+      });
+    }
+    return {
+      id: baseId,
+      title: baseTitle,
+      items: normalizedItems
+    };
+  });
+};
+
+const sanitizePotatoPool = (input?: unknown): string[] => {
+  if (Array.isArray(input)) {
+    const normalized = input
+      .map((entry) => String(entry ?? '').trim())
+      .filter((entry) => entry.length > 0);
+    if (normalized.length) return Array.from(new Set(normalized));
+  }
+  if (typeof input === 'string') {
+    const parts = input.split(/\r?\n/).map((entry) => entry.trim());
+    const filtered = parts.filter((entry) => entry.length > 0);
+    if (filtered.length) return Array.from(new Set(filtered));
+  }
+  return buildPlaceholderPotatoPool();
+};
+
+const applyDraftUpdate = (draft: CozyQuizDraft, payload: Partial<CozyQuizDraft>): CozyQuizDraft => {
+  const metaSource = payload.meta ? { ...draft.meta, ...payload.meta } : draft.meta;
+  const updated: CozyQuizDraft = {
+    ...draft,
+    meta: ensureCozyMeta(metaSource),
+    questions: payload.questions ? sanitizeCozyQuestions(draft.id, payload.questions as AnyQuestion[]) : draft.questions,
+    blitz: { pool: sanitizeBlitzPool(draft.id, payload.blitz?.pool ?? draft.blitz?.pool) },
+    potatoPool: sanitizePotatoPool(payload.potatoPool ?? draft.potatoPool),
+    enableBingo: payload.enableBingo ?? draft.enableBingo,
+    updatedAt: Date.now()
+  };
+  return hydrateCozyDraft(updated);
+};
+
+const findCozyDraftIndex = (draftId: string) => cozyDrafts.findIndex((draft) => draft.id === draftId);
+
+const getCozyDraftOrFail = (draftId: string) => {
+  const index = findCozyDraftIndex(draftId);
+  if (index === -1) {
+    throw new Error('Draft nicht gefunden');
+  }
+  return { draft: cozyDrafts[index], index };
+};
 
 // --- Stats Endpoints (minimal) ----------------------------------------------
 app.get('/api/stats/leaderboard', (_req, res) => {
@@ -335,6 +716,93 @@ app.post('/api/stats/question', (req, res) => {
 app.get('/api/stats/question/:questionId', (req, res) => {
   const stat = statsState.questions[req.params.questionId] || null;
   res.json({ stat });
+});
+
+// Cozy60 Builder API
+app.get('/api/studio/cozy60', (_req, res) => {
+  const list = [...cozyDrafts]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .map((draft) => summarizeCozyDraft(draft));
+  res.json({ drafts: list });
+});
+
+app.post('/api/studio/cozy60', (req, res) => {
+  try {
+    const meta = req.body?.meta as Partial<CozyQuizMeta> | undefined;
+    const draft = createNewCozyDraft(meta);
+    cozyDrafts.push(draft);
+    persistCozyDrafts();
+    res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/studio/cozy60/:id', (req, res) => {
+  try {
+    const { draft } = getCozyDraftOrFail(req.params.id);
+    res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
+  } catch (err) {
+    res.status(404).json({ error: (err as Error).message });
+  }
+});
+
+app.put('/api/studio/cozy60/:id', (req, res) => {
+  try {
+    const { draft, index } = getCozyDraftOrFail(req.params.id);
+    const updated = applyDraftUpdate(draft, (req.body as Partial<CozyQuizDraft>) || {});
+    cozyDrafts[index] = updated;
+    persistCozyDrafts();
+    res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
+  } catch (err) {
+    const message = (err as Error).message;
+    const status = message === 'Draft nicht gefunden' ? 404 : 400;
+    res.status(status).json({ error: message });
+  }
+});
+
+app.post('/api/studio/cozy60/:id/publish', (req, res) => {
+  try {
+    const { draft, index } = getCozyDraftOrFail(req.params.id);
+    const updates = (req.body?.draft || req.body?.updates) as Partial<CozyQuizDraft> | undefined;
+    const updatedDraft = updates ? applyDraftUpdate(draft, updates) : draft;
+    const now = Date.now();
+    const finalized: CozyQuizDraft = {
+      ...updatedDraft,
+      status: 'published',
+      lastPublishedAt: now,
+      updatedAt: now
+    };
+    cozyDrafts[index] = finalized;
+    const requestedQuizId = typeof req.body?.quizId === 'string' ? req.body.quizId : undefined;
+    const quizId = buildQuizIdFromDraft(finalized, requestedQuizId);
+    finalized.questions.forEach((question) => upsertCustomQuestion(question));
+    persistCustomQuestions();
+
+    const publishedMeta: QuizMeta = {
+      description: finalized.meta.description || undefined,
+      date: finalized.meta.date ?? now,
+      language: finalized.meta.language
+    };
+
+    const publishedPayload: PublishedQuiz = {
+      id: quizId,
+      name: finalized.meta.title,
+      questionIds: finalized.questions.map((question) => question.id),
+      language: finalized.meta.language,
+      meta: publishedMeta,
+      blitz: finalized.blitz,
+      potatoPool: finalized.potatoPool,
+      enableBingo: finalized.enableBingo
+    };
+    upsertPublishedQuiz(publishedPayload);
+    persistCozyDrafts();
+    res.json({ ok: true, draft: finalized, quizId, warnings: collectCozyDraftWarnings(finalized) });
+  } catch (err) {
+    const message = (err as Error).message;
+    const status = message === 'Draft nicht gefunden' ? 404 : 400;
+    res.status(status).json({ error: message });
+  }
 });
 
 // Custom Questions (erstellte/aktualisierte Fragen)
@@ -386,6 +854,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       remainingQuestionIds: [],
       askedQuestionIds: [],
       teamBoards: {},
+      bingoEnabled: false,
       timerEndsAt: null,
       screen: 'lobby',
       questionPhase: 'idle',
@@ -454,7 +923,11 @@ const DEFAULT_POTATO_THEMES = [
   'Fragen zu Europa',
   'Süßigkeitenmarken',
   'Fabelwesen',
-  'Berge in Europa'
+  'Berge in Europa',
+  'Streetfood Klassiker',
+  'Streaming Hits',
+  'Nordische Mythen',
+  'Retro Spielkonsolen'
 ]; // TODO(LEGACY): durch echtes Themen-Set ersetzen
 const sanitizeThemeList = (input: unknown): string[] => {
   if (Array.isArray(input)) {
@@ -476,10 +949,6 @@ const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_LENGTH = 4;
 const POTATO_SIMILARITY_THRESHOLD = 0.85;
 const BLITZ_SIMILARITY_THRESHOLD = 0.85;
-
-const BLITZ_SETS = 3;
-const BLITZ_ITEMS_PER_SET = 5;
-const BLITZ_ANSWER_TIME_MS = 30000;
 const DEFAULT_BLITZ_THEMES = [
   'Musik',
   'Filme',
@@ -498,6 +967,12 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+const buildQuizIdFromDraft = (draft: CozyQuizDraft, requested?: string | null) => {
+  if (requested && requested.trim()) return requested.trim();
+  const base = slugify(draft.meta?.title || draft.id);
+  return base ? `cozy-quiz-${base}` : `cozy-quiz-${draft.id}`;
+};
 
 const buildLegacyBlitzTheme = (title: string): QuizBlitzTheme => {
   const slug = slugify(title) || `theme-${Date.now()}`;
@@ -1104,6 +1579,16 @@ const persistCustomQuestions = () => {
   }
 };
 
+const upsertCustomQuestion = (question: AnyQuestion) => {
+  const baseIndex = questions.findIndex((entry) => entry.id === question.id);
+  if (baseIndex >= 0) questions[baseIndex] = question;
+  else questions.push(question);
+  questionById.set(question.id, question);
+  const customIndex = customQuestions.findIndex((entry) => entry.id === question.id);
+  if (customIndex >= 0) customQuestions[customIndex] = question;
+  else customQuestions.push(question);
+};
+
 const broadcastTeamsReady = (room: RoomState) => {
   const teamsArr = Object.values(room.teams);
   io.to(room.roomCode).emit('teamsReady', { teams: teamsArr });
@@ -1134,6 +1619,7 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.timerEndsAt = null;
   room.screen = 'lobby';
   room.questionPhase = 'answering';
+  room.bingoEnabled = Boolean(template.enableBingo ?? template.meta?.useBingo);
   room.potatoPhase = 'IDLE';
   room.potatoPool = [];
   room.presetPotatoPool = sanitizeThemeList(template.potatoPool ?? []);
@@ -1321,11 +1807,37 @@ const validateQuestionStructure = (question: AnyQuestion): string[] => {
   return issues;
 };
 
+const collectCozyDraftWarnings = (draft: CozyQuizDraft): string[] => {
+  const warnings: string[] = [];
+  const potatoSize = Array.isArray(draft.potatoPool) ? draft.potatoPool.length : 0;
+  if (potatoSize < 14) {
+    warnings.push(`Potato-Pool enthaelt nur ${potatoSize} Themen (>=14 empfohlen).`);
+  }
+  const blitzThemes = draft.blitz?.pool?.length ?? 0;
+  if (blitzThemes < 14) {
+    warnings.push(`Blitz-Pool enthaelt nur ${blitzThemes} Themen (>=14 empfohlen).`);
+  }
+  if (draft.questions.length !== COZY_SLOT_TEMPLATE.length) {
+    warnings.push(`Fragen-Slots unvollstaendig: ${draft.questions.length}/${COZY_SLOT_TEMPLATE.length}.`);
+  }
+  draft.questions.forEach((question, idx) => {
+    const issues = validateQuestionStructure(question);
+    issues.forEach((issue) => warnings.push(`F${idx + 1}: ${issue}`));
+  });
+  return warnings;
+};
+
 type BunteEvaluationResult = {
   awardedPoints: number;
   awardedDetail: string | null;
   isCorrect: boolean;
   tieBreaker?: AnswerTieBreaker | null;
+};
+
+const quantizePoints = (value: number, limit: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  const clamped = Math.min(limit, Math.max(0, value));
+  return Math.round(clamped * 100) / 100;
 };
 
 const evaluateBunteSubmission = (
@@ -1348,13 +1860,16 @@ const evaluateBunteSubmission = (
         ? setup.correctOrder
         : setup.items?.map((item: any) => item.id) ?? [];
     if (!target.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
+    let positionMatches = 0;
+    target.forEach((correctId: string, idx: number) => {
+      if (order[idx] === correctId) positionMatches += 1;
+    });
     if (setup.scoringMode === 'contains') {
       const hits = Array.from(new Set(order.filter(Boolean))).filter((id) => target.includes(id)).length;
-      let positionMatches = 0;
-      target.forEach((correctId: string, idx: number) => {
-        if (order[idx] === correctId) positionMatches += 1;
-      });
-      const points = Math.min(safeMax, hits);
+      const containsOnly = Math.max(0, hits - positionMatches);
+      const weighted = positionMatches * 2 + containsOnly; // Wertung: exakte Position doppelt so stark wie bloß enthalten
+      const normalized = weighted / Math.max(target.length * 2, 1);
+      const points = quantizePoints(normalized * safeMax, safeMax);
       return {
         awardedPoints: points,
         awardedDetail: `Pos ${positionMatches}/${target.length}, enthält ${hits}/${target.length}`,
@@ -1367,19 +1882,16 @@ const evaluateBunteSubmission = (
         }
       };
     }
-    let matches = 0;
-    target.forEach((correctId: string, idx: number) => {
-      if (order[idx] === correctId) matches += 1;
-    });
-    const points = Math.min(safeMax, matches);
+    const normalized = positionMatches / (target.length || 1);
+    const points = quantizePoints(normalized * safeMax, safeMax);
     return {
       awardedPoints: points,
-      awardedDetail: `${matches}/${target.length} Positionen`,
-      isCorrect: matches >= target.length,
+      awardedDetail: `${positionMatches}/${target.length} Positionen`,
+      isCorrect: positionMatches >= target.length,
       tieBreaker: {
         label: 'TOP5',
-        primary: matches,
-        secondary: matches,
+        primary: positionMatches,
+        secondary: positionMatches,
         detail: 'Positionen'
       }
     };
@@ -1433,10 +1945,14 @@ const evaluateBunteSubmission = (
     expected.forEach((val: string, idx: number) => {
       if (order[idx] === val) matches += 1;
     });
-    let points = Math.min(safeMax, matches * (setup.partialPoints ?? 1));
+    const perIndexWeight =
+      typeof setup.partialPoints === 'number' && setup.partialPoints > 0
+        ? setup.partialPoints
+        : safeMax / Math.max(expected.length, 1);
+    let points = quantizePoints(matches * perIndexWeight, safeMax);
     const isCorrect = expected.length > 0 && matches === expected.length;
     if (isCorrect && typeof setup.fullPoints === 'number') {
-      points = Math.min(setup.fullPoints, safeMax);
+      points = quantizePoints(setup.fullPoints, safeMax);
     }
     return {
       awardedPoints: points,
@@ -1622,7 +2138,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     potato,
     blitz,
     results,
-    warnings: warnings.length ? warnings : undefined
+    warnings: warnings.length ? warnings : undefined,
+    supportsBingo: Boolean(room.bingoEnabled)
   };
 };
 

@@ -10,6 +10,7 @@ import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import BaukastenNeuPage from './pages/BaukastenNeuPage';
 import BingoPrintPage from './pages/BingoPrintPage';
+import Cozy60BuilderPage from './pages/Cozy60BuilderPage';
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
@@ -32,6 +33,7 @@ function App() {
       <Route path="/moderator" element={<ModeratorPage />} />
       <Route path="/intro" element={<IntroSlidesPage />} />
       <Route path="/bingo" element={<BingoPrintPage />} />
+      <Route path="/cozy60-builder" element={<Cozy60BuilderPage />} />
       <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
       <Route path="/stats" element={<StatsPage />} />
       <Route path="/draft-import" element={<DraftImportPage />} />

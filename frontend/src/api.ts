@@ -1,4 +1,4 @@
-import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language } from '@shared/quizTypes';
+import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language, CozyQuizDraft } from '@shared/quizTypes';
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -375,6 +375,67 @@ export const publishStudioDraft = async (draft: any): Promise<{ ok: boolean; id?
     body: JSON.stringify(draft)
   });
   if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
+  return res.json();
+};
+
+export interface CozyDraftSummary {
+  id: string;
+  title: string;
+  language: Language;
+  date: number | null;
+  status: string;
+  updatedAt: number;
+  createdAt: number;
+  questionCount: number;
+  potatoCount: number;
+  blitzThemes: number;
+}
+
+export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60`);
+  if (!res.ok) throw new Error('Cozy-Drafts konnten nicht geladen werden');
+  return res.json();
+};
+
+export const createCozyDraft = async (meta?: Partial<CozyQuizDraft['meta']>): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ meta })
+  });
+  if (!res.ok) throw new Error('Draft konnte nicht erstellt werden');
+  return res.json();
+};
+
+export const fetchCozyDraft = async (draftId: string): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60/${draftId}`);
+  if (!res.ok) throw new Error('Draft konnte nicht geladen werden');
+  return res.json();
+};
+
+export const saveCozyDraft = async (
+  draftId: string,
+  payload: Partial<CozyQuizDraft>
+): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60/${draftId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
+  return res.json();
+};
+
+export const publishCozyDraft = async (
+  draftId: string,
+  payload?: { draft?: Partial<CozyQuizDraft>; quizId?: string }
+): Promise<{ ok: boolean; draft: CozyQuizDraft; quizId: string; warnings?: string[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60/${draftId}/publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {})
+  });
+  if (!res.ok) throw new Error('Draft konnte nicht veroeffentlicht werden');
   return res.json();
 };
 

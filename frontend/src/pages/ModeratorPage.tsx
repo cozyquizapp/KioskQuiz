@@ -19,7 +19,7 @@ import {
   fetchHealth,
   listPublishedQuizzes
 } from '../api';
-import { AnswerEntry, AnyQuestion, QuizTemplate, Language } from '@shared/quizTypes';
+import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
@@ -31,6 +31,7 @@ import StatusDot from '../components/moderator/StatusDot';
 import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
 import { loadPlayDraft } from '../utils/draft';
 import { connectControlSocket } from '../socket';
+import { featureFlags } from '../config/features';
 
 type AnswersState = {
   answers: Record<string, (AnswerEntry & { answer?: unknown })>;
@@ -178,6 +179,8 @@ const ModeratorPage: React.FC = () => {
     gameState: socketGameState,
     questionProgress: socketQuestionProgress,
     warnings: socketWarnings,
+    timerEndsAt: socketTimerEndsAt,
+    teamsConnected: socketTeamsConnected,
     emit: socketEmit
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
@@ -333,6 +336,11 @@ const ModeratorPage: React.FC = () => {
     }
     setRoomCode(code);
     localStorage.setItem('moderatorRoom', code);
+  };
+  const handleRoomReset = () => {
+    setRoomCode('');
+    setRoomInput('');
+    localStorage.removeItem('moderatorRoom');
   };
 
   const handleCreateSession = () => {
@@ -555,6 +563,7 @@ const ModeratorPage: React.FC = () => {
     () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
     [socketScores]
   );
+  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
   const questionProgress = socketQuestionProgress;
   const askedCount =
     questionProgress?.asked ??
@@ -588,6 +597,10 @@ const ModeratorPage: React.FC = () => {
     return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
   }, [blitzDeadline, countdownTick]);
   const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
+  const questionTimerSecondsLeft = useMemo(() => {
+    if (!socketTimerEndsAt) return null;
+    return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
+  }, [socketTimerEndsAt, countdownTick]);
 
   const structuralWarnings = useMemo(
     () => (socketWarnings || []).filter((entry): entry is string => Boolean(entry)),
@@ -650,6 +663,18 @@ const ModeratorPage: React.FC = () => {
     return { ready, total: teams.length };
   }, [answers]);
   const currentQuizName = quizzes.find((q) => q.id === selectedQuiz)?.name;
+  const quizzesSorted = useMemo(() => {
+    const isCozy = (quizId: string) => quizId.startsWith('cozy-quiz-60');
+    return [...quizzes].sort((a, b) => {
+      const cozyA = isCozy(a.id);
+      const cozyB = isCozy(b.id);
+      if (cozyA !== cozyB) return cozyA ? -1 : 1;
+      const dateA = typeof a.meta?.date === 'number' ? (a.meta?.date as number) : 0;
+      const dateB = typeof b.meta?.date === 'number' ? (b.meta?.date as number) : 0;
+      if (dateA !== dateB) return dateB - dateA;
+      return a.name.localeCompare(b.name);
+    });
+  }, [quizzes]);
   const phaseChip = (() => {
     const label =
       phase === 'question' ? 'Live' : phase === 'evaluating' ? 'Bewertung' : phase === 'final' ? 'Aufgeloest' : 'Bereit';
@@ -657,6 +682,21 @@ const ModeratorPage: React.FC = () => {
       phase === 'question' ? 'live' : phase === 'evaluating' ? 'eval' : phase === 'final' ? 'final' : 'setup';
     return pill(`Phase: ${label}`, tone);
   })();
+  const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> =
+    {
+      LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
+      INTRO: { label: 'Intro', hint: 'Intro & Regeln laufen', tone: 'setup' },
+      Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antworten offen', tone: 'live' },
+      Q_LOCKED: { label: 'Gesperrt', hint: 'Keine Antworten mehr', tone: 'eval' },
+      Q_REVEAL: { label: 'Reveal', hint: 'Auflösung läuft', tone: 'final' },
+      SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand zeigen', tone: 'eval' },
+      SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/Übergang', tone: 'setup' },
+      BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Runde aktiv', tone: 'live' },
+      POTATO: { label: 'Heisse Kartoffel', hint: 'Finale läuft', tone: 'live' },
+      AWARDS: { label: 'Awards', hint: 'Finale Scores & Awards', tone: 'final' }
+    };
+  const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
+  const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
 
   const phaseLabel =
     viewPhase === 'pre'
@@ -704,7 +744,7 @@ const ModeratorPage: React.FC = () => {
       currentQuizName={currentQuizName}
       selectedQuiz={selectedQuiz}
       setSelectedQuiz={setSelectedQuiz}
-      quizzes={quizzes}
+      quizzes={quizzesSorted}
       roomCode={roomCode}
       timerSeconds={timerSeconds}
       actionState={actionState}
@@ -1513,12 +1553,385 @@ const ModeratorPage: React.FC = () => {
         </button>
       );
     }
-    if (!ctas.length) return null;
+  if (!ctas.length) return null;
+  return (
+    <section style={{ ...card, marginTop: 12 }}>
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>Stage Actions</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{ctas}</div>
+    </section>
+  );
+};
+
+  const renderCompactScoreboard = (title = 'Scoreboard') => {
+    const fallbackEntries = Object.entries(answers?.teams || {}).map(([id, team]) => ({
+      id,
+      name: team?.name || 'Team',
+      score: (team as any)?.score ?? 0
+    }));
+    const dataset = (scoreboard.length ? scoreboard : fallbackEntries).slice(0, 6);
+    const totalTeams = scoreboard.length || fallbackEntries.length;
     return (
       <section style={{ ...card, marginTop: 12 }}>
-        <div style={{ fontWeight: 800, marginBottom: 6 }}>Stage Actions</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{ctas}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ fontWeight: 800 }}>{title}</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ ...statChip, background: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.35)', color: '#93c5fd' }}>
+              Teams: {totalTeams || 0}
+            </span>
+            <span style={{ ...statChip, background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.35)', color: '#bbf7d0' }}>
+              Connected: {connectedTeams || 0}
+            </span>
+          </div>
+        </div>
+        {dataset.length === 0 ? (
+          <div style={{ padding: 10, borderRadius: 12, border: '1px dashed rgba(255,255,255,0.12)', color: '#94a3b8' }}>
+            Noch keine Teams verbunden.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 6 }}>
+            {dataset.map((entry, idx) => (
+              <div
+                key={`compact-score-${entry.id}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto',
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(0,0,0,0.35)'
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>{idx + 1}.</span>
+                <span>{entry.name}</span>
+                <span style={{ fontWeight: 700 }}>{entry.score ?? 0}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
+    );
+  };
+
+  const renderWarningsPanel = () => {
+    if (!structuralWarnings.length) return null;
+    return (
+      <section
+        style={{
+          ...card,
+          marginTop: 12,
+          border: '1px solid rgba(251,191,36,0.45)',
+          background: 'rgba(120,53,15,0.35)'
+        }}
+      >
+        <div style={{ fontWeight: 800, color: '#fbbf24', marginBottom: 6 }}>Content-Warnungen</div>
+        <ul style={{ margin: 0, paddingLeft: 18, color: '#fde68a', fontSize: 13 }}>
+          {structuralWarnings.map((warning, idx) => (
+            <li key={`${warning}-${idx}`}>{warning}</li>
+          ))}
+        </ul>
+      </section>
+    );
+  };
+
+  const renderPrimaryControls = () => {
+    if (!roomCode) return null;
+    const waitingTeams = Math.max(0, teamsCount - answersCount);
+    const baseButtonStyle: React.CSSProperties = {
+      ...inputStyle,
+      width: '100%',
+      padding: '14px 16px',
+      fontSize: 16,
+      fontWeight: 800,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      cursor: 'pointer'
+    };
+    const buttonConfigs: Array<{
+      label: string;
+      onClick: () => void;
+      busy: boolean;
+      tone: 'primary' | 'warning' | 'accent';
+      disabled?: boolean;
+    }> = [
+      { label: 'Next', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
+      { label: 'Lock', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
+      {
+        label: 'Reveal',
+        onClick: handleReveal,
+        busy: actionState.reveal,
+        tone: 'accent',
+        disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL'
+      }
+    ];
+    const toneStyle = (tone: 'primary' | 'warning' | 'accent') => {
+      if (tone === 'primary') return { background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' };
+      if (tone === 'warning') return { background: 'linear-gradient(135deg, #fed7aa, #fb923c)', color: '#1f1305' };
+      return { background: 'linear-gradient(135deg, #c084fc, #8b5cf6)', color: '#130924' };
+    };
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 10
+          }}
+        >
+          {buttonConfigs.map(({ label, onClick, busy, tone, disabled }) => (
+            <button
+              key={label}
+              style={{
+                ...baseButtonStyle,
+                ...(toneStyle(tone) as React.CSSProperties),
+                opacity: busy || disabled ? 0.65 : 1,
+                cursor: busy || disabled ? 'not-allowed' : 'pointer'
+              }}
+              onClick={busy || disabled ? undefined : onClick}
+              disabled={busy || disabled}
+            >
+              {busy ? `${label} ...` : label}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <span style={statChip}>Frage {askedCount}/{totalQuestions}</span>
+          <span style={statChip}>Antworten {answersCount}/{teamsCount}</span>
+          {waitingTeams > 0 && (
+            <span style={{ ...statChip, borderColor: 'rgba(251,191,36,0.45)', color: '#fbbf24', background: 'rgba(251,191,36,0.12)' }}>
+              Warten auf {waitingTeams}
+            </span>
+          )}
+          <span style={statChip}>State: {stateInfo.label}</span>
+        </div>
+      </section>
+    );
+  };
+
+  const renderCozyStagePanel = () => {
+    if (!roomCode) return null;
+    if (normalizedGameState === 'BLITZ') return renderBlitzControls();
+    if (normalizedGameState === 'POTATO') return renderPotatoControls();
+    if (normalizedGameState === 'AWARDS') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Awards & Finale</div>
+          <p style={{ color: '#cbd5e1', marginBottom: 10 }}>
+            Scoreboard bitte auf dem Beamer lassen, Awards via Button triggern.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              style={{
+                ...inputStyle,
+                width: 'auto',
+                background: 'linear-gradient(135deg, #a5b4fc, #60a5fa)',
+                color: '#0b1020',
+                cursor: 'pointer'
+              }}
+              onClick={handleShowAwards}
+            >
+              Awards anzeigen
+            </button>
+          </div>
+        </section>
+      );
+    }
+    const stageShortcuts = renderStageShortcuts();
+    if (stageShortcuts) return stageShortcuts;
+    if (normalizedGameState === 'SCOREBOARD' || normalizedGameState === 'SCOREBOARD_PAUSE') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard aktiv</div>
+          <p style={{ color: '#cbd5e1', margin: 0 }}>
+            Scoreboard/Pause laeuft. Nutze NEXT, um weiterzugehen.
+          </p>
+        </section>
+      );
+    }
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Stage Ueberblick</div>
+        <div style={{ color: '#cbd5e1', marginBottom: 8 }}>{stateInfo.hint}</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <span style={statChip}>Frage {askedCount}/{totalQuestions}</span>
+          {questionTimerSecondsLeft !== null && (
+            <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const renderCozyLayout = () => {
+    if (!featureFlags.isCozyMode) return null;
+    const stagePanel = renderCozyStagePanel();
+    const warningsPanel = renderWarningsPanel();
+    const scoreboardPanel = renderCompactScoreboard();
+    return (
+      <>
+        <section style={{ ...card }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: 12,
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div style={{ display: 'grid', gap: 6 }}>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>Roomcode</span>
+              <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: '0.3em' }}>{roomCode || '----'}</span>
+              {currentQuizName && (
+                <span style={{ fontSize: 12, color: '#cbd5e1' }}>Quiz: {currentQuizName}</span>
+              )}
+            </div>
+            <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-start' }}>
+              {pill(stateInfo.label, stateInfo.tone)}
+              <span style={{ color: '#cbd5e1', fontSize: 12 }}>{stateInfo.hint}</span>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <span style={statChip}>Progress {askedCount}/{totalQuestions}</span>
+                <span style={statChip}>
+                  Timer {questionTimerSecondsLeft !== null ? `${questionTimerSecondsLeft}s` : '---'}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-end' }}>
+              <span style={{ ...statChip, background: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.32)', color: '#bfdbfe' }}>
+                Verbunden: {connectedTeams || 0}
+              </span>
+              {readyCount.total > 0 && (
+                <span
+                  style={{
+                    ...statChip,
+                    background: 'rgba(52,211,153,0.14)',
+                    borderColor: 'rgba(52,211,153,0.32)',
+                    color: '#86efac'
+                  }}
+                >
+                  Bereit {readyCount.ready}/{readyCount.total}
+                </span>
+              )}
+            </div>
+          </div>
+          {roomCode ? (
+            <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={statChip}>Sprache: {language.toUpperCase()}</span>
+              <button
+                style={{
+                  ...inputStyle,
+                  width: 'auto',
+                  background: 'rgba(255,255,255,0.08)',
+                  cursor: 'pointer'
+                }}
+                onClick={handleRoomReset}
+              >
+                Session wechseln
+              </button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={language}
+                  onChange={(e) => {
+                    const val = e.target.value as Language;
+                    setLang(val);
+                    localStorage.setItem('moderatorLanguage', val);
+                  }}
+                  style={{ ...inputStyle, width: 'auto', minWidth: 120 }}
+                >
+                  <option value="de">Deutsch</option>
+                  <option value="en">English</option>
+                  <option value="both">DE/EN</option>
+                </select>
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                    color: '#0b1020',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (!roomCode) {
+                      setToast('Roomcode fehlt');
+                      return;
+                    }
+                    doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt');
+                  }}
+                >
+                  Sprache setzen
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+              {/* TODO(DESIGN_LATER): separate Session-Setup screen */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  value={roomInput}
+                  onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                  placeholder="Roomcode eingeben"
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                  onClick={handleRoomConnect}
+                >
+                  Verbinden
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={selectedQuiz}
+                  onChange={(e) => {
+                    setSelectedQuiz(e.target.value);
+                    localStorage.setItem('moderatorSelectedQuiz', e.target.value);
+                  }}
+                  style={{ ...inputStyle, flex: 1 }}
+                >
+                  {quizzesSorted.map((quiz) => (
+                    <option key={quiz.id} value={quiz.id}>
+                      {quiz.name || quiz.id}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={language}
+                  onChange={(e) => {
+                    const val = e.target.value as Language;
+                    setLang(val);
+                    localStorage.setItem('moderatorLanguage', val);
+                  }}
+                  style={{ ...inputStyle, width: 140 }}
+                >
+                  <option value="de">Deutsch</option>
+                  <option value="en">English</option>
+                  <option value="both">DE+EN</option>
+                </select>
+                <button
+                  style={{
+                    ...inputStyle,
+                    width: 'auto',
+                    background: 'linear-gradient(135deg, #fde68a, #f97316)',
+                    color: '#1f1105',
+                    cursor: creatingSession ? 'wait' : 'pointer',
+                    opacity: creatingSession ? 0.7 : 1
+                  }}
+                  disabled={creatingSession || !selectedQuiz}
+                  onClick={handleCreateSession}
+                >
+                  {creatingSession ? 'Session wird erstellt ...' : 'Neue Session starten'}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+        {roomCode && renderPrimaryControls()}
+        {roomCode && stagePanel}
+        {roomCode ? warningsPanel : null}
+        {roomCode && scoreboardPanel}
+        {!roomCode && warningsPanel}
+      </>
     );
   };
 
@@ -1536,6 +1949,11 @@ const ModeratorPage: React.FC = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
+      {renderCozyLayout()}
+      {featureFlags.showLegacyPanels && (
+        <details style={{ marginTop: 24 }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Legacy Tools</summary>
+          <div style={{ marginTop: 12 }}>
       <div
         style={{
           position: 'sticky',
@@ -1769,24 +2187,6 @@ const ModeratorPage: React.FC = () => {
         {renderActions()}
         {renderStageShortcuts()}
       </div>
-
-      {structuralWarnings.length > 0 && (
-        <section
-          style={{
-            ...card,
-            marginTop: 8,
-            border: '1px solid rgba(251,191,36,0.45)',
-            background: 'rgba(120,53,15,0.35)'
-          }}
-        >
-          <div style={{ fontWeight: 800, color: '#fbbf24', marginBottom: 6 }}>Content-Warnungen</div>
-          <ul style={{ margin: 0, paddingLeft: 18, color: '#fde68a', fontSize: 13 }}>
-            {structuralWarnings.map((warning, idx) => (
-              <li key={`${warning}-${idx}`}>{warning}</li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* Stats Panels */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 10 }}>
@@ -2093,6 +2493,9 @@ const ModeratorPage: React.FC = () => {
           Quiz beenden & Stats loggen
         </button>
       </div>
+          </div>
+        </details>
+      )}
     </main>
   );
 };

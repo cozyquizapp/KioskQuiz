@@ -280,6 +280,7 @@ export interface RoomState {
   teamBoards: Record<string, BingoBoard>;
   timerEndsAt: number | null;
   language?: Language;
+  bingoEnabled?: boolean;
 }
 
 export type QuizMode = 'ordered' | 'random';
@@ -294,6 +295,7 @@ export interface QuizMeta {
   useBingo?: boolean;
   notes?: string;
   language?: Language; // TODO(LEGACY): remove when quiz language stored elsewhere
+  date?: number;
 }
 
 export interface CategoryConfig {
@@ -332,6 +334,38 @@ export interface QuizTemplate {
     pool: QuizBlitzTheme[];
   } | null;
   potatoPool?: string[] | null;
+  enableBingo?: boolean;
+}
+
+export interface CozyQuizMeta {
+  title: string;
+  language: Language;
+  date?: number | null;
+  description?: string | null;
+}
+
+export type CozyQuizDraftStatus = 'draft' | 'published';
+
+export interface CozyQuestionSlotTemplate {
+  index: number;
+  segmentIndex: 0 | 1;
+  type: CozyQuestionType;
+  defaultPoints: number;
+  label: string;
+  bunteKind?: BunteTuetePayload['kind'];
+}
+
+export interface CozyQuizDraft {
+  id: string;
+  meta: CozyQuizMeta;
+  questions: AnyQuestion[];
+  blitz: { pool: QuizBlitzTheme[] };
+  potatoPool: string[];
+  enableBingo?: boolean;
+  createdAt: number;
+  updatedAt: number;
+  status: CozyQuizDraftStatus;
+  lastPublishedAt?: number | null;
 }
 
 export interface BingoCell {
@@ -480,6 +514,7 @@ export type StateUpdatePayload = {
   blitz?: BlitzState | null;
   results?: AnswerAwardSnapshot[];
   warnings?: string[];
+  supportsBingo?: boolean;
 };
 
 export interface AnswerAwardSnapshot {

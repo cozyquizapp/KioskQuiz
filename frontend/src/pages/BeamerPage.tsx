@@ -1,25 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import BeamerView from '../views/BeamerView';
+import { featureFlags } from '../config/features';
+
+const DEFAULT_ROOM_CODE = featureFlags.singleSessionRoomCode || 'MAIN';
 
 const BeamerPage = () => {
   const { roomCode: paramCode } = useParams<{ roomCode?: string }>();
   const [searchParams] = useSearchParams();
   const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): nur für dev shortcuts
   const [roomCode, setRoomCode] = useState<string>(() => {
+    if (featureFlags.singleSessionMode) return DEFAULT_ROOM_CODE;
     const initial = searchParams.get('roomCode') || paramCode || legacyRoom || '';
     return initial.toUpperCase();
   });
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    const derived = searchParams.get('roomCode') || paramCode || '';
-    if (derived) {
-      setRoomCode(derived.toUpperCase());
+    if (featureFlags.singleSessionMode) {
+      setRoomCode(DEFAULT_ROOM_CODE);
+      return;
     }
-  }, [paramCode, searchParams]);
+    const derived = searchParams.get('roomCode') || paramCode || legacyRoom || '';
+    if (!derived) return;
+    const normalized = derived.toUpperCase();
+    setRoomCode((prev) => (prev === normalized ? prev : normalized));
+  }, [paramCode, searchParams, legacyRoom]);
 
-  if (!roomCode) {
+  const shouldShowJoinForm = !roomCode && (!featureFlags.singleSessionMode || featureFlags.showLegacyPanels);
+
+  if (shouldShowJoinForm) {
     return (
       <div style={{ minHeight: '100vh', background: '#05070d', color: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 420, padding: 20 }}>
@@ -59,6 +69,10 @@ const BeamerPage = () => {
         </div>
       </div>
     );
+  }
+
+  if (!roomCode) {
+    return null;
   }
 
   return <BeamerView roomCode={roomCode} />;

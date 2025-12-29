@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import TeamView from '../views/TeamView';
+import { featureFlags } from '../config/features';
 
 class ErrorCatcher extends React.Component<{ onError: (err: Error) => void; children: React.ReactNode }> {
   componentDidCatch(error: Error) {
@@ -42,35 +43,56 @@ const TeamBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
+const DEFAULT_ROOM_CODE = featureFlags.singleSessionRoomCode || 'MAIN';
+
 // Team-Seite: erlaubt freie Roomcodes (Legacy MAIN nur fallback)
 const TeamPage = () => {
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
   const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): nur für dev-shortcuts
-  const initial =
-    params.get('roomCode') ||
-    localStorage.getItem('teamRoomCode') ||
-    legacyRoom ||
-    '';
-  const [roomCode, setRoomCode] = useState(initial.toUpperCase());
+  const initialRoom = (() => {
+    if (featureFlags.singleSessionMode) return DEFAULT_ROOM_CODE;
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get('roomCode');
+    if (fromQuery) return fromQuery.toUpperCase();
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('teamRoomCode');
+      if (stored) return stored.toUpperCase();
+    }
+    return (legacyRoom || '').toUpperCase();
+  })();
+
+  const [roomCode, setRoomCode] = useState(initialRoom);
   const [input, setInput] = useState('');
 
   useEffect(() => {
+    if (featureFlags.singleSessionMode) {
+      setRoomCode(DEFAULT_ROOM_CODE);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('teamRoomCode', DEFAULT_ROOM_CODE);
+      }
+      return;
+    }
     const queryRoom = new URLSearchParams(location.search).get('roomCode');
     if (!queryRoom) return;
     const normalized = queryRoom.toUpperCase();
     setRoomCode((prev) => (prev === normalized ? prev : normalized));
-    localStorage.setItem('teamRoomCode', normalized);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('teamRoomCode', normalized);
+    }
   }, [location.search]);
 
   const attach = () => {
     const clean = (input || '').trim().toUpperCase();
     if (!clean) return;
     setRoomCode(clean);
-    localStorage.setItem('teamRoomCode', clean);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('teamRoomCode', clean);
+    }
   };
 
-  if (!roomCode) {
+  const shouldShowJoinForm = !roomCode && (!featureFlags.singleSessionMode || featureFlags.showLegacyPanels);
+
+  if (shouldShowJoinForm) {
     return (
       <div style={{ minHeight: '100vh', background: '#0b0d14', color: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 360, padding: 20 }}>
@@ -110,6 +132,10 @@ const TeamPage = () => {
         </div>
       </div>
     );
+  }
+
+  if (!roomCode) {
+    return null;
   }
 
   return (

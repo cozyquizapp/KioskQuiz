@@ -13,6 +13,7 @@ import {
   StateUpdatePayload,
   CozyGameState,
   PotatoState,
+  PotatoVerdict,
   BlitzState
 } from '@shared/quizTypes';
 import { fetchCurrentQuestion, fetchLanguage, fetchTimer, QuestionMeta } from '../api';
@@ -76,7 +77,7 @@ const translations = {
     answerFallback: 'Antwort wird eingeblendet.',
     slotTitle: 'Naechste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
-    mixedMechanic: 'Gemischte Tüte - Sondermechanik.',
+    mixedMechanic: 'Gemischte TÃÂ¼te - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
     footerMeta: (
       globalIndex: number,
@@ -240,6 +241,15 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [potatoTick, setPotatoTick] = useState(0);
+  const [potatoAttemptOverlay, setPotatoAttemptOverlay] = useState<{
+    id: string;
+    verdict: PotatoVerdict;
+    text: string;
+    teamName: string | null;
+    reason?: string;
+  } | null>(null);
+  const potatoOverlayTimeoutRef = useRef<number | null>(null);
+  const [questionProgress, setQuestionProgress] = useState<StateUpdatePayload['questionProgress'] | null>(null);
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
   const [showLastQuestion, setShowLastQuestion] = useState(true);
   const previousQuestionRef = useRef<AnyQuestion | null>(null);
@@ -386,6 +396,41 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
     return () => window.clearInterval(id);
   }, [gameState]);
+
+  useEffect(() => {
+    if (!potato?.lastAttempt || potato?.phase !== 'PLAYING') return;
+    const attempt = potato.lastAttempt;
+    const teamName = teams.find((team) => team.id === attempt.teamId)?.name || attempt.teamId;
+    setPotatoAttemptOverlay({
+      id: attempt.id,
+      verdict: attempt.verdict,
+      text: attempt.text,
+      teamName,
+      reason: attempt.reason || undefined
+    });
+    if (potatoOverlayTimeoutRef.current) {
+      window.clearTimeout(potatoOverlayTimeoutRef.current);
+    }
+    potatoOverlayTimeoutRef.current = window.setTimeout(() => setPotatoAttemptOverlay(null), 1600);
+  }, [potato?.lastAttempt?.id, potato?.phase, potato?.lastAttempt?.verdict, teams]);
+
+  useEffect(() => {
+    if (potato?.phase === 'PLAYING') return;
+    if (potatoOverlayTimeoutRef.current) {
+      window.clearTimeout(potatoOverlayTimeoutRef.current);
+      potatoOverlayTimeoutRef.current = null;
+    }
+    setPotatoAttemptOverlay(null);
+  }, [potato?.phase]);
+
+  useEffect(
+    () => () => {
+      if (potatoOverlayTimeoutRef.current) {
+        window.clearTimeout(potatoOverlayTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const prev = previousQuestionRef.current;
@@ -563,6 +608,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       if (payload.results !== undefined) {
         setAnswerResults(payload.results ?? null);
       }
+      if (payload.questionProgress !== undefined) {
+        setQuestionProgress(payload.questionProgress ?? null);
+      }
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
@@ -589,7 +637,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('answersEvaluated', ({ solution: sol }: { solution?: string }) => {
       setSolution(sol);
       setEvaluating(false);
-      setAnswerVisible(true); // Lösung direkt einblenden
+      setAnswerVisible(true); // LÃÂ¶sung direkt einblenden
       setQuestionPhase('evaluated');
     });
 
@@ -642,7 +690,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [categories, slotMeta]);
 
-  // roTüte lobby category highlights
+  // roTÃÂ¼te lobby category highlights
   useEffect(() => {
     if (categories.length === 0) return;
     if (screen !== 'lobby') return;
@@ -723,6 +771,11 @@ useEffect(() => {
   const isScoreboardState =
     gameState === 'SCOREBOARD' || gameState === 'SCOREBOARD_PAUSE' || gameState === 'AWARDS';
   const isPotatoStage = gameState === 'POTATO' && potato;
+  const derivedQuestionProgress =
+    questionProgress ??
+    (questionMeta
+      ? { asked: questionMeta.globalIndex ?? (question ? 1 : 0), total: questionMeta.globalTotal ?? 20 }
+      : { asked: question ? 1 : 0, total: 20 });
   const isBlitzStage = gameState === 'BLITZ' && blitz;
   const sortedScoreTeams = [...teams].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const teamNameLookup = useMemo(() => {
@@ -749,8 +802,8 @@ useEffect(() => {
     if (!blitz?.deadline) return null;
     return Math.max(0, Math.ceil((blitz.deadline - Date.now()) / 1000));
   }, [blitz?.deadline, potatoTick]);
-  const totalQuestions = questionProgress?.total ?? questionMeta?.globalTotal ?? 20;
-  const rawRoundIndex = questionMeta?.globalIndex ?? questionProgress?.asked ?? 0;
+  const totalQuestions = derivedQuestionProgress?.total ?? questionMeta?.globalTotal ?? 20;
+  const rawRoundIndex = questionMeta?.globalIndex ?? derivedQuestionProgress?.asked ?? 0;
   const currentRoundNumber =
     gameState === 'Q_ACTIVE' || gameState === 'Q_LOCKED' || gameState === 'Q_REVEAL'
       ? questionMeta?.globalIndex ?? (rawRoundIndex > 0 ? rawRoundIndex : 1)
@@ -1097,7 +1150,7 @@ useEffect(() => {
   const renderCozyIntroContent = (): JSX.Element => {
     const copy =
       language === 'de'
-        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen f�r Cozy Quiz 60.']
+        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen fÃ¼r Cozy Quiz 60.']
         : language === 'both'
         ? ['Teams beitreten / join teams.', 'Host setzt Sprache / selects language.', 'Get ready for Cozy Quiz 60.']
         : ['Teams join and check names.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
@@ -1253,7 +1306,7 @@ useEffect(() => {
           <div className="beamer-list">
             <span>
               {language === 'de'
-                ? `Eing�nge ${submissions}/${teams.length}`
+                ? `EingÃ¤nge ${submissions}/${teams.length}`
                 : `Submissions ${submissions}/${teams.length}`}
             </span>
             {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
@@ -1413,9 +1466,9 @@ useEffect(() => {
         footerMessage={
           phase === 'active'
             ? language === 'de'
-              ? 'Antworten jetzt m�glich'
+              ? 'Antworten jetzt mÃ¶glich'
               : language === 'both'
-              ? 'Antworten m�glich / Answers open'
+              ? 'Antworten mÃ¶glich / Answers open'
               : 'Answers open'
             : phase === 'locked'
             ? language === 'de'
@@ -1424,9 +1477,9 @@ useEffect(() => {
               ? 'Antworten geschlossen / Locked'
               : 'Answers locked'
             : language === 'de'
-            ? 'Aufl�sung'
+            ? 'AuflÃ¶sung'
             : language === 'both'
-            ? 'Aufl�sung / Reveal'
+            ? 'AuflÃ¶sung / Reveal'
             : 'Reveal'
         }
         status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
@@ -1441,9 +1494,9 @@ useEffect(() => {
                 {phase === 'reveal' && solution && (
                   <div className="beamer-question-solution">
                     {language === 'de'
-                      ? `L�sung: ${solution}`
+                      ? `LÃ¶sung: ${solution}`
                       : language === 'both'
-                      ? `L�sung / Solution: ${solution}`
+                      ? `LÃ¶sung / Solution: ${solution}`
                       : `Solution: ${solution}`}
                   </div>
                 )}
@@ -1477,8 +1530,8 @@ useEffect(() => {
         footerMessage={
           mode === 'pause'
             ? language === 'de'
-              ? 'Kurze Pause � gleich geht es weiter.'
-              : 'Short break � back soon.'
+              ? 'Kurze Pause â gleich geht es weiter.'
+              : 'Short break â back soon.'
             : language === 'de'
             ? 'Zwischenstand anzeigen'
             : 'Showing standings'
@@ -1543,7 +1596,7 @@ useEffect(() => {
         subtitle={language === 'de' ? 'Finales Ranking' : 'Final ranking'}
         badgeLabel="FINAL"
         badgeTone="success"
-        footerMessage={language === 'de' ? 'Gl�ckwunsch an alle Teams' : 'Congrats to all teams'}
+        footerMessage={language === 'de' ? 'GlÃ¼ckwunsch an alle Teams' : 'Congrats to all teams'}
         status="final"
       >
         {renderCozyAwardsContent()}
@@ -1592,7 +1645,7 @@ useEffect(() => {
             subtitle={language === 'de' ? 'Status' : 'Status'}
             badgeLabel={badgeInfo?.label}
             badgeTone={badgeInfo?.tone}
-            footerMessage={language === 'de' ? 'Warten auf den n�chsten Schritt' : 'Waiting for next step'}
+            footerMessage={language === 'de' ? 'Warten auf den nÃ¤chsten Schritt' : 'Waiting for next step'}
             status="info"
           >
             {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
@@ -1604,7 +1657,7 @@ useEffect(() => {
     if (!potato) return renderScoreboard();
     const roundTotal = potato.selectedThemes?.length ?? 0;
     const roundLabel =
-      roundTotal > 0 && potato.roundIndex >= 0 ? `${potato.roundIndex + 1}/${roundTotal}` : roundTotal > 0 ? `0/${roundTotal}` : '�';
+      roundTotal > 0 && potato.roundIndex >= 0 ? `${potato.roundIndex + 1}/${roundTotal}` : roundTotal > 0 ? `0/${roundTotal}` : '?';
     const activeTeamName = potato.activeTeamId
       ? teams.find((t) => t.id === potato.activeTeamId)?.name || potato.activeTeamId
       : null;
@@ -1619,205 +1672,278 @@ useEffect(() => {
         : potato.lastWinnerId || null;
     const infoCopy =
       language === 'de'
-        ? 'Max. 5 Sekunden pro Antwort � doppelte Antworten = Strike.'
+        ? 'Max. 5 Sekunden pro Antwort ? doppelte Antworten = Strike.'
         : language === 'both'
         ? 'Max. 5 Sekunden / max. 5 seconds. Duplicate answers = strike.'
-        : 'Max. 5 seconds per answer � duplicate answers = strike.';
+        : 'Max. 5 seconds per answer ? duplicate answers = strike.';
+    const attemptOverlay = potato.phase === 'PLAYING' ? potatoAttemptOverlay : null;
+    const overlayVerdictText = (verdict: PotatoVerdict) => {
+      if (language === 'en') {
+        return verdict === 'ok'
+          ? 'ACCEPTED'
+          : verdict === 'dup'
+          ? 'DUPLICATE'
+          : verdict === 'invalid'
+          ? 'INVALID'
+          : verdict === 'timeout'
+          ? 'TIMEOUT'
+          : 'CHECKING';
+      }
+      if (language === 'both') {
+        return verdict === 'ok'
+          ? 'AKZEPTIERT / ACCEPTED'
+          : verdict === 'dup'
+          ? 'DUPLIKAT / DUPLICATE'
+          : verdict === 'invalid'
+          ? 'UNGUELTIG / INVALID'
+          : verdict === 'timeout'
+          ? 'ZEIT / TIMEOUT'
+          : 'PRUEFUNG / CHECKING';
+      }
+      if (verdict === 'ok') return 'AKZEPTIERT';
+      if (verdict === 'dup') return 'DUPLIKAT';
+      if (verdict === 'invalid') return 'UNGUELTIG';
+      if (verdict === 'timeout') return 'TIMEOUT';
+      return 'PRUEFUNG';
+    };
+    const overlayReasonText = (reason?: string) => {
+      if (!reason) return null;
+      if (reason === 'duplicate')
+        return language === 'en' ? 'Already used' : language === 'both' ? 'Schon genannt / Already used' : 'Schon genannt';
+      if (reason === 'similar')
+        return language === 'en' ? 'Very similar' : language === 'both' ? 'Sehr aehnlich / Very similar' : 'Sehr aehnlich';
+      if (reason === 'not-listed')
+        return language === 'en' ? 'Not on list' : language === 'both' ? 'Nicht gelistet / Not on list' : 'Nicht gelistet';
+      if (reason === 'timeout')
+        return language === 'en' ? 'Too late' : language === 'both' ? 'Zu spaet / Too late' : 'Zu spaet';
+      if (reason === 'empty')
+        return language === 'en' ? 'No answer' : language === 'both' ? 'Keine Antwort / No answer' : 'Keine Antwort';
+      return null;
+    };
     return (
-      <div style={cardFrame}>
-        <div
-          style={{
-            borderRadius: 32,
-            border: '1px solid rgba(255,255,255,0.18)',
-            background: 'linear-gradient(140deg, rgba(13,15,20,0.94), rgba(14,17,27,0.85))',
-            padding: '28px 26px',
-            minHeight: 320,
-            boxShadow: '0 30px 64px rgba(0,0,0,0.55)'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 14,
-              flexWrap: 'wrap',
-              gap: 10
-            }}
-          >
-            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.06em' }}>
-              {language === 'de'
-                ? 'Heisse Kartoffel'
-                : language === 'both'
-                ? 'Heisse Kartoffel / Hot Potato'
-                : 'Hot Potato'}
-            </div>
-            <div style={{ ...pillRule, borderColor: 'rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.12)' }}>
-              Runde {roundLabel}
+      <div style={{ position: 'relative' }}>
+        {attemptOverlay && (
+          <div className={`potato-attempt-overlay verdict-${attemptOverlay.verdict}`}>
+            <div className="potato-attempt-team">{attemptOverlay.teamName || 'Team'}</div>
+            <div className="potato-attempt-text">"{attemptOverlay.text || '?'}"</div>
+            <div className="potato-attempt-meta">
+              <span>{overlayVerdictText(attemptOverlay.verdict)}</span>
+              {overlayReasonText(attemptOverlay.reason) && <span>{overlayReasonText(attemptOverlay.reason)}</span>}
             </div>
           </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {potato.phase === 'BANNING' && (
-              <>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>
-                  {language === 'de'
-                    ? 'Teams bannen noch Themen'
-                    : language === 'both'
-                    ? 'Teams bannen Themen / teams ban topics'
-                    : 'Teams are banning topics'}
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {selectedThemes.length > 0 ? (
-                    selectedThemes.map((theme, idx) => (
-                      <span key={`beamer-theme-${idx}`} style={{ ...pillRule, fontSize: 14 }}>
-                        {theme}
+        )}
+        <div style={cardFrame}>
+          <div
+            style={{
+              borderRadius: 32,
+              border: '1px solid rgba(255,255,255,0.18)',
+              background: 'linear-gradient(140deg, rgba(13,15,20,0.94), rgba(14,17,27,0.85))',
+              padding: '28px 26px',
+              minHeight: 320,
+              boxShadow: '0 30px 64px rgba(0,0,0,0.55)'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 14,
+                flexWrap: 'wrap',
+                gap: 10
+              }}
+            >
+              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.06em' }}>
+                {language === 'de'
+                  ? 'Heisse Kartoffel'
+                  : language === 'both'
+                  ? 'Heisse Kartoffel / Hot Potato'
+                  : 'Hot Potato'}
+              </div>
+              <div style={{ ...pillRule, borderColor: 'rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.12)' }}>
+                Runde {roundLabel}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {potato.phase === 'BANNING' && (
+                <>
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>
+                    {language === 'de'
+                      ? 'Teams bannen noch Themen'
+                      : language === 'both'
+                      ? 'Teams bannen Themen / teams ban topics'
+                      : 'Teams are banning topics'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {selectedThemes.length > 0 ? (
+                      selectedThemes.map((theme, idx) => (
+                        <span key={`beamer-theme-${idx}`} style={{ ...pillRule, fontSize: 14 }}>
+                          {theme}
+                        </span>
+                      ))
+                    ) : (
+                      <span style={{ color: '#94a3b8' }}>
+                        {language === 'de' ? 'Themen werden vorbereitet.' : 'Topics will be drawn soon.'}
                       </span>
-                    ))
-                  ) : (
-                    <span style={{ color: '#94a3b8' }}>
-                      {language === 'de' ? 'Themen werden vorbereitet.' : 'Topics will be drawn soon.'}
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {sortedScoreTeams.map((team) => (
-                    <div
-                      key={`ban-show-${team.id}`}
-                      style={{
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 16,
-                        padding: '10px 12px',
-                        background: 'rgba(0,0,0,0.35)',
-                        display: 'grid',
-                        gap: 4
-                      }}
-                    >
-                      <div style={{ fontWeight: 800 }}>{team.name}</div>
-                      <div style={{ fontSize: 14, color: '#cbd5e1' }}>
-                        {language === 'de' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({banLimits[team.id] ?? 0}):
-                        {' '}
-                        {bans[team.id]?.length ? bans[team.id].join(', ') : '�'}
+                    )}
+                  </div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {sortedScoreTeams.map((team) => (
+                      <div
+                        key={`ban-show-${team.id}`}
+                        style={{
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 16,
+                          padding: '10px 12px',
+                          background: 'rgba(0,0,0,0.35)',
+                          display: 'grid',
+                          gap: 4
+                        }}
+                      >
+                        <div style={{ fontWeight: 800 }}>{team.name}</div>
+                        <div style={{ fontSize: 14, color: '#cbd5e1' }}>
+                          {language === 'de' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({banLimits[team.id] ?? 0}):{' '}
+                          {bans[team.id]?.length ? bans[team.id].join(', ') : '?'}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            {potato.phase === 'PLAYING' && (
-              <>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>
-                  {language === 'de' ? 'Thema' : language === 'both' ? 'Thema / Topic' : 'Topic'}:{' '}
-                  {potato.currentTheme || '�'}
-                </div>
-                <div style={{ fontSize: 16, color: '#cbd5e1' }}>
-                  {language === 'de'
-                    ? 'Aktives Team'
-                    : language === 'both'
-                    ? 'Team am Zug / Active team'
-                    : 'Active team'}
-                  : {activeTeamName || '-'}
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1'
-                  }}
-                >
-                  {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s � ${infoCopy}` : infoCopy}
-                </div>
-                {potatoCountdown !== null && potatoCountdown <= 0 && (
+                    ))}
+                  </div>
+                </>
+              )}
+              {potato.phase === 'PLAYING' && (
+                <>
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>
+                    {language === 'de' ? 'Thema' : language === 'both' ? 'Thema / Topic' : 'Topic'}:{' '}
+                    {potato.currentTheme || '?'}
+                  </div>
+                  <div style={{ fontSize: 16, color: '#cbd5e1' }}>
+                    {language === 'de'
+                      ? 'Aktives Team'
+                      : language === 'both'
+                      ? 'Team am Zug / Active team'
+                      : 'Active team'}
+                    : {activeTeamName || '-'}
+                  </div>
                   <div
                     style={{
-                      ...pillRule,
-                      background: 'rgba(248,113,113,0.18)',
-                      borderColor: 'rgba(248,113,113,0.4)',
-                      color: '#fecaca'
+                      fontSize: 16,
+                      color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1'
                     }}
                   >
-                    {language === 'de'
-                      ? 'Zeit abgelaufen!'
-                      : language === 'both'
-                      ? 'Zeit abgelaufen / Time is up!'
-                      : 'Time is up!'}
+                    {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s ? ${infoCopy}` : infoCopy}
                   </div>
-                )}
-                <div style={{ display: 'grid', gap: 6 }}>
-                  {turnOrder.map((teamId) => (
+                  {potatoCountdown !== null && potatoCountdown <= 0 && (
                     <div
-                      key={`turn-${teamId}`}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: 10,
-                        padding: '10px 12px',
-                        borderRadius: 14,
-                        border:
-                          teamId === potato.activeTeamId
-                            ? '1px solid rgba(251,191,36,0.45)'
-                            : '1px solid rgba(255,255,255,0.08)',
-                        background: 'rgba(0,0,0,0.35)'
-                      }}
-                    >
-                      <span style={{ fontWeight: 700 }}>{teams.find((t) => t.id === teamId)?.name || teamId}</span>
-                      <span style={{ fontWeight: 800 }}>{'?'.repeat(Math.max(1, lives[teamId] ?? 0))}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ fontSize: 14, color: '#94a3b8' }}>
-                  {language === 'de'
-                    ? `${potato.usedAnswers?.length || 0} Antworten wurden schon genannt.`
-                    : language === 'both'
-                    ? `${potato.usedAnswers?.length || 0} Antworten wurden genannt / answers used.`
-                    : `${potato.usedAnswers?.length || 0} answers already used.`}
-                </div>
-              </>
-            )}
-            {potato.phase === 'ROUND_END' && (
-              <>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>
-                  {language === 'de'
-                    ? 'Runde beendet'
-                    : language === 'both'
-                    ? 'Runde beendet / Round finished'
-                    : 'Round finished'}
-                </div>
-                {lastWinner && (
-                  <div style={{ fontSize: 18, color: '#bbf7d0', fontWeight: 800 }}>
-                    {language === 'de' ? 'Sieger' : language === 'both' ? 'Sieger / Winner' : 'Winner'}: {lastWinner}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {selectedThemes.map((theme, idx) => (
-                    <span
-                      key={`done-theme-${idx}`}
                       style={{
                         ...pillRule,
-                        background: idx <= potato.roundIndex ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.08)',
-                        borderColor: idx <= potato.roundIndex ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.14)'
+                        background: 'rgba(248,113,113,0.18)',
+                        borderColor: 'rgba(248,113,113,0.4)',
+                        color: '#fecaca'
                       }}
                     >
-                      {theme}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ fontSize: 16, color: '#cbd5e1' }}>
+                      {language === 'de'
+                        ? 'Zeit abgelaufen!'
+                        : language === 'both'
+                        ? 'Zeit abgelaufen / Time is up!'
+                        : 'Time is up!'}
+                    </div>
+                  )}
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {turnOrder.map((teamId) => (
+                      <div
+                        key={`turn-${teamId}`}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          gap: 10,
+                          padding: '10px 12px',
+                          borderRadius: 14,
+                          border:
+                            teamId === potato.activeTeamId
+                              ? '1px solid rgba(251,191,36,0.45)'
+                              : '1px solid rgba(255,255,255,0.08)',
+                          background: 'rgba(0,0,0,0.35)'
+                        }}
+                      >
+                        <span style={{ fontWeight: 700 }}>{teams.find((t) => t.id === teamId)?.name || teamId}</span>
+                        <span style={{ fontWeight: 800 }}>{'?'.repeat(Math.max(1, lives[teamId] ?? 0))}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#94a3b8' }}>
+                    {language === 'de'
+                      ? `${potato.usedAnswers?.length || 0} Antworten wurden schon genannt.`
+                      : language === 'both'
+                      ? `${potato.usedAnswers?.length || 0} Antworten wurden genannt / answers used.`
+                      : `${potato.usedAnswers?.length || 0} answers already used.`}
+                  </div>
+                  {potato.usedAnswers?.length ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {potato.usedAnswers.map((answer, idx) => (
+                        <span
+                          key={`potato-used-chip-${idx}`}
+                          style={{
+                            ...pillRule,
+                            fontSize: 14,
+                            background: 'rgba(15,23,42,0.45)',
+                            borderColor: 'rgba(148,163,184,0.35)',
+                            color: '#e2e8f0'
+                          }}
+                        >
+                          {answer}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
+              {potato.phase === 'ROUND_END' && (
+                <>
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>
+                    {language === 'de'
+                      ? 'Runde beendet'
+                      : language === 'both'
+                      ? 'Runde beendet / Round finished'
+                      : 'Round finished'}
+                  </div>
+                  {lastWinner && (
+                    <div style={{ fontSize: 18, color: '#bbf7d0', fontWeight: 800 }}>
+                      {language === 'de' ? 'Sieger' : language === 'both' ? 'Sieger / Winner' : 'Winner'}: {lastWinner}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {selectedThemes.map((theme, idx) => (
+                      <span
+                        key={`done-theme-${idx}`}
+                        style={{
+                          ...pillRule,
+                          background: idx <= potato.roundIndex ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.08)',
+                          borderColor: idx <= potato.roundIndex ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.14)'
+                        }}
+                      >
+                        {theme}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 16, color: '#cbd5e1' }}>
+                    {language === 'de'
+                      ? 'Moderator startet gleich die n?chste Runde.'
+                      : language === 'both'
+                      ? 'Moderator startet gleich / Host starts next round soon.'
+                      : 'Host will start the next round soon.'}
+                  </div>
+                </>
+              )}
+              {potato.phase === 'DONE' && (
+                <div style={{ fontSize: 20, fontWeight: 800 }}>
                   {language === 'de'
-                    ? 'Moderator startet gleich die n�chste Runde.'
+                    ? 'Finale abgeschlossen. Awards folgen!'
                     : language === 'both'
-                    ? 'Moderator startet gleich / Host starts next round soon.'
-                    : 'Host will start the next round soon.'}
+                    ? 'Finale abgeschlossen / Final complete.'
+                    : 'Final complete. Awards incoming.'}
                 </div>
-              </>
-            )}
-            {potato.phase === 'DONE' && (
-              <div style={{ fontSize: 20, fontWeight: 800 }}>
-                {language === 'de'
-                  ? 'Finale abgeschlossen. Awards folgen!'
-                  : language === 'both'
-                  ? 'Finale abgeschlossen / Final complete.'
-                  : 'Final complete. Awards incoming.'}
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <div style={{ marginTop: 18 }}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>
@@ -1885,7 +2011,7 @@ useEffect(() => {
               </div>
               <div style={{ marginTop: 6, color: '#94a3b8' }}>
                 {language === 'de'
-                  ? `Eing�nge: ${submissions}/${teams.length}`
+                  ? `EingÃ¤nge: ${submissions}/${teams.length}`
                   : `Submissions: ${submissions}/${teams.length}`}
               </div>
               <div
@@ -2026,7 +2152,7 @@ useEffect(() => {
             }}
           >
             {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend pr�fen. / No connection for >5s. Check Wi-Fi/backend.'
+              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prÃ¼fen. / No connection for >5s. Check Wi-Fi/backend.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}

@@ -2132,9 +2132,9 @@ const renderShowResult = () => (
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: 12 }}>{language === 'en' ? 'Language' : 'Sprache'}</span>
         {([
-          { key: 'de', label: 'DE', flag: 'ð©ðª' },
-          { key: 'en', label: 'EN', flag: 'ð¬ð§' },
-          { key: 'both', label: 'DE+EN', flag: 'ð' }
+          { key: 'de', label: 'DE', flag: '🇩🇪' },
+          { key: 'en', label: 'EN', flag: '🇬🇧' },
+          { key: 'both', label: 'DE+EN', flag: '🇩🇪+🇬🇧' }
         ] as { key: Language; label: string; flag: string }[]).map((opt) => (
           <button
             key={opt.key}

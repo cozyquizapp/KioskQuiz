@@ -111,6 +111,43 @@ body {
   }
 }
 
+@keyframes potato-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes potato-shake {
+  0%,
+  100% {
+    transform: translate(-50%, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(calc(-50% - 8px), -2px) rotate(-1deg);
+  }
+  75% {
+    transform: translate(calc(-50% + 8px), 2px) rotate(1deg);
+  }
+}
+
+@keyframes potato-fade {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -18px);
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -139,4 +176,63 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.potato-attempt-overlay {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  padding: 22px 26px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 28, 0.95);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  min-width: 360px;
+  max-width: 80%;
+  text-align: center;
+  pointer-events: none;
+  z-index: 40;
+  animation-name: potato-pop, potato-fade;
+  animation-duration: 0.28s, 1.6s;
+  animation-timing-function: ease, ease;
+  animation-fill-mode: forwards;
+}
+
+.potato-attempt-overlay.verdict-ok {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(7, 31, 21, 0.92);
+}
+
+.potato-attempt-overlay.verdict-dup,
+.potato-attempt-overlay.verdict-invalid,
+.potato-attempt-overlay.verdict-timeout {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(75, 12, 19, 0.9);
+  animation-name: potato-shake, potato-fade;
+}
+
+.potato-attempt-overlay .potato-attempt-team {
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.potato-attempt-overlay .potato-attempt-text {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 6px 0 4px;
+}
+
+.potato-attempt-overlay .potato-attempt-meta {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
 }

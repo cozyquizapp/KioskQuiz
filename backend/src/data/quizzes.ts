@@ -1,4 +1,4 @@
-import { QuizTemplate, QuizCategory, QuizBlitzTheme } from '../../../shared/quizTypes';
+import { QuizTemplate, QuizCategory, QuizBlitzTheme, CozyPotatoThemeInput } from '../../../shared/quizTypes';
 import { questions } from './questions';
 
 // Hilfsfunktion: hole 5 Fragen pro Kategorie, mische optional
@@ -309,7 +309,7 @@ const buildCozyQuiz60 = (
     name?: string;
     meta?: Record<string, unknown>;
     blitzPool?: QuizBlitzTheme[];
-    potatoPool?: string[];
+    potatoPool?: CozyPotatoThemeInput[];
     questionIds?: string[];
   }
 ): QuizTemplate => {

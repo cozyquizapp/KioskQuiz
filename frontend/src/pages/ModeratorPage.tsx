@@ -366,39 +366,7 @@ function ModeratorPage(): React.ReactElement {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    roomCode,
-    showJoinScreen,
-    handleNextQuestion,
-    handleLockQuestion,
-    handleReveal,
-    emitBlitzEvent,
-    blitzPhase,
-    blitzResultsCount,
-    blitzSelectedCount,
-    blitzSetIndex,
-    isScoreboardState,
-    isScoreboardPauseState,
-    askedCount,
-    totalQuestions,
-    potatoPhase,
-    potatoConflict,
-    potatoRoundsTotal,
-    potatoFirstRoundPending,
-    potatoAllRoundsComplete,
-    handlePotatoStart,
-    handlePotatoConfirmThemes,
-    handlePotatoNextTurn,
-    handlePotatoStrike,
-    handlePotatoStartRound,
-    handlePotatoNextRound,
-    handlePotatoFinish,
-    handlePotatoEndRound,
-    hasWinnerDraft,
-    normalizedGameState,
-    handleShowAwards,
-    potato
-  ]);
+  }, [roomCode, showJoinScreen, potato]);
 
 
   useEffect(() => {

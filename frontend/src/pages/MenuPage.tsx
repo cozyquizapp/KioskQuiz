@@ -1,25 +1,44 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-type LinkItem = { path: string; label: string; note?: string }
+import { featureFlags } from '../config/features';
+
+type LinkItem = { path: string; label: string; note?: string };
 
 const liveLinks: LinkItem[] = [
-  { path: '/beamer', label: 'Beamer (Anzeige)', note: 'Publikum, Fragen & Slots zeigen' },
-  { path: 'https://play.cozyquiz.app/team', label: 'Team (Mitspielen)', note: 'Teilnehmer-View / Antworten' },
-  { path: '/moderator', label: 'Moderator (Steuerung)', note: 'Timer, Slot, Frage starten' },
+  { path: '/moderator', label: 'Moderator', note: 'Stage wechseln, Session steuern' },
+  { path: '/beamer', label: 'Beamer', note: 'Praesentation / Slides anzeigen' },
+  { path: 'https://play.cozyquiz.app/team', label: 'Team', note: 'Mitspielen & Antworten eingeben' }
+];
+
+const builderLinks: LinkItem[] = [
+  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Blitz & Potato pflegen' }
+];
+
+const toolsLinks: LinkItem[] = [
   { path: '/intro', label: 'Intro & Regeln', note: 'Pre-Show Slides / Regeln' },
-  { path: '/admin', label: 'Admin (Legacy)', note: 'Nur falls Moderator nicht genutzt wird' },
-]
-
-const creationFlow: LinkItem[] = [
-  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Blitz/Potato pflegen' },
-  { path: '/Baukasten Neu_neu', label: 'Baukasten Neu', note: 'Alles in einem Flow (Struktur, Theme, Slides, Publish)' },
-  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: '?lterer Flow, falls gebraucht' },
-]
-
-const metaLinks: LinkItem[] = [
+  { path: '/admin', label: 'Admin (Legacy)', note: 'Nur nutzen, falls Moderator ausfaellt' },
+  { path: '/Baukasten Neu_neu', label: 'Baukasten Neu', note: 'Alter Struktur-Flow' },
+  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: 'Legacy Builder' },
   { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' },
-  { path: '/bingo', label: 'Bingo-Print', note: '8 zuf?llige Bingofelder als PDF/Print' },
-]
+  { path: '/bingo', label: 'Bingo-Print', note: 'Zufaellige Bingofelder als PDF' }
+];
+
+const LinkWrapper = ({ link, children }: { link: LinkItem; children: React.ReactNode }) => {
+  const isExternal = /^https?:\/\//i.test(link.path);
+  if (isExternal) {
+    return (
+      <a href={link.path} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={link.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+      {children}
+    </Link>
+  );
+};
 
 const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string; links: LinkItem[] }) => (
   <div
@@ -28,18 +47,14 @@ const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string
       border: '1px solid rgba(255,255,255,0.12)',
       background: 'rgba(255,255,255,0.03)',
       padding: '14px 16px',
-      boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
+      boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
     }}
   >
     <div style={{ fontWeight: 800, marginBottom: 6 }}>{title}</div>
-    {subtitle && (
-      <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 10 }}>
-        {subtitle}
-      </div>
-    )}
+    {subtitle && <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 10 }}>{subtitle}</div>}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
       {links.map((link) => (
-        <Link key={link.path} to={link.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <LinkWrapper key={link.path} link={link}>
           <div
             style={{
               padding: '14px 16px',
@@ -47,7 +62,7 @@ const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string
               border: '1px solid rgba(255,255,255,0.12)',
               background: 'rgba(0,0,0,0.18)',
               boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              transition: 'transform 0.2s ease, border-color 0.2s ease'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -56,20 +71,23 @@ const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string
             {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
             <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{link.path}</div>
           </div>
-        </Link>
+        </LinkWrapper>
       ))}
     </div>
   </div>
-)
+);
 
 const MenuPage = () => {
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const showLegacyTools = featureFlags.showLegacyPanels;
+
   return (
     <div
       style={{
         minHeight: '100vh',
         background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 40%), #0d0f14',
         color: '#e2e8f0',
-        padding: '40px 24px',
+        padding: '40px 24px'
       }}
     >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
@@ -84,10 +102,10 @@ const MenuPage = () => {
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              fontSize: 12,
+              fontSize: 12
             }}
           >
-            Cozy Kiosk Quiz | Navigation
+            COZY QUIZ 60
           </div>
           <h1 style={{ margin: '10px 0 6px' }}>Schnellzugriff</h1>
           <p style={{ margin: '0 0 6px', color: '#94a3b8' }}>Waehle den Bereich, den du oeffnen willst.</p>
@@ -97,13 +115,50 @@ const MenuPage = () => {
         </div>
 
         <div style={{ display: 'grid', gap: 18 }}>
-          <CardList title="Live spielen" links={liveLinks} />
-          <CardList title="Erstellen (Flow)" subtitle="Empfohlene Reihenfolge 1 -> 4" links={creationFlow} />
-          <CardList title="Meta" subtitle="Auswertung & Zusatztools" links={metaLinks} />
+          <CardList title="Live spielen" subtitle="Moderator -> Beamer -> Team" links={liveLinks} />
+          <CardList title="Erstellen" subtitle="Cozy60 Builder" links={builderLinks} />
+          {showLegacyTools && (
+            <div
+              style={{
+                borderRadius: 16,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.03)',
+                padding: '14px 16px',
+                boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setToolsOpen((prev) => !prev)}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  border: 'none',
+                  padding: 0,
+                  fontWeight: 800,
+                  fontSize: 16,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>Tools (Erweitert)</span>
+                <span style={{ fontSize: 20 }}>{toolsOpen ? '-' : '+'}</span>
+              </button>
+              {toolsOpen && (
+                <div style={{ marginTop: 16 }}>
+                  <CardList title="Legacy & Tools" links={toolsLinks} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MenuPage
+export default MenuPage;

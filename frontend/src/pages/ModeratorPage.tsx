@@ -118,6 +118,9 @@ const pillStyle = (tone: 'setup' | 'live' | 'eval' | 'final'): React.CSSProperti
 
 const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span style={pillStyle(tone)}>{text}</span>;
 
+const buildQrUrl = (url: string, size = 180) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
+
 const ModeratorPage: React.FC = () => {
   const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
@@ -165,6 +168,8 @@ const ModeratorPage: React.FC = () => {
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>('');
   const [creatingSession, setCreatingSession] = useState(false);
+  const [showJoinScreen, setShowJoinScreen] = useState(false);
+
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const {
     currentQuestion: socketQuestion,
@@ -205,6 +210,16 @@ const ModeratorPage: React.FC = () => {
       socket.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!roomCode) {
+      setShowJoinScreen(false);
+    }
+  }, [roomCode]);
+
+
+
+
 
   // Load initial question + question list (for meta)
   useEffect(() => {
@@ -335,12 +350,14 @@ const ModeratorPage: React.FC = () => {
       return;
     }
     setRoomCode(code);
+    setShowJoinScreen(false);
     localStorage.setItem('moderatorRoom', code);
   };
   const handleRoomReset = () => {
     setRoomCode('');
     setRoomInput('');
     localStorage.removeItem('moderatorRoom');
+    setShowJoinScreen(false);
   };
 
   const handleCreateSession = () => {
@@ -363,8 +380,46 @@ const ModeratorPage: React.FC = () => {
         setRoomCode(resp.roomCode);
         setRoomInput(resp.roomCode);
         localStorage.setItem('moderatorRoom', resp.roomCode);
+        setShowJoinScreen(true);
       }
     );
+  };
+
+  const handleOpenBeamerLink = () => {
+    if (!joinLinks?.beamer) {
+      setToast('Beamer-Link fehlt');
+      setTimeout(() => setToast(null), 2200);
+      return;
+    }
+    window.open(joinLinks.beamer, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopyTeamLink = async () => {
+    if (!joinLinks?.team) {
+      setToast('Team-Link fehlt');
+      setTimeout(() => setToast(null), 2200);
+      return;
+    }
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(joinLinks.team);
+      } else if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.value = joinLinks.team;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setToast('Team-Link kopiert');
+    } catch (err) {
+      setToast('Kopieren nicht moeglich');
+    } finally {
+      setTimeout(() => setToast(null), 2200);
+    }
   };
 
   const sendHostCommand = (
@@ -662,6 +717,30 @@ const ModeratorPage: React.FC = () => {
     const ready = teams.filter((t: any) => t?.isReady).length;
     return { ready, total: teams.length };
   }, [answers]);
+
+
+  const joinScreenTeams = useMemo(() => {
+    const source =
+      (socketTeams && Object.keys(socketTeams).length > 0 ? socketTeams : answers?.teams) || {};
+    return Object.values(source).sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
+  }, [socketTeams, answers]);
+
+  const joinLinks = useMemo(() => {
+    if (!roomCode) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const normalizedOrigin = origin?.replace(/\/$/, '') || '';
+    const buildPath = (path: string) => `${normalizedOrigin}${path}?roomCode=${roomCode}`;
+    return {
+      team: buildPath('/team'),
+      beamer: buildPath('/beamer')
+    };
+  }, [roomCode]);
+
+
+
+
+
+
   const currentQuizName = quizzes.find((q) => q.id === selectedQuiz)?.name;
   const quizzesSorted = useMemo(() => {
     const isCozy = (quizId: string) => quizId.startsWith('cozy-quiz-60');
@@ -1762,6 +1841,88 @@ const ModeratorPage: React.FC = () => {
     );
   };
 
+
+
+  const renderJoinScreen = () => {
+    if (!roomCode || !showJoinScreen) return null;
+    const teamLink = joinLinks?.team ?? '';
+    const beamerLink = joinLinks?.beamer ?? '';
+    const teamDisplay = teamLink ? teamLink.replace(/^https?:\/\//i, '') : '';
+    const beamerDisplay = beamerLink ? beamerLink.replace(/^https?:\/\//i, '') : '';
+    const teamQr = teamLink ? buildQrUrl(teamLink) : '';
+    const beamerQr = beamerLink ? buildQrUrl(beamerLink) : '';
+    const connected = teamsConnected ?? joinScreenTeams.length;
+    return (
+      <section style={{ ...card, marginTop: 12 }}>
+        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>Roomcode</div>
+            <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: '0.3em' }}>{roomCode}</div>
+            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+              {connected} {connected === 1 ? 'Team verbunden' : 'Teams verbunden'}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                onClick={handleOpenBeamerLink}
+              >
+                Beamer oeffnen
+              </button>
+              <button
+                style={{ ...inputStyle, width: 'auto', background: 'rgba(15,23,42,0.85)', cursor: 'pointer' }}
+                onClick={handleCopyTeamLink}
+              >
+                Team-Link kopieren
+              </button>
+              <button
+                style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020', cursor: 'pointer' }}
+                onClick={() => setShowJoinScreen(false)}
+              >
+                Quiz starten
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))' }}>
+            {teamQr && (
+              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Team</div>
+                <img src={teamQr} alt="Team QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.12)' }} />
+                {teamDisplay && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{teamDisplay}</div>}
+              </div>
+            )}
+            {beamerQr && (
+              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Beamer</div>
+                <img src={beamerQr} alt="Beamer QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.12)' }} />
+                {beamerDisplay && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{beamerDisplay}</div>}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 800, marginBottom: 8 }}>Teams im Raum</div>
+          {joinScreenTeams.length === 0 ? (
+            <span style={{ color: '#94a3b8' }}>Noch keine Teams verbunden</span>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {joinScreenTeams.map((team) => (
+                <span
+                  key={team.id || team.name}
+                  style={{ ...statChip, borderRadius: 12, borderColor: 'rgba(255,255,255,0.18)' }}
+                >
+                  {team.name || 'Team'}
+                  {team.isReady && (
+                    <span style={{ fontSize: 10, marginLeft: 6, color: '#5eead4' }}>Ready</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  };
+
   const renderCozyLayout = () => {
     if (!featureFlags.isCozyMode) return null;
     const stagePanel = renderCozyStagePanel();
@@ -1926,11 +2087,46 @@ const ModeratorPage: React.FC = () => {
             </div>
           )}
         </section>
-        {roomCode && renderPrimaryControls()}
-        {roomCode && stagePanel}
-        {roomCode ? warningsPanel : null}
-        {roomCode && scoreboardPanel}
-        {!roomCode && warningsPanel}
+
+
+{roomCode ? (
+
+  showJoinScreen ? (
+
+    <>
+
+      {renderJoinScreen()}
+
+      {warningsPanel}
+
+    </>
+
+  ) : (
+
+    <>
+
+      {renderPrimaryControls()}
+
+      {stagePanel}
+
+      {warningsPanel}
+
+      {scoreboardPanel}
+
+    </>
+
+  )
+
+) : (
+
+  warningsPanel
+
+)}
+
+
+
+
+
       </>
     );
   };

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import TeamView from '../views/TeamView';
 
 class ErrorCatcher extends React.Component<{ onError: (err: Error) => void; children: React.ReactNode }> {
@@ -43,7 +44,8 @@ const TeamBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 // Team-Seite: erlaubt freie Roomcodes (Legacy MAIN nur fallback)
 const TeamPage = () => {
-  const params = new URLSearchParams(window.location.search);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
   const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): nur für dev-shortcuts
   const initial =
     params.get('roomCode') ||
@@ -52,6 +54,14 @@ const TeamPage = () => {
     '';
   const [roomCode, setRoomCode] = useState(initial.toUpperCase());
   const [input, setInput] = useState('');
+
+  useEffect(() => {
+    const queryRoom = new URLSearchParams(location.search).get('roomCode');
+    if (!queryRoom) return;
+    const normalized = queryRoom.toUpperCase();
+    setRoomCode((prev) => (prev === normalized ? prev : normalized));
+    localStorage.setItem('teamRoomCode', normalized);
+  }, [location.search]);
 
   const attach = () => {
     const clean = (input || '').trim().toUpperCase();

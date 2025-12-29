@@ -134,15 +134,6 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
   return TYPING_TAGS.has(tagName);
 };
 
-function matchesHotkey(event: KeyboardEvent, combos: string[]) {
-  const key = (event.key || '').toLowerCase();
-  const code = (event.code || '').toLowerCase();
-  return combos.some((combo) => {
-    const normalized = combo.toLowerCase();
-    return normalized === key || normalized === code;
-  });
-}
-
 const ModeratorPage: React.FC = () => {
   const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
@@ -318,7 +309,7 @@ const ModeratorPage: React.FC = () => {
       }
     };
 
-    const handleScoreboardAction = () => {
+  const handleScoreboardAction = () => {
       if (!roomCode) return;
       if (normalizedGameState === 'AWARDS') {
         handleShowAwards();
@@ -327,6 +318,15 @@ const ModeratorPage: React.FC = () => {
       if (normalizedGameState === 'SCOREBOARD' || normalizedGameState === 'SCOREBOARD_PAUSE') {
         handleNextQuestion();
       }
+    };
+
+    const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
+      const key = (event.key || '').toLowerCase();
+      const code = (event.code || '').toLowerCase();
+      return combos.some((combo) => {
+        const normalized = combo.toLowerCase();
+        return normalized === key || normalized === code;
+      });
     };
 
     const onKeyDown = (event: KeyboardEvent) => {

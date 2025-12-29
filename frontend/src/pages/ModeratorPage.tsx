@@ -134,14 +134,14 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
   return TYPING_TAGS.has(tagName);
 };
 
-const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
+function matchesHotkey(event: KeyboardEvent, combos: string[]) {
   const key = (event.key || '').toLowerCase();
   const code = (event.code || '').toLowerCase();
   return combos.some((combo) => {
     const normalized = combo.toLowerCase();
     return normalized === key || normalized === code;
   });
-};
+}
 
 const ModeratorPage: React.FC = () => {
   const draftTheme = loadPlayDraft()?.theme;

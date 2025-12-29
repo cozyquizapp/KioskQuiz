@@ -77,7 +77,7 @@ const translations = {
     answerFallback: 'Antwort wird eingeblendet.',
     slotTitle: 'Naechste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
-    mixedMechanic: 'Gemischte TÃÂ¼te - Sondermechanik.',
+    mixedMechanic: 'Gemischte Tüte - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
     footerMeta: (
       globalIndex: number,
@@ -273,6 +273,32 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
+  const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
+  const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
+  const debugMode = useMemo(
+    () =>
+      featureFlags.showLegacyPanels ||
+      (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1'),
+    []
+  );
+  const joinLinks = useMemo(() => {
+    const effectiveRoom = roomCode || (featureFlags.singleSessionMode ? featureFlags.singleSessionRoomCode : '');
+    if (!featureFlags.singleSessionMode && !effectiveRoom) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    if (!origin) return null;
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const buildPath = (path: string) =>
+      featureFlags.singleSessionMode
+        ? `${normalizedOrigin}${path}`
+        : `${normalizedOrigin}${path}?roomCode=${effectiveRoom}`;
+    return {
+      team: buildPath('/team'),
+      beamer: buildPath('/beamer')
+    };
+  }, [roomCode]);
+  const teamJoinLink = joinLinks?.team ?? null;
+  const teamJoinQr = teamJoinLink ? buildQrUrl(teamJoinLink) : null;
+  const showTechnicalHud = !featureFlags.isCozyMode || debugMode;
 
   const timerRef = useRef<number | null>(null);
   const slotTimeoutRef = useRef<number | null>(null);
@@ -478,6 +504,14 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (gameState !== 'LOBBY' && !lobbyQrLocked) {
+      setLobbyQrLocked(true);
+    } else if (gameState === 'LOBBY' && lobbyQrLocked && (questionProgress?.asked ?? 0) <= 0) {
+      setLobbyQrLocked(false);
+    }
+  }, [gameState, lobbyQrLocked, questionProgress?.asked]);
+
   // sockets
   useEffect(() => {
     setConnectionStatus('connecting');
@@ -596,8 +630,14 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
         }
       }
       if (payload.timer) {
-        setTimerEndsAt(payload.timer.endsAt);
-        setTimerDurationMs(payload.timer.endsAt ? payload.timer.endsAt - Date.now() : null);
+        setTimerEndsAt(payload.timer.endsAt ?? null);
+        if (payload.timer.durationMs && payload.timer.durationMs > 0) {
+          setTimerDurationMs(payload.timer.durationMs);
+        } else if (payload.timer.endsAt) {
+          setTimerDurationMs(payload.timer.endsAt - Date.now());
+        } else {
+          setTimerDurationMs(null);
+        }
       }
       if (payload.potato !== undefined) {
         setPotato(payload.potato ?? null);
@@ -610,6 +650,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.questionProgress !== undefined) {
         setQuestionProgress(payload.questionProgress ?? null);
+      }
+      if (payload.scoreboardOverlayForced !== undefined) {
+        setScoreboardOverlayForced(Boolean(payload.scoreboardOverlayForced));
       }
     };
     socket.on('server:stateUpdate', onStateUpdate);
@@ -637,7 +680,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('answersEvaluated', ({ solution: sol }: { solution?: string }) => {
       setSolution(sol);
       setEvaluating(false);
-      setAnswerVisible(true); // LÃÂ¶sung direkt einblenden
+      setAnswerVisible(true); // Lösung direkt einblenden
       setQuestionPhase('evaluated');
     });
 
@@ -690,7 +733,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [categories, slotMeta]);
 
-  // roTÃÂ¼te lobby category highlights
+  // roTüte lobby category highlights
   useEffect(() => {
     if (categories.length === 0) return;
     if (screen !== 'lobby') return;
@@ -809,8 +852,19 @@ useEffect(() => {
       ? questionMeta?.globalIndex ?? (rawRoundIndex > 0 ? rawRoundIndex : 1)
       : rawRoundIndex;
   const normalizedRound = Math.max(1, Math.min(totalQuestions || 20, currentRoundNumber || 1));
-  const progressValue = totalQuestions ? Math.min(1, normalizedRound / totalQuestions) : null;
-  const progressText = totalQuestions ? `${normalizedRound}/${totalQuestions}` : undefined;
+  const showTurnProgress =
+    Boolean(
+      timerDurationMs &&
+        timerEndsAt &&
+        (gameState === 'Q_ACTIVE' ||
+          (gameState === 'BLITZ' && blitz?.phase === 'PLAYING') ||
+          (gameState === 'POTATO' && potato?.phase === 'PLAYING'))
+    );
+  const progressValue = showTurnProgress
+    ? Math.max(0, Math.min(1, remainingMs / (timerDurationMs || 1)))
+    : null;
+  const roundWord = language === 'en' ? 'ROUND' : 'RUNDE';
+  const progressText = totalQuestions ? `${roundWord} ${normalizedRound}/${totalQuestions}` : undefined;
 
   const activeCategory = categories[highlightedCategoryIndex] ?? categories[0];
   const readyCount = teams.filter((tTeam) => tTeam.isReady).length;
@@ -824,9 +878,9 @@ useEffect(() => {
   const categoryIndex =
     questionMeta?.categoryIndex ??
     (currentCategory ? Math.max(1, categoryProgress[currentCategory] || 1) : 1);
-  const headerLeftLabel = draftTheme?.title || 'Cozy Quiz 60';
-  const headerLeftHint = roomCode ? `Room ${roomCode}` : undefined;
-  const headerTimerText = timerEndsAt ? `${formatSeconds(remainingMs)}s` : undefined;
+  const headerLeftLabel = 'Cozy Quiz 60';
+  const headerLeftHint = undefined;
+  const headerTimerText = showTurnProgress ? `${formatSeconds(remainingMs)}s` : undefined;
 
   const questionText =
     question && language === 'en' && (question as any)?.questionEn
@@ -1148,38 +1202,48 @@ useEffect(() => {
   };
 
   const renderCozyIntroContent = (): JSX.Element => {
-    const copy =
-      language === 'de'
-        ? ['Teams beitreten und Namen checken.', 'Host setzt Sprache & Quiz.', 'Bereit machen fÃ¼r Cozy Quiz 60.']
+    const headline = language === 'en' ? 'WELCOME' : 'WILLKOMMEN';
+    const subline =
+      language === 'en'
+        ? 'Teams connect – the show starts shortly'
         : language === 'both'
-        ? ['Teams beitreten / join teams.', 'Host setzt Sprache / selects language.', 'Get ready for Cozy Quiz 60.']
-        : ['Teams join and check names.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
-    const connectedInfo =
-      readyCount > 0
-        ? `${readyCount}/${teams.length || 0} ${language === 'de' ? 'bereit' : language === 'both' ? 'bereit / ready' : 'ready'}`
-        : `${teams.length || 0} ${language === 'de' ? 'Teams verbunden' : language === 'both' ? 'verbunden / connected' : 'teams connected'}`;
+        ? 'Teams verbinden / teams connect – gleich geht’s los'
+        : 'Teams verbinden – gleich geht’s los';
+    const teamsBadge =
+      language === 'en'
+        ? `TEAMS: ${teams.length || 0}`
+        : `TEAMS: ${teams.length || 0}`;
+    const tileCategories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
+    const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
+    const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     return (
-      <div className="beamer-stack">
-        <div className="beamer-intro-card">
-          <h2>{language === 'de' ? 'Session startet gleich' : language === 'both' ? 'Session startet / starting soon' : 'Session starts soon'}</h2>
-          <p>{connectedInfo}</p>
+      <div className="beamer-lobby-slide">
+        <div className="beamer-lobby-hero">
+          <span className="beamer-lobby-eyebrow">Cozy Quiz 60</span>
+          <h1>{headline}</h1>
+          <p>{subline}</p>
+          <span className="beamer-lobby-badge">{teamsBadge}</span>
         </div>
-        <div className="beamer-list">
-          {copy.map((text) => (
-            <span key={`intro-line-${text}`}>{text}</span>
+        <div className="beamer-lobby-tiles">
+          {tileCategories.map((cat) => (
+            <div className="beamer-lobby-tile" key={`lobby-tile-${cat}`}>
+              <strong>{getCategoryLabel(cat, language)}</strong>
+              <span>{getCategoryDescription(cat, language)}</span>
+            </div>
           ))}
         </div>
-        {sortedScoreTeams.length > 0 && (
-          <>
-            <div className="beamer-label">
-              {language === 'de'
-                ? 'Teams im Raum'
+        {showQr && teamJoinQr && (
+          <div className="beamer-lobby-qr">
+            <img src={teamJoinQr} alt="Team QR" />
+            <div>
+              {language === 'en'
+                ? 'Scan to join'
                 : language === 'both'
-                ? 'Teams im Raum / Teams in room'
-                : 'Teams in room'}
+                ? 'Scannen / scan to join'
+                : 'Jetzt scannen & beitreten'}
             </div>
-            {renderCozyScoreboardGrid(sortedScoreTeams.slice(0, 6))}
-          </>
+            {joinDisplay && <div>{joinDisplay}</div>}
+          </div>
         )}
       </div>
     );
@@ -1306,7 +1370,7 @@ useEffect(() => {
           <div className="beamer-list">
             <span>
               {language === 'de'
-                ? `EingÃ¤nge ${submissions}/${teams.length}`
+                ? `Eingänge ${submissions}/${teams.length}`
                 : `Submissions ${submissions}/${teams.length}`}
             </span>
             {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
@@ -1466,9 +1530,9 @@ useEffect(() => {
         footerMessage={
           phase === 'active'
             ? language === 'de'
-              ? 'Antworten jetzt mÃ¶glich'
+              ? 'Antworten jetzt möglich'
               : language === 'both'
-              ? 'Antworten mÃ¶glich / Answers open'
+              ? 'Antworten möglich / Answers open'
               : 'Answers open'
             : phase === 'locked'
             ? language === 'de'
@@ -1477,9 +1541,9 @@ useEffect(() => {
               ? 'Antworten geschlossen / Locked'
               : 'Answers locked'
             : language === 'de'
-            ? 'AuflÃ¶sung'
+            ? 'Auflösung'
             : language === 'both'
-            ? 'AuflÃ¶sung / Reveal'
+            ? 'Auflösung / Reveal'
             : 'Reveal'
         }
         status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
@@ -1494,9 +1558,9 @@ useEffect(() => {
                 {phase === 'reveal' && solution && (
                   <div className="beamer-question-solution">
                     {language === 'de'
-                      ? `LÃ¶sung: ${solution}`
+                      ? `Lösung: ${solution}`
                       : language === 'both'
-                      ? `LÃ¶sung / Solution: ${solution}`
+                      ? `Lösung / Solution: ${solution}`
                       : `Solution: ${solution}`}
                   </div>
                 )}
@@ -1530,8 +1594,8 @@ useEffect(() => {
         footerMessage={
           mode === 'pause'
             ? language === 'de'
-              ? 'Kurze Pause â gleich geht es weiter.'
-              : 'Short break â back soon.'
+              ? 'Kurze Pause – gleich geht es weiter.'
+              : 'Short break – back soon.'
             : language === 'de'
             ? 'Zwischenstand anzeigen'
             : 'Showing standings'
@@ -1576,8 +1640,8 @@ useEffect(() => {
         footerMessage={
           potato?.phase === 'PLAYING'
             ? language === 'de'
-              ? '5 Sekunden pro Antwort'
-              : '5 seconds per answer'
+              ? '30 Sekunden pro Antwort'
+              : '30 seconds per answer'
             : language === 'de'
             ? 'Moderator entscheidet'
             : 'Host resolving'
@@ -1596,7 +1660,7 @@ useEffect(() => {
         subtitle={language === 'de' ? 'Finales Ranking' : 'Final ranking'}
         badgeLabel="FINAL"
         badgeTone="success"
-        footerMessage={language === 'de' ? 'GlÃ¼ckwunsch an alle Teams' : 'Congrats to all teams'}
+        footerMessage={language === 'de' ? 'Glückwunsch an alle Teams' : 'Congrats to all teams'}
         status="final"
       >
         {renderCozyAwardsContent()}
@@ -1645,7 +1709,7 @@ useEffect(() => {
             subtitle={language === 'de' ? 'Status' : 'Status'}
             badgeLabel={badgeInfo?.label}
             badgeTone={badgeInfo?.tone}
-            footerMessage={language === 'de' ? 'Warten auf den nÃ¤chsten Schritt' : 'Waiting for next step'}
+            footerMessage={language === 'de' ? 'Warten auf den nächsten Schritt' : 'Waiting for next step'}
             status="info"
           >
             {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
@@ -1672,10 +1736,10 @@ useEffect(() => {
         : potato.lastWinnerId || null;
     const infoCopy =
       language === 'de'
-        ? 'Max. 5 Sekunden pro Antwort ? doppelte Antworten = Strike.'
+        ? 'Max. 30 Sekunden pro Antwort – doppelte Antworten = Strike.'
         : language === 'both'
-        ? 'Max. 5 Sekunden / max. 5 seconds. Duplicate answers = strike.'
-        : 'Max. 5 seconds per answer ? duplicate answers = strike.';
+        ? 'Max. 30 Sekunden / max. 30 seconds. Duplicate answers = strike.'
+        : 'Max. 30 seconds per answer – duplicate answers = strike.';
     const attemptOverlay = potato.phase === 'PLAYING' ? potatoAttemptOverlay : null;
     const overlayVerdictText = (verdict: PotatoVerdict) => {
       if (language === 'en') {
@@ -2011,7 +2075,7 @@ useEffect(() => {
               </div>
               <div style={{ marginTop: 6, color: '#94a3b8' }}>
                 {language === 'de'
-                  ? `EingÃ¤nge: ${submissions}/${teams.length}`
+                  ? `Eingänge: ${submissions}/${teams.length}`
                   : `Submissions: ${submissions}/${teams.length}`}
               </div>
               <div
@@ -2098,48 +2162,50 @@ useEffect(() => {
 
   return (
     <main style={pageStyle}>
-      {offlineBar(connectionStatus, language)}
+      {showTechnicalHud && offlineBar(connectionStatus, language)}
       {toast && <div style={toastStyle}>{toast}</div>}
-      {draftTheme?.logoUrl && (
+      {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (
         <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 40 }}>
           <img src={draftTheme.logoUrl} alt="Logo" style={{ maxHeight: 70, objectFit: 'contain' }} />
         </div>
       )}
       <div style={beamerAurora(lobbyActiveColor)} />
       <div style={beamerShell}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-          <span style={connectionPill(connectionStatus)}>
-            {language === 'de'
-              ? connectionStatus === 'connected'
-                ? 'Verbunden'
+        {showTechnicalHud && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+            <span style={connectionPill(connectionStatus)}>
+              {language === 'de'
+                ? connectionStatus === 'connected'
+                  ? 'Verbunden'
+                  : connectionStatus === 'connecting'
+                  ? 'Verbinde...'
+                  : 'Getrennt'
+                : connectionStatus === 'connected'
+                ? 'Online'
                 : connectionStatus === 'connecting'
-                ? 'Verbinde...'
-                : 'Getrennt'
-              : connectionStatus === 'connected'
-              ? 'Online'
-              : connectionStatus === 'connecting'
-              ? 'Reconnecting...'
-              : 'Offline'}
-            {connectionStatus === 'disconnected' && (
-              <button
-                style={{
-                  marginLeft: 10,
-                  padding: '6px 10px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  background: 'rgba(255,255,255,0.08)',
-                  color: '#e5e7eb',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-                onClick={handleReconnect}
-              >
-                {language === 'de' ? 'Neu laden' : 'Reload'}
-              </button>
-            )}
-          </span>
-        </div>
-        {connectionStuck && (
+                ? 'Reconnecting...'
+                : 'Offline'}
+              {connectionStatus === 'disconnected' && (
+                <button
+                  style={{
+                    marginLeft: 10,
+                    padding: '6px 10px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: 'rgba(255,255,255,0.08)',
+                    color: '#e5e7eb',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  onClick={handleReconnect}
+                >
+                  {language === 'de' ? 'Neu laden' : 'Reload'}
+                </button>
+              )}
+            </span>
+          </div>
+        )}
+        {showTechnicalHud && connectionStuck && (
           <div
             style={{
               marginBottom: 8,
@@ -2152,11 +2218,13 @@ useEffect(() => {
             }}
           >
             {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prÃ¼fen. / No connection for >5s. Check Wi-Fi/backend.'
+              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen. / No connection for >5s. Check Wi-Fi/backend.'
               : 'No connection for >5s. Please check Wi-Fi/backend.'}
           </div>
         )}
-        {featureFlags.isCozyMode ? (
+        {scoreboardOverlayForced ? (
+          renderScoreboard()
+        ) : featureFlags.isCozyMode ? (
           renderCozyScene()
         ) : isBlitzStage ? (
           renderBlitzView()

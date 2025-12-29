@@ -23,7 +23,7 @@ const BeamerHeader: React.FC<Props> = ({
 }) => {
   return (
     <header className="beamer-header">
-      <div className="beamer-header-block">
+      <div className="beamer-header-brand">
         <span className="beamer-label">{leftLabel}</span>
         {leftHint && <span className="beamer-hint">{leftHint}</span>}
       </div>
@@ -32,8 +32,8 @@ const BeamerHeader: React.FC<Props> = ({
         {subtitle && <div className="beamer-header-subtitle">{subtitle}</div>}
       </div>
       <div className="beamer-header-right">
-        {badge}
         {progressText && <div className="beamer-header-progress">{progressText}</div>}
+        {badge}
         {timerText && <div className="beamer-header-timer">{timerText}</div>}
         {rightNode}
       </div>
@@ -42,4 +42,3 @@ const BeamerHeader: React.FC<Props> = ({
 };
 
 export default BeamerHeader;
-

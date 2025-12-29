@@ -45,6 +45,7 @@ type AnswersState = {
 type Phase = 'setup' | 'question' | 'evaluating' | 'final';
 type ViewPhase = 'pre' | 'lobby' | 'intro' | 'quiz';
 type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
+type NextActionHintDetails = { hotkey: string; label: string; detail: string; context?: string };
 
 const card: React.CSSProperties = {
   background: 'rgba(10,14,24,0.92)',
@@ -202,7 +203,9 @@ function ModeratorPage(): React.ReactElement {
     timerEndsAt: socketTimerEndsAt,
     teamsConnected: socketTeamsConnected,
     emit: socketEmit,
-    config: socketConfig
+    config: socketConfig,
+    nextStage: socketNextStage,
+    scoreboardOverlayForced: socketScoreboardOverlayForced
   } = useQuizSocket(roomCode);
   const changeViewPhase = (phase: ViewPhase) => {
     setUserViewPhase(phase);
@@ -311,15 +314,23 @@ function ModeratorPage(): React.ReactElement {
     };
 
   const handleScoreboardAction = () => {
-      if (!roomCode) return;
-      if (normalizedGameState === 'AWARDS') {
-        handleShowAwards();
-        return;
+    if (!roomCode) return;
+    if (normalizedGameState === 'AWARDS') {
+      handleShowAwards();
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit('host:toggleScoreboardOverlay', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
       }
-      if (normalizedGameState === 'SCOREBOARD' || normalizedGameState === 'SCOREBOARD_PAUSE') {
-        handleNextQuestion();
-      }
-    };
+    });
+  };
 
     const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
       const key = (event.key || '').toLowerCase();
@@ -798,13 +809,14 @@ function ModeratorPage(): React.ReactElement {
   }
 
   const answersCount = Object.keys(answers?.answers || {}).length;
-  const teamsCount = Object.keys(answers?.teams || {}).length;
+  const teamsCount = connectedTeams || Object.keys(answers?.teams || {}).length;
   const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
   const scoreboard = useMemo(
     () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
     [socketScores]
   );
   const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
+  const scoreboardOverlayForced = socketScoreboardOverlayForced ?? false;
   const questionProgressSnapshot =
     socketQuestionProgress ??
     (meta
@@ -827,6 +839,7 @@ function ModeratorPage(): React.ReactElement {
     });
     return map;
   }, [answers, scoreboard]);
+  const potatoActiveTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato?.activeTeamId : null;
   const blitzPhase = blitz?.phase ?? 'IDLE';
   const potatoPhase = potato?.phase ?? 'IDLE';
   const potatoDeadline = potato?.deadline ?? null;
@@ -911,6 +924,81 @@ function ModeratorPage(): React.ReactElement {
     return { total, correct, perOption };
   }, [answers, question]);
 
+  const submissionStatus = useMemo(() => {
+    const entries = Object.entries(teamLookup);
+    const total = entries.length || connectedTeams || 0;
+    const submittedIds =
+      normalizedGameState === 'BLITZ'
+        ? blitz?.submissions ?? []
+        : Object.keys(answers?.answers || {});
+    const submittedSet = new Set(submittedIds);
+    const items =
+      entries.length > 0
+        ? entries.map(([id, info]) => ({
+            id,
+            name: info.name || 'Team',
+            submitted: submittedSet.has(id)
+          }))
+        : [];
+    const submittedCount = Math.min(submittedSet.size, total || submittedSet.size);
+    return { total, submittedCount, items };
+  }, [teamLookup, answers, blitz?.submissions, normalizedGameState, connectedTeams]);
+
+  const nextActionHint = useMemo<NextActionHintDetails>(() => {
+    const base: NextActionHintDetails = { hotkey: '1', label: 'NEXT', detail: 'Weiter' };
+    switch (normalizedGameState) {
+      case 'LOBBY':
+        return { hotkey: '1', label: 'START', detail: 'Session beginnen', context: 'Teams joinen gerade' };
+      case 'INTRO':
+        return { hotkey: '1', label: 'NEXT', detail: 'Intro fortsetzen', context: 'Slides laufen' };
+      case 'Q_ACTIVE':
+        return {
+          hotkey: '2',
+          label: 'LOCK',
+          detail: 'Antworten sperren',
+          context: `Antworten ${submissionStatus.submittedCount}/${submissionStatus.total || '—'}`
+        };
+      case 'Q_LOCKED':
+        return { hotkey: '3', label: 'REVEAL', detail: 'Auflösung zeigen', context: 'Antworten geprüft' };
+      case 'Q_REVEAL':
+        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'NEXT', detail: 'Zu Blitz wechseln', context: 'Segment 1 beendet' };
+        if (nextStage === 'POTATO') return { hotkey: '1', label: 'NEXT', detail: 'Finale starten', context: 'Segment 2 abgeschlossen' };
+        return { hotkey: '1', label: 'NEXT', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
+      case 'SCOREBOARD_PAUSE':
+        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'NEXT', detail: 'Blitz Battle starten', context: 'Scoreboard aktiv' };
+        if (nextStage === 'POTATO') return { hotkey: '1', label: 'NEXT', detail: 'Heiße Kartoffel starten', context: 'Scoreboard aktiv' };
+        if (nextStage === 'Q11') return { hotkey: '1', label: 'NEXT', detail: 'Segment 2 starten', context: 'Scoreboard aktiv' };
+        return { ...base, context: 'Scoreboard aktiv' };
+      case 'BLITZ':
+        return {
+          hotkey: '4',
+          label: 'BLITZ',
+          detail: blitz?.phase === 'PLAYING' ? 'Set läuft' : 'Set abschließen',
+          context: `Set ${(blitz?.setIndex ?? -1) + 1}/3`
+        };
+      case 'POTATO':
+        return {
+          hotkey: '5',
+          label: 'POTATO',
+          detail: potatoPhase === 'PLAYING' ? `Team ${potatoActiveTeamName || '—'} am Zug` : 'Kontextaktion ausführen',
+          context: `Autopilot ${potatoAutopilotEnabled ? 'AN' : 'AUS'}`
+        };
+      case 'AWARDS':
+        return { hotkey: '1', label: 'NEXT', detail: 'Awards zeigen', context: 'Finale' };
+      default:
+        return base;
+    }
+  }, [
+    normalizedGameState,
+    nextStage,
+    submissionStatus.submittedCount,
+    submissionStatus.total,
+    blitz?.phase,
+    potatoPhase,
+    potatoActiveTeamName,
+    potatoAutopilotEnabled
+  ]);
+
   const catKey = (question as any)?.category as keyof typeof categoryColors;
   const catColor = categoryColors[catKey] ?? '#6dd5fa';
   const catIcon = categoryIcons[catKey];
@@ -980,6 +1068,7 @@ function ModeratorPage(): React.ReactElement {
     };
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
   const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
+  const nextStage = socketNextStage ?? null;
 
   const phaseLabel =
     viewPhase === 'pre'
@@ -2081,6 +2170,8 @@ function ModeratorPage(): React.ReactElement {
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
     const waitingTeams = Math.max(0, teamsCount - answersCount);
+    const actionHintCard = renderNextActionHint();
+    const submissionCard = renderTeamSubmissionStatus();
     const baseButtonStyle: React.CSSProperties = {
       ...inputStyle,
       width: '100%',
@@ -2115,6 +2206,12 @@ function ModeratorPage(): React.ReactElement {
     };
     return (
       <section style={{ ...card, marginTop: 12 }}>
+        {(actionHintCard || submissionCard) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+            {actionHintCard}
+            {submissionCard}
+          </div>
+        )}
         <div
           style={{
             display: 'grid',
@@ -2138,9 +2235,13 @@ function ModeratorPage(): React.ReactElement {
             </button>
           ))}
         </div>
-        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={statChip}>Frage {askedCount}/{totalQuestions}</span>
-          <span style={statChip}>Antworten {answersCount}/{teamsCount}</span>
+          <span style={statChip}>Antworten {answersCount}/{teamsCount || '—'}</span>
+          <span style={statChip}>Teams online {connectedTeams || teamsCount || 0}</span>
+          {questionTimerSecondsLeft !== null && (
+            <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>
+          )}
           {waitingTeams > 0 && (
             <span style={{ ...statChip, borderColor: 'rgba(251,191,36,0.45)', color: '#fbbf24', background: 'rgba(251,191,36,0.12)' }}>
               Warten auf {waitingTeams}
@@ -2153,39 +2254,13 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderHotkeyLegend = () => {
-  if (!featureFlags.showLegacyPanels) return null;
-  if (!roomCode) return null;
-  const shortcuts = [
-    { combo: 'F13 / 1', text: 'Next stage' },
-    { combo: 'F14 / 2', text: 'Lock answers' },
-    { combo: 'F15 / 3', text: 'Reveal' },
-    { combo: 'F16 / 4', text: 'Blitz action (context)' },
-    { combo: 'F17 / 5', text: 'Potato action (context)' },
-    { combo: 'F18 / 6', text: 'Scoreboard / Awards' }
-  ];
-  return (
-    <section style={{ ...card, marginTop: 12 }}>
-      <div style={{ fontWeight: 800, marginBottom: 6 }}>Shortcuts</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {shortcuts.map((entry) => (
-          <span
-            key={entry.combo}
-            style={{
-              ...statChip,
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.08)',
-              borderColor: 'rgba(255,255,255,0.08)',
-              color: '#cbd5e1'
-            }}
-          >
-            {entry.combo} - {entry.text}
-          </span>
-        ))}
+    if (!roomCode) return null;
+    return (
+      <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
+        Shortcuts: 1 Next · 2 Lock · 3 Reveal · 4 Blitz · 5 Potato · 6 Scoreboard
       </div>
-      <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>Stream Deck: send F13-F18 or digits 1-6.</div>
-    </section>
-  );
-};
+    );
+  };
 
 const renderCozyStagePanel = () => {
     if (!roomCode) return null;
@@ -2323,6 +2398,89 @@ const renderCozyStagePanel = () => {
     );
   };
 
+  const renderNextActionHint = () => {
+    if (!nextActionHint) return null;
+    return (
+      <div
+        style={{
+          display: 'grid',
+          gap: 6,
+          padding: 16,
+          borderRadius: 16,
+          border: '1px solid rgba(96,165,250,0.5)',
+          background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(15,23,42,0.85))',
+          minWidth: 240,
+          flex: '1 1 280px'
+        }}
+      >
+        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NÄCHSTER SCHRITT</div>
+        {nextActionHint.context && (
+          <div style={{ fontSize: 12, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {nextActionHint.context}
+          </div>
+        )}
+        <div style={{ fontWeight: 900, fontSize: 24 }}>
+          Taste {nextActionHint.hotkey} · {nextActionHint.label}
+        </div>
+        <div style={{ fontSize: 15, color: '#e2e8f0' }}>{nextActionHint.detail}</div>
+      </div>
+    );
+  };
+
+  const renderTeamSubmissionStatus = () => {
+    if (!submissionStatus.total) return null;
+    return (
+      <div
+        style={{
+          display: 'grid',
+          gap: 6,
+          padding: 12,
+          borderRadius: 12,
+          border: '1px solid rgba(148,163,184,0.3)',
+          background: 'rgba(12,16,26,0.7)'
+        }}
+      >
+        <div style={{ fontSize: 12, color: '#94a3b8' }}>Teamstatus</div>
+        <div style={{ fontWeight: 900 }}>
+          Antworten {submissionStatus.submittedCount}
+          {submissionStatus.total ? `/${submissionStatus.total}` : ''}
+        </div>
+        <div style={{ fontSize: 12, color: '#94a3b8' }}>
+          Teams online {connectedTeams || submissionStatus.total || 0}
+        </div>
+        {submissionStatus.items.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {submissionStatus.items.map((team) => (
+              <span
+                key={team.id}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 10px',
+                  borderRadius: 999,
+                  border: `1px solid ${team.submitted ? '#22c55e55' : 'rgba(148,163,184,0.4)'}`,
+                  background: team.submitted ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.12)',
+                  color: '#e2e8f0',
+                  fontSize: 12
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: team.submitted ? '#22c55e' : '#475569'
+                  }}
+                />
+                {team.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
   const renderCozyLayout = () => {
     if (!featureFlags.isCozyMode) return null;
     const stagePanel = renderCozyStagePanel();
@@ -2372,6 +2530,18 @@ const renderCozyStagePanel = () => {
                   }}
                 >
                   Bereit {readyCount.ready}/{readyCount.total}
+                </span>
+              )}
+              {scoreboardOverlayForced && (
+                <span
+                  style={{
+                    ...statChip,
+                    background: 'rgba(251,191,36,0.16)',
+                    borderColor: 'rgba(251,191,36,0.4)',
+                    color: '#fcd34d'
+                  }}
+                >
+                  Beamer: Scoreboard fixiert
                 </span>
               )}
             </div>

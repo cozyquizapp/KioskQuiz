@@ -39,14 +39,17 @@ const BeamerFrame: React.FC<Props> = ({
   rightNode,
   children
 }) => {
+  const normalizedProgress =
+    typeof progressValue === 'number' && progressValue !== null
+      ? Math.min(1, Math.max(0, progressValue))
+      : null;
   return (
-    <div className={`beamer-frame scene-${scene || 'default'}`}>
-      <div className="beamer-frame-progress">
-        <div
-          className="beamer-frame-progress-inner"
-          style={{ width: progressValue ? `${Math.min(1, Math.max(0, progressValue)) * 100}%` : 0 }}
-        />
-      </div>
+    <div className={`beamer-frame scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
+      {normalizedProgress !== null && (
+        <div className="beamer-frame-progress">
+          <div className="beamer-frame-progress-inner" style={{ width: `${normalizedProgress * 100}%` }} />
+        </div>
+      )}
       <BeamerHeader
         leftLabel={leftLabel}
         leftHint={leftHint}
@@ -64,4 +67,3 @@ const BeamerFrame: React.FC<Props> = ({
 };
 
 export default BeamerFrame;
-

@@ -38,6 +38,7 @@ import {
   BunteTueteOrderSubmission,
   BunteTuetePayload,
   CozyQuizDraft,
+  NextStageHint,
   CozyQuizMeta,
   CozyQuestionSlotTemplate,
   CozyPotatoThemeInput
@@ -135,6 +136,7 @@ type RoomState = {
   teamBoards: Record<string, BingoBoard>;
   bingoEnabled: boolean;
   timerEndsAt: number | null;
+  questionTimerDurationMs: number | null;
   screen: ScreenState;
   questionPhase: QuestionPhase;
   lastActivityAt: number;
@@ -176,6 +178,8 @@ type RoomState = {
   blitzResultsByTeam: Record<string, BlitzSetResult>;
   blitzSubmittedTeamIds: string[];
   validationWarnings: string[];
+  nextStage: NextStageHint | null;
+  scoreboardOverlayForced: boolean;
 };
 
 const rooms = new Map<string, RoomState>();
@@ -362,6 +366,8 @@ app.post('/api/quizzes/publish', (req, res) => {
 const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_ANSWER_TIME_MS = 30000;
+const POTATO_THEME_RECOMMENDED_MIN = 14;
+const BLITZ_THEME_RECOMMENDED_MIN = 9;
 
 // Cozy60 Studio Drafts / Builder
 const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
@@ -957,6 +963,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       teamBoards: {},
       bingoEnabled: false,
       timerEndsAt: null,
+      questionTimerDurationMs: null,
       screen: 'lobby',
       questionPhase: 'idle',
       lastActivityAt: Date.now(),
@@ -997,7 +1004,9 @@ const ensureRoom = (roomCode: string): RoomState => {
       blitzAnswersByTeam: {},
       blitzResultsByTeam: {},
       blitzSubmittedTeamIds: [],
-      validationWarnings: []
+      validationWarnings: [],
+      nextStage: null,
+      scoreboardOverlayForced: false
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1014,7 +1023,7 @@ const log = (roomCode: string, message: string, ...args: unknown[]) => {
 };
 
 const POTATO_ROUNDS = 3;
-const POTATO_ANSWER_TIME_MS = 5000;
+const POTATO_ANSWER_TIME_MS = 30000;
 const DEFAULT_POTATO_THEMES = [
   'Songs mit Städtenamen',
   'Filme aus den 90ern',
@@ -1433,6 +1442,80 @@ const finishPotatoStage = (room: RoomState) => {
   applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
 };
 
+const initializePotatoStage = (room: RoomState, payload?: { themes?: string[]; themesText?: string }) => {
+  const parsed = sanitizePotatoPool(payload?.themes) || sanitizePotatoPool(payload?.themesText);
+  const fallbackPool =
+    room.presetPotatoPool.length >= POTATO_ROUNDS
+      ? clonePotatoThemes(room.presetPotatoPool)
+      : buildPlaceholderPotatoPool();
+  const pool = parsed.length >= POTATO_ROUNDS ? clonePotatoThemes(parsed) : fallbackPool;
+  if (pool.length < POTATO_ROUNDS) {
+    throw new Error('Mindestens drei Themen erforderlich');
+  }
+  room.potatoPool = pool;
+  room.potatoBans = {};
+  room.potatoBanLimits = computePotatoBanLimits(room);
+  room.potatoSelectedThemes = [];
+  room.potatoRoundIndex = -1;
+  room.potatoTurnOrder = [];
+  room.potatoLives = {};
+  room.potatoUsedAnswers = [];
+  room.potatoUsedAnswersNormalized = [];
+  room.potatoActiveTeamId = null;
+  room.potatoPhase = 'BANNING';
+  room.potatoDeadlineAt = null;
+  room.potatoTurnStartedAt = null;
+  room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
+  room.potatoLastWinnerId = null;
+  room.potatoCurrentTheme = null;
+  room.potatoLastConflict = null;
+  room.potatoLastAttempt = null;
+  room.nextStage = null;
+  recomputeRoomWarnings(room);
+  applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
+};
+
+const initializeBlitzStage = (room: RoomState, payload?: { themes?: string[]; themesText?: string }) => {
+  const requested = Array.isArray(payload?.themes)
+    ? (payload?.themes ?? []).map((entry) => String(entry ?? ''))
+    : [];
+  const resolvedRequested = requested
+    .map((id) => room.blitzThemeLibrary[id])
+    .filter((theme): theme is QuizBlitzTheme => Boolean(theme));
+  const fallbackNames = sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
+  let definitions: QuizBlitzTheme[] = [];
+  if (resolvedRequested.length >= BLITZ_SETS) {
+    definitions = resolvedRequested;
+  } else if (Object.keys(room.blitzThemeLibrary).length >= BLITZ_SETS) {
+    definitions = Object.values(room.blitzThemeLibrary);
+  } else {
+    const legacyNames = fallbackNames.length >= BLITZ_SETS ? fallbackNames : DEFAULT_BLITZ_THEMES.slice();
+    if (legacyNames.length < BLITZ_SETS) {
+      throw new Error('Mindestens drei Themen erforderlich');
+    }
+    definitions = legacyNames.map((title, idx) => buildLegacyBlitzTheme(title || `Legacy ${idx + 1}`));
+  }
+  const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
+  normalizedDefs.forEach((theme) => {
+    room.blitzThemeLibrary[theme.id] = theme;
+  });
+  room.blitzPool = normalizedDefs.map(toBlitzOption);
+  room.blitzBans = {};
+  room.blitzBanLimits = computePotatoBanLimits(room);
+  room.blitzSelectedThemes = [];
+  room.blitzSetIndex = -1;
+  room.blitzPhase = 'BANNING';
+  room.blitzDeadlineAt = null;
+  room.blitzTheme = null;
+  room.blitzItems = [];
+  room.blitzItemSolutions = [];
+  resetBlitzCollections(room);
+  recomputeRoomWarnings(room);
+  room.nextStage = null;
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ' });
+  return room.blitzPool;
+};
+
 const resetBlitzCollections = (room: RoomState) => {
   room.blitzAnswersByTeam = {};
   room.blitzResultsByTeam = {};
@@ -1574,6 +1657,7 @@ const finishBlitzStage = (room: RoomState) => {
   room.blitzTheme = null;
   room.blitzItems = [];
   room.blitzItemSolutions = [];
+  room.nextStage = 'Q11';
   applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
 };
 
@@ -1861,9 +1945,12 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.currentQuestionId = null;
   room.answers = {};
   room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
   room.screen = 'lobby';
   room.questionPhase = 'answering';
   room.bingoEnabled = Boolean(template.enableBingo ?? template.meta?.useBingo);
+  room.nextStage = null;
+  room.scoreboardOverlayForced = false;
   room.potatoPhase = 'IDLE';
   room.potatoPool = [];
   room.presetPotatoPool = sanitizePotatoPool(template.potatoPool ?? []);
@@ -1988,12 +2075,12 @@ const effectivePotatoPool = (room: RoomState) =>
 const recomputeRoomWarnings = (room: RoomState) => {
   const warnings: string[] = [];
   const potatoSize = effectivePotatoPool(room).length;
-  if (potatoSize > 0 && potatoSize < 14) {
-    warnings.push(`Potato-Pool enthält nur ${potatoSize} Themen (>=14 empfohlen).`);
+  if (potatoSize > 0 && potatoSize < POTATO_THEME_RECOMMENDED_MIN) {
+    warnings.push(`Potato-Pool enthält nur ${potatoSize} Themen (>=${POTATO_THEME_RECOMMENDED_MIN} empfohlen).`);
   }
   const blitzSize = room.blitzPool.length || Object.keys(room.blitzThemeLibrary || {}).length;
-  if (blitzSize > 0 && blitzSize < 14) {
-    warnings.push(`Blitz-Pool enthält nur ${blitzSize} Themen (>=14 empfohlen).`);
+  if (blitzSize > 0 && blitzSize < BLITZ_THEME_RECOMMENDED_MIN) {
+    warnings.push(`Blitz-Pool enthält nur ${blitzSize} Themen (>=${BLITZ_THEME_RECOMMENDED_MIN} empfohlen).`);
   }
   room.validationWarnings = warnings;
 };
@@ -2309,6 +2396,26 @@ const applyRoomState = (room: RoomState, action: GameStateAction) => {
   return room.gameState;
 };
 
+const buildTimerSnapshot = (room: RoomState) => {
+  let endsAt = room.timerEndsAt;
+  let running = Boolean(endsAt);
+  let durationMs: number | null = room.questionTimerDurationMs;
+
+  if (room.gameState === 'BLITZ' && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
+    endsAt = room.blitzDeadlineAt;
+    running = true;
+    durationMs = BLITZ_ANSWER_TIME_MS;
+  } else if (room.gameState === 'POTATO' && room.potatoPhase === 'PLAYING' && room.potatoDeadlineAt) {
+    endsAt = room.potatoDeadlineAt;
+    running = true;
+    durationMs = room.potatoTurnDurationMs;
+  } else if (!running) {
+    durationMs = null;
+  }
+
+  return { endsAt, running, durationMs };
+};
+
 const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
   const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
   const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
@@ -2371,12 +2478,17 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     ...room.validationWarnings,
     ...(localized ? validateQuestionStructure(localized) : [])
   ];
+  const timerSnapshot = buildTimerSnapshot(room);
   return {
     roomCode: room.roomCode,
     state: room.gameState,
     phase: room.questionPhase,
     currentQuestion: sanitized,
-    timer: { endsAt: room.timerEndsAt, running: Boolean(room.timerEndsAt) },
+    timer: {
+      endsAt: timerSnapshot.endsAt,
+      running: timerSnapshot.running,
+      durationMs: timerSnapshot.durationMs || undefined
+    },
     scores: Object.values(room.teams).map((team) => ({
       id: team.id,
       name: team.name,
@@ -2386,6 +2498,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
     potato,
     blitz,
+    nextStage: room.nextStage ?? undefined,
+    scoreboardOverlayForced: room.scoreboardOverlayForced || undefined,
     results,
     warnings: warnings.length ? warnings : undefined,
     supportsBingo: Boolean(room.bingoEnabled),
@@ -2653,6 +2767,8 @@ const startQuestionWithSlot = (
   room.currentQuestionId = questionId;
   room.answers = {};
   room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
+  room.nextStage = null;
   room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
   ensureSegmentTwoBaseline(room);
   room.screen = 'slot';
@@ -2703,6 +2819,7 @@ const runNextQuestion = (room: RoomState) => {
   if (!room.quizId || room.remainingQuestionIds.length === 0) {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
+  room.nextStage = null;
   const nextId = room.remainingQuestionIds.shift();
   if (!nextId) {
     throw new Error('Keine naechste Frage gefunden');
@@ -2719,6 +2836,25 @@ const shouldShowSegmentScoreboard = (room: RoomState) => {
 };
 
 const handleHostNextAdvance = (room: RoomState) => {
+  if (room.gameState === 'SCOREBOARD_PAUSE') {
+    if (room.nextStage === 'BLITZ') {
+      initializeBlitzStage(room);
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    if (room.nextStage === 'POTATO') {
+      initializePotatoStage(room);
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    if (room.nextStage === 'Q11') {
+      room.nextStage = null;
+      applyRoomState(room, { type: 'HOST_NEXT' });
+      return runNextQuestion(room);
+    }
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    return runNextQuestion(room);
+  }
   if (room.gameState === 'Q_REVEAL' && shouldShowSegmentScoreboard(room)) {
     applyRoomState(room, { type: 'HOST_NEXT' });
     broadcastState(room);
@@ -2729,10 +2865,6 @@ const handleHostNextAdvance = (room: RoomState) => {
       broadcastState(room);
       return { stage: room.gameState };
     }
-    applyRoomState(room, { type: 'HOST_NEXT' });
-    return runNextQuestion(room);
-  }
-  if (room.gameState === 'SCOREBOARD_PAUSE') {
     applyRoomState(room, { type: 'HOST_NEXT' });
     return runNextQuestion(room);
   }
@@ -2784,6 +2916,17 @@ const revealAnswersForRoom = (room: RoomState) => {
   });
 
   room.questionPhase = 'revealed';
+  const askedCount = room.askedQuestionIds.length;
+  const noQuestionsLeft = room.remainingQuestionIds.length === 0;
+  if (askedCount === 10) {
+    room.nextStage = 'BLITZ';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
+  } else if (askedCount >= 20 || noQuestionsLeft) {
+    room.nextStage = 'POTATO';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
+  } else {
+    room.nextStage = null;
+  }
   broadcastState(room);
   io.to(room.roomCode).emit('scoreUpdated'); // TODO(LEGACY): scoreboard now via stateUpdate
   io.to(room.roomCode).emit('evaluation:revealed');
@@ -2897,6 +3040,7 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   const answerCount = Object.keys(room.answers).length;
   if (teamCount > 0 && answerCount >= teamCount && room.timerEndsAt) {
     room.timerEndsAt = null;
+    room.questionTimerDurationMs = null;
     io.to(roomCode).emit('timerStopped');
     evaluateCurrentQuestion(room);
   }
@@ -3134,8 +3278,10 @@ app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
   touchRoom(room);
   const secs = Number(seconds ?? DEFAULT_QUESTION_TIME);
   if (!Number.isFinite(secs) || secs <= 0) return res.status(400).json({ error: 'seconds muss > 0 sein' });
-  const endsAt = Date.now() + secs * 1000;
+  const durationMs = Math.round(secs * 1000);
+  const endsAt = Date.now() + durationMs;
   room.timerEndsAt = endsAt;
+  room.questionTimerDurationMs = durationMs;
   io.to(roomCode).emit('timerStarted', { endsAt });
   broadcastState(room);
   return res.json({ ok: true, endsAt });
@@ -3146,6 +3292,7 @@ app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
   room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
   io.to(roomCode).emit('timerStopped');
    // automatisches Bewerten, wenn noch nicht erfolgt
   evaluateCurrentQuestion(room);
@@ -3157,7 +3304,13 @@ app.get('/api/rooms/:roomCode/timer', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  return res.json({ timer: { endsAt: room.timerEndsAt, running: Boolean(room.timerEndsAt) } });
+  return res.json({
+    timer: {
+      endsAt: room.timerEndsAt,
+      running: Boolean(room.timerEndsAt),
+      durationMs: room.questionTimerDurationMs
+    }
+  });
 });
 
 // Sprache
@@ -3384,6 +3537,14 @@ io.on('connection', (socket: Socket) => {
     withRoom(payload?.roomCode, ack, (room) => revealAnswersForRoom(room));
   });
 
+  socket.on('host:toggleScoreboardOverlay', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      room.scoreboardOverlayForced = !room.scoreboardOverlayForced;
+      broadcastState(room);
+      return { forced: room.scoreboardOverlayForced };
+    });
+  });
+
   socket.on(
     'host:startPotato',
     (
@@ -3391,36 +3552,7 @@ io.on('connection', (socket: Socket) => {
       ack?: AckFn
     ) => {
       withRoom(payload?.roomCode, ack, (room) => {
-        const parsed =
-          sanitizePotatoPool(payload?.themes) || sanitizePotatoPool(payload?.themesText);
-        const fallbackPool =
-          room.presetPotatoPool.length >= POTATO_ROUNDS
-            ? clonePotatoThemes(room.presetPotatoPool)
-            : buildPlaceholderPotatoPool();
-        const pool = parsed.length >= POTATO_ROUNDS ? clonePotatoThemes(parsed) : fallbackPool;
-        if (pool.length < POTATO_ROUNDS) {
-          throw new Error('Mindestens drei Themen erforderlich');
-        }
-        room.potatoPool = pool;
-        room.potatoBans = {};
-        room.potatoBanLimits = computePotatoBanLimits(room);
-        room.potatoSelectedThemes = [];
-        room.potatoRoundIndex = -1;
-        room.potatoTurnOrder = [];
-        room.potatoLives = {};
-        room.potatoUsedAnswers = [];
-        room.potatoUsedAnswersNormalized = [];
-        room.potatoActiveTeamId = null;
-        room.potatoPhase = 'BANNING';
-        room.potatoDeadlineAt = null;
-        room.potatoTurnStartedAt = null;
-        room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
-        room.potatoLastWinnerId = null;
-        room.potatoCurrentTheme = null;
-        room.potatoLastConflict = null;
-        room.potatoLastAttempt = null;
-        recomputeRoomWarnings(room);
-        applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
+        initializePotatoStage(room, payload);
         broadcastState(room);
         return { pool: room.potatoPool };
       });
@@ -3637,48 +3769,9 @@ io.on('connection', (socket: Socket) => {
       ack?: AckFn
     ) => {
       withRoom(payload?.roomCode, ack, (room) => {
-        const requested = Array.isArray(payload?.themes)
-          ? payload?.themes.map((entry) => String(entry))
-          : [];
-        const resolvedRequested = requested
-          .map((id) => room.blitzThemeLibrary[id])
-          .filter((theme): theme is QuizBlitzTheme => Boolean(theme));
-        const fallbackNames =
-          sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
-        let definitions: QuizBlitzTheme[] = [];
-        if (resolvedRequested.length >= BLITZ_SETS) {
-          definitions = resolvedRequested;
-        } else if (Object.keys(room.blitzThemeLibrary).length >= BLITZ_SETS) {
-          definitions = Object.values(room.blitzThemeLibrary);
-        } else {
-          const legacyNames = fallbackNames.length >= BLITZ_SETS ? fallbackNames : DEFAULT_BLITZ_THEMES.slice();
-          if (legacyNames.length < BLITZ_SETS) {
-            throw new Error('Mindestens drei Themen erforderlich');
-          }
-          definitions = legacyNames.map((title, idx) => {
-            // TODO(LEGACY): Replace placeholder Blitz content with curated assets when Studio supports it.
-            return buildLegacyBlitzTheme(title || `Legacy ${idx + 1}`);
-          });
-        }
-        const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
-        normalizedDefs.forEach((theme) => {
-          room.blitzThemeLibrary[theme.id] = theme;
-        });
-        room.blitzPool = normalizedDefs.map(toBlitzOption);
-        room.blitzBans = {};
-        room.blitzBanLimits = computePotatoBanLimits(room);
-        room.blitzSelectedThemes = [];
-        room.blitzSetIndex = -1;
-        room.blitzPhase = 'BANNING';
-        room.blitzDeadlineAt = null;
-        room.blitzTheme = null;
-        room.blitzItems = [];
-        room.blitzItemSolutions = [];
-        resetBlitzCollections(room);
-        recomputeRoomWarnings(room);
-        applyRoomState(room, { type: 'FORCE', next: 'BLITZ' });
+        const pool = initializeBlitzStage(room, payload);
         broadcastState(room);
-        return { pool: room.blitzPool };
+        return { pool };
       });
     }
   );

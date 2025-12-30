@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminPage from './pages/AdminPage';
 import TeamPage from './pages/TeamPage';
 import BeamerPage from './pages/BeamerPage';
@@ -47,10 +47,96 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
   }
 }
 
+function GlobalErrorOverlay() {
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onError = (event: ErrorEvent) => {
+      const message = event?.error?.message || event.message || 'Unbekannter Fehler';
+      setError(message);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event?.reason;
+      const message = reason instanceof Error ? reason.message : String(reason || 'Unbekannte Exception');
+      setError(message);
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
+
+  if (!error) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(3,7,18,0.92)',
+        color: '#e2e8f0',
+        zIndex: 9999,
+        padding: 24,
+        overflow: 'auto'
+      }}
+    >
+      <h2>Fehler im Client</h2>
+      <p>{error}</p>
+      <button
+        style={{
+          marginTop: 12,
+          padding: '10px 14px',
+          borderRadius: 10,
+          border: '1px solid rgba(255,255,255,0.2)',
+          background: 'rgba(255,255,255,0.08)',
+          color: '#e2e8f0',
+          cursor: 'pointer'
+        }}
+        onClick={() => window.location.reload()}
+      >
+        Neu laden
+      </button>
+    </div>
+  );
+}
+
+function AppDebugBadge() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setEnabled(params.get('debug') === '1');
+  }, []);
+  if (!enabled) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 10,
+        right: 10,
+        padding: '6px 10px',
+        borderRadius: 10,
+        border: '1px solid rgba(255,255,255,0.25)',
+        background: 'rgba(0,0,0,0.5)',
+        color: '#e2e8f0',
+        fontSize: 12,
+        fontWeight: 700,
+        zIndex: 9998
+      }}
+    >
+      APP DEBUG · {typeof window !== 'undefined' ? window.location.pathname : ''}
+    </div>
+  );
+}
+
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
   return (
     <AppErrorBoundary>
+      <GlobalErrorOverlay />
+      <AppDebugBadge />
       <Routes>
       <Route path="/" element={<Navigate to="/team" replace />} />
       <Route path="/menu" element={<MenuPage />} />

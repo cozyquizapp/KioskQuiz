@@ -208,6 +208,7 @@ function ModeratorPage(): React.ReactElement {
     scoreboardOverlayForced: socketScoreboardOverlayForced
   } = useQuizSocket(roomCode);
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
+  const nextStage = socketNextStage ?? null;
   const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
     LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
     INTRO: { label: 'Intro', hint: 'Intro/Regeln', tone: 'setup' },

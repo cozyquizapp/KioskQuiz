@@ -484,8 +484,7 @@ function ModeratorPage(): React.ReactElement {
     emitBlitzEvent,
     handleNextQuestion,
     handleLockQuestion,
-    handleReveal,
-    handleScoreboardAction
+    handleReveal
   ]);
 
 

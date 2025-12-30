@@ -255,7 +255,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   const potatoToastTimeoutRef = useRef<number | null>(null);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const [reconnectKey, setReconnectKey] = useState(0);
-  const storageKey = (suffix: string) => `team:${roomCode}:${suffix}`;
+  function storageKey(suffix: string) {
+    return `team:${roomCode}:${suffix}`;
+  }
   useEffect(() => {
     if (gameState === 'Q_ACTIVE') {
       setPhase('answering');
@@ -413,11 +415,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     return (COPY as any)[language]?.[key] ?? COPY.de[key];
   }
-  const inlineCopy = (de: string, en: string) => {
+  function inlineCopy(de: string, en: string) {
     if (language === 'en') return en;
     if (language === 'both') return `${de} / ${en}`;
     return de;
-  };
+  }
   const scoreboardLookup = useMemo(() => {
     const map: Record<string, { name: string; score: number }> = {};
     scoreboard.forEach((entry) => {
@@ -475,16 +477,16 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, [isBlitzPlaying, blitzSubmitted, activeBlitzItemIndex]);
 
-  const handleReconnect = () => {
+  function handleReconnect() {
     setConnectionStatus('connecting');
     setReconnectKey((v) => v + 1);
-  };
+  }
 
-  const updateLanguage = (lang: Language) => {
+  function updateLanguage(lang: Language) {
     setLanguageState(lang);
     localStorage.setItem('teamLanguage', lang);
     setLanguageApi(roomCode, lang).catch(() => undefined);
-  };
+  }
 
   // Socket connection & live updates
   useEffect(() => {
@@ -691,42 +693,44 @@ function TeamView({ roomCode }: TeamViewProps) {
     };
   }, [timerEndsAt]);
 
-  const connectionStatusPill = () => (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <span
-        style={connectionPill(connectionStatus)}
-        title={
-          connectionStatus === 'connected'
-            ? language === 'de'
-              ? 'Verbunden'
-              : 'Online'
-            : connectionStatus === 'connecting'
-            ? language === 'de'
-              ? 'Verbinde...'
-              : 'Connecting...'
-            : language === 'de'
-            ? 'Getrennt'
-            : 'Offline'
-        }
-      />
-      {connectionStatus === 'disconnected' && (
-        <button
-          style={{
-            padding: '6px 10px',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.22)',
-            background: 'rgba(255,255,255,0.06)',
-            color: '#e5e7eb',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-          onClick={handleReconnect}
-        >
-          {language === 'de' ? 'Erneut verbinden' : 'Reconnect'}
-        </button>
-      )}
-    </div>
-  );
+  function connectionStatusPill() {
+    return (
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span
+          style={connectionPill(connectionStatus)}
+          title={
+            connectionStatus === 'connected'
+              ? language === 'de'
+                ? 'Verbunden'
+                : 'Online'
+              : connectionStatus === 'connecting'
+              ? language === 'de'
+                ? 'Verbinde...'
+                : 'Connecting...'
+              : language === 'de'
+              ? 'Getrennt'
+              : 'Offline'
+          }
+        />
+        {connectionStatus === 'disconnected' && (
+          <button
+            style={{
+              padding: '6px 10px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.22)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#e5e7eb',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+            onClick={handleReconnect}
+          >
+            {language === 'de' ? 'Erneut verbinden' : 'Reconnect'}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   function resetInputs() {
     setAnswer('');
@@ -740,7 +744,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     setResultDetail(null);
   }
 
-  const applyRankingSelection = (current: string[], index: number, value: string) => {
+  function applyRankingSelection(current: string[], index: number, value: string) {
     const next = [...current];
     next[index] = value;
     if (value) {
@@ -749,7 +753,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       });
     }
     return next;
-  };
+  }
 
   const loadQuestion = async () => {
     const data = await fetchCurrentQuestion(roomCode);
@@ -1046,7 +1050,7 @@ const handleSubmit = async () => {
     }
   };
 
-  const buildBunteSubmission = (payload: BunteTuetePayload | undefined) => {
+  function buildBunteSubmission(payload: BunteTuetePayload | undefined) {
     if (!question || !payload) return null;
     if (payload.kind === 'top5') {
       const values = bunteTop5Order;
@@ -1083,7 +1087,7 @@ const handleSubmit = async () => {
       };
     }
     return null;
-  };
+  }
 
   const handleMarkCell = async (cellIndex: number) => {
     if (!teamId) {
@@ -1903,7 +1907,7 @@ const handleSubmit = async () => {
     );
   }
 
-  const submitBlitzAnswers = () => {
+  function submitBlitzAnswers() {
     if (!teamId || !socketRef.current) return;
     socketRef.current.emit(
       'team:submitBlitzAnswers',
@@ -1917,9 +1921,9 @@ const handleSubmit = async () => {
         }
       }
     );
-  };
+  }
 
-  const submitPotatoAnswer = () => {
+  function submitPotatoAnswer() {
     if (!teamId || !socketRef.current) return;
     if (!potatoState || potatoState.phase !== 'PLAYING') {
       setPotatoError(inlineCopy('Finale ist noch nicht aktiv.', 'Final stage has not started yet.'));
@@ -1952,7 +1956,7 @@ const handleSubmit = async () => {
         }
       }
     );
-  };
+  }
 
   function renderBlitzStage() {
     if (!blitzState) {
@@ -2407,12 +2411,12 @@ const handleSubmit = async () => {
             : renderWaiting(t('waitingMsg'));
     }
   };
-  const toggleReady = () => {
+  function toggleReady() {
     if (!teamId || !socketRef.current) return;
     const next = !isReady;
     setIsReady(next);
     socketRef.current.emit('teamReady', { roomCode, teamId, isReady: next });
-  };
+  }
 
   const remainingSeconds = timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0;
   const progress =

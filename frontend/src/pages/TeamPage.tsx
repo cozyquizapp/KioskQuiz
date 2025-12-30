@@ -81,6 +81,15 @@ const TeamPage = () => {
     }
   }, [location.search]);
 
+  useEffect(() => {
+    if (featureFlags.singleSessionMode && !roomCode) {
+      setRoomCode(DEFAULT_ROOM_CODE);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('teamRoomCode', DEFAULT_ROOM_CODE);
+      }
+    }
+  }, [roomCode]);
+
   const attach = () => {
     const clean = (input || '').trim().toUpperCase();
     if (!clean) return;
@@ -135,7 +144,23 @@ const TeamPage = () => {
   }
 
   if (!roomCode) {
-    return null;
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: '#06070e',
+          color: '#e2e8f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 12
+        }}
+      >
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Session wird vorbereitet</div>
+        <div style={{ fontSize: 14, opacity: 0.75 }}>Bitte kurz warten ...</div>
+      </div>
+    );
   }
 
   return (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { featureFlags } from '../config/features';
 
-const TeamView = React.lazy(() => import('../views/TeamView'));
+import TeamView from '../views/TeamView';
 
 class ErrorCatcher extends React.Component<{ onError: (err: Error) => void; children: React.ReactNode }> {
   componentDidCatch(error: Error) {
@@ -166,15 +166,7 @@ const TeamPage = () => {
 
   return (
     <TeamBoundary>
-      <React.Suspense
-        fallback={
-          <div style={{ minHeight: '100vh', background: '#0b0d14', color: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Teamansicht wird geladen ...
-          </div>
-        }
-      >
-        <TeamView roomCode={roomCode} />
-      </React.Suspense>
+      <TeamView roomCode={roomCode} />
     </TeamBoundary>
   );
 };

@@ -780,8 +780,9 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   };
 
-  const offlineBar = () =>
-    connectionStatus === 'disconnected' ? (
+  function renderOfflineBar() {
+    if (connectionStatus !== 'disconnected') return null;
+    return (
       <div
         style={{
           position: 'fixed',
@@ -816,7 +817,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           {language === 'de' ? 'Neu verbinden' : 'Reconnect'}
         </button>
       </div>
-    ) : null;
+    );
+  }
 
   const renderAnswering = () => (
     <div
@@ -2423,7 +2425,7 @@ const renderShowResult = () => (
 
   return (
     <div style={pageStyleTeam} data-timer={timerTick}>
-      {offlineBar()}
+      {renderOfflineBar()}
       <div style={contentShell}>
         <header style={headerBarTeam}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

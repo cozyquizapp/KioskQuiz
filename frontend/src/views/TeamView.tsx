@@ -728,7 +728,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     </div>
   );
 
-  const resetInputs = () => {
+  function resetInputs() {
     setAnswer('');
     setBettingPoints([0, 0, 0]);
     setBunteTop5Order([]);
@@ -738,7 +738,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     setBunteOrderCriteria(null);
     setResultPoints(null);
     setResultDetail(null);
-  };
+  }
 
   const applyRankingSelection = (current: string[], index: number, value: string) => {
     const next = [...current];

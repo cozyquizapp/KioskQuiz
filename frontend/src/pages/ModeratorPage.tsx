@@ -249,6 +249,70 @@ function ModeratorPage(): React.ReactElement {
     };
   }, []);
 
+  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
+  const answersCount = Object.keys(answers?.answers || {}).length;
+  const teamsCount = connectedTeams || Object.keys(answers?.teams || {}).length;
+  const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
+  const scoreboard = useMemo(
+    () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
+    [socketScores]
+  );
+  const scoreboardOverlayForced = socketScoreboardOverlayForced ?? false;
+  const questionProgressSnapshot =
+    socketQuestionProgress ??
+    (meta
+      ? {
+          asked: meta.globalIndex ?? (question ? 1 : 0),
+          total: meta.globalTotal ?? 20
+        }
+      : { asked: question ? 1 : 0, total: 20 });
+  const askedCount = questionProgressSnapshot?.asked ?? meta?.globalIndex ?? (question ? 1 : 0);
+  const totalQuestions = questionProgressSnapshot?.total ?? meta?.globalTotal ?? 20;
+  const isScoreboardState = socketGameState === 'SCOREBOARD';
+  const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE';
+  const teamLookup = useMemo(() => {
+    const map: Record<string, { name: string; score: number }> = {};
+    scoreboard.forEach((entry) => {
+      map[entry.id] = { name: entry.name, score: entry.score ?? 0 };
+    });
+    Object.entries(answers?.teams || {}).forEach(([id, team]) => {
+      map[id] = { name: team?.name ?? map[id]?.name ?? 'Team', score: map[id]?.score ?? (team as any)?.score ?? 0 };
+    });
+    return map;
+  }, [answers, scoreboard]);
+  const potatoActiveTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato?.activeTeamId : null;
+  const blitzPhase = blitz?.phase ?? 'IDLE';
+  const potatoPhase = potato?.phase ?? 'IDLE';
+  const potatoDeadline = potato?.deadline ?? null;
+  const potatoTimeLeft = useMemo(() => {
+    if (!potatoDeadline) return null;
+    return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
+  }, [potatoDeadline, countdownTick]);
+  const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
+  const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
+  const potatoConflict = potato?.pendingConflict ?? null;
+  const potatoRoundIndex = potato?.roundIndex ?? -1;
+  const potatoFirstRoundPending = potatoPhase === 'ROUND_END' && potatoRoundIndex < 0;
+  const potatoAllRoundsComplete =
+    potatoPhase === 'ROUND_END' && potatoRoundsTotal > 0 && potatoRoundIndex >= potatoRoundsTotal - 1;
+  const hasWinnerDraft = Boolean(potatoWinnerDraft && potatoWinnerDraft.trim());
+  const potatoAutopilotEnabled = socketConfig?.potatoAutopilot ?? true;
+  const potatoTimeoutAutostrikeEnabled = socketConfig?.potatoTimeoutAutostrike ?? false;
+  const showPotatoConfigBadges = socketGameState === 'POTATO';
+  const blitzDeadline = blitz?.deadline ?? null;
+  const blitzTimeLeft = useMemo(() => {
+    if (!blitzDeadline) return null;
+    return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
+  }, [blitzDeadline, countdownTick]);
+  const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
+  const blitzSetIndex = blitz?.setIndex ?? -1;
+  const blitzSelectedCount = blitz?.selectedThemes?.length ?? 0;
+  const blitzResultsCount = Object.keys(blitz?.results ?? {}).length;
+  const questionTimerSecondsLeft = useMemo(() => {
+    if (!socketTimerEndsAt) return null;
+    return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
+  }, [socketTimerEndsAt, countdownTick]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -851,70 +915,6 @@ function ModeratorPage(): React.ReactElement {
       onSuccess?.();
     });
   }
-
-  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
-  const answersCount = Object.keys(answers?.answers || {}).length;
-  const teamsCount = connectedTeams || Object.keys(answers?.teams || {}).length;
-  const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;
-  const scoreboard = useMemo(
-    () => (socketScores ? [...socketScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)) : []),
-    [socketScores]
-  );
-  const scoreboardOverlayForced = socketScoreboardOverlayForced ?? false;
-  const questionProgressSnapshot =
-    socketQuestionProgress ??
-    (meta
-      ? {
-          asked: meta.globalIndex ?? (question ? 1 : 0),
-          total: meta.globalTotal ?? 20
-        }
-      : { asked: question ? 1 : 0, total: 20 });
-  const askedCount = questionProgressSnapshot?.asked ?? meta?.globalIndex ?? (question ? 1 : 0);
-  const totalQuestions = questionProgressSnapshot?.total ?? meta?.globalTotal ?? 20;
-  const isScoreboardState = socketGameState === 'SCOREBOARD';
-  const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE';
-  const teamLookup = useMemo(() => {
-    const map: Record<string, { name: string; score: number }> = {};
-    scoreboard.forEach((entry) => {
-      map[entry.id] = { name: entry.name, score: entry.score ?? 0 };
-    });
-    Object.entries(answers?.teams || {}).forEach(([id, team]) => {
-      map[id] = { name: team?.name ?? map[id]?.name ?? 'Team', score: map[id]?.score ?? (team as any)?.score ?? 0 };
-    });
-    return map;
-  }, [answers, scoreboard]);
-  const potatoActiveTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato?.activeTeamId : null;
-  const blitzPhase = blitz?.phase ?? 'IDLE';
-  const potatoPhase = potato?.phase ?? 'IDLE';
-  const potatoDeadline = potato?.deadline ?? null;
-  const potatoTimeLeft = useMemo(() => {
-    if (!potatoDeadline) return null;
-    return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
-  }, [potatoDeadline, countdownTick]);
-  const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
-  const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
-  const potatoConflict = potato?.pendingConflict ?? null;
-  const potatoRoundIndex = potato?.roundIndex ?? -1;
-  const potatoFirstRoundPending = potatoPhase === 'ROUND_END' && potatoRoundIndex < 0;
-  const potatoAllRoundsComplete =
-    potatoPhase === 'ROUND_END' && potatoRoundsTotal > 0 && potatoRoundIndex >= potatoRoundsTotal - 1;
-  const hasWinnerDraft = Boolean(potatoWinnerDraft && potatoWinnerDraft.trim());
-  const potatoAutopilotEnabled = socketConfig?.potatoAutopilot ?? true;
-  const potatoTimeoutAutostrikeEnabled = socketConfig?.potatoTimeoutAutostrike ?? false;
-  const showPotatoConfigBadges = socketGameState === 'POTATO';
-  const blitzDeadline = blitz?.deadline ?? null;
-  const blitzTimeLeft = useMemo(() => {
-    if (!blitzDeadline) return null;
-    return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
-  }, [blitzDeadline, countdownTick]);
-  const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
-  const blitzSetIndex = blitz?.setIndex ?? -1;
-  const blitzSelectedCount = blitz?.selectedThemes?.length ?? 0;
-  const blitzResultsCount = Object.keys(blitz?.results ?? {}).length;
-  const questionTimerSecondsLeft = useMemo(() => {
-    if (!socketTimerEndsAt) return null;
-    return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
-  }, [socketTimerEndsAt, countdownTick]);
 
   const structuralWarnings = useMemo(
     () => (socketWarnings || []).filter((entry): entry is string => Boolean(entry)),

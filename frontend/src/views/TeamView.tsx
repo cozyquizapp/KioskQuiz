@@ -196,6 +196,7 @@ const COPY = {
 
 function TeamView({ roomCode }: TeamViewProps) {
   const draftTheme = getDraftTheme();
+  const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
   const [teamName, setTeamName] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -2449,6 +2450,25 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   return (
     <div style={pageStyleTeam} data-timer={timerTick}>
+      {debugMode && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 12,
+            left: 12,
+            zIndex: 50,
+            padding: '6px 10px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(0,0,0,0.55)',
+            color: '#e2e8f0',
+            fontSize: 12,
+            fontWeight: 700
+          }}
+        >
+          TEAM DEBUG · phase={phase} · state={gameState} · room={roomCode} · team={teamId ?? '—'}
+        </div>
+      )}
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
       <div style={contentShell}>
         <header style={headerBarTeam}>

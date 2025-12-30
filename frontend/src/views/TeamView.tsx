@@ -412,7 +412,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
     }
     return (COPY as any)[language]?.[key] ?? COPY.de[key];
-  };
+  }
   const inlineCopy = (de: string, en: string) => {
     if (language === 'en') return en;
     if (language === 'both') return `${de} / ${en}`;
@@ -827,8 +827,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   };
 
 
-  const renderAnswering = () => (
-    <div
+  function renderAnswering() {
+    return (
+      <div
       style={{
         ...questionShell,
         opacity: transitioning ? 0.4 : 1,
@@ -983,12 +984,14 @@ function TeamView({ roomCode }: TeamViewProps) {
       {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
     </div>
   );
+  }
 
-  const renderWaitingForResult = () =>
-    renderWaiting(
+  function renderWaitingForResult() {
+    return renderWaiting(
       t('waiting'),
       language === 'de' ? 'Wir pruefen alle Antworten ...' : t('evaluating')
     );
+  }
 
 const handleSubmit = async () => {
     if (!teamId) {
@@ -1103,7 +1106,7 @@ const handleSubmit = async () => {
     }
   };
 
-  const renderBunteInput = (payload: BunteTuetePayload, accent: string) => {
+  function renderBunteInput(payload: BunteTuetePayload, accent: string) {
     if (payload.kind === 'top5') {
       return (
         <div style={{ display: 'grid', gap: 10 }}>
@@ -1222,7 +1225,7 @@ const handleSubmit = async () => {
     return null;
   };
 
-  const renderBunteDetails = () => {
+  function renderBunteDetails() {
     if (!question || question.type !== 'BUNTE_TUETE' || !question.bunteTuete) {
       return null;
     }
@@ -1262,9 +1265,9 @@ const handleSubmit = async () => {
       );
     }
     return null;
-  };
+  }
 
-  const renderInput = (accent: string) => {
+  function renderInput(accent: string) {
     if (!question) return null;
     if (question.type === 'BUNTE_TUETE' && question.bunteTuete) {
       return renderBunteInput(question.bunteTuete as BunteTuetePayload, accent);
@@ -1420,10 +1423,11 @@ const handleSubmit = async () => {
         );
       }
     }
-  };
+  }
 
-const renderShowResult = () => (
-  <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
+  function renderShowResult() {
+    return (
+      <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
       <div style={pillLabel}>
         {isFinal
           ? language === 'de'
@@ -1453,9 +1457,11 @@ const renderShowResult = () => (
         </p>
       )}
     </div>
-  );
+    );
+  }
+  }
 
-  const renderPotatoStage = () => {
+  function renderPotatoStage() {
     if (!teamId) return renderNotJoined();
     const heading =
       language === 'en'
@@ -1564,7 +1570,8 @@ const renderShowResult = () => (
       }
       return inlineCopy('Wird geprüft ...', 'Checking attempt ...');
     })();
-    const renderScoreboardBlock = () => (
+    function renderScoreboardBlock() {
+      return (
       <div style={{ marginTop: 10 }}>
         <div style={pillLabel}>{language === 'en' ? 'Scoreboard' : language === 'both' ? 'Scoreboard / Punkte' : 'Scoreboard'}</div>
         <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
@@ -1594,7 +1601,9 @@ const renderShowResult = () => (
         </div>
       </div>
     );
-    const renderThemes = () => (
+    }
+    function renderThemes() {
+      return (
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {selectedThemes.map((theme, idx) => {
           const done = potatoState.roundIndex >= idx;
@@ -1620,7 +1629,9 @@ const renderShowResult = () => (
         {selectedThemes.length === 0 && <span style={{ ...mutedText }}>{language === 'en' ? 'Themes pending...' : 'Themen folgen...'}</span>}
       </div>
     );
-    const renderLives = () => (
+    }
+    function renderLives() {
+      return (
       <div style={{ display: 'grid', gap: 6 }}>
         {turnOrder.map((teamId) => {
           const livesLeft = lives[teamId] ?? (Object.keys(lives).length <= 2 ? 1 : 2);
@@ -1889,8 +1900,8 @@ const renderShowResult = () => (
 
         {renderScoreboardBlock()}
       </div>
-  );
-};
+    );
+  }
 
   const submitBlitzAnswers = () => {
     if (!teamId || !socketRef.current) return;
@@ -1943,7 +1954,7 @@ const renderShowResult = () => (
     );
   };
 
-  const renderBlitzStage = () => {
+  function renderBlitzStage() {
     if (!blitzState) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }}>
@@ -2157,8 +2168,9 @@ const renderShowResult = () => (
         )}
       </div>
     );
-  };
-  const renderBingo = () => {
+  }
+
+  function renderBingo() {
     if (!bingoEnabled) return null;
     if (board.length !== 25) return null;
     const show = canMarkBingo || showBingoPanel;
@@ -2245,7 +2257,7 @@ const renderShowResult = () => (
     );
   };
 
-  const renderBingoPrompt = () => {
+  function renderBingoPrompt() {
     if (!bingoEnabled) return null;
     return (
       <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '20px 18px' }}>
@@ -2260,11 +2272,12 @@ const renderShowResult = () => (
         </p>
       </div>
     );
-  };
+  }
 
-  const renderNotJoined = () => (
-    <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
-      <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+  function renderNotJoined() {
+    return (
+      <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
+        <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Join
       </Pill>
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2321,12 +2334,14 @@ const renderShowResult = () => (
             : `Resume team${teamName ? ` (${teamName})` : ''}`}
         </button>
       )}
-      {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
-    </div>
-  );
+        {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
+      </div>
+    );
+  }
 
-  const renderWaiting = (title: string, subtitle?: string) => (
-    <div
+  function renderWaiting(title: string, subtitle?: string) {
+    return (
+      <div
       style={{
         ...glassCard,
         textAlign: 'center',
@@ -2338,10 +2353,10 @@ const renderShowResult = () => (
     >
       <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'Warten' : 'Info'}</div>
       <h3 style={{ ...heading, marginBottom: 4 }}>{title}</h3>
-      {subtitle && <p style={mutedText}>{subtitle}</p>}
-      {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
-      <div style={hourglassStyle}>{'\u23F3'}</div>
-      {hasTimer && (
+        {subtitle && <p style={mutedText}>{subtitle}</p>}
+        {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
+        <div style={hourglassStyle}>{'\u23F3'}</div>
+        {hasTimer && (
         <>
           <div style={softDivider} />
           <div style={progressOuter(accentColor)}>
@@ -2352,10 +2367,11 @@ const renderShowResult = () => (
           </div>
         </>
       )}
-    </div>
-  );
+      </div>
+    );
+  }
 
-  const renderByPhase = () => {
+  function renderByPhase() {
     if (gameState === 'BLITZ') {
       return renderBlitzStage();
     }

@@ -232,6 +232,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [timerDurationMs, setTimerDurationMs] = useState<number | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState(0);
+  const [lobbyHighlightIndex, setLobbyHighlightIndex] = useState(0);
   const [evaluating, setEvaluating] = useState(false);
   const [answerVisible, setAnswerVisible] = useState(false);
   const [solution, setSolution] = useState<string | undefined>(undefined);

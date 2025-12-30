@@ -574,50 +574,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [question?.id, question?.type, gameState, revealStamp, prefersReducedMotion, language]);
 
   useEffect(() => {
-    if (!question || question.type !== 'MU_CHO') {
-      setMuChoHopIndex(null);
-      setMuChoLockedIndex(null);
-      return;
-    }
-    if (gameState !== 'Q_REVEAL') {
-      setMuChoHopIndex(null);
-      setMuChoLockedIndex(null);
-      return;
-    }
-    const q: any = question;
-    const totalOptions = mcOptions?.length ?? 0;
-    const correctIndex =
-      typeof q.correctIndex === 'number'
-        ? q.correctIndex
-        : typeof q.correct === 'number'
-        ? q.correct
-        : typeof q.correctAnswer === 'number'
-        ? q.correctAnswer
-        : Array.isArray(q.correctAnswers)
-        ? q.correctAnswers[0]
-        : null;
-    if (correctIndex === null) return;
-    if (prefersReducedMotion || totalOptions === 0) {
-      setMuChoHopIndex(correctIndex);
-      setMuChoLockedIndex(correctIndex);
-      return;
-    }
-    const hops = Array.from({ length: 6 }, () => Math.floor(Math.random() * totalOptions));
-    hops.push(correctIndex);
-    let hopIdx = 0;
-    const hopTimer = window.setInterval(() => {
-      const nextIdx = hops[Math.min(hopIdx, hops.length - 1)];
-      setMuChoHopIndex(nextIdx);
-      if (hopIdx >= hops.length - 1) {
-        setMuChoLockedIndex(correctIndex);
-        window.clearInterval(hopTimer);
-      }
-      hopIdx += 1;
-    }, 110);
-    return () => window.clearInterval(hopTimer);
-  }, [question?.id, question?.type, mcOptions?.length, gameState, revealStamp, prefersReducedMotion]);
-
-  useEffect(() => {
     if (lastQuestion) setShowLastQuestion(true);
   }, [lastQuestion]);
 
@@ -993,6 +949,50 @@ useEffect(() => {
       language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
     return Array.isArray(opts) ? opts : null;
   }, [question?.id, language]);
+
+  useEffect(() => {
+    if (!question || question.type !== 'MU_CHO') {
+      setMuChoHopIndex(null);
+      setMuChoLockedIndex(null);
+      return;
+    }
+    if (gameState !== 'Q_REVEAL') {
+      setMuChoHopIndex(null);
+      setMuChoLockedIndex(null);
+      return;
+    }
+    const q: any = question;
+    const totalOptions = mcOptions?.length ?? 0;
+    const correctIndex =
+      typeof q.correctIndex === 'number'
+        ? q.correctIndex
+        : typeof q.correct === 'number'
+        ? q.correct
+        : typeof q.correctAnswer === 'number'
+        ? q.correctAnswer
+        : Array.isArray(q.correctAnswers)
+        ? q.correctAnswers[0]
+        : null;
+    if (correctIndex === null) return;
+    if (prefersReducedMotion || totalOptions === 0) {
+      setMuChoHopIndex(correctIndex);
+      setMuChoLockedIndex(correctIndex);
+      return;
+    }
+    const hops = Array.from({ length: 6 }, () => Math.floor(Math.random() * totalOptions));
+    hops.push(correctIndex);
+    let hopIdx = 0;
+    const hopTimer = window.setInterval(() => {
+      const nextIdx = hops[Math.min(hopIdx, hops.length - 1)];
+      setMuChoHopIndex(nextIdx);
+      if (hopIdx >= hops.length - 1) {
+        setMuChoLockedIndex(correctIndex);
+        window.clearInterval(hopTimer);
+      }
+      hopIdx += 1;
+    }, 110);
+    return () => window.clearInterval(hopTimer);
+  }, [question?.id, question?.type, mcOptions?.length, gameState, revealStamp, prefersReducedMotion]);
   const mcCorrectIndex = useMemo(() => {
     if (!question || question.type !== 'MU_CHO') return null;
     const q: any = question;

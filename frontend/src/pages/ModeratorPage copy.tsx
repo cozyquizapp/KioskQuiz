@@ -665,7 +665,7 @@ const phaseLabel =
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <img
-                    src="/logo.png?v=2"
+                    src="/logo.png?v=3"
                     alt="Cozy Kiosk Quiz"
                     style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'contain', boxShadow: 'none' }}
                   />

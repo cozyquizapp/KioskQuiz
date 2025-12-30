@@ -26,6 +26,7 @@
 .cozy-beamer-shell {
   position: relative;
   min-height: 100vh;
+  z-index: 0;
 }
 
 .cozy-beamer-shell::after {
@@ -35,10 +36,16 @@
   right: -30px;
   width: 320px;
   height: 320px;
-  opacity: 0.08;
-  background: url('/logo.png?v=2') no-repeat center/contain;
+  opacity: 0.05;
+  background: url('/logo.png?v=3') no-repeat center/contain;
+  filter: saturate(0.9);
   pointer-events: none;
   z-index: 0;
+}
+
+.cozy-beamer-shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 .beamer-frame.scene-blitz {

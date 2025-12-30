@@ -2005,7 +2005,7 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="cozyWolfBadge">
-                  <img src="/logo.png?v=2" alt="Cozy Wolf" />
+                  <img src="/logo.png?v=3" alt="Cozy Wolf" />
                 </div>
               </div>
             </div>

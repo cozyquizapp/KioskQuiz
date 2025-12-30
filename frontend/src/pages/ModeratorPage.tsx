@@ -314,6 +314,25 @@ function ModeratorPage(): React.ReactElement {
     return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
   }, [socketTimerEndsAt, countdownTick]);
 
+  function handleScoreboardAction() {
+    if (!roomCode) return;
+    if (normalizedGameState === 'AWARDS') {
+      handleShowAwards();
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit('host:toggleScoreboardOverlay', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+      }
+    });
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -392,25 +411,6 @@ function ModeratorPage(): React.ReactElement {
       }
     };
 
-  function handleScoreboardAction() {
-    if (!roomCode) return;
-    if (normalizedGameState === 'AWARDS') {
-      handleShowAwards();
-      return;
-    }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    socketEmit('host:toggleScoreboardOverlay', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
-      if (!resp?.ok) {
-        setToast(resp?.error || 'Aktion fehlgeschlagen');
-        setTimeout(() => setToast(null), 2200);
-      }
-    });
-  }
-
     const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
       const key = (event.key || '').toLowerCase();
       const code = (event.code || '').toLowerCase();
@@ -474,6 +474,9 @@ function ModeratorPage(): React.ReactElement {
     isScoreboardState,
     isScoreboardPauseState,
     askedCount,
+    normalizedGameState,
+    socketEmit,
+    handleScoreboardAction,
     handlePotatoStart,
     handlePotatoConfirmThemes,
     handlePotatoNextTurn,
@@ -2803,7 +2806,7 @@ const renderCozyStagePanel = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <img
-                    src="/logo.png?v=2"
+                    src="/logo.png?v=3"
                     alt="Cozy Kiosk Quiz"
                     style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'contain', boxShadow: 'none' }}
                   />

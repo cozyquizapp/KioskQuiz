@@ -284,7 +284,7 @@ const BingoPrintPage = () => {
     const pageHeight = pdf.internal.pageSize.getHeight();
     const targetSize = Math.min(pageWidth - 14, pageHeight - 28);
 
-    const canvas = await renderBackCanvas(2400, '/logo.png');
+    const canvas = await renderBackCanvas(2400, '/logo.png?v=2');
     const dataUrl = canvas.toDataURL('image/png');
     const x = (pageWidth - targetSize) / 2;
     const y = (pageHeight - targetSize) / 2;
@@ -299,7 +299,7 @@ const BingoPrintPage = () => {
     const pageHeight = pdf.internal.pageSize.getHeight();
     const targetSize = Math.min(pageWidth - 14, pageHeight - 28);
 
-    const canvas = await renderBackCanvas(2400, '/logo.png');
+    const canvas = await renderBackCanvas(2400, '/logo.png?v=2');
     const dataUrl = canvas.toDataURL('image/png');
     const x = (pageWidth - targetSize) / 2;
     const y = (pageHeight - targetSize) / 2;
@@ -460,7 +460,7 @@ const BingoPrintPage = () => {
           }}
         >
           <img
-            src="/logo.png"
+            src="/logo.png?v=2"
             alt="Back Logo"
             style={{
               position: 'absolute',
@@ -634,7 +634,7 @@ const BingoPrintPage = () => {
             >
               <div className="back-face" style={backFrameStyle}>
                 <img
-                  src="/logo.png"
+                  src="/logo.png?v=2"
                   alt=""
                   style={{
                     width: '70%',

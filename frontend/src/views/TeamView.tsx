@@ -2469,7 +2469,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   border: '1px solid rgba(255,255,255,0.16)'
                 }}
               >
-                <img src="/logo.png" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+                <img src="/logo.png?v=2" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
                 <span style={{ fontWeight: 800 }}>Cozy Kiosk Quiz</span>
               </div>
             </Link>
@@ -2607,7 +2607,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         </button>
       )}
       <div style={footerLogo}>
-        <img src="/logo.png" alt="Cozy Wolf" style={{ width: 120, opacity: 0.85, objectFit: 'contain' }} />
+        <img src="/logo.png?v=2" alt="Cozy Wolf" style={{ width: 120, opacity: 0.85, objectFit: 'contain' }} />
       </div>
     </div>
   );

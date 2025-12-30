@@ -36,7 +36,7 @@
   width: 320px;
   height: 320px;
   opacity: 0.08;
-  background: url('/logo.png') no-repeat center/contain;
+  background: url('/logo.png?v=2') no-repeat center/contain;
   pointer-events: none;
   z-index: 0;
 }

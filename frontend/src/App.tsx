@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
 import AdminPage from './pages/AdminPage';
 import TeamPage from './pages/TeamPage';
 import BeamerPage from './pages/BeamerPage';
@@ -12,10 +13,45 @@ import BaukastenNeuPage from './pages/BaukastenNeuPage';
 import BingoPrintPage from './pages/BingoPrintPage';
 import Cozy60BuilderPage from './pages/Cozy60BuilderPage';
 
+class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  state = { error: null };
+
+  componentDidCatch(error: Error) {
+    this.setState({ error });
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#0b0d14', color: '#e2e8f0', padding: 24 }}>
+          <h2>Unerwarteter Fehler</h2>
+          <p>{this.state.error.message}</p>
+          <button
+            style={{
+              marginTop: 12,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#e2e8f0',
+              cursor: 'pointer'
+            }}
+            onClick={() => window.location.reload()}
+          >
+            Neu laden
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
   return (
-    <Routes>
+    <AppErrorBoundary>
+      <Routes>
       <Route path="/" element={<Navigate to="/team" replace />} />
       <Route path="/menu" element={<MenuPage />} />
       <Route path="/admin" element={<AdminPage />} />
@@ -38,7 +74,8 @@ function App() {
       <Route path="/stats" element={<StatsPage />} />
       <Route path="/draft-import" element={<DraftImportPage />} />
       <Route path="*" element={<Navigate to="/team" replace />} />
-    </Routes>
+      </Routes>
+    </AppErrorBoundary>
   );
 }
 

@@ -441,6 +441,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!blitzState?.deadline) return null;
     return Math.max(0, Math.ceil((blitzState.deadline - Date.now()) / 1000));
   }, [blitzState?.deadline, timerTick]);
+  const teamCount = useMemo(() => {
+    const scoreCount = scoreboard.length;
+    if (scoreCount) return scoreCount;
+    return blitzState?.submissions?.length ?? 0;
+  }, [scoreboard, blitzState?.submissions?.length]);
   const blitzItems = blitzState?.items ?? [];
   const totalBlitzItems = blitzItems.length || 5;
   const activeBlitzItemIndex = useMemo(() => {
@@ -1969,6 +1974,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     const results = blitzState.results || {};
     const themeLabel = blitzState.theme?.title || '?';
     const submissionCount = blitzState.submissions?.length ?? 0;
+    const totalTeamsLabel = teamCount ? String(teamCount) : '?';
     const currentItem = blitzItems[activeBlitzItemIndex];
     const totalItems = blitzItems.length || blitzAnswers.length || 5;
     return (
@@ -2046,8 +2052,8 @@ function TeamView({ roomCode }: TeamViewProps) {
             </div>
             <div style={{ fontSize: 13, color: '#94a3b8' }}>
               {language === 'de'
-                ? `Antworten: ${submissionCount}/${teams.length}`
-                : `Submissions: ${submissionCount}/${teams.length}`}
+                ? `Antworten: ${submissionCount}/${totalTeamsLabel}`
+                : `Submissions: ${submissionCount}/${totalTeamsLabel}`}
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {blitzAnswers.map((value, idx) => {

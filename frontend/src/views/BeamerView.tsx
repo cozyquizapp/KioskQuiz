@@ -436,6 +436,17 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [connectionStatus]);
 
   useEffect(() => {
+    if (!featureFlags.isCozyMode) {
+      return undefined;
+    }
+    if (gameState !== 'LOBBY' && gameState !== 'INTRO') {
+      return undefined;
+    }
+    const id = window.setInterval(() => setLobbyHighlightIndex((idx) => idx + 1), 5000);
+    return () => window.clearInterval(id);
+  }, [gameState, featureFlags.isCozyMode]);
+
+  useEffect(() => {
     if (gameState !== 'POTATO') {
       setPotatoTick(0);
       return undefined;
@@ -1227,13 +1238,13 @@ useEffect(() => {
   };
 
   const renderCozyIntroContent = (): JSX.Element => {
-    const headline = language === 'en' ? 'WELCOME' : 'WILLKOMMEN';
-    const subline =
+    const defaultHeadline = language === 'en' ? 'WELCOME' : 'WILLKOMMEN';
+    const defaultSubline =
       language === 'en'
-        ? 'Teams are joining ? show starts soon.'
+        ? 'Teams are joining — show starts soon.'
         : language === 'both'
-        ? 'Teams verbinden / connect ? gleich geht?s los.'
-        : 'Teams verbinden ? gleich geht?s los.';
+        ? 'Teams verbinden / connect — gleich geht’s los.'
+        : 'Teams verbinden – gleich geht’s los.';
     const connectedInfo =
       readyCount > 0
         ? `${readyCount}/${teams.length || 0} ${
@@ -1246,17 +1257,57 @@ useEffect(() => {
               ? 'Teams verbunden / connected'
               : 'teams connected'
           }`;
-    const tileCategories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
+    const tileCategories: QuizCategory[] = ['Cheese', 'Schaetzchen', 'Mu-Cho', 'Stimmts', 'GemischteTuete'];
+    const highlightCategory = tileCategories[lobbyHighlightIndex % tileCategories.length];
+    const heroCopy: Record<QuizCategory, { headline: string; subline: string }> = {
+      Cheese: {
+        headline: language === 'de' ? 'Ein Bild. Ein Blick. Eine Lösung.' : 'One image. One shot.',
+        subline:
+          language === 'de'
+            ? 'Entdeckt Details in Fotos & Illustrationen.'
+            : 'Look closer and spot every detail.'
+      },
+      Schaetzchen: {
+        headline: language === 'de' ? 'Treffsicher schätzen.' : 'Guess with precision.',
+        subline:
+          language === 'de'
+            ? 'Zahlengefühl entscheidet über die Punkte.'
+            : 'Numbers and instincts rule the round.'
+      },
+      'Mu-Cho': {
+        headline: language === 'de' ? 'Vier Optionen, eine Chance.' : 'Four options, one chance.',
+        subline:
+          language === 'de'
+            ? 'Multiple Choice trifft Taktik.'
+            : 'Strategic multiple choice questions.'
+      },
+      Stimmts: {
+        headline: language === 'de' ? 'Fakt oder Fiktion?' : 'Fact or fiction?',
+        subline:
+          language === 'de'
+            ? 'Vertraut eurem Bauchgefühl bei 10 Punkten.'
+            : 'Trust your gut when placing 10 points.'
+      },
+      GemischteTuete: {
+        headline: language === 'de' ? 'Bunte Tüte, bunter Mix.' : 'Mixed bag of mechanics.',
+        subline:
+          language === 'de'
+            ? 'Ranking, Präzision, 8 Dinge – alles drin.'
+            : 'Rankings, precision ladders, 8 things.'
+      }
+    };
+    const heroText = heroCopy[highlightCategory] ?? { headline: defaultHeadline, subline: defaultSubline };
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     return (
-      <>
+      <div className="cozyLobbyShell">
         <div className="cozyLobbyGrid">
           <div className="cozyLobbyLeft">
-            {tileCategories.map((cat, idx) => {
+            {tileCategories.map((cat) => {
               const iconSrc = categoryIcons[cat];
+              const isActive = highlightCategory === cat;
               return (
-                <div key={`cozy-pill-${cat}`} className={`cozyLobbyPill${idx === 0 ? ' cozyLobbyPillActive' : ''}`}>
+                <div key={`cozy-pill-${cat}`} className={`cozyLobbyPill${isActive ? ' cozyLobbyPillActive' : ''}`}>
                   {iconSrc && <img src={iconSrc} alt={cat} />}
                   <div>
                     <strong>{getCategoryLabel(cat, language)}</strong>
@@ -1269,8 +1320,14 @@ useEffect(() => {
           <div className="cozyLobbyHero">
             <div className="cozyLobbyHeroInner">
               <span className="cozyHeroEyebrow">Cozy Quiz 60</span>
-              <h1>{headline}</h1>
-              <p>{subline}</p>
+              <div className="cozyHeroIconWrap">
+                {categoryIcons[highlightCategory] && (
+                  <img src={categoryIcons[highlightCategory]} alt={highlightCategory} />
+                )}
+                <span>{getCategoryLabel(highlightCategory, language)}</span>
+              </div>
+              <h1>{heroText.headline || defaultHeadline}</h1>
+              <p>{heroText.subline || defaultSubline}</p>
               <div className="cozyHeroRoom">{roomCode || '----'}</div>
               <div className="cozyHeroMeta">{connectedInfo}</div>
             </div>
@@ -1287,11 +1344,11 @@ useEffect(() => {
           <span>A COZY WOLF PRODUCTION</span>
           <div className="cozyLobbyWolfBadge">
             <span role="img" aria-label="Wolf">
-              ??
+              🐺
             </span>
           </div>
         </div>
-      </>
+      </div>
     );
   };
 

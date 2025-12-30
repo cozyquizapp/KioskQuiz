@@ -470,17 +470,30 @@
   gap: 12px;
 }
 
+.cozyLobbyShell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+  min-height: 0;
+}
+
 .cozyLobbyGrid {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 24px;
   width: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .cozyLobbyLeft {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .cozyLobbyPill {
@@ -528,6 +541,8 @@
   background: linear-gradient(140deg, #bfdbfe, #d8b4fe);
   color: #0f172a;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .cozyLobbyHeroInner {
@@ -535,6 +550,27 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+}
+
+.cozyHeroIconWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.cozyHeroIconWrap img {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+  object-fit: contain;
 }
 
 .cozyHeroEyebrow {
@@ -601,7 +637,6 @@
 }
 
 .cozyLobbyProductionBar {
-  margin-top: 28px;
   border-radius: 30px;
   padding: 14px 22px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -633,6 +668,7 @@
 @media (max-width: 1100px) {
   .cozyLobbyGrid {
     grid-template-columns: 1fr;
+    flex: initial;
   }
   .cozyLobbyLeft {
     flex-direction: row;
@@ -655,6 +691,7 @@
   .cozyLobbyProductionBar {
     width: 100%;
     justify-content: center;
+    margin-top: 8px;
   }
 }
 

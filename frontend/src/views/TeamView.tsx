@@ -2580,7 +2580,7 @@ const renderShowResult = () => (
             : 'Bingofeld'}
         </button>
       )}
-      {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && (
+      {featureFlags.showLegacyPanels && (
         <div style={footerLogo}>
           <img
             src={draftTheme?.logoUrl || '/cozy-logo.svg'}

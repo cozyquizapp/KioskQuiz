@@ -1,4 +1,4 @@
-﻿// Zentrale Typdefinitionen fÃ¼r Fragen, Mechaniken und RÃ¤ume
+﻿// Zentrale Typdefinitionen für Fragen, Mechaniken und Räume
 
 export type QuizCategory =
   | 'Schaetzchen'
@@ -180,7 +180,7 @@ export interface BaseQuestion {
   createdAt?: number; // Unix ms; optional für Sortierung "zuletzt hinzugefügt"
   media?: MediaBlock;
   imageUrl?: string;
-  mixedMechanic?: MixedMechanicId; // nur relevant fÃ¼r Gemischte TÃ¼te
+  mixedMechanic?: MixedMechanicId; // nur relevant für Gemischte Tüte
   mixedMechanicDetails?: MixedMechanicDetails | null;
   decorationLeft?: DecorationKey | null;
   decorationRight?: DecorationKey | null;
@@ -384,7 +384,7 @@ export interface BingoCell {
   marked: boolean;
 }
 
-export type BingoBoard = BingoCell[]; // LÃ¤nge 25
+export type BingoBoard = BingoCell[]; // Länge 25
 
 export interface AnswerResult {
   teamId: string;
@@ -406,7 +406,7 @@ export interface AnswerTieBreaker {
 export interface AnswerEntry {
   value: unknown;
   isCorrect?: boolean;
-  deviation?: number | null; // fÃ¼r SchÃ¤tzfragen
+  deviation?: number | null; // für Schätzfragen
   bestDeviation?: number | null;
   betPoints?: number;
   betPool?: number;
@@ -425,7 +425,7 @@ export interface QuestionMeta {
   categoryName: string;
 }
 
-// Client-/Server-UI-ZustÃ¤nde
+// Client-/Server-UI-Zustände
 export type ScreenState = 'lobby' | 'slot' | 'question' | 'finished';
 export type QuestionPhase = 'idle' | 'slot' | 'answering' | 'evaluated' | 'revealed';
 
@@ -514,6 +514,9 @@ export interface BlitzState {
   items: BlitzItemView[];
   submissions: string[];
   results: Record<string, BlitzSetResult>;
+  itemIndex?: number;
+  itemDeadline?: number | null;
+  itemDurationMs?: number | null;
 }
 
 export type SyncStatePayload = {
@@ -526,17 +529,21 @@ export type SyncStatePayload = {
   slotMeta?: SlotTransitionMeta | null;
 };
 
+export type NextStageHint = 'BLITZ' | 'Q11' | 'POTATO';
+
 export type StateUpdatePayload = {
   roomCode: string;
   state: CozyGameState;
   phase: QuestionPhase;
   currentQuestion: AnyQuestion | null;
-  timer: { endsAt: number | null; running: boolean };
+  timer: { endsAt: number | null; running: boolean; durationMs?: number | null };
   scores: Array<{ id: string; name: string; score: number }>;
   teamsConnected: number;
   questionProgress?: { asked: number; total: number };
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
+  nextStage?: NextStageHint | null;
+  scoreboardOverlayForced?: boolean;
   results?: AnswerAwardSnapshot[];
   warnings?: string[];
   supportsBingo?: boolean;

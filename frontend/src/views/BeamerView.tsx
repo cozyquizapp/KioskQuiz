@@ -239,6 +239,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [potato, setPotato] = useState<PotatoState | null>(null);
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
+  const [blitzItemTick, setBlitzItemTick] = useState(0);
+  const [blitzTick, setBlitzTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [potatoTick, setPotatoTick] = useState(0);
   const [potatoAttemptOverlay, setPotatoAttemptOverlay] = useState<{
@@ -299,6 +301,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const teamJoinLink = joinLinks?.team ?? null;
   const teamJoinQr = teamJoinLink ? buildQrUrl(teamJoinLink) : null;
   const showTechnicalHud = !featureFlags.isCozyMode || debugMode;
+  const allowLegacyOverlays = !featureFlags.isCozyMode || debugMode || featureFlags.showLegacyPanels;
 
   const timerRef = useRef<number | null>(null);
   const slotTimeoutRef = useRef<number | null>(null);
@@ -399,6 +402,24 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
     };
   }, [timerEndsAt]);
+
+  useEffect(() => {
+    if (!blitz?.itemDeadline) {
+      setBlitzItemTick(0);
+      return () => undefined;
+    }
+    const id = window.setInterval(() => setBlitzItemTick((tick) => tick + 1), 300);
+    return () => window.clearInterval(id);
+  }, [blitz?.itemDeadline]);
+
+  useEffect(() => {
+    if (!blitz?.deadline) {
+      setBlitzTick(0);
+      return () => undefined;
+    }
+    const id = window.setInterval(() => setBlitzTick((tick) => tick + 1), 400);
+    return () => window.clearInterval(id);
+  }, [blitz?.deadline]);
 
   // warn if disconnected > 5s
   useEffect(() => {
@@ -844,7 +865,11 @@ useEffect(() => {
   const blitzCountdown = useMemo(() => {
     if (!blitz?.deadline) return null;
     return Math.max(0, Math.ceil((blitz.deadline - Date.now()) / 1000));
-  }, [blitz?.deadline, potatoTick]);
+  }, [blitz?.deadline, blitzTick]);
+  const blitzItemSeconds = useMemo(() => {
+    if (!blitz?.itemDeadline) return null;
+    return Math.max(0, Math.ceil((blitz.itemDeadline - Date.now()) / 1000));
+  }, [blitz?.itemDeadline, blitzItemTick]);
   const totalQuestions = derivedQuestionProgress?.total ?? questionMeta?.globalTotal ?? 20;
   const rawRoundIndex = questionMeta?.globalIndex ?? derivedQuestionProgress?.asked ?? 0;
   const currentRoundNumber =
@@ -1205,47 +1230,68 @@ useEffect(() => {
     const headline = language === 'en' ? 'WELCOME' : 'WILLKOMMEN';
     const subline =
       language === 'en'
-        ? 'Teams connect – the show starts shortly'
+        ? 'Teams are joining ? show starts soon.'
         : language === 'both'
-        ? 'Teams verbinden / teams connect – gleich geht’s los'
-        : 'Teams verbinden – gleich geht’s los';
-    const teamsBadge =
-      language === 'en'
-        ? `TEAMS: ${teams.length || 0}`
-        : `TEAMS: ${teams.length || 0}`;
+        ? 'Teams verbinden / connect ? gleich geht?s los.'
+        : 'Teams verbinden ? gleich geht?s los.';
+    const connectedInfo =
+      readyCount > 0
+        ? `${readyCount}/${teams.length || 0} ${
+            language === 'de' ? 'bereit' : language === 'both' ? 'bereit / ready' : 'ready'
+          }`
+        : `${teams.length || 0} ${
+            language === 'de'
+              ? 'Teams verbunden'
+              : language === 'both'
+              ? 'Teams verbunden / connected'
+              : 'teams connected'
+          }`;
     const tileCategories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     return (
-      <div className="beamer-lobby-slide">
-        <div className="beamer-lobby-hero">
-          <span className="beamer-lobby-eyebrow">Cozy Quiz 60</span>
-          <h1>{headline}</h1>
-          <p>{subline}</p>
-          <span className="beamer-lobby-badge">{teamsBadge}</span>
-        </div>
-        <div className="beamer-lobby-tiles">
-          {tileCategories.map((cat) => (
-            <div className="beamer-lobby-tile" key={`lobby-tile-${cat}`}>
-              <strong>{getCategoryLabel(cat, language)}</strong>
-              <span>{getCategoryDescription(cat, language)}</span>
-            </div>
-          ))}
-        </div>
-        {showQr && teamJoinQr && (
-          <div className="beamer-lobby-qr">
-            <img src={teamJoinQr} alt="Team QR" />
-            <div>
-              {language === 'en'
-                ? 'Scan to join'
-                : language === 'both'
-                ? 'Scannen / scan to join'
-                : 'Jetzt scannen & beitreten'}
-            </div>
-            {joinDisplay && <div>{joinDisplay}</div>}
+      <>
+        <div className="cozyLobbyGrid">
+          <div className="cozyLobbyLeft">
+            {tileCategories.map((cat, idx) => {
+              const iconSrc = categoryIcons[cat];
+              return (
+                <div key={`cozy-pill-${cat}`} className={`cozyLobbyPill${idx === 0 ? ' cozyLobbyPillActive' : ''}`}>
+                  {iconSrc && <img src={iconSrc} alt={cat} />}
+                  <div>
+                    <strong>{getCategoryLabel(cat, language)}</strong>
+                    <span>{getCategoryDescription(cat, language)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+          <div className="cozyLobbyHero">
+            <div className="cozyLobbyHeroInner">
+              <span className="cozyHeroEyebrow">Cozy Quiz 60</span>
+              <h1>{headline}</h1>
+              <p>{subline}</p>
+              <div className="cozyHeroRoom">{roomCode || '----'}</div>
+              <div className="cozyHeroMeta">{connectedInfo}</div>
+            </div>
+            {showQr && teamJoinQr && (
+              <div className="cozyLobbyQrCard">
+                <img src={teamJoinQr} alt="Team QR" />
+                <div>{language === 'en' ? 'Scan & join now' : 'Jetzt scannen & beitreten'}</div>
+                {joinDisplay && <div className="cozyQrLink">{joinDisplay}</div>}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="cozyLobbyProductionBar">
+          <span>A COZY WOLF PRODUCTION</span>
+          <div className="cozyLobbyWolfBadge">
+            <span role="img" aria-label="Wolf">
+              ??
+            </span>
+          </div>
+        </div>
+      </>
     );
   };
 
@@ -1357,43 +1403,109 @@ useEffect(() => {
     if (!blitz) return null;
     const detailMap: Record<string, string> = {};
     Object.entries(blitz.results || {}).forEach(([teamId, stats]) => {
-      detailMap[teamId] = `${stats.correctCount ?? 0}/5, +${stats.pointsAwarded ?? 0}`;
+      const awarded = stats.pointsAwarded ?? 0;
+      const awardedLabel = `${awarded >= 0 ? '+' : ''}${awarded}`;
+      detailMap[teamId] = `${stats.correctCount ?? 0}/5 · ${awardedLabel}`;
     });
     const submissions = blitz.submissions?.length ?? 0;
+    const items = blitz.items ?? [];
+    const totalItems = Math.max(1, items.length || 5);
+    const maxIndex = totalItems - 1;
+    const rawIndex =
+      blitz.phase === 'PLAYING'
+        ? typeof blitz.itemIndex === 'number' && blitz.itemIndex >= 0
+          ? blitz.itemIndex
+          : 0
+        : maxIndex;
+    const activeIndex = Math.min(maxIndex, Math.max(0, rawIndex));
+    const activeItem = items[activeIndex];
+    const timeline = Array.from({ length: totalItems }, (_, idx) => {
+      if (blitz.phase !== 'PLAYING') return idx <= activeIndex ? 'done' : 'pending';
+      if (idx < activeIndex) return 'done';
+      if (idx === activeIndex) return 'current';
+      return 'pending';
+    });
+    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
+    const resultsMap = blitz.results || {};
+    const scoreboardReady = Object.keys(resultsMap).length > 0;
+    const setFinished = blitz.phase !== 'PLAYING';
+    const waitingForReveal = setFinished && !scoreboardReady;
+
     return (
-      <div className="beamer-stack">
+      <div className="beamer-stack blitz-stack">
         <div className="beamer-question-main">
           <div className="beamer-question-category">
-            {language === 'de' ? 'Blitz-Thema' : language === 'both' ? 'Blitz-Thema / Theme' : 'Theme'}
+            {language === 'de'
+              ? 'Blitz Battle'
+              : language === 'both'
+              ? 'Blitz Battle / Blitz'
+              : 'Blitz Battle'}{' '}
+            ? Set {setLabel}
           </div>
           <div className="beamer-question-text">{blitz.theme?.title || '-'}</div>
           <div className="beamer-list">
             <span>
               {language === 'de'
-                ? `Eingänge ${submissions}/${teams.length}`
+                ? `Antworten ${submissions}/${teams.length}`
+                : language === 'both'
+                ? `Antworten ${submissions}/${teams.length} / Submissions`
                 : `Submissions ${submissions}/${teams.length}`}
             </span>
             {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
+            {blitzItemSeconds !== null && blitz.phase === 'PLAYING' && (
+              <span className="beamer-countdown beamer-countdown-secondary">
+                {language === 'de' ? 'Item' : 'Item'} {Math.max(0, blitzItemSeconds)}s
+              </span>
+            )}
           </div>
         </div>
-        {blitz.items?.length ? (
-          <div className="beamer-grid">
-            {blitz.items.map((item, idx) => (
-              <div className="beamer-card" key={item.id || idx}>
-                <strong>{language === 'de' ? `Item ${idx + 1}` : `Item ${idx + 1}`}</strong>
-                {item.mediaUrl && <img src={item.mediaUrl} alt={item.prompt || `Blitz ${idx + 1}`} />}
-                {item.prompt && <span>{item.prompt}</span>}
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {Object.keys(blitz.results || {}).length > 0 && (
+
+        {blitz.phase === 'PLAYING' ? (
           <>
-            <div className="beamer-label">
-              {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+            <div className="beamer-card blitz-current-card">
+              {activeItem?.mediaUrl && (
+                <img
+                  src={activeItem.mediaUrl}
+                  alt={activeItem.prompt || `Blitz ${activeIndex + 1}`}
+                  className="blitz-current-image"
+                />
+              )}
+              <div className="blitz-item-title">
+                {activeItem?.prompt ||
+                  `${language === 'de' ? 'Item' : 'Item'} ${activeIndex + 1}/${totalItems}`}
+              </div>
+              <div className="blitz-item-meta">
+                {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
+              </div>
             </div>
-            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+            <div className="blitz-timeline">
+              {timeline.map((status, idx) => (
+                <div key={`blitz-step-${idx}`} className={`blitz-chip ${status}`}>
+                  <span>{idx + 1}</span>
+                </div>
+              ))}
+            </div>
           </>
+        ) : (
+          <div className="beamer-card blitz-results-card">
+            {waitingForReveal && (
+              <div className="blitz-results-pending">
+                {language === 'de'
+                  ? 'Set abgeschlossen. Moderator zeigt gleich die Ergebnisse.'
+                  : language === 'both'
+                  ? 'Set abgeschlossen / Waiting for reveal.'
+                  : 'Set finished. Waiting for reveal.'}
+              </div>
+            )}
+            {scoreboardReady && (
+              <>
+                <div className="beamer-question-category">
+                  {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+                </div>
+                {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+              </>
+            )}
+          </div>
         )}
       </div>
     );
@@ -1674,8 +1786,8 @@ useEffect(() => {
           <BeamerFrame
             key={`${sceneKey}-intro`}
             {...baseFrameProps}
-            title="WILLKOMMEN"
-            subtitle={language === 'de' ? 'Moderator bereitet alles vor' : 'Host is getting ready'}
+            title=""
+            subtitle=""
             badgeLabel="LOBBY"
             badgeTone="muted"
             footerMessage={language === 'de' ? 'Teams jetzt verbinden' : 'Teams can join now'}
@@ -2040,124 +2152,9 @@ useEffect(() => {
   };
 
   const renderBlitzView = () => {
-    if (!blitz) return renderScoreboard();
-    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
-    const submissions = blitz.submissions?.length ?? 0;
-    const results = blitz.results || {};
-    const items = blitz.items || [];
-    const themeName = blitz.theme?.title || '-';
-    return (
-      <div style={cardFrame}>
-        <div
-          style={{
-            borderRadius: 32,
-            border: '1px solid rgba(255,255,255,0.18)',
-            background: 'linear-gradient(135deg, rgba(14,17,32,0.92), rgba(13,16,26,0.85))',
-            padding: '26px 24px',
-            minHeight: 280
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 28, fontWeight: 900 }}>Blitz Battle</div>
-            <div style={{ ...pillRule, borderColor: 'rgba(59,130,246,0.4)', background: 'rgba(59,130,246,0.15)' }}>
-              Set {setLabel}
-            </div>
-          </div>
-          <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
-            {language === 'de' ? 'Thema' : 'Theme'}: {themeName}
-          </div>
-          {blitz.phase === 'PLAYING' ? (
-            <>
-              <div style={{ marginTop: 6, color: '#cbd5e1' }}>
-                {language === 'de'
-                  ? 'Antworten werden gesammelt.'
-                  : 'Collecting answers...'}
-              </div>
-              <div style={{ marginTop: 6, color: '#94a3b8' }}>
-                {language === 'de'
-                  ? `Eingänge: ${submissions}/${teams.length}`
-                  : `Submissions: ${submissions}/${teams.length}`}
-              </div>
-              <div
-                style={{
-                  marginTop: 12,
-                  display: 'grid',
-                  gap: 12,
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
-                }}
-              >
-                {items.map((item, idx) => (
-                  <div
-                    key={`blitz-card-${item.id || idx}`}
-                    style={{
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 18,
-                      padding: '12px 14px',
-                      background: 'rgba(15,18,28,0.55)',
-                      minHeight: 120,
-                      display: 'grid',
-                      gap: 6
-                    }}
-                  >
-                    <div style={{ fontSize: 14, fontWeight: 800 }}>Item {idx + 1}</div>
-                    {item.mediaUrl && (
-                      <img
-                        src={item.mediaUrl}
-                        alt={item.prompt || `Blitz Item ${idx + 1}`}
-                        style={{ width: '100%', borderRadius: 12, objectFit: 'cover', maxHeight: 140 }}
-                      />
-                    )}
-                    {item.prompt && <div style={{ fontSize: 13, color: '#cbd5e1' }}>{item.prompt}</div>}
-                  </div>
-                ))}
-              </div>
-              {blitzCountdown !== null && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(59,130,246,0.4)',
-                    background: 'rgba(59,130,246,0.14)'
-                  }}
-                >
-                  ? {blitzCountdown}s
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{ marginTop: 8, fontWeight: 700 }}>
-                {language === 'de' ? 'Set-Ergebnis' : 'Set result'}
-              </div>
-              <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-                {sortedScoreTeams.map((team) => (
-                  <div
-                    key={`blitz-result-${team.id}`}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr auto auto',
-                      gap: 12,
-                      padding: '10px 12px',
-                      borderRadius: 16,
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: 'rgba(0,0,0,0.35)'
-                    }}
-                  >
-                    <span>{team.name}</span>
-                    <span>{results[team.id]?.correctCount ?? 0}/5</span>
-                    <span style={{ fontWeight: 900 }}>+{results[team.id]?.pointsAwarded ?? 0}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
+    const shared = renderCozyBlitzContent();
+    if (!shared) return renderScoreboard();
+    return <div style={cardFrame}>{shared}</div>;
   };
 
   return (
@@ -2263,7 +2260,7 @@ useEffect(() => {
           </>
         )}
       </div>
-      {lastQuestion && showLastQuestion && (
+      {allowLegacyOverlays && lastQuestion && showLastQuestion && (
         <div
           style={{
             position: 'fixed',
@@ -2303,7 +2300,7 @@ useEffect(() => {
           </button>
         </div>
       )}
-      {lastQuestion && !showLastQuestion && (
+      {allowLegacyOverlays && lastQuestion && !showLastQuestion && (
         <button
           style={{
             position: 'fixed',

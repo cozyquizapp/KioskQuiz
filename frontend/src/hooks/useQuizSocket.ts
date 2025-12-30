@@ -10,7 +10,8 @@ import {
   StateUpdatePayload,
   CozyGameState,
   PotatoState,
-  BlitzState
+  BlitzState,
+  NextStageHint
 } from '@shared/quizTypes';
 import { fetchAnswers } from '../api';
 
@@ -19,6 +20,7 @@ type SocketEvents = {
   questionMeta?: QuestionMeta | null;
   questionPhase?: QuestionPhase;
   timerEndsAt?: number | null;
+  timerDurationMs?: number | null;
   answers?: Record<string, AnswerEntry & { answer?: unknown }>;
   teams?: Record<string, Team>;
   solution?: string;
@@ -32,6 +34,8 @@ type SocketEvents = {
   warnings?: string[];
   supportsBingo?: boolean;
   config?: StateUpdatePayload['config'];
+  nextStage?: NextStageHint | null;
+  scoreboardOverlayForced?: boolean;
 };
 
 export const useQuizSocket = (roomCode: string) => {
@@ -142,6 +146,7 @@ export const useQuizSocket = (roomCode: string) => {
           payload.currentQuestion !== undefined ? payload.currentQuestion : prev.currentQuestion,
         questionPhase: payload.phase,
         timerEndsAt: payload.timer?.endsAt ?? prev.timerEndsAt,
+        timerDurationMs: payload.timer?.durationMs ?? prev.timerDurationMs,
         gameState: payload.state,
         scores: payload.scores,
         teamsConnected: payload.teamsConnected,
@@ -151,7 +156,9 @@ export const useQuizSocket = (roomCode: string) => {
         results: payload.results ?? prev.results,
         warnings: payload.warnings ?? prev.warnings,
         supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
-        config: payload.config ?? prev.config
+        config: payload.config ?? prev.config,
+        nextStage: payload.nextStage ?? prev.nextStage,
+        scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced
       }));
     };
 

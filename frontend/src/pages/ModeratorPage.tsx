@@ -207,6 +207,20 @@ function ModeratorPage(): React.ReactElement {
     nextStage: socketNextStage,
     scoreboardOverlayForced: socketScoreboardOverlayForced
   } = useQuizSocket(roomCode);
+  const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
+  const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
+    LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
+    INTRO: { label: 'Intro', hint: 'Intro/Regeln', tone: 'setup' },
+    Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antwortphase läuft', tone: 'live' },
+    Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflösen', tone: 'eval' },
+    Q_REVEAL: { label: 'Reveal', hint: 'Antworten werden gezeigt', tone: 'eval' },
+    SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand wird gezeigt', tone: 'eval' },
+    SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/im Scoreboard', tone: 'eval' },
+    BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Sets laufen', tone: 'live' },
+    POTATO: { label: 'Heisse Kartoffel', hint: 'Finale läuft', tone: 'live' },
+    AWARDS: { label: 'Awards', hint: 'Sieger werden gezeigt', tone: 'final' }
+  };
+  const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
   const changeViewPhase = (phase: ViewPhase) => {
     setUserViewPhase(phase);
     setViewPhase(phase);
@@ -378,7 +392,37 @@ function ModeratorPage(): React.ReactElement {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [roomCode, showJoinScreen, potato]);
+  }, [
+    roomCode,
+    showJoinScreen,
+    potato,
+    potatoPhase,
+    potatoConflict,
+    hasWinnerDraft,
+    potatoFirstRoundPending,
+    potatoAllRoundsComplete,
+    totalQuestions,
+    blitzPhase,
+    blitzResultsCount,
+    blitzSelectedCount,
+    blitzSetIndex,
+    isScoreboardState,
+    isScoreboardPauseState,
+    askedCount,
+    handlePotatoStart,
+    handlePotatoConfirmThemes,
+    handlePotatoNextTurn,
+    handlePotatoStrike,
+    handlePotatoStartRound,
+    handlePotatoEndRound,
+    handlePotatoNextRound,
+    handlePotatoFinish,
+    emitBlitzEvent,
+    handleNextQuestion,
+    handleLockQuestion,
+    handleReveal,
+    handleScoreboardAction
+  ]);
 
 
   useEffect(() => {
@@ -1053,23 +1097,6 @@ function ModeratorPage(): React.ReactElement {
       phase === 'question' ? 'live' : phase === 'evaluating' ? 'eval' : phase === 'final' ? 'final' : 'setup';
     return pill(`Phase: ${label}`, tone);
   })();
-  const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> =
-    {
-      LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
-      INTRO: { label: 'Intro', hint: 'Intro & Regeln laufen', tone: 'setup' },
-      Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antworten offen', tone: 'live' },
-      Q_LOCKED: { label: 'Gesperrt', hint: 'Keine Antworten mehr', tone: 'eval' },
-      Q_REVEAL: { label: 'Reveal', hint: 'Auflösung läuft', tone: 'final' },
-      SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand zeigen', tone: 'eval' },
-      SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/Übergang', tone: 'setup' },
-      BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Runde aktiv', tone: 'live' },
-      POTATO: { label: 'Heisse Kartoffel', hint: 'Finale läuft', tone: 'live' },
-      AWARDS: { label: 'Awards', hint: 'Finale Scores & Awards', tone: 'final' }
-    };
-  const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
-  const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
-  const nextStage = socketNextStage ?? null;
-
   const phaseLabel =
     viewPhase === 'pre'
       ? 'Vor Quiz'

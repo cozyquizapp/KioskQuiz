@@ -207,6 +207,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const potatoInputRef = useRef<HTMLInputElement | null>(null);
   const lastPotatoActiveRef = useRef<string | null>(null);
   const potatoToastTimeoutRef = useRef<number | null>(null);
+  const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const [reconnectKey, setReconnectKey] = useState(0);
   const storageKey = (suffix: string) => `team:${roomCode}:${suffix}`;
   useEffect(() => {
@@ -391,6 +392,22 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!blitzState?.deadline) return null;
     return Math.max(0, Math.ceil((blitzState.deadline - Date.now()) / 1000));
   }, [blitzState?.deadline, timerTick]);
+  const blitzItems = blitzState?.items ?? [];
+  const totalBlitzItems = blitzItems.length || 5;
+  const activeBlitzItemIndex = useMemo(() => {
+    if (!totalBlitzItems) return 0;
+    const rawIndex = blitzState?.itemIndex ?? 0;
+    return Math.min(totalBlitzItems - 1, Math.max(0, rawIndex));
+  }, [blitzState?.itemIndex, totalBlitzItems]);
+  const blitzItemCountdown = useMemo(() => {
+    if (!blitzState?.itemDeadline) return null;
+    return Math.max(0, Math.ceil((blitzState.itemDeadline - Date.now()) / 1000));
+  }, [blitzState?.itemDeadline, timerTick]);
+  const isBlitzPlaying = gameState === 'BLITZ' && blitzState?.phase === 'PLAYING';
+  const isPotatoActiveTurn =
+    gameState === 'POTATO' &&
+    potatoState?.phase === 'PLAYING' &&
+    potatoState?.activeTeamId === teamId;
 
   useEffect(() => {
     if (!teamId) return;
@@ -399,6 +416,18 @@ function TeamView({ roomCode }: TeamViewProps) {
       setBlitzAnswers(['', '', '', '', '']);
     }
   }, [teamId, blitzState]);
+
+  useEffect(() => {
+    if (!isBlitzPlaying) return;
+    if (blitzSubmitted) return;
+    const ref = blitzInputsRef.current[activeBlitzItemIndex];
+    if (ref && document.activeElement !== ref) {
+      ref.focus({ preventScroll: true });
+      if (typeof ref.select === 'function') {
+        ref.select();
+      }
+    }
+  }, [isBlitzPlaying, blitzSubmitted, activeBlitzItemIndex]);
 
   const handleReconnect = () => {
     setConnectionStatus('connecting');
@@ -517,7 +546,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         }
       }
       if (payload.timer) {
-        setTimerEndsAt(payload.timer.endsAt);
+        setTimerEndsAt(payload.timer.endsAt ?? null);
+        if (payload.timer.durationMs && payload.timer.durationMs > 0) {
+          setTimerDuration(Math.max(1, Math.round(payload.timer.durationMs / 1000)));
+        }
       }
       if (payload.results && teamId) {
         const entry = payload.results.find((res) => res.teamId === teamId);
@@ -552,7 +584,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
-        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. Ã¼ber teamResult.
+        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
         setPhase('showResult');
       }
     });
@@ -996,7 +1028,7 @@ const handleSubmit = async () => {
     } catch (err) {
       setMessage(
         language === 'de'
-          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prÃ¼fen.'
+          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prüfen.'
           : 'Could not send answer. Please check connection.'
       );
     }
@@ -1007,7 +1039,7 @@ const handleSubmit = async () => {
     if (payload.kind === 'top5') {
       const values = bunteTop5Order;
       if (values.length !== payload.items.length || values.some((val) => !val)) {
-        setMessage(language === 'de' ? 'Bitte alle Positionen wÃ¤hlen.' : 'Please fill all positions.');
+        setMessage(language === 'de' ? 'Bitte alle Positionen wählen.' : 'Please fill all positions.');
         return null;
       }
       return { kind: 'top5', order: values };
@@ -1021,7 +1053,7 @@ const handleSubmit = async () => {
     }
     if (payload.kind === 'oneOfEight') {
       if (!bunteOneChoice) {
-        setMessage(language === 'de' ? 'Bitte eine Option wÃ¤hlen.' : 'Please choose an option.');
+        setMessage(language === 'de' ? 'Bitte eine Option wählen.' : 'Please choose an option.');
         return null;
       }
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
@@ -1079,7 +1111,7 @@ const handleSubmit = async () => {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'WÃ¤hlen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1166,7 +1198,7 @@ const handleSubmit = async () => {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'WÃ¤hlen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1403,7 +1435,7 @@ const renderShowResult = () => (
       {resultPoints !== null && (
         <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
           {language === 'de' ? 'Punkte' : 'Points'}: {resultPoints}
-          {resultDetail ? ` Â· ${resultDetail}` : ''}
+          {resultDetail ? ` · ${resultDetail}` : ''}
         </p>
       )}
       {solution && (
@@ -1460,10 +1492,10 @@ const renderShowResult = () => (
         : potatoState.lastWinnerId || null;
     const infoCopy =
       language === 'en'
-        ? 'Max. 5 seconds per answer Â· duplicates = strike.'
+        ? 'Max. 30 seconds per answer - duplicates = strike.'
         : language === 'both'
-        ? 'Max. 5 Sekunden pro Antwort / Max. 5 seconds per answer. Doppelte Antworten verlieren ein Leben.'
-        : 'Max. 5 Sekunden pro Antwort. Doppelte Antworten verlieren ein Leben.';
+        ? 'Max. 30 Sekunden pro Antwort / Max. 30 seconds per answer. Doppelte Antworten verlieren ein Leben.'
+        : 'Max. 30 Sekunden pro Antwort. Doppelte Antworten verlieren ein Leben.';
     const usedAnswers = potatoState.usedAnswers || [];
     const isActiveTeam = potatoState.activeTeamId === teamId;
     const ownAttempt =
@@ -1597,7 +1629,7 @@ const renderShowResult = () => (
               }}
             >
               <span>{scoreboardLookup[teamId]?.name || teamId}</span>
-              <span style={{ fontWeight: 800 }}>{'â¤'.repeat(Math.max(1, livesLeft))}</span>
+              <span style={{ fontWeight: 800 }}>{'?'.repeat(Math.max(1, livesLeft))}</span>
             </div>
           );
         })}
@@ -1617,7 +1649,7 @@ const renderShowResult = () => (
           <>
             <p style={mutedText}>
               {language === 'de'
-                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen Ã¼brig bleiben.'
+                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
                 : language === 'both'
                 ? 'Teams bannen Themen / Teams are banning topics.'
                 : 'Teams are banning topics before the final.'}
@@ -1640,7 +1672,7 @@ const renderShowResult = () => (
                     <div style={{ fontSize: 12, color: '#94a3b8' }}>
                       {language === 'en' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({limit}):
                       {' '}
-                      {bans[team.id]?.length ? bans[team.id].join(', ') : 'â'}
+                      {bans[team.id]?.length ? bans[team.id].join(', ') : '?'}
                     </div>
                   </div>
                 );
@@ -1653,14 +1685,14 @@ const renderShowResult = () => (
           <>
             <div style={{ ...pillLabel, justifyContent: 'flex-start', gap: 8 }}>
               <span>{language === 'en' ? 'Topic' : language === 'both' ? 'Thema / Topic' : 'Thema'}:</span>
-              <strong>{potatoState.currentTheme || 'â'}</strong>
+              <strong>{potatoState.currentTheme || '?'}</strong>
             </div>
             <div style={{ fontWeight: 700 }}>
               {language === 'en' ? 'Active team' : language === 'both' ? 'Team am Zug / Active team' : 'Team am Zug'}:{' '}
-              {activeTeamName || 'â'}
+              {activeTeamName || '?'}
             </div>
             <div style={{ color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
-              {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s Â· ${infoCopy}` : infoCopy}
+              {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s - ${infoCopy}` : infoCopy}
             </div>
             {potatoDeadlinePassed && (
               <div
@@ -1739,7 +1771,7 @@ const renderShowResult = () => (
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                      <strong style={{ color: '#e2e8f0' }}>"{ownAttempt.text || 'â'}"</strong>
+                      <strong style={{ color: '#e2e8f0' }}>"{ownAttempt.text || '?'}"</strong>
                       {attemptLabel && (
                         <span
                           style={{
@@ -1830,8 +1862,8 @@ const renderShowResult = () => (
               {language === 'en'
                 ? 'Host prepares the next round.'
                 : language === 'both'
-                ? 'Host startet gleich die nÃ¤chste Runde / Host prepares next round.'
-                : 'Host bereitet die nÃ¤chste Runde vor.'}
+                ? 'Host startet gleich die nächste Runde / Host prepares next round.'
+                : 'Host bereitet die nächste Runde vor.'}
             </p>
           </>
         )}
@@ -1841,8 +1873,8 @@ const renderShowResult = () => (
             {language === 'en'
               ? 'Hot Potato finished. Await the awards!'
               : language === 'both'
-              ? 'Finale beendet â Awards gleich / Hot Potato finished.'
-              : 'Heisse Kartoffel beendet â Awards gleich!'}
+              ? 'Finale beendet ? Awards gleich / Hot Potato finished.'
+              : 'Heisse Kartoffel beendet ? Awards gleich!'}
           </div>
         )}
 
@@ -1913,30 +1945,108 @@ const renderShowResult = () => (
     }
     const canAnswer = blitzState.phase === 'PLAYING' && !blitzSubmitted;
     const results = blitzState.results || {};
-    const themeLabel = blitzState.theme?.title || 'â';
-    const blitzItems = blitzState.items || [];
+    const themeLabel = blitzState.theme?.title || '?';
+    const submissionCount = blitzState.submissions?.length ?? 0;
+    const currentItem = blitzItems[activeBlitzItemIndex];
+    const totalItems = blitzItems.length || blitzAnswers.length || 5;
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
           <span>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</span>
           <span>
-            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 Â· {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
+            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 • {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
           </span>
         </div>
         {blitzState.phase === 'PLAYING' ? (
           <>
-            <div style={{ fontSize: 14, color: '#cbd5e1' }}>
-              {language === 'de' ? 'Gib fÃ¼nf Antworten ein.' : 'Enter five answers.'}
+            <div style={{ fontSize: 14, color: '#cbd5e1', fontWeight: 600 }}>
+              {language === 'de'
+                ? `Item ${Math.min(activeBlitzItemIndex + 1, totalItems)}/${totalItems}`
+                : `Item ${Math.min(activeBlitzItemIndex + 1, totalItems)}/${totalItems}`}
+            </div>
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 16,
+                border: '1px solid rgba(96,165,250,0.35)',
+                background: 'rgba(15,23,42,0.7)',
+                display: 'grid',
+                gap: 8
+              }}
+            >
+              {currentItem?.mediaUrl && (
+                <img
+                  src={currentItem.mediaUrl}
+                  alt={currentItem.prompt || `Blitz Item ${activeBlitzItemIndex + 1}`}
+                  style={{ width: '100%', borderRadius: 14, maxHeight: 220, objectFit: 'cover' }}
+                />
+              )}
+              <div style={{ fontSize: 18, fontWeight: 800 }}>{currentItem?.prompt || `Item ${activeBlitzItemIndex + 1}`}</div>
+              {blitzItemCountdown !== null && (
+                <div
+                  style={{
+                    ...pillLabel,
+                    width: 'fit-content',
+                    background: 'rgba(96,165,250,0.15)',
+                    borderColor: 'rgba(96,165,250,0.4)',
+                    color: '#bfdbfe'
+                  }}
+                >
+                  {language === 'de' ? 'Item Restzeit' : 'Item time'}: {blitzItemCountdown}s
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {Array.from({ length: totalItems }).map((_, idx) => {
+                const status =
+                  idx === activeBlitzItemIndex ? 'current' : idx < activeBlitzItemIndex ? 'done' : 'upcoming';
+                const palette =
+                  status === 'current'
+                    ? { bg: 'rgba(96,165,250,0.2)', border: 'rgba(96,165,250,0.5)', color: '#dbeafe' }
+                    : status === 'done'
+                    ? { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }
+                    : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.12)', color: '#cbd5e1' };
+                return (
+                  <span
+                    key={`blitz-stage-chip-${idx}`}
+                    style={{
+                      ...pillLabel,
+                      background: palette.bg,
+                      borderColor: palette.border,
+                      color: palette.color,
+                      fontSize: 12
+                    }}
+                  >
+                    {language === 'de' ? `Item ${idx + 1}` : `Item ${idx + 1}`}
+                  </span>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              {language === 'de'
+                ? `Antworten: ${submissionCount}/${teams.length}`
+                : `Submissions: ${submissionCount}/${teams.length}`}
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {blitzAnswers.map((value, idx) => {
                 const item = blitzItems[idx];
                 const inputId = `blitz-input-${idx}`;
+                const isActive = idx === activeBlitzItemIndex;
                 return (
-                  <div key={inputId} style={{ display: 'grid', gap: 4 }}>
-                    <label htmlFor={inputId} style={{ fontSize: 12, color: '#cbd5e1' }}>
+                  <div
+                    key={inputId}
+                    style={{
+                      display: 'grid',
+                      gap: 4,
+                      padding: 6,
+                      borderRadius: 12,
+                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                      background: isActive ? 'rgba(96,165,250,0.08)' : 'rgba(15,23,42,0.65)'
+                    }}
+                  >
+                    <label htmlFor={inputId} style={{ fontSize: 12, color: isActive ? '#dbeafe' : '#cbd5e1' }}>
                       {language === 'de' ? 'Item' : 'Item'} {idx + 1}
-                      {item?.prompt ? ` Â· ${item.prompt}` : ''}
+                      {item?.prompt ? ` · ${item.prompt}` : ''}
                     </label>
                     {item?.mediaUrl && (
                       <img
@@ -1947,7 +2057,12 @@ const renderShowResult = () => (
                     )}
                     <input
                       id={inputId}
-                      style={inputStyle}
+                      ref={(el) => (blitzInputsRef.current[idx] = el)}
+                      style={{
+                        ...inputStyle,
+                        border: isActive ? '1px solid rgba(96,165,250,0.8)' : inputStyle.border,
+                        background: isActive ? 'rgba(15,78,134,0.45)' : inputStyle.background
+                      }}
                       value={value}
                       disabled={!canAnswer}
                       placeholder={`${language === 'de' ? 'Antwort' : 'Answer'} ${idx + 1}`}
@@ -1981,17 +2096,31 @@ const renderShowResult = () => (
                 ? 'Antworten senden'
                 : 'Submit answers'}
             </button>
-            {blitzCountdown !== null && (
-              <div style={{ ...pillLabel, marginTop: 4 }}>
-                {language === 'de' ? 'Restzeit' : 'Time left'}: {blitzCountdown}s
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {blitzCountdown !== null && (
+                <div style={{ ...pillLabel }}>
+                  {language === 'de' ? 'Set Restzeit' : 'Set time'}: {blitzCountdown}s
+                </div>
+              )}
+              {blitzItemCountdown !== null && (
+                <div
+                  style={{
+                    ...pillLabel,
+                    background: 'rgba(96,165,250,0.15)',
+                    borderColor: 'rgba(96,165,250,0.4)',
+                    color: '#bfdbfe'
+                  }}
+                >
+                  {language === 'de' ? 'Aktuelles Item' : 'Current item'}: {blitzItemCountdown}s
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
               {language === 'de'
-                ? 'Set abgeschlossen. Warte auf das nÃ¤chste.'
+                ? 'Set abgeschlossen. Warte auf das nächste.'
                 : 'Set finished. Waiting for the next one.'}
             </div>
             {Object.keys(results).length > 0 && (
@@ -2042,7 +2171,7 @@ const renderShowResult = () => (
             }}
             onClick={() => setShowBingoPanel(false)}
           >
-            {language === 'de' ? 'Bingofeld schlieÃen' : 'Close bingo board'}
+            {language === 'de' ? 'Bingofeld schließen' : 'Close bingo board'}
           </button>
         </div>
         <div
@@ -2117,7 +2246,7 @@ const renderShowResult = () => (
         </h3>
         <p style={{ ...mutedText, margin: 0 }}>
           {language === 'de'
-            ? 'WÃ¤hlt ein freies Feld der aktuellen Kategorie.'
+            ? 'Wählt ein freies Feld der aktuellen Kategorie.'
             : 'Pick a free cell of the current category.'}
         </p>
       </div>
@@ -2266,14 +2395,12 @@ const renderShowResult = () => (
       ? Math.max(0, Math.min(100, (remainingSeconds / timerDuration) * 100))
       : 0;
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
-  const canAnswer = gameState === 'Q_ACTIVE' && phase === 'answering' && !timeUp;
+  const questionAnsweringActive = gameState === 'Q_ACTIVE' && phase === 'answering';
+  const canAnswer = questionAnsweringActive && !timeUp;
   const isLocked = gameState === 'Q_LOCKED';
-  const hasTimer = Boolean(
-    question &&
-    timerEndsAt &&
-    timerDuration > 0 &&
-    (phase === 'answering' || phase === 'waitingForResult')
-  );
+  const timerContextActive = questionAnsweringActive || isBlitzPlaying || isPotatoActiveTurn;
+  const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
+  const showTimerProgress = hasTimer && !isLocked;
 
   const accentCategory = (question?.category as keyof typeof categoryColors) ?? 'GemischteTuete';
   const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
@@ -2303,7 +2430,7 @@ const renderShowResult = () => (
             <Link
               to="/menu"
               style={{ textDecoration: 'none', color: 'inherit' }}
-              title={language === 'de' ? 'MenÃ¼ Ã¶ffnen' : 'Open menu'}
+              title={language === 'de' ? 'Menü öffnen' : 'Open menu'}
             >
               <div
                 style={{
@@ -2349,11 +2476,18 @@ const renderShowResult = () => (
                 }}
               />
             </div>
-            {hasTimer && (
+            {isLocked ? (
+              <Pill
+                tone="muted"
+                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'rgba(250,204,21,0.5)', color: '#fcd34d' }}
+              >
+                {language === 'de' ? 'Gesperrt' : 'Locked'}
+              </Pill>
+            ) : hasTimer ? (
               <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
                 {timeUp ? t('timerDoneLabel') : t('timerActiveLabel')}
               </Pill>
-            )}
+            ) : null}
             {bingoEnabled && board.length === 25 && !showBingoPanel && (
               <button
                 style={{
@@ -2367,11 +2501,22 @@ const renderShowResult = () => (
                 }}
                 onClick={() => setShowBingoPanel(true)}
               >
-                {language === 'de' ? 'Bingofeld Ã¶ffnen' : 'Open bingo board'}
+                {language === 'de' ? 'Bingofeld öffnen' : 'Open bingo board'}
               </button>
             )}
           </div>
         </header>
+
+        {showTimerProgress && (
+          <div style={{ marginTop: 12 }}>
+            <div style={progressOuter(accentColor)}>
+              <div style={{ ...progressInner(accentColor), width: `${progress}%` }} />
+            </div>
+            <div style={{ marginTop: 6, color: '#cbd5e1', fontWeight: 700 }}>
+              {t('timeLeft')(Math.max(0, Math.round(remainingSeconds)))}
+            </div>
+          </div>
+        )}
 
         {renderByPhase()}
 
@@ -2430,18 +2575,20 @@ const renderShowResult = () => (
         >
           {canMarkBingo
             ? language === 'de'
-              ? 'Bingofeld Ã¶ffnen'
+              ? 'Bingofeld öffnen'
               : 'Open bingo board'
             : 'Bingofeld'}
         </button>
       )}
-      <div style={footerLogo}>
-        <img
-          src={draftTheme?.logoUrl || '/cozy-logo.svg'}
-          alt="cozy"
-          style={{ width: 120, opacity: 0.8, objectFit: 'contain' }}
-        />
-      </div>
+      {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && (
+        <div style={footerLogo}>
+          <img
+            src={draftTheme?.logoUrl || '/cozy-logo.svg'}
+            alt="cozy"
+            style={{ width: 120, opacity: 0.8, objectFit: 'contain' }}
+          />
+        </div>
+      )}
     </div>
   );
 }

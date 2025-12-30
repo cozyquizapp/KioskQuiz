@@ -67,6 +67,52 @@ import { featureFlags } from '../config/features';
 
 type Phase = 'notJoined' | 'waitingForQuestion' | 'answering' | 'waitingForResult' | 'showResult';
 
+type OfflineBarProps = {
+  disconnected: boolean;
+  language: Language;
+  onReconnect: () => void;
+};
+
+function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
+  if (!disconnected) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 8,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '8px 12px',
+        borderRadius: 12,
+        background: 'rgba(239,68,68,0.14)',
+        border: '1px solid rgba(239,68,68,0.45)',
+        color: '#fecdd3',
+        fontWeight: 700,
+        zIndex: 40,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+      }}
+    >
+      {language === 'de' ? 'Offline - bitte erneut verbinden' : 'Offline - please reconnect'}
+      <button
+        style={{
+          padding: '6px 10px',
+          borderRadius: 10,
+          border: '1px solid rgba(255,255,255,0.25)',
+          background: 'rgba(255,255,255,0.08)',
+          color: '#e5e7eb',
+          fontWeight: 700,
+          cursor: 'pointer'
+        }}
+        onClick={onReconnect}
+      >
+        {language === 'de' ? 'Neu verbinden' : 'Reconnect'}
+      </button>
+    </div>
+  );
+}
+
 interface TeamViewProps {
   roomCode: string;
 }
@@ -780,45 +826,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   };
 
-  function renderOfflineBar() {
-    if (connectionStatus !== 'disconnected') return null;
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 8,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          padding: '8px 12px',
-          borderRadius: 12,
-          background: 'rgba(239,68,68,0.14)',
-          border: '1px solid rgba(239,68,68,0.45)',
-          color: '#fecdd3',
-          fontWeight: 700,
-          zIndex: 40,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10
-        }}
-      >
-        {language === 'de' ? 'Offline - bitte erneut verbinden' : 'Offline - please reconnect'}
-        <button
-          style={{
-            padding: '6px 10px',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.25)',
-            background: 'rgba(255,255,255,0.08)',
-            color: '#e5e7eb',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-          onClick={handleReconnect}
-        >
-          {language === 'de' ? 'Neu verbinden' : 'Reconnect'}
-        </button>
-      </div>
-    );
-  }
 
   const renderAnswering = () => (
     <div
@@ -2425,7 +2432,7 @@ const renderShowResult = () => (
 
   return (
     <div style={pageStyleTeam} data-timer={timerTick}>
-      {renderOfflineBar()}
+      <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
       <div style={contentShell}>
         <header style={headerBarTeam}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

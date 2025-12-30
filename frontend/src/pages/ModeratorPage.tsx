@@ -391,7 +391,7 @@ function ModeratorPage(): React.ReactElement {
       }
     };
 
-  const handleScoreboardAction = () => {
+  function handleScoreboardAction() {
     if (!roomCode) return;
     if (normalizedGameState === 'AWARDS') {
       handleShowAwards();
@@ -408,7 +408,7 @@ function ModeratorPage(): React.ReactElement {
         setTimeout(() => setToast(null), 2200);
       }
     });
-  };
+  }
 
     const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
       const key = (event.key || '').toLowerCase();

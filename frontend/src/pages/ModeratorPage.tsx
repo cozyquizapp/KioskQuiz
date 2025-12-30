@@ -2194,6 +2194,35 @@ function ModeratorPage(): React.ReactElement {
     );
   };
 
+  const renderNextActionHint = () => {
+    if (!nextActionHint) return null;
+    return (
+      <div
+        style={{
+          display: 'grid',
+          gap: 6,
+          padding: 16,
+          borderRadius: 16,
+          border: '1px solid rgba(96,165,250,0.5)',
+          background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(15,23,42,0.85))',
+          minWidth: 240,
+          flex: '1 1 280px'
+        }}
+      >
+        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NÄCHSTER SCHRITT</div>
+        {nextActionHint.context && (
+          <div style={{ fontSize: 12, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {nextActionHint.context}
+          </div>
+        )}
+        <div style={{ fontWeight: 900, fontSize: 24 }}>
+          Taste {nextActionHint.hotkey} · {nextActionHint.label}
+        </div>
+        <div style={{ fontSize: 15, color: '#e2e8f0' }}>{nextActionHint.detail}</div>
+      </div>
+    );
+  };
+
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
     const waitingTeams = Math.max(0, teamsCount - answersCount);
@@ -2422,35 +2451,6 @@ const renderCozyStagePanel = () => {
           )}
         </div>
       </section>
-    );
-  };
-
-  const renderNextActionHint = () => {
-    if (!nextActionHint) return null;
-    return (
-      <div
-        style={{
-          display: 'grid',
-          gap: 6,
-          padding: 16,
-          borderRadius: 16,
-          border: '1px solid rgba(96,165,250,0.5)',
-          background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(15,23,42,0.85))',
-          minWidth: 240,
-          flex: '1 1 280px'
-        }}
-      >
-        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NÄCHSTER SCHRITT</div>
-        {nextActionHint.context && (
-          <div style={{ fontSize: 12, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {nextActionHint.context}
-          </div>
-        )}
-        <div style={{ fontWeight: 900, fontSize: 24 }}>
-          Taste {nextActionHint.hotkey} · {nextActionHint.label}
-        </div>
-        <div style={{ fontSize: 15, color: '#e2e8f0' }}>{nextActionHint.detail}</div>
-      </div>
     );
   };
 

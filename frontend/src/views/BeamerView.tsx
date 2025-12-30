@@ -30,6 +30,19 @@ import { loadPlayDraft } from '../utils/draft';
 import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 
+const usePrefersReducedMotion = () => {
+  const [prefersReduced, setPrefersReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReduced(media.matches);
+    handleChange();
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
+  return prefersReduced;
+};
+
 type Lang = Language;
 type BaseScreen = 'lobby' | 'slot' | 'question' | 'intro';
 type BeamerViewMode = 'lobby' | 'categorySlot' | 'question' | 'calculating' | 'answer' | 'intro';
@@ -251,11 +264,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     teamName: string | null;
     reason?: string;
   } | null>(null);
+  const [revealStamp, setRevealStamp] = useState(0);
+  const [estimateDisplay, setEstimateDisplay] = useState<string | null>(null);
+  const [muChoHopIndex, setMuChoHopIndex] = useState<number | null>(null);
+  const [muChoLockedIndex, setMuChoLockedIndex] = useState<number | null>(null);
   const potatoOverlayTimeoutRef = useRef<number | null>(null);
   const [questionProgress, setQuestionProgress] = useState<StateUpdatePayload['questionProgress'] | null>(null);
   const [lastQuestion, setLastQuestion] = useState<{ text: string; category?: QuizCategory | string } | null>(null);
   const [showLastQuestion, setShowLastQuestion] = useState(true);
   const previousQuestionRef = useRef<AnyQuestion | null>(null);
+  const previousGameStateRef = useRef<CozyGameState>('LOBBY');
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [toast, setToast] = useState<string | null>(null);
   const [connectionStuck, setConnectionStuck] = useState(false);
@@ -303,6 +321,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const teamJoinQr = teamJoinLink ? buildQrUrl(teamJoinLink) : null;
   const showTechnicalHud = !featureFlags.isCozyMode || debugMode;
   const allowLegacyOverlays = !featureFlags.isCozyMode || debugMode || featureFlags.showLegacyPanels;
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const timerRef = useRef<number | null>(null);
   const slotTimeoutRef = useRef<number | null>(null);
@@ -437,6 +456,18 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [connectionStatus]);
 
   useEffect(() => {
+    if (previousGameStateRef.current !== 'Q_REVEAL' && gameState === 'Q_REVEAL') {
+      setRevealStamp((stamp) => stamp + 1);
+    }
+    previousGameStateRef.current = gameState;
+    if (gameState !== 'Q_REVEAL') {
+      setEstimateDisplay(null);
+      setMuChoHopIndex(null);
+      setMuChoLockedIndex(null);
+    }
+  }, [gameState]);
+
+  useEffect(() => {
     if (!featureFlags.isCozyMode) {
       return undefined;
     }
@@ -500,6 +531,91 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     }
     previousQuestionRef.current = question;
   }, [question, lastQuestion]);
+
+  useEffect(() => {
+    if (!question || question.type !== 'SCHAETZCHEN') {
+      setEstimateDisplay(null);
+      return;
+    }
+    if (gameState !== 'Q_REVEAL') {
+      setEstimateDisplay(null);
+      return;
+    }
+    const q: any = question;
+    const unit = q.unit || q.answerUnit;
+    const numericTargetRaw =
+      typeof q.correctValue === 'number'
+        ? q.correctValue
+        : typeof q.answer === 'number'
+        ? q.answer
+        : typeof q.solution === 'number'
+        ? q.solution
+        : parseFloat(q.solution);
+    if (!Number.isFinite(numericTargetRaw) || prefersReducedMotion) {
+      setEstimateDisplay(formatEstimateValue(numericTargetRaw || q.solution || q.answerText || '', unit));
+      return;
+    }
+    let frameId: number;
+    const duration = 1500;
+    const start = performance.now();
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration);
+      if (progress >= 1) {
+        setEstimateDisplay(formatEstimateValue(numericTargetRaw, unit));
+        return;
+      }
+      const variance = Math.max(1, Math.abs(numericTargetRaw) * (1 - progress));
+      const randomValue = numericTargetRaw + (Math.random() - 0.5) * variance;
+      setEstimateDisplay(formatEstimateValue(randomValue, unit));
+      frameId = requestAnimationFrame(animate);
+    };
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [question?.id, question?.type, gameState, revealStamp, prefersReducedMotion, language]);
+
+  useEffect(() => {
+    if (!question || question.type !== 'MU_CHO') {
+      setMuChoHopIndex(null);
+      setMuChoLockedIndex(null);
+      return;
+    }
+    if (gameState !== 'Q_REVEAL') {
+      setMuChoHopIndex(null);
+      setMuChoLockedIndex(null);
+      return;
+    }
+    const q: any = question;
+    const totalOptions = mcOptions?.length ?? 0;
+    const correctIndex =
+      typeof q.correctIndex === 'number'
+        ? q.correctIndex
+        : typeof q.correct === 'number'
+        ? q.correct
+        : typeof q.correctAnswer === 'number'
+        ? q.correctAnswer
+        : Array.isArray(q.correctAnswers)
+        ? q.correctAnswers[0]
+        : null;
+    if (correctIndex === null) return;
+    if (prefersReducedMotion || totalOptions === 0) {
+      setMuChoHopIndex(correctIndex);
+      setMuChoLockedIndex(correctIndex);
+      return;
+    }
+    const hops = Array.from({ length: 6 }, () => Math.floor(Math.random() * totalOptions));
+    hops.push(correctIndex);
+    let hopIdx = 0;
+    const hopTimer = window.setInterval(() => {
+      const nextIdx = hops[Math.min(hopIdx, hops.length - 1)];
+      setMuChoHopIndex(nextIdx);
+      if (hopIdx >= hops.length - 1) {
+        setMuChoLockedIndex(correctIndex);
+        window.clearInterval(hopTimer);
+      }
+      hopIdx += 1;
+    }, 110);
+    return () => window.clearInterval(hopTimer);
+  }, [question?.id, question?.type, mcOptions?.length, gameState, revealStamp, prefersReducedMotion]);
 
   useEffect(() => {
     if (lastQuestion) setShowLastQuestion(true);
@@ -870,6 +986,24 @@ useEffect(() => {
       }))
       .sort((a, b) => (b.awardedPoints ?? 0) - (a.awardedPoints ?? 0));
   }, [answerResults, teamNameLookup]);
+  const mcOptions = useMemo(() => {
+    if (!question) return null;
+    const q: any = question;
+    const opts =
+      language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
+    return Array.isArray(opts) ? opts : null;
+  }, [question?.id, language]);
+  const mcCorrectIndex = useMemo(() => {
+    if (!question || question.type !== 'MU_CHO') return null;
+    const q: any = question;
+    if (typeof q.correctIndex === 'number') return q.correctIndex;
+    if (typeof q.correct === 'number') return q.correct;
+    if (typeof q.correctAnswer === 'number') return q.correctAnswer;
+    if (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number') {
+      return q.correctAnswers[0];
+    }
+    return null;
+  }, [question?.id, question?.type]);
   const potatoCountdown = useMemo(() => {
     if (!potato?.deadline) return null;
     return Math.max(0, Math.ceil((potato.deadline - Date.now()) / 1000));
@@ -915,6 +1049,16 @@ useEffect(() => {
   const categoryIndex =
     questionMeta?.categoryIndex ??
     (currentCategory ? Math.max(1, categoryProgress[currentCategory] || 1) : 1);
+  const cozyRailOrder: QuizCategory[] = ['Cheese', 'Schaetzchen', 'Mu-Cho', 'Stimmts', 'GemischteTuete'];
+  const heroCategoryKey =
+    ((question?.category as QuizCategory) ??
+      cozyRailOrder[(Math.abs(lobbyHighlightIndex) % cozyRailOrder.length)]) || cozyRailOrder[0];
+  const cozyRailItems = cozyRailOrder.map((cat) => ({
+    key: cat,
+    label: getCategoryLabel(cat, language),
+    description: getCategoryDescription(cat, language),
+    icon: categoryIcons[cat]
+  }));
   const headerLeftLabel = 'Cozy Quiz 60';
   const headerLeftHint = undefined;
   const headerTimerText = showTurnProgress ? `${formatSeconds(remainingMs)}s` : undefined;
@@ -1365,6 +1509,17 @@ useEffect(() => {
     return undefined;
   };
 
+  const formatEstimateValue = (value: number | string | null | undefined, unit?: string): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const formatter = new Intl.NumberFormat(language === 'en' ? 'en-US' : 'de-DE', {
+        maximumFractionDigits: 2
+      });
+      return `${formatter.format(value)}${unit ? ` ${unit}` : ''}`;
+    }
+    return `${value}${unit ? ` ${unit}` : ''}`;
+  };
+
   const renderQuestionCardGrid = (): JSX.Element | null => {
     if (!question) return null;
     const q: any = question;
@@ -1689,69 +1844,176 @@ useEffect(() => {
         ? question?.questionEn ?? question?.question
         : question?.question ?? question?.questionEn ?? '';
 
-    const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => (
-      <BeamerFrame
-        key={`${sceneKey}-${phase}`}
-        {...baseFrameProps}
-        title={questionTitle}
-        subtitle={questionSubtitle}
-        badgeLabel={badgeInfo?.label}
-        badgeTone={badgeInfo?.tone}
-        footerMessage={
-          phase === 'active'
-            ? language === 'de'
-              ? 'Antworten jetzt möglich'
-              : language === 'both'
-              ? 'Antworten möglich / Answers open'
-              : 'Answers open'
-            : phase === 'locked'
-            ? language === 'de'
-              ? 'Antwortfenster geschlossen'
-              : language === 'both'
-              ? 'Antworten geschlossen / Locked'
-              : 'Answers locked'
-            : language === 'de'
-            ? 'Auflösung'
-            : language === 'both'
-            ? 'Auflösung / Reveal'
-            : 'Reveal'
+    const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
+      const heroDescription = getCategoryDescription(heroCategoryKey, language);
+      const heroLabel = getCategoryLabel(heroCategoryKey, language);
+      const heroIcon = categoryIcons[heroCategoryKey];
+      const promptText = getQuestionPromptText();
+      const mediaUrl =
+        (question as any)?.media?.url ||
+        (question as any)?.mediaUrl ||
+        (question as any)?.imageUrl ||
+        (question as any)?.image ||
+        null;
+
+      const renderMultipleChoiceList = (showReveal: boolean) => {
+        if (!mcOptions?.length) return null;
+        return (
+          <div className="cozyOptionList">
+            {mcOptions.map((option, idx) => {
+              const hopMatch = muChoLockedIndex ?? mcCorrectIndex;
+              const isHop = showReveal && muChoHopIndex === idx && hopMatch !== idx;
+              const isCorrect = showReveal && hopMatch === idx;
+              return (
+                <div
+                  key={`mc-option-${idx}`}
+                  className={`cozyOption${isHop ? ' hopping' : ''}${isCorrect ? ' correct' : ''}`}
+                >
+                  <span className="cozyOptionPrefix">{String.fromCharCode(65 + idx)}.</span>
+                  <span>{option}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
+
+      const renderHeroBody = () => {
+        if (!question) {
+          return (
+            <div className="cozyQuestionEmpty">
+              <p>{language === 'de' ? 'Keine Frage aktiv' : 'No active question'}</p>
+            </div>
+          );
         }
-        status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
-      >
-        {question ? (
-          <>
-            <div className="beamer-question-layout">
-              <div className="beamer-question-main">
-                {categoryLabel && <div className="beamer-question-category">{categoryLabel}</div>}
-                <div className="beamer-question-text">{questionTextLocalized}</div>
-                {promptText && <div className="beamer-hint">{promptText}</div>}
-                {phase === 'reveal' && solution && (
-                  <div className="beamer-question-solution">
-                    {language === 'de'
-                      ? `Lösung: ${solution}`
-                      : language === 'both'
-                      ? `Lösung / Solution: ${solution}`
-                      : `Solution: ${solution}`}
+        if (phase === 'reveal') {
+          if (question.type === 'SCHAETZCHEN') {
+            return (
+              <div className="cozyRevealNumber">
+                <span className={estimateDisplay ? 'is-ready' : ''}>
+                  {estimateDisplay || solution || '—'}
+                </span>
+                {solution && <div className="cozyRevealLabel">{solution}</div>}
+              </div>
+            );
+          }
+          if (question.type === 'MU_CHO') {
+            return renderMultipleChoiceList(true);
+          }
+          return (
+            <div className="cozyRevealGeneric">
+              {solution ||
+                (language === 'de'
+                  ? 'Auflösung eingeblendet'
+                  : language === 'both'
+                  ? 'Auflösung / Reveal'
+                  : 'Solution')}
+            </div>
+          );
+        }
+        if (question.type === 'MU_CHO') {
+          return renderMultipleChoiceList(false);
+        }
+        const supplement = renderQuestionCardGrid();
+        if (supplement) {
+          return <div className="cozyQuestionSupplement">{supplement}</div>;
+        }
+        return null;
+      };
+
+      return (
+        <BeamerFrame
+          key={`${sceneKey}-${phase}`}
+          {...baseFrameProps}
+          title={questionTitle}
+          subtitle={questionSubtitle}
+          badgeLabel={badgeInfo?.label}
+          badgeTone={badgeInfo?.tone}
+          footerMessage={
+            phase === 'active'
+              ? language === 'de'
+                ? 'Antworten jetzt möglich'
+                : language === 'both'
+                ? 'Antworten möglich / Answers open'
+                : 'Answers open'
+              : phase === 'locked'
+              ? language === 'de'
+                ? 'Antwortfenster geschlossen'
+                : language === 'both'
+                ? 'Antworten geschlossen / Locked'
+                : 'Answers locked'
+              : language === 'de'
+              ? 'Auflösung'
+              : language === 'both'
+              ? 'Auflösung / Reveal'
+              : 'Reveal'
+          }
+          status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
+        >
+          <div className="cozyQuestionGrid">
+            <div className="cozyCategoryRail">
+              {cozyRailItems.map((item) => (
+                <div
+                  key={item.key}
+                  className={`cozyCategoryPill${item.key === heroCategoryKey ? ' active' : ''}`}
+                >
+                  {item.icon && <img src={item.icon} alt="" />}
+                  <div>
+                    <strong>{item.label}</strong>
+                    <span>{item.description}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
+              <div className="cozyQuestionHeroHeader">
+                <div className="cozyQuestionBadge">
+                  {heroIcon && <img src={heroIcon} alt="" />}
+                  <div>
+                    <span>{heroLabel}</span>
+                    <small>{heroDescription}</small>
+                  </div>
+                </div>
+                {phase !== 'reveal' && (
+                  <div className="cozyQuestionPhaseBadge">
+                    {phase === 'active'
+                      ? language === 'de'
+                        ? 'Antworten offen'
+                        : 'Answers open'
+                      : language === 'de'
+                      ? 'Gesperrt'
+                      : 'Locked'}
                   </div>
                 )}
               </div>
+              <div className="cozyQuestionText">{questionTextLocalized || questionText || ''}</div>
+              {promptText && <div className="cozyQuestionHint">{promptText}</div>}
               {mediaUrl && (
-                <div className="beamer-question-media">
+                <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}`}>
                   <img src={mediaUrl} alt="" />
                 </div>
               )}
+              <div className="cozyQuestionBody">{renderHeroBody()}</div>
+              <div className="cozyQuestionFooter">
+                <div>
+                  {questionTitle}
+                  {categoryLabel && (
+                    <>
+                      {' · '}
+                      {categoryLabel} {categoryIndex}/{categoryTotal}
+                    </>
+                  )}
+                </div>
+                <div className="cozyWolfBadge">
+                  <img src="/logo.png" alt="Cozy Wolf" />
+                </div>
+              </div>
             </div>
-            {renderQuestionCardGrid()}
-            {phase === 'reveal' && renderRevealResultsSection()}
-          </>
-        ) : (
-          <div className="beamer-intro-card">
-            <h2>{language === 'de' ? 'Keine Frage aktiv' : 'No active question'}</h2>
-            <p>{language === 'de' ? 'Moderator startet gleich weiter.' : 'Host will continue shortly.'}</p>
           </div>
-        )}
-      </BeamerFrame>
-    );
+          {phase === 'reveal' && renderRevealResultsSection()}
+        </BeamerFrame>
+      );
+    };
 
     const renderScoreboardFrame = (mode: 'scoreboard' | 'pause') => (
       <BeamerFrame
@@ -2216,7 +2478,7 @@ useEffect(() => {
   };
 
   return (
-    <main style={pageStyle}>
+    <main style={pageStyle} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
       {showTechnicalHud && offlineBar(connectionStatus, language)}
       {toast && <div style={toastStyle}>{toast}</div>}
       {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (

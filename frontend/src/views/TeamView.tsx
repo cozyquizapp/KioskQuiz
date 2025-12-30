@@ -2580,15 +2580,9 @@ const renderShowResult = () => (
             : 'Bingofeld'}
         </button>
       )}
-      {featureFlags.showLegacyPanels && (
-        <div style={footerLogo}>
-          <img
-            src={draftTheme?.logoUrl || '/cozy-logo.svg'}
-            alt="cozy"
-            style={{ width: 120, opacity: 0.8, objectFit: 'contain' }}
-          />
-        </div>
-      )}
+      <div style={footerLogo}>
+        <img src="/logo.png" alt="Cozy Wolf" style={{ width: 120, opacity: 0.85, objectFit: 'contain' }} />
+      </div>
     </div>
   );
 }

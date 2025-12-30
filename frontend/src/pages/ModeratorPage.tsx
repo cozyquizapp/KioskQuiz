@@ -800,16 +800,12 @@ function ModeratorPage(): React.ReactElement {
     });
   }
 
-  const handlePotatoStart = () => {
+  function handlePotatoStart() {
     const text = potatoThemeInput.trim();
-    emitPotatoEvent(
-      'host:startPotato',
-      text ? { themesText: text } : {},
-      () => setPotatoThemeInput('')
-    );
-  };
+    emitPotatoEvent('host:startPotato', text ? { themesText: text } : {}, () => setPotatoThemeInput(''));
+  }
 
-  const handlePotatoBan = (teamId: string) => {
+  function handlePotatoBan(teamId: string) {
     const selection = (potatoBanDrafts[teamId] || '').trim();
     if (!selection) {
       setToast('Bitte zuerst ein Thema auswählen');
@@ -819,13 +815,21 @@ function ModeratorPage(): React.ReactElement {
     emitPotatoEvent('host:banPotatoTheme', { teamId, theme: selection }, () =>
       setPotatoBanDrafts((prev) => ({ ...prev, [teamId]: '' }))
     );
-  };
+  }
 
-  const handlePotatoConfirmThemes = () => emitPotatoEvent('host:confirmPotatoThemes');
-  const handlePotatoStartRound = () => emitPotatoEvent('host:potatoStartRound');
-  const handlePotatoNextRound = () => emitPotatoEvent('host:potatoNextRound');
-  const handlePotatoFinish = () => emitPotatoEvent('host:potatoFinish');
-  const handleShowAwards = () => {
+  function handlePotatoConfirmThemes() {
+    emitPotatoEvent('host:confirmPotatoThemes');
+  }
+  function handlePotatoStartRound() {
+    emitPotatoEvent('host:potatoStartRound');
+  }
+  function handlePotatoNextRound() {
+    emitPotatoEvent('host:potatoNextRound');
+  }
+  function handlePotatoFinish() {
+    emitPotatoEvent('host:potatoFinish');
+  }
+  function handleShowAwards() {
     if (!roomCode) {
       setToast('Roomcode fehlt');
       setTimeout(() => setToast(null), 2000);
@@ -842,15 +846,20 @@ function ModeratorPage(): React.ReactElement {
         setTimeout(() => setToast(null), 2200);
       }
     });
-  };
-  const handlePotatoNextTurn = () => emitPotatoEvent('host:potatoNextTurn');
-  const handlePotatoStrike = () => emitPotatoEvent('host:potatoStrikeActive');
-  const handlePotatoEndRound = () =>
+  }
+  function handlePotatoNextTurn() {
+    emitPotatoEvent('host:potatoNextTurn');
+  }
+  function handlePotatoStrike() {
+    emitPotatoEvent('host:potatoStrikeActive');
+  }
+  function handlePotatoEndRound() {
     emitPotatoEvent(
       'host:potatoEndRound',
       potatoWinnerDraft ? { winnerId: potatoWinnerDraft } : {},
       () => setPotatoWinnerDraft('')
     );
+  }
 
   const handlePotatoSubmit = (
     verdict: 'correct' | 'strike',
@@ -873,7 +882,7 @@ function ModeratorPage(): React.ReactElement {
     emitPotatoEvent('host:potatoSubmitTurn', { verdict });
   };
 
-  const handlePotatoOverrideAttempt = (action: 'accept' | 'acceptDuplicate' | 'reject') => {
+  function handlePotatoOverrideAttempt(action: 'accept' | 'acceptDuplicate' | 'reject') {
     const attemptId = potato?.lastAttempt?.id;
     if (!attemptId) {
       setToast('Kein Versuch zum Uebersteuern');
@@ -881,7 +890,7 @@ function ModeratorPage(): React.ReactElement {
       return;
     }
     emitPotatoEvent('host:potatoOverrideAttempt', { attemptId, action });
-  };
+  }
 
   function emitBlitzEvent(
     eventName:

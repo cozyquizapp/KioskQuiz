@@ -830,6 +830,56 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!teamId) {
+      if (teamName) {
+        try {
+          await handleJoin();
+        } catch {
+          setMessage(t('loginError'));
+          return;
+        }
+      } else {
+        setMessage(t('loginError'));
+        return;
+      }
+    }
+    if (!canAnswer) {
+      setMessage(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
+      return;
+    }
+    try {
+      const isBunteQuestion = question?.type === 'BUNTE_TUETE' && question?.bunteTuete;
+      if (question?.mechanic === 'betting') {
+        const pool = (question as any).pointsPool ?? 10;
+        const sum = bettingPoints.reduce((a, b) => a + b, 0);
+        if (sum !== pool) {
+          setMessage(t('betInvalid'));
+          return;
+        }
+        await submitAnswer(roomCode, teamId, bettingPoints);
+        setAnswerSubmitted(true);
+        setAnswer(bettingPoints);
+      } else if (isBunteQuestion) {
+        const payload = buildBunteSubmission(question.bunteTuete as BunteTuetePayload);
+        if (!payload) return;
+        await submitAnswer(roomCode, teamId, payload);
+        setAnswerSubmitted(true);
+      } else {
+        await submitAnswer(roomCode, teamId, answer);
+        setAnswerSubmitted(true);
+      }
+      setPhase('waitingForResult');
+      setAllowReadyToggle(false);
+      setTransitioning(true);
+      setMessage(null);
+      setTimeout(() => setTransitioning(false), 500);
+    } catch (error) {
+      console.error(error);
+      setMessage(language === 'de' ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung pruefen.' : 'Could not submit answer.');
+    }
+  };
+
 
   function renderAnswering() {
     return (
@@ -996,59 +1046,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       language === 'de' ? 'Wir pruefen alle Antworten ...' : t('evaluating')
     );
   }
-
-const handleSubmit = async () => {
-    if (!teamId) {
-      if (teamName) {
-        try {
-          await handleJoin();
-        } catch {
-          setMessage(t('loginError'));
-          return;
-        }
-      } else {
-        setMessage(t('loginError'));
-        return;
-      }
-    }
-    if (!canAnswer) {
-      setMessage(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
-      return;
-    }
-    try {
-      const isBunteQuestion = question?.type === 'BUNTE_TUETE' && question?.bunteTuete;
-      if (question?.mechanic === 'betting') {
-        const pool = (question as any).pointsPool ?? 10;
-        const sum = bettingPoints.reduce((a, b) => a + b, 0);
-        if (sum !== pool) {
-          setMessage(t('betInvalid'));
-          return;
-        }
-        await submitAnswer(roomCode, teamId, bettingPoints);
-        setAnswerSubmitted(true);
-        setAnswer(bettingPoints);
-      } else if (isBunteQuestion) {
-        const payload = buildBunteSubmission(question.bunteTuete as BunteTuetePayload);
-        if (!payload) return;
-        await submitAnswer(roomCode, teamId, payload);
-        setAnswerSubmitted(true);
-      } else {
-        await submitAnswer(roomCode, teamId, answer);
-        setAnswerSubmitted(true);
-      }
-      setPhase('waitingForResult');
-      setAllowReadyToggle(false);
-      setTransitioning(true);
-      setTimeout(() => setTransitioning(false), 400);
-      setMessage(null);
-    } catch (err) {
-      setMessage(
-        language === 'de'
-          ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung prüfen.'
-          : 'Could not send answer. Please check connection.'
-      );
-    }
-  };
 
   function buildBunteSubmission(payload: BunteTuetePayload | undefined) {
     if (!question || !payload) return null;

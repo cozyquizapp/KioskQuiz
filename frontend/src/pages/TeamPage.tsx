@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { joinRoom } from '../api';
 import { featureFlags } from '../config/features';
-
 import TeamView from '../views/TeamView';
 
 type BoundaryState = {
@@ -56,7 +56,7 @@ const TeamPage = () => {
   const debugMode =
     import.meta.env.DEV ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1');
-  const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): nur fuer dev-shortcuts
+  const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): dev shortcut only
 
   const initialRoom = useMemo(() => {
     if (featureFlags.singleSessionMode) return DEFAULT_ROOM_CODE;
@@ -75,7 +75,11 @@ const TeamPage = () => {
   const [teamMounted, setTeamMounted] = useState(false);
   const [mountTimedOut, setMountTimedOut] = useState(false);
   const [renderCount, setRenderCount] = useState(0);
-  const [uiProbe, setUiProbe] = useState({ children: 0, inputHeight: 0 });
+  const [uiProbe, setUiProbe] = useState({ hasEl: false, children: 0, inputHeight: 0, rootChildren: 0 });
+  const [fallbackName, setFallbackName] = useState('');
+  const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
+  const [fallbackJoined, setFallbackJoined] = useState(false);
+  const [fallbackJoining, setFallbackJoining] = useState(false);
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -130,19 +134,20 @@ const TeamPage = () => {
     const id = window.setInterval(() => {
       const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
       const count = Number(win.__TEAMVIEW_RENDER_COUNT || 0);
-      if (count > 0) {
-        setTeamMounted(true);
-        setRenderCount(count);
-      }
+      setRenderCount(count);
       const el = document.querySelector('[data-team-ui]') as HTMLElement | null;
       const rect = el ? el.getBoundingClientRect() : null;
       const input = el?.querySelector('input') as HTMLElement | null;
       const inputRect = input ? input.getBoundingClientRect() : null;
+      const root = document.getElementById('root');
+      const rootChildren = root?.children?.length ?? 0;
       setUiProbe({
+        hasEl: Boolean(el),
         children: el?.children?.length ?? 0,
-        inputHeight: inputRect ? Math.round(inputRect.height) : 0
+        inputHeight: inputRect ? Math.round(inputRect.height) : 0,
+        rootChildren
       });
-      if (rect && rect.height > 10 && rect.width > 10) {
+      if (rect && rect.height > 10 && rect.width > 10 && (el?.children?.length ?? 0) > 0) {
         setTeamMounted(true);
       }
       attempts += 1;
@@ -152,6 +157,28 @@ const TeamPage = () => {
     }, 250);
     return () => window.clearInterval(id);
   }, []);
+
+  const handleFallbackJoin = async () => {
+    if (!roomCode) return;
+    const name = fallbackName.trim();
+    if (!name) {
+      setFallbackJoinError('Bitte Teamnamen eingeben.');
+      return;
+    }
+    try {
+      setFallbackJoining(true);
+      setFallbackJoinError(null);
+      const res = await joinRoom(roomCode, name);
+      localStorage.setItem(`team:${roomCode}:name`, res.team.name);
+      localStorage.setItem(`team:${roomCode}:id`, res.team.id);
+      setFallbackJoined(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Join fehlgeschlagen';
+      setFallbackJoinError(message);
+    } finally {
+      setFallbackJoining(false);
+    }
+  };
 
   const showRoomCodeForm = !featureFlags.singleSessionMode && !roomCode;
 
@@ -174,7 +201,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)} · renders={renderCount} · children={uiProbe.children} · inputH={uiProbe.inputHeight}
+            TEAM PAGE OK | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren}
           </div>
         )}
         {showRoomCodeForm && (
@@ -246,8 +273,48 @@ const TeamPage = () => {
                 Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.
               </p>
               <p style={{ color: '#94a3b8', fontSize: 12 }}>
-                room={roomCode || '—'} · single={String(featureFlags.singleSessionMode)}
+                room={roomCode || '??'} | single={String(featureFlags.singleSessionMode)}
               </p>
+              <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+                <label style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 700 }}>Teamname</label>
+                <input
+                  value={fallbackName}
+                  onChange={(e) => setFallbackName(e.target.value)}
+                  placeholder="Teamname"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc'
+                  }}
+                />
+                <button
+                  onClick={fallbackJoining ? undefined : handleFallbackJoin}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 12,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                    color: '#0b1020',
+                    fontWeight: 800,
+                    cursor: fallbackJoining ? 'not-allowed' : 'pointer',
+                    opacity: fallbackJoining ? 0.7 : 1
+                  }}
+                >
+                  {fallbackJoining ? 'Verbinde...' : 'Beitreten (Fallback)'}
+                </button>
+                {fallbackJoinError && (
+                  <div style={{ color: '#fca5a5', fontWeight: 700 }}>{fallbackJoinError}</div>
+                )}
+                {fallbackJoined && (
+                  <div style={{ color: '#86efac', fontWeight: 700 }}>
+                    Verbunden. Bitte Seite neu laden.
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => window.location.reload()}
                 style={{

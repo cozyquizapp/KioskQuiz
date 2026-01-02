@@ -122,11 +122,48 @@ const TeamPage = () => {
     return () => window.clearTimeout(id);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    let attempts = 0;
+    const id = window.setInterval(() => {
+      const el = document.querySelector('[data-team-ui]');
+      const rect = el ? (el as HTMLElement).getBoundingClientRect() : null;
+      if (rect && rect.height > 10 && rect.width > 10) {
+        setTeamMounted(true);
+        window.clearInterval(id);
+      }
+      attempts += 1;
+      if (attempts >= 10) {
+        window.clearInterval(id);
+      }
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
+
   const showRoomCodeForm = !featureFlags.singleSessionMode && !roomCode;
 
   return (
     <TeamBoundary>
       <>
+        {debugMode && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 12,
+              left: 12,
+              zIndex: 9999,
+              padding: '6px 10px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.25)',
+              background: 'rgba(0,0,0,0.5)',
+              color: '#e2e8f0',
+              fontSize: 12,
+              fontWeight: 700
+            }}
+          >
+            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)}
+          </div>
+        )}
         {showRoomCodeForm && (
           <div
             style={{
@@ -217,7 +254,7 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        <TeamView roomCode={roomCode || ''} onMount={() => setTeamMounted(true)} />
+        <TeamView roomCode={roomCode || ''} />
       </>
     </TeamBoundary>
   );

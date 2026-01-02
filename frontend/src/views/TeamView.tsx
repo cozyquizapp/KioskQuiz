@@ -1695,6 +1695,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         })}
       </div>
     );
+    }
 
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>

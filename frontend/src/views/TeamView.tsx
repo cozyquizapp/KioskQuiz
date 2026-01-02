@@ -196,7 +196,9 @@ const COPY = {
 
 function TeamView({ roomCode }: TeamViewProps) {
   const draftTheme = getDraftTheme();
-  const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
+  const debugMode =
+    import.meta.env.DEV ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1');
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
     win.__TEAMVIEW_RENDERED = true;
@@ -2543,13 +2545,13 @@ function TeamView({ roomCode }: TeamViewProps) {
       : renderByPhase();
 
   return (
-    <div style={pageStyleTeam} data-timer={timerTick} data-team-ui="1">
+    <div id="team-root" style={pageStyleTeam} data-timer={timerTick} data-team-ui="1">
       {debugMode && (
         <div
           style={{
             position: 'fixed',
             top: 12,
-            left: 12,
+            right: 12,
             zIndex: 50,
             padding: '6px 10px',
             borderRadius: 10,
@@ -2560,7 +2562,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             fontWeight: 700
           }}
         >
-          TEAM DEBUG ┬À phase={phase} ┬À state={gameState} ┬À room={roomCode} ┬À team={teamId ?? 'ÔÇö'}
+          TEAMVIEW LIVE | phase={phase} | state={gameState} | room={roomCode} | team={teamId ?? '--'}
         </div>
       )}
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />

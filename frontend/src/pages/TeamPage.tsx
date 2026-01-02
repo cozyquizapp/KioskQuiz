@@ -75,7 +75,14 @@ const TeamPage = () => {
   const [teamMounted, setTeamMounted] = useState(false);
   const [mountTimedOut, setMountTimedOut] = useState(false);
   const [renderCount, setRenderCount] = useState(0);
-  const [uiProbe, setUiProbe] = useState({ hasEl: false, children: 0, inputHeight: 0, rootChildren: 0 });
+  const [uiProbe, setUiProbe] = useState({
+    hasEl: false,
+    children: 0,
+    inputHeight: 0,
+    rootChildren: 0,
+    hasRoot: false,
+    rootHasKids: false
+  });
   const [fallbackName, setFallbackName] = useState('');
   const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
   const [fallbackJoined, setFallbackJoined] = useState(false);
@@ -134,26 +141,26 @@ const TeamPage = () => {
     const id = window.setInterval(() => {
       const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
       const count = Number(win.__TEAMVIEW_RENDER_COUNT || 0);
-      if (count > 0) {
-        setTeamMounted(true);
-      }
       setRenderCount(count);
-      const el = document.querySelector('[data-team-ui]') as HTMLElement | null;
+      const el =
+        (document.getElementById('team-root') as HTMLElement | null) ||
+        (document.querySelector('[data-team-ui]') as HTMLElement | null);
       const rect = el ? el.getBoundingClientRect() : null;
       const input = el?.querySelector('input') as HTMLElement | null;
       const inputRect = input ? input.getBoundingClientRect() : null;
       const root = document.getElementById('root');
       const rootChildren = root?.children?.length ?? 0;
+      const rootHasSize = Boolean(rect && rect.height > 10 && rect.width > 10);
+      const rootHasKids = Boolean((el?.children?.length ?? 0) > 0);
       setUiProbe({
         hasEl: Boolean(el),
         children: el?.children?.length ?? 0,
         inputHeight: inputRect ? Math.round(inputRect.height) : 0,
-        rootChildren
+        rootChildren,
+        hasRoot: rootHasSize,
+        rootHasKids
       });
-      if (
-        (rect && rect.height > 10 && rect.width > 10 && (el?.children?.length ?? 0) > 0) ||
-        rootChildren > 1
-      ) {
+      if (rootHasSize && rootHasKids) {
         setTeamMounted(true);
       }
       attempts += 1;
@@ -207,7 +214,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren}
+            TEAM PAGE OK | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKids>0={String(uiProbe.rootHasKids)}
           </div>
         )}
         {showRoomCodeForm && (
@@ -260,7 +267,7 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        {!teamMounted && mountTimedOut && (
+        {!teamMounted && (
           <div
             style={{
               position: 'fixed',
@@ -274,9 +281,13 @@ const TeamPage = () => {
             }}
           >
             <div style={{ width: '100%', maxWidth: 420, padding: 20, background: '#0b0d14', borderRadius: 16 }}>
-              <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>Team UI konnte nicht starten</h2>
+              <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>
+                {mountTimedOut ? 'Team UI konnte nicht starten' : 'Lade Cozy Quiz ...'}
+              </h2>
               <p style={{ color: '#cbd5e1', marginTop: 0 }}>
-                Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.
+                {mountTimedOut
+                  ? 'Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.'
+                  : 'Falls es haengt, kannst du unten schon beitreten.'}
               </p>
               <p style={{ color: '#94a3b8', fontSize: 12 }}>
                 room={roomCode || '??'} | single={String(featureFlags.singleSessionMode)}
@@ -321,22 +332,24 @@ const TeamPage = () => {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => window.location.reload()}
-                style={{
-                  marginTop: 10,
-                  width: '100%',
-                  padding: 12,
-                  borderRadius: 12,
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-                  color: '#0b1020',
-                  fontWeight: 800,
-                  cursor: 'pointer'
-                }}
-              >
-                Neu laden
-              </button>
+              {mountTimedOut && (
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{
+                    marginTop: 10,
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 12,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                    color: '#0b1020',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Neu laden
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -72,6 +72,8 @@ const TeamPage = () => {
 
   const [roomCode, setRoomCode] = useState(initialRoom);
   const [roomInput, setRoomInput] = useState('');
+  const [teamMounted, setTeamMounted] = useState(false);
+  const [mountTimedOut, setMountTimedOut] = useState(false);
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -111,6 +113,14 @@ const TeamPage = () => {
       flags: featureFlags
     });
   }, [debugMode, roomCode, location.search, legacyRoom]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const id = window.setTimeout(() => {
+      setMountTimedOut(true);
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const showRoomCodeForm = !featureFlags.singleSessionMode && !roomCode;
 
@@ -167,7 +177,47 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        <TeamView roomCode={roomCode || ''} />
+        {!teamMounted && mountTimedOut && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 60,
+              background: 'rgba(6,7,14,0.78)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20
+            }}
+          >
+            <div style={{ width: '100%', maxWidth: 420, padding: 20, background: '#0b0d14', borderRadius: 16 }}>
+              <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>Team UI konnte nicht starten</h2>
+              <p style={{ color: '#cbd5e1', marginTop: 0 }}>
+                Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.
+              </p>
+              <p style={{ color: '#94a3b8', fontSize: 12 }}>
+                room={roomCode || '—'} · single={String(featureFlags.singleSessionMode)}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  padding: 12,
+                  borderRadius: 12,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                  color: '#0b1020',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Neu laden
+              </button>
+            </div>
+          </div>
+        )}
+        <TeamView roomCode={roomCode || ''} onMount={() => setTeamMounted(true)} />
       </>
     </TeamBoundary>
   );

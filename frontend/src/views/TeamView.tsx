@@ -115,6 +115,7 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
 
 interface TeamViewProps {
   roomCode: string;
+  onMount?: () => void;
 }
 
 const COPY = {
@@ -194,7 +195,7 @@ const COPY = {
   }
 } as const;
 
-function TeamView({ roomCode }: TeamViewProps) {
+function TeamView({ roomCode, onMount }: TeamViewProps) {
   const draftTheme = getDraftTheme();
   const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
   const [teamName, setTeamName] = useState('');
@@ -274,6 +275,10 @@ function TeamView({ roomCode }: TeamViewProps) {
       setPhase('notJoined');
     }
   }, [gameState, teamId]);
+
+  useEffect(() => {
+    onMount?.();
+  }, [onMount]);
 
   useEffect(() => {
     if (!debugMode && !import.meta.env.DEV) return;
@@ -2538,7 +2543,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       : renderByPhase();
 
   return (
-    <div style={pageStyleTeam} data-timer={timerTick}>
+    <div style={pageStyleTeam} data-timer={timerTick} data-team-ui="1">
       {debugMode && (
         <div
           style={{

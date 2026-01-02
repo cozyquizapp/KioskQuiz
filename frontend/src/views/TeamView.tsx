@@ -1500,7 +1500,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     </div>
     );
   }
-  }
 
   function renderPotatoStage() {
     if (!teamId) return renderNotJoined();

@@ -126,6 +126,15 @@ const buildQrUrl = (url: string, size = 180) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+const COZY_POTATO_MIN = 14;
+const COZY_BLITZ_MIN = 3;
+
+const isCozyPlayableQuiz = (quiz: QuizTemplate): boolean => {
+  const questionCount = Array.isArray(quiz.questionIds) ? quiz.questionIds.length : 0;
+  const blitzCount = quiz.blitz?.pool?.length ?? 0;
+  const potatoCount = Array.isArray(quiz.potatoPool) ? quiz.potatoPool.length : 0;
+  return questionCount === 20 && blitzCount >= COZY_BLITZ_MIN && potatoCount >= COZY_POTATO_MIN;
+};
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!target) return false;
@@ -515,12 +524,13 @@ function ModeratorPage(): React.ReactElement {
           ...(res.quizzes || []),
           ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds }))
         ];
-        setQuizzes(merged);
-        if (merged.length) {
+        const filtered = featureFlags.showLegacyPanels ? merged : merged.filter(isCozyPlayableQuiz);
+        setQuizzes(filtered);
+        if (filtered.length) {
           setSelectedQuiz((prev) => {
             if (prev) return prev;
-            const fallback = savedQuiz && merged.find((q) => q.id === savedQuiz)?.id;
-            return fallback || merged[0].id;
+            const fallback = savedQuiz && filtered.find((q) => q.id === savedQuiz)?.id;
+            return fallback || filtered[0]?.id || '';
           });
         }
       } catch {
@@ -623,6 +633,38 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2500);
     }
   };
+
+  async function loadCurrentQuestion() {
+    if (!roomCode) return;
+    try {
+      const res = await fetchCurrentQuestion(roomCode);
+      setQuestion(res.question ?? null);
+      setMeta(res.meta ?? null);
+      const hasQuestion = Boolean(res.question);
+      setPhase(hasQuestion ? 'question' : 'setup');
+      if (hasQuestion) {
+        setViewPhase(userViewPhase ?? 'quiz');
+      } else if (!userViewPhase) {
+        setViewPhase('pre');
+      }
+    } catch (err) {
+      setToast((err as Error).message);
+    }
+  }
+
+  async function loadAnswers() {
+    if (!roomCode) return;
+    try {
+      const res = await fetchAnswers(roomCode);
+      setAnswers({
+        answers: res.answers ?? {},
+        teams: res.teams ?? {},
+        solution: res.solution
+      });
+    } catch (err) {
+      setToast((err as Error).message);
+    }
+  }
 
   const handleRoomConnect = () => {
     if (SINGLE_SESSION_MODE) {

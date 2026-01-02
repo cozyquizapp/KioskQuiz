@@ -387,6 +387,7 @@ export const defaultQuizzes: QuizTemplate[] = [
     blitzPool: blitzHamburgMoments,
     potatoPool: potatoPoolHamburg
   }),
+  // TODO(LEGACY): Fallback-Templates ohne vollstaendigen Blitz/Potato-Pool.
   buildCozyQuiz60('ordered'),
   buildCozyQuiz60('random'),
   buildQuiz('quiz-1-ordered', 'Quiz 1 (Legacy geordnet)', 'ordered'), // TODO(LEGACY): Altbestand, migrieren

@@ -134,6 +134,9 @@ const TeamPage = () => {
     const id = window.setInterval(() => {
       const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
       const count = Number(win.__TEAMVIEW_RENDER_COUNT || 0);
+      if (count > 0) {
+        setTeamMounted(true);
+      }
       setRenderCount(count);
       const el = document.querySelector('[data-team-ui]') as HTMLElement | null;
       const rect = el ? el.getBoundingClientRect() : null;
@@ -147,7 +150,10 @@ const TeamPage = () => {
         inputHeight: inputRect ? Math.round(inputRect.height) : 0,
         rootChildren
       });
-      if (rect && rect.height > 10 && rect.width > 10 && (el?.children?.length ?? 0) > 0) {
+      if (
+        (rect && rect.height > 10 && rect.width > 10 && (el?.children?.length ?? 0) > 0) ||
+        rootChildren > 1
+      ) {
         setTeamMounted(true);
       }
       attempts += 1;

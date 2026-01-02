@@ -53,9 +53,6 @@ const DEFAULT_ROOM_CODE = featureFlags.singleSessionRoomCode || 'MAIN';
 
 const TeamPage = () => {
   const location = useLocation();
-  const debugMode =
-    import.meta.env.DEV ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1');
   const legacyRoom = import.meta.env.VITE_LEGACY_ROOMCODE || ''; // TODO(LEGACY): dev shortcut only
 
   const initialRoom = useMemo(() => {
@@ -116,17 +113,6 @@ const TeamPage = () => {
       localStorage.setItem('teamRoomCode', clean);
     }
   };
-
-  useEffect(() => {
-    if (!debugMode) return;
-    console.log('[TeamPage]', {
-      singleSessionMode: featureFlags.singleSessionMode,
-      roomCode,
-      search: location.search,
-      legacyRoom,
-      flags: featureFlags
-    });
-  }, [debugMode, roomCode, location.search, legacyRoom]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -200,25 +186,9 @@ const TeamPage = () => {
   return (
     <TeamBoundary>
       <>
-        {debugMode && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 12,
-              left: 12,
-              zIndex: 9999,
-              padding: '6px 10px',
-              borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.25)',
-              background: 'rgba(0,0,0,0.5)',
-              color: '#e2e8f0',
-              fontSize: 12,
-              fontWeight: 700
-            }}
-          >
-            TEAM PAGE OK v=2026-01-02b | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKidsGt0={String(uiProbe.rootHasKids)}
-          </div>
-        )}
+        <div style={{ display: 'none' }}>
+          TEAM PAGE OK v=2026-01-02b | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKidsGt0={String(uiProbe.rootHasKids)}
+        </div>
         {showRoomCodeForm && (
           <div
             style={{

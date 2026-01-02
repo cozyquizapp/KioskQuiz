@@ -102,41 +102,11 @@ function GlobalErrorOverlay() {
   );
 }
 
-function AppDebugBadge() {
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    setEnabled(params.get('debug') === '1');
-  }, []);
-  if (!enabled) return null;
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 10,
-        right: 10,
-        padding: '6px 10px',
-        borderRadius: 10,
-        border: '1px solid rgba(255,255,255,0.25)',
-        background: 'rgba(0,0,0,0.5)',
-        color: '#e2e8f0',
-        fontSize: 12,
-        fontWeight: 700,
-        zIndex: 9998
-      }}
-    >
-      APP DEBUG · {typeof window !== 'undefined' ? window.location.pathname : ''}
-    </div>
-  );
-}
-
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
   return (
     <AppErrorBoundary>
       <GlobalErrorOverlay />
-      <AppDebugBadge />
       <Routes>
       <Route path="/" element={<Navigate to="/team" replace />} />
       <Route path="/menu" element={<MenuPage />} />

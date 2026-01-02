@@ -230,6 +230,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [allowReadyToggle, setAllowReadyToggle] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [socketError, setSocketError] = useState<string | null>(null);
+  const [hasStateUpdate, setHasStateUpdate] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
   const [isFinal, setIsFinal] = useState(false);
@@ -272,6 +274,18 @@ function TeamView({ roomCode }: TeamViewProps) {
       setPhase('notJoined');
     }
   }, [gameState, teamId]);
+
+  useEffect(() => {
+    if (!debugMode && !import.meta.env.DEV) return;
+    console.log('[TeamView]', {
+      roomCode,
+      connectionStatus,
+      gameState,
+      teamId,
+      hasStateUpdate,
+      socketError
+    });
+  }, [debugMode, roomCode, connectionStatus, gameState, teamId, hasStateUpdate, socketError]);
 
   useEffect(() => {
     if (!teamId) {
@@ -502,12 +516,18 @@ function TeamView({ roomCode }: TeamViewProps) {
 
     socket.on('connect', () => {
       setConnectionStatus('connected');
+      setSocketError(null);
       setToast(null);
     });
     socket.on('disconnect', () => setConnectionStatus('disconnected'));
+    socket.on('connect_error', (err) => {
+      setSocketError(err?.message || 'Socket error');
+      setConnectionStatus('disconnected');
+    });
     socket.io?.on?.('reconnect_attempt', () => setConnectionStatus('connecting'));
 
     socket.on('syncState', (payload: SyncStatePayload) => {
+      setHasStateUpdate(true);
       const hasTeam = Boolean(teamId);
       if (!hasTeam) {
         setQuestion(null);
@@ -580,6 +600,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     });
     socket.on('timerStopped', () => setTimerEndsAt(null));
     const onStateUpdate = (payload: StateUpdatePayload) => {
+      setHasStateUpdate(true);
       setGameState(payload.state);
       if (payload.scores) {
         setScoreboard(payload.scores);
@@ -638,7 +659,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
-        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. über teamResult.
+        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. ├╝ber teamResult.
         setPhase('showResult');
       }
     });
@@ -782,6 +803,10 @@ function TeamView({ roomCode }: TeamViewProps) {
       const cleanName = teamName.trim();
       if (!cleanName) {
         setMessage(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
+        return;
+      }
+      if (!roomCode) {
+        setMessage(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
         return;
       }
       const socket = socketRef.current;
@@ -1058,7 +1083,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (payload.kind === 'top5') {
       const values = bunteTop5Order;
       if (values.length !== payload.items.length || values.some((val) => !val)) {
-        setMessage(language === 'de' ? 'Bitte alle Positionen wählen.' : 'Please fill all positions.');
+        setMessage(language === 'de' ? 'Bitte alle Positionen w├ñhlen.' : 'Please fill all positions.');
         return null;
       }
       return { kind: 'top5', order: values };
@@ -1072,7 +1097,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (payload.kind === 'oneOfEight') {
       if (!bunteOneChoice) {
-        setMessage(language === 'de' ? 'Bitte eine Option wählen.' : 'Please choose an option.');
+        setMessage(language === 'de' ? 'Bitte eine Option w├ñhlen.' : 'Please choose an option.');
         return null;
       }
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
@@ -1130,7 +1155,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'W├ñhlen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1217,7 +1242,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 disabled={!canAnswer}
                 style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
               >
-                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'W├ñhlen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1455,7 +1480,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       {resultPoints !== null && (
         <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
           {language === 'de' ? 'Punkte' : 'Points'}: {resultPoints}
-          {resultDetail ? ` · ${resultDetail}` : ''}
+          {resultDetail ? ` ┬À ${resultDetail}` : ''}
         </p>
       )}
       {solution && (
@@ -1551,7 +1576,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (ownAttempt.verdict === 'dup') {
         const conflictText =
-          relevantConflict?.conflictingAnswer || inlineCopy('eine frühere Antwort', 'an earlier answer');
+          relevantConflict?.conflictingAnswer || inlineCopy('eine fr├╝here Antwort', 'an earlier answer');
         if (ownAttempt.reason === 'similar') {
           return inlineCopy(`Sehr aehnlich zu ${conflictText}.`, `Very similar to ${conflictText}.`);
         }
@@ -1575,7 +1600,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (ownAttempt.verdict === 'timeout') {
         return inlineCopy('Zu spaet. Leben in Gefahr.', 'Too late. Life is in danger.');
       }
-      return inlineCopy('Wird geprüft ...', 'Checking attempt ...');
+      return inlineCopy('Wird gepr├╝ft ...', 'Checking attempt ...');
     })();
     function renderScoreboardBlock() {
       return (
@@ -1676,7 +1701,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           <>
             <p style={mutedText}>
               {language === 'de'
-                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
+                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen ├╝brig bleiben.'
                 : language === 'both'
                 ? 'Teams bannen Themen / Teams are banning topics.'
                 : 'Teams are banning topics before the final.'}
@@ -1785,7 +1810,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                       width: 'fit-content'
                     }}
                   >
-                    {inlineCopy('✅ Gültig!', '✅ Accepted!')}
+                    {inlineCopy('Ô£à G├╝ltig!', 'Ô£à Accepted!')}
                   </div>
                 )}
                 {ownAttempt && (
@@ -1889,8 +1914,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               {language === 'en'
                 ? 'Host prepares the next round.'
                 : language === 'both'
-                ? 'Host startet gleich die nächste Runde / Host prepares next round.'
-                : 'Host bereitet die nächste Runde vor.'}
+                ? 'Host startet gleich die n├ñchste Runde / Host prepares next round.'
+                : 'Host bereitet die n├ñchste Runde vor.'}
             </p>
           </>
         )}
@@ -1982,7 +2007,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
           <span>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</span>
           <span>
-            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 • {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
+            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 ÔÇó {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
           </span>
         </div>
         {blitzState.phase === 'PLAYING' ? (
@@ -2074,7 +2099,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   >
                     <label htmlFor={inputId} style={{ fontSize: 12, color: isActive ? '#dbeafe' : '#cbd5e1' }}>
                       {language === 'de' ? 'Item' : 'Item'} {idx + 1}
-                      {item?.prompt ? ` · ${item.prompt}` : ''}
+                      {item?.prompt ? ` ┬À ${item.prompt}` : ''}
                     </label>
                     {item?.mediaUrl && (
                       <img
@@ -2148,7 +2173,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
               {language === 'de'
-                ? 'Set abgeschlossen. Warte auf das nächste.'
+                ? 'Set abgeschlossen. Warte auf das n├ñchste.'
                 : 'Set finished. Waiting for the next one.'}
             </div>
             {Object.keys(results).length > 0 && (
@@ -2200,7 +2225,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             }}
             onClick={() => setShowBingoPanel(false)}
           >
-            {language === 'de' ? 'Bingofeld schließen' : 'Close bingo board'}
+            {language === 'de' ? 'Bingofeld schlie├ƒen' : 'Close bingo board'}
           </button>
         </div>
         <div
@@ -2275,7 +2300,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         </h3>
         <p style={{ ...mutedText, margin: 0 }}>
           {language === 'de'
-            ? 'Wählt ein freies Feld der aktuellen Kategorie.'
+            ? 'W├ñhlt ein freies Feld der aktuellen Kategorie.'
             : 'Pick a free cell of the current category.'}
         </p>
       </div>
@@ -2283,6 +2308,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderNotJoined() {
+    const joinDisabled = !roomCode;
     return (
       <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
         <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -2291,9 +2317,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: 12 }}>{language === 'en' ? 'Language' : 'Sprache'}</span>
         {([
-          { key: 'de', label: 'DE', flag: '🇩🇪' },
-          { key: 'en', label: 'EN', flag: '🇬🇧' },
-          { key: 'both', label: 'DE+EN', flag: '🇩🇪+🇬🇧' }
+          { key: 'de', label: 'DE', flag: '\u{1F1E9}\u{1F1EA}' },
+          { key: 'en', label: 'EN', flag: '\u{1F1EC}\u{1F1E7}' },
+          { key: 'both', label: 'DE+EN', flag: '\u{1F1E9}\u{1F1EA}+\u{1F1EC}\u{1F1E7}' }
         ] as { key: Language; label: string; flag: string }[]).map((opt) => (
           <button
             key={opt.key}
@@ -2322,9 +2348,22 @@ function TeamView({ roomCode }: TeamViewProps) {
         placeholder={t('joinPlaceholder')}
         style={inputStyle}
       />
-      <PrimaryButton style={{ marginTop: 12 }} onClick={() => handleJoin(false)}>
+      <PrimaryButton
+        style={{
+          marginTop: 12,
+          opacity: joinDisabled ? 0.6 : 1,
+          cursor: joinDisabled ? 'not-allowed' : 'pointer'
+        }}
+        onClick={!joinDisabled ? () => handleJoin(false) : undefined}
+        disabled={joinDisabled}
+      >
         {t('joinButton')}
       </PrimaryButton>
+      {!roomCode && (
+        <p style={{ color: '#f97316', marginTop: 8, fontWeight: 700 }}>
+          {language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.'}
+        </p>
+      )}
       {savedIdRef.current && (
         <button
           style={{
@@ -2375,6 +2414,34 @@ function TeamView({ roomCode }: TeamViewProps) {
           </div>
         </>
       )}
+      </div>
+    );
+  }
+
+  function renderLoadingCard() {
+    return renderWaiting(language === 'de' ? 'Verbinde ...' : 'Connecting ...');
+  }
+
+  function renderErrorCard() {
+    return (
+      <div style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.6)' }}>
+        <div style={pillLabel}>{language === 'de' ? 'Fehler' : 'Error'}</div>
+        <h3 style={{ ...heading, marginBottom: 6 }}>
+          {language === 'de' ? 'Verbindung fehlgeschlagen' : 'Connection failed'}
+        </h3>
+        <p style={mutedText}>{socketError || 'Unknown error'}</p>
+        <button
+          style={{
+            ...primaryButton,
+            background: 'rgba(255,255,255,0.12)',
+            color: '#e2e8f0',
+            border: '1px solid rgba(255,255,255,0.2)',
+            minHeight: 44
+          }}
+          onClick={() => window.location.reload()}
+        >
+          {language === 'de' ? 'Neu laden' : 'Reload'}
+        </button>
       </div>
     );
   }
@@ -2434,6 +2501,13 @@ function TeamView({ roomCode }: TeamViewProps) {
   const timerContextActive = questionAnsweringActive || isBlitzPlaying || isPotatoActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
   const showTimerProgress = hasTimer && !isLocked;
+  const viewState = socketError
+    ? 'error'
+    : !hasStateUpdate && connectionStatus === 'connecting'
+    ? 'loading'
+    : !teamId
+    ? 'join'
+    : 'active';
 
   const accentCategory = (question?.category as keyof typeof categoryColors) ?? 'GemischteTuete';
   const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
@@ -2454,6 +2528,15 @@ function TeamView({ roomCode }: TeamViewProps) {
       ? 'Ergebnis'
       : 'Warten';
 
+  const mainContent =
+    viewState === 'error'
+      ? renderErrorCard()
+      : viewState === 'loading'
+      ? renderLoadingCard()
+      : viewState === 'join'
+      ? renderNotJoined()
+      : renderByPhase();
+
   return (
     <div style={pageStyleTeam} data-timer={timerTick}>
       {debugMode && (
@@ -2472,7 +2555,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             fontWeight: 700
           }}
         >
-          TEAM DEBUG · phase={phase} · state={gameState} · room={roomCode} · team={teamId ?? '—'}
+          TEAM DEBUG ┬À phase={phase} ┬À state={gameState} ┬À room={roomCode} ┬À team={teamId ?? 'ÔÇö'}
         </div>
       )}
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
@@ -2482,7 +2565,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             <Link
               to="/menu"
               style={{ textDecoration: 'none', color: 'inherit' }}
-              title={language === 'de' ? 'Menü öffnen' : 'Open menu'}
+              title={language === 'de' ? 'Men├╝ ├Âffnen' : 'Open menu'}
             >
               <div
                 style={{
@@ -2553,7 +2636,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 }}
                 onClick={() => setShowBingoPanel(true)}
               >
-                {language === 'de' ? 'Bingofeld öffnen' : 'Open bingo board'}
+                {language === 'de' ? 'Bingofeld ├Âffnen' : 'Open bingo board'}
               </button>
             )}
           </div>
@@ -2570,7 +2653,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           </div>
         )}
 
-        {renderByPhase()}
+        {mainContent}
 
         {featureFlags.showLegacyPanels && teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
           <PrimaryButton
@@ -2627,7 +2710,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         >
           {canMarkBingo
             ? language === 'de'
-              ? 'Bingofeld öffnen'
+              ? 'Bingofeld ├Âffnen'
               : 'Open bingo board'
             : 'Bingofeld'}
         </button>

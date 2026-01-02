@@ -214,7 +214,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK v=2026-01-02a | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKids>0={String(uiProbe.rootHasKids)}
+            TEAM PAGE OK v=2026-01-02a | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKidsGt0={String(uiProbe.rootHasKids)}
           </div>
         )}
         {showRoomCodeForm && (

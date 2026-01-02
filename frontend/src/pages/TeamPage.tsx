@@ -74,6 +74,7 @@ const TeamPage = () => {
   const [roomInput, setRoomInput] = useState('');
   const [teamMounted, setTeamMounted] = useState(false);
   const [mountTimedOut, setMountTimedOut] = useState(false);
+  const [renderCount, setRenderCount] = useState(0);
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -126,6 +127,14 @@ const TeamPage = () => {
     if (typeof window === 'undefined') return undefined;
     let attempts = 0;
     const id = window.setInterval(() => {
+      const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
+      const count = Number(win.__TEAMVIEW_RENDER_COUNT || 0);
+      if (count > 0) {
+        setTeamMounted(true);
+        setRenderCount(count);
+        window.clearInterval(id);
+        return;
+      }
       const el = document.querySelector('[data-team-ui]');
       const rect = el ? (el as HTMLElement).getBoundingClientRect() : null;
       if (rect && rect.height > 10 && rect.width > 10) {
@@ -161,7 +170,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)}
+            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)} · renders={renderCount}
           </div>
         )}
         {showRoomCodeForm && (

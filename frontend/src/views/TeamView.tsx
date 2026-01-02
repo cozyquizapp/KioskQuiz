@@ -197,6 +197,11 @@ const COPY = {
 function TeamView({ roomCode }: TeamViewProps) {
   const draftTheme = getDraftTheme();
   const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
+  if (typeof window !== 'undefined') {
+    const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
+    win.__TEAMVIEW_RENDERED = true;
+    win.__TEAMVIEW_RENDER_COUNT = (win.__TEAMVIEW_RENDER_COUNT ?? 0) + 1;
+  }
   const [teamName, setTeamName] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);

@@ -75,6 +75,7 @@ const TeamPage = () => {
   const [teamMounted, setTeamMounted] = useState(false);
   const [mountTimedOut, setMountTimedOut] = useState(false);
   const [renderCount, setRenderCount] = useState(0);
+  const [uiProbe, setUiProbe] = useState({ children: 0, inputHeight: 0 });
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -132,14 +133,17 @@ const TeamPage = () => {
       if (count > 0) {
         setTeamMounted(true);
         setRenderCount(count);
-        window.clearInterval(id);
-        return;
       }
-      const el = document.querySelector('[data-team-ui]');
-      const rect = el ? (el as HTMLElement).getBoundingClientRect() : null;
+      const el = document.querySelector('[data-team-ui]') as HTMLElement | null;
+      const rect = el ? el.getBoundingClientRect() : null;
+      const input = el?.querySelector('input') as HTMLElement | null;
+      const inputRect = input ? input.getBoundingClientRect() : null;
+      setUiProbe({
+        children: el?.children?.length ?? 0,
+        inputHeight: inputRect ? Math.round(inputRect.height) : 0
+      });
       if (rect && rect.height > 10 && rect.width > 10) {
         setTeamMounted(true);
-        window.clearInterval(id);
       }
       attempts += 1;
       if (attempts >= 10) {
@@ -170,7 +174,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)} · renders={renderCount}
+            TEAM PAGE OK · room={roomCode || '—'} · mounted={String(teamMounted)} · renders={renderCount} · children={uiProbe.children} · inputH={uiProbe.inputHeight}
           </div>
         )}
         {showRoomCodeForm && (

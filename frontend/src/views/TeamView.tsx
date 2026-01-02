@@ -199,10 +199,12 @@ function TeamView({ roomCode }: TeamViewProps) {
   const debugMode =
     import.meta.env.DEV ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1');
+  const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
     win.__TEAMVIEW_RENDERED = true;
     win.__TEAMVIEW_RENDER_COUNT = (win.__TEAMVIEW_RENDER_COUNT ?? 0) + 1;
+    (win as any).__TEAMVIEW_MARKER = teamMarker;
   }
   const [teamName, setTeamName] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
@@ -2545,7 +2547,14 @@ function TeamView({ roomCode }: TeamViewProps) {
       : renderByPhase();
 
   return (
-    <div id="team-root" style={pageStyleTeam} data-timer={timerTick} data-team-ui="1">
+    <div
+      id="team-root"
+      style={pageStyleTeam}
+      data-timer={timerTick}
+      data-team-ui="1"
+      data-team-marker={teamMarker}
+    >
+      <span style={{ display: 'none' }}>{teamMarker}</span>
       {debugMode && (
         <div
           style={{

@@ -83,6 +83,7 @@ const TeamPage = () => {
     hasRoot: false,
     rootHasKids: false
   });
+  const [hideFallback, setHideFallback] = useState(false);
   const [fallbackName, setFallbackName] = useState('');
   const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
   const [fallbackJoined, setFallbackJoined] = useState(false);
@@ -143,6 +144,7 @@ const TeamPage = () => {
       const count = Number(win.__TEAMVIEW_RENDER_COUNT || 0);
       setRenderCount(count);
       const el =
+        (document.querySelector('[data-team-marker]') as HTMLElement | null) ||
         (document.getElementById('team-root') as HTMLElement | null) ||
         (document.querySelector('[data-team-ui]') as HTMLElement | null);
       const rect = el ? el.getBoundingClientRect() : null;
@@ -214,7 +216,7 @@ const TeamPage = () => {
               fontWeight: 700
             }}
           >
-            TEAM PAGE OK v=2026-01-02a | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKidsGt0={String(uiProbe.rootHasKids)}
+            TEAM PAGE OK v=2026-01-02b | room={roomCode || '??'} | mounted={String(teamMounted)} | renders={renderCount} | hasEl={String(uiProbe.hasEl)} | children={uiProbe.children} | inputH={uiProbe.inputHeight} | rootKids={uiProbe.rootChildren} | rootSize={String(uiProbe.hasRoot)} | rootKidsGt0={String(uiProbe.rootHasKids)}
           </div>
         )}
         {showRoomCodeForm && (
@@ -267,7 +269,7 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        {!teamMounted && (
+        {!teamMounted && !hideFallback && (
           <div
             style={{
               position: 'fixed',
@@ -332,6 +334,22 @@ const TeamPage = () => {
                   </div>
                 )}
               </div>
+              <button
+                onClick={() => setHideFallback(true)}
+                style={{
+                  marginTop: 8,
+                  width: '100%',
+                  padding: 10,
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#e2e8f0',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                UI anzeigen (Debug)
+              </button>
               {mountTimedOut && (
                 <button
                   onClick={() => window.location.reload()}

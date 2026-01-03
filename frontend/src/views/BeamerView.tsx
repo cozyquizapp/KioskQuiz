@@ -1383,58 +1383,68 @@ useEffect(() => {
   };
 
   const renderCozyIntroContent = (): JSX.Element => {
-    const connectedInfo = `Teams: ${teams.length || 0}`;
-    const tileCategories: QuizCategory[] = ['Cheese', 'Schaetzchen', 'Mu-Cho', 'Stimmts', 'GemischteTuete'];
-    const highlightCategory = tileCategories[lobbyHighlightIndex % tileCategories.length];
-    const heroLang = normalizeLang(language);
-    const heroLabel = getCategoryLabel(highlightCategory, heroLang);
-    const heroText = getCategoryDescription(highlightCategory, heroLang);
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     const joinTitle =
       language === 'en'
         ? 'Scan to join'
         : language === 'both'
-        ? 'Scannen & beitreten / Scan to join'
+        ? 'Scannen / Scan to join'
         : 'Jetzt scannen & beitreten';
+    const titleText =
+      language === 'en'
+        ? 'Welcome to Cozy Wolf Quiz'
+        : language === 'both'
+        ? 'Willkommen / Welcome'
+        : 'Willkommen zum Cozy Wolf Quiz';
+    const subtitleText =
+      language === 'en'
+        ? 'Connect your team and get ready.'
+        : language === 'both'
+        ? 'Teams verbinden / Connect teams'
+        : 'Teams verbinden und bereit machen.';
+    const statusReady = language === 'en' ? 'ready' : language === 'both' ? 'bereit / ready' : 'bereit';
+    const statusOnline = language === 'en' ? 'online' : language === 'both' ? 'online / connected' : 'online';
+    const sortedTeams = [...teams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return (
       <div className="cozyLobbyShell">
-        <div className="cozyLobbyGrid">
-          <div className="cozyLobbyLeft">
-            {tileCategories.map((cat) => {
-              const iconSrc = categoryIcons[cat];
-              const isActive = highlightCategory === cat;
-              return (
-                <div key={`cozy-pill-${cat}`} className={`cozyLobbyPill${isActive ? ' cozyLobbyPillActive' : ''}`}>
-                  {iconSrc && <img src={iconSrc} alt={cat} />}
-                  <strong>{getCategoryLabel(cat, heroLang)}</strong>
-                </div>
-              );
-            })}
+        <div className="cozyLobbyHeader">
+          <img src="/logo.png?v=3" alt="Cozy Wolf" />
+          <div>
+            <div className="cozyLobbyTitle">{titleText}</div>
+            <div className="cozyLobbySubtitle">{subtitleText}</div>
           </div>
-          <div className="cozyLobbyHero">
-            <div className="cozyLobbyHeroInner">
-              <div className="cozyLobbyHeroHeader">
-                {categoryIcons[highlightCategory] && (
-                  <img src={categoryIcons[highlightCategory]} alt={highlightCategory} />
-                )}
-                <span className="cozyLobbyHeroTitle">{heroLabel}</span>
-              </div>
-              <p className="cozyLobbyHeroText">{heroText}</p>
-              <div className="cozyLobbyMetaRow">{connectedInfo}</div>
+        </div>
+        <div className="cozyLobbyMain">
+          <div className="cozyLobbyTeams">
+            <div className="cozyLobbyTeamsHeader">
+              <span>Teams</span>
+              <span>{teams.length || 0}</span>
             </div>
-            {showQr && teamJoinQr && (
-              <div className="cozyLobbyJoinCard">
-                <div className="cozyLobbyJoinText">
-                  <div className="cozyLobbyJoinTitle">{joinTitle}</div>
-                  {joinDisplay && <div className="cozyLobbyJoinLink">{joinDisplay}</div>}
-                </div>
-                <div className="cozyLobbyJoinQr">
-                  <img src={teamJoinQr} alt="Team QR" />
-                </div>
-              </div>
-            )}
+            <div className="cozyLobbyTeamsList">
+              {sortedTeams.length === 0 ? (
+                <div className="cozyLobbyTeamsEmpty">Noch keine Teams verbunden</div>
+              ) : (
+                sortedTeams.map((team) => {
+                  const isReady = Boolean(team.isReady);
+                  return (
+                    <div className="cozyLobbyTeamRow" key={team.id}>
+                      <span className={`cozyLobbyStatusDot ${isReady ? 'ready' : 'online'}`} />
+                      <span className="cozyLobbyTeamName">{team.name || 'Team'}</span>
+                      <span className="cozyLobbyTeamStatus">{isReady ? statusReady : statusOnline}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
+          {showQr && teamJoinQr && (
+            <div className="cozyLobbyQrPane">
+              <div className="cozyLobbyQrTitle">{joinTitle}</div>
+              {joinDisplay && <div className="cozyLobbyQrLink">{joinDisplay}</div>}
+              <img src={teamJoinQr} alt="Team QR" />
+            </div>
+          )}
         </div>
       </div>
     );

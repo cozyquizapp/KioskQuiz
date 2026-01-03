@@ -1811,6 +1811,7 @@ const computeBlitzResults = (room: RoomState) => {
 
   const activeTeams = standings.filter((entry) => room.teams[entry.teamId]);
   const teamCount = activeTeams.length;
+  const totalSets = Math.min(BLITZ_SETS, room.blitzSelectedThemes.length || BLITZ_SETS);
   if (teamCount <= 1) {
     room.blitzResultsByTeam = provisional;
     room.blitzPhase = 'SET_END';

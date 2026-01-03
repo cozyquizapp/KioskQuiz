@@ -3455,7 +3455,10 @@ const handleHostNextAdvance = (room: RoomState) => {
   }
   if (room.gameState === 'SCOREBOARD') {
     const askedCount = room.askedQuestionIds.length;
-    const shouldStartBlitz = room.nextStage === 'BLITZ' || (askedCount === 10 && room.blitzPhase === 'IDLE');
+    const totalQuestions = room.questionOrder.length;
+    const shouldStartBlitz =
+      room.nextStage === 'BLITZ' ||
+      (room.blitzPhase === 'IDLE' && askedCount >= 10 && askedCount < totalQuestions);
     if (shouldStartBlitz) {
       room.nextStage = 'BLITZ';
       initializeBlitzStage(room);
@@ -3470,7 +3473,7 @@ const handleHostNextAdvance = (room: RoomState) => {
     }
     const shouldStartRundlauf =
       room.nextStage === 'RUNDLAUF' ||
-      (askedCount >= room.questionOrder.length && room.rundlaufPool.length === 0);
+      (askedCount >= totalQuestions && room.rundlaufPool.length === 0);
     if (shouldStartRundlauf) {
       initializeRundlaufStage(room);
       broadcastState(room);
@@ -3650,9 +3653,9 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
 
   const connectedTeamIds = getConnectedTeamIds(room);
-  const answeredConnected = connectedTeamIds.filter((teamId) => room.answers[teamId]).length;
-  if (connectedTeamIds.length > 0 && answeredConnected >= connectedTeamIds.length && room.timerEndsAt) {
-    clearQuestionTimers(room);
+  const activeTeamIds = connectedTeamIds.length ? connectedTeamIds : Object.keys(room.teams);
+  const answeredActive = activeTeamIds.filter((activeId) => room.answers[activeId]).length;
+  if (activeTeamIds.length > 0 && answeredActive >= activeTeamIds.length && room.timerEndsAt) {
     evaluateCurrentQuestion(room);
   }
 

@@ -1786,7 +1786,7 @@ useEffect(() => {
         ? { label: `Segment ${normalizedRound <= 10 ? 1 : 2}`, tone: normalizedRound <= 10 ? 'muted' : 'accent' as const }
         : undefined;
     const questionTitle = `RUNDE ${normalizedRound}/${totalQuestions || 20}`;
-    const questionSubtitle = categoryLabel ? `${categoryLabel} ${categoryIndex}/${categoryTotal}` : undefined;
+    const questionSubtitle = undefined;
     const promptText = getQuestionPromptText();
     const mediaUrl =
       (question as any)?.media?.url ||
@@ -1802,9 +1802,6 @@ useEffect(() => {
         : question?.question ?? question?.questionEn ?? '';
 
     const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
-      const heroDescription = getCategoryDescription(heroCategoryKey, language);
-      const heroLabel = getCategoryLabel(heroCategoryKey, language);
-      const heroIcon = categoryIcons[heroCategoryKey];
       const promptText = getQuestionPromptText();
       const mediaUrl =
         (question as any)?.media?.url ||
@@ -1907,30 +1904,9 @@ useEffect(() => {
           }
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          <div className="cozyQuestionGrid">
-            <div className="cozyCategoryRail">
-              {cozyRailItems.map((item) => (
-                <div
-                  key={item.key}
-                  className={`cozyCategoryPill${item.key === heroCategoryKey ? ' active' : ''}`}
-                >
-                  {item.icon && <img src={item.icon} alt="" />}
-                  <div>
-                    <strong>{item.label}</strong>
-                    <span>{item.description}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="cozyQuestionGrid cozyQuestionGridSolo">
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
-              <div className="cozyQuestionHeroHeader">
-                <div className="cozyQuestionBadge">
-                  {heroIcon && <img src={heroIcon} alt="" />}
-                  <div>
-                    <span>{heroLabel}</span>
-                    <small>{heroDescription}</small>
-                  </div>
-                </div>
+              <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase !== 'reveal' && (
                   <div className="cozyQuestionPhaseBadge">
                     {phase === 'active'
@@ -1962,20 +1938,6 @@ useEffect(() => {
                   ))}
                 </div>
               )}
-              <div className="cozyQuestionFooter">
-                <div>
-                  {questionTitle}
-                  {categoryLabel && (
-                    <>
-                      {' · '}
-                      {categoryLabel} {categoryIndex}/{categoryTotal}
-                    </>
-                  )}
-                </div>
-                <div className="cozyWolfBadge">
-                  <img src="/logo.png?v=3" alt="Cozy Wolf" />
-                </div>
-              </div>
             </div>
           </div>
           {phase === 'reveal' && renderRevealResultsSection()}

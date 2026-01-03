@@ -1782,8 +1782,6 @@ useEffect(() => {
         ? { label: language === 'de' ? 'Finale' : 'Final', tone: 'warning' as const }
         : gameState === 'AWARDS'
         ? { label: 'FINAL', tone: 'success' as const }
-        : totalQuestions
-        ? { label: `Segment ${normalizedRound <= 10 ? 1 : 2}`, tone: normalizedRound <= 10 ? 'muted' : 'accent' as const }
         : undefined;
     const questionTitle = `RUNDE ${normalizedRound}/${totalQuestions || 20}`;
     const questionSubtitle = undefined;
@@ -1881,27 +1879,10 @@ useEffect(() => {
           {...baseFrameProps}
           title={questionTitle}
           subtitle={questionSubtitle}
-          badgeLabel={badgeInfo?.label}
-          badgeTone={badgeInfo?.tone}
-          footerMessage={
-            phase === 'active'
-              ? language === 'de'
-                ? 'Antworten jetzt möglich'
-                : language === 'both'
-                ? 'Antworten möglich / Answers open'
-                : 'Answers open'
-              : phase === 'locked'
-              ? language === 'de'
-                ? 'Antwortfenster geschlossen'
-                : language === 'both'
-                ? 'Antworten geschlossen / Locked'
-                : 'Answers locked'
-              : language === 'de'
-              ? 'Auflösung'
-              : language === 'both'
-              ? 'Auflösung / Reveal'
-              : 'Reveal'
-          }
+          badgeLabel={undefined}
+          badgeTone={undefined}
+          progressText={undefined}
+          footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           <div className="cozyQuestionGrid cozyQuestionGridSolo">

@@ -177,6 +177,7 @@ function ModeratorPage(): React.ReactElement {
   const [potatoWinnerDraft, setPotatoWinnerDraft] = useState('');
   const [blitzThemeInput, setBlitzThemeInput] = useState('');
   const [blitzBanDrafts, setBlitzBanDrafts] = useState<Record<string, string>>({});
+  const [blitzPickDraft, setBlitzPickDraft] = useState('');
   const [countdownTick, setCountdownTick] = useState(0);
   const lastReportedQuestionId = React.useRef<string | null>(null);
   const [slotHoldMs, setSlotHoldMs] = useState(2400);
@@ -356,8 +357,17 @@ function ModeratorPage(): React.ReactElement {
         }
         return;
       }
+      if (blitzPhase === 'READY') {
+        emitBlitzEvent('host:blitzOpenSelection');
+        return;
+      }
       if (blitzPhase === 'BANNING') {
-        emitBlitzEvent('host:confirmBlitzThemes');
+        if (blitz?.pinnedTheme || !blitz?.lastTeamId) {
+          emitBlitzEvent('host:confirmBlitzThemes');
+        }
+        return;
+      }
+      if (blitzPhase === 'ROUND_INTRO') {
         return;
       }
       if (blitzPhase === 'PLAYING') {
@@ -1886,6 +1896,11 @@ function ModeratorPage(): React.ReactElement {
     const selected = blitz?.selectedThemes ?? [];
     const banLimits = blitz?.banLimits ?? {};
     const bans = blitz?.bans ?? {};
+    const pinnedTheme = blitz?.pinnedTheme ?? null;
+    const topTeamId = blitz?.topTeamId ?? null;
+    const lastTeamId = blitz?.lastTeamId ?? null;
+    const topTeamName = topTeamId ? teamLookup[topTeamId]?.name || topTeamId : null;
+    const lastTeamName = lastTeamId ? teamLookup[lastTeamId]?.name || lastTeamId : null;
     const submissions = blitz?.submissions ?? [];
     const results = blitz?.results ?? {};
     const setIndex = blitz?.setIndex ?? -1;
@@ -2000,9 +2015,20 @@ function ModeratorPage(): React.ReactElement {
           </div>
         )}
 
-        {(phase === 'BANNING' || phase === 'SET_END') && selected.length === 0 && (
-          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
-            <div style={{ fontWeight: 700 }}>VerfÃ¼gbare Themen</div>
+        {phase === 'READY' && (
+          <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+            <div style={{ fontWeight: 700 }}>
+              {language === 'de' ? 'Fotoblitz bereit' : 'Blitz ready'}
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {topTeamName
+                ? `Platz 1 (${topTeamName}) streicht 2 Themen`
+                : 'Platz 1 streicht 2 Themen'}{' '}
+              -
+              {lastTeamName
+                ? ` Letzter Platz (${lastTeamName}) waehlt 1 Thema`
+                : ' Letzter Platz waehlt 1 Thema'}
+            </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {pool.map((theme) => (
                 <span key={theme.id} style={statChip}>
@@ -2011,16 +2037,80 @@ function ModeratorPage(): React.ReactElement {
               ))}
               {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {scoreboard.map((entry) => renderBanRow(entry.id, entry.name))}
-            </div>
             <button
               style={{ ...inputStyle, width: 'auto' }}
+              onClick={() => emitBlitzEvent('host:blitzOpenSelection')}
+            >
+              Auswahl starten
+            </button>
+          </div>
+        )}
+
+        {phase === 'BANNING' && selected.length === 0 && (
+          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+            <div style={{ fontWeight: 700 }}>Verfuegbare Themen</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {pool.map((theme) => (
+                <span key={theme.id} style={statChip}>
+                  {theme.title}
+                </span>
+              ))}
+              {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
+            </div>
+            {topTeamId && (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ fontWeight: 700 }}>Bans durch Platz 1</div>
+                {renderBanRow(topTeamId, topTeamName || 'Platz 1')}
+              </div>
+            )}
+            {lastTeamId && (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ fontWeight: 700 }}>Garantiertes Thema (letzter Platz)</div>
+                {pinnedTheme ? (
+                  <span
+                    style={{
+                      ...statChip,
+                      borderColor: 'rgba(59,130,246,0.4)',
+                      background: 'rgba(59,130,246,0.18)'
+                    }}
+                  >
+                    {pinnedTheme.title}
+                  </span>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <select
+                      value={blitzPickDraft}
+                      onChange={(e) => setBlitzPickDraft(e.target.value)}
+                      style={{ ...inputStyle, flex: '1 1 180px', minWidth: 180 }}
+                    >
+                      <option value="">Theme waehlen</option>
+                      {pool.map((theme) => (
+                        <option key={`pick-${theme.id}`} value={theme.id}>
+                          {theme.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      style={{ ...inputStyle, width: 'auto' }}
+                      disabled={!blitzPickDraft}
+                      onClick={() => emitBlitzEvent('host:pickBlitzTheme', { teamId: lastTeamId, themeId: blitzPickDraft })}
+                    >
+                      Thema festlegen
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              style={{ ...inputStyle, width: 'auto' }}
+              disabled={Boolean(lastTeamId && !pinnedTheme)}
               onClick={() => emitBlitzEvent('host:confirmBlitzThemes')}
             >
               Themen auslosen
             </button>
           </div>
+        )}
+
         )}
 
         {selected.length > 0 && (
@@ -2040,6 +2130,12 @@ function ModeratorPage(): React.ReactElement {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {phase === 'ROUND_INTRO' && (
+          <div style={{ marginTop: 10, fontSize: 13, color: '#cbd5e1' }}>
+            Runde startet gleich. Thema: {currentTheme?.title || '-'}
           </div>
         )}
 
@@ -2147,26 +2243,18 @@ function ModeratorPage(): React.ReactElement {
 
   const renderStageShortcuts = () => {
     const ctas: React.ReactNode[] = [];
-    if (isScoreboardState && askedCount === 10 && blitzPhase === 'IDLE') {
+    if (isScoreboardState && askedCount === 10 && nextStage === 'BLITZ') {
       ctas.push(
         <button
           key="cta-blitz"
           style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#1f1305' }}
-          onClick={() => emitBlitzEvent('host:startBlitz')}
-        >
-          BLITZ STARTEN
-        </button>
-      );
-      ctas.push(
-        <button
-          key="cta-segment-two"
-          style={{ ...inputStyle, width: 'auto', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(96,165,250,0.4)', color: '#bfdbfe' }}
           onClick={handleNextQuestion}
         >
-          Weiter zu Frage 11
+          Weiter -> Fotoblitz
         </button>
       );
     }
+
     if (isScoreboardPauseState && blitzPhase === 'DONE') {
       ctas.push(
         <button

@@ -2033,6 +2033,63 @@ function TeamView({ roomCode }: TeamViewProps) {
     const totalTeamsLabel = teamCount ? String(teamCount) : '?';
     const currentItem = blitzItems[activeBlitzItemIndex];
     const totalItems = blitzItems.length || blitzAnswers.length || 5;
+    if (blitzState.phase === 'READY') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>
+            {language === 'de' ? 'Fotoblitz startet gleich' : 'Blitz starts soon'}
+          </div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            {language === 'de'
+              ? 'Bitte bereit machen.'
+              : 'Please get ready.'}
+          </div>
+          {teamId && (
+            <button
+              style={{
+                ...primaryButton,
+                background: isReady ? accentPink : `${accentPink}22`,
+                color: isReady ? '#0d0f14' : '#e2e8f0',
+                border: `1px solid ${accentPink}66`,
+                opacity: connectionStatus === 'connected' ? 1 : 0.6,
+                cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
+              }}
+              onClick={connectionStatus === 'connected' ? toggleReady : undefined}
+              disabled={connectionStatus !== 'connected'}
+            >
+              {isReady ? t('readyOn') : language === 'de' ? 'Bereit' : 'Ready'}
+            </button>
+          )}
+        </div>
+      );
+    }
+    if (blitzState.phase === 'BANNING') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>
+            {language === 'de' ? 'Themen werden gewaehlt' : 'Themes are being selected'}
+          </div>
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            {language === 'de'
+              ? 'Bitte warten, gleich geht es los.'
+              : 'Please wait, starting soon.'}
+          </div>
+        </div>
+      );
+    }
+    if (blitzState.phase === 'ROUND_INTRO') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>{themeLabel}</div>
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            {language === 'de' ? 'Runde startet jetzt' : 'Round is starting'}
+          </div>
+        </div>
+      );
+    }
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>

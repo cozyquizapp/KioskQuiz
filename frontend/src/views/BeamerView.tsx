@@ -1571,6 +1571,67 @@ useEffect(() => {
 
   const renderCozyBlitzContent = (): JSX.Element | null => {
     if (!blitz) return null;
+    const phase = blitz.phase ?? 'IDLE';
+    const pool = blitz.pool ?? [];
+    const selectedThemes = blitz.selectedThemes ?? [];
+    const pinnedTheme = blitz.pinnedTheme ?? null;
+    const totalSets = Math.max(1, selectedThemes.length || 3);
+
+    if (phase === 'READY' || phase === 'BANNING') {
+      const headline = phase === 'READY' ? 'FOTOBLITZ BEREIT' : 'FOTOBLITZ AUSWAHL';
+      return (
+        <div className="beamer-stack blitz-stack">
+          <div className="beamer-intro-card">
+            <h2>{headline}</h2>
+            <p>Platz 1 streicht 2 Themen, letzter Platz waehlt 1 Thema.</p>
+          </div>
+          <div className="beamer-list">
+            {pool.length ? (
+              pool.map((theme) => (
+                <span key={theme.id}>{theme.title}</span>
+              ))
+            ) : (
+              <span>Keine Themen verfuegbar</span>
+            )}
+          </div>
+          {pinnedTheme && (
+            <div className="beamer-card">
+              <div className="beamer-question-category">Garantiert gespielt</div>
+              <div className="beamer-question-text">{pinnedTheme.title}</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (phase === 'ROUND_INTRO') {
+      return (
+        <div className="beamer-stack blitz-stack">
+          <div className="beamer-intro-card">
+            <h2>FOTOBLITZ</h2>
+            <p>{blitz.theme?.title || '-'}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (phase === 'SET_END' && (blitz.setIndex ?? -1) < 0 && selectedThemes.length) {
+      return (
+        <div className="beamer-stack blitz-stack">
+          <div className="beamer-intro-card">
+            <h2>FOTOBLITZ STARTET</h2>
+            <p>Die 3 Themen stehen fest.</p>
+          </div>
+          <div className="beamer-list">
+            {selectedThemes.map((theme, idx) => (
+              <span key={`blitz-selected-${theme.id}-${idx}`}>{idx + 1}. {theme.title}</span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+
     const detailMap: Record<string, string> = {};
     Object.entries(blitz.results || {}).forEach(([teamId, stats]) => {
       const awarded = stats.pointsAwarded ?? 0;
@@ -1595,7 +1656,7 @@ useEffect(() => {
       if (idx === activeIndex) return 'current';
       return 'pending';
     });
-    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
+    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/${totalSets}`;
     const resultsMap = blitz.results || {};
     const scoreboardReady = Object.keys(resultsMap).length > 0;
     const setFinished = blitz.phase !== 'PLAYING';
@@ -1972,28 +2033,34 @@ useEffect(() => {
       </BeamerFrame>
     );
 
-    const renderBlitzFrame = () => (
-      <BeamerFrame
-        key={`${sceneKey}-blitz`}
-        {...baseFrameProps}
-        title="BLITZ BATTLE"
-        subtitle={blitz?.theme?.title || (language === 'de' ? 'Schnelle Runde' : 'Fast round')}
-        badgeLabel={`SET ${(blitz?.setIndex ?? -1) + 1}/3`}
-        badgeTone="accent"
-        footerMessage={
-          blitz?.phase === 'PLAYING'
-            ? language === 'de'
-              ? '30 Sekunden Antworten'
-              : '30 seconds to answer'
-            : language === 'de'
-            ? 'Set Ergebnis'
-            : 'Set result'
-        }
-        status={blitz?.phase === 'PLAYING' ? 'active' : 'info'}
-      >
-        {renderCozyBlitzContent()}
-      </BeamerFrame>
-    );
+    const renderBlitzFrame = () => {
+      const blitzPhase = blitz?.phase ?? 'IDLE';
+      const totalSets = Math.max(1, blitz?.selectedThemes?.length || 3);
+      const setLabel = `SET ${Math.max(1, (blitz?.setIndex ?? -1) + 1)}/${totalSets}`;
+      const subtitle =
+        blitzPhase === 'PLAYING' || blitzPhase === 'ROUND_INTRO'
+          ? blitz?.theme?.title || ''
+          : blitzPhase === 'BANNING' || blitzPhase === 'READY'
+          ? 'Kategorienwahl'
+          : blitzPhase === 'SET_END'
+          ? 'Set Ergebnis'
+          : '';
+      const showSetBadge = blitzPhase === 'PLAYING' || blitzPhase === 'ROUND_INTRO' || blitzPhase === 'SET_END';
+      return (
+        <BeamerFrame
+          key={`${sceneKey}-blitz`}
+          {...baseFrameProps}
+          title="FOTOBLITZ"
+          subtitle={subtitle}
+          badgeLabel={showSetBadge ? setLabel : undefined}
+          badgeTone={showSetBadge ? 'accent' : undefined}
+          footerMessage={undefined}
+          status={blitzPhase === 'PLAYING' ? 'active' : 'info'}
+        >
+          {renderCozyBlitzContent()}
+        </BeamerFrame>
+      );
+    };
 
     const renderPotatoFrame = () => (
       <BeamerFrame

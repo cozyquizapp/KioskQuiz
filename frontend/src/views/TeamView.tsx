@@ -65,7 +65,7 @@ import {
 } from './teamStyles';
 import { featureFlags } from '../config/features';
 
-type Phase = 'notJoined' | 'waitingForQuestion' | 'answering' | 'waitingForResult' | 'showResult';
+type Phase = 'notJoined' | 'waitingForQuestion' | 'intro' | 'answering' | 'waitingForResult' | 'showResult';
 
 type OfflineBarProps = {
   disconnected: boolean;
@@ -255,6 +255,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [potatoError, setPotatoError] = useState<string | null>(null);
   const [showPotatoOkToast, setShowPotatoOkToast] = useState(false);
   const savedIdRef = useRef<string | null>(null);
+  const answerSubmittedRef = useRef(false);
+  const lastQuestionIdRef = useRef<string | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -268,8 +270,14 @@ function TeamView({ roomCode }: TeamViewProps) {
     return `team:${roomCode}:${suffix}`;
   }
   useEffect(() => {
+    answerSubmittedRef.current = answerSubmitted;
+  }, [answerSubmitted]);
+
+  useEffect(() => {
     if (gameState === 'Q_ACTIVE') {
-      setPhase('answering');
+      setPhase(answerSubmittedRef.current ? 'waitingForResult' : 'answering');
+    } else if (gameState === 'QUESTION_INTRO') {
+      setPhase('intro');
     } else if (gameState === 'Q_LOCKED') {
       setPhase('waitingForResult');
     } else if (gameState === 'Q_REVEAL') {
@@ -596,6 +604,10 @@ function TeamView({ roomCode }: TeamViewProps) {
     const onStateUpdate = (payload: StateUpdatePayload) => {
       setHasStateUpdate(true);
       setGameState(payload.state);
+      const teamSnapshot = teamId ? payload.teamStatus?.find((team) => team.id === teamId) : undefined;
+      if (teamSnapshot && typeof teamSnapshot.submitted === 'boolean') {
+        setAnswerSubmitted(teamSnapshot.submitted);
+      }
       if (payload.scores) {
         setScoreboard(payload.scores);
       }
@@ -607,8 +619,28 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.currentQuestion !== undefined) {
         if (payload.currentQuestion) {
+          const nextId = payload.currentQuestion.id;
+          if (nextId && lastQuestionIdRef.current !== nextId) {
+            lastQuestionIdRef.current = nextId;
+            resetInputs();
+            setAnswerSubmitted(false);
+            setResultMessage(null);
+            setResultCorrect(null);
+            setSolution(null);
+          }
           setQuestion(payload.currentQuestion);
-          setPhase('answering');
+          if (payload.state === 'QUESTION_INTRO') {
+            setPhase('intro');
+          } else if (payload.state === 'Q_ACTIVE') {
+            const submitted = teamSnapshot?.submitted ?? answerSubmittedRef.current;
+            setPhase(submitted ? 'waitingForResult' : 'answering');
+          } else if (payload.state === 'Q_LOCKED') {
+            setPhase('waitingForResult');
+          } else if (payload.state === 'Q_REVEAL') {
+            setPhase('showResult');
+          } else if (teamId) {
+            setPhase('waitingForQuestion');
+          }
         } else if (teamId) {
           setPhase('waitingForQuestion');
           setQuestion(null);
@@ -653,8 +685,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
-        // Zeige Ergebnis direkt nach der Bewertung; finale Korrektur kommt ggf. ueber teamResult.
-        setPhase('showResult');
+        setPhase('waitingForResult');
       }
     });
     socket.on(
@@ -1066,8 +1097,14 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderWaitingForResult() {
+    const submittedTitle =
+      language === 'both'
+        ? 'Antwort gesendet ✅ / Answer sent ✅'
+        : language === 'en'
+        ? 'Answer sent ✅'
+        : 'Antwort gesendet ✅';
     return renderWaiting(
-      t('waiting'),
+      answerSubmitted ? submittedTitle : t('waiting'),
       language === 'de' ? 'Wir pruefen alle Antworten ...' : t('evaluating')
     );
   }
@@ -2456,6 +2493,19 @@ function TeamView({ roomCode }: TeamViewProps) {
     switch (phase) {
       case 'notJoined':
         return renderNotJoined();
+      case 'intro':
+        return renderWaiting(
+          language === 'de'
+            ? 'Neue Frage kommt'
+            : language === 'both'
+            ? 'Neue Frage / New question'
+            : 'New question',
+          language === 'de'
+            ? 'Bereit machen ...'
+            : language === 'both'
+            ? 'Bereit machen / Get ready ...'
+            : 'Get ready ...'
+        );
       case 'waitingForQuestion':
         return evaluating
           ? renderWaiting(t('evaluating'), null)
@@ -2490,9 +2540,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       : 0;
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
   const questionAnsweringActive = gameState === 'Q_ACTIVE' && phase === 'answering';
-  const canAnswer = questionAnsweringActive && !timeUp;
+  const canAnswer = questionAnsweringActive && !timeUp && !answerSubmitted;
   const isLocked = gameState === 'Q_LOCKED';
-  const timerContextActive = questionAnsweringActive || isBlitzPlaying || isPotatoActiveTurn;
+  const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
   const showTimerProgress = hasTimer && !isLocked;
   const viewState = socketError

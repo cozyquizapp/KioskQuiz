@@ -250,6 +250,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [answerVisible, setAnswerVisible] = useState(false);
   const [solution, setSolution] = useState<string | undefined>(undefined);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [potato, setPotato] = useState<PotatoState | null>(null);
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
@@ -759,6 +760,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       if (payload.scoreboardOverlayForced !== undefined) {
         setScoreboardOverlayForced(Boolean(payload.scoreboardOverlayForced));
       }
+      if (payload.teamStatus !== undefined) {
+        setTeamStatus(payload.teamStatus ?? []);
+      }
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
@@ -785,7 +789,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('answersEvaluated', ({ solution: sol }: { solution?: string }) => {
       setSolution(sol);
       setEvaluating(false);
-      setAnswerVisible(true); // Lösung direkt einblenden
+      setAnswerVisible(false);
       setQuestionPhase('evaluated');
     });
 
@@ -1947,6 +1951,17 @@ useEffect(() => {
                 </div>
               )}
               <div className="cozyQuestionBody">{renderHeroBody()}</div>
+              {phase !== 'reveal' && teamStatus?.length > 0 && (
+                <div className="cozyTeamStatusBar">
+                  {teamStatus.map((team) => (
+                    <div key={team.id} className="cozyTeamStatusChip">
+                      <span className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`} />
+                      <span className="cozyTeamStatusName">{team.name || 'Team'}</span>
+                      <span className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`} />
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="cozyQuestionFooter">
                 <div>
                   {questionTitle}
@@ -1967,6 +1982,29 @@ useEffect(() => {
         </BeamerFrame>
       );
     };
+
+    const renderQuestionIntroFrame = () => (
+      <BeamerFrame
+        key={`${sceneKey}-question-intro`}
+        {...baseFrameProps}
+        title=""
+        subtitle=""
+        badgeLabel={undefined}
+        badgeTone={undefined}
+        footerMessage={undefined}
+        hideHeader
+        status="info"
+      >
+        <div className="cozyQuestionIntro">
+          <div className="cozyQuestionIntroTitle">
+            {language === 'de' ? 'Neue Frage kommt' : language === 'both' ? 'Neue Frage / New question' : 'New question'}
+          </div>
+          <div className="cozyQuestionIntroSub">
+            {language === 'de' ? 'Bereit machen' : language === 'both' ? 'Bereit machen / Get ready' : 'Get ready'}
+          </div>
+        </div>
+      </BeamerFrame>
+    );
 
     const renderScoreboardFrame = (mode: 'scoreboard' | 'pause') => (
       <BeamerFrame
@@ -2053,6 +2091,8 @@ useEffect(() => {
     );
 
     switch (gameState) {
+      case 'QUESTION_INTRO':
+        return renderQuestionIntroFrame();
       case 'INTRO':
       case 'LOBBY':
         return (
@@ -2687,6 +2727,7 @@ const cardFrame: React.CSSProperties = {
 };
 
 export default BeamerView;
+
 
 
 

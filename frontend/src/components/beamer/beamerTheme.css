@@ -1033,6 +1033,75 @@
   color: #fcd34d;
 }
 
+.cozyQuestionIntro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.cozyQuestionIntroTitle {
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cozyQuestionIntroSub {
+  font-size: 16px;
+  color: var(--beamer-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cozyTeamStatusBar {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cozyTeamStatusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+}
+
+.cozyTeamStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.cozyTeamStatusDot.offline {
+  background: #475569;
+}
+
+.cozyTeamStatusName {
+  font-weight: 700;
+}
+
+.cozyTeamAnswerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.cozyTeamAnswerDot.submitted {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
 @keyframes beamerFade {
   from {
     opacity: 0;

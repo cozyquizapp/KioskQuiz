@@ -18,6 +18,7 @@ import {
   ScreenState,
   SlotTransitionMeta,
   Team,
+  TeamStatusSnapshot,
   SyncStatePayload,
   StateUpdatePayload,
   PotatoState,
@@ -50,7 +51,7 @@ import { questions, questionById } from './data/questions';
 import { QuizMeta, Language, PotatoPhase } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
-import { DEBUG, DEFAULT_QUESTION_TIME, ROOM_IDLE_CLEANUP_MS, SLOT_DURATION_MS } from './constants';
+import { DEBUG, DEFAULT_QUESTION_TIME, QUESTION_INTRO_MS, ROOM_IDLE_CLEANUP_MS, SLOT_DURATION_MS } from './constants';
 import { INTRO_SLIDES } from './config/introSlides';
 import {
   applyGameAction,
@@ -127,6 +128,7 @@ const upload = multer({
 type RoomState = {
   roomCode: string;
   teams: Record<string, Team>;
+  connectedTeams: Record<string, number>;
   currentQuestionId: string | null;
   answers: Record<string, AnswerEntry>;
   quizId: string | null;
@@ -137,6 +139,8 @@ type RoomState = {
   bingoEnabled: boolean;
   timerEndsAt: number | null;
   questionTimerDurationMs: number | null;
+  questionIntroTimeout: NodeJS.Timeout | null;
+  questionTimerTimeout: NodeJS.Timeout | null;
   screen: ScreenState;
   questionPhase: QuestionPhase;
   lastActivityAt: number;
@@ -959,6 +963,7 @@ const ensureRoom = (roomCode: string): RoomState => {
     rooms.set(code, {
       roomCode: code,
       teams: {},
+      connectedTeams: {},
       currentQuestionId: null,
       answers: {},
       quizId: null,
@@ -969,6 +974,8 @@ const ensureRoom = (roomCode: string): RoomState => {
       bingoEnabled: false,
       timerEndsAt: null,
       questionTimerDurationMs: null,
+      questionIntroTimeout: null,
+      questionTimerTimeout: null,
       screen: 'lobby',
       questionPhase: 'idle',
       lastActivityAt: Date.now(),
@@ -1023,6 +1030,46 @@ const ensureRoom = (roomCode: string): RoomState => {
 
 const touchRoom = (room: RoomState) => {
   room.lastActivityAt = Date.now();
+};
+
+const getConnectedTeamIds = (room: RoomState) =>
+  Object.keys(room.connectedTeams).filter((teamId) => room.connectedTeams[teamId] > 0);
+
+const markTeamConnected = (room: RoomState, teamId: string) => {
+  room.connectedTeams[teamId] = (room.connectedTeams[teamId] ?? 0) + 1;
+};
+
+const markTeamDisconnected = (room: RoomState, teamId: string) => {
+  if (!room.connectedTeams[teamId]) return;
+  room.connectedTeams[teamId] -= 1;
+  if (room.connectedTeams[teamId] <= 0) {
+    delete room.connectedTeams[teamId];
+  }
+};
+
+const clearQuestionTimers = (room: RoomState) => {
+  if (room.questionIntroTimeout) {
+    clearTimeout(room.questionIntroTimeout);
+    room.questionIntroTimeout = null;
+  }
+  if (room.questionTimerTimeout) {
+    clearTimeout(room.questionTimerTimeout);
+    room.questionTimerTimeout = null;
+  }
+};
+
+const startQuestionTimer = (room: RoomState, durationMs: number) => {
+  clearQuestionTimers(room);
+  const endsAt = Date.now() + durationMs;
+  room.timerEndsAt = endsAt;
+  room.questionTimerDurationMs = durationMs;
+  room.questionTimerTimeout = setTimeout(() => {
+    if (room.gameState !== 'Q_ACTIVE') return;
+    if (!room.timerEndsAt) return;
+    clearQuestionTimers(room);
+    evaluateCurrentQuestion(room);
+  }, durationMs + 20);
+  io.to(room.roomCode).emit('timerStarted', { endsAt });
 };
 
 const log = (roomCode: string, message: string, ...args: unknown[]) => {
@@ -2527,6 +2574,14 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           itemDurationMs: room.blitzItemDurationMs ?? undefined
         };
   const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
+  const connectedTeamIds = getConnectedTeamIds(room);
+  const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({
+    id: team.id,
+    name: team.name,
+    connected: connectedTeamIds.includes(team.id),
+    submitted: Boolean(room.answers[team.id]),
+    isReady: team.isReady
+  }));
   const results = includeResults
     ? Object.entries(room.answers).map(([teamId, entry]) => ({
         teamId,
@@ -2558,7 +2613,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
       name: team.name,
       score: team.score ?? 0
     })),
-    teamsConnected: Object.keys(room.teams).length,
+    teamsConnected: connectedTeamIds.length,
+    teamStatus,
     questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
     potato,
     blitz,
@@ -2587,6 +2643,7 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
   if (room.questionPhase === 'evaluated' || room.questionPhase === 'revealed') return false;
   const question = questionById.get(room.currentQuestionId);
   if (!question) return false;
+  clearQuestionTimers(room);
   applyRoomState(room, { type: 'HOST_LOCK' });
   const basePoints = getQuestionPoints(room, question);
 
@@ -2814,6 +2871,27 @@ app.post('/api/rooms/:roomCode/use-quiz', (req, res) => {
   return res.json({ ok: true, quizId, remaining });
 });
 
+const enterQuestionActive = (room: RoomState, questionId: string, remainingOverride?: number) => {
+  const question = questionById.get(questionId);
+  if (!question) return;
+  const questionWithImage = applyOverrides(question);
+  room.questionIntroTimeout = null;
+  room.screen = 'question';
+  const meta = buildQuestionMeta(room, questionId);
+  const localized = localizeQuestion(questionWithImage, room.language);
+  room.questionPhase = 'answering';
+  applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
+  startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
+  io.to(room.roomCode).emit('questionStarted', {
+    questionId,
+    remaining: remainingOverride ?? room.remainingQuestionIds.length,
+    meta
+  });
+  io.to(room.roomCode).emit('beamer:show-question', { question: localized, meta });
+  io.to(room.roomCode).emit('team:show-question', { question: sanitizeQuestionForTeams(localized) });
+  broadcastState(room);
+};
+
 const startQuestionWithSlot = (
   room: RoomState,
   questionId: string,
@@ -2832,12 +2910,13 @@ const startQuestionWithSlot = (
   room.answers = {};
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
+  clearQuestionTimers(room);
   room.nextStage = null;
   room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
   ensureSegmentTwoBaseline(room);
   room.screen = 'slot';
-  room.questionPhase = 'answering';
-  applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
+  room.questionPhase = 'idle';
+  applyRoomState(room, { type: 'FORCE', next: 'QUESTION_INTRO' });
   broadcastState(room);
 
   const askedInCategory = room.askedQuestionIds.filter(
@@ -2856,19 +2935,9 @@ const startQuestionWithSlot = (
   log(room.roomCode, `Slot-Transition for question ${questionWithImage.id}`);
   io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
 
-  setTimeout(() => {
-    room.screen = 'question';
-    const meta = buildQuestionMeta(room, questionId);
-    const localized = localizeQuestion(questionWithImage, room.language);
-    io.to(room.roomCode).emit('questionStarted', {
-      questionId,
-      remaining: remainingOverride ?? room.remainingQuestionIds.length,
-      meta
-    });
-    io.to(room.roomCode).emit('beamer:show-question', { question: localized, meta });
-    io.to(room.roomCode).emit('team:show-question', { question: sanitizeQuestionForTeams(localized) });
-    broadcastState(room);
-  }, SLOT_DURATION_MS);
+  room.questionIntroTimeout = setTimeout(() => {
+    enterQuestionActive(room, questionId, remainingOverride);
+  }, QUESTION_INTRO_MS);
 
   if (res) {
     res.json({
@@ -2900,6 +2969,11 @@ const shouldShowSegmentScoreboard = (room: RoomState) => {
 };
 
 const handleHostNextAdvance = (room: RoomState) => {
+  if (room.gameState === 'QUESTION_INTRO' && room.currentQuestionId) {
+    clearQuestionTimers(room);
+    enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
+    return { stage: room.gameState };
+  }
   if (room.gameState === 'SCOREBOARD_PAUSE') {
     if (room.nextStage === 'BLITZ') {
       initializeBlitzStage(room);
@@ -2919,7 +2993,7 @@ const handleHostNextAdvance = (room: RoomState) => {
     applyRoomState(room, { type: 'HOST_NEXT' });
     return runNextQuestion(room);
   }
-  if (room.gameState === 'Q_REVEAL' && shouldShowSegmentScoreboard(room)) {
+  if (room.gameState === 'Q_REVEAL') {
     applyRoomState(room, { type: 'HOST_NEXT' });
     broadcastState(room);
     return { stage: room.gameState };
@@ -3100,12 +3174,10 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   io.to(roomCode).emit('answerReceived', { teamId });
   io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
 
-  const teamCount = Object.keys(room.teams).length;
-  const answerCount = Object.keys(room.answers).length;
-  if (teamCount > 0 && answerCount >= teamCount && room.timerEndsAt) {
-    room.timerEndsAt = null;
-    room.questionTimerDurationMs = null;
-    io.to(roomCode).emit('timerStopped');
+  const connectedTeamIds = getConnectedTeamIds(room);
+  const answeredConnected = connectedTeamIds.filter((teamId) => room.answers[teamId]).length;
+  if (connectedTeamIds.length > 0 && answeredConnected >= connectedTeamIds.length && room.timerEndsAt) {
+    clearQuestionTimers(room);
     evaluateCurrentQuestion(room);
   }
 
@@ -3343,18 +3415,16 @@ app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
   const secs = Number(seconds ?? DEFAULT_QUESTION_TIME);
   if (!Number.isFinite(secs) || secs <= 0) return res.status(400).json({ error: 'seconds muss > 0 sein' });
   const durationMs = Math.round(secs * 1000);
-  const endsAt = Date.now() + durationMs;
-  room.timerEndsAt = endsAt;
-  room.questionTimerDurationMs = durationMs;
-  io.to(roomCode).emit('timerStarted', { endsAt });
+  startQuestionTimer(room, durationMs);
   broadcastState(room);
-  return res.json({ ok: true, endsAt });
+  return res.json({ ok: true, endsAt: room.timerEndsAt });
 });
 
 app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
   touchRoom(room);
+  clearQuestionTimers(room);
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
   io.to(roomCode).emit('timerStopped');
@@ -3559,6 +3629,22 @@ io.on('connection', (socket: Socket) => {
         const room = ensureRoom(resolved);
         touchRoom(room);
         const result = joinTeamToRoom(room, teamName, teamId);
+        const previousTeamId = socket.data.teamId as string | undefined;
+        const previousRoom = socket.data.roomCode as string | undefined;
+        if (previousTeamId && previousRoom && (previousTeamId !== result.team.id || previousRoom !== room.roomCode)) {
+          const oldRoom = rooms.get(previousRoom);
+          if (oldRoom) {
+            markTeamDisconnected(oldRoom, previousTeamId);
+            broadcastState(oldRoom);
+          }
+        }
+        if (!previousTeamId || previousTeamId !== result.team.id || previousRoom !== room.roomCode) {
+          markTeamConnected(room, result.team.id);
+        }
+        socket.data.teamId = result.team.id;
+        socket.data.roomCode = room.roomCode;
+        socket.data.role = 'team';
+        broadcastState(room);
         respond(ack, { ok: true, team: result.team, board: result.board });
       } catch (err) {
         respond(ack, { ok: false, error: (err as Error).message });
@@ -3969,6 +4055,25 @@ io.on('connection', (socket: Socket) => {
     if (!team) return;
     team.isReady = isReady;
     broadcastTeamsReady(room);
+    broadcastState(room);
+  });
+
+  socket.on('disconnect', () => {
+    const role = socket.data.role as string | undefined;
+    const teamId = socket.data.teamId as string | undefined;
+    const roomCode = socket.data.roomCode as string | undefined;
+    if (role !== 'team' || !teamId || !roomCode) return;
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    markTeamDisconnected(room, teamId);
+    const connectedTeamIds = getConnectedTeamIds(room);
+    const answeredConnected = connectedTeamIds.filter((id) => room.answers[id]).length;
+    if (room.gameState === 'Q_ACTIVE' && room.timerEndsAt && connectedTeamIds.length > 0) {
+      if (answeredConnected >= connectedTeamIds.length) {
+        clearQuestionTimers(room);
+        evaluateCurrentQuestion(room);
+      }
+    }
     broadcastState(room);
   });
 });

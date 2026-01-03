@@ -432,6 +432,7 @@ export type QuestionPhase = 'idle' | 'slot' | 'answering' | 'evaluated' | 'revea
 export type CozyGameState =
   | 'LOBBY'
   | 'INTRO'
+  | 'QUESTION_INTRO'
   | 'Q_ACTIVE'
   | 'Q_LOCKED'
   | 'Q_REVEAL'
@@ -531,6 +532,14 @@ export type SyncStatePayload = {
 
 export type NextStageHint = 'BLITZ' | 'Q11' | 'POTATO';
 
+export type TeamStatusSnapshot = {
+  id: string;
+  name: string;
+  connected: boolean;
+  submitted: boolean;
+  isReady?: boolean;
+};
+
 export type StateUpdatePayload = {
   roomCode: string;
   state: CozyGameState;
@@ -539,6 +548,7 @@ export type StateUpdatePayload = {
   timer: { endsAt: number | null; running: boolean; durationMs?: number | null };
   scores: Array<{ id: string; name: string; score: number }>;
   teamsConnected: number;
+  teamStatus?: TeamStatusSnapshot[];
   questionProgress?: { asked: number; total: number };
   potato?: PotatoState | null;
   blitz?: BlitzState | null;

@@ -222,6 +222,7 @@ function ModeratorPage(): React.ReactElement {
   const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
     LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
     INTRO: { label: 'Intro', hint: 'Intro/Regeln', tone: 'setup' },
+    QUESTION_INTRO: { label: 'Frage intro', hint: 'Neue Frage startet', tone: 'live' },
     Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antwortphase lÃ¤uft', tone: 'live' },
     Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflÃ¶sen', tone: 'eval' },
     Q_REVEAL: { label: 'Reveal', hint: 'Antworten werden gezeigt', tone: 'eval' },
@@ -1055,6 +1056,8 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '1', label: 'START', detail: 'Session beginnen', context: 'Teams joinen gerade' };
       case 'INTRO':
         return { hotkey: '1', label: 'WEITER', detail: 'Intro fortsetzen', context: 'Slides laufen' };
+      case 'QUESTION_INTRO':
+        return { hotkey: '1', label: 'WEITER', detail: 'Frage starten', context: 'Neue Frage kommt' };
       case 'Q_ACTIVE':
         return {
           hotkey: '2',

@@ -15,9 +15,12 @@ type TransitionKey = Exclude<GameStateAction['type'], 'FORCE'>;
 const transitionTable: Record<CozyGameState, Partial<Record<TransitionKey, CozyGameState>>> = {
   LOBBY: {
     START_SESSION: 'LOBBY',
-    HOST_NEXT: 'INTRO'
+    HOST_NEXT: 'QUESTION_INTRO'
   },
   INTRO: {
+    HOST_NEXT: 'QUESTION_INTRO'
+  },
+  QUESTION_INTRO: {
     HOST_NEXT: 'Q_ACTIVE'
   },
   Q_ACTIVE: {
@@ -31,13 +34,13 @@ const transitionTable: Record<CozyGameState, Partial<Record<TransitionKey, CozyG
     HOST_NEXT: 'SCOREBOARD'
   },
   SCOREBOARD: {
-    HOST_NEXT: 'Q_ACTIVE'
+    HOST_NEXT: 'QUESTION_INTRO'
   },
   BLITZ: {
     HOST_NEXT: 'SCOREBOARD_PAUSE'
   },
   SCOREBOARD_PAUSE: {
-    HOST_NEXT: 'Q_ACTIVE'
+    HOST_NEXT: 'QUESTION_INTRO'
   },
   POTATO: {
     HOST_NEXT: 'AWARDS'

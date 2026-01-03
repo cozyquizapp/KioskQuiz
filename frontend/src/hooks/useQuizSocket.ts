@@ -27,6 +27,7 @@ type SocketEvents = {
   gameState?: CozyGameState;
   scores?: StateUpdatePayload['scores'];
   teamsConnected?: number;
+  teamStatus?: StateUpdatePayload['teamStatus'];
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
   questionProgress?: StateUpdatePayload['questionProgress'];
@@ -150,6 +151,7 @@ export const useQuizSocket = (roomCode: string) => {
         gameState: payload.state,
         scores: payload.scores,
         teamsConnected: payload.teamsConnected,
+        teamStatus: payload.teamStatus ?? prev.teamStatus,
         potato: payload.potato ?? prev.potato,
         blitz: payload.blitz ?? prev.blitz,
         questionProgress: payload.questionProgress ?? prev.questionProgress,

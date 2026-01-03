@@ -212,6 +212,7 @@ function ModeratorPage(): React.ReactElement {
     warnings: socketWarnings,
     timerEndsAt: socketTimerEndsAt,
     teamsConnected: socketTeamsConnected,
+    teamStatus: socketTeamStatus,
     emit: socketEmit,
     config: socketConfig,
     nextStage: socketNextStage,
@@ -1030,24 +1031,45 @@ function ModeratorPage(): React.ReactElement {
   }, [answers, question]);
 
   const submissionStatus = useMemo(() => {
-    const entries = Object.entries(teamLookup);
-    const total = entries.length || connectedTeams || 0;
+    const hasTeamStatus = Boolean(socketTeamStatus?.length);
     const submittedIds =
       normalizedGameState === 'BLITZ'
         ? blitz?.submissions ?? []
         : Object.keys(answers?.answers || {});
     const submittedSet = new Set(submittedIds);
+
+    if (hasTeamStatus) {
+      const connectedIds = (socketTeamStatus || [])
+        .filter((team) => team.connected)
+        .map((team) => team.id);
+      const totalConnected = connectedIds.length;
+      const submittedCount =
+        normalizedGameState === 'BLITZ'
+          ? connectedIds.filter((id) => submittedSet.has(id)).length
+          : (socketTeamStatus || []).filter((team) => team.connected && team.submitted).length;
+      const items = (socketTeamStatus || []).map((team) => ({
+        id: team.id,
+        name: team.name || 'Team',
+        connected: team.connected,
+        submitted: normalizedGameState === 'BLITZ' ? submittedSet.has(team.id) : team.submitted
+      }));
+      return { total: totalConnected, submittedCount, items };
+    }
+
+    const entries = Object.entries(teamLookup);
+    const total = connectedTeams || entries.length || 0;
     const items =
       entries.length > 0
         ? entries.map(([id, info]) => ({
             id,
             name: info.name || 'Team',
+            connected: Boolean(connectedTeams),
             submitted: submittedSet.has(id)
           }))
         : [];
     const submittedCount = Math.min(submittedSet.size, total || submittedSet.size);
     return { total, submittedCount, items };
-  }, [teamLookup, answers, blitz?.submissions, normalizedGameState, connectedTeams]);
+  }, [teamLookup, answers, blitz?.submissions, normalizedGameState, connectedTeams, socketTeamStatus]);
 
   const nextActionHint = useMemo<NextActionHintDetails>(() => {
     const base: NextActionHintDetails = { hotkey: '1', label: 'WEITER', detail: 'Weiter' };
@@ -2523,7 +2545,8 @@ const renderCozyStagePanel = () => {
                   border: `1px solid ${team.submitted ? '#22c55e55' : 'rgba(148,163,184,0.4)'}`,
                   background: team.submitted ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.12)',
                   color: '#e2e8f0',
-                  fontSize: 12
+                  fontSize: 12,
+                  opacity: team.connected ? 1 : 0.55
                 }}
               >
                 <span
@@ -2531,7 +2554,15 @@ const renderCozyStagePanel = () => {
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: team.submitted ? '#22c55e' : '#475569'
+                    background: team.connected ? '#22c55e' : '#64748b'
+                  }}
+                />
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: team.submitted ? '#38bdf8' : '#475569'
                   }}
                 />
                 {team.name}

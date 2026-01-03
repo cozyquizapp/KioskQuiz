@@ -501,7 +501,6 @@
   gap: 24px;
   height: 100%;
   min-height: 0;
-  padding-bottom: 8px;
 }
 
 .cozyLobbyHeader {
@@ -533,22 +532,21 @@
 
 .cozyLobbyMain {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: 1fr 320px;
   gap: 24px;
   align-items: stretch;
   flex: 1;
   min-height: 0;
-  min-height: 520px;
 }
 
 .cozyLobbyTeams {
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(10, 14, 24, 0.6);
-  padding: 24px 26px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   min-height: 0;
 }
 
@@ -629,7 +627,7 @@
   padding: 18px;
   display: grid;
   gap: 12px;
-  align-content: center;
+  align-content: start;
   justify-items: center;
   text-align: center;
 }
@@ -649,8 +647,8 @@
 }
 
 .cozyLobbyQrPane img {
-  width: 240px;
-  height: 240px;
+  width: 220px;
+  height: 220px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.2);

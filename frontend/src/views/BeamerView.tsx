@@ -1263,7 +1263,645 @@ useEffect(() => {
           progressText={progressText}
           progressValue={progressValue}
           timerText={headerTimerText}
-          footerMessage={undefined}
+          footerMessage={
+            language === 'de'
+              ? 'Teams via QR oder Code beitreten lassen'
+              : language === 'both'
+              ? 'Teams via QR / Code beitreten lassen'
+              : 'Let teams join via QR or code'
+          }
+          status="info"
+          rightNode={
+            teamJoinQr ? (
+              <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+                <img
+                  src={teamJoinQr}
+                  alt="Team QR"
+                  style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 6 }}
+                />
+                <div>{joinDisplay}</div>
+              </div>
+            ) : undefined
+          }
+        >
+          <div className="beamer-stack">
+            <div className="beamer-intro-card">
+              <h2>{language === 'de' ? 'Room Code' : language === 'both' ? 'Room Code / Code' : 'Room code'}</h2>
+              <p style={{ fontSize: 48, fontWeight: 800 }}>{roomCode || '----'}</p>
+              <p>{connectedInfo}</p>
+            </div>
+            <div className="beamer-list">
+              {steps.map((textLine) => (
+                <span key={`lobby-line-${textLine}`}>{textLine}</span>
+              ))}
+            </div>
+            {sortedScoreTeams.length > 0 && (
+              <>
+                <div className="beamer-label">
+                  {language === 'de'
+                    ? 'Teams im Raum'
+                    : language === 'both'
+                    ? 'Teams im Raum / Teams in room'
+                    : 'Teams in room'}
+                </div>
+                {renderCozyScoreboardGrid(sortedScoreTeams.slice(0, 6))}
+              </>
+            )}
+          </div>
+        </BeamerFrame>
+      );
+    }
+    return (
+      <BeamerLobbyView
+        t={t}
+        language={language}
+        roomCode={roomCode}
+        readyCount={readyCount}
+        teamsCount={teams.length || 0}
+        categories={featureFlags.showLegacyCategories ? categories : []}
+        highlightedCategoryIndex={highlightedCategoryIndex}
+        categoryColors={categoryColors}
+        categoryIcons={categoryIcons}
+        categoryProgress={categoryProgress}
+        categoryTotals={categoryTotals}
+        getCategoryLabel={getCategoryLabel}
+        getCategoryDescription={getCategoryDescription}
+      />
+    );
+  };
+
+  const renderQuestionFrame = () => (
+    <div
+      style={{
+        ...cardFrame,
+        opacity: questionFlyIn ? 0 : 1,
+        transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
+        transition: 'opacity 420ms ease, transform 420ms ease'
+      }}
+    >
+      <BeamerQuestionView
+        showCalculating={showCalculating}
+        showAnswer={showAnswer}
+        categoryLabel={categoryLabel}
+        questionMeta={questionMeta}
+        timerText={timerText}
+        progress={progress}
+        hasTimer={Boolean(timerEndsAt)}
+        question={question}
+        questionText={questionText}
+        t={t}
+        solution={solution}
+        footerMeta={footerMeta}
+        cardColor={cardColor}
+        leftDecorationSrc={leftDecorationSrc}
+        rightDecorationSrc={rightDecorationSrc}
+      />
+    </div>
+  );
+  const renderCozyScoreboardGrid = (
+    entries: Array<{ id: string; name: string; score?: number | null }>,
+    options?: { highlightTop?: boolean; detailMap?: Record<string, string | null | undefined> }
+  ): JSX.Element => {
+    if (!entries.length) {
+      return (
+        <div className="beamer-intro-card">
+          <h2>{language === 'de' ? 'Noch keine Teams' : 'No teams yet'}</h2>
+          <p>{language === 'de' ? 'Wartet auf Beitritte.' : 'Waiting for teams to join.'}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="beamer-scoreboard-grid">
+        {entries.map((entry, idx) => (
+          <BeamerScoreboardCard
+            key={`cozy-score-${entry.id}-${idx}`}
+            rank={idx + 1}
+            name={entry.name}
+            score={entry.score ?? 0}
+            detail={options?.detailMap?.[entry.id] ?? null}
+            highlight={Boolean(options?.highlightTop && idx < 3)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const renderCozyIntroContent = (): JSX.Element => {
+    const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
+    const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
+    const joinTitle =
+      language === 'en'
+        ? 'Scan to join'
+        : language === 'both'
+        ? 'Scannen / Scan to join'
+        : 'Jetzt scannen & beitreten';
+    const titleText =
+      language === 'en'
+        ? 'Welcome to Cozy Wolf Quiz'
+        : language === 'both'
+        ? 'Willkommen / Welcome'
+        : 'Willkommen zum Cozy Wolf Quiz';
+    const subtitleText =
+      language === 'en'
+        ? 'Connect your team and get ready.'
+        : language === 'both'
+        ? 'Teams verbinden / Connect teams'
+        : 'Teams verbinden und bereit machen.';
+    const statusReady = language === 'en' ? 'ready' : language === 'both' ? 'bereit / ready' : 'bereit';
+    const statusOnline = language === 'en' ? 'online' : language === 'both' ? 'online / connected' : 'online';
+    const sortedTeams = [...teams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return (
+      <div className="cozyLobbyShell">
+        <div className="cozyLobbyHeader">
+          <img src="/logo.png?v=3" alt="Cozy Wolf" />
+          <div>
+            <div className="cozyLobbyTitle">{titleText}</div>
+            <div className="cozyLobbySubtitle">{subtitleText}</div>
+          </div>
+        </div>
+        <div className="cozyLobbyMain">
+          <div className="cozyLobbyTeams">
+            <div className="cozyLobbyTeamsHeader">
+              <span>Teams</span>
+              <span>{teams.length || 0}</span>
+            </div>
+            <div className="cozyLobbyTeamsList">
+              {sortedTeams.length === 0 ? (
+                <div className="cozyLobbyTeamsEmpty">Noch keine Teams verbunden</div>
+              ) : (
+                sortedTeams.map((team) => {
+                  const isReady = Boolean(team.isReady);
+                  return (
+                    <div className="cozyLobbyTeamRow" key={team.id}>
+                      <span className={`cozyLobbyStatusDot ${isReady ? 'ready' : 'online'}`} />
+                      <span className="cozyLobbyTeamName">{team.name || 'Team'}</span>
+                      <span className="cozyLobbyTeamStatus">{isReady ? statusReady : statusOnline}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+          {showQr && teamJoinQr && (
+            <div className="cozyLobbyQrPane">
+              <div className="cozyLobbyQrTitle">{joinTitle}</div>
+              {joinDisplay && <div className="cozyLobbyQrLink">{joinDisplay}</div>}
+              <img src={teamJoinQr} alt="Team QR" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const getQuestionPromptText = (): string | undefined => {
+    if (!question) return undefined;
+    const q: any = question;
+    if (language === 'both' && q.promptEn) {
+      return `${q.prompt ?? ''}${q.promptEn ? ` / ${q.promptEn}` : ''}`;
+    }
+    if (language === 'en' && q.promptEn) return q.promptEn;
+    if (q.prompt) return q.prompt;
+    if (q.bunteTuete?.prompt) return q.bunteTuete.prompt;
+    return undefined;
+  };
+
+  const formatEstimateValue = (value: number | string | null | undefined, unit?: string): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const formatter = new Intl.NumberFormat(language === 'en' ? 'en-US' : 'de-DE', {
+        maximumFractionDigits: 2
+      });
+      return `${formatter.format(value)}${unit ? ` ${unit}` : ''}`;
+    }
+    return `${value}${unit ? ` ${unit}` : ''}`;
+  };
+
+  const renderQuestionCardGrid = (): JSX.Element | null => {
+    if (!question) return null;
+    const q: any = question;
+    const mcOptions =
+      language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
+    if (Array.isArray(mcOptions) && mcOptions.length) {
+      return (
+        <div className="beamer-grid">
+          {mcOptions.map((opt: string, idx: number) => (
+            <div className="beamer-card" key={`opt-${idx}`}>
+              <strong>{String.fromCharCode(65 + idx)}.</strong> {opt}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const bunte = q.bunteTuete;
+    if (bunte?.items?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.items.map((item: any) => (
+            <div className="beamer-card" key={item.id || item.label}>
+              {item.label || item.text || item.prompt || item.id}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (bunte?.statements?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.statements.map((statement: any) => (
+            <div className="beamer-card" key={statement.id}>
+              <strong>{statement.id}.</strong> {statement.text}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (bunte?.ladder?.length) {
+      return (
+        <div className="beamer-grid">
+          {bunte.ladder.map((step: any) => (
+            <div className="beamer-card" key={step.label}>
+              <strong>{step.label}</strong>
+              <span>{language === 'de' ? `${step.points} Punkte` : `${step.points} pts`}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderRevealResultsSection = (): JSX.Element | null => {
+    if (!revealResultRows.length) return null;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-label">
+          {language === 'de' ? 'Teamwertung' : language === 'both' ? 'Teamwertung / Team results' : 'Team results'}
+        </div>
+        <div className="beamer-scoreboard-grid">
+          {revealResultRows.map((entry, idx) => {
+            const pointsLabel =
+              typeof entry.awardedPoints === 'number'
+                ? `${entry.awardedPoints >= 0 ? '+' : ''}${entry.awardedPoints}`
+                : entry.awardedDetail || '';
+            const detailLabel = entry.awardedDetail
+              ? entry.awardedDetail
+              : entry.isCorrect
+              ? language === 'de'
+                ? 'Richtig'
+                : 'Correct'
+              : language === 'de'
+              ? 'Offen'
+              : 'Pending';
+            return (
+              <BeamerScoreboardCard
+                key={`result-${entry.teamId}-${idx}`}
+                rank={idx + 1}
+                name={entry.displayName || entry.teamId}
+                score={pointsLabel}
+                detail={detailLabel}
+                highlight={Boolean(entry.isCorrect)}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCozyBlitzContent = (): JSX.Element | null => {
+    if (!blitz) return null;
+    const detailMap: Record<string, string> = {};
+    Object.entries(blitz.results || {}).forEach(([teamId, stats]) => {
+      const awarded = stats.pointsAwarded ?? 0;
+      const awardedLabel = `${awarded >= 0 ? '+' : ''}${awarded}`;
+      detailMap[teamId] = `${stats.correctCount ?? 0}/5 · ${awardedLabel}`;
+    });
+    const submissions = blitz.submissions?.length ?? 0;
+    const items = blitz.items ?? [];
+    const totalItems = Math.max(1, items.length || 5);
+    const maxIndex = totalItems - 1;
+    const rawIndex =
+      blitz.phase === 'PLAYING'
+        ? typeof blitz.itemIndex === 'number' && blitz.itemIndex >= 0
+          ? blitz.itemIndex
+          : 0
+        : maxIndex;
+    const activeIndex = Math.min(maxIndex, Math.max(0, rawIndex));
+    const activeItem = items[activeIndex];
+    const timeline = Array.from({ length: totalItems }, (_, idx) => {
+      if (blitz.phase !== 'PLAYING') return idx <= activeIndex ? 'done' : 'pending';
+      if (idx < activeIndex) return 'done';
+      if (idx === activeIndex) return 'current';
+      return 'pending';
+    });
+    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/3`;
+    const resultsMap = blitz.results || {};
+    const scoreboardReady = Object.keys(resultsMap).length > 0;
+    const setFinished = blitz.phase !== 'PLAYING';
+    const waitingForReveal = setFinished && !scoreboardReady;
+
+    return (
+      <div className="beamer-stack blitz-stack">
+        <div className="beamer-question-main">
+          <div className="beamer-question-category">
+            {language === 'de'
+              ? 'Blitz Battle'
+              : language === 'both'
+              ? 'Blitz Battle / Blitz'
+              : 'Blitz Battle'}{' '}
+            ? Set {setLabel}
+          </div>
+          <div className="beamer-question-text">{blitz.theme?.title || '-'}</div>
+          <div className="beamer-list">
+            <span>
+              {language === 'de'
+                ? `Antworten ${submissions}/${teams.length}`
+                : language === 'both'
+                ? `Antworten ${submissions}/${teams.length} / Submissions`
+                : `Submissions ${submissions}/${teams.length}`}
+            </span>
+            {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
+            {blitzItemSeconds !== null && blitz.phase === 'PLAYING' && (
+              <span className="beamer-countdown beamer-countdown-secondary">
+                {language === 'de' ? 'Item' : 'Item'} {Math.max(0, blitzItemSeconds)}s
+              </span>
+            )}
+          </div>
+        </div>
+
+        {blitz.phase === 'PLAYING' ? (
+          <>
+            <div className="beamer-card blitz-current-card">
+              {activeItem?.mediaUrl && (
+                <img
+                  src={activeItem.mediaUrl}
+                  alt={activeItem.prompt || `Blitz ${activeIndex + 1}`}
+                  className="blitz-current-image"
+                />
+              )}
+              <div className="blitz-item-title">
+                {activeItem?.prompt ||
+                  `${language === 'de' ? 'Item' : 'Item'} ${activeIndex + 1}/${totalItems}`}
+              </div>
+              <div className="blitz-item-meta">
+                {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
+              </div>
+            </div>
+            <div className="blitz-timeline">
+              {timeline.map((status, idx) => (
+                <div key={`blitz-step-${idx}`} className={`blitz-chip ${status}`}>
+                  <span>{idx + 1}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="beamer-card blitz-results-card">
+            {waitingForReveal && (
+              <div className="blitz-results-pending">
+                {language === 'de'
+                  ? 'Set abgeschlossen. Moderator zeigt gleich die Ergebnisse.'
+                  : language === 'both'
+                  ? 'Set abgeschlossen / Waiting for reveal.'
+                  : 'Set finished. Waiting for reveal.'}
+              </div>
+            )}
+            {scoreboardReady && (
+              <>
+                <div className="beamer-question-category">
+                  {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+                </div>
+                {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCozyPotatoContent = (): JSX.Element | null => {
+    if (!potato) return null;
+    const turnOrder = potato.turnOrder.length ? potato.turnOrder : Object.keys(potato.lives || {});
+    const lives = potato.lives || {};
+    const activeName = potato.activeTeamId ? teamNameLookup[potato.activeTeamId] || potato.activeTeamId : null;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-question-main">
+          <div className="beamer-question-category">
+            {language === 'de' ? 'Aktuelles Thema' : language === 'both' ? 'Thema / Theme' : 'Theme'}
+          </div>
+          <div className="beamer-question-text">{potato.currentTheme || '-'}</div>
+          <div className="beamer-list">
+            {activeName && (
+              <span>
+                {language === 'de'
+                  ? `Dran: ${activeName}`
+                  : language === 'both'
+                  ? `Dran / Up: ${activeName}`
+                  : `Up: ${activeName}`}
+              </span>
+            )}
+            {potatoCountdown !== null && <span className="beamer-countdown">{potatoCountdown}s</span>}
+            {potato.usedAnswers && (
+              <span>
+                {language === 'de'
+                  ? `${potato.usedAnswers.length} Antworten genannt`
+                  : `${potato.usedAnswers.length} answers used`}
+              </span>
+            )}
+          </div>
+          {potato.pendingConflict && (
+            <span className="beamer-conflict-badge">
+              {potato.pendingConflict.type === 'duplicate'
+                ? language === 'de'
+                  ? 'Duplikat'
+                  : 'Duplicate'
+                : language === 'de'
+                ? 'Konflikt'
+                : 'Conflict'}
+            </span>
+          )}
+        </div>
+        <div className="beamer-grid">
+          {turnOrder.map((teamId) => {
+            const name = teamNameLookup[teamId] || teamId;
+            const livesCount = lives[teamId] ?? 0;
+            const hearts = livesCount > 0 ? `${livesCount}x` : '-';
+            return (
+              <div className={`beamer-card${teamId === potato.activeTeamId ? ' highlight' : ''}`} key={`life-${teamId}`}>
+                <strong>{name}</strong>
+                <span>{hearts}</span>
+              </div>
+            );
+          })}
+        </div>
+        {potato.selectedThemes?.length ? (
+          <div className="beamer-grid">
+            {potato.selectedThemes.map((theme, idx) => (
+              <div className="beamer-card" key={`theme-${idx}`}>
+                {theme}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderCozyAwardsContent = (): JSX.Element => (
+    <div className="beamer-stack">
+      <div className="beamer-intro-card">
+        <h2>{language === 'de' ? 'Siegerehrung' : language === 'both' ? 'Siegerehrung / Awards' : 'Awards'}</h2>
+        <p>
+          {language === 'de'
+            ? 'Top Teams des Abends'
+            : language === 'both'
+            ? 'Top Teams des Abends / Top teams tonight'
+            : 'Top teams tonight'}
+        </p>
+      </div>
+      {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+    </div>
+  );
+  const renderCozyScene = () => {
+    const sceneKey = `${gameState}-${question?.id ?? 'none'}-${blitz?.phase ?? 'idle'}-${potato?.phase ?? 'idle'}`;
+    const baseFrameProps: FrameBaseProps = {
+      scene: (gameState || 'lobby').toLowerCase(),
+      leftLabel: headerLeftLabel,
+      leftHint: headerLeftHint,
+      progressText,
+      progressValue,
+      timerText: headerTimerText
+    };
+    const badgeInfo =
+      gameState === 'BLITZ'
+        ? { label: `SET ${(blitz?.setIndex ?? -1) + 1}/3`, tone: 'accent' as const }
+        : gameState === 'POTATO'
+        ? { label: language === 'de' ? 'Finale' : 'Final', tone: 'warning' as const }
+        : gameState === 'AWARDS'
+        ? { label: 'FINAL', tone: 'success' as const }
+        : totalQuestions
+        ? { label: `Segment ${normalizedRound <= 10 ? 1 : 2}`, tone: normalizedRound <= 10 ? 'muted' : 'accent' as const }
+        : undefined;
+    const questionTitle = `RUNDE ${normalizedRound}/${totalQuestions || 20}`;
+    const questionSubtitle = undefined;
+    const promptText = getQuestionPromptText();
+    const mediaUrl =
+      (question as any)?.media?.url ||
+      (question as any)?.mediaUrl ||
+      (question as any)?.imageUrl ||
+      (question as any)?.image ||
+      null;
+    const questionTextLocalized =
+      language === 'both'
+        ? `${question?.question ?? ''}${question?.questionEn ? ` / ${question.questionEn}` : ''}`
+        : language === 'en'
+        ? question?.questionEn ?? question?.question
+        : question?.question ?? question?.questionEn ?? '';
+
+    const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
+      const promptText = getQuestionPromptText();
+      const mediaUrl =
+        (question as any)?.media?.url ||
+        (question as any)?.mediaUrl ||
+        (question as any)?.imageUrl ||
+        (question as any)?.image ||
+        null;
+
+      const renderMultipleChoiceList = (showReveal: boolean) => {
+        if (!mcOptions?.length) return null;
+        return (
+          <div className="cozyOptionList">
+            {mcOptions.map((option, idx) => {
+              const hopMatch = muChoLockedIndex ?? mcCorrectIndex;
+              const isHop = showReveal && muChoHopIndex === idx && hopMatch !== idx;
+              const isCorrect = showReveal && hopMatch === idx;
+              return (
+                <div
+                  key={`mc-option-${idx}`}
+                  className={`cozyOption${isHop ? ' hopping' : ''}${isCorrect ? ' correct' : ''}`}
+                >
+                  <span className="cozyOptionPrefix">{String.fromCharCode(65 + idx)}.</span>
+                  <span>{option}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
+
+      const renderHeroBody = () => {
+        if (!question) {
+          return (
+            <div className="cozyQuestionEmpty">
+              <p>{language === 'de' ? 'Keine Frage aktiv' : 'No active question'}</p>
+            </div>
+          );
+        }
+        if (phase === 'reveal') {
+          if (question.type === 'SCHAETZCHEN') {
+            return (
+              <div className="cozyRevealNumber">
+                <span className={estimateDisplay ? 'is-ready' : ''}>
+                  {estimateDisplay || solution || '—'}
+                </span>
+                {solution && <div className="cozyRevealLabel">{solution}</div>}
+              </div>
+            );
+          }
+          if (question.type === 'MU_CHO') {
+            return renderMultipleChoiceList(true);
+          }
+          return (
+            <div className="cozyRevealGeneric">
+              {solution ||
+                (language === 'de'
+                  ? 'Auflösung eingeblendet'
+                  : language === 'both'
+                  ? 'Auflösung / Reveal'
+                  : 'Solution')}
+            </div>
+          );
+        }
+        if (question.type === 'MU_CHO') {
+          return renderMultipleChoiceList(false);
+        }
+        const supplement = renderQuestionCardGrid();
+        if (supplement) {
+          return <div className="cozyQuestionSupplement">{supplement}</div>;
+        }
+        return null;
+      };
+
+      return (
+        <BeamerFrame
+          key={`${sceneKey}-${phase}`}
+          {...baseFrameProps}
+          title={questionTitle}
+          subtitle={questionSubtitle}
+          badgeLabel={badgeInfo?.label}
+          badgeTone={badgeInfo?.tone}
+          footerMessage={
+            phase === 'active'
+              ? language === 'de'
+                ? 'Antworten jetzt möglich'
+                : language === 'both'
+                ? 'Antworten möglich / Answers open'
+                : 'Answers open'
+              : phase === 'locked'
+              ? language === 'de'
+                ? 'Antwortfenster geschlossen'
+                : language === 'both'
+                ? 'Antworten geschlossen / Locked'
+                : 'Answers locked'
+              : language === 'de'
+              ? 'Auflösung'
+              : language === 'both'
+              ? 'Auflösung / Reveal'
+              : 'Reveal'
+          }
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           <div className="cozyQuestionGrid cozyQuestionGridSolo">

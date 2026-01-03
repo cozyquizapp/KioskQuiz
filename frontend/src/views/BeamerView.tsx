@@ -14,7 +14,8 @@ import {
   CozyGameState,
   PotatoState,
   PotatoVerdict,
-  BlitzState
+  BlitzState,
+  RundlaufState
 } from '@shared/quizTypes';
 import { fetchCurrentQuestion, fetchLanguage, fetchTimer, QuestionMeta } from '../api';
 import { connectToRoom } from '../socket';
@@ -254,6 +255,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [potato, setPotato] = useState<PotatoState | null>(null);
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
+  const [rundlauf, setRundlauf] = useState<RundlaufState | null>(null);
   const [blitzItemTick, setBlitzItemTick] = useState(0);
   const [blitzTick, setBlitzTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
@@ -750,6 +752,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.blitz !== undefined) {
         setBlitz(payload.blitz ?? null);
+      }
+      if (payload.rundlauf !== undefined) {
+        setRundlauf(payload.rundlauf ?? null);
       }
       if (payload.results !== undefined) {
         setAnswerResults(payload.results ?? null);
@@ -1360,7 +1365,11 @@ useEffect(() => {
   );
   const renderCozyScoreboardGrid = (
     entries: Array<{ id: string; name: string; score?: number | null }>,
-    options?: { highlightTop?: boolean; detailMap?: Record<string, string | null | undefined> }
+    options?: {
+      highlightTop?: boolean;
+      detailMap?: Record<string, string | null | undefined>;
+      className?: string;
+    }
   ): JSX.Element => {
     if (!entries.length) {
       return (
@@ -1371,7 +1380,7 @@ useEffect(() => {
       );
     }
     return (
-      <div className="beamer-scoreboard-grid">
+      <div className={`beamer-scoreboard-grid${options?.className ? ` ${options.className}` : ''}`}>
         {entries.map((entry, idx) => (
           <BeamerScoreboardCard
             key={`cozy-score-${entry.id}-${idx}`}
@@ -1827,7 +1836,7 @@ useEffect(() => {
     </div>
   );
   const renderCozyScene = () => {
-    const sceneKey = `${gameState}-${question?.id ?? 'none'}-${blitz?.phase ?? 'idle'}-${potato?.phase ?? 'idle'}`;
+    const sceneKey = `${gameState}-${question?.id ?? 'none'}-${blitz?.phase ?? 'idle'}-${potato?.phase ?? 'idle'}-${rundlauf?.roundIndex ?? 'nr'}`;
     const baseFrameProps: FrameBaseProps = {
       scene: (gameState || 'lobby').toLowerCase(),
       leftLabel: headerLeftLabel,
@@ -2085,6 +2094,242 @@ useEffect(() => {
       </BeamerFrame>
     );
 
+    const renderRundlaufFrame = () => {
+      const pool = rundlauf?.pool ?? [];
+      const bans = new Set(rundlauf?.bans ?? []);
+      const pinnedId = rundlauf?.pinned?.id ?? null;
+      const selected = rundlauf?.selected ?? [];
+      const selectedIds = new Set(selected.map((entry) => entry.id));
+      const roundTotal = Math.max(1, selected.length || 3);
+      const roundIndex = rundlauf?.roundIndex ?? -1;
+      const roundLabel = roundIndex >= 0 ? `${roundIndex + 1}/${roundTotal}` : `0/${roundTotal}`;
+      const currentCategoryTitle =
+        rundlauf?.currentCategory?.title ??
+        (roundIndex >= 0 ? selected[roundIndex]?.title : '') ??
+        '';
+      const activeTeamName = rundlauf?.activeTeamId
+        ? teams.find((t) => t.id === rundlauf.activeTeamId)?.name || rundlauf.activeTeamId
+        : null;
+      const eliminatedSet = new Set(rundlauf?.eliminatedTeamIds ?? []);
+      const eliminatedNames = (rundlauf?.eliminatedTeamIds ?? [])
+        .map((id) => teams.find((t) => t.id === id)?.name || id)
+        .filter(Boolean);
+      const winners = (rundlauf?.roundWinners ?? []).map(
+        (id) => teams.find((t) => t.id === id)?.name || id
+      );
+
+      if (gameState === 'RUNDLAUF_PAUSE') {
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-pause`}
+            {...baseFrameProps}
+            title="PAUSE"
+            subtitle={language === 'de' ? 'Rundlauf startet gleich' : 'Roundabout starts soon'}
+            badgeLabel="RUNDLAUF"
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Moderator startet, sobald bereit.' : 'Host will start soon.'}
+            status="info"
+          >
+            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-pre`}
+            {...baseFrameProps}
+            title="ZWISCHENSTAND"
+            subtitle={language === 'de' ? 'Vor dem Rundlauf' : 'Before roundabout'}
+            badgeLabel="RUNDLAUF"
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Platzierung entscheidet die Auswahl.' : 'Standings decide picks.'}
+            status="info"
+          >
+            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-select`}
+            {...baseFrameProps}
+            title="RUNDLAUF"
+            subtitle={language === 'de' ? 'Kategorienwahl' : 'Category selection'}
+            badgeLabel="AUSWAHL"
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Platz 1 streicht, letzter waehlt.' : 'Top bans, last picks.'}
+            status="info"
+          >
+            <div className="beamer-stack">
+              <div className="beamer-grid">
+                {pool.map((entry) => {
+                  const isBanned = bans.has(entry.id);
+                  const isPinned = pinnedId === entry.id;
+                  const isSelected = selectedIds.has(entry.id);
+                  const tag = isPinned ? 'FIX' : isBanned ? 'GEBANNT' : isSelected ? 'GEWAEHLT' : '';
+                  return (
+                    <div
+                      key={`rundlauf-cat-${entry.id}`}
+                      className={`beamer-card${isPinned ? ' highlight' : ''}`}
+                      style={{ opacity: isBanned ? 0.35 : 1 }}
+                    >
+                      <div style={{ fontWeight: 800 }}>{entry.title}</div>
+                      {tag && (
+                        <div style={{ marginTop: 6, fontSize: 12, color: '#cbd5e1' }}>{tag}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {selected.length > 0 && (
+                <div className="beamer-grid">
+                  {selected.map((entry, idx) => (
+                    <div className="beamer-card highlight" key={`rundlauf-picked-${entry.id}`}>
+                      <div style={{ fontWeight: 800 }}>{`R${idx + 1}: ${entry.title}`}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_ROUND_INTRO') {
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-intro`}
+            {...baseFrameProps}
+            title="RUNDLAUF"
+            subtitle={currentCategoryTitle || ''}
+            badgeLabel={`RUNDE ${roundLabel}`}
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Gleich geht es los.' : 'Get ready.'}
+            status="info"
+          >
+            <div className="beamer-intro-card">
+              <h2>{currentCategoryTitle || 'Kategorie'}</h2>
+              <p>
+                {language === 'de'
+                  ? 'Reihum antworten - wer nichts weiss, fliegt raus.'
+                  : 'Take turns answering - pass means eliminated.'}
+              </p>
+            </div>
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_PLAY') {
+        const lastAttempt = rundlauf?.lastAttempt ?? null;
+        const lastAttemptName = lastAttempt
+          ? teams.find((t) => t.id === lastAttempt.teamId)?.name || lastAttempt.teamId
+          : null;
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-play`}
+            {...baseFrameProps}
+            title="RUNDLAUF"
+            subtitle={currentCategoryTitle || ''}
+            badgeLabel={`RUNDE ${roundLabel}`}
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Reihum antworten' : 'Take turns'}
+            status="active"
+          >
+            <div className="beamer-stack">
+              <div className="beamer-intro-card">
+                <h2>{currentCategoryTitle || 'Kategorie'}</h2>
+                <p>{activeTeamName ? `Team dran: ${activeTeamName}` : 'Team dran: ?'}</p>
+                {lastAttempt && (
+                  <p style={{ marginTop: 8 }}>
+                    {lastAttemptName ? `${lastAttemptName}: ` : ''}
+                    {lastAttempt.text || (language === 'de' ? 'Keine Eingabe' : 'No answer')}
+                  </p>
+                )}
+              </div>
+              {rundlauf?.usedAnswers?.length ? (
+                <div className="beamer-grid">
+                  {rundlauf.usedAnswers.slice(-12).map((answer, idx) => (
+                    <div className="beamer-card" key={`rundlauf-ans-${idx}`}>
+                      {answer}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {eliminatedNames.length > 0 && (
+                <div className="beamer-card" style={{ opacity: 0.8 }}>
+                  <div style={{ fontWeight: 700 }}>
+                    {language === 'de' ? 'Ausgeschieden:' : 'Eliminated:'}
+                  </div>
+                  <div style={{ marginTop: 6 }}>{eliminatedNames.join(', ')}</div>
+                </div>
+              )}
+            </div>
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_ROUND_END') {
+        const label =
+          winners.length > 0
+            ? `${language === 'de' ? 'Rundensieger:' : 'Round winners:'} ${winners.join(', ')}`
+            : language === 'de'
+            ? 'Runde beendet'
+            : 'Round finished';
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-end`}
+            {...baseFrameProps}
+            title="RUNDLAUF"
+            subtitle={language === 'de' ? 'Runde beendet' : 'Round finished'}
+            badgeLabel={`RUNDE ${roundLabel}`}
+            badgeTone="accent"
+            footerMessage={label}
+            status="final"
+          >
+            {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_SCOREBOARD_FINAL') {
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-final`}
+            {...baseFrameProps}
+            title="ZWISCHENSTAND"
+            subtitle={language === 'de' ? 'Nach dem Rundlauf' : 'After roundabout'}
+            badgeLabel="RUNDLAUF"
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Finale Punkte werden gezeigt.' : 'Final points shown.'}
+            status="final"
+          >
+            {renderCozyScoreboardGrid(sortedScoreTeams, {
+              highlightTop: true,
+              className: 'rundlauf-final'
+            })}
+          </BeamerFrame>
+        );
+      }
+
+      return (
+        <BeamerFrame
+          key={`${sceneKey}-rundlauf-fallback`}
+          {...baseFrameProps}
+          title="RUNDLAUF"
+          subtitle={language === 'de' ? 'Warten...' : 'Waiting...'}
+          badgeLabel="RUNDLAUF"
+          badgeTone="accent"
+          status="info"
+        >
+          {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
+        </BeamerFrame>
+      );
+    };
+
     const renderAwardsFrame = () => (
       <BeamerFrame
         key={`${sceneKey}-awards`}
@@ -2137,6 +2382,16 @@ useEffect(() => {
         return renderScoreboardFrame('pause');
       case 'BLITZ':
         return renderBlitzFrame();
+      case 'RUNDLAUF_PAUSE':
+      case 'RUNDLAUF_SCOREBOARD_PRE':
+      case 'RUNDLAUF_CATEGORY_SELECT':
+      case 'RUNDLAUF_ROUND_INTRO':
+      case 'RUNDLAUF_PLAY':
+      case 'RUNDLAUF_ROUND_END':
+      case 'RUNDLAUF_SCOREBOARD_FINAL':
+        return renderRundlaufFrame();
+      case 'SIEGEREHRUNG':
+        return renderAwardsFrame();
       case 'POTATO':
         return renderPotatoFrame();
       case 'AWARDS':

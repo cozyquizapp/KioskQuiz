@@ -440,7 +440,15 @@ export type CozyGameState =
   | 'BLITZ'
   | 'SCOREBOARD_PAUSE'
   | 'POTATO'
-  | 'AWARDS';
+  | 'AWARDS'
+  | 'RUNDLAUF_PAUSE'
+  | 'RUNDLAUF_SCOREBOARD_PRE'
+  | 'RUNDLAUF_CATEGORY_SELECT'
+  | 'RUNDLAUF_ROUND_INTRO'
+  | 'RUNDLAUF_PLAY'
+  | 'RUNDLAUF_ROUND_END'
+  | 'RUNDLAUF_SCOREBOARD_FINAL'
+  | 'SIEGEREHRUNG';
 
 export type PotatoPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'ROUND_END' | 'DONE';
 
@@ -486,6 +494,44 @@ export interface PotatoState {
 }
 
 export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'PLAYING' | 'SET_END' | 'DONE';
+
+export type RundlaufVerdict = 'ok' | 'dup' | 'invalid' | 'timeout' | 'pending';
+
+export interface RundlaufCategoryOption {
+  id: string;
+  title: string;
+}
+
+export interface RundlaufAttempt {
+  id: string;
+  teamId: string;
+  text: string;
+  normalized: string;
+  verdict: RundlaufVerdict;
+  reason?: string;
+  at: number;
+}
+
+export interface RundlaufState {
+  pool: RundlaufCategoryOption[];
+  bans: string[];
+  selected: RundlaufCategoryOption[];
+  pinned?: RundlaufCategoryOption | null;
+  topTeamId?: string | null;
+  lastTeamId?: string | null;
+  roundIndex: number;
+  turnOrder: string[];
+  activeTeamId: string | null;
+  eliminatedTeamIds: string[];
+  usedAnswers: string[];
+  usedAnswersNormalized: string[];
+  lastAttempt?: RundlaufAttempt | null;
+  deadline?: number | null;
+  turnStartedAt?: number | null;
+  turnDurationMs?: number | null;
+  currentCategory?: RundlaufCategoryOption | null;
+  roundWinners?: string[];
+}
 
 export interface BlitzThemeOption {
   id: string;
@@ -533,7 +579,7 @@ export type SyncStatePayload = {
   slotMeta?: SlotTransitionMeta | null;
 };
 
-export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'POTATO';
+export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'POTATO' | 'RUNDLAUF';
 
 export type TeamStatusSnapshot = {
   id: string;
@@ -555,6 +601,7 @@ export type StateUpdatePayload = {
   questionProgress?: { asked: number; total: number };
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
+  rundlauf?: RundlaufState | null;
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
   results?: AnswerAwardSnapshot[];

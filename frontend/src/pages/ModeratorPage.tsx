@@ -19,7 +19,7 @@ import {
   fetchHealth,
   listPublishedQuizzes
 } from '../api';
-import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState } from '@shared/quizTypes';
+import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, RundlaufState } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
@@ -178,6 +178,8 @@ function ModeratorPage(): React.ReactElement {
   const [blitzThemeInput, setBlitzThemeInput] = useState('');
   const [blitzBanDrafts, setBlitzBanDrafts] = useState<Record<string, string>>({});
   const [blitzPickDraft, setBlitzPickDraft] = useState('');
+  const [rundlaufBanDraft, setRundlaufBanDraft] = useState('');
+  const [rundlaufPickDraft, setRundlaufPickDraft] = useState('');
   const [countdownTick, setCountdownTick] = useState(0);
   const lastReportedQuestionId = React.useRef<string | null>(null);
   const [slotHoldMs, setSlotHoldMs] = useState(2400);
@@ -208,6 +210,7 @@ function ModeratorPage(): React.ReactElement {
     scores: socketScores,
     potato,
     blitz,
+    rundlauf: socketRundlauf,
     gameState: socketGameState,
     questionProgress: socketQuestionProgress,
     warnings: socketWarnings,
@@ -219,6 +222,7 @@ function ModeratorPage(): React.ReactElement {
     nextStage: socketNextStage,
     scoreboardOverlayForced: socketScoreboardOverlayForced
   } = useQuizSocket(roomCode);
+  const rundlauf: RundlaufState | null = socketRundlauf ?? null;
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
   const nextStage = socketNextStage ?? null;
   const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
@@ -232,7 +236,15 @@ function ModeratorPage(): React.ReactElement {
     SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/im Scoreboard', tone: 'eval' },
     BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Sets laufen', tone: 'live' },
     POTATO: { label: 'Heisse Kartoffel', hint: 'Finale lÃ¤uft', tone: 'live' },
-    AWARDS: { label: 'Awards', hint: 'Sieger werden gezeigt', tone: 'final' }
+    AWARDS: { label: 'Awards', hint: 'Sieger werden gezeigt', tone: 'final' },
+    RUNDLAUF_PAUSE: { label: 'Rundlauf Pause', hint: 'Rundlauf startet gleich', tone: 'eval' },
+    RUNDLAUF_SCOREBOARD_PRE: { label: 'Rundlauf Scoreboard', hint: 'Standings vor Rundlauf', tone: 'eval' },
+    RUNDLAUF_CATEGORY_SELECT: { label: 'Rundlauf Auswahl', hint: 'Kategorien waehlen', tone: 'eval' },
+    RUNDLAUF_ROUND_INTRO: { label: 'Rundlauf Intro', hint: 'Runde wird gestartet', tone: 'live' },
+    RUNDLAUF_PLAY: { label: 'Rundlauf', hint: 'Teams antworten reihum', tone: 'live' },
+    RUNDLAUF_ROUND_END: { label: 'Rundlauf Ende', hint: 'Runde beendet', tone: 'eval' },
+    RUNDLAUF_SCOREBOARD_FINAL: { label: 'Rundlauf Scoreboard', hint: 'Rundlauf abgeschlossen', tone: 'final' },
+    SIEGEREHRUNG: { label: 'Siegerehrung', hint: 'Finale Anzeige', tone: 'final' }
   };
   const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
   const changeViewPhase = (phase: ViewPhase) => {
@@ -318,6 +330,12 @@ function ModeratorPage(): React.ReactElement {
     if (!blitzDeadline) return null;
     return Math.max(0, Math.ceil((blitzDeadline - Date.now()) / 1000));
   }, [blitzDeadline, countdownTick]);
+  const rundlaufDeadline = rundlauf?.deadline ?? null;
+  const rundlaufTimeLeft = useMemo(() => {
+    if (!rundlaufDeadline) return null;
+    return Math.max(0, Math.ceil((rundlaufDeadline - Date.now()) / 1000));
+  }, [rundlaufDeadline, countdownTick]);
+  const isRundlaufState = normalizedGameState.startsWith('RUNDLAUF') || normalizedGameState === 'SIEGEREHRUNG';
   const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
   const blitzSetIndex = blitz?.setIndex ?? -1;
   const blitzSelectedCount = blitz?.selectedThemes?.length ?? 0;
@@ -986,6 +1004,96 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
+  }
+
+  function emitRundlaufEvent(
+    eventName:
+      | 'host:rundlaufBanCategory'
+      | 'host:rundlaufPickCategory'
+      | 'host:rundlaufConfirmCategories'
+      | 'host:rundlaufStartRound'
+      | 'host:rundlaufMarkAnswer'
+      | 'host:rundlaufEliminateTeam'
+      | 'host:rundlaufNextTeam'
+      | 'host:rundlaufEndRound',
+    payload?: Record<string, unknown>,
+    onSuccess?: () => void
+  ) {
+    if (!roomCode) {
+      setToast('Roomcode fehlt');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    socketEmit(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+        return;
+      }
+      onSuccess?.();
+    });
+  }
+
+  function handleRundlaufBanCategory(categoryId: string) {
+    if (!rundlauf?.topTeamId) {
+      setToast('Platz 1 nicht verfuegbar');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitRundlaufEvent('host:rundlaufBanCategory', { teamId: rundlauf.topTeamId, categoryId }, () =>
+      setRundlaufBanDraft('')
+    );
+  }
+
+  function handleRundlaufPickCategory(categoryId: string) {
+    if (!rundlauf?.lastTeamId) {
+      setToast('Letzter Platz nicht verfuegbar');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitRundlaufEvent('host:rundlaufPickCategory', { teamId: rundlauf.lastTeamId, categoryId }, () =>
+      setRundlaufPickDraft('')
+    );
+  }
+
+  function handleRundlaufConfirm() {
+    emitRundlaufEvent('host:rundlaufConfirmCategories');
+  }
+
+  function handleRundlaufStartRound() {
+    emitRundlaufEvent('host:rundlaufStartRound');
+  }
+
+  function handleRundlaufMark(verdict: 'ok' | 'dup' | 'invalid') {
+    const attemptId = rundlauf?.lastAttempt?.id;
+    if (!attemptId) {
+      setToast('Kein Versuch zum Bewerten');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitRundlaufEvent('host:rundlaufMarkAnswer', { attemptId, verdict });
+  }
+
+  function handleRundlaufEliminate(teamId: string | null) {
+    if (!teamId) {
+      setToast('Kein aktives Team');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    emitRundlaufEvent('host:rundlaufEliminateTeam', { teamId });
+  }
+
+  function handleRundlaufNextTeam() {
+    emitRundlaufEvent('host:rundlaufNextTeam');
+  }
+
+  function handleRundlaufEndRound() {
+    emitRundlaufEvent('host:rundlaufEndRound');
   }
 
   const structuralWarnings = useMemo(
@@ -1890,6 +1998,310 @@ function ModeratorPage(): React.ReactElement {
     );
   };
 
+  const renderRundlaufControls = () => {
+    if (!roomCode || !isRundlaufState) return null;
+    const pool = rundlauf?.pool ?? [];
+    const bans = new Set(rundlauf?.bans ?? []);
+    const pinned = rundlauf?.pinned ?? null;
+    const selected = rundlauf?.selected ?? [];
+    const selectedTitles = selected.map((entry) => entry.title);
+    const roundIndex = rundlauf?.roundIndex ?? -1;
+    const roundTotal = Math.max(1, selected.length || 3);
+    const roundLabel = roundIndex >= 0 ? `${roundIndex + 1}/${roundTotal}` : `0/${roundTotal}`;
+    const topTeamName = rundlauf?.topTeamId ? teamLookup[rundlauf.topTeamId]?.name || rundlauf.topTeamId : null;
+    const lastTeamName = rundlauf?.lastTeamId ? teamLookup[rundlauf.lastTeamId]?.name || rundlauf.lastTeamId : null;
+    const activeTeamName = rundlauf?.activeTeamId ? teamLookup[rundlauf.activeTeamId]?.name || rundlauf.activeTeamId : null;
+    const currentCategoryTitle =
+      rundlauf?.currentCategory?.title ??
+      (roundIndex >= 0 ? selected[roundIndex]?.title : '') ??
+      '';
+    const lastAttempt = rundlauf?.lastAttempt ?? null;
+    const lastAttemptTeamName = lastAttempt ? teamLookup[lastAttempt.teamId]?.name || lastAttempt.teamId : null;
+    const lastAttemptLabel = lastAttempt
+      ? {
+          ok: 'OK',
+          dup: 'DUP',
+          invalid: 'INVALID',
+          timeout: 'TIMEOUT',
+          pending: 'PRUEFUNG'
+        }[lastAttempt.verdict]
+      : null;
+
+    if (normalizedGameState === 'RUNDLAUF_PAUSE') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Pause</div>
+          <p style={{ color: '#cbd5e1' }}>Rundlauf startet gleich.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleNextQuestion}
+            >
+              WEITER
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_SCOREBOARD_PRE') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard vor Rundlauf</div>
+          <p style={{ color: '#cbd5e1' }}>Platzierung entscheidet die Auswahl.</p>
+          <div style={{ marginTop: 10 }}>{renderCompactScoreboard('Standings')}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleNextQuestion}
+            >
+              WEITER
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_CATEGORY_SELECT') {
+      const banOptions = pool.filter((entry) => !bans.has(entry.id) && entry.id !== pinned?.id);
+      const pickOptions = pool.filter((entry) => !bans.has(entry.id));
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Kategorien waehlen</div>
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            Platz 1 streicht 2 Kategorien, letzter Platz waehlt 1 Fix-Kategorie.
+          </div>
+          <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {pool.map((entry) => {
+                const isBanned = bans.has(entry.id);
+                const isPinned = pinned?.id === entry.id;
+                const isSelected = selected.some((sel) => sel.id === entry.id);
+                const label = isPinned ? 'FIX' : isBanned ? 'GEBANNT' : isSelected ? 'GEWAEHLT' : '';
+                return (
+                  <span
+                    key={`rundlauf-cat-${entry.id}`}
+                    style={{
+                      ...statChip,
+                      opacity: isBanned ? 0.35 : 1,
+                      borderColor: isPinned ? 'rgba(96,165,250,0.6)' : 'rgba(255,255,255,0.15)',
+                      background: isPinned ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.06)'
+                    }}
+                  >
+                    {entry.title} {label ? `(${label})` : ''}
+                  </span>
+                );
+              })}
+            </div>
+            {selectedTitles.length > 0 && (
+              <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' · ')}
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <div style={{ fontWeight: 700 }}>Bans (Platz 1): {topTeamName || 'n/a'}</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={rundlaufBanDraft}
+                  onChange={(e) => setRundlaufBanDraft(e.target.value)}
+                  style={{ ...inputStyle, flex: '1 1 220px', minWidth: 180 }}
+                >
+                  <option value="">Kategorie waehlen</option>
+                  {banOptions.map((entry) => (
+                    <option key={`ban-${entry.id}`} value={entry.id}>
+                      {entry.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  style={{ ...inputStyle, width: 'auto', background: 'rgba(148,163,184,0.16)' }}
+                  onClick={() => {
+                    const selection = rundlaufBanDraft.trim();
+                    if (!selection) return;
+                    handleRundlaufBanCategory(selection);
+                  }}
+                >
+                  Bann setzen
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <div style={{ fontWeight: 700 }}>Fix Kategorie (Letzter): {lastTeamName || 'n/a'}</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={rundlaufPickDraft}
+                  onChange={(e) => setRundlaufPickDraft(e.target.value)}
+                  style={{ ...inputStyle, flex: '1 1 220px', minWidth: 180 }}
+                >
+                  <option value="">Kategorie waehlen</option>
+                  {pickOptions.map((entry) => (
+                    <option key={`pick-${entry.id}`} value={entry.id}>
+                      {entry.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  style={{ ...inputStyle, width: 'auto', background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }}
+                  onClick={() => {
+                    const selection = rundlaufPickDraft.trim();
+                    if (!selection) return;
+                    handleRundlaufPickCategory(selection);
+                  }}
+                >
+                  Fix waehlen
+                </button>
+              </div>
+            </div>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleRundlaufConfirm}
+            >
+              Auswahl bestaetigen
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_ROUND_INTRO') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Runde {roundLabel}</div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>Kategorie: {currentCategoryTitle || 'n/a'}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleRundlaufStartRound}
+            >
+              START RUNDE
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_PLAY') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf live</div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            Runde {roundLabel} · Kategorie: {currentCategoryTitle || 'n/a'}
+          </div>
+          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={statChip}>Aktiv: {activeTeamName || 'n/a'}</span>
+            {rundlaufTimeLeft !== null && <span style={statChip}>Restzeit {rundlaufTimeLeft}s</span>}
+            <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}</span>
+          </div>
+          {lastAttempt && (
+            <div style={{ marginTop: 10, padding: 10, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontWeight: 700 }}>
+                Letzter Versuch: {lastAttemptTeamName || lastAttempt.teamId}
+              </div>
+              <div style={{ color: '#e2e8f0' }}>{lastAttempt.text || '—'}</div>
+              {lastAttemptLabel && <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
+            </div>
+          )}
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(34,197,94,0.18)', borderColor: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }}
+              onClick={() => handleRundlaufMark('ok')}
+            >
+              OK
+            </button>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(250,204,21,0.16)', borderColor: 'rgba(250,204,21,0.4)', color: '#fde68a' }}
+              onClick={() => handleRundlaufMark('dup')}
+            >
+              DUP
+            </button>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.2)', borderColor: 'rgba(248,113,113,0.45)', color: '#fecaca' }}
+              onClick={() => handleRundlaufMark('invalid')}
+            >
+              INVALID
+            </button>
+            <button
+              style={{ ...inputStyle, width: 'auto' }}
+              onClick={handleRundlaufNextTeam}
+            >
+              Naechstes Team
+            </button>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.2)', borderColor: 'rgba(248,113,113,0.45)', color: '#fecaca' }}
+              onClick={() => handleRundlaufEliminate(rundlauf?.activeTeamId ?? null)}
+            >
+              Team rausnehmen
+            </button>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(148,163,184,0.16)' }}
+              onClick={handleRundlaufEndRound}
+            >
+              Runde beenden
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_ROUND_END') {
+      const winners = (rundlauf?.roundWinners ?? []).map((id) => teamLookup[id]?.name || id);
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Runde beendet</div>
+          <div style={{ color: '#cbd5e1' }}>
+            {winners.length ? `Sieger: ${winners.join(', ')}` : 'Keine Sieger gemeldet'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleNextQuestion}
+            >
+              NAECHSTE RUNDE
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_SCOREBOARD_FINAL') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Scoreboard</div>
+          {renderCompactScoreboard('Finaler Stand')}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleNextQuestion}
+            >
+              WEITER ZUR SIEGEREHRUNG
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'SIEGEREHRUNG') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Siegerehrung</div>
+          {renderCompactScoreboard('Finales Ranking')}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(148,163,184,0.16)' }}
+              onClick={handleNextQuestion}
+            >
+              ENDE
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    return null;
+  };
+
   const renderBlitzControls = () => {
     const phase = blitz?.phase ?? 'IDLE';
     const pool = blitz?.pool ?? [];
@@ -2485,6 +2897,7 @@ function ModeratorPage(): React.ReactElement {
 
 const renderCozyStagePanel = () => {
   if (!roomCode) return null;
+  if (isRundlaufState) return renderRundlaufControls();
   if (normalizedGameState === 'BLITZ') return renderBlitzControls();
   if (normalizedGameState === 'POTATO') return renderPotatoControls();
   if (normalizedGameState === 'AWARDS') {

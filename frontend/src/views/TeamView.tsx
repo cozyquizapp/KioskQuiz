@@ -11,7 +11,8 @@ import {
   Team,
   BlitzState,
   PotatoState,
-  BunteTuetePayload
+  BunteTuetePayload,
+  RundlaufState
 } from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
@@ -247,6 +248,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
+  const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [potatoTick, setPotatoTick] = useState(0);
@@ -254,6 +256,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [potatoSubmitting, setPotatoSubmitting] = useState(false);
   const [potatoError, setPotatoError] = useState<string | null>(null);
   const [showPotatoOkToast, setShowPotatoOkToast] = useState(false);
+  const [rundlaufInput, setRundlaufInput] = useState('');
+  const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
+  const [rundlaufError, setRundlaufError] = useState<string | null>(null);
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
@@ -333,6 +338,30 @@ function TeamView({ roomCode }: TeamViewProps) {
     teamId,
     potatoSubmitting
   ]);
+
+  useEffect(() => {
+    if (!teamId) return;
+    const activeId = rundlaufState?.activeTeamId ?? null;
+    const attempt = rundlaufState?.lastAttempt ?? null;
+    if (activeId !== teamId) {
+      setRundlaufSubmitting(false);
+      setRundlaufError(null);
+      setRundlaufInput('');
+      return;
+    }
+    if (attempt && attempt.teamId === teamId) {
+      if (attempt.verdict === 'ok') {
+        setRundlaufInput('');
+        setRundlaufError(null);
+      }
+      if (attempt.verdict === 'dup') {
+        setRundlaufError(language === 'de' ? 'Doppelte Antwort.' : 'Duplicate answer.');
+      }
+      if (attempt.verdict === 'invalid') {
+        setRundlaufError(language === 'de' ? 'Ungueltig.' : 'Invalid.');
+      }
+    }
+  }, [rundlaufState?.activeTeamId, rundlaufState?.lastAttempt?.id, teamId, language]);
 
   useEffect(() => {
     if (!teamId) return;
@@ -478,6 +507,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     gameState === 'POTATO' &&
     potatoState?.phase === 'PLAYING' &&
     potatoState?.activeTeamId === teamId;
+  const isRundlaufActiveTurn = gameState === 'RUNDLAUF_PLAY' && rundlaufState?.activeTeamId === teamId;
 
   useEffect(() => {
     if (!teamId) return;
@@ -616,6 +646,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.blitz !== undefined) {
         setBlitzState(payload.blitz ?? null);
+      }
+      if (payload.rundlauf !== undefined) {
+        setRundlaufState(payload.rundlauf ?? null);
       }
       if (payload.currentQuestion !== undefined) {
         if (payload.currentQuestion) {
@@ -2017,6 +2050,207 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
   }
 
+  function submitRundlaufAnswer(pass = false) {
+    if (!teamId || !socketRef.current) return;
+    if (gameState !== 'RUNDLAUF_PLAY') {
+      setRundlaufError(inlineCopy('Rundlauf ist noch nicht aktiv.', 'Rundlauf is not active yet.'));
+      return;
+    }
+    if (!rundlaufState || rundlaufState.activeTeamId !== teamId) {
+      setRundlaufError(inlineCopy('Nur das aktive Team darf antworten.', 'Only the active team may answer.'));
+      return;
+    }
+    if (!pass && !rundlaufInput.trim()) {
+      setRundlaufError(inlineCopy('Bitte gib eine Antwort ein.', 'Please enter an answer.'));
+      return;
+    }
+    setRundlaufSubmitting(true);
+    setRundlaufError(null);
+    socketRef.current.emit(
+      'team:submitRundlaufAnswer',
+      { roomCode, teamId, text: rundlaufInput.trim(), pass },
+      (resp?: { error?: string }) => {
+        setRundlaufSubmitting(false);
+        if (resp?.error) {
+          setRundlaufError(resp.error);
+        } else if (!pass) {
+          setRundlaufInput('');
+        }
+      }
+    );
+  }
+
+  function renderRundlaufStage() {
+    if (!teamId) return renderNotJoined();
+    const state = rundlaufState;
+    if (!state) {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>Rundlauf</div>
+          <p style={mutedText}>
+            {language === 'de'
+              ? 'Rundlauf wird vorbereitet.'
+              : language === 'both'
+              ? 'Rundlauf wird vorbereitet / Roundabout is preparing.'
+              : 'Roundabout is preparing.'}
+          </p>
+        </div>
+      );
+    }
+    const currentCategory = state.currentCategory?.title || state.selected[state.roundIndex]?.title || '?';
+    const activeTeamName = state.activeTeamId ? scoreboardLookup[state.activeTeamId]?.name || state.activeTeamId : null;
+    const isActive = state.activeTeamId === teamId;
+    const isEliminated = state.eliminatedTeamIds?.includes(teamId);
+    const winners = state.roundWinners || [];
+    const winnerNames = winners.map((id) => scoreboardLookup[id]?.name || id).join(', ');
+    const scoreboardBlock = (
+      <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+        {sortedScoreboard.map((entry, idx) => (
+          <div
+            key={`rundlauf-score-${entry.id}`}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto',
+              gap: 10,
+              padding: '8px 10px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(2,6,23,0.6)'
+            }}
+          >
+            <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+            <span>{entry.name}</span>
+            <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+          </div>
+        ))}
+      </div>
+    );
+
+    if (gameState === 'RUNDLAUF_PAUSE') {
+      return renderWaiting(
+        language === 'de' ? 'Pause – Rundlauf startet gleich' : language === 'both' ? 'Pause / Roundabout starts soon' : 'Roundabout starts soon',
+        language === 'de' ? 'Bleibt bereit.' : 'Stay ready.'
+      );
+    }
+    if (gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
+          <p style={mutedText}>{language === 'de' ? 'Platzierung vor dem Rundlauf.' : 'Standings before the roundabout.'}</p>
+          {scoreboardBlock}
+        </div>
+      );
+    }
+    if (gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Kategorienwahl' : 'Category select'}</div>
+          <p style={mutedText}>
+            {language === 'de'
+              ? 'Moderator waehlt die Kategorien.'
+              : language === 'both'
+              ? 'Moderator waehlt / Host selects categories.'
+              : 'Host selects the categories.'}
+          </p>
+        </div>
+      );
+    }
+    if (gameState === 'RUNDLAUF_ROUND_INTRO') {
+      return renderWaiting(
+        language === 'de' ? `Rundlauf – ${currentCategory}` : language === 'both' ? `Rundlauf / Roundabout – ${currentCategory}` : `Roundabout – ${currentCategory}`,
+        language === 'de' ? 'Gleich geht es los.' : 'Starting shortly.'
+      );
+    }
+    if (gameState === 'RUNDLAUF_PLAY') {
+      if (isEliminated) {
+        return (
+          <div style={{ ...glassCard, textAlign: 'center' }}>
+            <div style={pillLabel}>{language === 'de' ? 'Rundlauf' : 'Roundabout'}</div>
+            <p style={{ ...mutedText, marginBottom: 0 }}>
+              {language === 'de'
+                ? 'Du bist fuer diese Runde raus.'
+                : language === 'both'
+                ? 'Du bist raus / You are out for this round.'
+                : 'You are out for this round.'}
+            </p>
+          </div>
+        );
+      }
+      if (!isActive) {
+        return (
+          <div style={{ ...glassCard, textAlign: 'center' }}>
+            <div style={pillLabel}>{language === 'de' ? 'Rundlauf' : 'Roundabout'}</div>
+            <p style={mutedText}>
+              {activeTeamName
+                ? inlineCopy(`${activeTeamName} ist dran.`, `${activeTeamName} is up.`)
+                : inlineCopy('Ein anderes Team ist dran.', 'Another team is up.')}
+            </p>
+            <div style={{ ...pillSmall, marginTop: 8 }}>{currentCategory}</div>
+          </div>
+        );
+      }
+      const ownAttempt = state.lastAttempt && state.lastAttempt.teamId === teamId ? state.lastAttempt : null;
+      return (
+        <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Du bist dran' : language === 'both' ? 'Du bist dran / Your turn' : 'Your turn'}</div>
+          <div style={{ fontWeight: 700 }}>{currentCategory}</div>
+          <input
+            style={inputStyle}
+            placeholder={language === 'de' ? 'Antwort eingeben' : 'Enter answer'}
+            value={rundlaufInput}
+            onChange={(e) => setRundlaufInput(e.target.value)}
+            disabled={rundlaufSubmitting}
+          />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <PrimaryButton onClick={() => submitRundlaufAnswer(false)} disabled={rundlaufSubmitting}>
+              {language === 'de' ? 'Senden' : 'Submit'}
+            </PrimaryButton>
+            <button
+              style={{
+                ...primaryButton,
+                background: 'rgba(255,255,255,0.08)',
+                color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.16)',
+                minHeight: 44
+              }}
+              onClick={() => submitRundlaufAnswer(true)}
+              disabled={rundlaufSubmitting}
+            >
+              {language === 'de' ? 'Pass' : 'Pass'}
+            </button>
+          </div>
+          {rundlaufError && <div style={{ color: '#fbbf24', fontWeight: 700 }}>{rundlaufError}</div>}
+          {ownAttempt && ownAttempt.verdict === 'pending' && (
+            <div style={{ color: '#cbd5e1', fontWeight: 700 }}>
+              {language === 'de' ? 'Warte auf Moderator...' : 'Waiting for host...'}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (gameState === 'RUNDLAUF_ROUND_END') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Runde beendet' : 'Round finished'}</div>
+          {winnerNames && (
+            <p style={{ ...mutedText, marginBottom: 0 }}>
+              {language === 'de' ? 'Gewinner' : 'Winner'}: {winnerNames}
+            </p>
+          )}
+        </div>
+      );
+    }
+    if (gameState === 'RUNDLAUF_SCOREBOARD_FINAL' || gameState === 'SIEGEREHRUNG') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center' }}>
+          <div style={pillLabel}>{language === 'de' ? 'Finale' : 'Final'}</div>
+          {scoreboardBlock}
+        </div>
+      );
+    }
+    return renderWaiting(language === 'de' ? 'Warten...' : 'Waiting...');
+  }
+
   function renderBlitzStage() {
     if (!blitzState) {
       return (
@@ -2535,6 +2769,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderByPhase() {
+    if (gameState.startsWith('RUNDLAUF') || gameState === 'SIEGEREHRUNG') {
+      return renderRundlaufStage();
+    }
     if (gameState === 'BLITZ') {
       return renderBlitzStage();
     }
@@ -2599,7 +2836,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const questionAnsweringActive = gameState === 'Q_ACTIVE' && phase === 'answering';
   const canAnswer = questionAnsweringActive && !timeUp && !answerSubmitted;
   const isLocked = gameState === 'Q_LOCKED';
-  const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn;
+  const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn || isRundlaufActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
   const showTimerProgress = hasTimer && !isLocked;
   const viewState = socketError

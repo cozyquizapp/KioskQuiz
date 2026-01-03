@@ -29,6 +29,9 @@ import {
   BlitzSetResult,
   BlitzThemeOption,
   BlitzItemView,
+  RundlaufState,
+  RundlaufCategoryOption,
+  RundlaufAttempt,
   QuizBlitzTheme,
   QuizBlitzItem,
   CozyQuestionType,
@@ -196,6 +199,24 @@ type RoomState = {
   blitzResultsByTeam: Record<string, BlitzSetResult>;
   blitzSubmittedTeamIds: string[];
   blitzRoundIntroTimeout: NodeJS.Timeout | null;
+  rundlaufPool: RundlaufCategoryOption[];
+  rundlaufBans: string[];
+  rundlaufSelectedCategories: RundlaufCategoryOption[];
+  rundlaufPinnedCategory: RundlaufCategoryOption | null;
+  rundlaufTopTeamId: string | null;
+  rundlaufLastTeamId: string | null;
+  rundlaufRoundIndex: number;
+  rundlaufTurnOrder: string[];
+  rundlaufActiveTeamId: string | null;
+  rundlaufEliminatedTeamIds: string[];
+  rundlaufUsedAnswers: string[];
+  rundlaufUsedAnswersNormalized: string[];
+  rundlaufLastAttempt: RundlaufAttempt | null;
+  rundlaufDeadlineAt: number | null;
+  rundlaufTurnStartedAt: number | null;
+  rundlaufTurnDurationMs: number;
+  rundlaufRoundWinners: string[];
+  rundlaufRoundIntroTimeout: NodeJS.Timeout | null;
   validationWarnings: string[];
   nextStage: NextStageHint | null;
   scoreboardOverlayForced: boolean;
@@ -204,6 +225,7 @@ type RoomState = {
 const rooms = new Map<string, RoomState>();
 const quizzes = new Map<string, QuizTemplate>(defaultQuizzes.map((q) => [q.id, q]));
 const blitzItemTimers = new Map<string, NodeJS.Timeout>();
+const rundlaufTurnTimers = new Map<string, NodeJS.Timeout>();
 
 const questionImagesPath = path.join(__dirname, 'data', 'questionImages.json');
 let questionImageMap: Record<string, string> = {};
@@ -389,6 +411,19 @@ const BLITZ_ANSWER_TIME_MS = 30000;
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_ANSWER_TIME_MS / BLITZ_ITEMS_PER_SET);
 const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
+const RUNDLAUF_ROUNDS = 3;
+const RUNDLAUF_VISIBLE_CATEGORY_COUNT = (() => {
+  const raw = Number(process.env.RUNDLAUF_VISIBLE_CATEGORY_COUNT ?? 5);
+  if (!Number.isFinite(raw)) return 5;
+  return Math.max(1, Math.floor(raw));
+})();
+const RUNDLAUF_TURN_TIME_MS = (() => {
+  const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 7000);
+  if (!Number.isFinite(raw)) return 7000;
+  return Math.max(3000, Math.floor(raw));
+})();
+const RUNDLAUF_ROUND_POINTS = 3; // TODO(RUNDLAUF): confirm points per round win
+const RUNDLAUF_SIMILARITY_THRESHOLD = 0.85;
 
 // Cozy60 Studio Drafts / Builder
 const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
@@ -1035,6 +1070,24 @@ const ensureRoom = (roomCode: string): RoomState => {
       blitzResultsByTeam: {},
       blitzSubmittedTeamIds: [],
       blitzRoundIntroTimeout: null,
+      rundlaufPool: [],
+      rundlaufBans: [],
+      rundlaufSelectedCategories: [],
+      rundlaufPinnedCategory: null,
+      rundlaufTopTeamId: null,
+      rundlaufLastTeamId: null,
+      rundlaufRoundIndex: -1,
+      rundlaufTurnOrder: [],
+      rundlaufActiveTeamId: null,
+      rundlaufEliminatedTeamIds: [],
+      rundlaufUsedAnswers: [],
+      rundlaufUsedAnswersNormalized: [],
+      rundlaufLastAttempt: null,
+      rundlaufDeadlineAt: null,
+      rundlaufTurnStartedAt: null,
+      rundlaufTurnDurationMs: RUNDLAUF_TURN_TIME_MS,
+      rundlaufRoundWinners: [],
+      rundlaufRoundIntroTimeout: null,
       validationWarnings: [],
       nextStage: null,
       scoreboardOverlayForced: false
@@ -1060,6 +1113,9 @@ const markTeamDisconnected = (room: RoomState, teamId: string) => {
   room.connectedTeams[teamId] -= 1;
   if (room.connectedTeams[teamId] <= 0) {
     delete room.connectedTeams[teamId];
+    if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufActiveTeamId === teamId) {
+      advanceRundlaufTurn(room);
+    }
   }
 };
 
@@ -1824,6 +1880,254 @@ const finishBlitzStage = (room: RoomState) => {
   applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
 };
 
+const buildRundlaufCategoryPool = (visibleCount: number): RundlaufCategoryOption[] => {
+  const all = (Object.entries(CATEGORY_CONFIG) as Array<[QuizCategory, { label: string }]>).map(
+    ([key, config]) => ({
+      id: key,
+      title: config.label
+    })
+  );
+  const pool = [...all];
+  pool.sort(() => Math.random() - 0.5);
+  const limit = Math.max(1, Math.min(visibleCount, pool.length));
+  return pool.slice(0, limit);
+};
+
+const clearRundlaufTurnTimer = (roomCode: string) => {
+  const timer = rundlaufTurnTimers.get(roomCode);
+  if (timer) {
+    clearTimeout(timer);
+    rundlaufTurnTimers.delete(roomCode);
+  }
+};
+
+const aliveRundlaufTeams = (room: RoomState) => {
+  const connected = new Set(getConnectedTeamIds(room));
+  const eliminated = new Set(room.rundlaufEliminatedTeamIds);
+  return room.rundlaufTurnOrder.filter((teamId) => connected.has(teamId) && !eliminated.has(teamId));
+};
+
+const scheduleRundlaufTurnTimer = (room: RoomState) => {
+  clearRundlaufTurnTimer(room.roomCode);
+  if (room.gameState !== 'RUNDLAUF_PLAY' || !room.rundlaufActiveTeamId) {
+    room.rundlaufTurnStartedAt = null;
+    room.rundlaufDeadlineAt = null;
+    return;
+  }
+  room.rundlaufTurnStartedAt = Date.now();
+  room.rundlaufDeadlineAt = room.rundlaufTurnStartedAt + RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  const timer = setTimeout(() => {
+    rundlaufTurnTimers.delete(room.roomCode);
+    if (room.gameState !== 'RUNDLAUF_PLAY') return;
+    if (!room.rundlaufActiveTeamId) return;
+    const attempt: RundlaufAttempt = {
+      id: uuid(),
+      teamId: room.rundlaufActiveTeamId,
+      text: '',
+      normalized: '',
+      verdict: 'timeout',
+      reason: 'timeout',
+      at: Date.now()
+    };
+    room.rundlaufLastAttempt = attempt;
+    const eliminated = new Set(room.rundlaufEliminatedTeamIds);
+    eliminated.add(room.rundlaufActiveTeamId);
+    room.rundlaufEliminatedTeamIds = Array.from(eliminated);
+    if (aliveRundlaufTeams(room).length <= 1) {
+      const winners = aliveRundlaufTeams(room);
+      const uniqueWinners = Array.from(new Set(winners));
+      uniqueWinners.forEach((teamId) => {
+        if (room.teams[teamId]) {
+          room.teams[teamId].score = (room.teams[teamId].score ?? 0) + RUNDLAUF_ROUND_POINTS;
+        }
+      });
+      room.rundlaufRoundWinners = uniqueWinners;
+      room.rundlaufActiveTeamId = null;
+      room.rundlaufDeadlineAt = null;
+      room.rundlaufTurnStartedAt = null;
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
+    } else {
+      const alive = aliveRundlaufTeams(room);
+      const currentIdx = alive.indexOf(room.rundlaufActiveTeamId);
+      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
+      room.rundlaufActiveTeamId = alive[nextIdx] ?? null;
+      scheduleRundlaufTurnTimer(room);
+    }
+    broadcastState(room);
+  }, RUNDLAUF_TURN_TIME_MS);
+  rundlaufTurnTimers.set(room.roomCode, timer);
+};
+
+const setRundlaufActiveTeam = (room: RoomState, teamId: string | null) => {
+  room.rundlaufActiveTeamId = teamId;
+  room.rundlaufLastAttempt = null;
+  scheduleRundlaufTurnTimer(room);
+};
+
+const assignRundlaufTurnOrder = (room: RoomState) => {
+  room.rundlaufTurnOrder = getTeamsByScore(room, 'desc').map((team) => team.id);
+};
+
+const advanceRundlaufTurn = (room: RoomState) => {
+  const alive = aliveRundlaufTeams(room);
+  if (alive.length <= 1) {
+    const winners = alive;
+    const uniqueWinners = Array.from(new Set(winners));
+    uniqueWinners.forEach((teamId) => {
+      if (room.teams[teamId]) {
+        room.teams[teamId].score = (room.teams[teamId].score ?? 0) + RUNDLAUF_ROUND_POINTS;
+      }
+    });
+    room.rundlaufRoundWinners = uniqueWinners;
+    room.rundlaufActiveTeamId = null;
+    room.rundlaufDeadlineAt = null;
+    room.rundlaufTurnStartedAt = null;
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
+    clearRundlaufTurnTimer(room.roomCode);
+    return;
+  }
+  const currentIdx = alive.indexOf(room.rundlaufActiveTeamId ?? '');
+  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
+  setRundlaufActiveTeam(room, alive[nextIdx] ?? null);
+};
+
+const eliminateRundlaufTeam = (room: RoomState, teamId: string, reason?: string) => {
+  const eliminated = new Set(room.rundlaufEliminatedTeamIds);
+  eliminated.add(teamId);
+  room.rundlaufEliminatedTeamIds = Array.from(eliminated);
+  if (reason) {
+    room.rundlaufLastAttempt = {
+      id: uuid(),
+      teamId,
+      text: '',
+      normalized: '',
+      verdict: 'invalid',
+      reason,
+      at: Date.now()
+    };
+  }
+  if (room.rundlaufActiveTeamId === teamId) {
+    advanceRundlaufTurn(room);
+  } else if (aliveRundlaufTeams(room).length <= 1) {
+    advanceRundlaufTurn(room);
+  }
+};
+
+const initializeRundlaufStage = (room: RoomState) => {
+  const pool = buildRundlaufCategoryPool(RUNDLAUF_VISIBLE_CATEGORY_COUNT);
+  const standings = getTeamStandings(room);
+  room.rundlaufPool = pool;
+  room.rundlaufBans = [];
+  room.rundlaufSelectedCategories = [];
+  room.rundlaufPinnedCategory = null;
+  room.rundlaufTopTeamId = standings[0]?.id ?? null;
+  room.rundlaufLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
+  room.rundlaufRoundIndex = -1;
+  room.rundlaufTurnOrder = [];
+  room.rundlaufActiveTeamId = null;
+  room.rundlaufEliminatedTeamIds = [];
+  room.rundlaufUsedAnswers = [];
+  room.rundlaufUsedAnswersNormalized = [];
+  room.rundlaufLastAttempt = null;
+  room.rundlaufDeadlineAt = null;
+  room.rundlaufTurnStartedAt = null;
+  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufRoundWinners = [];
+  room.rundlaufRoundIntroTimeout = null;
+  room.nextStage = 'RUNDLAUF';
+  clearRundlaufTurnTimer(room.roomCode);
+  applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_PAUSE' });
+};
+
+const startRundlaufRound = (room: RoomState) => {
+  if (room.rundlaufSelectedCategories.length === 0) {
+    throw new Error('Keine Rundlauf-Kategorien gesetzt');
+  }
+  if (room.rundlaufRoundIndex >= RUNDLAUF_ROUNDS - 1) {
+    throw new Error('Alle Rundlauf-Runden gespielt');
+  }
+  const nextIndex = room.rundlaufRoundIndex + 1;
+  if (!room.rundlaufSelectedCategories[nextIndex]) {
+    throw new Error('Nicht genug Rundlauf-Kategorien vorhanden');
+  }
+  room.rundlaufRoundIndex = nextIndex;
+  room.rundlaufRoundWinners = [];
+  room.rundlaufEliminatedTeamIds = [];
+  room.rundlaufUsedAnswers = [];
+  room.rundlaufUsedAnswersNormalized = [];
+  room.rundlaufLastAttempt = null;
+  assignRundlaufTurnOrder(room);
+  applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_PLAY' });
+  const alive = aliveRundlaufTeams(room);
+  setRundlaufActiveTeam(room, alive[0] ?? null);
+};
+
+const evaluateRundlaufAttempt = (room: RoomState, teamId: string, rawInput: string): RundlaufAttempt => {
+  if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf nicht aktiv');
+  if (!room.rundlaufActiveTeamId) throw new Error('Kein aktives Team');
+  if (room.rundlaufActiveTeamId !== teamId) throw new Error('Team ist nicht am Zug');
+  if (room.rundlaufLastAttempt?.verdict === 'pending') throw new Error('Moderation ausstehend');
+  if (room.rundlaufDeadlineAt && Date.now() > room.rundlaufDeadlineAt) {
+    return {
+      id: uuid(),
+      teamId,
+      text: '',
+      normalized: '',
+      verdict: 'timeout',
+      reason: 'timeout',
+      at: Date.now()
+    };
+  }
+  const text = (rawInput ?? '').trim().slice(0, 160);
+  const normalized = text ? normalizeText(text) : '';
+  if (!text) {
+    return {
+      id: uuid(),
+      teamId,
+      text,
+      normalized,
+      verdict: 'invalid',
+      reason: 'empty',
+      at: Date.now()
+    };
+  }
+  if (room.rundlaufUsedAnswersNormalized.includes(normalized)) {
+    return {
+      id: uuid(),
+      teamId,
+      text,
+      normalized,
+      verdict: 'dup',
+      reason: 'duplicate',
+      at: Date.now()
+    };
+  }
+  let bestScore = 0;
+  room.rundlaufUsedAnswersNormalized.forEach((entry) => {
+    bestScore = Math.max(bestScore, similarityScore(entry, normalized));
+  });
+  if (bestScore >= RUNDLAUF_SIMILARITY_THRESHOLD) {
+    return {
+      id: uuid(),
+      teamId,
+      text,
+      normalized,
+      verdict: 'dup',
+      reason: 'similar',
+      at: Date.now()
+    };
+  }
+  return {
+    id: uuid(),
+    teamId,
+    text,
+    normalized,
+    verdict: 'pending',
+    at: Date.now()
+  };
+};
+
 const baseBingoCategories: QuizCategory[] = (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).flatMap(
   (c) => Array.from({ length: 5 }, () => c)
 );
@@ -2156,6 +2460,24 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.blitzResultsByTeam = {};
   room.blitzSubmittedTeamIds = [];
   room.blitzRoundIntroTimeout = null;
+  room.rundlaufPool = [];
+  room.rundlaufBans = [];
+  room.rundlaufSelectedCategories = [];
+  room.rundlaufPinnedCategory = null;
+  room.rundlaufTopTeamId = null;
+  room.rundlaufLastTeamId = null;
+  room.rundlaufRoundIndex = -1;
+  room.rundlaufTurnOrder = [];
+  room.rundlaufActiveTeamId = null;
+  room.rundlaufEliminatedTeamIds = [];
+  room.rundlaufUsedAnswers = [];
+  room.rundlaufUsedAnswersNormalized = [];
+  room.rundlaufLastAttempt = null;
+  room.rundlaufDeadlineAt = null;
+  room.rundlaufTurnStartedAt = null;
+  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufRoundWinners = [];
+  room.rundlaufRoundIntroTimeout = null;
   recomputeRoomWarnings(room);
   applyRoomState(room, { type: 'START_SESSION' });
   broadcastTeamsReady(room);
@@ -2555,12 +2877,16 @@ const formatSolution = (question: AnyQuestion, language: Language): string | und
 const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => question;
 
 const applyRoomState = (room: RoomState, action: GameStateAction) => {
+  const prev = room.gameState;
   const next = applyGameAction(room.gameState, action);
   if (next !== room.gameState) {
     room.gameState = next;
     room.stateHistory = [...room.stateHistory.slice(-9), next];
-    if ((next === 'BLITZ' || next === 'POTATO') && room.scoreboardOverlayForced) {
+    if ((next === 'BLITZ' || next === 'POTATO' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
       room.scoreboardOverlayForced = false;
+    }
+    if (prev === 'RUNDLAUF_PLAY' && next !== 'RUNDLAUF_PLAY') {
+      clearRundlaufTurnTimer(room.roomCode);
     }
   }
   return room.gameState;
@@ -2579,6 +2905,10 @@ const buildTimerSnapshot = (room: RoomState) => {
     endsAt = room.potatoDeadlineAt;
     running = true;
     durationMs = room.potatoTurnDurationMs;
+  } else if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufDeadlineAt) {
+    endsAt = room.rundlaufDeadlineAt;
+    running = true;
+    durationMs = room.rundlaufTurnDurationMs;
   } else if (!running) {
     durationMs = null;
   }
@@ -2638,6 +2968,32 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           itemDeadline: room.blitzItemDeadlineAt ?? undefined,
           itemDurationMs: room.blitzItemDurationMs ?? undefined
         };
+  const shouldIncludeRundlauf =
+    room.gameState.startsWith('RUNDLAUF') || room.gameState === 'SIEGEREHRUNG' || room.rundlaufPool.length > 0;
+  const currentRundlaufCategory =
+    room.rundlaufRoundIndex >= 0 ? room.rundlaufSelectedCategories[room.rundlaufRoundIndex] ?? null : null;
+  const rundlauf: RundlaufState | null = !shouldIncludeRundlauf
+    ? null
+    : {
+        pool: room.rundlaufPool,
+        bans: room.rundlaufBans,
+        selected: room.rundlaufSelectedCategories,
+        pinned: room.rundlaufPinnedCategory ?? null,
+        topTeamId: room.rundlaufTopTeamId ?? null,
+        lastTeamId: room.rundlaufLastTeamId ?? null,
+        roundIndex: room.rundlaufRoundIndex,
+        turnOrder: room.rundlaufTurnOrder,
+        activeTeamId: room.rundlaufActiveTeamId,
+        eliminatedTeamIds: room.rundlaufEliminatedTeamIds,
+        usedAnswers: room.rundlaufUsedAnswers,
+        usedAnswersNormalized: room.rundlaufUsedAnswersNormalized,
+        lastAttempt: room.rundlaufLastAttempt ?? null,
+        deadline: room.rundlaufDeadlineAt,
+        turnStartedAt: room.rundlaufTurnStartedAt,
+        turnDurationMs: room.rundlaufTurnDurationMs,
+        currentCategory: currentRundlaufCategory,
+        roundWinners: room.rundlaufRoundWinners
+      };
   const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
   const connectedTeamIds = getConnectedTeamIds(room);
   const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({
@@ -2683,6 +3039,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
     potato,
     blitz,
+    rundlauf,
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
     results,
@@ -3039,6 +3396,38 @@ const handleHostNextAdvance = (room: RoomState) => {
     enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
     return { stage: room.gameState };
   }
+  if (room.gameState === 'RUNDLAUF_PAUSE') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_ROUND_INTRO' || room.gameState === 'RUNDLAUF_PLAY') {
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_ROUND_END') {
+    if (room.rundlaufRoundIndex >= RUNDLAUF_ROUNDS - 1) {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SCOREBOARD_FINAL' });
+    } else {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_SCOREBOARD_FINAL' || room.gameState === 'SIEGEREHRUNG') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
   if (room.gameState === 'SCOREBOARD_PAUSE') {
     if (room.nextStage === 'BLITZ') {
       initializeBlitzStage(room);
@@ -3064,7 +3453,10 @@ const handleHostNextAdvance = (room: RoomState) => {
     return { stage: room.gameState };
   }
   if (room.gameState === 'SCOREBOARD') {
-    if (room.nextStage === 'BLITZ') {
+    const askedCount = room.askedQuestionIds.length;
+    const shouldStartBlitz = room.nextStage === 'BLITZ' || (askedCount === 10 && room.blitzPhase === 'IDLE');
+    if (shouldStartBlitz) {
+      room.nextStage = 'BLITZ';
       initializeBlitzStage(room);
       broadcastState(room);
       return { stage: room.gameState };
@@ -3072,6 +3464,14 @@ const handleHostNextAdvance = (room: RoomState) => {
     if (room.nextStage === 'BLITZ_PAUSE') {
       room.nextStage = 'Q11';
       applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    const shouldStartRundlauf =
+      room.nextStage === 'RUNDLAUF' ||
+      (askedCount >= room.questionOrder.length && room.rundlaufPool.length === 0);
+    if (shouldStartRundlauf) {
+      initializeRundlaufStage(room);
       broadcastState(room);
       return { stage: room.gameState };
     }
@@ -3135,8 +3535,7 @@ const revealAnswersForRoom = (room: RoomState) => {
   if (askedCount === 10) {
     room.nextStage = 'BLITZ';
   } else if (askedCount >= 20 || noQuestionsLeft) {
-    room.nextStage = 'POTATO';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
+    initializeRundlaufStage(room);
   } else {
     room.nextStage = null;
   }
@@ -3986,6 +4385,176 @@ io.on('connection', (socket: Socket) => {
       broadcastState(room);
     });
   });
+
+  socket.on(
+    'host:rundlaufBanCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') throw new Error('Rundlauf-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufTopTeamId && payload.teamId !== room.rundlaufTopTeamId) {
+          throw new Error('Nur Platz 1 darf bannen');
+        }
+        const limit = Math.min(2, Math.max(0, room.rundlaufPool.length - 1));
+        if (room.rundlaufBans.length >= limit) throw new Error('Ban-Limit erreicht');
+        const categoryId = (payload.categoryId ?? '').trim();
+        if (!categoryId) throw new Error('Kategorie fehlt');
+        const exists = room.rundlaufPool.find((entry) => entry.id === categoryId);
+        if (!exists) throw new Error('Kategorie nicht verfuegbar');
+        if (room.rundlaufBans.includes(categoryId)) throw new Error('Kategorie bereits gebannt');
+        if (room.rundlaufPinnedCategory?.id === categoryId) throw new Error('Kategorie ist bereits ausgewaehlt');
+        room.rundlaufBans = [...room.rundlaufBans, categoryId];
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'host:rundlaufPickCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') throw new Error('Rundlauf-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufLastTeamId && payload.teamId !== room.rundlaufLastTeamId) {
+          throw new Error('Nur letzter Platz darf waehlen');
+        }
+        if (room.rundlaufPinnedCategory) throw new Error('Kategorie bereits gesetzt');
+        const categoryId = (payload.categoryId ?? '').trim();
+        if (!categoryId) throw new Error('Kategorie fehlt');
+        const exists = room.rundlaufPool.find((entry) => entry.id === categoryId);
+        if (!exists) throw new Error('Kategorie nicht verfuegbar');
+        if (room.rundlaufBans.includes(categoryId)) throw new Error('Kategorie ist gebannt');
+        room.rundlaufPinnedCategory = exists;
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:rundlaufConfirmCategories', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+        throw new Error('Rundlauf-Auswahl nicht aktiv');
+      }
+      if (!room.rundlaufPinnedCategory && room.rundlaufPool.length > 0) {
+        throw new Error('Letzter Platz muss eine Kategorie waehlen');
+      }
+      const banned = new Set(room.rundlaufBans);
+      const pinned = room.rundlaufPinnedCategory ?? null;
+      const remaining = room.rundlaufPool.filter(
+        (entry) => !banned.has(entry.id) && entry.id !== pinned?.id
+      );
+      const needed = Math.max(0, RUNDLAUF_ROUNDS - (pinned ? 1 : 0));
+      const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+      const randomPick = shuffled.slice(0, needed);
+      room.rundlaufSelectedCategories = pinned ? [pinned, ...randomPick] : randomPick;
+      room.rundlaufRoundIndex = -1;
+      room.rundlaufRoundWinners = [];
+      room.rundlaufActiveTeamId = null;
+      room.rundlaufDeadlineAt = null;
+      room.rundlaufTurnStartedAt = null;
+      clearRundlaufTurnTimer(room.roomCode);
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+      broadcastState(room);
+      return { selected: room.rundlaufSelectedCategories };
+    });
+  });
+
+  socket.on('host:rundlaufStartRound', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_ROUND_INTRO') throw new Error('Rundlauf-Intro nicht aktiv');
+      startRundlaufRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'team:submitRundlaufAnswer',
+    (payload: { roomCode?: string; teamId?: string; text?: string; pass?: boolean }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufActiveTeamId !== payload.teamId) throw new Error('Team ist nicht am Zug');
+        if (payload.pass) {
+          eliminateRundlaufTeam(room, payload.teamId, 'pass');
+          broadcastState(room);
+          return { eliminated: true };
+        }
+        const attempt = evaluateRundlaufAttempt(room, payload.teamId, payload?.text ?? '');
+        room.rundlaufLastAttempt = attempt;
+        if (attempt.verdict === 'timeout') {
+          eliminateRundlaufTeam(room, payload.teamId, 'timeout');
+        }
+        broadcastState(room);
+        return { attempt };
+      });
+    }
+  );
+
+  socket.on(
+    'host:rundlaufMarkAnswer',
+    (payload: { roomCode?: string; attemptId?: string; verdict?: 'ok' | 'dup' | 'invalid' }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        if (!room.rundlaufLastAttempt) throw new Error('Kein Versuch vorhanden');
+        if (!payload?.attemptId || payload.attemptId !== room.rundlaufLastAttempt.id) {
+          throw new Error('Attempt nicht gefunden');
+        }
+        const verdict = payload.verdict ?? 'invalid';
+        const attempt = { ...room.rundlaufLastAttempt, verdict };
+        room.rundlaufLastAttempt = attempt;
+        if (verdict === 'ok') {
+          if (!room.rundlaufUsedAnswersNormalized.includes(attempt.normalized)) {
+            room.rundlaufUsedAnswers = [...room.rundlaufUsedAnswers, attempt.text];
+            room.rundlaufUsedAnswersNormalized = [...room.rundlaufUsedAnswersNormalized, attempt.normalized];
+          }
+          advanceRundlaufTurn(room);
+        }
+        broadcastState(room);
+        return { attempt };
+      });
+    }
+  );
+
+  socket.on('host:rundlaufEliminateTeam', (payload: { roomCode?: string; teamId?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+      if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+      eliminateRundlaufTeam(room, payload.teamId, 'eliminated');
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:rundlaufNextTeam', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+      advanceRundlaufTurn(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:rundlaufEndRound',
+    (payload: { roomCode?: string; winnerIds?: string[] }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        const winners =
+          payload?.winnerIds?.filter((id) => room.teams[id]) ?? aliveRundlaufTeams(room);
+        const unique = Array.from(new Set(winners));
+        unique.forEach((teamId) => {
+          if (room.teams[teamId]) {
+            room.teams[teamId].score = (room.teams[teamId].score ?? 0) + RUNDLAUF_ROUND_POINTS;
+          }
+        });
+        room.rundlaufRoundWinners = unique;
+        room.rundlaufActiveTeamId = null;
+        room.rundlaufDeadlineAt = null;
+        room.rundlaufTurnStartedAt = null;
+        clearRundlaufTurnTimer(room.roomCode);
+        applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
+        broadcastState(room);
+      });
+    }
+  );
 
   socket.on(
     'host:startBlitz',

@@ -11,7 +11,8 @@ import {
   CozyGameState,
   PotatoState,
   BlitzState,
-  NextStageHint
+  NextStageHint,
+  RundlaufState
 } from '@shared/quizTypes';
 import { fetchAnswers } from '../api';
 
@@ -30,6 +31,7 @@ type SocketEvents = {
   teamStatus?: StateUpdatePayload['teamStatus'];
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
+  rundlauf?: RundlaufState | null;
   questionProgress?: StateUpdatePayload['questionProgress'];
   results?: StateUpdatePayload['results'];
   warnings?: string[];
@@ -154,6 +156,7 @@ export const useQuizSocket = (roomCode: string) => {
         teamStatus: payload.teamStatus ?? prev.teamStatus,
         potato: payload.potato ?? prev.potato,
         blitz: payload.blitz ?? prev.blitz,
+        rundlauf: payload.rundlauf ?? prev.rundlauf,
         questionProgress: payload.questionProgress ?? prev.questionProgress,
         results: payload.results ?? prev.results,
         warnings: payload.warnings ?? prev.warnings,

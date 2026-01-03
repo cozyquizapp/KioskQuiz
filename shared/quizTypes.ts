@@ -485,7 +485,7 @@ export interface PotatoState {
   pendingConflict?: PotatoConflict | null;
 }
 
-export type BlitzPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'SET_END' | 'DONE';
+export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'PLAYING' | 'SET_END' | 'DONE';
 
 export interface BlitzThemeOption {
   id: string;
@@ -509,6 +509,9 @@ export interface BlitzState {
   bans: Record<string, string[]>;
   banLimits: Record<string, number>;
   selectedThemes: BlitzThemeOption[];
+  pinnedTheme?: BlitzThemeOption | null;
+  topTeamId?: string | null;
+  lastTeamId?: string | null;
   setIndex: number;
   deadline?: number | null;
   theme?: BlitzThemeOption | null;
@@ -530,7 +533,7 @@ export type SyncStatePayload = {
   slotMeta?: SlotTransitionMeta | null;
 };
 
-export type NextStageHint = 'BLITZ' | 'Q11' | 'POTATO';
+export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'POTATO';
 
 export type TeamStatusSnapshot = {
   id: string;

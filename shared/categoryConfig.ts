@@ -24,11 +24,11 @@ export const CATEGORY_CONFIG: Record<QuizCategory, CategoryConfig> = {
     short: 'MC'
   },
   Stimmts: {
-    label: 'Stimmts?',
-    labelEn: 'Fake Finder',
+    label: 'Bluff',
+    labelEn: 'Bluff',
     icon: '/categories/punktlandung_logo.png',
     color: '#72ac78',
-    short: 'ST'
+    short: 'BL'
   },
   Cheese: {
     label: 'Cheese',
@@ -38,7 +38,7 @@ export const CATEGORY_CONFIG: Record<QuizCategory, CategoryConfig> = {
     short: 'CH'
   },
   GemischteTuete: {
-    label: 'Gemischte Tuete',
+    label: 'Bunte Tuete',
     labelEn: 'Mixed Bag',
     icon: '/categories/buntetuete_logo.png',
     color: '#d85f58',

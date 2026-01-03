@@ -3,9 +3,9 @@ import { QuizCategory, Language } from '@shared/quizTypes';
 type Lang = Exclude<Language, 'both'>;
 
 export const categoryLabels: Record<QuizCategory, Record<Lang, string>> = {
-  Schaetzchen: { de: 'Schätzchen', en: 'Close Call' },
+  Schaetzchen: { de: 'Schaetzchen', en: 'Close Call' },
   'Mu-Cho': { de: 'Mu-Cho', en: 'Mu-Cho' },
-  Stimmts: { de: "Stimmt's?", en: 'True or False?' },
+  Stimmts: { de: 'Bluff', en: 'Bluff' },
   Cheese: { de: 'Cheese', en: 'Cheese' },
-  GemischteTuete: { de: 'Gemischte Tüte', en: 'Mixed Bag' }
+  GemischteTuete: { de: 'Bunte Tuete', en: 'Mixed Bag' }
 };

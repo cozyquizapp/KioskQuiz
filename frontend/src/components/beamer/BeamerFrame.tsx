@@ -19,6 +19,7 @@ type Props = {
   footerDetail?: string;
   status?: 'active' | 'locked' | 'info' | 'final';
   rightNode?: React.ReactNode;
+  hideHeader?: boolean;
   children: React.ReactNode;
 };
 
@@ -37,6 +38,7 @@ const BeamerFrame: React.FC<Props> = ({
   footerDetail,
   status,
   rightNode,
+  hideHeader,
   children
 }) => {
   const normalizedProgress =
@@ -50,16 +52,18 @@ const BeamerFrame: React.FC<Props> = ({
           <div className="beamer-frame-progress-inner" style={{ width: `${normalizedProgress * 100}%` }} />
         </div>
       )}
-      <BeamerHeader
-        leftLabel={leftLabel}
-        leftHint={leftHint}
-        title={title}
-        subtitle={subtitle}
-        badge={badgeLabel ? <BeamerBadge label={badgeLabel} tone={badgeTone} /> : undefined}
-        progressText={progressText}
-        timerText={timerText}
-        rightNode={rightNode}
-      />
+      {!hideHeader && (
+        <BeamerHeader
+          leftLabel={leftLabel}
+          leftHint={leftHint}
+          title={title}
+          subtitle={subtitle}
+          badge={badgeLabel ? <BeamerBadge label={badgeLabel} tone={badgeTone} /> : undefined}
+          progressText={progressText}
+          timerText={timerText}
+          rightNode={rightNode}
+        />
+      )}
       <div className="beamer-frame-body">{children}</div>
       <BeamerFooter message={footerMessage} detail={footerDetail} status={status} />
     </div>

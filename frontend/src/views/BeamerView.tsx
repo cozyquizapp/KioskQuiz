@@ -62,7 +62,7 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
 type BeamerProps = { roomCode: string };
 
 const SLOT_ITEM_HEIGHT = 70;
-const buildQrUrl = (url: string) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+const buildQrUrl = (url: string) => `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
 
 type FrameBaseProps = {
   scene: string;
@@ -162,24 +162,24 @@ const translationsBoth = {
 
 const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> = {
   Schaetzchen: {
-    de: 'Hier \u00e4\u0068lt euer Gef\u00fchl f\u00fcr Zahlen und Gr\u00f6\u00dfen.',
+    de: 'Treffsicher schaetzen - Naehe zaehlt.',
     en: 'Here your sense for numbers and sizes matters.'
   },
   'Mu-Cho': {
-    de: 'Hier entscheidet ihr euch clever zwischen vier Optionen.',
+    de: 'Vier Optionen, eine Entscheidung.',
     en: 'Make the best choice between four options.'
   },
   Stimmts: {
-    de: 'Raten oder wissen? Wahr oder falsch.',
-    en: 'True or false? Trust your gut or knowledge.'
+    de: 'Drei Aussagen, nur eine ist wahr.',
+    en: 'Three statements, only one is true.'
   },
   Cheese: {
-    de: 'Alles rund ums Motiv \u2013 genau hinschauen.',
+    de: 'Ein Bild. Ein Blick. Eine Loesung.',
     en: 'All about the picture \u2013 look closely.'
   },
   GemischteTuete: {
-    de: 'Gemischte T\u00fcte: ein bisschen von allem.',
-    en: 'Mixed bag: a bit of everything.'
+    de: 'Bunte Tuete: Ranking, Praezision, Ordnung.',
+    en: 'Mixed bag: rankings, precision, order.'
   }
 };
 
@@ -1059,7 +1059,7 @@ useEffect(() => {
     description: getCategoryDescription(cat, language),
     icon: categoryIcons[cat]
   }));
-  const headerLeftLabel = 'Cozy Quiz 60';
+  const headerLeftLabel = featureFlags.isCozyMode ? '' : 'Cozy Quiz 60';
   const headerLeftHint = undefined;
   const headerTimerText = showTurnProgress ? `${formatSeconds(remainingMs)}s` : undefined;
 
@@ -1383,67 +1383,20 @@ useEffect(() => {
   };
 
   const renderCozyIntroContent = (): JSX.Element => {
-    const defaultHeadline = language === 'en' ? 'WELCOME' : 'WILLKOMMEN';
-    const defaultSubline =
-      language === 'en'
-        ? 'Teams are joining — show starts soon.'
-        : language === 'both'
-        ? 'Teams verbinden / connect — gleich geht’s los.'
-        : 'Teams verbinden – gleich geht’s los.';
-    const connectedInfo =
-      readyCount > 0
-        ? `${readyCount}/${teams.length || 0} ${
-            language === 'de' ? 'bereit' : language === 'both' ? 'bereit / ready' : 'ready'
-          }`
-        : `${teams.length || 0} ${
-            language === 'de'
-              ? 'Teams verbunden'
-              : language === 'both'
-              ? 'Teams verbunden / connected'
-              : 'teams connected'
-          }`;
+    const connectedInfo = `Teams: ${teams.length || 0}`;
     const tileCategories: QuizCategory[] = ['Cheese', 'Schaetzchen', 'Mu-Cho', 'Stimmts', 'GemischteTuete'];
     const highlightCategory = tileCategories[lobbyHighlightIndex % tileCategories.length];
-    const heroCopy: Record<QuizCategory, { headline: string; subline: string }> = {
-      Cheese: {
-        headline: language === 'de' ? 'Ein Bild. Ein Blick. Eine Lösung.' : 'One image. One shot.',
-        subline:
-          language === 'de'
-            ? 'Entdeckt Details in Fotos & Illustrationen.'
-            : 'Look closer and spot every detail.'
-      },
-      Schaetzchen: {
-        headline: language === 'de' ? 'Treffsicher schätzen.' : 'Guess with precision.',
-        subline:
-          language === 'de'
-            ? 'Zahlengefühl entscheidet über die Punkte.'
-            : 'Numbers and instincts rule the round.'
-      },
-      'Mu-Cho': {
-        headline: language === 'de' ? 'Vier Optionen, eine Chance.' : 'Four options, one chance.',
-        subline:
-          language === 'de'
-            ? 'Multiple Choice trifft Taktik.'
-            : 'Strategic multiple choice questions.'
-      },
-      Stimmts: {
-        headline: language === 'de' ? 'Fakt oder Fiktion?' : 'Fact or fiction?',
-        subline:
-          language === 'de'
-            ? 'Vertraut eurem Bauchgefühl bei 10 Punkten.'
-            : 'Trust your gut when placing 10 points.'
-      },
-      GemischteTuete: {
-        headline: language === 'de' ? 'Bunte Tüte, bunter Mix.' : 'Mixed bag of mechanics.',
-        subline:
-          language === 'de'
-            ? 'Ranking, Präzision, 8 Dinge – alles drin.'
-            : 'Rankings, precision ladders, 8 things.'
-      }
-    };
-    const heroText = heroCopy[highlightCategory] ?? { headline: defaultHeadline, subline: defaultSubline };
+    const heroLang = normalizeLang(language);
+    const heroLabel = getCategoryLabel(highlightCategory, heroLang);
+    const heroText = getCategoryDescription(highlightCategory, heroLang);
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
+    const joinTitle =
+      language === 'en'
+        ? 'Scan to join'
+        : language === 'both'
+        ? 'Scannen & beitreten / Scan to join'
+        : 'Jetzt scannen & beitreten';
     return (
       <div className="cozyLobbyShell">
         <div className="cozyLobbyGrid">
@@ -1454,43 +1407,33 @@ useEffect(() => {
               return (
                 <div key={`cozy-pill-${cat}`} className={`cozyLobbyPill${isActive ? ' cozyLobbyPillActive' : ''}`}>
                   {iconSrc && <img src={iconSrc} alt={cat} />}
-                  <div>
-                    <strong>{getCategoryLabel(cat, language)}</strong>
-                    <span>{getCategoryDescription(cat, language)}</span>
-                  </div>
+                  <strong>{getCategoryLabel(cat, heroLang)}</strong>
                 </div>
               );
             })}
           </div>
           <div className="cozyLobbyHero">
             <div className="cozyLobbyHeroInner">
-              <span className="cozyHeroEyebrow">Cozy Quiz 60</span>
-              <div className="cozyHeroIconWrap">
+              <div className="cozyLobbyHeroHeader">
                 {categoryIcons[highlightCategory] && (
                   <img src={categoryIcons[highlightCategory]} alt={highlightCategory} />
                 )}
-                <span>{getCategoryLabel(highlightCategory, language)}</span>
+                <span className="cozyLobbyHeroTitle">{heroLabel}</span>
               </div>
-              <h1>{heroText.headline || defaultHeadline}</h1>
-              <p>{heroText.subline || defaultSubline}</p>
-              <div className="cozyHeroRoom">{roomCode || '----'}</div>
-              <div className="cozyHeroMeta">{connectedInfo}</div>
+              <p className="cozyLobbyHeroText">{heroText}</p>
+              <div className="cozyLobbyMetaRow">{connectedInfo}</div>
             </div>
             {showQr && teamJoinQr && (
-              <div className="cozyLobbyQrCard">
-                <img src={teamJoinQr} alt="Team QR" />
-                <div>{language === 'en' ? 'Scan & join now' : 'Jetzt scannen & beitreten'}</div>
-                {joinDisplay && <div className="cozyQrLink">{joinDisplay}</div>}
+              <div className="cozyLobbyJoinCard">
+                <div className="cozyLobbyJoinText">
+                  <div className="cozyLobbyJoinTitle">{joinTitle}</div>
+                  {joinDisplay && <div className="cozyLobbyJoinLink">{joinDisplay}</div>}
+                </div>
+                <div className="cozyLobbyJoinQr">
+                  <img src={teamJoinQr} alt="Team QR" />
+                </div>
               </div>
             )}
-          </div>
-        </div>
-        <div className="cozyLobbyProductionBar">
-          <span>A COZY WOLF PRODUCTION</span>
-          <div className="cozyLobbyWolfBadge">
-            <span role="img" aria-label="Wolf">
-              🐺
-            </span>
           </div>
         </div>
       </div>
@@ -2106,11 +2049,17 @@ useEffect(() => {
           <BeamerFrame
             key={`${sceneKey}-intro`}
             {...baseFrameProps}
+            leftLabel=""
+            leftHint={undefined}
             title=""
             subtitle=""
-            badgeLabel="LOBBY"
-            badgeTone="muted"
-            footerMessage={language === 'de' ? 'Teams jetzt verbinden' : 'Teams can join now'}
+            badgeLabel={undefined}
+            badgeTone={undefined}
+            progressText={undefined}
+            progressValue={null}
+            timerText={undefined}
+            footerMessage={undefined}
+            hideHeader
             status="info"
           >
             {renderCozyIntroContent()}

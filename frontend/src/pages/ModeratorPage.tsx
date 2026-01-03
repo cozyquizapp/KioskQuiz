@@ -198,6 +198,7 @@ function ModeratorPage(): React.ReactElement {
   const [showJoinScreen, setShowJoinScreen] = useState(false);
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const singleActionMode = featureFlags.isCozyMode;
 
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const {
@@ -469,15 +470,17 @@ function ModeratorPage(): React.ReactElement {
         handleNextQuestion();
         return;
       }
-      if (matchesHotkey(event, ['f14', 'digit2', 'numpad2', '2'])) {
-        event.preventDefault();
-        handleLockQuestion();
-        return;
-      }
-      if (matchesHotkey(event, ['f15', 'digit3', 'numpad3', '3'])) {
-        event.preventDefault();
-        handleReveal();
-        return;
+      if (!singleActionMode) {
+        if (matchesHotkey(event, ['f14', 'digit2', 'numpad2', '2'])) {
+          event.preventDefault();
+          handleLockQuestion();
+          return;
+        }
+        if (matchesHotkey(event, ['f15', 'digit3', 'numpad3', '3'])) {
+          event.preventDefault();
+          handleReveal();
+          return;
+        }
       }
       if (matchesHotkey(event, ['f16', 'digit4', 'numpad4', '4'])) {
         event.preventDefault();
@@ -528,7 +531,8 @@ function ModeratorPage(): React.ReactElement {
     emitBlitzEvent,
     handleNextQuestion,
     handleLockQuestion,
-    handleReveal
+    handleReveal,
+    singleActionMode
   ]);
 
 
@@ -2523,8 +2527,6 @@ function ModeratorPage(): React.ReactElement {
           </div>
         )}
 
-        )}
-
         {selected.length > 0 && (
           <div style={{ marginTop: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>AusgewÃ¤hlte Themen</div>
@@ -2662,7 +2664,7 @@ function ModeratorPage(): React.ReactElement {
           style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#1f1305' }}
           onClick={handleNextQuestion}
         >
-          Weiter -> Fotoblitz
+          Weiter zu Fotoblitz
         </button>
       );
     }
@@ -2828,17 +2830,19 @@ function ModeratorPage(): React.ReactElement {
       busy: boolean;
       tone: 'primary' | 'warning' | 'accent';
       disabled?: boolean;
-    }> = [
-      { label: 'Weiter', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
-      { label: 'Sperren', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
-      {
-        label: 'Aufdecken',
-        onClick: handleReveal,
-        busy: actionState.reveal,
-        tone: 'accent',
-        disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL'
-      }
-    ];
+    }> = singleActionMode
+      ? [{ label: 'Weiter', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' }]
+      : [
+          { label: 'Weiter', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
+          { label: 'Sperren', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
+          {
+            label: 'Aufdecken',
+            onClick: handleReveal,
+            busy: actionState.reveal,
+            tone: 'accent',
+            disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL'
+          }
+        ];
     const toneStyle = (tone: 'primary' | 'warning' | 'accent') => {
       if (tone === 'primary') return { background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' };
       if (tone === 'warning') return { background: 'linear-gradient(135deg, #fed7aa, #fb923c)', color: '#1f1305' };
@@ -2878,6 +2882,33 @@ function ModeratorPage(): React.ReactElement {
         <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={statChip}>Antworten {answersCount}/{teamsCount || '0'}</span>
           <span style={statChip}>Teams online {connectedTeams || teamsCount || 0}</span>
+          {readyCount.total > 0 && (
+            <span style={statChip}>Bereit {readyCount.ready}/{readyCount.total}</span>
+          )}
+          <span style={statChip}>
+            Timer (s)
+            <input
+              type="number"
+              min={5}
+              max={300}
+              value={timerSeconds}
+              onChange={(event) => {
+                const val = Number(event.target.value);
+                if (!Number.isFinite(val)) return;
+                setTimerSeconds(val);
+                localStorage.setItem('moderatorTimerSeconds', String(val));
+              }}
+              style={{
+                marginLeft: 6,
+                width: 70,
+                background: 'rgba(15,23,42,0.7)',
+                border: '1px solid rgba(148,163,184,0.4)',
+                borderRadius: 8,
+                color: '#e2e8f0',
+                padding: '4px 6px'
+              }}
+            />
+          </span>
           {questionTimerSecondsLeft !== null && (
             <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>
           )}
@@ -2890,7 +2921,7 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     return (
       <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
-        Shortcuts: 1 Weiter | 2 Sperren | 3 Aufdecken | 6 Scoreboard
+        Shortcuts: 1 Weiter{singleActionMode ? '' : ' | 2 Sperren | 3 Aufdecken'} | 6 Scoreboard
       </div>
     );
   };

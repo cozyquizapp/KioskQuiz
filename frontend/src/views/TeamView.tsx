@@ -2984,7 +2984,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
         {mainContent}
 
-        {featureFlags.showLegacyPanels && teamId && phase === 'waitingForQuestion' && allowReadyToggle && (
+        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && (
           <PrimaryButton
             style={{
               marginTop: 12,
@@ -3001,19 +3001,19 @@ function TeamView({ roomCode }: TeamViewProps) {
             {isReady
               ? t('readyOn')
               : language === 'en'
-              ? 'Our team is ready'
+              ? 'We are ready'
               : language === 'both'
-              ? 'Unser Team ist bereit / Our team is ready'
-              : 'Unser Team ist bereit'}
+              ? 'Wir sind bereit / We are ready'
+              : 'Wir sind bereit'}
           </PrimaryButton>
         )}
-        {featureFlags.showLegacyPanels && teamId && phase === 'waitingForQuestion' && allowReadyToggle && connectionStatus !== 'connected' && (
+        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && connectionStatus !== 'connected' && (
           <p style={{ marginTop: 6, color: '#f97316', fontWeight: 700 }}>
             {language === 'both'
-              ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden. / Not connected to server (${SOCKET_URL}). Please reconnect.`
+              ? `Keine Verbindung (${SOCKET_URL}). Bitte neu verbinden. / Not connected (${SOCKET_URL}). Please reconnect.`
               : language === 'de'
-              ? `Keine Verbindung zum Server (${SOCKET_URL}). Bitte neu verbinden.`
-              : `Not connected to server (${SOCKET_URL}). Please reconnect.`}
+              ? `Keine Verbindung (${SOCKET_URL}). Bitte neu verbinden.`
+              : `Not connected (${SOCKET_URL}). Please reconnect.`}
           </p>
         )}
       </div>

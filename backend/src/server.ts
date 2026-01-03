@@ -3392,10 +3392,28 @@ const shouldShowSegmentScoreboard = (room: RoomState) => {
 };
 
 const handleHostNextAdvance = (room: RoomState) => {
+  if (room.gameState === 'LOBBY') {
+    const connectedTeamIds = getConnectedTeamIds(room);
+    if (connectedTeamIds.length > 0) {
+      const allReady = connectedTeamIds.every((teamId) => room.teams[teamId]?.isReady);
+      if (!allReady) {
+        throw new Error('Nicht alle Teams bereit');
+      }
+    }
+  }
   if (room.gameState === 'QUESTION_INTRO' && room.currentQuestionId) {
     clearQuestionTimers(room);
     enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
     return { stage: room.gameState };
+  }
+  if (room.gameState === 'Q_ACTIVE') {
+    applyRoomState(room, { type: 'HOST_LOCK' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'Q_LOCKED') {
+    const payload = revealAnswersForRoom(room);
+    return { stage: room.gameState, ...payload };
   }
   if (room.gameState === 'RUNDLAUF_PAUSE') {
     applyRoomState(room, { type: 'HOST_NEXT' });

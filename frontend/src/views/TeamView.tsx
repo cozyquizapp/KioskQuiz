@@ -502,7 +502,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!blitzState?.itemDeadline) return null;
     return Math.max(0, Math.ceil((blitzState.itemDeadline - Date.now()) / 1000));
   }, [blitzState?.itemDeadline, timerTick]);
-  const isBlitzPlaying = gameState === 'BLITZ' && blitzState?.phase === 'PLAYING';
+  const isBlitzPlaying =
+    gameState === 'BLITZ_PLAYING' || (gameState === 'BLITZ' && blitzState?.phase === 'PLAYING');
   const isPotatoActiveTurn =
     gameState === 'POTATO' &&
     potatoState?.phase === 'PLAYING' &&
@@ -512,10 +513,10 @@ function TeamView({ roomCode }: TeamViewProps) {
   useEffect(() => {
     if (!teamId) return;
     setBlitzSubmitted(Boolean(blitzState?.submissions?.includes(teamId)));
-    if (blitzState?.phase !== 'PLAYING') {
+    if (!isBlitzPlaying) {
       setBlitzAnswers(['', '', '', '', '']);
     }
-  }, [teamId, blitzState]);
+  }, [teamId, blitzState, isBlitzPlaying]);
 
   useEffect(() => {
     if (!isBlitzPlaying) return;
@@ -2050,6 +2051,34 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
   }
 
+  function submitBlitzBan(themeId: string) {
+    if (!teamId || !socketRef.current) return;
+    socketRef.current.emit(
+      'team:blitzBanCategory',
+      { roomCode, teamId, themeId },
+      (resp?: { error?: string }) => {
+        if (resp?.error) {
+          setToast(resp.error);
+          setTimeout(() => setToast(null), 2000);
+        }
+      }
+    );
+  }
+
+  function submitBlitzPick(themeId: string) {
+    if (!teamId || !socketRef.current) return;
+    socketRef.current.emit(
+      'team:blitzPickCategory',
+      { roomCode, teamId, themeId },
+      (resp?: { error?: string }) => {
+        if (resp?.error) {
+          setToast(resp.error);
+          setTimeout(() => setToast(null), 2000);
+        }
+      }
+    );
+  }
+
   function submitRundlaufAnswer(pass = false) {
     if (!teamId || !socketRef.current) return;
     if (gameState !== 'RUNDLAUF_PLAY') {
@@ -2075,6 +2104,32 @@ function TeamView({ roomCode }: TeamViewProps) {
           setRundlaufError(resp.error);
         } else if (!pass) {
           setRundlaufInput('');
+        }
+      }
+    );
+  }
+
+  function submitRundlaufBan(categoryId: string) {
+    if (!teamId || !socketRef.current) return;
+    socketRef.current.emit(
+      'team:rundlaufBanCategory',
+      { roomCode, teamId, categoryId },
+      (resp?: { error?: string }) => {
+        if (resp?.error) {
+          setRundlaufError(resp.error);
+        }
+      }
+    );
+  }
+
+  function submitRundlaufPick(categoryId: string) {
+    if (!teamId || !socketRef.current) return;
+    socketRef.current.emit(
+      'team:rundlaufPickCategory',
+      { roomCode, teamId, categoryId },
+      (resp?: { error?: string }) => {
+        if (resp?.error) {
+          setRundlaufError(resp.error);
         }
       }
     );
@@ -2142,16 +2197,94 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     if (gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+      const pool = rundlaufState?.pool ?? [];
+      const bans = new Set(rundlaufState?.bans ?? []);
+      const pinnedId = rundlaufState?.pinned?.id ?? null;
+      const isTopTeam = Boolean(teamId && rundlaufState?.topTeamId === teamId);
+      const isLastTeam = Boolean(teamId && rundlaufState?.lastTeamId === teamId);
+      const banCount = rundlaufState?.bans?.length ?? 0;
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Kategorienwahl' : 'Category select'}</div>
-          <p style={mutedText}>
-            {language === 'de'
-              ? 'Moderator waehlt die Kategorien.'
-              : language === 'both'
-              ? 'Moderator waehlt / Host selects categories.'
-              : 'Host selects the categories.'}
-          </p>
+          {isTopTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de'
+                ? `Du bist Platz 1: streiche ${Math.max(0, 2 - banCount)} Kategorien`
+                : `You are top: ban ${Math.max(0, 2 - banCount)} categories`}
+            </div>
+          )}
+          {isLastTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de' ? 'Du bist letzter Platz: waehle 1 Kategorie' : 'You are last: pick 1 category'}
+            </div>
+          )}
+          {!isTopTeam && !isLastTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de' ? 'Bitte warten...' : 'Please wait...'}
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {pool.map((entry) => {
+              const isBanned = bans.has(entry.id);
+              const isPinned = pinnedId === entry.id;
+              return (
+                <div
+                  key={`rundlauf-team-pick-${entry.id}`}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    opacity: isBanned ? 0.5 : 1
+                  }}
+                >
+                  <span>{entry.title}</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {isTopTeam && (
+                      <button
+                        style={{
+                          ...primaryButton,
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          background: 'rgba(248,113,113,0.2)',
+                          border: '1px solid rgba(248,113,113,0.4)',
+                          color: '#fecaca',
+                          opacity: isBanned || banCount >= 2 || isPinned ? 0.4 : 1,
+                          cursor: isBanned || banCount >= 2 || isPinned ? 'not-allowed' : 'pointer'
+                        }}
+                        disabled={isBanned || banCount >= 2 || isPinned}
+                        onClick={() => submitRundlaufBan(entry.id)}
+                      >
+                        {language === 'de' ? 'Bannen' : 'Ban'}
+                      </button>
+                    )}
+                    {isLastTeam && (
+                      <button
+                        style={{
+                          ...primaryButton,
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          background: 'rgba(34,197,94,0.2)',
+                          border: '1px solid rgba(34,197,94,0.45)',
+                          color: '#bbf7d0',
+                          opacity: isPinned || isBanned ? 0.4 : 1,
+                          cursor: isPinned || isBanned ? 'not-allowed' : 'pointer'
+                        }}
+                        disabled={isPinned || isBanned}
+                        onClick={() => submitRundlaufPick(entry.id)}
+                      >
+                        {language === 'de' ? 'Waehlen' : 'Pick'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -2260,14 +2393,40 @@ function TeamView({ roomCode }: TeamViewProps) {
         </div>
       );
     }
-    const canAnswer = blitzState.phase === 'PLAYING' && !blitzSubmitted;
+    const phase = (() => {
+      switch (gameState) {
+        case 'BLITZ_READY':
+          return 'READY';
+        case 'BLITZ_BANNING':
+          return 'BANNING';
+        case 'BLITZ_SET_INTRO':
+          return 'ROUND_INTRO';
+        case 'BLITZ_PLAYING':
+          return 'PLAYING';
+        case 'BLITZ_SET_END':
+          return 'SET_END';
+        case 'BLITZ_SCOREBOARD':
+        case 'BLITZ_PAUSE':
+          return 'DONE';
+        default:
+          return blitzState.phase ?? 'IDLE';
+      }
+    })();
+    const canAnswer = phase === 'PLAYING' && !blitzSubmitted;
     const results = blitzState.results || {};
     const themeLabel = blitzState.theme?.title || '?';
     const submissionCount = blitzState.submissions?.length ?? 0;
     const totalTeamsLabel = teamCount ? String(teamCount) : '?';
     const currentItem = blitzItems[activeBlitzItemIndex];
     const totalItems = blitzItems.length || blitzAnswers.length || 5;
-    if (blitzState.phase === 'READY') {
+    const pool = blitzState.pool ?? [];
+    const bannedIds = new Set(Object.values(blitzState.bans ?? {}).flat());
+    const pinnedId = blitzState.pinnedTheme?.id ?? null;
+    const isTopTeam = Boolean(teamId && blitzState.topTeamId === teamId);
+    const isLastTeam = Boolean(teamId && blitzState.lastTeamId === teamId);
+    const banLimit = teamId ? blitzState.banLimits?.[teamId] ?? 0 : 0;
+    const banCount = teamId ? blitzState.bans?.[teamId]?.length ?? 0 : 0;
+    if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
@@ -2298,22 +2457,98 @@ function TeamView({ roomCode }: TeamViewProps) {
         </div>
       );
     }
-    if (blitzState.phase === 'BANNING') {
+    if (phase === 'BANNING') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>
-            {language === 'de' ? 'Themen werden gewaehlt' : 'Themes are being selected'}
+            {language === 'de' ? 'Themen-Auswahl' : 'Theme selection'}
           </div>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>
-            {language === 'de'
-              ? 'Bitte warten, gleich geht es los.'
-              : 'Please wait, starting soon.'}
+          {isTopTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de'
+                ? `Du bist Platz 1: streiche ${Math.max(0, banLimit - banCount)} Kategorien`
+                : `You are top: ban ${Math.max(0, banLimit - banCount)} categories`}
+            </div>
+          )}
+          {isLastTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de'
+                ? 'Du bist letzter Platz: waehle 1 Kategorie'
+                : 'You are last: pick 1 category'}
+            </div>
+          )}
+          {!isTopTeam && !isLastTeam && (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              {language === 'de' ? 'Bitte warten, gleich geht es los.' : 'Please wait, starting soon.'}
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {pool.map((theme) => {
+              const isBanned = bannedIds.has(theme.id);
+              const isPinned = pinnedId === theme.id;
+              return (
+                <div
+                  key={`blitz-team-pick-${theme.id}`}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    opacity: isBanned ? 0.5 : 1
+                  }}
+                >
+                  <span>{theme.title}</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {isTopTeam && (
+                      <button
+                        style={{
+                          ...primaryButton,
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          background: 'rgba(248,113,113,0.2)',
+                          border: '1px solid rgba(248,113,113,0.4)',
+                          color: '#fecaca',
+                          opacity: isBanned || banCount >= banLimit || isPinned ? 0.4 : 1,
+                          cursor: isBanned || banCount >= banLimit || isPinned ? 'not-allowed' : 'pointer'
+                        }}
+                        disabled={isBanned || banCount >= banLimit || isPinned}
+                        onClick={() => submitBlitzBan(theme.id)}
+                      >
+                        {language === 'de' ? 'Bannen' : 'Ban'}
+                      </button>
+                    )}
+                    {isLastTeam && (
+                      <button
+                        style={{
+                          ...primaryButton,
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          background: 'rgba(34,197,94,0.2)',
+                          border: '1px solid rgba(34,197,94,0.45)',
+                          color: '#bbf7d0',
+                          opacity: isPinned || isBanned ? 0.4 : 1,
+                          cursor: isPinned || isBanned ? 'not-allowed' : 'pointer'
+                        }}
+                        disabled={isPinned || isBanned}
+                        onClick={() => submitBlitzPick(theme.id)}
+                      >
+                        {language === 'de' ? 'Waehlen' : 'Pick'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
     }
-    if (blitzState.phase === 'ROUND_INTRO') {
+    if (phase === 'ROUND_INTRO') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
@@ -2324,6 +2559,35 @@ function TeamView({ roomCode }: TeamViewProps) {
         </div>
       );
     }
+    if (gameState === 'BLITZ_SCOREBOARD') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {scoreboard.map((entry, idx) => (
+              <div
+                key={`blitz-final-${entry.id}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto',
+                  gap: 10,
+                  padding: '8px 10px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.12)'
+                }}
+              >
+                <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+                <span>{entry.name}</span>
+                <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (gameState === 'BLITZ_PAUSE') {
+      return renderWaiting(language === 'de' ? 'Pause - gleich geht es weiter.' : 'Pause - back soon.', '');
+    }
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
@@ -2332,7 +2596,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 - {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
           </span>
         </div>
-        {blitzState.phase === 'PLAYING' ? (
+        {phase === 'PLAYING' ? (
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1', fontWeight: 600 }}>
               {language === 'de'
@@ -2769,10 +3033,36 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderByPhase() {
+    if (gameState === 'SCOREBOARD_PRE_BLITZ') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {scoreboard.map((entry, idx) => (
+              <div
+                key={`scoreboard-pre-${entry.id}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto',
+                  gap: 10,
+                  padding: '8px 10px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.12)'
+                }}
+              >
+                <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+                <span>{entry.name}</span>
+                <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
     if (gameState.startsWith('RUNDLAUF') || gameState === 'SIEGEREHRUNG') {
       return renderRundlaufStage();
     }
-    if (gameState === 'BLITZ') {
+    if (gameState === 'BLITZ' || gameState.startsWith('BLITZ_')) {
       return renderBlitzStage();
     }
     if (gameState === 'POTATO') {

@@ -513,6 +513,11 @@
   color: var(--beamer-muted);
 }
 
+.beamer-list-banned {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
 .beamer-conflict-badge {
   display: inline-flex;
   align-items: center;

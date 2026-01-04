@@ -56,7 +56,6 @@ import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
   BLITZ_ROUND_INTRO_MS,
-  BLITZ_VISIBLE_THEME_COUNT,
   DEBUG,
   DEFAULT_QUESTION_TIME,
   QUESTION_INTRO_MS,
@@ -225,6 +224,7 @@ type RoomState = {
 const rooms = new Map<string, RoomState>();
 const quizzes = new Map<string, QuizTemplate>(defaultQuizzes.map((q) => [q.id, q]));
 const blitzItemTimers = new Map<string, NodeJS.Timeout>();
+const blitzSetTimers = new Map<string, NodeJS.Timeout>();
 const rundlaufTurnTimers = new Map<string, NodeJS.Timeout>();
 
 const questionImagesPath = path.join(__dirname, 'data', 'questionImages.json');
@@ -409,14 +409,11 @@ const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_ANSWER_TIME_MS = 30000;
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_ANSWER_TIME_MS / BLITZ_ITEMS_PER_SET);
+const BLITZ_CATEGORY_COUNT = 6;
 const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
-const RUNDLAUF_VISIBLE_CATEGORY_COUNT = (() => {
-  const raw = Number(process.env.RUNDLAUF_VISIBLE_CATEGORY_COUNT ?? 5);
-  if (!Number.isFinite(raw)) return 5;
-  return Math.max(1, Math.floor(raw));
-})();
+const RUNDLAUF_CATEGORY_COUNT = 6;
 const RUNDLAUF_TURN_TIME_MS = (() => {
   const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 7000);
   if (!Number.isFinite(raw)) return 7000;
@@ -424,6 +421,100 @@ const RUNDLAUF_TURN_TIME_MS = (() => {
 })();
 const RUNDLAUF_ROUND_POINTS = 3; // TODO(RUNDLAUF): confirm points per round win
 const RUNDLAUF_SIMILARITY_THRESHOLD = 0.85;
+
+const PHOTO_SPRINT_CATEGORIES: QuizBlitzTheme[] = [
+  {
+    id: 'PROMIS_AUGEN',
+    title: 'PROMIS - AUGEN',
+    items: [
+      { id: 'promis_augen_01', prompt: 'promis_augen_01', answer: 'promis_augen_01', aliases: [] },
+      { id: 'promis_augen_02', prompt: 'promis_augen_02', answer: 'promis_augen_02', aliases: [] },
+      { id: 'promis_augen_03', prompt: 'promis_augen_03', answer: 'promis_augen_03', aliases: [] },
+      { id: 'promis_augen_04', prompt: 'promis_augen_04', answer: 'promis_augen_04', aliases: [] },
+      { id: 'promis_augen_05', prompt: 'promis_augen_05', answer: 'promis_augen_05', aliases: [] }
+    ]
+  },
+  {
+    id: 'TIERBABYS',
+    title: 'TIERBABYS',
+    items: [
+      { id: 'tierbaby_01', prompt: 'tierbaby_01', answer: 'tierbaby_01', aliases: [] },
+      { id: 'tierbaby_02', prompt: 'tierbaby_02', answer: 'tierbaby_02', aliases: [] },
+      { id: 'tierbaby_03', prompt: 'tierbaby_03', answer: 'tierbaby_03', aliases: [] },
+      { id: 'tierbaby_04', prompt: 'tierbaby_04', answer: 'tierbaby_04', aliases: [] },
+      { id: 'tierbaby_05', prompt: 'tierbaby_05', answer: 'tierbaby_05', aliases: [] }
+    ]
+  },
+  {
+    id: 'LANDMARKS',
+    title: 'LANDMARKS',
+    items: [
+      { id: 'lm_01', prompt: 'lm_01', answer: 'lm_01', aliases: [] },
+      { id: 'lm_02', prompt: 'lm_02', answer: 'lm_02', aliases: [] },
+      { id: 'lm_03', prompt: 'lm_03', answer: 'lm_03', aliases: [] },
+      { id: 'lm_04', prompt: 'lm_04', answer: 'lm_04', aliases: [] },
+      { id: 'lm_05', prompt: 'lm_05', answer: 'lm_05', aliases: [] }
+    ]
+  },
+  {
+    id: 'LOGOS',
+    title: 'LOGOS',
+    items: [
+      { id: 'logo_01', prompt: 'logo_01', answer: 'logo_01', aliases: [] },
+      { id: 'logo_02', prompt: 'logo_02', answer: 'logo_02', aliases: [] },
+      { id: 'logo_03', prompt: 'logo_03', answer: 'logo_03', aliases: [] },
+      { id: 'logo_04', prompt: 'logo_04', answer: 'logo_04', aliases: [] },
+      { id: 'logo_05', prompt: 'logo_05', answer: 'logo_05', aliases: [] }
+    ]
+  },
+  {
+    id: 'ESSEN_CLOSEUP',
+    title: 'ESSEN CLOSE-UP',
+    items: [
+      { id: 'food_01', prompt: 'food_01', answer: 'food_01', aliases: [] },
+      { id: 'food_02', prompt: 'food_02', answer: 'food_02', aliases: [] },
+      { id: 'food_03', prompt: 'food_03', answer: 'food_03', aliases: [] },
+      { id: 'food_04', prompt: 'food_04', answer: 'food_04', aliases: [] },
+      { id: 'food_05', prompt: 'food_05', answer: 'food_05', aliases: [] }
+    ]
+  },
+  {
+    id: 'FILMSTILLS',
+    title: 'FILMSTILLS',
+    items: [
+      { id: 'film_01', prompt: 'film_01', answer: 'film_01', aliases: [] },
+      { id: 'film_02', prompt: 'film_02', answer: 'film_02', aliases: [] },
+      { id: 'film_03', prompt: 'film_03', answer: 'film_03', aliases: [] },
+      { id: 'film_04', prompt: 'film_04', answer: 'film_04', aliases: [] },
+      { id: 'film_05', prompt: 'film_05', answer: 'film_05', aliases: [] }
+    ]
+  }
+];
+
+const RUN_LOOP_CATEGORIES: RundlaufCategoryOption[] = [
+  { id: 'HAUPTSTAEDTE_AFRIKA', title: 'HAUPTSTAEDTE AFRIKA' },
+  { id: 'DEUTSCHE_STAEDTE', title: 'DEUTSCHE STAEDTE' },
+  { id: 'US_BUNDESSTAATEN', title: 'US BUNDESSTAATEN' },
+  { id: 'FILMTITEL', title: 'FILMTITEL' },
+  { id: 'MARKEN', title: 'MARKEN' },
+  { id: 'TIERARTEN', title: 'TIERARTEN' }
+];
+
+const RUN_LOOP_DATA: Record<string, string[]> = {
+  HAUPTSTAEDTE_AFRIKA: [
+    'kairo',
+    'rabat',
+    'tunis',
+    'algier',
+    'tripolis',
+    'dakar',
+    'accra',
+    'abuja',
+    'addis abeba',
+    'nairobi'
+  ],
+  DEUTSCHE_STAEDTE: ['berlin', 'hamburg', 'muenchen', 'koeln', 'frankfurt', 'stuttgart', 'duesseldorf']
+};
 
 // Cozy60 Studio Drafts / Builder
 const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
@@ -1620,31 +1711,14 @@ const initializePotatoStage = (room: RoomState, payload?: { themes?: string[]; t
   applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
 };
 
-const initializeBlitzStage = (room: RoomState, payload?: { themes?: string[]; themesText?: string }) => {
-  const requested = Array.isArray(payload?.themes)
-    ? (payload?.themes ?? []).map((entry) => String(entry ?? ''))
-    : [];
-  const resolvedRequested = requested
-    .map((id) => room.blitzThemeLibrary[id])
-    .filter((theme): theme is QuizBlitzTheme => Boolean(theme));
-  const fallbackNames = sanitizeThemeList(payload?.themes) || sanitizeThemeList(payload?.themesText);
-  let definitions: QuizBlitzTheme[] = [];
-  if (resolvedRequested.length >= BLITZ_SETS) {
-    definitions = resolvedRequested;
-  } else if (Object.keys(room.blitzThemeLibrary).length >= BLITZ_SETS) {
-    definitions = Object.values(room.blitzThemeLibrary);
-  } else {
-    const legacyNames = fallbackNames.length >= BLITZ_SETS ? fallbackNames : DEFAULT_BLITZ_THEMES.slice();
-    if (legacyNames.length < BLITZ_SETS) {
-      throw new Error('Mindestens drei Themen erforderlich');
-    }
-    definitions = legacyNames.map((title, idx) => buildLegacyBlitzTheme(title || `Legacy ${idx + 1}`));
-  }
+const initializeBlitzStage = (room: RoomState) => {
+  const definitions = PHOTO_SPRINT_CATEGORIES.length ? PHOTO_SPRINT_CATEGORIES : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
   const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
-  normalizedDefs.forEach((theme) => {
-    room.blitzThemeLibrary[theme.id] = theme;
-  });
-  const visibleCount = Math.max(0, Math.min(BLITZ_VISIBLE_THEME_COUNT, normalizedDefs.length));
+  room.blitzThemeLibrary = normalizedDefs.reduce<Record<string, QuizBlitzTheme>>((acc, theme) => {
+    acc[theme.id] = theme;
+    return acc;
+  }, {});
+  const visibleCount = Math.max(0, Math.min(BLITZ_CATEGORY_COUNT, normalizedDefs.length));
   room.blitzPool = selectBlitzVisiblePool(normalizedDefs, visibleCount);
   room.blitzBans = {};
   const standings = getTeamStandings(room);
@@ -1662,8 +1736,64 @@ const initializeBlitzStage = (room: RoomState, payload?: { themes?: string[]; th
   resetBlitzCollections(room);
   recomputeRoomWarnings(room);
   room.nextStage = null;
-  applyRoomState(room, { type: 'FORCE', next: 'BLITZ' });
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ_READY' });
   return room.blitzPool;
+};
+
+const hasBlitzSelectionReady = (room: RoomState) => {
+  const topId = room.blitzTopTeamId;
+  const lastId = room.blitzLastTeamId;
+  const bans = topId ? room.blitzBans[topId]?.length ?? 0 : 0;
+  const banReady = topId ? bans >= 2 : true;
+  const pickReady = lastId ? Boolean(room.blitzPinnedTheme) : true;
+  return banReady && pickReady;
+};
+
+const finalizeBlitzSelection = (room: RoomState) => {
+  const bannedIds = new Set(Object.values(room.blitzBans).flat());
+  const pinned = room.blitzPinnedTheme ?? null;
+  const remaining = room.blitzPool.filter((entry) => !bannedIds.has(entry.id) && entry.id !== pinned?.id);
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+  const needed = Math.max(0, BLITZ_SETS - (pinned ? 1 : 0));
+  const randomPick = shuffled.slice(0, needed);
+  room.blitzSelectedThemes = pinned ? [pinned, ...randomPick] : randomPick;
+  room.blitzSetIndex = -1;
+  room.blitzDeadlineAt = null;
+  room.blitzTheme = null;
+  room.blitzPhase = 'ROUND_INTRO';
+  resetBlitzCollections(room);
+};
+
+const applyBlitzBan = (room: RoomState, teamId: string, themeKey: string) => {
+  if (room.blitzTopTeamId && teamId !== room.blitzTopTeamId) {
+    throw new Error('Nur Platz 1 darf bannen');
+  }
+  const limit = room.blitzBanLimits[teamId] ?? 0;
+  if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
+  const bans = room.blitzBans[teamId] ?? [];
+  if (bans.length >= limit) throw new Error('Ban-Limit erreicht');
+  const themeId = themeKey.trim();
+  if (!themeId) throw new Error('Thema fehlt');
+  const theme = room.blitzPool.find(
+    (entry) => entry.id === themeId || entry.title.toLowerCase() === themeId.toLowerCase()
+  );
+  if (!theme) throw new Error('Thema nicht verfuegbar');
+  if (bans.includes(theme.id)) throw new Error('Thema bereits gebannt');
+  room.blitzBans[teamId] = [...bans, theme.id];
+};
+
+const applyBlitzPick = (room: RoomState, teamId: string, themeKey: string) => {
+  if (room.blitzLastTeamId && teamId !== room.blitzLastTeamId) {
+    throw new Error('Nur letzter Platz darf waehlen');
+  }
+  if (room.blitzPinnedTheme) throw new Error('Thema bereits gewaehlt');
+  const themeId = themeKey.trim();
+  if (!themeId) throw new Error('Thema fehlt');
+  const theme = room.blitzPool.find(
+    (entry) => entry.id === themeId || entry.title.toLowerCase() === themeId.toLowerCase()
+  );
+  if (!theme) throw new Error('Thema nicht verfuegbar');
+  room.blitzPinnedTheme = theme;
 };
 
 const clearBlitzItemTimer = (roomCode: string) => {
@@ -1674,11 +1804,39 @@ const clearBlitzItemTimer = (roomCode: string) => {
   }
 };
 
+const clearBlitzSetTimer = (roomCode: string) => {
+  const timer = blitzSetTimers.get(roomCode);
+  if (timer) {
+    clearTimeout(timer);
+    blitzSetTimers.delete(roomCode);
+  }
+};
+
 const clearBlitzRoundIntroTimer = (room: RoomState) => {
   if (room.blitzRoundIntroTimeout) {
     clearTimeout(room.blitzRoundIntroTimeout);
     room.blitzRoundIntroTimeout = null;
   }
+};
+
+const scheduleBlitzSetTimer = (room: RoomState) => {
+  clearBlitzSetTimer(room.roomCode);
+  if (room.blitzPhase !== 'PLAYING' || !room.blitzDeadlineAt) return;
+  const remaining = Math.max(0, room.blitzDeadlineAt - Date.now());
+  if (remaining <= 0) {
+    lockBlitzSet(room);
+    computeBlitzResults(room);
+    broadcastState(room);
+    return;
+  }
+  const timer = setTimeout(() => {
+    blitzSetTimers.delete(room.roomCode);
+    if (room.blitzPhase !== 'PLAYING') return;
+    lockBlitzSet(room);
+    computeBlitzResults(room);
+    broadcastState(room);
+  }, remaining);
+  blitzSetTimers.set(room.roomCode, timer);
 };
 
 const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
@@ -1718,6 +1876,7 @@ const resetBlitzCollections = (room: RoomState) => {
   room.blitzItemDeadlineAt = null;
   room.blitzItemDurationMs = null;
   clearBlitzItemTimer(room.roomCode);
+  clearBlitzSetTimer(room.roomCode);
   clearBlitzRoundIntroTimer(room);
 };
 
@@ -1755,15 +1914,18 @@ const startBlitzSet = (room: RoomState) => {
   room.blitzPhase = 'ROUND_INTRO';
   room.blitzDeadlineAt = null;
   room.blitzItemIndex = 0;
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_INTRO' });
   broadcastState(room);
   clearBlitzRoundIntroTimer(room);
   room.blitzRoundIntroTimeout = setTimeout(() => {
     room.blitzRoundIntroTimeout = null;
     if (room.blitzPhase !== 'ROUND_INTRO') return;
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
     room.blitzPhase = 'PLAYING';
     room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
     room.blitzItemIndex = 0;
     scheduleBlitzItemTicker(room, true);
+    scheduleBlitzSetTimer(room);
   }, BLITZ_ROUND_INTRO_MS);
 };
 
@@ -1772,13 +1934,16 @@ const lockBlitzSet = (room: RoomState) => {
   room.blitzPhase = 'SET_END';
   room.blitzDeadlineAt = null;
   clearBlitzItemTimer(room.roomCode);
+  clearBlitzSetTimer(room.roomCode);
   room.blitzItemDeadlineAt = null;
   room.blitzItemDurationMs = null;
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_END' });
 };
 
 const enforceBlitzDeadline = (room: RoomState) => {
   if (room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
     lockBlitzSet(room);
+    computeBlitzResults(room);
   }
 };
 
@@ -1816,6 +1981,7 @@ const computeBlitzResults = (room: RoomState) => {
     room.blitzResultsByTeam = provisional;
     room.blitzPhase = 'SET_END';
     room.blitzDeadlineAt = null;
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_END' });
     return;
   }
 
@@ -1838,6 +2004,7 @@ const computeBlitzResults = (room: RoomState) => {
     room.blitzResultsByTeam = provisional;
     room.blitzPhase = 'SET_END';
     room.blitzDeadlineAt = null;
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_END' });
     if (room.blitzSetIndex >= totalSets - 1) {
       finishBlitzStage(room);
     }
@@ -1861,6 +2028,7 @@ const computeBlitzResults = (room: RoomState) => {
   room.blitzResultsByTeam = provisional;
   room.blitzPhase = 'SET_END';
   room.blitzDeadlineAt = null;
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_END' });
   if (room.blitzSetIndex >= totalSets - 1) {
     finishBlitzStage(room);
   }
@@ -1875,20 +2043,15 @@ const finishBlitzStage = (room: RoomState) => {
   room.blitzItemDeadlineAt = null;
   room.blitzItemDurationMs = null;
   clearBlitzItemTimer(room.roomCode);
+  clearBlitzSetTimer(room.roomCode);
   clearBlitzRoundIntroTimer(room);
   room.blitzItemSolutions = [];
-  room.nextStage = 'BLITZ_PAUSE';
-  applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+  room.nextStage = null;
+  applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SCOREBOARD' });
 };
 
 const buildRundlaufCategoryPool = (visibleCount: number): RundlaufCategoryOption[] => {
-  const all = (Object.entries(CATEGORY_CONFIG) as Array<[QuizCategory, { label: string }]>).map(
-    ([key, config]) => ({
-      id: key,
-      title: config.label
-    })
-  );
-  const pool = [...all];
+  const pool = [...RUN_LOOP_CATEGORIES];
   pool.sort(() => Math.random() - 0.5);
   const limit = Math.max(1, Math.min(visibleCount, pool.length));
   return pool.slice(0, limit);
@@ -2016,7 +2179,7 @@ const eliminateRundlaufTeam = (room: RoomState, teamId: string, reason?: string)
 };
 
 const initializeRundlaufStage = (room: RoomState) => {
-  const pool = buildRundlaufCategoryPool(RUNDLAUF_VISIBLE_CATEGORY_COUNT);
+  const pool = buildRundlaufCategoryPool(RUNDLAUF_CATEGORY_COUNT);
   const standings = getTeamStandings(room);
   room.rundlaufPool = pool;
   room.rundlaufBans = [];
@@ -2039,6 +2202,63 @@ const initializeRundlaufStage = (room: RoomState) => {
   room.nextStage = 'RUNDLAUF';
   clearRundlaufTurnTimer(room.roomCode);
   applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_PAUSE' });
+};
+
+const hasRundlaufSelectionReady = (room: RoomState) => {
+  const topId = room.rundlaufTopTeamId;
+  const lastId = room.rundlaufLastTeamId;
+  const banCount = topId ? room.rundlaufBans.filter((id) => Boolean(id)).length : 0;
+  const banReady = topId ? banCount >= 2 : true;
+  const pickReady = lastId ? Boolean(room.rundlaufPinnedCategory) : true;
+  return banReady && pickReady;
+};
+
+const finalizeRundlaufSelection = (room: RoomState) => {
+  const banned = new Set(room.rundlaufBans);
+  const pinned = room.rundlaufPinnedCategory ?? null;
+  const remaining = room.rundlaufPool.filter((entry) => !banned.has(entry.id) && entry.id !== pinned?.id);
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+  const needed = Math.max(0, RUNDLAUF_ROUNDS - (pinned ? 1 : 0));
+  const randomPick = shuffled.slice(0, needed);
+  room.rundlaufSelectedCategories = pinned ? [pinned, ...randomPick] : randomPick;
+  room.rundlaufRoundIndex = -1;
+  room.rundlaufRoundWinners = [];
+  room.rundlaufActiveTeamId = null;
+  room.rundlaufDeadlineAt = null;
+  room.rundlaufTurnStartedAt = null;
+  clearRundlaufTurnTimer(room.roomCode);
+};
+
+const applyRundlaufBan = (room: RoomState, teamId: string, categoryKey: string) => {
+  if (room.rundlaufTopTeamId && teamId !== room.rundlaufTopTeamId) {
+    throw new Error('Nur Platz 1 darf bannen');
+  }
+  const limit = Math.min(2, Math.max(0, room.rundlaufPool.length - 1));
+  const used = room.rundlaufBans.filter(Boolean).length;
+  if (used >= limit) throw new Error('Ban-Limit erreicht');
+  const categoryId = categoryKey.trim();
+  if (!categoryId) throw new Error('Kategorie fehlt');
+  const entry = room.rundlaufPool.find(
+    (item) => item.id === categoryId || item.title.toLowerCase() === categoryId.toLowerCase()
+  );
+  if (!entry) throw new Error('Kategorie nicht verfuegbar');
+  if (room.rundlaufPinnedCategory?.id === entry.id) throw new Error('Kategorie ist bereits ausgewaehlt');
+  if (room.rundlaufBans.includes(entry.id)) throw new Error('Kategorie bereits gebannt');
+  room.rundlaufBans = [...room.rundlaufBans, entry.id];
+};
+
+const applyRundlaufPick = (room: RoomState, teamId: string, categoryKey: string) => {
+  if (room.rundlaufLastTeamId && teamId !== room.rundlaufLastTeamId) {
+    throw new Error('Nur letzter Platz darf waehlen');
+  }
+  if (room.rundlaufPinnedCategory) throw new Error('Kategorie bereits gewaehlt');
+  const categoryId = categoryKey.trim();
+  if (!categoryId) throw new Error('Kategorie fehlt');
+  const entry = room.rundlaufPool.find(
+    (item) => item.id === categoryId || item.title.toLowerCase() === categoryId.toLowerCase()
+  );
+  if (!entry) throw new Error('Kategorie nicht verfuegbar');
+  room.rundlaufPinnedCategory = entry;
 };
 
 const startRundlaufRound = (room: RoomState) => {
@@ -2068,7 +2288,6 @@ const evaluateRundlaufAttempt = (room: RoomState, teamId: string, rawInput: stri
   if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf nicht aktiv');
   if (!room.rundlaufActiveTeamId) throw new Error('Kein aktives Team');
   if (room.rundlaufActiveTeamId !== teamId) throw new Error('Team ist nicht am Zug');
-  if (room.rundlaufLastAttempt?.verdict === 'pending') throw new Error('Moderation ausstehend');
   if (room.rundlaufDeadlineAt && Date.now() > room.rundlaufDeadlineAt) {
     return {
       id: uuid(),
@@ -2119,14 +2338,58 @@ const evaluateRundlaufAttempt = (room: RoomState, teamId: string, rawInput: stri
       at: Date.now()
     };
   }
+  const currentCategoryId = room.rundlaufSelectedCategories[room.rundlaufRoundIndex]?.id;
+  const allowedList = currentCategoryId ? RUN_LOOP_DATA[currentCategoryId] : null;
+  if (allowedList && allowedList.length) {
+    const allowedNormalized = allowedList.map((entry) => normalizeText(entry));
+    const bestAllowedScore = allowedNormalized.reduce(
+      (best, entry) => Math.max(best, similarityScore(entry, normalized)),
+      0
+    );
+    if (bestAllowedScore < RUNDLAUF_SIMILARITY_THRESHOLD) {
+      return {
+        id: uuid(),
+        teamId,
+        text,
+        normalized,
+        verdict: 'invalid',
+        reason: 'not-listed',
+        at: Date.now()
+      };
+    }
+  }
   return {
     id: uuid(),
     teamId,
     text,
     normalized,
-    verdict: 'pending',
+    verdict: 'ok',
     at: Date.now()
   };
+};
+
+const maybeEndRundlaufOnExhaustedList = (room: RoomState) => {
+  if (room.gameState !== 'RUNDLAUF_PLAY') return false;
+  const currentCategoryId = room.rundlaufSelectedCategories[room.rundlaufRoundIndex]?.id;
+  const allowedList = currentCategoryId ? RUN_LOOP_DATA[currentCategoryId] : null;
+  if (!allowedList || allowedList.length === 0) return false;
+  const allowedNormalized = allowedList.map((entry) => normalizeText(entry));
+  const used = new Set(room.rundlaufUsedAnswersNormalized);
+  const allUsed = allowedNormalized.every((entry) => used.has(entry));
+  if (!allUsed) return false;
+  const winners = aliveRundlaufTeams(room);
+  winners.forEach((teamId) => {
+    if (room.teams[teamId]) {
+      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + RUNDLAUF_ROUND_POINTS;
+    }
+  });
+  room.rundlaufRoundWinners = winners;
+  room.rundlaufActiveTeamId = null;
+  room.rundlaufDeadlineAt = null;
+  room.rundlaufTurnStartedAt = null;
+  clearRundlaufTurnTimer(room.roomCode);
+  applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
+  return true;
 };
 
 const baseBingoCategories: QuizCategory[] = (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).flatMap(
@@ -2883,7 +3146,7 @@ const applyRoomState = (room: RoomState, action: GameStateAction) => {
   if (next !== room.gameState) {
     room.gameState = next;
     room.stateHistory = [...room.stateHistory.slice(-9), next];
-    if ((next === 'BLITZ' || next === 'POTATO' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
+    if ((next.startsWith('BLITZ') || next === 'BLITZ' || next === 'POTATO' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
       room.scoreboardOverlayForced = false;
     }
     if (prev === 'RUNDLAUF_PLAY' && next !== 'RUNDLAUF_PLAY') {
@@ -2898,7 +3161,7 @@ const buildTimerSnapshot = (room: RoomState) => {
   let running = Boolean(endsAt);
   let durationMs: number | null = room.questionTimerDurationMs;
 
-  if (room.gameState === 'BLITZ' && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
+  if ((room.gameState === 'BLITZ_PLAYING' || room.gameState === 'BLITZ') && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
     endsAt = room.blitzDeadlineAt;
     running = true;
     durationMs = BLITZ_ANSWER_TIME_MS;
@@ -3415,6 +3678,66 @@ const handleHostNextAdvance = (room: RoomState) => {
     const payload = revealAnswersForRoom(room);
     return { stage: room.gameState, ...payload };
   }
+  if (room.gameState === 'SCOREBOARD_PRE_BLITZ') {
+    initializeBlitzStage(room);
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_READY') {
+    room.blitzPhase = 'BANNING';
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_BANNING' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_BANNING') {
+    if (!hasBlitzSelectionReady(room)) {
+      throw new Error('Blitz-Auswahl noch nicht abgeschlossen');
+    }
+    finalizeBlitzSelection(room);
+    startBlitzSet(room);
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SET_INTRO') {
+    if (room.blitzPhase === 'ROUND_INTRO') {
+      clearBlitzRoundIntroTimer(room);
+      room.blitzPhase = 'PLAYING';
+      room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
+      room.blitzItemIndex = 0;
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
+      scheduleBlitzItemTicker(room, true);
+      scheduleBlitzSetTimer(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_PLAYING') {
+    enforceBlitzDeadline(room);
+    if (room.blitzPhase === 'PLAYING') {
+      lockBlitzSet(room);
+      computeBlitzResults(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SET_END') {
+    const totalSets = Math.min(BLITZ_SETS, room.blitzSelectedThemes.length || BLITZ_SETS);
+    if (room.blitzSetIndex >= totalSets - 1) {
+      finishBlitzStage(room);
+    } else {
+      startBlitzSet(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SCOREBOARD') {
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PAUSE' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_PAUSE') {
+    return runNextQuestion(room);
+  }
   if (room.gameState === 'RUNDLAUF_PAUSE') {
     applyRoomState(room, { type: 'HOST_NEXT' });
     broadcastState(room);
@@ -3426,10 +3749,20 @@ const handleHostNextAdvance = (room: RoomState) => {
     return { stage: room.gameState };
   }
   if (room.gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+    if (!hasRundlaufSelectionReady(room)) {
+      throw new Error('Rundlauf-Auswahl noch nicht abgeschlossen');
+    }
+    finalizeRundlaufSelection(room);
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
     broadcastState(room);
     return { stage: room.gameState };
   }
-  if (room.gameState === 'RUNDLAUF_ROUND_INTRO' || room.gameState === 'RUNDLAUF_PLAY') {
+  if (room.gameState === 'RUNDLAUF_ROUND_INTRO') {
+    startRundlaufRound(room);
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_PLAY') {
     broadcastState(room);
     return { stage: room.gameState };
   }
@@ -3467,28 +3800,18 @@ const handleHostNextAdvance = (room: RoomState) => {
     return runNextQuestion(room);
   }
   if (room.gameState === 'Q_REVEAL') {
-    applyRoomState(room, { type: 'HOST_NEXT' });
+    const askedCount = room.askedQuestionIds.length;
+    if (askedCount === 10) {
+      applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
+    } else {
+      applyRoomState(room, { type: 'HOST_NEXT' });
+    }
     broadcastState(room);
     return { stage: room.gameState };
   }
   if (room.gameState === 'SCOREBOARD') {
     const askedCount = room.askedQuestionIds.length;
     const totalQuestions = room.questionOrder.length;
-    const shouldStartBlitz =
-      room.nextStage === 'BLITZ' ||
-      (room.blitzPhase === 'IDLE' && askedCount >= 10 && askedCount < totalQuestions);
-    if (shouldStartBlitz) {
-      room.nextStage = 'BLITZ';
-      initializeBlitzStage(room);
-      broadcastState(room);
-      return { stage: room.gameState };
-    }
-    if (room.nextStage === 'BLITZ_PAUSE') {
-      room.nextStage = 'Q11';
-      applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
-      broadcastState(room);
-      return { stage: room.gameState };
-    }
     const shouldStartRundlauf =
       room.nextStage === 'RUNDLAUF' ||
       (askedCount >= totalQuestions && room.rundlaufPool.length === 0);
@@ -4457,29 +4780,44 @@ io.on('connection', (socket: Socket) => {
       if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
         throw new Error('Rundlauf-Auswahl nicht aktiv');
       }
-      if (!room.rundlaufPinnedCategory && room.rundlaufPool.length > 0) {
-        throw new Error('Letzter Platz muss eine Kategorie waehlen');
+      if (!hasRundlaufSelectionReady(room)) {
+        throw new Error('Auswahl nicht abgeschlossen');
       }
-      const banned = new Set(room.rundlaufBans);
-      const pinned = room.rundlaufPinnedCategory ?? null;
-      const remaining = room.rundlaufPool.filter(
-        (entry) => !banned.has(entry.id) && entry.id !== pinned?.id
-      );
-      const needed = Math.max(0, RUNDLAUF_ROUNDS - (pinned ? 1 : 0));
-      const shuffled = [...remaining].sort(() => Math.random() - 0.5);
-      const randomPick = shuffled.slice(0, needed);
-      room.rundlaufSelectedCategories = pinned ? [pinned, ...randomPick] : randomPick;
-      room.rundlaufRoundIndex = -1;
-      room.rundlaufRoundWinners = [];
-      room.rundlaufActiveTeamId = null;
-      room.rundlaufDeadlineAt = null;
-      room.rundlaufTurnStartedAt = null;
-      clearRundlaufTurnTimer(room.roomCode);
+      finalizeRundlaufSelection(room);
       applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
       broadcastState(room);
       return { selected: room.rundlaufSelectedCategories };
     });
   });
+
+  socket.on(
+    'team:rundlaufBanCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+          throw new Error('Rundlauf-Auswahl nicht aktiv');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyRundlaufBan(room, payload.teamId, payload.categoryId || '');
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'team:rundlaufPickCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+          throw new Error('Rundlauf-Auswahl nicht aktiv');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyRundlaufPick(room, payload.teamId, payload.categoryId || '');
+        broadcastState(room);
+        return { pinned: room.rundlaufPinnedCategory };
+      });
+    }
+  );
 
   socket.on('host:rundlaufStartRound', (payload: { roomCode?: string }, ack?: AckFn) => {
     withRoom(payload?.roomCode, ack, (room) => {
@@ -4505,6 +4843,14 @@ io.on('connection', (socket: Socket) => {
         room.rundlaufLastAttempt = attempt;
         if (attempt.verdict === 'timeout') {
           eliminateRundlaufTeam(room, payload.teamId, 'timeout');
+        } else if (attempt.verdict === 'ok') {
+          if (!room.rundlaufUsedAnswersNormalized.includes(attempt.normalized)) {
+            room.rundlaufUsedAnswers = [...room.rundlaufUsedAnswers, attempt.text];
+            room.rundlaufUsedAnswersNormalized = [...room.rundlaufUsedAnswersNormalized, attempt.normalized];
+          }
+          if (!maybeEndRundlaufOnExhaustedList(room)) {
+            advanceRundlaufTurn(room);
+          }
         }
         broadcastState(room);
         return { attempt };
@@ -4580,12 +4926,9 @@ io.on('connection', (socket: Socket) => {
 
   socket.on(
     'host:startBlitz',
-    (
-      payload: { roomCode?: string; themes?: string[]; themesText?: string },
-      ack?: AckFn
-    ) => {
+    (payload: { roomCode?: string }, ack?: AckFn) => {
       withRoom(payload?.roomCode, ack, (room) => {
-        const pool = initializeBlitzStage(room, payload);
+        const pool = initializeBlitzStage(room);
         broadcastState(room);
         return { pool };
       });
@@ -4598,6 +4941,7 @@ io.on('connection', (socket: Socket) => {
         throw new Error('Blitz ist nicht bereit');
       }
       room.blitzPhase = 'BANNING';
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_BANNING' });
       broadcastState(room);
       return { phase: room.blitzPhase };
     });
@@ -4609,21 +4953,8 @@ io.on('connection', (socket: Socket) => {
       withRoom(payload?.roomCode, ack, (room) => {
         if (room.blitzPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
-        if (room.blitzTopTeamId && payload.teamId !== room.blitzTopTeamId) {
-          throw new Error('Nur Platz 1 darf bannen');
-        }
-        const limit = room.blitzBanLimits[payload.teamId] ?? 0;
-        if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
-        const bans = room.blitzBans[payload.teamId] ?? [];
-        if (bans.length >= limit) throw new Error('Ban-Limit erreicht');
         const themeKey = (payload?.themeId || payload?.theme || '').trim();
-        if (!themeKey) throw new Error('Theme fehlt');
-        const index = room.blitzPool.findIndex(
-          (entry) => entry.id === themeKey || entry.title.toLowerCase() === themeKey.toLowerCase()
-        );
-        if (index === -1) throw new Error('Theme nicht verfuegbar');
-        const actualTheme = room.blitzPool.splice(index, 1)[0];
-        room.blitzBans[payload.teamId] = [...bans, actualTheme.title];
+        applyBlitzBan(room, payload.teamId, themeKey);
         recomputeRoomWarnings(room);
         broadcastState(room);
       });
@@ -4636,20 +4967,10 @@ io.on('connection', (socket: Socket) => {
       withRoom(payload?.roomCode, ack, (room) => {
         if (room.blitzPhase !== 'BANNING') throw new Error('Auswahl nicht aktiv');
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
-        if (room.blitzLastTeamId && payload.teamId !== room.blitzLastTeamId) {
-          throw new Error('Nur letzter Platz darf waehlen');
-        }
-        if (room.blitzPinnedTheme) throw new Error('Thema bereits gewaehlt');
         const themeKey = (payload?.themeId || payload?.theme || '').trim();
-        if (!themeKey) throw new Error('Theme fehlt');
-        const index = room.blitzPool.findIndex(
-          (entry) => entry.id === themeKey || entry.title.toLowerCase() === themeKey.toLowerCase()
-        );
-        if (index === -1) throw new Error('Theme nicht verfuegbar');
-        const actualTheme = room.blitzPool.splice(index, 1)[0];
-        room.blitzPinnedTheme = actualTheme;
+        applyBlitzPick(room, payload.teamId, themeKey);
         broadcastState(room);
-        return { pinned: actualTheme };
+        return { pinned: room.blitzPinnedTheme };
       });
     }
   );
@@ -4659,24 +4980,40 @@ io.on('connection', (socket: Socket) => {
       if (room.blitzPhase !== 'BANNING') {
         throw new Error('Themes koennen aktuell nicht gesetzt werden');
       }
-      const selected: BlitzThemeOption[] = [];
-      if (room.blitzPinnedTheme) {
-        selected.push(room.blitzPinnedTheme);
+      if (!hasBlitzSelectionReady(room)) {
+        throw new Error('Auswahl nicht abgeschlossen');
       }
-      const shuffled = [...room.blitzPool].sort(() => Math.random() - 0.5);
-      const needed = Math.max(0, BLITZ_SETS - selected.length);
-      const randomPick = shuffled.slice(0, needed);
-      room.blitzSelectedThemes = [...selected, ...randomPick].slice(0, BLITZ_SETS);
-      room.blitzSetIndex = -1;
-      room.blitzPhase = 'SET_END';
-      room.blitzDeadlineAt = null;
-      room.blitzTheme = null;
-      room.blitzItems = [];
-      resetBlitzCollections(room);
+      finalizeBlitzSelection(room);
+      startBlitzSet(room);
       broadcastState(room);
       return { selected: room.blitzSelectedThemes };
     });
   });
+
+  socket.on(
+    'team:blitzBanCategory',
+    (payload: { roomCode?: string; teamId?: string; themeId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyBlitzBan(room, payload.teamId, payload.themeId || '');
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'team:blitzPickCategory',
+    (payload: { roomCode?: string; teamId?: string; themeId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyBlitzPick(room, payload.teamId, payload.themeId || '');
+        broadcastState(room);
+        return { pinned: room.blitzPinnedTheme };
+      });
+    }
+  );
 
   socket.on('host:blitzStartSet', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => {
@@ -4730,7 +5067,10 @@ io.on('connection', (socket: Socket) => {
     ) => {
       withRoom(payload?.roomCode, ack, (room) => {
         enforceBlitzDeadline(room);
-        if (room.blitzPhase !== 'PLAYING') throw new Error('Blitz ist nicht aktiv');
+        if (room.blitzPhase !== 'PLAYING' || (room.gameState !== 'BLITZ_PLAYING' && room.gameState !== 'BLITZ')) {
+          broadcastState(room);
+          throw new Error('Blitz ist nicht aktiv');
+        }
         if (room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
           lockBlitzSet(room);
           broadcastState(room);
@@ -4783,6 +5123,9 @@ io.on('connection', (socket: Socket) => {
         clearQuestionTimers(room);
         evaluateCurrentQuestion(room);
       }
+    }
+    if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufActiveTeamId === teamId) {
+      advanceRundlaufTurn(room);
     }
     broadcastState(room);
   });

@@ -1580,8 +1580,27 @@ useEffect(() => {
 
   const renderCozyBlitzContent = (): JSX.Element | null => {
     if (!blitz) return null;
-    const phase = blitz.phase ?? 'IDLE';
+    const phase = (() => {
+      switch (gameState) {
+        case 'BLITZ_READY':
+          return 'READY';
+        case 'BLITZ_BANNING':
+          return 'BANNING';
+        case 'BLITZ_SET_INTRO':
+          return 'ROUND_INTRO';
+        case 'BLITZ_PLAYING':
+          return 'PLAYING';
+        case 'BLITZ_SET_END':
+          return 'SET_END';
+        case 'BLITZ_SCOREBOARD':
+        case 'BLITZ_PAUSE':
+          return 'DONE';
+        default:
+          return blitz.phase ?? 'IDLE';
+      }
+    })();
     const pool = blitz.pool ?? [];
+    const bannedIds = new Set(Object.values(blitz.bans ?? {}).flat());
     const selectedThemes = blitz.selectedThemes ?? [];
     const pinnedTheme = blitz.pinnedTheme ?? null;
     const totalSets = Math.max(1, selectedThemes.length || 3);
@@ -1597,7 +1616,9 @@ useEffect(() => {
           <div className="beamer-list">
             {pool.length ? (
               pool.map((theme) => (
-                <span key={theme.id}>{theme.title}</span>
+                <span key={theme.id} className={bannedIds.has(theme.id) ? 'beamer-list-banned' : undefined}>
+                  {theme.title}
+                </span>
               ))
             ) : (
               <span>Keine Themen verfuegbar</span>
@@ -2043,7 +2064,25 @@ useEffect(() => {
     );
 
     const renderBlitzFrame = () => {
-      const blitzPhase = blitz?.phase ?? 'IDLE';
+      const blitzPhase = (() => {
+        switch (gameState) {
+          case 'BLITZ_READY':
+            return 'READY';
+          case 'BLITZ_BANNING':
+            return 'BANNING';
+          case 'BLITZ_SET_INTRO':
+            return 'ROUND_INTRO';
+          case 'BLITZ_PLAYING':
+            return 'PLAYING';
+          case 'BLITZ_SET_END':
+            return 'SET_END';
+          case 'BLITZ_SCOREBOARD':
+          case 'BLITZ_PAUSE':
+            return 'DONE';
+          default:
+            return blitz?.phase ?? 'IDLE';
+        }
+      })();
       const totalSets = Math.max(1, blitz?.selectedThemes?.length || 3);
       const setLabel = `SET ${Math.max(1, (blitz?.setIndex ?? -1) + 1)}/${totalSets}`;
       const subtitle =
@@ -2378,10 +2417,21 @@ useEffect(() => {
         return renderQuestionFrameCozy('reveal');
       case 'SCOREBOARD':
         return renderScoreboardFrame('scoreboard');
+      case 'SCOREBOARD_PRE_BLITZ':
+        return renderScoreboardFrame('scoreboard');
       case 'SCOREBOARD_PAUSE':
         return renderScoreboardFrame('pause');
       case 'BLITZ':
+      case 'BLITZ_READY':
+      case 'BLITZ_BANNING':
+      case 'BLITZ_SET_INTRO':
+      case 'BLITZ_PLAYING':
+      case 'BLITZ_SET_END':
         return renderBlitzFrame();
+      case 'BLITZ_SCOREBOARD':
+        return renderScoreboardFrame('scoreboard');
+      case 'BLITZ_PAUSE':
+        return renderScoreboardFrame('pause');
       case 'RUNDLAUF_PAUSE':
       case 'RUNDLAUF_SCOREBOARD_PRE':
       case 'RUNDLAUF_CATEGORY_SELECT':

@@ -234,8 +234,16 @@ function ModeratorPage(): React.ReactElement {
     Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflÃ¶sen', tone: 'eval' },
     Q_REVEAL: { label: 'Reveal', hint: 'Antworten werden gezeigt', tone: 'eval' },
     SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand wird gezeigt', tone: 'eval' },
+    SCOREBOARD_PRE_BLITZ: { label: 'Scoreboard', hint: 'Standings vor Fotoblitz', tone: 'eval' },
     SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/im Scoreboard', tone: 'eval' },
     BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Sets laufen', tone: 'live' },
+    BLITZ_READY: { label: 'Fotoblitz bereit', hint: 'Teams machen sich bereit', tone: 'live' },
+    BLITZ_BANNING: { label: 'Fotoblitz Auswahl', hint: 'Teams bannen/waehlen', tone: 'eval' },
+    BLITZ_SET_INTRO: { label: 'Fotoblitz Intro', hint: 'Naechstes Set', tone: 'live' },
+    BLITZ_PLAYING: { label: 'Fotoblitz', hint: 'Set laeuft', tone: 'live' },
+    BLITZ_SET_END: { label: 'Fotoblitz Ende', hint: 'Set beendet', tone: 'eval' },
+    BLITZ_SCOREBOARD: { label: 'Fotoblitz Scoreboard', hint: 'Standings nach Fotoblitz', tone: 'eval' },
+    BLITZ_PAUSE: { label: 'Fotoblitz Pause', hint: 'Pause vor Frage 11', tone: 'eval' },
     POTATO: { label: 'Heisse Kartoffel', hint: 'Finale lÃ¤uft', tone: 'live' },
     AWARDS: { label: 'Awards', hint: 'Sieger werden gezeigt', tone: 'final' },
     RUNDLAUF_PAUSE: { label: 'Rundlauf Pause', hint: 'Rundlauf startet gleich', tone: 'eval' },
@@ -295,8 +303,11 @@ function ModeratorPage(): React.ReactElement {
       : { asked: question ? 1 : 0, total: 20 });
   const askedCount = questionProgressSnapshot?.asked ?? meta?.globalIndex ?? (question ? 1 : 0);
   const totalQuestions = questionProgressSnapshot?.total ?? meta?.globalTotal ?? 20;
-  const isScoreboardState = socketGameState === 'SCOREBOARD';
-  const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE';
+  const isScoreboardState =
+    socketGameState === 'SCOREBOARD' ||
+    socketGameState === 'SCOREBOARD_PRE_BLITZ' ||
+    socketGameState === 'BLITZ_SCOREBOARD';
+  const isScoreboardPauseState = socketGameState === 'SCOREBOARD_PAUSE' || socketGameState === 'BLITZ_PAUSE';
   const teamLookup = useMemo(() => {
     const map: Record<string, { name: string; score: number }> = {};
     scoreboard.forEach((entry) => {
@@ -337,6 +348,7 @@ function ModeratorPage(): React.ReactElement {
     return Math.max(0, Math.ceil((rundlaufDeadline - Date.now()) / 1000));
   }, [rundlaufDeadline, countdownTick]);
   const isRundlaufState = normalizedGameState.startsWith('RUNDLAUF') || normalizedGameState === 'SIEGEREHRUNG';
+  const isBlitzState = normalizedGameState === 'BLITZ' || normalizedGameState.startsWith('BLITZ_');
   const blitzSetTotal = blitz?.selectedThemes?.length ?? 0;
   const blitzSetIndex = blitz?.setIndex ?? -1;
   const blitzSelectedCount = blitz?.selectedThemes?.length ?? 0;
@@ -1154,10 +1166,7 @@ function ModeratorPage(): React.ReactElement {
 
   const submissionStatus = useMemo(() => {
     const hasTeamStatus = Boolean(socketTeamStatus?.length);
-    const submittedIds =
-      normalizedGameState === 'BLITZ'
-        ? blitz?.submissions ?? []
-        : Object.keys(answers?.answers || {});
+    const submittedIds = isBlitzState ? blitz?.submissions ?? [] : Object.keys(answers?.answers || {});
     const submittedSet = new Set(submittedIds);
 
     if (hasTeamStatus) {
@@ -1165,15 +1174,14 @@ function ModeratorPage(): React.ReactElement {
         .filter((team) => team.connected)
         .map((team) => team.id);
       const totalConnected = connectedIds.length;
-      const submittedCount =
-        normalizedGameState === 'BLITZ'
-          ? connectedIds.filter((id) => submittedSet.has(id)).length
-          : (socketTeamStatus || []).filter((team) => team.connected && team.submitted).length;
+      const submittedCount = isBlitzState
+        ? connectedIds.filter((id) => submittedSet.has(id)).length
+        : (socketTeamStatus || []).filter((team) => team.connected && team.submitted).length;
       const items = (socketTeamStatus || []).map((team) => ({
         id: team.id,
         name: team.name || 'Team',
         connected: team.connected,
-        submitted: normalizedGameState === 'BLITZ' ? submittedSet.has(team.id) : team.submitted
+        submitted: isBlitzState ? submittedSet.has(team.id) : team.submitted
       }));
       return { total: totalConnected, submittedCount, items };
     }
@@ -1215,18 +1223,22 @@ function ModeratorPage(): React.ReactElement {
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Blitz wechseln', context: 'Segment 1 beendet' };
         if (nextStage === 'POTATO') return { hotkey: '1', label: 'WEITER', detail: 'Finale starten', context: 'Segment 2 abgeschlossen' };
         return { hotkey: '1', label: 'WEITER', detail: 'Zur naechsten Frage', context: 'Reveal beendet' };
+      case 'SCOREBOARD_PRE_BLITZ':
+        return { hotkey: '1', label: 'WEITER', detail: 'Fotoblitz starten', context: 'Standings vor Fotoblitz' };
       case 'SCOREBOARD_PAUSE':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Blitz Battle starten', context: 'Scoreboard aktiv' };
         if (nextStage === 'POTATO') return { hotkey: '1', label: 'WEITER', detail: 'Heisse Kartoffel starten', context: 'Scoreboard aktiv' };
         if (nextStage === 'Q11') return { hotkey: '1', label: 'WEITER', detail: 'Segment 2 starten', context: 'Scoreboard aktiv' };
         return { ...base, context: 'Scoreboard aktiv' };
       case 'BLITZ':
-        return {
-          hotkey: '4',
-          label: 'BLITZ',
-          detail: blitz?.phase === 'PLAYING' ? 'Set laeuft' : 'Set abschliessen',
-          context: `Set ${(blitz?.setIndex ?? -1) + 1}/3`
-        };
+      case 'BLITZ_READY':
+      case 'BLITZ_BANNING':
+      case 'BLITZ_SET_INTRO':
+      case 'BLITZ_PLAYING':
+      case 'BLITZ_SET_END':
+      case 'BLITZ_SCOREBOARD':
+      case 'BLITZ_PAUSE':
+        return { hotkey: '1', label: 'WEITER', detail: 'Fotoblitz', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
       case 'POTATO':
         return {
           hotkey: '5',
@@ -2003,7 +2015,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderRundlaufControls = () => {
-    if (!roomCode || !isRundlaufState) return null;
+    if (!roomCode || !isRundlaufState || singleActionMode) return null;
     const pool = rundlauf?.pool ?? [];
     const bans = new Set(rundlauf?.bans ?? []);
     const pinned = rundlauf?.pinned ?? null;
@@ -2307,6 +2319,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderBlitzControls = () => {
+    if (featureFlags.isCozyMode) return null;
     const phase = blitz?.phase ?? 'IDLE';
     const pool = blitz?.pool ?? [];
     const selected = blitz?.selectedThemes ?? [];
@@ -2929,7 +2942,7 @@ function ModeratorPage(): React.ReactElement {
 const renderCozyStagePanel = () => {
   if (!roomCode) return null;
   if (isRundlaufState) return renderRundlaufControls();
-  if (normalizedGameState === 'BLITZ') return renderBlitzControls();
+  if (isBlitzState) return renderBlitzControls();
   if (normalizedGameState === 'POTATO') return renderPotatoControls();
   if (normalizedGameState === 'AWARDS') {
     return (

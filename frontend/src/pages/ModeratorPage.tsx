@@ -2969,6 +2969,7 @@ function ModeratorPage(): React.ReactElement {
 
   const renderHotkeyLegend = () => {
     if (!roomCode) return null;
+    if (!featureFlags.showLegacyPanels) return null;
     return (
       <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
         Shortcuts: 1 Weiter{singleActionMode ? '' : ' | 2 Sperren | 3 Aufdecken'} | 6 Scoreboard
@@ -3176,20 +3177,14 @@ const renderCozyStagePanel = () => {
             <div style={{ display: 'grid', gap: 6 }}>
               <span style={{ fontSize: 12, color: '#94a3b8' }}>Roomcode</span>
               <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: '0.3em' }}>{roomCode || '----'}</span>
-              {currentQuizName && (
-                <span style={{ fontSize: 12, color: '#cbd5e1' }}>Quiz: {currentQuizName}</span>
-              )}
             </div>
             <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-start' }}>
   {pill(stateInfo.label, stateInfo.tone)}
   <span style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700 }}>Frage {askedCount}/{totalQuestions}</span>
 </div>
             <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-end' }}>
-  <span style={{ ...statChip, background: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.32)', color: '#bfdbfe' }}>
-    Teams online: {connectedTeams || 0}
-  </span>
   {questionTimerSecondsLeft !== null && <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>}
-  {readyCount.total > 0 && (
+  {readyCount.total > 0 && normalizedGameState === 'LOBBY' && (
     <span
       style={{
         ...statChip,
@@ -3201,24 +3196,11 @@ const renderCozyStagePanel = () => {
       Bereit {readyCount.ready}/{readyCount.total}
     </span>
   )}
-  {scoreboardOverlayForced && (
-    <span
-      style={{
-        ...statChip,
-        background: 'rgba(251,191,36,0.16)',
-        borderColor: 'rgba(251,191,36,0.4)',
-        color: '#fcd34d'
-      }}
-    >
-      Beamer: Scoreboard fixiert
-    </span>
-  )}
 </div>
           </div>
           {roomCode && !showSessionSetup ? (
   <>
     <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-      <span style={statChip}>Sprache: {language.toUpperCase()}</span>
       <button
         style={{
           ...inputStyle,
@@ -3231,9 +3213,15 @@ const renderCozyStagePanel = () => {
         {showSettingsPanel ? 'Einstellungen schliessen' : 'Einstellungen'}
       </button>
     </div>
-    {showSettingsPanel && (
+        {showSettingsPanel && (
       <div style={{ ...actionWrap, marginTop: 10 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {currentQuizName && (
+            <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
+              Quiz: {currentQuizName}
+            </span>
+          )}
+          <span style={statChip}>Sprache: {language.toUpperCase()}</span>
           <button
             style={{
               ...inputStyle,

@@ -2764,6 +2764,15 @@ function ModeratorPage(): React.ReactElement {
 
   const renderWarningsPanel = () => {
     if (!structuralWarnings.length) return null;
+    const showWarnings =
+      showSessionSetup ||
+      showJoinScreen ||
+      normalizedGameState === 'LOBBY' ||
+      normalizedGameState === 'SCOREBOARD_PRE_BLITZ' ||
+      normalizedGameState === 'RUNDLAUF_SCOREBOARD_PRE' ||
+      normalizedGameState === 'BLITZ_READY' ||
+      normalizedGameState === 'RUNDLAUF_PAUSE';
+    if (!showWarnings) return null;
     return (
       <details
         style={{

@@ -2765,7 +2765,7 @@ function ModeratorPage(): React.ReactElement {
   const renderWarningsPanel = () => {
     if (!structuralWarnings.length) return null;
     return (
-      <section
+      <details
         style={{
           ...card,
           marginTop: 12,
@@ -2773,13 +2773,25 @@ function ModeratorPage(): React.ReactElement {
           background: 'rgba(120,53,15,0.35)'
         }}
       >
-        <div style={{ fontWeight: 800, color: '#fbbf24', marginBottom: 6 }}>Content-Warnungen</div>
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontWeight: 800,
+            color: '#fbbf24',
+            listStyle: 'none',
+            outline: 'none',
+            appearance: 'none',
+            WebkitAppearance: 'none'
+          }}
+        >
+          Hinweise ({structuralWarnings.length})
+        </summary>
         <ul style={{ margin: 0, paddingLeft: 18, color: '#fde68a', fontSize: 13 }}>
           {structuralWarnings.map((warning, idx) => (
             <li key={`${warning}-${idx}`}>{warning}</li>
           ))}
         </ul>
-      </section>
+      </details>
     );
   };
 
@@ -3106,13 +3118,9 @@ const renderCozyStagePanel = () => {
           background: 'rgba(12,16,26,0.7)'
         }}
       >
-        <div style={{ fontSize: 12, color: '#94a3b8' }}>Teamstatus</div>
         <div style={{ fontWeight: 900 }}>
           Antworten {submissionStatus.submittedCount}
           {submissionStatus.total ? `/${submissionStatus.total}` : ''}
-        </div>
-        <div style={{ fontSize: 12, color: '#94a3b8' }}>
-          Teams online {connectedTeams || submissionStatus.total || 0}
         </div>
         {submissionStatus.items.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

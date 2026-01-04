@@ -2669,6 +2669,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderStageShortcuts = () => {
+    if (!featureFlags.showLegacyPanels) return null;
     const ctas: React.ReactNode[] = [];
     if (isScoreboardPauseState && blitzPhase === 'DONE') {
       ctas.push(

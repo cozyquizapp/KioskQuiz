@@ -79,6 +79,14 @@ const parseAliasesText = (text: string) => {
   return map;
 };
 
+const toCommaList = (values?: string[]) => (values && values.length ? values.join(', ') : '');
+
+const fromCommaList = (value: string) =>
+  value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
 const builderThemeFromEntry = (entry: CozyPotatoThemeInput, idx: number): BuilderPotatoTheme => {
   if (typeof entry === 'string') {
     const safeTitle = entry.trim() || `Thema ${idx + 1}`;
@@ -152,6 +160,55 @@ const questionTemplateForSlot = (slotIndex: number, existingId: string, type: Co
       items: Array.from({ length: 5 }).map((_, idx) => ({ id: `${existingId}-item-${idx + 1}`, label: `Item ${idx + 1}` })),
       correctOrder: Array.from({ length: 5 }).map((_, idx) => `${existingId}-item-${idx + 1}`)
     }
+  };
+};
+
+const buildBuntePayload = (kind: 'top5' | 'precision' | 'oneOfEight' | 'order', baseId: string) => {
+  if (kind === 'precision') {
+    return {
+      kind,
+      prompt: 'Schaetze moeglichst genau.',
+      ladder: [
+        { label: 'Guter Treffer', acceptedAnswers: [''], points: 2 },
+        { label: 'Nahe dran', acceptedAnswers: [''], points: 1 }
+      ]
+    };
+  }
+  if (kind === 'oneOfEight') {
+    return {
+      kind,
+      prompt: 'Eine Aussage ist falsch.',
+      statements: Array.from({ length: 8 }).map((_, idx) => ({
+        id: `${baseId}-stmt-${idx + 1}`,
+        text: `Aussage ${idx + 1}`,
+        isFalse: idx === 0
+      }))
+    };
+  }
+  if (kind === 'order') {
+    const items = Array.from({ length: 5 }).map((_, idx) => ({
+      id: `${baseId}-item-${idx + 1}`,
+      label: `Item ${idx + 1}`
+    }));
+    const criteriaId = `${baseId}-criteria-1`;
+    return {
+      kind,
+      prompt: 'Ordne die Items.',
+      items,
+      criteriaOptions: [{ id: criteriaId, label: 'Kriterium', direction: 'asc' }],
+      defaultCriteriaId: criteriaId,
+      correctByCriteria: { [criteriaId]: items.map((item) => item.id) }
+    };
+  }
+  const items = Array.from({ length: 5 }).map((_, idx) => ({
+    id: `${baseId}-item-${idx + 1}`,
+    label: `Item ${idx + 1}`
+  }));
+  return {
+    kind: 'top5',
+    prompt: 'Ordne die fuenf Eintraege.',
+    items,
+    correctOrder: items.map((item) => item.id)
   };
 };
 
@@ -264,6 +321,20 @@ const Cozy60BuilderPage = () => {
     }
   };
 
+  const handleValidate = async () => {
+    if (!draft) return;
+    setStatus('Validiere ...');
+    try {
+      const response = await saveCozyDraft(draft.id, draft);
+      setDraft(response.draft);
+      setWarnings(response.warnings ?? []);
+      await loadSummaries();
+      setStatus('Validierung ok');
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   const updatePotatoTheme = (index: number, updater: (theme: BuilderPotatoTheme) => BuilderPotatoTheme) => {
     updateDraft((prev) => {
       const pool = prev.potatoPool.slice();
@@ -305,8 +376,48 @@ const Cozy60BuilderPage = () => {
     });
   };
 
+  const updateCurrentQuestion = (updater: (question: AnyQuestion) => AnyQuestion) => {
+    updateDraft((prev) => {
+      if (!prev) return prev;
+      return updateQuestionArray(prev, selectedSlot, updater);
+    });
+  };
+
+  const updateQuestionOptions = (count: number, index: number, value: string) => {
+    updateCurrentQuestion((prevQ) => {
+      const next = { ...prevQ } as AnyQuestion & { options?: string[]; correctIndex?: number };
+      const options = Array.isArray(next.options) ? [...next.options] : [];
+      while (options.length < count) options.push('');
+      options[index] = value;
+      next.options = options.slice(0, count);
+      if (typeof next.correctIndex !== 'number') next.correctIndex = 0;
+      if (next.correctIndex >= count) next.correctIndex = 0;
+      return next;
+    });
+  };
+
+  const updateBlitzTheme = (themeIndex: number, updater: (theme: QuizBlitzTheme) => QuizBlitzTheme) => {
+    updateDraft((prev) => {
+      const pool = prev.blitz?.pool ?? [];
+      if (!pool[themeIndex]) return prev;
+      const nextPool = pool.slice();
+      nextPool[themeIndex] = updater(pool[themeIndex]);
+      return { ...prev, blitz: { pool: nextPool } };
+    });
+  };
+
+  const updateBlitzItem = (themeIndex: number, itemIndex: number, updater: (item: QuizBlitzTheme['items'][number]) => QuizBlitzTheme['items'][number]) => {
+    updateBlitzTheme(themeIndex, (theme) => {
+      const items = theme.items.slice();
+      if (!items[itemIndex]) return theme;
+      items[itemIndex] = updater(items[itemIndex]);
+      return { ...theme, items };
+    });
+  };
+
   const currentQuestion = draft?.questions[selectedSlot];
   const currentSlot = useMemo(() => COZY_SLOT_TEMPLATE[selectedSlot] ?? COZY_SLOT_TEMPLATE[0], [selectedSlot]);
+  const currentType = currentQuestion ? getQuestionTypeKey(currentQuestion) : 'MU_CHO';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a', color: '#f8fafc' }}>
@@ -342,6 +453,18 @@ const Cozy60BuilderPage = () => {
           <div>Draft wird geladen ...</div>
         ) : (
           <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 12, opacity: 0.7 }}>Cozy60 Builder</div>
+                <div style={{ fontSize: 22, fontWeight: 800 }}>{draft.meta.title || 'Unbenanntes Quiz'}</div>
+                <div style={{ fontSize: 12, opacity: 0.6 }}>{status || 'bereit'}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleSave}>Speichern</button>
+                <button onClick={handleValidate}>Validieren</button>
+                <button onClick={handlePublish}>Publish</button>
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               {(['meta', 'questions', 'blitz', 'potato'] as TabKey[]).map((entry) => (
                 <button
@@ -354,14 +477,10 @@ const Cozy60BuilderPage = () => {
                 >
                   {entry === 'meta' && 'Meta'}
                   {entry === 'questions' && 'Fragen'}
-                  {entry === 'blitz' && 'Blitz'}
+                  {entry === 'blitz' && 'Fotoblitz'}
                   {entry === 'potato' && 'Potato'}
                 </button>
               ))}
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                <button onClick={handleSave}>Speichern</button>
-                <button onClick={handlePublish}>Publish</button>
-              </div>
             </div>
             {tab === 'meta' && (
               <section style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 720 }}>
@@ -422,14 +541,14 @@ const Cozy60BuilderPage = () => {
                   </label>
                 </div>
                 {warnings.length > 0 && (
-                  <div style={{ background: 'rgba(248,113,113,0.15)', borderRadius: 8, padding: 12 }}>
-                    <strong>Warnings</strong>
+                  <details style={{ background: 'rgba(248,113,113,0.15)', borderRadius: 8, padding: 12 }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Warnings ({warnings.length})</summary>
                     <ul>
                       {warnings.map((warn) => (
                         <li key={warn}>{warn}</li>
                       ))}
                     </ul>
-                  </div>
+                  </details>
                 )}
               </section>
             )}
@@ -452,7 +571,10 @@ const Cozy60BuilderPage = () => {
                       <div style={{ fontWeight: 600 }}>
                         {idx + 1}. {COZY_SLOT_TEMPLATE[idx].label}
                       </div>
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>{question.mechanic}</div>
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>
+                        Segment {COZY_SLOT_TEMPLATE[idx].segmentIndex + 1} | {question.points} Punkte
+                      </div>
+                      <div style={{ fontSize: 12, opacity: 0.6 }}>{question.mechanic}</div>
                     </button>
                   ))}
                 </div>
@@ -460,6 +582,45 @@ const Cozy60BuilderPage = () => {
                   <div>
                     <strong>Frage {selectedSlot + 1}</strong>
                     <div style={{ fontSize: 12, opacity: 0.7 }}>{currentSlot.label}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      Segment
+                      <input value={`Segment ${currentSlot.segmentIndex + 1}`} readOnly style={{ padding: 8, borderRadius: 6, opacity: 0.7 }} />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      Punkte
+                      <input
+                        type="number"
+                        min={0}
+                        value={currentQuestion.points}
+                        onChange={(e) =>
+                          updateCurrentQuestion((prevQ) => ({ ...prevQ, points: Number(e.target.value) }))
+                        }
+                        style={{ padding: 8, borderRadius: 6, width: 120 }}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 200px' }}>
+                      Kategorie
+                      <input
+                        value={currentQuestion.category}
+                        onChange={(e) =>
+                          updateCurrentQuestion((prevQ) => ({ ...prevQ, category: e.target.value }))
+                        }
+                        style={{ padding: 8, borderRadius: 6 }}
+                      />
+                    </label>
+                    <button
+                      onClick={() =>
+                        updateDraft((prev) =>
+                          updateQuestionArray(prev, selectedSlot, (prevQ) =>
+                            questionTemplateForSlot(selectedSlot, prevQ.id, getQuestionTypeKey(prevQ))
+                          )
+                        )
+                      }
+                    >
+                      Slot zuruecksetzen
+                    </button>
                   </div>
                   <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     Fragentyp
@@ -494,10 +655,326 @@ const Cozy60BuilderPage = () => {
                       style={{ padding: 8, borderRadius: 6 }}
                     />
                   </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    Rohdaten (JSON)
+                  {currentType === 'MU_CHO' && (
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <div style={{ fontWeight: 600 }}>Antwort-Optionen</div>
+                      {Array.from({ length: 4 }).map((_, idx) => {
+                        const value = Array.isArray((currentQuestion as any).options) ? (currentQuestion as any).options[idx] ?? '' : '';
+                        return (
+                          <input
+                            key={`mc-opt-${idx}`}
+                            value={value}
+                            placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                            onChange={(e) => updateQuestionOptions(4, idx, e.target.value)}
+                            style={{ padding: 8, borderRadius: 6 }}
+                          />
+                        );
+                      })}
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        Richtige Option
+                        <select
+                          value={(currentQuestion as any).correctIndex ?? 0}
+                          onChange={(e) =>
+                            updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), correctIndex: Number(e.target.value) }))
+                          }
+                          style={{ padding: 8, borderRadius: 6, width: 160 }}
+                        >
+                          {['A', 'B', 'C', 'D'].map((label, idx) => (
+                            <option key={label} value={idx}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  {currentType === 'SCHAETZCHEN' && (
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        Zielwert
+                        <input
+                          type="number"
+                          value={(currentQuestion as any).targetValue ?? 0}
+                          onChange={(e) =>
+                            updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), targetValue: Number(e.target.value) }))
+                          }
+                          style={{ padding: 8, borderRadius: 6, width: 160 }}
+                        />
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        Einheit
+                        <input
+                          value={(currentQuestion as any).unit ?? ''}
+                          onChange={(e) => updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), unit: e.target.value }))}
+                          style={{ padding: 8, borderRadius: 6, width: 160 }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  {currentType === 'STIMMTS' && (
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <div style={{ fontWeight: 600 }}>Aussagen (3)</div>
+                      {Array.from({ length: 3 }).map((_, idx) => {
+                        const value = Array.isArray((currentQuestion as any).options) ? (currentQuestion as any).options[idx] ?? '' : '';
+                        return (
+                          <input
+                            key={`bet-opt-${idx}`}
+                            value={value}
+                            placeholder={`Aussage ${idx + 1}`}
+                            onChange={(e) => updateQuestionOptions(3, idx, e.target.value)}
+                            style={{ padding: 8, borderRadius: 6 }}
+                          />
+                        );
+                      })}
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          Richtige Aussage
+                          <select
+                            value={(currentQuestion as any).correctIndex ?? 0}
+                            onChange={(e) =>
+                              updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), correctIndex: Number(e.target.value) }))
+                            }
+                            style={{ padding: 8, borderRadius: 6, width: 160 }}
+                          >
+                            {['A', 'B', 'C'].map((label, idx) => (
+                              <option key={label} value={idx}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          Punkte-Pool
+                          <input
+                            type="number"
+                            value={(currentQuestion as any).pointsPool ?? 10}
+                            onChange={(e) =>
+                              updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), pointsPool: Number(e.target.value) }))
+                            }
+                            style={{ padding: 8, borderRadius: 6, width: 160 }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                  {currentType === 'CHEESE' && (
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        Bild URL
+                        <input
+                          value={(currentQuestion as any).imageUrl ?? ''}
+                          onChange={(e) =>
+                            updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), imageUrl: e.target.value }))
+                          }
+                          style={{ padding: 8, borderRadius: 6 }}
+                        />
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        Antwort
+                        <input
+                          value={(currentQuestion as any).answer ?? ''}
+                          onChange={(e) => updateCurrentQuestion((prevQ) => ({ ...(prevQ as any), answer: e.target.value }))}
+                          style={{ padding: 8, borderRadius: 6 }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  {currentType === 'BUNTE_TUETE' && (
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {(() => {
+                        const base = currentQuestion as any;
+                        const payload = base.bunteTuete;
+                        if (!payload) {
+                          return (
+                            <div>
+                              <div style={{ fontWeight: 600, marginBottom: 6 }}>Bunte Tuete</div>
+                              <button
+                                onClick={() =>
+                                  updateCurrentQuestion((prevQ) => ({
+                                    ...(prevQ as any),
+                                    type: 'BUNTE_TUETE',
+                                    bunteTuete: buildBuntePayload('top5', prevQ.id)
+                                  }))
+                                }
+                              >
+                                Template erzeugen
+                              </button>
+                            </div>
+                          );
+                        }
+                        return (
+                          <>
+                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                Subtype
+                                <select
+                                  value={payload.kind}
+                                  onChange={(e) =>
+                                    updateCurrentQuestion((prevQ) => ({
+                                      ...(prevQ as any),
+                                      type: 'BUNTE_TUETE',
+                                      bunteTuete: buildBuntePayload(e.target.value as any, prevQ.id)
+                                    }))
+                                  }
+                                  style={{ padding: 8, borderRadius: 6, width: 180 }}
+                                >
+                                  <option value="top5">Top 5</option>
+                                  <option value="precision">Praezision</option>
+                                  <option value="oneOfEight">8 Dinge - 1 falsch</option>
+                                  <option value="order">Ordnen</option>
+                                </select>
+                              </label>
+                              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 320px' }}>
+                                Prompt
+                                <input
+                                  value={payload.prompt ?? ''}
+                                  onChange={(e) =>
+                                    updateCurrentQuestion((prevQ) => ({
+                                      ...(prevQ as any),
+                                      bunteTuete: { ...payload, prompt: e.target.value }
+                                    }))
+                                  }
+                                  style={{ padding: 8, borderRadius: 6 }}
+                                />
+                              </label>
+                            </div>
+                            {(payload.kind === 'top5' || payload.kind === 'order') && (
+                              <div style={{ display: 'grid', gap: 8 }}>
+                                <div style={{ fontWeight: 600 }}>Items</div>
+                                {payload.items?.map((item: any, idx: number) => (
+                                  <input
+                                    key={item.id ?? `${base.id}-item-${idx}`}
+                                    value={item.label ?? ''}
+                                    onChange={(e) =>
+                                      updateCurrentQuestion((prevQ) => {
+                                        const nextPayload = { ...(payload as any) };
+                                        const items = [...(nextPayload.items ?? [])];
+                                        items[idx] = { ...items[idx], label: e.target.value };
+                                        nextPayload.items = items;
+                                        return { ...(prevQ as any), bunteTuete: nextPayload };
+                                      })
+                                    }
+                                    style={{ padding: 8, borderRadius: 6 }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            {payload.kind === 'precision' && (
+                              <div style={{ display: 'grid', gap: 10 }}>
+                                <div style={{ fontWeight: 600 }}>Praezisionsleiter</div>
+                                {payload.ladder?.map((step: any, idx: number) => (
+                                  <div key={`${base.id}-step-${idx}`} style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <input
+                                      value={step.label ?? ''}
+                                      placeholder="Label"
+                                      onChange={(e) =>
+                                        updateCurrentQuestion((prevQ) => {
+                                          const nextPayload = { ...(payload as any) };
+                                          const ladder = [...(nextPayload.ladder ?? [])];
+                                          ladder[idx] = { ...ladder[idx], label: e.target.value };
+                                          nextPayload.ladder = ladder;
+                                          return { ...(prevQ as any), bunteTuete: nextPayload };
+                                        })
+                                      }
+                                      style={{ padding: 8, borderRadius: 6 }}
+                                    />
+                                    <textarea
+                                      rows={2}
+                                      value={(step.acceptedAnswers ?? []).join('\n')}
+                                      placeholder="Erlaubte Antworten (1 pro Zeile)"
+                                      onChange={(e) =>
+                                        updateCurrentQuestion((prevQ) => {
+                                          const nextPayload = { ...(payload as any) };
+                                          const ladder = [...(nextPayload.ladder ?? [])];
+                                          ladder[idx] = { ...ladder[idx], acceptedAnswers: linesFromText(e.target.value) };
+                                          nextPayload.ladder = ladder;
+                                          return { ...(prevQ as any), bunteTuete: nextPayload };
+                                        })
+                                      }
+                                      style={{ padding: 8, borderRadius: 6 }}
+                                    />
+                                    <input
+                                      type="number"
+                                      value={step.points ?? 0}
+                                      onChange={(e) =>
+                                        updateCurrentQuestion((prevQ) => {
+                                          const nextPayload = { ...(payload as any) };
+                                          const ladder = [...(nextPayload.ladder ?? [])];
+                                          ladder[idx] = { ...ladder[idx], points: Number(e.target.value) };
+                                          nextPayload.ladder = ladder;
+                                          return { ...(prevQ as any), bunteTuete: nextPayload };
+                                        })
+                                      }
+                                      style={{ padding: 8, borderRadius: 6, width: 140 }}
+                                    />
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() =>
+                                    updateCurrentQuestion((prevQ) => {
+                                      const nextPayload = { ...(payload as any) };
+                                      const ladder = [...(nextPayload.ladder ?? [])];
+                                      ladder.push({ label: 'Stufe', acceptedAnswers: [], points: 0 });
+                                      nextPayload.ladder = ladder;
+                                      return { ...(prevQ as any), bunteTuete: nextPayload };
+                                    })
+                                  }
+                                >
+                                  Stufe hinzufuegen
+                                </button>
+                              </div>
+                            )}
+                            {payload.kind === 'oneOfEight' && (
+                              <div style={{ display: 'grid', gap: 8 }}>
+                                <div style={{ fontWeight: 600 }}>Aussagen (1 falsch)</div>
+                                {payload.statements?.map((statement: any, idx: number) => (
+                                  <label
+                                    key={statement.id ?? `${base.id}-stmt-${idx}`}
+                                    style={{ display: 'grid', gap: 6, padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}
+                                  >
+                                    <input
+                                      value={statement.text ?? ''}
+                                      placeholder={`Aussage ${idx + 1}`}
+                                      onChange={(e) =>
+                                        updateCurrentQuestion((prevQ) => {
+                                          const nextPayload = { ...(payload as any) };
+                                          const statements = [...(nextPayload.statements ?? [])];
+                                          statements[idx] = { ...statements[idx], text: e.target.value };
+                                          nextPayload.statements = statements;
+                                          return { ...(prevQ as any), bunteTuete: nextPayload };
+                                        })
+                                      }
+                                      style={{ padding: 8, borderRadius: 6 }}
+                                    />
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={Boolean(statement.isFalse)}
+                                        onChange={(e) =>
+                                          updateCurrentQuestion((prevQ) => {
+                                            const nextPayload = { ...(payload as any) };
+                                            const statements = [...(nextPayload.statements ?? [])];
+                                            statements[idx] = { ...statements[idx], isFalse: e.target.checked };
+                                            nextPayload.statements = statements;
+                                            return { ...(prevQ as any), bunteTuete: nextPayload };
+                                          })
+                                        }
+                                      />
+                                      Falsche Aussage
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                  <details style={{ display: 'grid', gap: 6 }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Advanced JSON</summary>
                     <textarea
-                      rows={12}
+                      rows={10}
                       value={JSON.stringify(currentQuestion, null, 2)}
                       onChange={(e) => {
                         try {
@@ -510,14 +987,14 @@ const Cozy60BuilderPage = () => {
                       }}
                       style={{ padding: 8, borderRadius: 6, fontFamily: 'monospace', fontSize: 12 }}
                     />
-                  </label>
+                  </details>
                 </div>
               </section>
             )}
             {tab === 'blitz' && (
               <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <strong>Blitz Themes</strong>
+                  <strong>Fotoblitz Themes</strong>
                   <button
                     onClick={() =>
                       updateDraft((prev) => ({
@@ -531,34 +1008,99 @@ const Cozy60BuilderPage = () => {
                 </div>
                 {(draft.blitz?.pool ?? []).map((theme, idx) => (
                   <div key={theme.id} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: 12 }}>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      Titel
-                      <input
-                        value={theme.title}
-                        onChange={(e) => {
-                          const next = (draft.blitz?.pool ?? []).slice();
-                          next[idx] = { ...theme, title: e.target.value };
-                          updateDraft((prev) => ({ ...prev, blitz: { pool: next } }));
-                        }}
-                        style={{ padding: 6, borderRadius: 6 }}
-                      />
-                    </label>
-                    <textarea
-                      rows={6}
-                      value={JSON.stringify(theme.items, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          const parsed = JSON.parse(e.target.value);
-                          const next = (draft.blitz?.pool ?? []).slice();
-                          next[idx] = { ...theme, items: parsed };
-                          updateDraft((prev) => ({ ...prev, blitz: { pool: next } }));
-                          setError('');
-                        } catch {
-                          setError('Ungueltiges Blitz JSON');
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 240px' }}>
+                        Titel
+                        <input
+                          value={theme.title}
+                          onChange={(e) => updateBlitzTheme(idx, (prevTheme) => ({ ...prevTheme, title: e.target.value }))}
+                          style={{ padding: 6, borderRadius: 6 }}
+                        />
+                      </label>
+                      <button
+                        onClick={() =>
+                          updateDraft((prev) => ({
+                            ...prev,
+                            blitz: { pool: (prev.blitz?.pool ?? []).filter((_, poolIdx) => poolIdx !== idx) }
+                          }))
                         }
-                      }}
-                      style={{ padding: 6, borderRadius: 6, marginTop: 6, fontFamily: 'monospace' }}
-                    />
+                      >
+                        Entfernen
+                      </button>
+                    </div>
+                    <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+                      {theme.items.map((item, itemIdx) => (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: 8,
+                            padding: 10,
+                            borderRadius: 8,
+                            border: '1px solid rgba(255,255,255,0.08)'
+                          }}
+                        >
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Prompt
+                            <input
+                              value={item.prompt ?? ''}
+                              onChange={(e) =>
+                                updateBlitzItem(idx, itemIdx, (prevItem) => ({ ...prevItem, prompt: e.target.value }))
+                              }
+                              style={{ padding: 6, borderRadius: 6 }}
+                            />
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Media URL
+                            <input
+                              value={item.mediaUrl ?? ''}
+                              onChange={(e) =>
+                                updateBlitzItem(idx, itemIdx, (prevItem) => ({ ...prevItem, mediaUrl: e.target.value }))
+                              }
+                              style={{ padding: 6, borderRadius: 6 }}
+                            />
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Antwort
+                            <input
+                              value={item.answer ?? ''}
+                              onChange={(e) =>
+                                updateBlitzItem(idx, itemIdx, (prevItem) => ({ ...prevItem, answer: e.target.value }))
+                              }
+                              style={{ padding: 6, borderRadius: 6 }}
+                            />
+                          </label>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            Aliases (comma)
+                            <input
+                              value={toCommaList(item.aliases)}
+                              onChange={(e) =>
+                                updateBlitzItem(idx, itemIdx, (prevItem) => ({ ...prevItem, aliases: fromCommaList(e.target.value) }))
+                              }
+                              style={{ padding: 6, borderRadius: 6 }}
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <details style={{ marginTop: 10 }}>
+                      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Advanced JSON</summary>
+                      <textarea
+                        rows={6}
+                        value={JSON.stringify(theme.items, null, 2)}
+                        onChange={(e) => {
+                          try {
+                            const parsed = JSON.parse(e.target.value);
+                            updateBlitzTheme(idx, (prevTheme) => ({ ...prevTheme, items: parsed }));
+                            setError('');
+                          } catch {
+                            setError('Ungueltiges Blitz JSON');
+                          }
+                        }}
+                        style={{ padding: 6, borderRadius: 6, marginTop: 6, fontFamily: 'monospace' }}
+                      />
+                    </details>
                   </div>
                 ))}
               </section>

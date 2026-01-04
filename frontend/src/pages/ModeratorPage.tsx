@@ -2670,18 +2670,6 @@ function ModeratorPage(): React.ReactElement {
 
   const renderStageShortcuts = () => {
     const ctas: React.ReactNode[] = [];
-    if (isScoreboardState && askedCount === 10 && nextStage === 'BLITZ') {
-      ctas.push(
-        <button
-          key="cta-blitz"
-          style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fde68a, #fbbf24)', color: '#1f1305' }}
-          onClick={handleNextQuestion}
-        >
-          Weiter zu Fotoblitz
-        </button>
-      );
-    }
-
     if (isScoreboardPauseState && blitzPhase === 'DONE') {
       ctas.push(
         <button

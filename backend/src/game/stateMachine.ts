@@ -31,7 +31,7 @@ const transitionTable: Record<CozyGameState, Partial<Record<TransitionKey, CozyG
     HOST_REVEAL: 'Q_REVEAL'
   },
   Q_REVEAL: {
-    HOST_NEXT: 'SCOREBOARD'
+    HOST_NEXT: 'QUESTION_INTRO'
   },
   SCOREBOARD: {
     HOST_NEXT: 'QUESTION_INTRO'

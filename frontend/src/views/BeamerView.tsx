@@ -1607,29 +1607,38 @@ useEffect(() => {
 
     if (phase === 'READY' || phase === 'BANNING') {
       const headline = phase === 'READY' ? 'FOTOBLITZ BEREIT' : 'FOTOBLITZ AUSWAHL';
+      const selectedIds = new Set(selectedThemes.map((entry) => entry.id));
+      const randomIds = new Set(
+        selectedThemes.filter((entry) => entry.id !== pinnedTheme?.id).map((entry) => entry.id)
+      );
+      const statusLine = selectedThemes.length
+        ? selectedThemes.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' | ')
+        : null;
       return (
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
             <h2>{headline}</h2>
             <p>Platz 1 streicht 2 Themen, letzter Platz waehlt 1 Thema.</p>
           </div>
-          <div className="beamer-list">
+          <div className="beamer-select-grid">
             {pool.length ? (
-              pool.map((theme) => (
-                <span key={theme.id} className={bannedIds.has(theme.id) ? 'beamer-list-banned' : undefined}>
-                  {theme.title}
-                </span>
-              ))
+              pool.map((theme) => {
+                const isBanned = bannedIds.has(theme.id);
+                const isPick = pinnedTheme?.id === theme.id;
+                const isRandom = randomIds.has(theme.id);
+                const badge = isPick ? 'PICK' : isRandom ? 'RANDOM' : isBanned ? 'BANNED' : '';
+                return (
+                  <div key={theme.id} className={`beamer-select-card${isBanned ? ' banned' : ''}`}>
+                    <div className="beamer-select-title">{theme.title}</div>
+                    {badge && <span className={`beamer-select-badge ${badge.toLowerCase()}`}>{badge}</span>}
+                  </div>
+                );
+              })
             ) : (
-              <span>Keine Themen verfuegbar</span>
+              <div className="beamer-select-card">Keine Themen verfuegbar</div>
             )}
           </div>
-          {pinnedTheme && (
-            <div className="beamer-card">
-              <div className="beamer-question-category">Garantiert gespielt</div>
-              <div className="beamer-question-text">{pinnedTheme.title}</div>
-            </div>
-          )}
+          {statusLine && <div className="beamer-select-status">{statusLine}</div>}
         </div>
       );
     }
@@ -2192,6 +2201,12 @@ useEffect(() => {
       }
 
       if (gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+        const randomIds = new Set(
+          selected.filter((entry) => entry.id !== pinnedId).map((entry) => entry.id)
+        );
+        const statusLine = selected.length
+          ? selected.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' | ')
+          : null;
         return (
           <BeamerFrame
             key={`${sceneKey}-rundlauf-select`}
@@ -2204,35 +2219,24 @@ useEffect(() => {
             status="info"
           >
             <div className="beamer-stack">
-              <div className="beamer-grid">
+              <div className="beamer-select-grid">
                 {pool.map((entry) => {
                   const isBanned = bans.has(entry.id);
-                  const isPinned = pinnedId === entry.id;
-                  const isSelected = selectedIds.has(entry.id);
-                  const tag = isPinned ? 'FIX' : isBanned ? 'GEBANNT' : isSelected ? 'GEWAEHLT' : '';
+                  const isPick = pinnedId === entry.id;
+                  const isRandom = randomIds.has(entry.id);
+                  const badge = isPick ? 'PICK' : isRandom ? 'RANDOM' : isBanned ? 'BANNED' : '';
                   return (
                     <div
                       key={`rundlauf-cat-${entry.id}`}
-                      className={`beamer-card${isPinned ? ' highlight' : ''}`}
-                      style={{ opacity: isBanned ? 0.35 : 1 }}
+                      className={`beamer-select-card${isBanned ? ' banned' : ''}`}
                     >
-                      <div style={{ fontWeight: 800 }}>{entry.title}</div>
-                      {tag && (
-                        <div style={{ marginTop: 6, fontSize: 12, color: '#cbd5e1' }}>{tag}</div>
-                      )}
+                      <div className="beamer-select-title">{entry.title}</div>
+                      {badge && <span className={`beamer-select-badge ${badge.toLowerCase()}`}>{badge}</span>}
                     </div>
                   );
                 })}
               </div>
-              {selected.length > 0 && (
-                <div className="beamer-grid">
-                  {selected.map((entry, idx) => (
-                    <div className="beamer-card highlight" key={`rundlauf-picked-${entry.id}`}>
-                      <div style={{ fontWeight: 800 }}>{`R${idx + 1}: ${entry.title}`}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {statusLine && <div className="beamer-select-status">{statusLine}</div>}
             </div>
           </BeamerFrame>
         );

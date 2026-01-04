@@ -2785,6 +2785,32 @@ const normalizeString = (value: unknown) =>
     .trim()
     .toLowerCase();
 
+const normalizeAnswer = (value: unknown) => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return '';
+  return raw
+    .replace(/\u00e4/g, 'ae')
+    .replace(/\u00f6/g, 'oe')
+    .replace(/\u00fc/g, 'ue')
+    .replace(/\u00df/g, 'ss')
+    .replace(/&/g, ' und ')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const matchesAnswer = (userInput: unknown, expected: unknown) => {
+  const user = normalizeAnswer(userInput);
+  const expectedNorm = normalizeAnswer(expected);
+  if (!user || !expectedNorm) return false;
+  if (user === expectedNorm) return true;
+  const userLen = user.length;
+  const expectedLen = expectedNorm.length;
+  if (userLen < 4) return false;
+  if (expectedLen > 10 && userLen < Math.ceil(expectedLen * 0.4)) return false;
+  return expectedNorm.includes(user) || user.includes(expectedNorm);
+};
+
 const getQuestionType = (question: AnyQuestion): CozyQuestionType => {
   if ((question as any).type) return (question as any).type as CozyQuestionType;
   switch (question.mechanic) {
@@ -3089,11 +3115,10 @@ const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
     return false;
   }
   if ((question as any).answer) {
-    const normalized = normalizeString(answer);
-    const deAnswer = normalizeString((question as any).answer);
-    const enAnswer = (question as any).answerEn ? normalizeString((question as any).answerEn) : null;
-    if (normalized === deAnswer) return true;
-    if (enAnswer && normalized === enAnswer) return true;
+    const deAnswer = (question as any).answer;
+    const enAnswer = (question as any).answerEn;
+    if (matchesAnswer(answer, deAnswer)) return true;
+    if (enAnswer && matchesAnswer(answer, enAnswer)) return true;
     return false;
   }
   return false;

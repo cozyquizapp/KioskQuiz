@@ -2823,10 +2823,57 @@ function ModeratorPage(): React.ReactElement {
     );
   };
 
+  const renderSpecialStageHints = () => {
+    const blitzStates = new Set(['BLITZ_READY', 'BLITZ_BANNING', 'BLITZ_SET_INTRO', 'BLITZ_PLAYING', 'BLITZ_SET_END']);
+    const rundlaufStates = new Set([
+      'RUNDLAUF_PAUSE',
+      'RUNDLAUF_SCOREBOARD_PRE',
+      'RUNDLAUF_CATEGORY_SELECT',
+      'RUNDLAUF_ROUND_INTRO',
+      'RUNDLAUF_PLAY',
+      'RUNDLAUF_ROUND_END'
+    ]);
+    if (blitzStates.has(normalizedGameState) && blitz) {
+      const topId = blitz.topTeamId ?? null;
+      const topBans = topId ? blitz.bans?.[topId]?.length ?? 0 : 0;
+      const pinned = blitz.pinnedTheme?.title ?? null;
+      const selected = blitz.selectedThemes ?? [];
+      const orderLabel = selected.length
+        ? selected.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' | ')
+        : 'R1: - | R2: - | R3: -';
+      return (
+        <div style={{ ...card, flex: '1 1 240px', minWidth: 220, padding: 12 }}>
+          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>FOTOBLITZ STATUS</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#e2e8f0' }}>Top bans: {topBans}/2</div>
+          <div style={{ fontSize: 13, color: '#e2e8f0' }}>Last pick: {pinned ?? '-'}</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{orderLabel}</div>
+        </div>
+      );
+    }
+    if (rundlaufStates.has(normalizedGameState) && rundlauf) {
+      const topBans = rundlauf.bans?.length ?? 0;
+      const pinned = rundlauf.pinned?.title ?? null;
+      const selected = rundlauf.selected ?? [];
+      const orderLabel = selected.length
+        ? selected.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' | ')
+        : 'R1: - | R2: - | R3: -';
+      return (
+        <div style={{ ...card, flex: '1 1 240px', minWidth: 220, padding: 12 }}>
+          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>RUNDLAUF STATUS</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#e2e8f0' }}>Top bans: {topBans}/2</div>
+          <div style={{ fontSize: 13, color: '#e2e8f0' }}>Last pick: {pinned ?? '-'}</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{orderLabel}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
     const actionHintCard = renderNextActionHint();
     const submissionCard = renderTeamSubmissionStatus();
+    const stageHintCard = renderSpecialStageHints();
     const baseButtonStyle: React.CSSProperties = {
       ...inputStyle,
       width: '100%',
@@ -2863,10 +2910,11 @@ function ModeratorPage(): React.ReactElement {
     };
     return (
       <section style={{ ...card, marginTop: 12 }}>
-        {(actionHintCard || submissionCard) && (
+        {(actionHintCard || submissionCard || stageHintCard) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
             {actionHintCard}
             {submissionCard}
+            {stageHintCard}
           </div>
         )}
         <div

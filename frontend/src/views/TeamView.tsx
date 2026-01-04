@@ -123,6 +123,7 @@ const COPY = {
     send: 'Antwort senden',
     waiting: 'Antwort eingeloggt! Bitte warten...',
     waitingSoon: 'Quiz startet gleich ...',
+    waitingStart: 'Warte auf Quizstart ...',
     waitingJoin: 'Bitte beitreten, dann geht es gleich los.',
     waitingAdmin: 'Warte auf Admin ...',
     joinWelcome: 'Willkommen beim Cozy Kiosk Quiz',
@@ -160,6 +161,7 @@ const COPY = {
     send: 'Submit answer',
     waiting: 'Answer submitted! Please wait...',
     waitingSoon: 'Quiz starting soon ...',
+    waitingStart: 'Waiting for quiz start ...',
     waitingJoin: 'Please join to get started.',
     waitingAdmin: 'Waiting for host ...',
     joinWelcome: 'Welcome to Cozy Kiosk Quiz',
@@ -1235,6 +1237,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (payload.kind === 'precision') {
       return (
         <input
+          className="team-answer-input"
           style={inputStyle}
           placeholder={language === 'de' ? 'Antwort eingeben' : 'Enter answer'}
           value={buntePrecisionText}
@@ -1437,6 +1440,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                     value={bettingPoints[idx] ?? 0}
                     onChange={(e) => updateBet(idx, Number(e.target.value))}
                     disabled={!canAnswer}
+                    className="team-answer-input"
                     style={{
                       width: 70,
                       padding: '8px 10px',
@@ -1498,6 +1502,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         const q = question as SortItemsQuestion;
         return (
           <input
+            className="team-answer-input"
             style={inputStyle}
             placeholder={t('inputOrder')}
             value={answer}
@@ -1510,6 +1515,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         const unit = (question as any).unit;
         return (
           <input
+            className="team-answer-input"
             style={inputStyle}
             placeholder={t('inputNumber')(unit)}
             value={answer}
@@ -1839,6 +1845,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                   <input
                     ref={potatoInputRef}
+                    className="team-answer-input"
                     style={{ ...inputStyle, flex: 1, minWidth: 200 }}
                     value={potatoInput}
                     disabled={potatoSubmitting || potatoDeadlinePassed}
@@ -2328,6 +2335,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           <div style={pillLabel}>{language === 'de' ? 'Du bist dran' : language === 'both' ? 'Du bist dran / Your turn' : 'Your turn'}</div>
           <div style={{ fontWeight: 700 }}>{currentCategory}</div>
           <input
+            className="team-answer-input"
             style={inputStyle}
             placeholder={language === 'de' ? 'Antwort eingeben' : 'Enter answer'}
             value={rundlaufInput}
@@ -2697,6 +2705,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                     <input
                       id={inputId}
                       ref={(el) => (blitzInputsRef.current[idx] = el)}
+                      className={`team-answer-input${isActive ? ' is-active' : ''}`}
                       style={{
                         ...inputStyle,
                         border: isActive ? '1px solid rgba(96,165,250,0.8)' : inputStyle.border,
@@ -2932,6 +2941,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         value={teamName}
         onChange={(e) => setTeamName(e.target.value)}
         placeholder={t('joinPlaceholder')}
+        className="team-answer-input"
         style={inputStyle}
       />
       <PrimaryButton
@@ -3094,7 +3104,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         return evaluating
           ? renderWaiting(t('evaluating'), null)
           : renderWaiting(
-              t('waitingSoon') ?? COPY.en.waitingSoon,
+              waitForQuestionHeadline,
               teamId ? null : t('waitingJoin'),
               Boolean(teamId)
             );
@@ -3107,7 +3117,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       default:
         return evaluating
             ? renderWaiting(t('evaluating'), null)
-            : renderWaiting(t('waitingMsg'));
+            : renderWaiting(waitForQuestionHeadline);
     }
   };
   function toggleReady() {
@@ -3125,6 +3135,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
   const questionAnsweringActive = gameState === 'Q_ACTIVE' && phase === 'answering';
   const canAnswer = questionAnsweringActive && !timeUp && !answerSubmitted;
+  const waitForQuestionHeadline = gameState === 'LOBBY' ? t('waitingStart') : t('waitingMsg');
   const isLocked = gameState === 'Q_LOCKED';
   const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn || isRundlaufActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);

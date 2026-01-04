@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
+import '../styles/cozyBuilder.css';
 import {
   AnyQuestion,
   CozyQuestionType,
@@ -459,30 +460,28 @@ const Cozy60BuilderPage = () => {
   }, [draft, tab, filteredQuestionIndices, selectedSlot]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a', color: '#f8fafc' }}>
-      <aside style={{ width: 300, borderRight: '1px solid rgba(255,255,255,0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="cozy-builder" style={{ display: 'flex', minHeight: '100vh' }}>
+      <aside className="builder-sidebar" style={{ width: 300, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Cozy Drafts</strong>
-          <button onClick={handleCreate}>Neu</button>
+          <button className="builder-button secondary" onClick={handleCreate}>
+            Neu
+          </button>
         </div>
         <input
+          className="builder-input"
           value={draftFilter}
           onChange={(e) => setDraftFilter(e.target.value)}
           placeholder="Draft suchen..."
-          style={{ padding: 8, borderRadius: 6 }}
         />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {filteredDrafts.map((summary) => (
             <button
               key={summary.id}
               onClick={() => loadDraft(summary.id)}
+              className={`builder-draft-item${selectedDraftId === summary.id ? ' is-active' : ''}`}
               style={{
-                textAlign: 'left',
-                padding: 8,
-                borderRadius: 6,
-                border: selectedDraftId === summary.id ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)',
-                background: selectedDraftId === summary.id ? 'rgba(56,189,248,0.12)' : 'transparent',
-                color: 'inherit'
+                borderColor: selectedDraftId === summary.id ? 'rgba(34, 211, 238, 0.6)' : undefined
               }}
             >
               <div style={{ fontWeight: 600 }}>{summary.title}</div>
@@ -493,32 +492,35 @@ const Cozy60BuilderPage = () => {
         <small>Status: {status || 'bereit'}</small>
         {error && <small style={{ color: '#f87171' }}>Error: {error}</small>}
       </aside>
-      <main style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
+      <main className="builder-main" style={{ flex: 1, overflowY: 'auto' }}>
         {!draft ? (
           <div>Draft wird geladen ...</div>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+            <div className="builder-header" style={{ marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 12, opacity: 0.7 }}>Cozy60 Builder</div>
                 <div style={{ fontSize: 22, fontWeight: 800 }}>{draft.meta.title || 'Unbenanntes Quiz'}</div>
                 <div style={{ fontSize: 12, opacity: 0.6 }}>{status || 'bereit'}</div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleSave}>Speichern</button>
-                <button onClick={handleValidate}>Validieren</button>
-                <button onClick={handlePublish}>Publish</button>
+              <div className="builder-actions">
+                <button className="builder-button secondary" onClick={handleSave}>
+                  Speichern
+                </button>
+                <button className="builder-button secondary" onClick={handleValidate}>
+                  Validieren
+                </button>
+                <button className="builder-button primary" onClick={handlePublish}>
+                  Publish
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div className="builder-tabs" style={{ marginBottom: 16 }}>
               {(['meta', 'questions', 'blitz', 'potato'] as TabKey[]).map((entry) => (
                 <button
                   key={entry}
                   onClick={() => setTab(entry)}
-                  style={{
-                    borderBottom: tab === entry ? '2px solid #38bdf8' : '2px solid transparent',
-                    paddingBottom: 6
-                  }}
+                  className={`builder-tab${tab === entry ? ' is-active' : ''}`}
                 >
                   {entry === 'meta' && 'Meta'}
                   {entry === 'questions' && 'Fragen'}
@@ -528,7 +530,7 @@ const Cozy60BuilderPage = () => {
               ))}
             </div>
             {tab === 'meta' && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 720 }}>
+              <section className="builder-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 720 }}>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   Titel
                   <input
@@ -599,7 +601,7 @@ const Cozy60BuilderPage = () => {
             )}
             {tab === 'questions' && currentQuestion && (
               <section style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: 12 }}>
+                <div className="builder-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 12 }}>
                   <div style={{ display: 'grid', gap: 6 }}>
                     <div style={{ fontSize: 12, opacity: 0.7 }}>Segment-Filter</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -623,9 +625,9 @@ const Cozy60BuilderPage = () => {
                         </button>
                       ))}
                     </div>
-                    <button onClick={handleApplyTemplate} style={{ marginTop: 6 }}>
-                      20 Slots Vorlage anwenden
-                    </button>
+                <button className="builder-button secondary" onClick={handleApplyTemplate} style={{ marginTop: 6 }}>
+                  20 Slots Vorlage anwenden
+                </button>
                   </div>
                   {filteredQuestionIndices.map((idx) => {
                     const question = draft.questions[idx];
@@ -653,7 +655,7 @@ const Cozy60BuilderPage = () => {
                     );
                   })}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div className="builder-card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
                     <strong>Frage {selectedSlot + 1}</strong>
                     <div style={{ fontSize: 12, opacity: 0.7 }}>{currentSlot.label}</div>
@@ -685,7 +687,7 @@ const Cozy60BuilderPage = () => {
                         style={{ padding: 8, borderRadius: 6 }}
                       />
                     </label>
-                    <button
+                    <button className="builder-button secondary"
                       onClick={() =>
                         updateDraft((prev) =>
                           updateQuestionArray(prev, selectedSlot, (prevQ) =>
@@ -863,7 +865,7 @@ const Cozy60BuilderPage = () => {
                           return (
                             <div>
                               <div style={{ fontWeight: 600, marginBottom: 6 }}>Bunte Tuete</div>
-                              <button
+                              <button className="builder-button secondary"
                                 onClick={() =>
                                   updateCurrentQuestion((prevQ) => ({
                                     ...(prevQ as any),
@@ -984,7 +986,7 @@ const Cozy60BuilderPage = () => {
                                     />
                                   </div>
                                 ))}
-                                <button
+                                <button className="builder-button secondary"
                                   onClick={() =>
                                     updateCurrentQuestion((prevQ) => {
                                       const nextPayload = { ...(payload as any) };
@@ -1067,10 +1069,10 @@ const Cozy60BuilderPage = () => {
               </section>
             )}
             {tab === 'blitz' && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <section className="builder-card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <strong>Fotoblitz Themes</strong>
-                  <button
+                  <button className="builder-button secondary"
                     onClick={() =>
                       updateDraft((prev) => ({
                         ...prev,
@@ -1082,7 +1084,7 @@ const Cozy60BuilderPage = () => {
                   </button>
                 </div>
                 {(draft.blitz?.pool ?? []).map((theme, idx) => (
-                  <div key={theme.id} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: 12 }}>
+                  <div key={theme.id} className="builder-card" style={{ padding: 12 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 240px' }}>
                         Titel
@@ -1092,30 +1094,30 @@ const Cozy60BuilderPage = () => {
                           style={{ padding: 6, borderRadius: 6 }}
                         />
                       </label>
-                      <button
-                        onClick={() =>
-                          updateDraft((prev) => ({
-                            ...prev,
-                            blitz: { pool: (prev.blitz?.pool ?? []).filter((_, poolIdx) => poolIdx !== idx) }
-                          }))
-                        }
-                      >
-                        Entfernen
-                      </button>
+                        <button className="builder-button secondary"
+                          onClick={() =>
+                            updateDraft((prev) => ({
+                              ...prev,
+                              blitz: { pool: (prev.blitz?.pool ?? []).filter((_, poolIdx) => poolIdx !== idx) }
+                            }))
+                          }
+                        >
+                          Entfernen
+                        </button>
                     </div>
                     <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
                       {theme.items.map((item, itemIdx) => (
-                        <div
-                          key={item.id}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: 8,
-                            padding: 10,
-                            borderRadius: 8,
-                            border: '1px solid rgba(255,255,255,0.08)'
-                          }}
-                        >
+                          <div
+                            key={item.id}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              gap: 8,
+                              padding: 10,
+                              borderRadius: 8,
+                              border: '1px solid rgba(255,255,255,0.08)'
+                            }}
+                          >
                           <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             Prompt
                             <input
@@ -1159,7 +1161,7 @@ const Cozy60BuilderPage = () => {
                         </div>
                       ))}
                     </div>
-                    <details style={{ marginTop: 10 }}>
+                    <details className="builder-card" style={{ marginTop: 10 }}>
                       <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Advanced JSON</summary>
                       <textarea
                         rows={6}
@@ -1181,10 +1183,12 @@ const Cozy60BuilderPage = () => {
               </section>
             )}
             {tab === 'potato' && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 860 }}>
+              <section className="builder-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 860 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong>Potato Themen</strong>
-                  <button onClick={handlePotatoThemeAdd}>Neues Thema</button>
+                  <button className="builder-button secondary" onClick={handlePotatoThemeAdd}>
+                    Neues Thema
+                  </button>
                 </div>
                 {draft.potatoPool.length === 0 && <p>Keine Themen vorhanden.</p>}
                 {draft.potatoPool.map((entry, idx) => {
@@ -1226,16 +1230,16 @@ const Cozy60BuilderPage = () => {
                             disabled={idx === 0}
                             style={{ opacity: idx === 0 ? 0.5 : 1 }}
                           >
-                            ↑
+                            Hoch
                           </button>
                           <button
                             onClick={() => handlePotatoThemeMove(idx, 1)}
                             disabled={idx === draft.potatoPool.length - 1}
                             style={{ opacity: idx === draft.potatoPool.length - 1 ? 0.5 : 1 }}
                           >
-                            ↓
+                            Runter
                           </button>
-                          <button onClick={() => handlePotatoThemeDelete(idx)}>Löschen</button>
+                          <button onClick={() => handlePotatoThemeDelete(idx)}>Loeschen</button>
                         </div>
                       </div>
                       {theme.strict ? (

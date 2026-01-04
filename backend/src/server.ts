@@ -3828,11 +3828,10 @@ const handleHostNextAdvance = (room: RoomState) => {
     const askedCount = room.askedQuestionIds.length;
     if (askedCount === 10) {
       applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
-    } else {
-      applyRoomState(room, { type: 'HOST_NEXT' });
+      broadcastState(room);
+      return { stage: room.gameState };
     }
-    broadcastState(room);
-    return { stage: room.gameState };
+    return runNextQuestion(room);
   }
   if (room.gameState === 'SCOREBOARD') {
     const askedCount = room.askedQuestionIds.length;

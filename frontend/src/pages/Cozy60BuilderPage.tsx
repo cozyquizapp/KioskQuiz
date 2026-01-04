@@ -239,6 +239,8 @@ const Cozy60BuilderPage = () => {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [tab, setTab] = useState<TabKey>('meta');
   const [selectedSlot, setSelectedSlot] = useState(0);
+  const [draftFilter, setDraftFilter] = useState('');
+  const [questionSegmentFilter, setQuestionSegmentFilter] = useState<'all' | 'seg1' | 'seg2'>('all');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
@@ -376,6 +378,19 @@ const Cozy60BuilderPage = () => {
     });
   };
 
+  const handleApplyTemplate = () => {
+    if (!draft) return;
+    const confirmed = window.confirm('20 Slots Vorlage anwenden? Bestehende Fragen werden ueberschrieben.');
+    if (!confirmed) return;
+    updateDraft((prev) => {
+      const nextQuestions = COZY_SLOT_TEMPLATE.map((slot, idx) =>
+        questionTemplateForSlot(idx, prev.questions[idx]?.id ?? `${prev.id}-q${idx + 1}`, slot.type)
+      );
+      return { ...prev, questions: nextQuestions };
+    });
+    setSelectedSlot(0);
+  };
+
   const updateCurrentQuestion = (updater: (question: AnyQuestion) => AnyQuestion) => {
     updateDraft((prev) => {
       if (!prev) return prev;
@@ -418,6 +433,30 @@ const Cozy60BuilderPage = () => {
   const currentQuestion = draft?.questions[selectedSlot];
   const currentSlot = useMemo(() => COZY_SLOT_TEMPLATE[selectedSlot] ?? COZY_SLOT_TEMPLATE[0], [selectedSlot]);
   const currentType = currentQuestion ? getQuestionTypeKey(currentQuestion) : 'MU_CHO';
+  const filteredDrafts = useMemo(() => {
+    const needle = draftFilter.trim().toLowerCase();
+    if (!needle) return draftSummaries;
+    return draftSummaries.filter((summary) => {
+      const title = summary.title?.toLowerCase() ?? '';
+      return title.includes(needle) || summary.id.toLowerCase().includes(needle);
+    });
+  }, [draftSummaries, draftFilter]);
+  const filteredQuestionIndices = useMemo(() => {
+    if (!draft) return [];
+    if (questionSegmentFilter === 'all') return draft.questions.map((_, idx) => idx);
+    const segmentIndex = questionSegmentFilter === 'seg1' ? 0 : 1;
+    return draft.questions
+      .map((_, idx) => idx)
+      .filter((idx) => (COZY_SLOT_TEMPLATE[idx]?.segmentIndex ?? 0) === segmentIndex);
+  }, [draft, questionSegmentFilter]);
+
+  useEffect(() => {
+    if (!draft || tab !== 'questions') return;
+    if (filteredQuestionIndices.length === 0) return;
+    if (!filteredQuestionIndices.includes(selectedSlot)) {
+      setSelectedSlot(filteredQuestionIndices[0]);
+    }
+  }, [draft, tab, filteredQuestionIndices, selectedSlot]);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a', color: '#f8fafc' }}>
@@ -426,8 +465,14 @@ const Cozy60BuilderPage = () => {
           <strong>Cozy Drafts</strong>
           <button onClick={handleCreate}>Neu</button>
         </div>
+        <input
+          value={draftFilter}
+          onChange={(e) => setDraftFilter(e.target.value)}
+          placeholder="Draft suchen..."
+          style={{ padding: 8, borderRadius: 6 }}
+        />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {draftSummaries.map((summary) => (
+          {filteredDrafts.map((summary) => (
             <button
               key={summary.id}
               onClick={() => loadDraft(summary.id)}
@@ -554,29 +599,59 @@ const Cozy60BuilderPage = () => {
             )}
             {tab === 'questions' && currentQuestion && (
               <section style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: 12 }}>
-                  {draft.questions.map((question, idx) => (
-                    <button
-                      key={question.id}
-                      onClick={() => setSelectedSlot(idx)}
-                      style={{
-                        textAlign: 'left',
-                        padding: 8,
-                        borderRadius: 6,
-                        border: selectedSlot === idx ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)',
-                        background: selectedSlot === idx ? 'rgba(56,189,248,0.12)' : 'transparent',
-                        color: 'inherit'
-                      }}
-                    >
-                      <div style={{ fontWeight: 600 }}>
-                        {idx + 1}. {COZY_SLOT_TEMPLATE[idx].label}
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>
-                        Segment {COZY_SLOT_TEMPLATE[idx].segmentIndex + 1} | {question.points} Punkte
-                      </div>
-                      <div style={{ fontSize: 12, opacity: 0.6 }}>{question.mechanic}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: 12 }}>
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>Segment-Filter</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[
+                        { key: 'all', label: 'Alle' },
+                        { key: 'seg1', label: 'Segment 1' },
+                        { key: 'seg2', label: 'Segment 2' }
+                      ].map((entry) => (
+                        <button
+                          key={entry.key}
+                          onClick={() => setQuestionSegmentFilter(entry.key as 'all' | 'seg1' | 'seg2')}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 999,
+                            border: questionSegmentFilter === entry.key ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)',
+                            background: questionSegmentFilter === entry.key ? 'rgba(56,189,248,0.2)' : 'transparent',
+                            color: 'inherit'
+                          }}
+                        >
+                          {entry.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleApplyTemplate} style={{ marginTop: 6 }}>
+                      20 Slots Vorlage anwenden
                     </button>
-                  ))}
+                  </div>
+                  {filteredQuestionIndices.map((idx) => {
+                    const question = draft.questions[idx];
+                    return (
+                      <button
+                        key={question.id}
+                        onClick={() => setSelectedSlot(idx)}
+                        style={{
+                          textAlign: 'left',
+                          padding: 8,
+                          borderRadius: 6,
+                          border: selectedSlot === idx ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)',
+                          background: selectedSlot === idx ? 'rgba(56,189,248,0.12)' : 'transparent',
+                          color: 'inherit'
+                        }}
+                      >
+                        <div style={{ fontWeight: 600 }}>
+                          {idx + 1}. {COZY_SLOT_TEMPLATE[idx].label}
+                        </div>
+                        <div style={{ fontSize: 12, opacity: 0.7 }}>
+                          Segment {COZY_SLOT_TEMPLATE[idx].segmentIndex + 1} | {question.points} Punkte
+                        </div>
+                        <div style={{ fontSize: 12, opacity: 0.6 }}>{question.mechanic}</div>
+                      </button>
+                    );
+                  })}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>

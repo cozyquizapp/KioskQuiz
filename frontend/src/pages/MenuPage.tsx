@@ -12,7 +12,7 @@ const liveLinks: LinkItem[] = [
 ];
 
 const builderLinks: LinkItem[] = [
-  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Blitz & Potato pflegen' }
+  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Fotoblitz & Rundlauf pflegen' }
 ];
 
 const toolsLinks: LinkItem[] = [

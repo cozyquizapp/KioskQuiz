@@ -298,6 +298,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
+  // TODO(LEGACY): Potato ist deaktiviert; nur anzeigen, wenn Legacy-Panels aktiv sind.
+  const showPotatoUI = featureFlags.showLegacyPanels;
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   const debugMode = useMemo(
     () =>
@@ -482,15 +484,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [gameState, featureFlags.isCozyMode]);
 
   useEffect(() => {
-    if (gameState !== 'POTATO') {
+    if (!showPotatoUI || gameState !== 'POTATO') {
       setPotatoTick(0);
       return undefined;
     }
     const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
     return () => window.clearInterval(id);
-  }, [gameState]);
+  }, [gameState, showPotatoUI]);
 
   useEffect(() => {
+    if (!showPotatoUI) return;
     if (!potato?.lastAttempt || potato?.phase !== 'PLAYING') return;
     const attempt = potato.lastAttempt;
     const teamName = teams.find((team) => team.id === attempt.teamId)?.name || attempt.teamId;
@@ -505,16 +508,17 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       window.clearTimeout(potatoOverlayTimeoutRef.current);
     }
     potatoOverlayTimeoutRef.current = window.setTimeout(() => setPotatoAttemptOverlay(null), 1600);
-  }, [potato?.lastAttempt?.id, potato?.phase, potato?.lastAttempt?.verdict, teams]);
+  }, [potato?.lastAttempt?.id, potato?.phase, potato?.lastAttempt?.verdict, teams, showPotatoUI]);
 
   useEffect(() => {
+    if (!showPotatoUI) return;
     if (potato?.phase === 'PLAYING') return;
     if (potatoOverlayTimeoutRef.current) {
       window.clearTimeout(potatoOverlayTimeoutRef.current);
       potatoOverlayTimeoutRef.current = null;
     }
     setPotatoAttemptOverlay(null);
-  }, [potato?.phase]);
+  }, [potato?.phase, showPotatoUI]);
 
   useEffect(
     () => () => {
@@ -748,7 +752,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
         }
       }
       if (payload.potato !== undefined) {
-        setPotato(payload.potato ?? null);
+        if (showPotatoUI) {
+          setPotato(payload.potato ?? null);
+        }
       }
       if (payload.blitz !== undefined) {
         setBlitz(payload.blitz ?? null);
@@ -813,6 +819,12 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       socket.disconnect();
     };
   }, [roomCode, language, reconnectNonce]);
+
+  useEffect(() => {
+    if (!showPotatoUI && potato) {
+      setPotato(null);
+    }
+  }, [showPotatoUI, potato]);
 
   // slot animation
   useEffect(() => {
@@ -927,7 +939,7 @@ useEffect(() => {
 
   const isScoreboardState =
     gameState === 'SCOREBOARD' || gameState === 'SCOREBOARD_PAUSE' || gameState === 'AWARDS';
-  const isPotatoStage = gameState === 'POTATO' && potato;
+  const isPotatoStage = showPotatoUI && gameState === 'POTATO' && potato;
   const derivedQuestionProgress =
     questionProgress ??
     (questionMeta
@@ -1038,7 +1050,7 @@ useEffect(() => {
         timerEndsAt &&
         (gameState === 'Q_ACTIVE' ||
           (gameState === 'BLITZ' && blitz?.phase === 'PLAYING') ||
-          (gameState === 'POTATO' && potato?.phase === 'PLAYING'))
+          (showPotatoUI && gameState === 'POTATO' && potato?.phase === 'PLAYING'))
     );
   const progressValue = showTurnProgress
     ? Math.max(0, Math.min(1, remainingMs / (timerDurationMs || 1)))
@@ -2447,7 +2459,7 @@ useEffect(() => {
       case 'SIEGEREHRUNG':
         return renderAwardsFrame();
       case 'POTATO':
-        return renderPotatoFrame();
+        return showPotatoUI ? renderPotatoFrame() : renderScoreboardFrame('pause');
       case 'AWARDS':
         return renderAwardsFrame();
       default:

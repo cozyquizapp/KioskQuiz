@@ -126,14 +126,12 @@ const buildQrUrl = (url: string, size = 180) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
-const COZY_POTATO_MIN = 14;
 const COZY_BLITZ_MIN = 3;
 
 const isCozyPlayableQuiz = (quiz: QuizTemplate): boolean => {
   const questionCount = Array.isArray(quiz.questionIds) ? quiz.questionIds.length : 0;
   const blitzCount = quiz.blitz?.pool?.length ?? 0;
-  const potatoCount = Array.isArray(quiz.potatoPool) ? quiz.potatoPool.length : 0;
-  return questionCount === 20 && blitzCount >= COZY_BLITZ_MIN && potatoCount >= COZY_POTATO_MIN;
+  return questionCount === 20 && blitzCount >= COZY_BLITZ_MIN;
 };
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -199,6 +197,8 @@ function ModeratorPage(): React.ReactElement {
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const singleActionMode = featureFlags.isCozyMode;
+  // TODO(LEGACY): Potato is retired in Cozy60; keep backend handlers hidden for now.
+  const showPotatoUI = false;
 
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const {
@@ -209,7 +209,7 @@ function ModeratorPage(): React.ReactElement {
     solution: socketSolution,
     questionPhase: socketQuestionPhase,
     scores: socketScores,
-    potato,
+    potato: socketPotato,
     blitz,
     rundlauf: socketRundlauf,
     gameState: socketGameState,
@@ -223,6 +223,7 @@ function ModeratorPage(): React.ReactElement {
     nextStage: socketNextStage,
     scoreboardOverlayForced: socketScoreboardOverlayForced
   } = useQuizSocket(roomCode);
+  const potato: PotatoState | null = showPotatoUI ? socketPotato ?? null : null;
   const rundlauf: RundlaufState | null = socketRundlauf ?? null;
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
   const nextStage = socketNextStage ?? null;
@@ -1377,6 +1378,7 @@ function ModeratorPage(): React.ReactElement {
   );
 
   const renderPotatoControls = () => {
+    if (!showPotatoUI) return null;
     const shouldShow =
       Boolean(roomCode) && (potato || (meta?.globalIndex ?? 0) >= 19 || scoreboard.length > 0);
     if (!shouldShow) return null;

@@ -31,6 +31,7 @@ import { categoryLabels } from '../categoryLabels';
 import { categoryIcons } from '../categoryAssets';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
+import { featureFlags } from '../config/features';
 import {
   pageStyleTeam,
   contentShell,
@@ -258,6 +259,14 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [potatoSubmitting, setPotatoSubmitting] = useState(false);
   const [potatoError, setPotatoError] = useState<string | null>(null);
   const [showPotatoOkToast, setShowPotatoOkToast] = useState(false);
+  // TODO(LEGACY): Potato ist deaktiviert; nur anzeigen, wenn Legacy-Panels aktiv sind.
+  const showPotatoUI = featureFlags.showLegacyPanels;
+
+  useEffect(() => {
+    if (!showPotatoUI && potatoState) {
+      setPotatoState(null);
+    }
+  }, [showPotatoUI, potatoState]);
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
@@ -507,6 +516,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const isBlitzPlaying =
     gameState === 'BLITZ_PLAYING' || (gameState === 'BLITZ' && blitzState?.phase === 'PLAYING');
   const isPotatoActiveTurn =
+    showPotatoUI &&
     gameState === 'POTATO' &&
     potatoState?.phase === 'PLAYING' &&
     potatoState?.activeTeamId === teamId;
@@ -645,7 +655,9 @@ function TeamView({ roomCode }: TeamViewProps) {
         setScoreboard(payload.scores);
       }
       if (payload.potato !== undefined) {
-        setPotatoState(payload.potato ?? null);
+        if (showPotatoUI) {
+          setPotatoState(payload.potato ?? null);
+        }
       }
       if (payload.blitz !== undefined) {
         setBlitzState(payload.blitz ?? null);
@@ -3076,7 +3088,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       return renderBlitzStage();
     }
     if (gameState === 'POTATO') {
-      return renderPotatoStage();
+      return showPotatoUI ? renderPotatoStage() : renderWaiting(t('waitingMsg'));
     }
     if (bingoEnabled && (showBingoPanel || canMarkBingo)) {
       return renderBingo();

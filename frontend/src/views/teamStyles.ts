@@ -33,7 +33,7 @@ export const contentShell: CSSProperties = {
   margin: '0 auto',
   display: 'grid',
   gap: 14,
-  zIndex: 1
+  zIndex: 2
 };
 
 export const footerLogo: CSSProperties = {
@@ -42,7 +42,7 @@ export const footerLogo: CSSProperties = {
   bottom: 32,
   transform: 'translateX(-50%)',
   pointerEvents: 'none',
-  zIndex: 3,
+  zIndex: 0,
   opacity: 0.32
 };
 

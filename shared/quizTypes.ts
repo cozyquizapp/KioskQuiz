@@ -1,4 +1,4 @@
-// Zentrale Typdefinitionen für Fragen, Mechaniken und Räume
+// Zentrale Typdefinitionen fÃ¼r Fragen, Mechaniken und RÃ¤ume
 
 export type QuizCategory =
   | 'Schaetzchen'
@@ -177,10 +177,10 @@ export interface BaseQuestion {
   question: string;
   questionEn?: string;
   points: number;
-  createdAt?: number; // Unix ms; optional für Sortierung "zuletzt hinzugefügt"
+  createdAt?: number; // Unix ms; optional fÃ¼r Sortierung "zuletzt hinzugefÃ¼gt"
   media?: MediaBlock;
   imageUrl?: string;
-  mixedMechanic?: MixedMechanicId; // nur relevant für Gemischte Tüte
+  mixedMechanic?: MixedMechanicId; // nur relevant fÃ¼r Gemischte TÃ¼te
   mixedMechanicDetails?: MixedMechanicDetails | null;
   decorationLeft?: DecorationKey | null;
   decorationRight?: DecorationKey | null;
@@ -323,6 +323,14 @@ export interface QuizBlitzTheme {
   items: QuizBlitzItem[];
 }
 
+export interface RundlaufConfig {
+  pool: string[];
+  turnDurationMs?: number;
+  pointsWinner?: number;
+  pointsTie?: number;
+}
+
+
 export type CozyPotatoThemeInput =
   | string
   | {
@@ -344,6 +352,7 @@ export interface QuizTemplate {
   blitz?: {
     pool: QuizBlitzTheme[];
   } | null;
+  rundlauf?: RundlaufConfig | null;
   potatoPool?: CozyPotatoThemeInput[] | null;
   enableBingo?: boolean;
 }
@@ -384,7 +393,7 @@ export interface BingoCell {
   marked: boolean;
 }
 
-export type BingoBoard = BingoCell[]; // Länge 25
+export type BingoBoard = BingoCell[]; // LÃ¤nge 25
 
 export interface AnswerResult {
   teamId: string;
@@ -406,7 +415,7 @@ export interface AnswerTieBreaker {
 export interface AnswerEntry {
   value: unknown;
   isCorrect?: boolean;
-  deviation?: number | null; // für Schätzfragen
+  deviation?: number | null; // fÃ¼r SchÃ¤tzfragen
   bestDeviation?: number | null;
   betPoints?: number;
   betPool?: number;
@@ -425,7 +434,7 @@ export interface QuestionMeta {
   categoryName: string;
 }
 
-// Client-/Server-UI-Zustände
+// Client-/Server-UI-ZustÃ¤nde
 export type ScreenState = 'lobby' | 'slot' | 'question' | 'finished';
 export type QuestionPhase = 'idle' | 'slot' | 'answering' | 'evaluated' | 'revealed';
 
@@ -563,6 +572,7 @@ export interface BlitzState {
   bans: Record<string, string[]>;
   banLimits: Record<string, number>;
   selectedThemes: BlitzThemeOption[];
+  selectionComplete?: boolean;
   pinnedTheme?: BlitzThemeOption | null;
   topTeamId?: string | null;
   lastTeamId?: string | null;

@@ -32,6 +32,7 @@ import {
   RundlaufState,
   RundlaufCategoryOption,
   RundlaufAttempt,
+  RundlaufConfig,
   QuizBlitzTheme,
   QuizBlitzItem,
   CozyQuestionType,
@@ -199,6 +200,7 @@ type RoomState = {
   blitzSubmittedTeamIds: string[];
   blitzRoundIntroTimeout: NodeJS.Timeout | null;
   rundlaufPool: RundlaufCategoryOption[];
+  rundlaufPresetPool: RundlaufCategoryOption[];
   rundlaufBans: string[];
   rundlaufSelectedCategories: RundlaufCategoryOption[];
   rundlaufPinnedCategory: RundlaufCategoryOption | null;
@@ -214,6 +216,8 @@ type RoomState = {
   rundlaufDeadlineAt: number | null;
   rundlaufTurnStartedAt: number | null;
   rundlaufTurnDurationMs: number;
+  rundlaufPointsWinner: number;
+  rundlaufPointsTie: number;
   rundlaufRoundWinners: string[];
   rundlaufRoundIntroTimeout: NodeJS.Timeout | null;
   validationWarnings: string[];
@@ -313,6 +317,7 @@ type PublishedQuiz = {
   language?: string;
   meta?: QuizMeta | null;
   blitz?: { pool: QuizBlitzTheme[] } | null;
+  rundlauf?: RundlaufConfig | null;
   potatoPool?: CozyPotatoThemeInput[] | null;
   enableBingo?: boolean;
 };
@@ -341,6 +346,7 @@ publishedQuizzes.forEach((q) => {
     questionIds: q.questionIds,
     meta,
     blitz: q.blitz ?? null,
+    rundlauf: q.rundlauf ?? null,
     potatoPool: q.potatoPool ?? null,
     enableBingo: q.enableBingo ?? false
   });
@@ -380,6 +386,7 @@ const upsertPublishedQuiz = (payload: PublishedQuiz) => {
     questionIds: stored.questionIds,
     meta,
     blitz: stored.blitz ?? null,
+    rundlauf: stored.rundlauf ?? null,
     potatoPool: stored.potatoPool ?? null,
     enableBingo: stored.enableBingo ?? false
   });
@@ -514,6 +521,66 @@ const RUN_LOOP_DATA: Record<string, string[]> = {
     'nairobi'
   ],
   DEUTSCHE_STAEDTE: ['berlin', 'hamburg', 'muenchen', 'koeln', 'frankfurt', 'stuttgart', 'duesseldorf']
+};
+
+const RUNDLAUF_DEFAULT_POINTS_TIE = 1;
+
+const slugifyRundlaufId = (value: string) =>
+  value
+    .toString()
+    .toUpperCase()
+    .trim()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const normalizeRundlaufPool = (pool?: string[] | null): RundlaufCategoryOption[] => {
+  if (!Array.isArray(pool)) return [];
+  const mapped = pool
+    .map((entry) => String(entry ?? '').trim())
+    .filter((entry) => entry.length > 0)
+    .map((entry, idx) => ({
+      id: slugifyRundlaufId(entry) || `RUNDLAUF_${idx + 1}`,
+      title: entry
+    }));
+  const deduped: RundlaufCategoryOption[] = [];
+  mapped.forEach((entry) => {
+    if (!deduped.find((item) => item.id === entry.id)) deduped.push(entry);
+  });
+  return deduped;
+};
+
+const normalizeRundlaufConfig = (config?: RundlaufConfig | null) => {
+  const pool = normalizeRundlaufPool(config?.pool ?? null);
+  const turnDurationMs =
+    typeof config?.turnDurationMs === 'number' && Number.isFinite(config.turnDurationMs)
+      ? Math.max(3000, Math.floor(config.turnDurationMs))
+      : undefined;
+  const pointsWinner =
+    typeof config?.pointsWinner === 'number' && Number.isFinite(config.pointsWinner)
+      ? Math.max(0, Math.floor(config.pointsWinner))
+      : undefined;
+  const pointsTie =
+    typeof config?.pointsTie === 'number' && Number.isFinite(config.pointsTie)
+      ? Math.max(0, Math.floor(config.pointsTie))
+      : undefined;
+  return { pool, turnDurationMs, pointsWinner, pointsTie };
+};
+
+const sanitizeRundlaufDraft = (config?: RundlaufConfig | null): RundlaufConfig => {
+  const pool = normalizeRundlaufPool(config?.pool ?? null).map((entry) => entry.title);
+  const turnDurationMs =
+    typeof config?.turnDurationMs === 'number' && Number.isFinite(config.turnDurationMs)
+      ? Math.max(3000, Math.floor(config.turnDurationMs))
+      : undefined;
+  const pointsWinner =
+    typeof config?.pointsWinner === 'number' && Number.isFinite(config.pointsWinner)
+      ? Math.max(0, Math.floor(config.pointsWinner))
+      : undefined;
+  const pointsTie =
+    typeof config?.pointsTie === 'number' && Number.isFinite(config.pointsTie)
+      ? Math.max(0, Math.floor(config.pointsTie))
+      : undefined;
+  return { pool, turnDurationMs, pointsWinner, pointsTie };
 };
 
 // Cozy60 Studio Drafts / Builder
@@ -715,6 +782,7 @@ const hydrateCozyDraft = (draft: CozyQuizDraft): CozyQuizDraft => ({
   questions: Array.isArray(draft.questions) && draft.questions.length === 20 ? draft.questions : buildDefaultCozyQuestions(draft.id),
   blitz: draft.blitz && Array.isArray(draft.blitz.pool) ? draft.blitz : { pool: buildPlaceholderBlitzPool(draft.id) },
   potatoPool: Array.isArray(draft.potatoPool) ? draft.potatoPool : buildPlaceholderPotatoPool(),
+  rundlauf: sanitizeRundlaufDraft(draft.rundlauf ?? null),
   enableBingo: Boolean(draft.enableBingo),
   status: draft.status || 'draft',
   createdAt: draft.createdAt || Date.now(),
@@ -733,6 +801,12 @@ const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
     questions: buildDefaultCozyQuestions(id),
     blitz: { pool: buildPlaceholderBlitzPool(id) },
     potatoPool: buildPlaceholderPotatoPool(),
+    rundlauf: sanitizeRundlaufDraft({
+      pool: RUN_LOOP_CATEGORIES.map((entry) => entry.title),
+      turnDurationMs: RUNDLAUF_TURN_TIME_MS,
+      pointsWinner: RUNDLAUF_ROUND_POINTS,
+      pointsTie: RUNDLAUF_DEFAULT_POINTS_TIE
+    }),
     enableBingo: false,
     createdAt: now,
     updatedAt: now,
@@ -915,6 +989,7 @@ const applyDraftUpdate = (draft: CozyQuizDraft, payload: Partial<CozyQuizDraft>)
     questions: payload.questions ? sanitizeCozyQuestions(draft.id, payload.questions as AnyQuestion[]) : draft.questions,
     blitz: { pool: sanitizeBlitzPool(draft.id, payload.blitz?.pool ?? draft.blitz?.pool) },
     potatoPool: sanitizePotatoPool(payload.potatoPool ?? draft.potatoPool),
+    rundlauf: sanitizeRundlaufDraft(payload.rundlauf ?? draft.rundlauf),
     enableBingo: payload.enableBingo ?? draft.enableBingo,
     updatedAt: Date.now()
   };
@@ -1044,6 +1119,7 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
       language: finalized.meta.language,
       meta: publishedMeta,
       blitz: finalized.blitz,
+      rundlauf: finalized.rundlauf ?? null,
       potatoPool: finalized.potatoPool,
       enableBingo: finalized.enableBingo
     };
@@ -1162,6 +1238,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       blitzSubmittedTeamIds: [],
       blitzRoundIntroTimeout: null,
       rundlaufPool: [],
+      rundlaufPresetPool: [...RUN_LOOP_CATEGORIES],
       rundlaufBans: [],
       rundlaufSelectedCategories: [],
       rundlaufPinnedCategory: null,
@@ -1177,6 +1254,8 @@ const ensureRoom = (roomCode: string): RoomState => {
       rundlaufDeadlineAt: null,
       rundlaufTurnStartedAt: null,
       rundlaufTurnDurationMs: RUNDLAUF_TURN_TIME_MS,
+      rundlaufPointsWinner: RUNDLAUF_ROUND_POINTS,
+      rundlaufPointsTie: RUNDLAUF_DEFAULT_POINTS_TIE,
       rundlaufRoundWinners: [],
       rundlaufRoundIntroTimeout: null,
       validationWarnings: [],
@@ -1786,6 +1865,14 @@ const applyBlitzPick = (room: RoomState, teamId: string, themeKey: string) => {
   if (room.blitzLastTeamId && teamId !== room.blitzLastTeamId) {
     throw new Error('Nur letzter Platz darf waehlen');
   }
+  const topId = room.blitzTopTeamId;
+  if (topId) {
+    const required = room.blitzBanLimits[topId] ?? 0;
+    const bans = room.blitzBans[topId] ?? [];
+    if (required > 0 && bans.length < required) {
+      throw new Error('Erst bannen, dann waehlen');
+    }
+  }
   if (room.blitzPinnedTheme) throw new Error('Thema bereits gewaehlt');
   const themeId = themeKey.trim();
   if (!themeId) throw new Error('Thema fehlt');
@@ -2050,8 +2137,12 @@ const finishBlitzStage = (room: RoomState) => {
   applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SCOREBOARD' });
 };
 
-const buildRundlaufCategoryPool = (visibleCount: number): RundlaufCategoryOption[] => {
-  const pool = [...RUN_LOOP_CATEGORIES];
+const buildRundlaufCategoryPool = (
+  visibleCount: number,
+  source?: RundlaufCategoryOption[]
+): RundlaufCategoryOption[] => {
+  const base = source && source.length ? source : RUN_LOOP_CATEGORIES;
+  const pool = [...base];
   pool.sort(() => Math.random() - 0.5);
   const limit = Math.max(1, Math.min(visibleCount, pool.length));
   return pool.slice(0, limit);
@@ -2079,8 +2170,9 @@ const scheduleRundlaufTurnTimer = (room: RoomState) => {
     return;
   }
   room.rundlaufTurnStartedAt = Date.now();
-  room.rundlaufDeadlineAt = room.rundlaufTurnStartedAt + RUNDLAUF_TURN_TIME_MS;
-  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  const turnMs = room.rundlaufTurnDurationMs || RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufDeadlineAt = room.rundlaufTurnStartedAt + turnMs;
+  room.rundlaufTurnDurationMs = turnMs;
   const timer = setTimeout(() => {
     rundlaufTurnTimers.delete(room.roomCode);
     if (room.gameState !== 'RUNDLAUF_PLAY') return;
@@ -2119,7 +2211,7 @@ const scheduleRundlaufTurnTimer = (room: RoomState) => {
       scheduleRundlaufTurnTimer(room);
     }
     broadcastState(room);
-  }, RUNDLAUF_TURN_TIME_MS);
+  }, turnMs);
   rundlaufTurnTimers.set(room.roomCode, timer);
 };
 
@@ -2179,7 +2271,7 @@ const eliminateRundlaufTeam = (room: RoomState, teamId: string, reason?: string)
 };
 
 const initializeRundlaufStage = (room: RoomState) => {
-  const pool = buildRundlaufCategoryPool(RUNDLAUF_CATEGORY_COUNT);
+  const pool = buildRundlaufCategoryPool(RUNDLAUF_CATEGORY_COUNT, room.rundlaufPresetPool);
   const standings = getTeamStandings(room);
   room.rundlaufPool = pool;
   room.rundlaufBans = [];
@@ -2196,7 +2288,10 @@ const initializeRundlaufStage = (room: RoomState) => {
   room.rundlaufLastAttempt = null;
   room.rundlaufDeadlineAt = null;
   room.rundlaufTurnStartedAt = null;
-  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufTurnDurationMs =
+    Number.isFinite(room.rundlaufTurnDurationMs) && room.rundlaufTurnDurationMs > 0
+      ? room.rundlaufTurnDurationMs
+      : RUNDLAUF_TURN_TIME_MS;
   room.rundlaufRoundWinners = [];
   room.rundlaufRoundIntroTimeout = null;
   room.nextStage = 'RUNDLAUF';
@@ -2668,6 +2763,7 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
     template.mode === 'random'
       ? [...template.questionIds].sort(() => Math.random() - 0.5)
       : [...template.questionIds];
+  const rundlaufConfig = normalizeRundlaufConfig(template.rundlauf ?? null);
 
   room.quizId = quizId;
   room.questionOrder = [...questionIds];
@@ -2725,6 +2821,7 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.blitzSubmittedTeamIds = [];
   room.blitzRoundIntroTimeout = null;
   room.rundlaufPool = [];
+  room.rundlaufPresetPool = rundlaufConfig.pool.length ? rundlaufConfig.pool : [...RUN_LOOP_CATEGORIES];
   room.rundlaufBans = [];
   room.rundlaufSelectedCategories = [];
   room.rundlaufPinnedCategory = null;
@@ -2739,7 +2836,9 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.rundlaufLastAttempt = null;
   room.rundlaufDeadlineAt = null;
   room.rundlaufTurnStartedAt = null;
-  room.rundlaufTurnDurationMs = RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufTurnDurationMs = rundlaufConfig.turnDurationMs ?? RUNDLAUF_TURN_TIME_MS;
+  room.rundlaufPointsWinner = rundlaufConfig.pointsWinner ?? RUNDLAUF_ROUND_POINTS;
+  room.rundlaufPointsTie = rundlaufConfig.pointsTie ?? RUNDLAUF_DEFAULT_POINTS_TIE;
   room.rundlaufRoundWinners = [];
   room.rundlaufRoundIntroTimeout = null;
   recomputeRoomWarnings(room);
@@ -2747,6 +2846,21 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   broadcastTeamsReady(room);
   broadcastState(room);
   return questionIds.length;
+};
+
+const restartRoomSession = (room: RoomState) => {
+  if (!room.quizId) throw new Error('Kein Quiz aktiv');
+  clearQuestionTimers(room);
+  clearBlitzItemTimer(room.roomCode);
+  clearBlitzSetTimer(room.roomCode);
+  clearBlitzRoundIntroTimer(room);
+  clearRundlaufTurnTimer(room.roomCode);
+  Object.values(room.teams).forEach((team) => {
+    team.score = 0;
+    team.isReady = false;
+  });
+  configureRoomForQuiz(room, room.quizId);
+  return { quizId: room.quizId };
 };
 
 const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string) => {
@@ -2928,6 +3042,10 @@ const collectCozyDraftWarnings = (draft: CozyQuizDraft): string[] => {
   if (blitzThemes < 14) {
     warnings.push(`Blitz-Pool enthaelt nur ${blitzThemes} Themen (>=14 empfohlen).`);
   }
+  const rundlaufThemes = Array.isArray(draft.rundlauf?.pool) ? draft.rundlauf.pool.length : 0;
+  if (rundlaufThemes > 0 && rundlaufThemes < 6) {
+    warnings.push(`Rundlauf-Pool enthaelt nur ${rundlaufThemes} Kategorien (>=6 empfohlen).`);
+  }
   if (draft.questions.length !== COZY_SLOT_TEMPLATE.length) {
     warnings.push(`Fragen-Slots unvollstaendig: ${draft.questions.length}/${COZY_SLOT_TEMPLATE.length}.`);
   }
@@ -2964,6 +3082,7 @@ const evaluateBunteSubmission = (
   const segmentCap = getBunteMaxAward(question, maxPoints);
   const safeMax = Math.max(1, Math.min(maxPoints, segmentCap));
   if (setup.kind === 'top5') {
+    // TODO(TOP5): Unordered "hits-only" mode (order irrelevant), score per hit.
     const submission = payload as BunteTueteTop5Submission;
     const order = Array.isArray(submission.order) ? submission.order : [];
     const target =
@@ -3244,6 +3363,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           bans: room.blitzBans,
           banLimits: room.blitzBanLimits,
           selectedThemes: room.blitzSelectedThemes,
+          selectionComplete: hasBlitzSelectionReady(room),
           pinnedTheme: room.blitzPinnedTheme ?? null,
           topTeamId: room.blitzTopTeamId ?? null,
           lastTeamId: room.blitzLastTeamId ?? null,
@@ -3394,17 +3514,25 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
   } else if (question.mechanic === 'betting') {
     const correctIdx = (question as any).correctIndex ?? 0;
     const pool = (question as any).pointsPool ?? 10;
+    const betPointsByTeam = Object.entries(room.answers).map(([teamId, ans]) => {
+      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
+      const ptsRaw = Number(arr[correctIdx] ?? 0);
+      const points = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      return { teamId, points };
+    });
+    const maxPoints = betPointsByTeam.reduce((max, entry) => Math.max(max, entry.points), 0);
     Object.entries(room.answers).forEach(([teamId, ans]) => {
       const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
       const ptsRaw = Number(arr[correctIdx] ?? 0);
-      const awardedPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      const betPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      const awardedPoints = maxPoints > 0 && betPoints === maxPoints ? 1 : 0;
       room.answers[teamId] = {
         ...ans,
         isCorrect: awardedPoints > 0,
-        betPoints: awardedPoints,
+        betPoints,
         betPool: pool,
         awardedPoints,
-        awardedDetail: `${awardedPoints}/${pool} Punkte`,
+        awardedDetail: awardedPoints > 0 ? '1 Punkt' : '0 Punkte',
         autoGraded: true,
         tieBreaker: null
       };
@@ -4517,6 +4645,10 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:next', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => handleHostNextAdvance(room));
+  });
+
+  socket.on('host:restartSession', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => restartRoomSession(room));
   });
 
   socket.on('host:lock', (payload: { roomCode?: string }, ack) => {

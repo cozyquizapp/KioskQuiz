@@ -6,7 +6,8 @@ import {
   CozyQuestionType,
   CozyQuizDraft,
   Language,
-  QuizBlitzTheme
+  QuizBlitzTheme,
+  RundlaufConfig
 } from '@shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '@shared/cozyTemplate';
 import {
@@ -18,7 +19,7 @@ import {
   publishCozyDraft
 } from '../api';
 
-type TabKey = 'meta' | 'questions' | 'blitz';
+type TabKey = 'meta' | 'questions' | 'blitz' | 'rundlauf';
 
 const languageOptions: { label: string; value: Language }[] = [
   { label: 'Deutsch', value: 'de' },
@@ -47,6 +48,16 @@ const fromCommaList = (value: string) =>
     .split(',')
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
+
+const getRundlaufDraft = (draft: CozyQuizDraft | null): RundlaufConfig => {
+  const base = draft?.rundlauf;
+  return {
+    pool: Array.isArray(base?.pool) ? base.pool : [],
+    turnDurationMs: typeof base?.turnDurationMs === 'number' ? base.turnDurationMs : 7000,
+    pointsWinner: typeof base?.pointsWinner === 'number' ? base.pointsWinner : 3,
+    pointsTie: typeof base?.pointsTie === 'number' ? base.pointsTie : 1
+  };
+};
 
 
 const questionTemplateForSlot = (slotIndex: number, existingId: string, type: CozyQuestionType): AnyQuestion => {
@@ -197,6 +208,10 @@ const Cozy60BuilderPage = () => {
 
   const updateDraft = (updater: (prev: CozyQuizDraft) => CozyQuizDraft) => {
     setDraft((prev) => (prev ? updater(prev) : prev));
+  };
+
+  const updateRundlauf = (updater: (prev: RundlaufConfig) => RundlaufConfig) => {
+    updateDraft((prev) => ({ ...prev, rundlauf: updater(getRundlaufDraft(prev)) }));
   };
 
   const handleCreate = async () => {
@@ -394,7 +409,7 @@ const Cozy60BuilderPage = () => {
               </div>
             </div>
             <div className="builder-tabs" style={{ marginBottom: 16 }}>
-              {(['meta', 'questions', 'blitz'] as TabKey[]).map((entry) => (
+              {(['meta', 'questions', 'blitz', 'rundlauf'] as TabKey[]).map((entry) => (
                 <button
                   key={entry}
                   onClick={() => setTab(entry)}
@@ -403,6 +418,7 @@ const Cozy60BuilderPage = () => {
                   {entry === 'meta' && 'Meta'}
                   {entry === 'questions' && 'Fragen'}
                   {entry === 'blitz' && 'Fotoblitz'}
+                  {entry === 'rundlauf' && 'Rundlauf'}
                 </button>
               ))}
             </div>
@@ -942,6 +958,78 @@ const Cozy60BuilderPage = () => {
                       style={{ padding: 8, borderRadius: 6, fontFamily: 'monospace', fontSize: 12 }}
                     />
                   </details>
+                </div>
+              </section>
+            )}
+            {tab === 'rundlauf' && (
+              <section className="builder-card" style={{ display: 'grid', gap: 16, maxWidth: 840 }}>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ fontWeight: 800 }}>Kategorien-Pool (6+ empfohlen)</div>
+                  <textarea
+                    rows={10}
+                    value={getRundlaufDraft(draft).pool.join('\n')}
+                    onChange={(e) =>
+                      updateRundlauf((prev) => ({
+                        ...prev,
+                        pool: linesFromText(e.target.value)
+                      }))
+                    }
+                    style={{ padding: 10, borderRadius: 10 }}
+                    placeholder="Eine Kategorie pro Zeile"
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    Turn-Timer (ms)
+                    <input
+                      type="number"
+                      min={3000}
+                      step={500}
+                      value={getRundlaufDraft(draft).turnDurationMs ?? 7000}
+                      onChange={(e) =>
+                        updateRundlauf((prev) => ({
+                          ...prev,
+                          turnDurationMs: Number(e.target.value) || 7000
+                        }))
+                      }
+                      style={{ padding: 8, borderRadius: 6 }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    Punkte Sieger
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={getRundlaufDraft(draft).pointsWinner ?? 3}
+                      onChange={(e) =>
+                        updateRundlauf((prev) => ({
+                          ...prev,
+                          pointsWinner: Number(e.target.value) || 0
+                        }))
+                      }
+                      style={{ padding: 8, borderRadius: 6 }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    Punkte Unentschieden
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={getRundlaufDraft(draft).pointsTie ?? 1}
+                      onChange={(e) =>
+                        updateRundlauf((prev) => ({
+                          ...prev,
+                          pointsTie: Number(e.target.value) || 0
+                        }))
+                      }
+                      style={{ padding: 8, borderRadius: 6 }}
+                    />
+                  </label>
+                </div>
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                  Rundlauf nutzt die Kategorien aus diesem Pool. Turn-Order basiert auf der aktuellen Platzierung.
                 </div>
               </section>
             )}

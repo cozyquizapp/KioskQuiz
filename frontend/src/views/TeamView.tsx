@@ -1267,6 +1267,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               <button
                 key={statement.id}
                 type="button"
+                className={`team-choice${selected ? ' is-selected' : ''}`}
                 onClick={() => setBunteOneChoice(statement.id)}
                 disabled={!canAnswer}
                 style={{
@@ -1392,6 +1393,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             {q.options.map((opt, idx) => (
               <button
                 key={idx}
+                className={`team-choice${answer === String(idx) ? ' is-selected' : ''}`}
                 style={{
                   ...choiceButton,
                   border: `1px solid ${accent}55`,
@@ -1483,6 +1485,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         return (
           <div style={{ display: 'flex', gap: 10 }}>
             <button
+              className={`team-choice${answer === 'true' ? ' is-selected' : ''}`}
               style={{
                 ...choiceButton,
                 border: `1px solid ${accent}55`,
@@ -1496,6 +1499,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               {t('tfTrue')}
             </button>
             <button
+              className={`team-choice${answer === 'false' ? ' is-selected' : ''}`}
               style={{
                 ...choiceButton,
                 border: `1px solid ${accent}55`,

@@ -166,15 +166,15 @@ button {
 }
 
 .team-answer-input:focus-visible {
-  border-color: rgba(96, 165, 250, 0.9);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35), 0 12px 24px rgba(0, 0, 0, 0.45);
-  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(96, 165, 250, 1);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.45), 0 12px 24px rgba(0, 0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 .team-answer-input:focus {
-  border-color: rgba(96, 165, 250, 0.9);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35), 0 12px 24px rgba(0, 0, 0, 0.45);
-  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(96, 165, 250, 1);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.45), 0 12px 24px rgba(0,  0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 .team-answer-input.is-active {
@@ -186,6 +186,25 @@ button {
   opacity: 0.65;
   border-color: rgba(148, 163, 184, 0.35);
   background: rgba(2, 6, 23, 0.55);
+}
+
+.team-choice {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+}
+
+.team-choice.is-selected {
+  border-color: rgba(96, 165, 250, 0.95);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3), 0 12px 24px rgba(0, 0, 0, 0.4);
+  background: rgba(30, 64, 175, 0.22);
+  outline: 3px solid rgba(96, 165, 250, 0.5);
+  outline-offset: 2px;
+}
+
+.team-choice:focus-visible {
+  outline: 3px solid rgba(96, 165, 250, 0.6);
+  outline-offset: 2px;
 }
 
 img {

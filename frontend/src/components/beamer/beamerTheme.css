@@ -578,6 +578,7 @@
   color: var(--beamer-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-weight: 700;
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;

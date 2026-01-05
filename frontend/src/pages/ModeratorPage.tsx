@@ -196,6 +196,8 @@ function ModeratorPage(): React.ReactElement {
   const [showJoinScreen, setShowJoinScreen] = useState(false);
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showReconnectModal, setShowReconnectModal] = useState(false);
+  const reconnectPromptedRef = React.useRef(false);
   const singleActionMode = featureFlags.isCozyMode;
   // TODO(LEGACY): Potato is retired in Cozy60; keep backend handlers hidden for now.
   const showPotatoUI = false;
@@ -275,6 +277,15 @@ function ModeratorPage(): React.ReactElement {
     if (!SINGLE_SESSION_MODE || typeof window === 'undefined') return;
     localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
   }, []);
+
+  useEffect(() => {
+    if (reconnectPromptedRef.current) return;
+    if (!socketGameState) return;
+    reconnectPromptedRef.current = true;
+    if (socketGameState !== 'LOBBY') {
+      setShowReconnectModal(true);
+    }
+  }, [socketGameState]);
 
 
   useEffect(() => {
@@ -859,6 +870,30 @@ function ModeratorPage(): React.ReactElement {
   function handleReveal() {
     sendHostCommand('host:reveal', async () => {
       await loadAnswers();
+    });
+  }
+
+  function handleReconnectSession() {
+    setShowReconnectModal(false);
+  }
+
+  function handleRestartSession() {
+    if (!roomCode) {
+      setToast('Roomcode fehlt');
+      return;
+    }
+    if (!socketEmit) {
+      setToast('Socket nicht bereit');
+      return;
+    }
+    setShowReconnectModal(false);
+    socketEmit('host:restartSession', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Restart fehlgeschlagen');
+        return;
+      }
+      loadCurrentQuestion().catch(() => undefined);
+      loadAnswers().catch(() => undefined);
     });
   }
 
@@ -2671,6 +2706,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderStageShortcuts = () => {
+    if (singleActionMode) return null;
     if (!featureFlags.showLegacyPanels) return null;
     const ctas: React.ReactNode[] = [];
     if (isScoreboardPauseState && blitzPhase === 'DONE') {
@@ -2831,6 +2867,44 @@ function ModeratorPage(): React.ReactElement {
           Taste {nextActionHint.hotkey} | {nextActionHint.label}
         </div>
         <div style={{ fontSize: 15, color: '#e2e8f0' }}>{nextActionHint.detail}</div>
+      </div>
+    );
+  };
+
+  const renderReconnectModal = () => {
+    if (!showReconnectModal) return null;
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(2,6,23,0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50
+        }}
+      >
+        <div style={{ ...card, maxWidth: 420, width: '92%', textAlign: 'left' }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 6 }}>Session aktiv</div>
+          <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 12 }}>
+            Eine Session laeuft bereits. Willst du reconnecten oder neu starten?
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <button
+              style={{ ...inputStyle, background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleReconnectSession}
+            >
+              Reconnect
+            </button>
+            <button
+              style={{ ...inputStyle, background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.5)' }}
+              onClick={handleRestartSession}
+            >
+              Restart (setzt Lobby)
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -3425,6 +3499,7 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
+      {renderReconnectModal()}
       {renderCozyLayout()}
       {featureFlags.showLegacyPanels && (
         <details style={{ marginTop: 24 }}>

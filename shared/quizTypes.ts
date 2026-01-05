@@ -381,6 +381,7 @@ export interface CozyQuizDraft {
   questions: AnyQuestion[];
   blitz: { pool: QuizBlitzTheme[] };
   potatoPool: CozyPotatoThemeInput[];
+  rundlauf?: RundlaufConfig | null;
   enableBingo?: boolean;
   createdAt: number;
   updatedAt: number;

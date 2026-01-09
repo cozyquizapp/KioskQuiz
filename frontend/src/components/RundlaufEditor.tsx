@@ -1,29 +1,30 @@
-import { useState } from 'react';
-import type { RundlaufConfig, QuizCategory } from '@shared/quizTypes';
-import { categoryLabels } from '../categoryLabels';
+import type { RundlaufConfig } from '@shared/quizTypes';
 
 interface RundlaufEditorProps {
   config: RundlaufConfig;
   onChange: (config: RundlaufConfig) => void;
 }
 
-const AVAILABLE_CATEGORIES: QuizCategory[] = [
-  'Schaetzchen',
-  'Mu-Cho',
-  'Stimmts',
-  'Cheese',
-  'GemischteTuete'
-];
+// Mapping of category IDs to answer counts (sync with backend RUN_LOOP_DATA)
+const CATEGORY_ANSWER_COUNTS: Record<string, number> = {
+  'HAUPTSTAEDTE AFRIKA': 20,
+  'HAUPTSTAEDTE EUROPA': 26,
+  'DEUTSCHE STAEDTE': 20,
+  'DEUTSCHE BUNDESLAENDER': 16,
+  'US BUNDESSTAATEN': 50,
+  'LAENDER MIT S': 19,
+  'DISNEY FILME': 25,
+  'AUTOMOBILMARKEN': 35,
+  'AFRIKANISCHE SAEUGETIERE': 24,
+  'OLYMPISCHE SPORTARTEN': 33,
+  'PLANETEN': 8,
+  'FRUECHTE': 25,
+  'GEMUESESORTEN': 25,
+  'EUROPAEISCHE FLUESSE': 21,
+  'MUSIKINSTRUMENTE': 25
+};
 
 export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
-  const [newCategory, setNewCategory] = useState<QuizCategory | ''>('');
-
-  const addCategory = (cat: string) => {
-    if (cat && !config.pool.includes(cat)) {
-      onChange({ ...config, pool: [...config.pool, cat] });
-    }
-  };
-
   const removeCategory = (cat: string) => {
     onChange({ ...config, pool: config.pool.filter((c) => c !== cat) });
   };
@@ -38,52 +39,26 @@ export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
       <div style={sectionStyle}>
         <label style={labelStyle}>Kategorien-Pool</label>
         <div style={{ fontSize: 13, opacity: 0.6, marginBottom: 12 }}>
-          Diese Kategorien stehen im Rundlauf zur Auswahl
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <select
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="">Kategorie wählen...</option>
-            {AVAILABLE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} disabled={config.pool.includes(cat)}>
-                {categoryLabels[cat]?.de || cat}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              addCategory(newCategory);
-              setNewCategory('');
-            }}
-            disabled={!newCategory}
-            style={{
-              ...addButtonStyle,
-              opacity: newCategory ? 1 : 0.5,
-              cursor: newCategory ? 'pointer' : 'not-allowed'
-            }}
-          >
-            Hinzufügen
-          </button>
+          Diese Kategorien stehen im Rundlauf zur Auswahl. Anzahl in Klammern = gültige Antworten.
         </div>
 
         <div style={{ display: 'grid', gap: 8 }}>
-          {config.pool.map((cat) => (
-            <div key={cat} style={categoryCardStyle}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>
-                {categoryLabels[cat as QuizCategory]?.de || cat}
-              </span>
-              <button
-                onClick={() => removeCategory(cat)}
-                style={removeButtonStyle}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {config.pool.map((cat) => {
+            const answerCount = CATEGORY_ANSWER_COUNTS[cat] || '?';
+            return (
+              <div key={cat} style={categoryCardStyle}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>
+                  {cat} <span style={{ opacity: 0.6, fontWeight: 400 }}>({answerCount})</span>
+                </span>
+                <button
+                  onClick={() => removeCategory(cat)}
+                  style={removeButtonStyle}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         {config.pool.length === 0 && (
@@ -150,17 +125,6 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: '0.5px'
 };
 
-const selectStyle: React.CSSProperties = {
-  flex: 1,
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
-  borderRadius: 8,
-  padding: '10px 12px',
-  color: '#f1f5f9',
-  fontSize: 14,
-  outline: 'none'
-};
-
 const inputStyle: React.CSSProperties = {
   background: 'rgba(15,23,42,0.6)',
   border: '1px solid rgba(148,163,184,0.2)',
@@ -170,17 +134,6 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14,
   width: '100%',
   outline: 'none'
-};
-
-const addButtonStyle: React.CSSProperties = {
-  background: 'rgba(34,197,94,0.2)',
-  border: '1px solid rgba(34,197,94,0.4)',
-  borderRadius: 8,
-  padding: '10px 20px',
-  color: '#4ade80',
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontSize: 14
 };
 
 const categoryCardStyle: React.CSSProperties = {

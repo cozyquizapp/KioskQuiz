@@ -369,6 +369,7 @@ function ModeratorPage(): React.ReactElement {
     if (!socketTimerEndsAt) return null;
     return Math.max(0, Math.ceil((socketTimerEndsAt - Date.now()) / 1000));
   }, [socketTimerEndsAt, countdownTick]);
+  const timerActive = socketTimerEndsAt && socketTimerEndsAt > Date.now();
 
   function handleScoreboardAction() {
     if (!roomCode) return;

@@ -17,7 +17,9 @@ import {
   postRunStats,
   fetchLeaderboard,
   fetchHealth,
-  listPublishedQuizzes
+  listPublishedQuizzes,
+  listCozyDrafts,
+  fetchCozyDraft
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, RundlaufState } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
@@ -584,10 +586,15 @@ function ModeratorPage(): React.ReactElement {
     if (savedQuiz) setSelectedQuiz((prev) => prev || savedQuiz);
     const loadQuizzes = async () => {
       try {
-        const [res, pub] = await Promise.all([fetchQuizzes(), listPublishedQuizzes().catch(() => ({ quizzes: [] }))]);
+        const [res, pub, cozy] = await Promise.all([
+          fetchQuizzes(),
+          listPublishedQuizzes().catch(() => ({ quizzes: [] })),
+          listCozyDrafts().catch(() => ({ drafts: [] }))
+        ]);
         const merged: QuizTemplate[] = [
           ...(res.quizzes || []),
-          ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds }))
+          ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds })),
+          ...(cozy.drafts || []).map((d: any) => ({ id: d.id, name: `${d.title} (Draft)`, mode: 'cozy60', questionIds: [] }))
         ];
         const filtered = featureFlags.showLegacyPanels ? merged : merged.filter(isCozyPlayableQuiz);
         setQuizzes(filtered);

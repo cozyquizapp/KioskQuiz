@@ -2293,6 +2293,8 @@ function ModeratorPage(): React.ReactElement {
     }
 
     if (normalizedGameState === 'RUNDLAUF_PLAY') {
+      const remainingCount = rundlauf?.remainingAnswers?.length ?? 0;
+      const totalCount = rundlauf?.availableAnswers?.length ?? 0;
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf live</div>
@@ -2302,15 +2304,46 @@ function ModeratorPage(): React.ReactElement {
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span style={statChip}>Aktiv: {activeTeamName || 'n/a'}</span>
             {rundlaufTimeLeft !== null && <span style={statChip}>Restzeit {rundlaufTimeLeft}s</span>}
-            <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}</span>
+            <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}/{totalCount}</span>
+            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>Übrig: {remainingCount}</span>}
           </div>
+
+          {/* Remaining answers hint */}
+          {totalCount > 0 && remainingCount > 0 && remainingCount <= 5 && (
+            <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} übrig:</div>
+              <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {(rundlauf?.remainingAnswers ?? []).slice(0, 10).map((answer, idx) => (
+                  <span key={idx} style={{ background: 'rgba(148,163,184,0.2)', padding: '4px 8px', borderRadius: 4 }}>
+                    {answer}
+                  </span>
+                ))}
+                {remainingCount > 10 && <span style={{ color: '#94a3b8' }}>... +{remainingCount - 10} mehr</span>}
+              </div>
+            </div>
+          )}
+
           {lastAttempt && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontWeight: 700 }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>
                 Letzter Versuch: {lastAttemptTeamName || lastAttempt.teamId}
               </div>
-              <div style={{ color: '#e2e8f0' }}>{lastAttempt.text || '—'}</div>
-              {lastAttemptLabel && <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
+              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || '—'}</div>
+              {lastAttemptLabel && <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
+              
+              {/* Validation hint: show if answer is similar to any available answer */}
+              {lastAttempt.verdict === 'invalid' && lastAttempt.reason === 'not-listed' && rundlauf?.availableAnswers && (
+                <div style={{ marginTop: 8, padding: 8, background: 'rgba(248,113,113,0.1)', borderRadius: 6 }}>
+                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>Ähnliche Antworten:</div>
+                  <div style={{ fontSize: 12, color: '#fecaca', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {rundlauf.availableAnswers.slice(0, 5).map((answer, idx) => (
+                      <span key={idx} style={{ background: 'rgba(248,113,113,0.2)', padding: '3px 6px', borderRadius: 3 }}>
+                        {answer}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>

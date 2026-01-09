@@ -563,6 +563,8 @@ export interface RundlaufState {
   turnDurationMs?: number | null;
   currentCategory?: RundlaufCategoryOption | null;
   roundWinners?: string[];
+  availableAnswers?: string[]; // All valid answers for current category
+  remainingAnswers?: string[]; // Answers not yet used (normalized)
 }
 
 export interface BlitzThemeOption {

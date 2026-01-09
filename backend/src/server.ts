@@ -3799,26 +3799,37 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     room.rundlaufRoundIndex >= 0 ? room.rundlaufSelectedCategories[room.rundlaufRoundIndex] ?? null : null;
   const rundlauf: RundlaufState | null = !shouldIncludeRundlauf
     ? null
-    : {
-        pool: room.rundlaufPool,
-        bans: room.rundlaufBans,
-        selected: room.rundlaufSelectedCategories,
-        pinned: room.rundlaufPinnedCategory ?? null,
-        topTeamId: room.rundlaufTopTeamId ?? null,
-        lastTeamId: room.rundlaufLastTeamId ?? null,
-        roundIndex: room.rundlaufRoundIndex,
-        turnOrder: room.rundlaufTurnOrder,
-        activeTeamId: room.rundlaufActiveTeamId,
-        eliminatedTeamIds: room.rundlaufEliminatedTeamIds,
-        usedAnswers: room.rundlaufUsedAnswers,
-        usedAnswersNormalized: room.rundlaufUsedAnswersNormalized,
-        lastAttempt: room.rundlaufLastAttempt ?? null,
-        deadline: room.rundlaufDeadlineAt,
-        turnStartedAt: room.rundlaufTurnStartedAt,
-        turnDurationMs: room.rundlaufTurnDurationMs,
-        currentCategory: currentRundlaufCategory,
-        roundWinners: room.rundlaufRoundWinners
-      };
+    : (() => {
+        // Get available answers for current category
+        const currentCatId = room.rundlaufSelectedCategories[room.rundlaufRoundIndex]?.id;
+        const allAnswers = currentCatId ? RUN_LOOP_DATA[currentCatId] || [] : [];
+        const allAnswersNormalized = new Set(allAnswers.map((a) => normalizeText(a)));
+        const usedNormalized = new Set(room.rundlaufUsedAnswersNormalized);
+        const remainingAnswers = Array.from(allAnswersNormalized).filter((a) => !usedNormalized.has(a));
+
+        return {
+          pool: room.rundlaufPool,
+          bans: room.rundlaufBans,
+          selected: room.rundlaufSelectedCategories,
+          pinned: room.rundlaufPinnedCategory ?? null,
+          topTeamId: room.rundlaufTopTeamId ?? null,
+          lastTeamId: room.rundlaufLastTeamId ?? null,
+          roundIndex: room.rundlaufRoundIndex,
+          turnOrder: room.rundlaufTurnOrder,
+          activeTeamId: room.rundlaufActiveTeamId,
+          eliminatedTeamIds: room.rundlaufEliminatedTeamIds,
+          usedAnswers: room.rundlaufUsedAnswers,
+          usedAnswersNormalized: room.rundlaufUsedAnswersNormalized,
+          lastAttempt: room.rundlaufLastAttempt ?? null,
+          deadline: room.rundlaufDeadlineAt,
+          turnStartedAt: room.rundlaufTurnStartedAt,
+          turnDurationMs: room.rundlaufTurnDurationMs,
+          currentCategory: currentRundlaufCategory,
+          roundWinners: room.rundlaufRoundWinners,
+          availableAnswers: allAnswers,
+          remainingAnswers
+        };
+      })();
   const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
   const connectedTeamIds = getConnectedTeamIds(room);
   const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({

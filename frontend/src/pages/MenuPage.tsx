@@ -13,8 +13,7 @@ const liveLinks: LinkItem[] = [
 
 const builderLinks: LinkItem[] = [
   { path: '/kanban-builder', label: 'Kanban Quiz Builder', note: 'Visueller Builder mit Drag & Drop' },
-  { path: '/question-catalog', label: 'Fragenbibliothek', note: 'Alle Fragen durchsuchen & bearbeiten' },
-  { path: '/cozy60-builder', label: 'Cozy60 Builder (alt)', note: '20 Fragen + Fotoblitz & Rundlauf pflegen' }
+  { path: '/question-catalog', label: 'Fragenbibliothek', note: 'Alle Fragen durchsuchen & bearbeiten' }
 ];
 
 const toolsLinks: LinkItem[] = [

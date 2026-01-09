@@ -42,7 +42,7 @@ export default function QuestionCatalogPage() {
       setQuestions(data.questions || []);
       setFilteredQuestions(data.questions || []);
     } catch (err) {
-      console.error('Fehler beim Laden der Fragen:', err);
+      // Failed to load questions
     }
   };
 
@@ -84,7 +84,6 @@ export default function QuestionCatalogPage() {
       setEditingQuestion(null);
       alert('✓ Frage gespeichert');
     } catch (err) {
-      console.error('Save error:', err);
       alert('Fehler beim Speichern');
     }
   };
@@ -102,7 +101,6 @@ export default function QuestionCatalogPage() {
       await loadQuestions();
       alert('✓ Frage gelöscht');
     } catch (err) {
-      console.error('Delete error:', err);
       alert('Fehler beim Löschen');
     }
   };
@@ -131,7 +129,6 @@ export default function QuestionCatalogPage() {
       setUploadStatus(`✓ ${result.count || questionsToUpload.length} Fragen importiert`);
       setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
-      console.error('Upload error:', err);
       setUploadStatus('❌ Upload fehlgeschlagen');
       setTimeout(() => setUploadStatus(''), 3000);
     }

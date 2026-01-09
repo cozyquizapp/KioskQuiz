@@ -110,7 +110,6 @@ export function KanbanQuestionEditor({
       setImagePreview(data.imageUrl);
       showNotification('success', '✅ Bild erfolgreich hochgeladen');
     } catch (err) {
-      console.error('Image upload error:', err);
       showNotification('error', `❌ Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
       // Revert preview on error
       setImagePreview(question.imageUrl || null);

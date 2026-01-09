@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import {
   AnyQuestion,
   QuizCategory,
-  CozyQuizDraft
+  CozyQuizDraft,
+  CozyQuestionSlotTemplate
 } from '@shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '@shared/cozyTemplate';
 import { categoryColors } from '../categoryColors';
@@ -15,7 +16,7 @@ interface KanbanBoardProps {
   onUpdate: (draft: CozyQuizDraft) => void;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoardProps) => {
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [draggedSlot, setDraggedSlot] = useState<number | null>(null);
   const [draggedCategory, setDraggedCategory] = useState<QuizCategory | null>(null);
@@ -26,8 +27,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
   // Gruppiere Fragen nach Kategorie
   const getQuestionsByCategory = (category: QuizCategory) => {
     return draft.questions
-      .map((q, idx) => ({ question: q, index: idx }))
-      .filter(({ question }) => question.category === category);
+      .map((q: AnyQuestion, idx: number) => ({ question: q, index: idx }))
+      .filter(({ question }: { question: AnyQuestion; index: number }) => question.category === category);
   };
 
   const handleQuestionSave = (slotIndex: number, updatedQuestion: AnyQuestion) => {
@@ -43,7 +44,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
     handleQuestionSave(slotIndex, emptyQuestion);
   };
 
-  const createEmptyQuestion = (slotIndex: number, slot: typeof COZY_SLOT_TEMPLATE[0]): AnyQuestion => {
+  const createEmptyQuestion = (slotIndex: number, slot: CozyQuestionSlotTemplate): AnyQuestion => {
     const base = {
       id: draft.questions[slotIndex]?.id || `${draft.id}-q${slotIndex + 1}`,
       question: slot.label,
@@ -86,8 +87,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
         const question = JSON.parse(catalogData) as AnyQuestion;
         // Find first empty slot in target category
         const targetSlots = draft.questions
-          .map((q, idx) => ({ q, idx }))
-          .filter(({ q }) => q.category === targetCategory && (!q.question || q.question === COZY_SLOT_TEMPLATE[0].label));
+          .map((q: AnyQuestion, idx: number) => ({ q, idx }))
+          .filter(({ q }: { q: AnyQuestion; idx: number }) => q.category === targetCategory && (!q.question || q.question === COZY_SLOT_TEMPLATE[0].label));
         
         if (targetSlots.length > 0) {
           const firstEmpty = targetSlots[0].idx;
@@ -96,7 +97,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
           alert(`Keine freien Slots in ${targetCategory}`);
         }
       } catch (err) {
-        console.error('Error parsing dropped question:', err);
+        // Parsing error - ignore dropped data
       }
       return;
     }
@@ -173,7 +174,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }) => {
 
               {/* Questions */}
               <div style={questionsListStyle}>
-                {questions.map(({ question, index }) => {
+                {questions.map(({ question, index }: { question: AnyQuestion; index: number }) => {
                   const slot = COZY_SLOT_TEMPLATE[index] || COZY_SLOT_TEMPLATE[0];
                   const isBeingDragged = draggedSlot === index;
                   const usedCount = question.usedIn?.length || 0;

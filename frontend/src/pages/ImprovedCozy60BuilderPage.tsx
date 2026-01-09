@@ -178,7 +178,7 @@ const ImprovedCozy60BuilderPage = () => {
         localStorage.setItem(LOCAL_BACKUP_TS_KEY, Date.now().toString());
         setStatus((prev) => (prev ? prev : 'Auto-Save ausgeführt'));
       } catch (err) {
-        console.warn('Auto-Save fehlgeschlagen', err);
+        // Auto-save failed silently
       }
     }, 1000);
     return () => clearTimeout(handle);

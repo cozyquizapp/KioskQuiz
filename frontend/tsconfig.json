@@ -10,6 +10,8 @@
       "@shared/*": ["../shared/*"]
     },
     "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },

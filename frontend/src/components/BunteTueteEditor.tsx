@@ -83,11 +83,11 @@ export const validateBunteMechanic = (kind: string, question: BunteTueteQuestion
     if (!payload?.statements || payload.statements.length !== 8) {
       errors.push('⚠️ Genau 8 Aussagen erforderlich');
     } else {
-      const falseCount = payload.statements.filter((s: any) => s.isFalse).length;
+      const falseCount = payload.statements.filter((s: { text: string; isFalse?: boolean }) => s.isFalse).length;
       if (falseCount !== 1) {
         errors.push(`⚠️ Genau 1 Aussage als falsch markieren (aktuell: ${falseCount})`);
       }
-      payload.statements.forEach((stmt: any, idx: number) => {
+      payload.statements.forEach((stmt: { text: string; isFalse?: boolean }, idx: number) => {
         if (!stmt.text?.trim()) {
           errors.push(`⚠️ Aussage ${String.fromCharCode(65 + idx)}: Text erforderlich`);
         }
@@ -286,18 +286,18 @@ const PrecisionEditor = ({ payload, onUpdate }: { payload: BunteTuetePrecisionPa
 
 export function BunteTueteEditor({ question, onQuestionChange }: BunteTueteEditorProps) {
   const [activeTab, setActiveTab] = useState<'top5' | 'precision' | 'oneOfEight' | 'order'>(
-    ((question.bunteTuete as any)?.kind || 'top5') as any
+    (question.bunteTuete?.kind as 'top5' | 'precision' | 'oneOfEight' | 'order') || 'top5'
   );
 
-  const payload = question.bunteTuete as any || {};
+  const payload = question.bunteTuete || {};
   const currentErrors = validateBunteMechanic(activeTab, question);
 
-  const handlePayloadUpdate = (newPayload: any) => {
+  const handlePayloadUpdate = (newPayload: BunteTuetePayload) => {
     onQuestionChange({ ...question, bunteTuete: newPayload } as BunteTueteQuestion);
   };
 
   const handleTabChange = (kind: string) => {
-    setActiveTab(kind as any);
+    setActiveTab(kind as 'top5' | 'precision' | 'oneOfEight' | 'order');
     const newPayload = buildBuntePayloadNew(kind, question.id);
     handlePayloadUpdate(newPayload);
   };

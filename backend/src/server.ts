@@ -100,6 +100,8 @@ app.get('/api/rooms/:roomCode', (req, res) => {
     teams: Object.values(room.teams).length,
     hasQuestion: Boolean(room.currentQuestionId)
   });
+});
+
 app.use('/uploads', express.static(uploadRoot));
 app.use('/api/studio', studioRoutes);
 
@@ -5367,3 +5369,6 @@ const respond = <T>(ack: unknown, payload: T) => {
     (ack as AckFn<T>)(payload);
   }
 };
+
+// End of server module
+

@@ -34,7 +34,7 @@ const shuffle = <T>(arr: T[]): T[] => {
   return copy;
 };
 
-const defaultBlitzPool: QuizBlitzTheme[] = [
+export const defaultBlitzPool: QuizBlitzTheme[] = [
   {
     id: 'blitz-buildings',
     title: '🏢 Berühmte Gebäude',

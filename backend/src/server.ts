@@ -52,6 +52,7 @@ import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
+import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language, PotatoPhase } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
@@ -99,8 +100,6 @@ app.get('/api/rooms/:roomCode', (req, res) => {
     teams: Object.values(room.teams).length,
     hasQuestion: Boolean(room.currentQuestionId)
   });
-});
-fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadRoot));
 app.use('/api/studio', studioRoutes);
 
@@ -628,16 +627,20 @@ type PotatoThemeDefinition = {
 };
 
 const buildPlaceholderBlitzPool = (draftId: string): QuizBlitzTheme[] =>
-  BLITZ_PLACEHOLDER_TITLES.map((title, themeIdx) => ({
-    id: `${draftId}-blitz-${themeIdx + 1}`,
-    title,
-    items: Array.from({ length: BLITZ_ITEMS_PER_SET }).map((_, itemIdx) => ({
-      id: `${draftId}-blitz-${themeIdx + 1}-${itemIdx + 1}`,
-      prompt: `Motiv ${itemIdx + 1}`,
-      answer: '',
-      aliases: []
-    }))
-  }));
+  defaultBlitzPool.map((theme, themeIdx) => {
+    const baseId = theme.id || `blitz-${themeIdx + 1}`;
+    return {
+      id: `${draftId}-${baseId}`,
+      title: theme.title,
+      items: theme.items.map((item, itemIdx) => ({
+        id: `${draftId}-${baseId}-${itemIdx + 1}`,
+        prompt: item.prompt,
+        answer: item.answer,
+        aliases: item.aliases,
+        mediaUrl: (item as any).mediaUrl
+      }))
+    };
+  });
 
 const buildPlaceholderPotatoPool = (): PotatoThemeDefinition[] =>
   DEFAULT_POTATO_THEMES.map((title, idx) => ({

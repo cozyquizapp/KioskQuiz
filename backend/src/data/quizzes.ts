@@ -36,36 +36,80 @@ const shuffle = <T>(arr: T[]): T[] => {
 
 const defaultBlitzPool: QuizBlitzTheme[] = [
   {
-    id: 'blitz-cities',
-    title: 'Städte-Silhouetten',
+    id: 'blitz-buildings',
+    title: '🏢 Berühmte Gebäude',
     items: [
-      { id: 'blitz-cities-1', prompt: 'Skyline mit Eiffelturm', answer: 'Paris', aliases: ['Stadt der Liebe'] },
-      { id: 'blitz-cities-2', prompt: 'Wolkenkratzer mit Empire State Building', answer: 'New York', aliases: ['NYC'] },
-      { id: 'blitz-cities-3', prompt: 'Opernhaus am Hafen', answer: 'Sydney' },
-      { id: 'blitz-cities-4', prompt: 'Kolosseum im Sonnenuntergang', answer: 'Rom' },
-      { id: 'blitz-cities-5', prompt: 'Brandenburger Tor bei Nacht', answer: 'Berlin' }
+      { id: 'blitz-buildings-1', prompt: 'Gotisches Meisterwerk in London', answer: 'Big Ben', aliases: ['Elizabeth Tower', 'Palace of Westminster'] },
+      { id: 'blitz-buildings-2', prompt: 'Weißes Mausoleum in Indien', answer: 'Taj Mahal', aliases: ['Agra'] },
+      { id: 'blitz-buildings-3', prompt: 'Kupferstatue im New Yorker Hafen', answer: 'Statue of Liberty', aliases: ['Liberty Statue'] },
+      { id: 'blitz-buildings-4', prompt: 'Bogenbrücke über die Themse', answer: 'Tower Bridge', aliases: ['London Bridge'] },
+      { id: 'blitz-buildings-5', prompt: 'Kathedrale mit schiefen Säulen in Barcelona', answer: 'Sagrada Familia', aliases: ['Gaudí'] }
     ]
   },
   {
-    id: 'blitz-snacks',
-    title: 'Snack Attack',
+    id: 'blitz-films',
+    title: '🎬 Blockbuster Poster',
     items: [
-      { id: 'blitz-snacks-1', prompt: 'Stapeln aus dünnen Kartoffelscheiben', answer: 'Chips', aliases: ['Kartoffelchips'] },
-      { id: 'blitz-snacks-2', prompt: 'Schokoladencreme im Glas mit Löffel', answer: 'Nutella' },
-      { id: 'blitz-snacks-3', prompt: 'Frisch gebackene Brezn', answer: 'Brezel', aliases: ['Brezn'] },
-      { id: 'blitz-snacks-4', prompt: 'Popcorn im Kinoeimer', answer: 'Popcorn' },
-      { id: 'blitz-snacks-5', prompt: 'Gebäck mit rosa Zuckerguss', answer: 'Donut', aliases: ['Doughnut'] }
+      { id: 'blitz-films-1', prompt: 'Science-Fiction mit blauem humanoidem Alien', answer: 'Avatar', aliases: ['Pandora'] },
+      { id: 'blitz-films-2', prompt: 'Schiff sinkt im Eiswasser', answer: 'Titanic', aliases: ['Jack Rose'] },
+      { id: 'blitz-films-3', prompt: 'Traum in Traum in Traum', answer: 'Inception', aliases: ['Nolan'] },
+      { id: 'blitz-films-4', prompt: 'Grüne digitale Welt mit schwarzem Anzug', answer: 'The Matrix', aliases: ['Neo'] },
+      { id: 'blitz-films-5', prompt: 'Dinosaurier im modernen Park', answer: 'Jurassic Park', aliases: ['Dino'] }
     ]
   },
   {
-    id: 'blitz-songs',
-    title: 'Song Lyrics',
+    id: 'blitz-gaming',
+    title: '🎮 Gaming Icons',
     items: [
-      { id: 'blitz-songs-1', prompt: '"Is this the real life, is this just fantasy?"', answer: 'Bohemian Rhapsody', aliases: ['Queen'] },
-      { id: 'blitz-songs-2', prompt: '"Cause baby you\'re a firework"', answer: 'Firework', aliases: ['Katy Perry'] },
-      { id: 'blitz-songs-3', prompt: '"We don\'t talk about..."', answer: 'Bruno', aliases: ['Encanto'] },
-      { id: 'blitz-songs-4', prompt: '"Shake it off, shake it off"', answer: 'Shake It Off' },
-      { id: 'blitz-songs-5', prompt: '"I\'m gonna swing from the chandelier"', answer: 'Chandelier' }
+      { id: 'blitz-gaming-1', prompt: 'Springender Klempner mit Schnurrbart', answer: 'Mario', aliases: ['Super Mario', 'Nintendo'] },
+      { id: 'blitz-gaming-2', prompt: 'Gelbes rundes Elektro-Pokémon', answer: 'Pikachu', aliases: ['Pokemon'] },
+      { id: 'blitz-gaming-3', prompt: 'Blauer schneller Igel mit Spikes', answer: 'Sonic', aliases: ['Sonic the Hedgehog'] },
+      { id: 'blitz-gaming-4', prompt: 'Grüner Held mit Schwert und Schild', answer: 'Link', aliases: ['Zelda'] },
+      { id: 'blitz-gaming-5', prompt: 'Brauner starker Affe in Fässern', answer: 'Donkey Kong', aliases: ['Kong'] }
+    ]
+  },
+  {
+    id: 'blitz-sports',
+    title: '🏀 Sportler Silhouetten',
+    items: [
+      { id: 'blitz-sports-1', prompt: 'Portugiesischer Fußball-Megastar', answer: 'Cristiano Ronaldo', aliases: ['Ronaldo', 'CR7'] },
+      { id: 'blitz-sports-2', prompt: 'Argentinischer Fußballer mit Nummer 10', answer: 'Messi', aliases: ['Lionel Messi'] },
+      { id: 'blitz-sports-3', prompt: 'Basketball-Legende mit Nummer 23', answer: 'Michael Jordan', aliases: ['Jordan', 'MJ'] },
+      { id: 'blitz-sports-4', prompt: 'Jamaikanischer Sprint-Weltrekordler', answer: 'Usain Bolt', aliases: ['Bolt'] },
+      { id: 'blitz-sports-5', prompt: 'Amerikanische Tennis-Großmeisterin', answer: 'Serena Williams', aliases: ['Williams'] }
+    ]
+  },
+  {
+    id: 'blitz-stadiums',
+    title: '🏟️ Stadion Silhouetten',
+    items: [
+      { id: 'blitz-stadiums-1', prompt: 'Englisches Fußball-Tempel in London', answer: 'Wembley Stadium', aliases: ['Wembley'] },
+      { id: 'blitz-stadiums-2', prompt: 'Größtes Stadion von FC Barcelona', answer: 'Camp Nou', aliases: ['Barcelona Stadium'] },
+      { id: 'blitz-stadiums-3', prompt: 'Heimat von Manchester United', answer: 'Old Trafford', aliases: ['Manchester'] },
+      { id: 'blitz-stadiums-4', prompt: 'Bayerns rotes Fußball-Stadion', answer: 'Allianz Arena', aliases: ['Bayern München'] },
+      { id: 'blitz-stadiums-5', prompt: 'Brasilianisches Fußball-Wahrzeichen', answer: 'Maracanã', aliases: ['Rio'] }
+    ]
+  },
+  {
+    id: 'blitz-theater',
+    title: '🎭 Theater & Kino',
+    items: [
+      { id: 'blitz-theater-1', prompt: 'Weißes muschelförmiges Gebäude am Hafen', answer: 'Sydney Opera House', aliases: ['Sydney Opera'] },
+      { id: 'blitz-theater-2', prompt: 'Prächtiges Opernhaus in Paris', answer: 'Palais Garnier', aliases: ['Opera Paris'] },
+      { id: 'blitz-theater-3', prompt: 'Weltberühmtes Opernhaus in Mailand', answer: 'Teatro alla Scala', aliases: ['La Scala'] },
+      { id: 'blitz-theater-4', prompt: 'Russisches Balletttheater in Moskau', answer: 'Bolschoi Theater', aliases: ['Bolshoi'] },
+      { id: 'blitz-theater-5', prompt: 'Legendäres Jazztheater in New York', answer: 'Apollo Theater', aliases: ['Apollo'] }
+    ]
+  },
+  {
+    id: 'blitz-herbs',
+    title: '🌿 Kräuter',
+    items: [
+      { id: 'blitz-herbs-1', prompt: 'Grüne breite Blätter, italienisches Aroma', answer: 'Basilikum', aliases: ['Basil'] },
+      { id: 'blitz-herbs-2', prompt: 'Kleine Blätter auf dünnem Stiel, Mittelmeer', answer: 'Oregano', aliases: ['Oreganum'] },
+      { id: 'blitz-herbs-3', prompt: 'Feine kleine Blätter auf verholztem Stiel', answer: 'Thymian', aliases: ['Thyme'] },
+      { id: 'blitz-herbs-4', prompt: 'Nadelartige Blätter, intensiver Geschmack', answer: 'Rosmarin', aliases: ['Rosemary'] },
+      { id: 'blitz-herbs-5', prompt: 'Herzförmige grüne Blätter, erfrischend', answer: 'Minze', aliases: ['Mint', 'Pfefferminze'] }
     ]
   }
 ];
@@ -75,7 +119,17 @@ const defaultPotatoThemes = [
   'Streaming-Highlights',
   '80er-Hits',
   'Urlaubsregionen in Europa',
-  'Gameshow-Legenden'
+  'Gameshow-Legenden',
+  'Weltrekorde',
+  'Legendäre Duette',
+  'Museen Europas',
+  'Craft-Beer-Sorten',
+  'Deutsche Sprichwörter',
+  'Retro-Spielkonsolen',
+  'Südamerikanische Städte',
+  'Modetrends der 2000er',
+  'Berühmte Cafés',
+  'Eissorten des Jahres'
 ];
 
 const buildBlitzPool = (quizId: string, themes: QuizBlitzTheme[]): QuizBlitzTheme[] =>

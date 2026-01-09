@@ -221,51 +221,184 @@ export function KanbanQuestionEditor({
     );
   };
 
+  const validateBunteMechanic = (kind: string, question: BunteTueteQuestion): string[] => {
+    const errors: string[] = [];
+    const payload = question.bunteTuete as any;
+
+    if (kind === 'top5') {
+      if (!payload?.correctOrder || payload.correctOrder.length !== 5) {
+        errors.push('⚠️ Genau 5 korrekte Antworten erforderlich');
+      }
+      if (!payload?.prompt) {
+        errors.push('⚠️ Frage erforderlich');
+      }
+    } else if (kind === 'precision') {
+      if (!payload?.prompt) {
+        errors.push('⚠️ Frage erforderlich');
+      }
+      if (!payload?.ladder || payload.ladder.length === 0) {
+        errors.push('⚠️ Mindestens 1 Genauigkeitsstufe erforderlich');
+      } else {
+        payload.ladder.forEach((step: any, idx: number) => {
+          if (!step.label) errors.push(`⚠️ Stufe ${idx + 1}: Label erforderlich`);
+          if (step.acceptedAnswers.length === 0) {
+            errors.push(`⚠️ Stufe ${idx + 1}: Mindestens 1 Beispiel-Antwort erforderlich`);
+          }
+        });
+      }
+    } else if (kind === 'oneOfEight') {
+      if (!payload?.prompt) {
+        errors.push('⚠️ Frage erforderlich');
+      }
+      if (!payload?.statements || payload.statements.length !== 8) {
+        errors.push('⚠️ Genau 8 Aussagen erforderlich');
+      } else {
+        const falseCount = payload.statements.filter((s: any) => s.isFalse).length;
+        if (falseCount !== 1) {
+          errors.push(`⚠️ Genau 1 Aussage als falsch markieren (aktuell: ${falseCount})`);
+        }
+        payload.statements.forEach((stmt: any, idx: number) => {
+          if (!stmt.text?.trim()) {
+            errors.push(`⚠️ Aussage ${String.fromCharCode(65 + idx)}: Text erforderlich`);
+          }
+        });
+      }
+    } else if (kind === 'order') {
+      if (!payload?.prompt) {
+        errors.push('⚠️ Frage erforderlich');
+      }
+      if (!payload?.items || payload.items.length < 2) {
+        errors.push('⚠️ Mindestens 2 Items erforderlich');
+      } else {
+        payload.items.forEach((item: any, idx: number) => {
+          if (!item.label?.trim()) {
+            errors.push(`⚠️ Item ${idx + 1}: Text erforderlich`);
+          }
+        });
+      }
+    }
+
+    return errors;
+  };
+
   const renderBunteTuete = () => {
     const q = localQuestion as BunteTueteQuestion;
     const bunteKindValue = (q.bunteTuete as any)?.kind || bunteTueteTab;
     const activeMechanicKind = bunteTueteTab;
 
     const mechanicConfigs = [
-      { kind: 'top5', label: '🏆 Top 5', icon: '🏆', color: '#f59e0b' },
-      { kind: 'precision', label: '🎯 Präzision', icon: '🎯', color: '#3b82f6' },
-      { kind: 'oneOfEight', label: '🚫 1 falsch', icon: '🚫', color: '#ef4444' },
-      { kind: 'order', label: '📋 Ordnen', icon: '📋', color: '#10b981' }
+      { 
+        kind: 'top5', 
+        label: '🏆 Top 5', 
+        icon: '🏆', 
+        color: '#f59e0b',
+        description: 'Teams geben 5 Antworten ein und ordnen sie nach Häufigkeit/Wichtigkeit'
+      },
+      { 
+        kind: 'precision', 
+        label: '🎯 Präzision', 
+        icon: '🎯', 
+        color: '#3b82f6',
+        description: 'Numerische Genauigkeit mit mehreren Stufen (z.B. Jahreszahl erraten)'
+      },
+      { 
+        kind: 'oneOfEight', 
+        label: '🚫 1 falsch', 
+        icon: '🚫', 
+        color: '#ef4444',
+        description: 'Genau eine von 8 Aussagen ist falsch'
+      },
+      { 
+        kind: 'order', 
+        label: '📋 Ordnen', 
+        icon: '📋', 
+        color: '#10b981',
+        description: 'Items in richtige Reihenfolge sortieren'
+      }
     ];
+
+    const currentErrors = validateBunteMechanic(activeMechanicKind as string, q);
 
     return (
       <div style={formSectionStyle}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ ...labelStyle, marginBottom: 12 }}>🎲 Bunte Tüte - Wähle eine Mechanik:</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-            {mechanicConfigs.map((config) => (
-              <button
-                key={config.kind}
-                onClick={() => {
-                  setBunteTueteTab(config.kind as any);
-                  // Ändere auch die Kind-Mechanik
-                  setLocalQuestion(prev => {
-                    const payload = buildBuntePayloadNew(config.kind as any, prev.id);
-                    return { ...prev, bunteTuete: payload } as BunteTueteQuestion;
-                  });
-                }}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 8,
-                  border: activeMechanicKind === config.kind ? `2px solid ${config.color}` : '1px solid rgba(148,163,184,0.3)',
-                  background: activeMechanicKind === config.kind ? `${config.color}20` : 'rgba(30,41,59,0.4)',
-                  color: activeMechanicKind === config.kind ? config.color : '#cbd5e1',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: activeMechanicKind === config.kind ? 700 : 500,
-                  transition: 'all 0.2s'
-                }}
-              >
-                {config.label}
-              </button>
-            ))}
+            {mechanicConfigs.map((config) => {
+              const configErrors = validateBunteMechanic(config.kind as string, q);
+              const isActive = activeMechanicKind === config.kind;
+              const hasErrors = configErrors.length > 0;
+              
+              return (
+                <div key={config.kind} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => {
+                      setBunteTueteTab(config.kind as any);
+                      setLocalQuestion(prev => {
+                        const payload = buildBuntePayloadNew(config.kind as any, prev.id);
+                        return { ...prev, bunteTuete: payload } as BunteTueteQuestion;
+                      });
+                    }}
+                    title={config.description}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: isActive ? `2px solid ${config.color}` : `1px solid ${hasErrors ? '#ef4444' : 'rgba(148,163,184,0.3)'}`,
+                      background: isActive ? `${config.color}20` : (hasErrors ? 'rgba(239,68,68,0.1)' : 'rgba(30,41,59,0.4)'),
+                      color: isActive ? config.color : (hasErrors ? '#ef4444' : '#cbd5e1'),
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: isActive ? 700 : 500,
+                      transition: 'all 0.2s',
+                      width: '100%',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{config.label}</span>
+                      {hasErrors && <span style={{ fontSize: 10, opacity: 0.7 }}>⚠️</span>}
+                    </div>
+                  </button>
+                  
+                  {/* Tooltip mit Beschreibung */}
+                  {isActive && (
+                    <div style={{
+                      fontSize: 11,
+                      opacity: 0.7,
+                      marginTop: 4,
+                      color: config.color,
+                      fontStyle: 'italic'
+                    }}>
+                      💡 {config.description}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Fehler-Anzeige */}
+        {currentErrors.length > 0 && (
+          <div style={{
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 16
+          }}>
+            <div style={{ fontWeight: 600, fontSize: 12, color: '#fca5a5', marginBottom: 6 }}>
+              ❌ Validierungsfehler:
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12 }}>
+              {currentErrors.map((err, idx) => (
+                <li key={idx} style={{ color: '#fca5a5', marginBottom: 2 }}>
+                  {err}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Aktuell gewählte Mechanik rendern */}
         <div style={{ background: 'rgba(30,41,59,0.6)', borderRadius: 12, padding: 16, border: '1px solid rgba(148,163,184,0.2)' }}>

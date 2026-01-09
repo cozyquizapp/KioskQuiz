@@ -10,6 +10,26 @@ import type {
 } from '@shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '@shared/cozyTemplate';
 import { BunteTueteEditor } from './BunteTueteEditor';
+import {
+  modalOverlayStyle,
+  modalStyle,
+  modalHeaderStyle,
+  modalContentStyle,
+  modalFooterStyle,
+  formSectionStyle,
+  labelStyle,
+  inputStyle,
+  textareaStyle,
+  selectStyle,
+  uploadButtonStyle,
+  closeButtonStyle,
+  deleteButtonStyle,
+  cancelButtonStyle,
+  saveButtonStyle,
+  imagePreviewStyle,
+  errorNotificationStyle,
+  successNotificationStyle
+} from './editorStyles';
 
 interface KanbanQuestionEditorProps {
   question: AnyQuestion;
@@ -33,15 +53,33 @@ export function KanbanQuestionEditor({
 }: KanbanQuestionEditorProps) {
   const [localQuestion, setLocalQuestion] = useState<AnyQuestion>(question);
   const [imagePreview, setImagePreview] = useState<string | null>(question.imageUrl || null);
+  const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const slot = COZY_SLOT_TEMPLATE[slotIndex];
   const mechanic = slot?.type || question.type;
   const bunteKind = slot?.bunteKind;
 
+  const showNotification = (type: 'error' | 'success', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showNotification('error', '❌ Nur Bilddateien erlaubt');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification('error', '❌ Bild zu groß (max. 5MB)');
+      return;
+    }
 
     // Show preview immediately
     const reader = new FileReader();
@@ -62,14 +100,20 @@ export function KanbanQuestionEditor({
         body: formData
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Upload failed');
+      }
 
       const data = await response.json();
       setLocalQuestion(prev => ({ ...prev, imageUrl: data.imageUrl }));
       setImagePreview(data.imageUrl);
+      showNotification('success', '✅ Bild erfolgreich hochgeladen');
     } catch (err) {
       console.error('Image upload error:', err);
-      alert('Bild-Upload fehlgeschlagen');
+      showNotification('error', `❌ Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+      // Revert preview on error
+      setImagePreview(question.imageUrl || null);
     }
   };
 
@@ -216,8 +260,16 @@ export function KanbanQuestionEditor({
   };
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalStyle}>
+    <>
+      {/* Notification */}
+      {notification && (
+        <div style={notification.type === 'error' ? errorNotificationStyle : successNotificationStyle}>
+          {notification.message}
+        </div>
+      )}
+
+      <div style={modalOverlayStyle}>
+        <div style={modalStyle}>
         {/* Header */}
         <div style={modalHeaderStyle}>
           <div>
@@ -349,147 +401,8 @@ export function KanbanQuestionEditor({
         </div>
       </div>
     </div>
+    </>
   );
 }
-
-// Styles
-const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  background: 'rgba(0,0,0,0.8)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: 20
-};
-
-const modalStyle: React.CSSProperties = {
-  background: 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(10,14,24,0.98))',
-  border: '1px solid rgba(148,163,184,0.2)',
-  borderRadius: 16,
-  width: '100%',
-  maxWidth: 700,
-  maxHeight: '90vh',
-  display: 'flex',
-  flexDirection: 'column',
-  boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-};
-
-const modalHeaderStyle: React.CSSProperties = {
-  padding: '20px 24px',
-  borderBottom: '1px solid rgba(148,163,184,0.2)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-};
-
-const modalContentStyle: React.CSSProperties = {
-  padding: '24px',
-  overflowY: 'auto',
-  flex: 1
-};
-
-const modalFooterStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  borderTop: '1px solid rgba(148,163,184,0.2)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-};
-
-const formSectionStyle: React.CSSProperties = {
-  marginBottom: 20
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 12,
-  fontWeight: 700,
-  color: '#cbd5e1',
-  marginBottom: 8,
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px'
-};
-
-const inputStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
-  borderRadius: 8,
-  padding: '10px 12px',
-  color: '#f1f5f9',
-  fontSize: 14,
-  width: '100%',
-  outline: 'none'
-};
-
-const textareaStyle: React.CSSProperties = {
-  ...inputStyle,
-  resize: 'vertical',
-  fontFamily: 'inherit'
-};
-
-const selectStyle: React.CSSProperties = {
-  ...inputStyle
-};
-
-const uploadButtonStyle: React.CSSProperties = {
-  background: 'rgba(59,130,246,0.2)',
-  border: '1px solid rgba(59,130,246,0.4)',
-  borderRadius: 8,
-  padding: '10px 16px',
-  color: '#60a5fa',
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontSize: 13
-};
-
-const imagePreviewStyle: React.CSSProperties = {
-  marginBottom: 12,
-  textAlign: 'center'
-};
-
-const closeButtonStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: 8,
-  color: '#e2e8f0',
-  cursor: 'pointer',
-  padding: '6px 12px',
-  fontSize: 14
-};
-
-const deleteButtonStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  borderRadius: 8,
-  border: '1px solid rgba(239,68,68,0.4)',
-  background: 'rgba(239,68,68,0.1)',
-  color: '#fca5a5',
-  cursor: 'pointer',
-  fontWeight: 600
-};
-
-const cancelButtonStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.12)',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#e2e8f0',
-  cursor: 'pointer',
-  fontWeight: 600
-};
-
-const saveButtonStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  borderRadius: 8,
-  border: '1px solid rgba(34,211,238,0.4)',
-  background: 'rgba(34,211,238,0.2)',
-  color: '#22d3ee',
-  cursor: 'pointer',
-  fontWeight: 600
-};
 
 export default KanbanQuestionEditor;

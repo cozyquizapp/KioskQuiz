@@ -6,19 +6,19 @@ import type {
   BunteTueteOneOfEightPayload,
   BunteTueteOrderPayload
 } from '@shared/quizTypes';
+import {
+  formSectionStyle,
+  labelStyle,
+  inputStyle,
+  textareaStyle,
+  uploadButtonStyle,
+  deleteButtonStyle
+} from './editorStyles';
 
 interface BunteTueteEditorProps {
   question: BunteTueteQuestion;
   onQuestionChange: (q: BunteTueteQuestion) => void;
 }
-
-// Shared styles
-const formSectionStyle = { marginBottom: 20 };
-const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#cbd5e1' };
-const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: 6, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.3)', color: '#e2e8f0', fontSize: 13, marginBottom: 8, fontFamily: 'inherit' };
-const textareaStyle = { width: '100%', padding: '8px 12px', borderRadius: 6, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.3)', color: '#e2e8f0', fontSize: 13, marginBottom: 8, fontFamily: 'inherit', resize: 'vertical' as const };
-const uploadButtonStyle = { padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.2s', width: 'auto' };
-const deleteButtonStyle = { padding: '8px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 };
 
 export const BUNTU_MECHANIC_CONFIGS = [
   { 

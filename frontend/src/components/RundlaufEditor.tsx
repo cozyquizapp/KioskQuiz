@@ -16,7 +16,7 @@ const AVAILABLE_CATEGORIES: QuizCategory[] = [
 ];
 
 export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState<QuizCategory | ''>('');
 
   const addCategory = (cat: string) => {
     if (cat && !config.pool.includes(cat)) {
@@ -50,7 +50,7 @@ export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
             <option value="">Kategorie wählen...</option>
             {AVAILABLE_CATEGORIES.map((cat) => (
               <option key={cat} value={cat} disabled={config.pool.includes(cat)}>
-                {(categoryLabels as any)[cat]?.de || cat}
+                {categoryLabels[cat]?.de || cat}
               </option>
             ))}
           </select>
@@ -74,7 +74,7 @@ export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
           {config.pool.map((cat) => (
             <div key={cat} style={categoryCardStyle}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>
-                {(categoryLabels as any)[cat]?.de || cat}
+                {categoryLabels[cat as QuizCategory]?.de || cat}
               </span>
               <button
                 onClick={() => removeCategory(cat)}

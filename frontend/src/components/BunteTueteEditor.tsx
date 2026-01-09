@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { 
   BunteTueteQuestion,
+  BunteTuetePayload,
   BunteTueteTop5Payload,
   BunteTuetePrecisionPayload,
   BunteTueteOneOfEightPayload,
@@ -111,10 +112,10 @@ export const validateBunteMechanic = (kind: string, question: BunteTueteQuestion
   return errors;
 };
 
-export const buildBuntePayloadNew = (kind: string, baseId: string) => {
+export const buildBuntePayloadNew = (kind: string, baseId: string): BunteTuetePayload => {
   if (kind === 'precision') {
     return {
-      kind,
+      kind: 'precision' as const,
       prompt: 'Schaetze moeglichst genau.',
       ladder: [
         { label: 'Guter Treffer', acceptedAnswers: [''], points: 2 },
@@ -126,22 +127,29 @@ export const buildBuntePayloadNew = (kind: string, baseId: string) => {
   }
   if (kind === 'oneOfEight') {
     return {
-      kind,
+      kind: 'oneOfEight' as const,
       prompt: 'Welche eine Aussage ist falsch?',
-      statements: Array.from({ length: 8 }).map((_, idx) => ({ id: `${baseId}-stmt-${idx + 1}`, label: `Aussage ${idx + 1}` })),
-      wrongStatementId: `${baseId}-stmt-1`
+      statements: Array.from({ length: 8 }).map((_, idx) => ({ 
+        id: `${baseId}-stmt-${idx + 1}`, 
+        text: `Aussage ${idx + 1}`, 
+        isFalse: idx === 0 
+      }))
     };
   }
   if (kind === 'order') {
     return {
-      kind,
+      kind: 'order' as const,
       prompt: 'Ordne diese Dinge richtig!',
       items: Array.from({ length: 5 }).map((_, idx) => ({ id: `${baseId}-item-${idx + 1}`, label: `Item ${idx + 1}` })),
-      correctOrder: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)
+      criteriaOptions: [{ id: 'default', label: 'Standard', direction: 'asc' as const }],
+      defaultCriteriaId: 'default',
+      correctByCriteria: {
+        default: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)
+      }
     };
   }
   return {
-    kind: 'top5',
+    kind: 'top5' as const,
     prompt: 'Ordnet die fuenf Eintraege.',
     items: Array.from({ length: 5 }).map((_, idx) => ({ id: `${baseId}-item-${idx + 1}`, label: `Item ${idx + 1}` })),
     correctOrder: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)

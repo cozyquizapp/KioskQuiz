@@ -512,7 +512,7 @@ const ImprovedCozy60BuilderPage = () => {
                     <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
                       {draft.blitz.pool.map((t, i) => (
                         <li key={i} style={{ fontSize: 13 }}>
-                          <strong>{t.theme}</strong> – {t.items?.length || 0} Bilder
+                          <strong>{t.title || 'Theme'}</strong> – {t.items?.length || 0} Bilder
                         </li>
                       ))}
                     </ul>
@@ -527,7 +527,7 @@ const ImprovedCozy60BuilderPage = () => {
                     <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
                       {draft.rundlauf.pool.map((t, i) => (
                         <li key={i} style={{ fontSize: 13 }}>
-                          <strong>{t.label}</strong> – {t.questions?.length || 0} Fragen
+                          <strong>{typeof t === 'string' ? t : t}</strong> – Kategorie
                         </li>
                       ))}
                     </ul>

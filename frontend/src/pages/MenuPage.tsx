@@ -12,7 +12,9 @@ const liveLinks: LinkItem[] = [
 ];
 
 const builderLinks: LinkItem[] = [
-  { path: '/cozy60-builder', label: 'Cozy60 Builder', note: '20 Fragen + Fotoblitz & Rundlauf pflegen' }
+  { path: '/kanban-builder', label: 'Kanban Quiz Builder', note: 'Visueller Builder mit Drag & Drop' },
+  { path: '/question-catalog', label: 'Fragenbibliothek', note: 'Alle Fragen durchsuchen & bearbeiten' },
+  { path: '/cozy60-builder', label: 'Cozy60 Builder (alt)', note: '20 Fragen + Fotoblitz & Rundlauf pflegen' }
 ];
 
 const toolsLinks: LinkItem[] = [
@@ -116,7 +118,7 @@ const MenuPage = () => {
 
         <div style={{ display: 'grid', gap: 18 }}>
           <CardList title="Live spielen" subtitle="Moderator -> Beamer -> Team" links={liveLinks} />
-          <CardList title="Erstellen" subtitle="Cozy60 Builder" links={builderLinks} />
+          <CardList title="Quiz erstellen & verwalten" subtitle="Builder & Fragenkatalog" links={builderLinks} />
           {showLegacyTools && (
             <div
               style={{

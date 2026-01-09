@@ -65,7 +65,6 @@ import {
   timerPill,
   questionStyleTeam
 } from './teamStyles';
-import { featureFlags } from '../config/features';
 
 type Phase = 'notJoined' | 'waitingForQuestion' | 'intro' | 'answering' | 'waitingForResult' | 'showResult';
 

@@ -12,6 +12,9 @@ import DraftImportPage from './pages/DraftImportPage';
 import BaukastenNeuPage from './pages/BaukastenNeuPage';
 import BingoPrintPage from './pages/BingoPrintPage';
 import Cozy60BuilderPage from './pages/Cozy60BuilderPage';
+import ImprovedCozy60BuilderPage from './pages/ImprovedCozy60BuilderPage';
+import QuestionCatalogPage from './pages/QuestionCatalogPage';
+import LandingPage from './pages/LandingPage';
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -108,28 +111,31 @@ function App() {
     <AppErrorBoundary>
       <GlobalErrorOverlay />
       <Routes>
-      <Route path="/" element={<Navigate to="/team" replace />} />
-      <Route path="/menu" element={<MenuPage />} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/team" element={<TeamPage />} />
-      <Route path="/beamer" element={<BeamerPage />} />
-      <Route path="/beamer/:roomCode" element={<BeamerPage />} />
-      <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
-      <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/question-editor" element={<QuestionEditorPage />} />
-      <Route path="/moderator" element={<ModeratorPage />} />
-      <Route path="/intro" element={<IntroSlidesPage />} />
-      <Route path="/bingo" element={<BingoPrintPage />} />
-      <Route path="/cozy60-builder" element={<Cozy60BuilderPage />} />
-      <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
-      <Route path="/stats" element={<StatsPage />} />
-      <Route path="/draft-import" element={<DraftImportPage />} />
-      <Route path="*" element={<Navigate to="/team" replace />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/welcome" element={<LandingPage />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/team" element={<TeamPage />} />
+        <Route path="/beamer" element={<BeamerPage />} />
+        <Route path="/beamer/:roomCode" element={<BeamerPage />} />
+        <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
+        <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/question-editor" element={<QuestionEditorPage />} />
+        <Route path="/moderator" element={<ModeratorPage />} />
+        <Route path="/intro" element={<IntroSlidesPage />} />
+        <Route path="/bingo" element={<BingoPrintPage />} />
+        <Route path="/cozy60-builder" element={<Cozy60BuilderPage />} />
+        <Route path="/question-catalog" element={<QuestionCatalogPage />} />
+        <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
+        <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
+        <Route path="/stats" element={<StatsPage />} />
+        <Route path="/draft-import" element={<DraftImportPage />} />
+        <Route path="*" element={<Navigate to="/team" replace />} />
       </Routes>
     </AppErrorBoundary>
   );

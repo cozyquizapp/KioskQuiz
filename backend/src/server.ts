@@ -4521,6 +4521,43 @@ app.post('/api/questions', (req, res) => {
   return res.json({ ok: true, question: created });
 });
 
+// Bulk-Upload von Fragen
+app.post('/api/questions/bulk', (req, res) => {
+  const { questions: questionsToAdd } = req.body as { questions: Partial<AnyQuestion>[] };
+  if (!Array.isArray(questionsToAdd) || questionsToAdd.length === 0) {
+    return res.status(400).json({ error: 'questions array erforderlich' });
+  }
+
+  const created: AnyQuestion[] = [];
+  for (const q of questionsToAdd) {
+    const { id, category, mechanic, question, points = 1, ...rest } = q;
+    if (!category || !mechanic || !question) continue; // Skip invalid questions
+    
+    const newId = id && typeof id === 'string' ? id : uuid();
+    if (questionById.has(newId)) continue; // Skip duplicates
+    
+    const newQuestion: AnyQuestion = {
+      id: newId,
+      category: category as QuizCategory,
+      mechanic: mechanic as AnyQuestion['mechanic'],
+      question,
+      points: Number(points) || 1,
+      createdAt: Date.now(),
+      catalogId: (rest as any)?.catalogId || 'default',
+      mediaSlots: (rest as any)?.mediaSlots,
+      ...(rest as any)
+    };
+    
+    customQuestions.push(newQuestion);
+    questions.push(newQuestion);
+    questionById.set(newId, newQuestion);
+    created.push(newQuestion);
+  }
+
+  persistCustomQuestions();
+  return res.json({ ok: true, count: created.length, questions: created });
+});
+
 // Frage aktualisieren (nur f?r Custom empfohlen)
 app.put('/api/questions/:id', (req, res) => {
   const { id } = req.params;

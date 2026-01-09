@@ -89,16 +89,26 @@ export interface BunteTueteListItem {
 export interface BunteTueteTop5Payload {
   kind: 'top5';
   prompt: string;
-  items: BunteTueteListItem[];
-  correctOrder: string[];
-  scoringMode?: 'position' | 'contains';
+  items?: BunteTueteListItem[]; // Optional: Für Anzeige der Auflösung mit Plätzen
+  correctOrder: string[]; // Die 5 korrekten Antworten (Strings, keine IDs!)
+  scoringMode?: 'position' | 'contains'; // 'contains' = nur ob in Top 5 (Standard), 'position' = exakte Position
   maxPoints?: number;
 }
 
 export interface BunteTuetePrecisionStep {
   label: string;
-  acceptedAnswers: string[];
+  acceptedAnswers: string[]; // Beispiel-Antworten für Moderator
   points: number;
+  
+  // Erweiterte Auto-Match Optionen:
+  numericRange?: { min: number; max: number }; // Z.B. 1987-1991 für "nah dran"
+  regexPattern?: string; // Z.B. "198[0-9]" für 1980er
+  fuzzyMatch?: boolean; // Erlaubt ähnliche Strings (z.B. "neunzehnhundertneunundachtzig" = "1989")
+  caseSensitive?: boolean; // Standard: false
+  
+  // Hinweise für Moderator:
+  examples?: string[]; // Weitere Beispiele zur Orientierung
+  description?: string; // "Exakte Jahreszahl" oder "Ungefähres Jahrzehnt"
 }
 
 export interface BunteTuetePrecisionPayload {
@@ -107,6 +117,10 @@ export interface BunteTuetePrecisionPayload {
   ladder: BunteTuetePrecisionStep[];
   similarityThreshold?: number;
   maxPoints?: number;
+  
+  // Moderator-Modus:
+  requiresModeratorReview?: boolean; // true = Moderator muss alle Antworten manuell bewerten
+  autoMatchEnabled?: boolean; // false = komplett manuell, true = versuche Auto-Match
 }
 
 export interface BunteTueteOneOfEightPayload {

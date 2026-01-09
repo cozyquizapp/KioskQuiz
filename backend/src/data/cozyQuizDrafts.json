@@ -1,0 +1,2196 @@
+[
+  {
+    "id": "cozy-draft-16f2dd61",
+    "meta": {
+      "title": "Neues Cozy Quiz 60",
+      "language": "de",
+      "date": 1767961395143,
+      "description": null
+    },
+    "questions": [
+      {
+        "id": "cozy-draft-16f2dd61-q01",
+        "question": "Slot 1 - Multiple Choice Warmup",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q02",
+        "question": "Slot 2 - Schaetzfrage",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q03",
+        "question": "Slot 3 - Stimmts / 10 Punkte verteilen",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q04",
+        "question": "Slot 4 - Cheese (Bildfrage)",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q05",
+        "question": "Slot 5 - Bunte Tuete Top 5",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Ordnet die fuenf Eintraege. 1 = oberste Position.",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-q05-top-1",
+              "label": "Option 1"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q05-top-2",
+              "label": "Option 2"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q05-top-3",
+              "label": "Option 3"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q05-top-4",
+              "label": "Option 4"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q05-top-5",
+              "label": "Option 5"
+            }
+          ],
+          "correctOrder": [
+            "cozy-draft-16f2dd61-q05-top-1",
+            "cozy-draft-16f2dd61-q05-top-2",
+            "cozy-draft-16f2dd61-q05-top-3",
+            "cozy-draft-16f2dd61-q05-top-4",
+            "cozy-draft-16f2dd61-q05-top-5"
+          ],
+          "scoringMode": "position",
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q06",
+        "question": "Slot 6 - Bunte Tuete 8 Dinge, 1 falsch",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "oneOfEight",
+          "prompt": "Sieben Aussagen stimmen, eine ist falsch.",
+          "statements": [
+            {
+              "id": "A",
+              "text": "Statement 1",
+              "isFalse": true
+            },
+            {
+              "id": "B",
+              "text": "Statement 2",
+              "isFalse": false
+            },
+            {
+              "id": "C",
+              "text": "Statement 3",
+              "isFalse": false
+            },
+            {
+              "id": "D",
+              "text": "Statement 4",
+              "isFalse": false
+            },
+            {
+              "id": "E",
+              "text": "Statement 5",
+              "isFalse": false
+            },
+            {
+              "id": "F",
+              "text": "Statement 6",
+              "isFalse": false
+            },
+            {
+              "id": "G",
+              "text": "Statement 7",
+              "isFalse": false
+            },
+            {
+              "id": "H",
+              "text": "Statement 8",
+              "isFalse": false
+            }
+          ],
+          "chooseMode": "id",
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q07",
+        "question": "Slot 7 - Bunte Tuete Ordnen",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Ordnet die Items nach dem gewaehlten Kriterium.",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-q07-item-1",
+              "label": "Item 1"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q07-item-2",
+              "label": "Item 2"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q07-item-3",
+              "label": "Item 3"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q07-item-4",
+              "label": "Item 4"
+            }
+          ],
+          "criteriaOptions": [
+            {
+              "id": "default",
+              "label": "Standard",
+              "direction": "asc"
+            }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "cozy-draft-16f2dd61-q07-item-1",
+              "cozy-draft-16f2dd61-q07-item-2",
+              "cozy-draft-16f2dd61-q07-item-3",
+              "cozy-draft-16f2dd61-q07-item-4"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 2,
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q08",
+        "question": "Slot 8 - Cheese (Bildfrage)",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q09",
+        "question": "Slot 9 - Multiple Choice",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q10",
+        "question": "Slot 10 - Schaetzfrage",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q11",
+        "question": "Slot 11 - Stimmts / 10 Punkte verteilen",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q12",
+        "question": "Slot 12 - Cheese (Bildfrage)",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q13",
+        "question": "Slot 13 - Bunte Tuete Praezisiere Antwort",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "precision",
+          "prompt": "Praezisiere eure Antwort. Ladder von exakt bis grob.",
+          "ladder": [
+            {
+              "label": "Exakt",
+              "acceptedAnswers": [
+                ""
+              ],
+              "points": 3
+            },
+            {
+              "label": "Nah dran",
+              "acceptedAnswers": [
+                ""
+              ],
+              "points": 2
+            }
+          ],
+          "similarityThreshold": 0.82,
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q14",
+        "question": "Slot 14 - Multiple Choice",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q15",
+        "question": "Slot 15 - Schaetzfrage",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q16",
+        "question": "Slot 16 - Bunte Tuete Ordnen",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Ordnet die Items nach dem gewaehlten Kriterium.",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-q16-item-1",
+              "label": "Item 1"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q16-item-2",
+              "label": "Item 2"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q16-item-3",
+              "label": "Item 3"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q16-item-4",
+              "label": "Item 4"
+            }
+          ],
+          "criteriaOptions": [
+            {
+              "id": "default",
+              "label": "Standard",
+              "direction": "asc"
+            }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "cozy-draft-16f2dd61-q16-item-1",
+              "cozy-draft-16f2dd61-q16-item-2",
+              "cozy-draft-16f2dd61-q16-item-3",
+              "cozy-draft-16f2dd61-q16-item-4"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 3,
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q17",
+        "question": "Slot 17 - Cheese (Bildfrage)",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q18",
+        "question": "Slot 18 - Multiple Choice",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q19",
+        "question": "Slot 19 - Schaetzfrage",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-16f2dd61-q20",
+        "question": "Slot 20 - Bunte Tuete Top 5",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Ordnet die fuenf Eintraege. 1 = oberste Position.",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-q20-top-1",
+              "label": "Option 1"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q20-top-2",
+              "label": "Option 2"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q20-top-3",
+              "label": "Option 3"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q20-top-4",
+              "label": "Option 4"
+            },
+            {
+              "id": "cozy-draft-16f2dd61-q20-top-5",
+              "label": "Option 5"
+            }
+          ],
+          "correctOrder": [
+            "cozy-draft-16f2dd61-q20-top-1",
+            "cozy-draft-16f2dd61-q20-top-2",
+            "cozy-draft-16f2dd61-q20-top-3",
+            "cozy-draft-16f2dd61-q20-top-4",
+            "cozy-draft-16f2dd61-q20-top-5"
+          ],
+          "scoringMode": "position",
+          "maxPoints": 3
+        }
+      }
+    ],
+    "blitz": {
+      "pool": [
+        {
+          "id": "cozy-draft-16f2dd61-blitz-1",
+          "title": "City Skylines",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-1-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-1-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-1-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-1-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-1-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-2",
+          "title": "Snack Attack",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-2-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-2-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-2-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-2-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-2-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-3",
+          "title": "Pop Lyrics",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-3-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-3-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-3-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-3-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-3-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-4",
+          "title": "Streaming Gesichter",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-4-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-4-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-4-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-4-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-4-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-5",
+          "title": "Travel Icons",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-5-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-5-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-5-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-5-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-5-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-6",
+          "title": "Retro Games",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-6-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-6-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-6-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-6-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-6-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-7",
+          "title": "Sport Flash",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-7-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-7-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-7-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-7-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-7-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-8",
+          "title": "Emoji Stories",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-8-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-8-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-8-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-8-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-8-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-9",
+          "title": "Logo Guessing",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-9-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-9-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-9-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-9-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-9-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-10",
+          "title": "Fashion Notes",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-10-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-10-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-10-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-10-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-10-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-11",
+          "title": "Nature Closeups",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-11-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-11-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-11-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-11-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-11-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-12",
+          "title": "Art Classics",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-12-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-12-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-12-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-12-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-12-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-13",
+          "title": "World Records",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-13-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-13-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-13-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-13-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-13-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-16f2dd61-blitz-14",
+          "title": "Random Mix",
+          "items": [
+            {
+              "id": "cozy-draft-16f2dd61-blitz-14-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-14-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-14-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-14-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-16f2dd61-blitz-14-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        }
+      ]
+    },
+    "potatoPool": [
+      {
+        "id": "default-potato-1",
+        "title": "Songs mit Städtenamen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-2",
+        "title": "Filme aus den 90ern",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-3",
+        "title": "Berühmte Duos",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-4",
+        "title": "Kartoffelgerichte",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-5",
+        "title": "Sportarten mit Ball",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-6",
+        "title": "Wörter mit Doppelbuchstaben",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-7",
+        "title": "Fragen zu Europa",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-8",
+        "title": "Süßigkeitenmarken",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-9",
+        "title": "Fabelwesen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-10",
+        "title": "Berge in Europa",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-11",
+        "title": "Streetfood Klassiker",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-12",
+        "title": "Streaming Hits",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-13",
+        "title": "Nordische Mythen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-14",
+        "title": "Retro Spielkonsolen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      }
+    ],
+    "rundlauf": {
+      "pool": [
+        "HAUPTSTAEDTE AFRIKA",
+        "DEUTSCHE STAEDTE",
+        "US BUNDESSTAATEN",
+        "FILMTITEL",
+        "MARKEN",
+        "TIERARTEN"
+      ],
+      "turnDurationMs": 7000,
+      "pointsWinner": 3,
+      "pointsTie": 1
+    },
+    "enableBingo": false,
+    "createdAt": 1767961395143,
+    "updatedAt": 1767961395143,
+    "status": "draft",
+    "lastPublishedAt": null
+  },
+  {
+    "id": "cozy-draft-90d044a2",
+    "meta": {
+      "title": "Neues Cozy Quiz 60",
+      "language": "de",
+      "date": 1767961750692,
+      "description": null
+    },
+    "questions": [
+      {
+        "id": "cozy-draft-90d044a2-q01",
+        "question": "Slot 1 - Multiple Choice Warmup",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-90d044a2-q02",
+        "question": "Slot 2 - Schaetzfrage",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q03",
+        "question": "Slot 3 - Stimmts / 10 Punkte verteilen",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "cozy-draft-90d044a2-q04",
+        "question": "Slot 4 - Cheese (Bildfrage)",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q05",
+        "question": "Slot 5 - Bunte Tuete Top 5",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Ordnet die fuenf Eintraege. 1 = oberste Position.",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-q05-top-1",
+              "label": "Option 1"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q05-top-2",
+              "label": "Option 2"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q05-top-3",
+              "label": "Option 3"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q05-top-4",
+              "label": "Option 4"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q05-top-5",
+              "label": "Option 5"
+            }
+          ],
+          "correctOrder": [
+            "cozy-draft-90d044a2-q05-top-1",
+            "cozy-draft-90d044a2-q05-top-2",
+            "cozy-draft-90d044a2-q05-top-3",
+            "cozy-draft-90d044a2-q05-top-4",
+            "cozy-draft-90d044a2-q05-top-5"
+          ],
+          "scoringMode": "position",
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-90d044a2-q06",
+        "question": "Slot 6 - Bunte Tuete 8 Dinge, 1 falsch",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "oneOfEight",
+          "prompt": "Sieben Aussagen stimmen, eine ist falsch.",
+          "statements": [
+            {
+              "id": "A",
+              "text": "Statement 1",
+              "isFalse": true
+            },
+            {
+              "id": "B",
+              "text": "Statement 2",
+              "isFalse": false
+            },
+            {
+              "id": "C",
+              "text": "Statement 3",
+              "isFalse": false
+            },
+            {
+              "id": "D",
+              "text": "Statement 4",
+              "isFalse": false
+            },
+            {
+              "id": "E",
+              "text": "Statement 5",
+              "isFalse": false
+            },
+            {
+              "id": "F",
+              "text": "Statement 6",
+              "isFalse": false
+            },
+            {
+              "id": "G",
+              "text": "Statement 7",
+              "isFalse": false
+            },
+            {
+              "id": "H",
+              "text": "Statement 8",
+              "isFalse": false
+            }
+          ],
+          "chooseMode": "id",
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-90d044a2-q07",
+        "question": "Slot 7 - Bunte Tuete Ordnen",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Ordnet die Items nach dem gewaehlten Kriterium.",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-q07-item-1",
+              "label": "Item 1"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q07-item-2",
+              "label": "Item 2"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q07-item-3",
+              "label": "Item 3"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q07-item-4",
+              "label": "Item 4"
+            }
+          ],
+          "criteriaOptions": [
+            {
+              "id": "default",
+              "label": "Standard",
+              "direction": "asc"
+            }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "cozy-draft-90d044a2-q07-item-1",
+              "cozy-draft-90d044a2-q07-item-2",
+              "cozy-draft-90d044a2-q07-item-3",
+              "cozy-draft-90d044a2-q07-item-4"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 2,
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "cozy-draft-90d044a2-q08",
+        "question": "Slot 8 - Cheese (Bildfrage)",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q09",
+        "question": "Slot 9 - Multiple Choice",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-90d044a2-q10",
+        "question": "Slot 10 - Schaetzfrage",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q11",
+        "question": "Slot 11 - Stimmts / 10 Punkte verteilen",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "cozy-draft-90d044a2-q12",
+        "question": "Slot 12 - Cheese (Bildfrage)",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q13",
+        "question": "Slot 13 - Bunte Tuete Praezisiere Antwort",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "precision",
+          "prompt": "Praezisiere eure Antwort. Ladder von exakt bis grob.",
+          "ladder": [
+            {
+              "label": "Exakt",
+              "acceptedAnswers": [
+                ""
+              ],
+              "points": 3
+            },
+            {
+              "label": "Nah dran",
+              "acceptedAnswers": [
+                ""
+              ],
+              "points": 2
+            }
+          ],
+          "similarityThreshold": 0.82,
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "cozy-draft-90d044a2-q14",
+        "question": "Slot 14 - Multiple Choice",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-90d044a2-q15",
+        "question": "Slot 15 - Schaetzfrage",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q16",
+        "question": "Slot 16 - Bunte Tuete Ordnen",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Ordnet die Items nach dem gewaehlten Kriterium.",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-q16-item-1",
+              "label": "Item 1"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q16-item-2",
+              "label": "Item 2"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q16-item-3",
+              "label": "Item 3"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q16-item-4",
+              "label": "Item 4"
+            }
+          ],
+          "criteriaOptions": [
+            {
+              "id": "default",
+              "label": "Standard",
+              "direction": "asc"
+            }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "cozy-draft-90d044a2-q16-item-1",
+              "cozy-draft-90d044a2-q16-item-2",
+              "cozy-draft-90d044a2-q16-item-3",
+              "cozy-draft-90d044a2-q16-item-4"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 3,
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "cozy-draft-90d044a2-q17",
+        "question": "Slot 17 - Cheese (Bildfrage)",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q18",
+        "question": "Slot 18 - Multiple Choice",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "cozy-draft-90d044a2-q19",
+        "question": "Slot 19 - Schaetzfrage",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 0,
+        "unit": ""
+      },
+      {
+        "id": "cozy-draft-90d044a2-q20",
+        "question": "Slot 20 - Bunte Tuete Top 5",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Ordnet die fuenf Eintraege. 1 = oberste Position.",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-q20-top-1",
+              "label": "Option 1"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q20-top-2",
+              "label": "Option 2"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q20-top-3",
+              "label": "Option 3"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q20-top-4",
+              "label": "Option 4"
+            },
+            {
+              "id": "cozy-draft-90d044a2-q20-top-5",
+              "label": "Option 5"
+            }
+          ],
+          "correctOrder": [
+            "cozy-draft-90d044a2-q20-top-1",
+            "cozy-draft-90d044a2-q20-top-2",
+            "cozy-draft-90d044a2-q20-top-3",
+            "cozy-draft-90d044a2-q20-top-4",
+            "cozy-draft-90d044a2-q20-top-5"
+          ],
+          "scoringMode": "position",
+          "maxPoints": 3
+        }
+      }
+    ],
+    "blitz": {
+      "pool": [
+        {
+          "id": "cozy-draft-90d044a2-blitz-1",
+          "title": "City Skylines",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-1-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-1-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-1-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-1-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-1-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-2",
+          "title": "Snack Attack",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-2-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-2-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-2-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-2-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-2-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-3",
+          "title": "Pop Lyrics",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-3-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-3-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-3-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-3-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-3-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-4",
+          "title": "Streaming Gesichter",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-4-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-4-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-4-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-4-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-4-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-5",
+          "title": "Travel Icons",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-5-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-5-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-5-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-5-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-5-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-6",
+          "title": "Retro Games",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-6-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-6-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-6-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-6-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-6-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-7",
+          "title": "Sport Flash",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-7-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-7-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-7-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-7-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-7-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-8",
+          "title": "Emoji Stories",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-8-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-8-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-8-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-8-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-8-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-9",
+          "title": "Logo Guessing",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-9-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-9-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-9-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-9-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-9-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-10",
+          "title": "Fashion Notes",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-10-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-10-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-10-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-10-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-10-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-11",
+          "title": "Nature Closeups",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-11-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-11-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-11-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-11-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-11-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-12",
+          "title": "Art Classics",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-12-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-12-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-12-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-12-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-12-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-13",
+          "title": "World Records",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-13-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-13-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-13-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-13-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-13-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "cozy-draft-90d044a2-blitz-14",
+          "title": "Random Mix",
+          "items": [
+            {
+              "id": "cozy-draft-90d044a2-blitz-14-1",
+              "prompt": "Motiv 1",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-14-2",
+              "prompt": "Motiv 2",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-14-3",
+              "prompt": "Motiv 3",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-14-4",
+              "prompt": "Motiv 4",
+              "answer": "",
+              "aliases": []
+            },
+            {
+              "id": "cozy-draft-90d044a2-blitz-14-5",
+              "prompt": "Motiv 5",
+              "answer": "",
+              "aliases": []
+            }
+          ]
+        }
+      ]
+    },
+    "potatoPool": [
+      {
+        "id": "default-potato-1",
+        "title": "Songs mit Städtenamen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-2",
+        "title": "Filme aus den 90ern",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-3",
+        "title": "Berühmte Duos",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-4",
+        "title": "Kartoffelgerichte",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-5",
+        "title": "Sportarten mit Ball",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-6",
+        "title": "Wörter mit Doppelbuchstaben",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-7",
+        "title": "Fragen zu Europa",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-8",
+        "title": "Süßigkeitenmarken",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-9",
+        "title": "Fabelwesen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-10",
+        "title": "Berge in Europa",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-11",
+        "title": "Streetfood Klassiker",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-12",
+        "title": "Streaming Hits",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-13",
+        "title": "Nordische Mythen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      },
+      {
+        "id": "default-potato-14",
+        "title": "Retro Spielkonsolen",
+        "allowedAnswers": [],
+        "allowedNormalized": [],
+        "aliases": {},
+        "aliasNormalized": []
+      }
+    ],
+    "rundlauf": {
+      "pool": [
+        "HAUPTSTAEDTE AFRIKA",
+        "DEUTSCHE STAEDTE",
+        "US BUNDESSTAATEN",
+        "FILMTITEL",
+        "MARKEN",
+        "TIERARTEN"
+      ],
+      "turnDurationMs": 7000,
+      "pointsWinner": 3,
+      "pointsTie": 1
+    },
+    "enableBingo": false,
+    "createdAt": 1767961750692,
+    "updatedAt": 1767961750692,
+    "status": "draft",
+    "lastPublishedAt": null
+  }
+]

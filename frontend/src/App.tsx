@@ -11,7 +11,6 @@ import StatsPage from './pages/StatsPage';
 import DraftImportPage from './pages/DraftImportPage';
 import BaukastenNeuPage from './pages/BaukastenNeuPage';
 import BingoPrintPage from './pages/BingoPrintPage';
-import Cozy60BuilderPage from './pages/Cozy60BuilderPage';
 import ImprovedCozy60BuilderPage from './pages/ImprovedCozy60BuilderPage';
 import QuestionCatalogPage from './pages/QuestionCatalogPage';
 import LandingPage from './pages/LandingPage';
@@ -129,7 +128,6 @@ function App() {
         <Route path="/moderator" element={<ModeratorPage />} />
         <Route path="/intro" element={<IntroSlidesPage />} />
         <Route path="/bingo" element={<BingoPrintPage />} />
-        <Route path="/cozy60-builder" element={<Cozy60BuilderPage />} />
         <Route path="/question-catalog" element={<QuestionCatalogPage />} />
         <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
         <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />

@@ -221,8 +221,6 @@ export function KanbanQuestionEditor({
     );
   };
 
-  const [bunteTueteTab, setBunteTueteTab] = React.useState<'top5' | 'precision' | 'oneOfEight' | 'order'>('top5');
-
   const renderBunteTuete = () => {
     const q = localQuestion as BunteTueteQuestion;
     const bunteKindValue = (q.bunteTuete as any)?.kind || bunteTueteTab;

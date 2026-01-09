@@ -729,7 +729,7 @@ function ModeratorPage(): React.ReactElement {
         if (timerActive) {
           doAction(() => stopTimer(roomCode), 'Timer gestoppt');
         } else if (socketGameState === 'Q_ACTIVE') {
-          doAction(() => startTimer(roomCode, 30), 'Timer gestartet');
+          doAction(() => startTimer(roomCode, timerSeconds), 'Timer gestartet');
         }
       }
       

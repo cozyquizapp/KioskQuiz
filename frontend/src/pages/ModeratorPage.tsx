@@ -296,7 +296,7 @@ function ModeratorPage(): React.ReactElement {
     };
   }, []);
 
-  const connectedTeams = socketTeamsConnected ?? Object.keys(answers?.teams || {}).length;
+  const connectedTeams = Object.keys(answers?.teams || {}).length;
   const answersCount = Object.keys(answers?.answers || {}).length;
   const teamsCount = connectedTeams || Object.keys(answers?.teams || {}).length;
   const unreviewedCount = Object.values(answers?.answers || {}).filter((a) => (a as any).isCorrect === undefined).length;

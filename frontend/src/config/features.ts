@@ -15,7 +15,7 @@ const singleSessionRoomCode =
 export const featureFlags = {
   mode,
   isCozyMode: mode === 'cozy60',
-  showBingo: toBoolean(import.meta.env.VITE_FEATURE_BINGO, false),
+  showBingo: false, // Bingo deaktiviert
   showLegacyPanels: toBoolean(import.meta.env.VITE_FEATURE_LEGACY_PANELS, false),
   showLegacyCategories: toBoolean(import.meta.env.VITE_FEATURE_LEGACY_CATEGORIES, false),
   singleSessionMode: toBoolean(import.meta.env.VITE_SINGLE_SESSION_MODE, true),

@@ -4295,7 +4295,7 @@ const handleHostNextAdvance = (room: RoomState) => {
     return runNextQuestion(room);
   }
   if (room.gameState === 'RUNDLAUF_PAUSE') {
-    applyRoomState(room, { type: 'HOST_NEXT' });
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SCOREBOARD_PRE' });
     broadcastState(room);
     return { stage: room.gameState };
   }
@@ -4351,17 +4351,16 @@ const handleHostNextAdvance = (room: RoomState) => {
     return runNextQuestion(room);
   }
   if (room.gameState === 'Q_REVEAL') {
-    const askedCount = room.askedQuestionIds.length;
-    if (askedCount === 10) {
-      applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
-      broadcastState(room);
-      return { stage: room.gameState };
-    }
     return runNextQuestion(room);
   }
   if (room.gameState === 'SCOREBOARD') {
     const askedCount = room.askedQuestionIds.length;
     const totalQuestions = room.questionOrder.length;
+    if (room.nextStage === 'BLITZ') {
+      applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
     const shouldStartRundlauf =
       room.nextStage === 'RUNDLAUF' ||
       (askedCount >= totalQuestions && room.rundlaufPool.length === 0);
@@ -4430,7 +4429,7 @@ const revealAnswersForRoom = (room: RoomState) => {
   if (askedCount === 10) {
     room.nextStage = 'BLITZ';
   } else if (askedCount >= 20 || noQuestionsLeft) {
-    initializeRundlaufStage(room);
+    room.nextStage = 'RUNDLAUF';
   } else {
     room.nextStage = null;
   }

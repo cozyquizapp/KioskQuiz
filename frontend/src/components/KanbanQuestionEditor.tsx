@@ -36,6 +36,9 @@ export function KanbanQuestionEditor({
 }: KanbanQuestionEditorProps) {
   const [localQuestion, setLocalQuestion] = useState<AnyQuestion>(question);
   const [imagePreview, setImagePreview] = useState<string | null>(question.imageUrl || null);
+  const [bunteTueteTab, setBunteTueteTab] = useState<'top5' | 'precision' | 'oneOfEight' | 'order'>(
+    ((question as BunteTueteQuestion).bunteTuete as any)?.kind || 'top5'
+  );
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const slot = COZY_SLOT_TEMPLATE[slotIndex];
@@ -218,19 +221,100 @@ export function KanbanQuestionEditor({
     );
   };
 
+  const [bunteTueteTab, setBunteTueteTab] = React.useState<'top5' | 'precision' | 'oneOfEight' | 'order'>('top5');
+
   const renderBunteTuete = () => {
-    switch (bunteKind) {
-      case 'top5':
-        return renderTop5();
-      case 'precision':
-        return renderPrecision();
-      case 'oneOfEight':
-        return renderOneOfEight();
-      case 'order':
-        return renderOrder();
-      default:
-        return <div style={{ padding: 16, opacity: 0.5 }}>Bunte Tüte: Unbekannte Mechanik</div>;
+    const q = localQuestion as BunteTueteQuestion;
+    const bunteKindValue = (q.bunteTuete as any)?.kind || bunteTueteTab;
+    const activeMechanicKind = bunteTueteTab;
+
+    const mechanicConfigs = [
+      { kind: 'top5', label: '🏆 Top 5', icon: '🏆', color: '#f59e0b' },
+      { kind: 'precision', label: '🎯 Präzision', icon: '🎯', color: '#3b82f6' },
+      { kind: 'oneOfEight', label: '🚫 1 falsch', icon: '🚫', color: '#ef4444' },
+      { kind: 'order', label: '📋 Ordnen', icon: '📋', color: '#10b981' }
+    ];
+
+    return (
+      <div style={formSectionStyle}>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ ...labelStyle, marginBottom: 12 }}>🎲 Bunte Tüte - Wähle eine Mechanik:</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            {mechanicConfigs.map((config) => (
+              <button
+                key={config.kind}
+                onClick={() => {
+                  setBunteTueteTab(config.kind as any);
+                  // Ändere auch die Kind-Mechanik
+                  setLocalQuestion(prev => {
+                    const payload = buildBuntePayloadNew(config.kind as any, prev.id);
+                    return { ...prev, bunteTuete: payload } as BunteTueteQuestion;
+                  });
+                }}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  border: activeMechanicKind === config.kind ? `2px solid ${config.color}` : '1px solid rgba(148,163,184,0.3)',
+                  background: activeMechanicKind === config.kind ? `${config.color}20` : 'rgba(30,41,59,0.4)',
+                  color: activeMechanicKind === config.kind ? config.color : '#cbd5e1',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: activeMechanicKind === config.kind ? 700 : 500,
+                  transition: 'all 0.2s'
+                }}
+              >
+                {config.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Aktuell gewählte Mechanik rendern */}
+        <div style={{ background: 'rgba(30,41,59,0.6)', borderRadius: 12, padding: 16, border: '1px solid rgba(148,163,184,0.2)' }}>
+          {activeMechanicKind === 'top5' && renderTop5()}
+          {activeMechanicKind === 'precision' && renderPrecision()}
+          {activeMechanicKind === 'oneOfEight' && renderOneOfEight()}
+          {activeMechanicKind === 'order' && renderOrder()}
+        </div>
+      </div>
+    );
+  };
+
+  const buildBuntePayloadNew = (kind: string, baseId: string) => {
+    if (kind === 'precision') {
+      return {
+        kind,
+        prompt: 'Schaetze moeglichst genau.',
+        ladder: [
+          { label: 'Guter Treffer', acceptedAnswers: [''], points: 2 },
+          { label: 'Nahe dran', acceptedAnswers: [''], points: 1 }
+        ],
+        autoMatchEnabled: true,
+        requiresModeratorReview: false
+      };
     }
+    if (kind === 'oneOfEight') {
+      return {
+        kind,
+        prompt: 'Welche eine Aussage ist falsch?',
+        statements: Array.from({ length: 8 }).map((_, idx) => ({ id: `${baseId}-stmt-${idx + 1}`, label: `Aussage ${idx + 1}` })),
+        wrongStatementId: `${baseId}-stmt-1`
+      };
+    }
+    if (kind === 'order') {
+      return {
+        kind,
+        prompt: 'Ordne diese Dinge richtig!',
+        items: Array.from({ length: 5 }).map((_, idx) => ({ id: `${baseId}-item-${idx + 1}`, label: `Item ${idx + 1}` })),
+        correctOrder: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)
+      };
+    }
+    return {
+      kind: 'top5',
+      prompt: 'Ordnet die fuenf Eintraege.',
+      items: Array.from({ length: 5 }).map((_, idx) => ({ id: `${baseId}-item-${idx + 1}`, label: `Item ${idx + 1}` })),
+      correctOrder: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)
+    };
   };
 
   const renderTop5 = () => {

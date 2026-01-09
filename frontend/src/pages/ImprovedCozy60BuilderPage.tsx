@@ -198,20 +198,63 @@ const ImprovedCozy60BuilderPage = () => {
 
           <div style={draftListStyle}>
             {drafts.map((d) => (
-              <button
+              <div
                 key={d.id}
-                onClick={() => loadDraft(d.id)}
                 style={{
                   ...draftItemStyle,
                   borderColor: selectedDraftId === d.id ? 'rgba(34,211,238,0.5)' : 'rgba(255,255,255,0.08)',
-                  background: selectedDraftId === d.id ? 'rgba(34,211,238,0.1)' : 'rgba(15,23,42,0.5)'
+                  background: selectedDraftId === d.id ? 'rgba(34,211,238,0.1)' : 'rgba(15,23,42,0.5)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
-                <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
-                  {new Date(d.updatedAt).toLocaleDateString()}
-                </div>
-              </button>
+                <button
+                  onClick={() => loadDraft(d.id)}
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    padding: 0
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
+                  <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
+                    {new Date(d.updatedAt).toLocaleDateString()}
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`"${d.title}" wirklich löschen?`)) {
+                      const updated = drafts.filter((draft) => draft.id !== d.id);
+                      setDrafts(updated);
+                      localStorage.setItem('cozyQuizDrafts', JSON.stringify(updated));
+                      if (selectedDraftId === d.id) {
+                        setSelectedDraftId(null);
+                        setDraft(null);
+                      }
+                      setStatus('Draft gelöscht');
+                    }
+                  }}
+                  style={{
+                    background: 'rgba(239,68,68,0.2)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    borderRadius: 4,
+                    padding: '4px 8px',
+                    color: '#f87171',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    marginLeft: 8,
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Draft löschen"
+                >
+                  🗑️
+                </button>
+              </div>
             ))}
           </div>
 

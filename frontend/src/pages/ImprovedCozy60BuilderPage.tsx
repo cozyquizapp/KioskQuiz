@@ -139,16 +139,16 @@ const ImprovedCozy60BuilderPage = () => {
     }
 
     if (!currentDraft.blitz?.pool || currentDraft.blitz.pool.length === 0) {
-      errors.push('❌ Fotoblitz: Keine Themes vorhanden');
+      errors.push('❌ Fotosprint: Keine Themes vorhanden');
     } else {
       const emptyThemes = currentDraft.blitz.pool.filter((t) => !t.items || t.items.length === 0);
       if (emptyThemes.length > 0) {
-        errors.push(`❌ Fotoblitz: ${emptyThemes.length} leere Themes`);
+        errors.push(`❌ Fotosprint: ${emptyThemes.length} leere Themes`);
       }
     }
 
     if (!currentDraft.rundlauf?.pool || currentDraft.rundlauf.pool.length === 0) {
-      errors.push('❌ Rundlauf: Keine Kategorien konfiguriert');
+      errors.push('❌ K.O.-Rallye: Keine Kategorien konfiguriert');
     }
 
     return errors;
@@ -336,7 +336,7 @@ const ImprovedCozy60BuilderPage = () => {
                     color: tab === 'blitz' ? '#22d3ee' : '#94a3b8'
                   }}
                 >
-                  ⚡ Fotoblitz
+                  ⚡ Fotosprint
                 </button>
                 <button
                   onClick={() => setTab('rundlauf')}
@@ -346,7 +346,7 @@ const ImprovedCozy60BuilderPage = () => {
                     color: tab === 'rundlauf' ? '#22d3ee' : '#94a3b8'
                   }}
                 >
-                  🏃 Rundlauf
+                  🏃 K.O.-Rallye
                 </button>
                 <button
                   onClick={() => setTab('help')}
@@ -569,7 +569,7 @@ const ImprovedCozy60BuilderPage = () => {
                 </section>
 
                 <section style={previewSectionStyle}>
-                  <h4 style={{ margin: '0 0 8px' }}>Fotoblitz</h4>
+                  <h4 style={{ margin: '0 0 8px' }}>Fotosprint</h4>
                   {draft.blitz?.pool?.length ? (
                     <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
                       {draft.blitz.pool.map((t, i) => (
@@ -584,7 +584,7 @@ const ImprovedCozy60BuilderPage = () => {
                 </section>
 
                 <section style={previewSectionStyle}>
-                  <h4 style={{ margin: '0 0 8px' }}>Rundlauf</h4>
+                  <h4 style={{ margin: '0 0 8px' }}>K.O.-Rallye</h4>
                   {draft.rundlauf?.pool?.length ? (
                     <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
                       {draft.rundlauf.pool.map((t, i) => (

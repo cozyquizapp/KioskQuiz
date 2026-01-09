@@ -1618,7 +1618,7 @@ useEffect(() => {
     const totalSets = Math.max(1, selectedThemes.length || 3);
 
     if (phase === 'READY' || phase === 'BANNING') {
-      const headline = phase === 'READY' ? 'FOTOBLITZ BEREIT' : 'FOTOBLITZ AUSWAHL';
+      const headline = phase === 'READY' ? 'FOTOSPRINT BEREIT' : 'FOTOSPRINT AUSWAHL';
       const selectedIds = new Set(selectedThemes.map((entry) => entry.id));
       const randomIds = new Set(
         selectedThemes.filter((entry) => entry.id !== pinnedTheme?.id).map((entry) => entry.id)
@@ -1659,7 +1659,7 @@ useEffect(() => {
       return (
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
-            <h2>FOTOBLITZ</h2>
+            <h2>FOTOSPRINT</h2>
             <p>{blitz.theme?.title || '-'}</p>
           </div>
         </div>
@@ -1670,7 +1670,7 @@ useEffect(() => {
       return (
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
-            <h2>FOTOBLITZ STARTET</h2>
+            <h2>FOTOSPRINT STARTET</h2>
             <p>Die 3 Themen stehen fest.</p>
           </div>
           <div className="beamer-list">
@@ -2119,7 +2119,7 @@ useEffect(() => {
         <BeamerFrame
           key={`${sceneKey}-blitz`}
           {...baseFrameProps}
-          title="FOTOBLITZ"
+          title="FOTOSPRINT"
           subtitle={subtitle}
           badgeLabel={showSetBadge ? setLabel : undefined}
           badgeTone={showSetBadge ? 'accent' : undefined}
@@ -2184,8 +2184,8 @@ useEffect(() => {
             key={`${sceneKey}-rundlauf-pause`}
             {...baseFrameProps}
             title="PAUSE"
-            subtitle={language === 'de' ? 'Rundlauf startet gleich' : 'Roundabout starts soon'}
-            badgeLabel="RUNDLAUF"
+            subtitle={language === 'de' ? 'K.O.-Rallye startet gleich' : 'Knockout relay starts soon'}
+            badgeLabel="K.O.-RALLYE"
             badgeTone="accent"
             footerMessage={language === 'de' ? 'Moderator startet, sobald bereit.' : 'Host will start soon.'}
             status="info"
@@ -2201,8 +2201,8 @@ useEffect(() => {
             key={`${sceneKey}-rundlauf-pre`}
             {...baseFrameProps}
             title="ZWISCHENSTAND"
-            subtitle={language === 'de' ? 'Vor dem Rundlauf' : 'Before roundabout'}
-            badgeLabel="RUNDLAUF"
+            subtitle={language === 'de' ? 'Vor der K.O.-Rallye' : 'Before the knockout relay'}
+            badgeLabel="K.O.-RALLYE"
             badgeTone="accent"
             footerMessage={language === 'de' ? 'Platzierung entscheidet die Auswahl.' : 'Standings decide picks.'}
             status="info"
@@ -2223,7 +2223,7 @@ useEffect(() => {
           <BeamerFrame
             key={`${sceneKey}-rundlauf-select`}
             {...baseFrameProps}
-            title="RUNDLAUF"
+            title="K.O.-RALLYE"
             subtitle={language === 'de' ? 'Kategorienwahl' : 'Category selection'}
             badgeLabel="AUSWAHL"
             badgeTone="accent"
@@ -2259,7 +2259,7 @@ useEffect(() => {
           <BeamerFrame
             key={`${sceneKey}-rundlauf-intro`}
             {...baseFrameProps}
-            title="RUNDLAUF"
+            title="K.O.-RALLYE"
             subtitle={currentCategoryTitle || ''}
             badgeLabel={`RUNDE ${roundLabel}`}
             badgeTone="accent"
@@ -2287,7 +2287,7 @@ useEffect(() => {
           <BeamerFrame
             key={`${sceneKey}-rundlauf-play`}
             {...baseFrameProps}
-            title="RUNDLAUF"
+            title="K.O.-RALLYE"
             subtitle={currentCategoryTitle || ''}
             badgeLabel={`RUNDE ${roundLabel}`}
             badgeTone="accent"
@@ -2356,8 +2356,8 @@ useEffect(() => {
             key={`${sceneKey}-rundlauf-final`}
             {...baseFrameProps}
             title="ZWISCHENSTAND"
-            subtitle={language === 'de' ? 'Nach dem Rundlauf' : 'After roundabout'}
-            badgeLabel="RUNDLAUF"
+            subtitle={language === 'de' ? 'Nach der K.O.-Rallye' : 'After the knockout relay'}
+            badgeLabel="K.O.-RALLYE"
             badgeTone="accent"
             footerMessage={language === 'de' ? 'Finale Punkte werden gezeigt.' : 'Final points shown.'}
             status="final"
@@ -2374,9 +2374,9 @@ useEffect(() => {
         <BeamerFrame
           key={`${sceneKey}-rundlauf-fallback`}
           {...baseFrameProps}
-          title="RUNDLAUF"
+          title="K.O.-RALLYE"
           subtitle={language === 'de' ? 'Warten...' : 'Waiting...'}
-          badgeLabel="RUNDLAUF"
+          badgeLabel="K.O.-RALLYE"
           badgeTone="accent"
           status="info"
         >

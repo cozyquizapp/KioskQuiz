@@ -237,25 +237,25 @@ function ModeratorPage(): React.ReactElement {
     Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflÃ¶sen', tone: 'eval' },
     Q_REVEAL: { label: 'Reveal', hint: 'Antworten werden gezeigt', tone: 'eval' },
     SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand wird gezeigt', tone: 'eval' },
-    SCOREBOARD_PRE_BLITZ: { label: 'Scoreboard', hint: 'Standings vor Fotoblitz', tone: 'eval' },
+    SCOREBOARD_PRE_BLITZ: { label: 'Scoreboard', hint: 'Standings vor Fotosprint', tone: 'eval' },
     SCOREBOARD_PAUSE: { label: 'Pause', hint: 'Kurze Pause/im Scoreboard', tone: 'eval' },
-    BLITZ: { label: 'Blitz Battle', hint: 'Schnelle Sets laufen', tone: 'live' },
-    BLITZ_READY: { label: 'Fotoblitz bereit', hint: 'Teams machen sich bereit', tone: 'live' },
-    BLITZ_BANNING: { label: 'Fotoblitz Auswahl', hint: 'Teams bannen/waehlen', tone: 'eval' },
-    BLITZ_SET_INTRO: { label: 'Fotoblitz Intro', hint: 'Naechstes Set', tone: 'live' },
-    BLITZ_PLAYING: { label: 'Fotoblitz', hint: 'Set laeuft', tone: 'live' },
-    BLITZ_SET_END: { label: 'Fotoblitz Ende', hint: 'Set beendet', tone: 'eval' },
-    BLITZ_SCOREBOARD: { label: 'Fotoblitz Scoreboard', hint: 'Standings nach Fotoblitz', tone: 'eval' },
-    BLITZ_PAUSE: { label: 'Fotoblitz Pause', hint: 'Pause vor Frage 11', tone: 'eval' },
-    POTATO: { label: 'Heisse Kartoffel', hint: 'Finale lÃ¤uft', tone: 'live' },
+    BLITZ: { label: 'Fotosprint', hint: 'Schnelle Sets laufen', tone: 'live' },
+    BLITZ_READY: { label: 'Fotosprint bereit', hint: 'Teams machen sich bereit', tone: 'live' },
+    BLITZ_BANNING: { label: 'Fotosprint Auswahl', hint: 'Teams bannen/waehlen', tone: 'eval' },
+    BLITZ_SET_INTRO: { label: 'Fotosprint Intro', hint: 'Naechstes Set', tone: 'live' },
+    BLITZ_PLAYING: { label: 'Fotosprint', hint: 'Set laeuft', tone: 'live' },
+    BLITZ_SET_END: { label: 'Fotosprint Ende', hint: 'Set beendet', tone: 'eval' },
+    BLITZ_SCOREBOARD: { label: 'Fotosprint Scoreboard', hint: 'Standings nach Fotosprint', tone: 'eval' },
+    BLITZ_PAUSE: { label: 'Fotosprint Pause', hint: 'Pause vor Frage 11', tone: 'eval' },
+    POTATO: { label: 'Potato (entfernt)', hint: 'Deaktiviert', tone: 'eval' },
     AWARDS: { label: 'Awards', hint: 'Sieger werden gezeigt', tone: 'final' },
-    RUNDLAUF_PAUSE: { label: 'Rundlauf Pause', hint: 'Rundlauf startet gleich', tone: 'eval' },
-    RUNDLAUF_SCOREBOARD_PRE: { label: 'Rundlauf Scoreboard', hint: 'Standings vor Rundlauf', tone: 'eval' },
-    RUNDLAUF_CATEGORY_SELECT: { label: 'Rundlauf Auswahl', hint: 'Kategorien waehlen', tone: 'eval' },
-    RUNDLAUF_ROUND_INTRO: { label: 'Rundlauf Intro', hint: 'Runde wird gestartet', tone: 'live' },
-    RUNDLAUF_PLAY: { label: 'Rundlauf', hint: 'Teams antworten reihum', tone: 'live' },
-    RUNDLAUF_ROUND_END: { label: 'Rundlauf Ende', hint: 'Runde beendet', tone: 'eval' },
-    RUNDLAUF_SCOREBOARD_FINAL: { label: 'Rundlauf Scoreboard', hint: 'Rundlauf abgeschlossen', tone: 'final' },
+    RUNDLAUF_PAUSE: { label: 'K.O.-Rallye Pause', hint: 'K.O.-Rallye startet gleich', tone: 'eval' },
+    RUNDLAUF_SCOREBOARD_PRE: { label: 'K.O.-Rallye Scoreboard', hint: 'Standings vor K.O.-Rallye', tone: 'eval' },
+    RUNDLAUF_CATEGORY_SELECT: { label: 'K.O.-Rallye Auswahl', hint: 'Kategorien waehlen', tone: 'eval' },
+    RUNDLAUF_ROUND_INTRO: { label: 'K.O.-Rallye Intro', hint: 'Runde wird gestartet', tone: 'live' },
+    RUNDLAUF_PLAY: { label: 'K.O.-Rallye', hint: 'Teams antworten reihum', tone: 'live' },
+    RUNDLAUF_ROUND_END: { label: 'K.O.-Rallye Ende', hint: 'Runde beendet', tone: 'eval' },
+    RUNDLAUF_SCOREBOARD_FINAL: { label: 'K.O.-Rallye Scoreboard', hint: 'K.O.-Rallye abgeschlossen', tone: 'final' },
     SIEGEREHRUNG: { label: 'Siegerehrung', hint: 'Finale Anzeige', tone: 'final' }
   };
   const stateInfo = gameStateInfoMap[normalizedGameState] ?? gameStateInfoMap.LOBBY;
@@ -1313,14 +1313,12 @@ function ModeratorPage(): React.ReactElement {
       case 'Q_LOCKED':
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
       case 'Q_REVEAL':
-        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Blitz wechseln', context: 'Segment 1 beendet' };
-        if (nextStage === 'POTATO') return { hotkey: '1', label: 'WEITER', detail: 'Finale starten', context: 'Segment 2 abgeschlossen' };
+        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
         return { hotkey: '1', label: 'WEITER', detail: 'Zur naechsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
-        return { hotkey: '1', label: 'WEITER', detail: 'Fotoblitz starten', context: 'Standings vor Fotoblitz' };
+        return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
       case 'SCOREBOARD_PAUSE':
-        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Blitz Battle starten', context: 'Scoreboard aktiv' };
-        if (nextStage === 'POTATO') return { hotkey: '1', label: 'WEITER', detail: 'Heisse Kartoffel starten', context: 'Scoreboard aktiv' };
+        if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Scoreboard aktiv' };
         if (nextStage === 'Q11') return { hotkey: '1', label: 'WEITER', detail: 'Segment 2 starten', context: 'Scoreboard aktiv' };
         return { ...base, context: 'Scoreboard aktiv' };
       case 'BLITZ':
@@ -1331,14 +1329,9 @@ function ModeratorPage(): React.ReactElement {
       case 'BLITZ_SET_END':
       case 'BLITZ_SCOREBOARD':
       case 'BLITZ_PAUSE':
-        return { hotkey: '1', label: 'WEITER', detail: 'Fotoblitz', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
+        return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
       case 'POTATO':
-        return {
-          hotkey: '5',
-          label: 'POTATO',
-          detail: potatoPhase === 'PLAYING' ? `Team ${potatoActiveTeamName || 'Team'} am Zug` : 'Kontextaktion ausfuehren',
-          context: `Autopilot ${potatoAutopilotEnabled ? 'AN' : 'AUS'}`
-        };
+        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: '—' };
       case 'AWARDS':
         return { hotkey: '1', label: 'WEITER', detail: 'Awards zeigen', context: 'Finale' };
       default:
@@ -2140,8 +2133,8 @@ function ModeratorPage(): React.ReactElement {
     if (normalizedGameState === 'RUNDLAUF_PAUSE') {
       return (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Pause</div>
-          <p style={{ color: '#cbd5e1' }}>Rundlauf startet gleich.</p>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Pause</div>
+          <p style={{ color: '#cbd5e1' }}>K.O.-Rallye startet gleich.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
               style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
@@ -2157,7 +2150,7 @@ function ModeratorPage(): React.ReactElement {
     if (normalizedGameState === 'RUNDLAUF_SCOREBOARD_PRE') {
       return (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard vor Rundlauf</div>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard vor K.O.-Rallye</div>
           <p style={{ color: '#cbd5e1' }}>Platzierung entscheidet die Auswahl.</p>
           <div style={{ marginTop: 10 }}>{renderCompactScoreboard('Standings')}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
@@ -2278,7 +2271,7 @@ function ModeratorPage(): React.ReactElement {
     if (normalizedGameState === 'RUNDLAUF_ROUND_INTRO') {
       return (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Runde {roundLabel}</div>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Runde {roundLabel}</div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>Kategorie: {currentCategoryTitle || 'n/a'}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
@@ -2297,7 +2290,7 @@ function ModeratorPage(): React.ReactElement {
       const totalCount = rundlauf?.availableAnswers?.length ?? 0;
       return (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf live</div>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye live</div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
             Runde {roundLabel} · Kategorie: {currentCategoryTitle || 'n/a'}
           </div>
@@ -2411,7 +2404,7 @@ function ModeratorPage(): React.ReactElement {
     if (normalizedGameState === 'RUNDLAUF_SCOREBOARD_FINAL') {
       return (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Rundlauf Scoreboard</div>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Scoreboard</div>
           {renderCompactScoreboard('Finaler Stand')}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
@@ -2574,7 +2567,7 @@ function ModeratorPage(): React.ReactElement {
         {phase === 'READY' && (
           <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
             <div style={{ fontWeight: 700 }}>
-              {language === 'de' ? 'Fotoblitz bereit' : 'Blitz ready'}
+              {language === 'de' ? 'Fotosprint bereit' : 'Photo sprint ready'}
             </div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {topTeamName
@@ -3019,7 +3012,7 @@ function ModeratorPage(): React.ReactElement {
         : 'R1: - | R2: - | R3: -';
       return (
         <div style={{ ...card, flex: '1 1 240px', minWidth: 220, padding: 12 }}>
-          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>FOTOBLITZ STATUS</div>
+          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>FOTOSPRINT STATUS</div>
           <div style={{ marginTop: 6, fontSize: 13, color: '#e2e8f0' }}>Top bans: {topBans}/2</div>
           <div style={{ fontSize: 13, color: '#e2e8f0' }}>Last pick: {pinned ?? '-'}</div>
           <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{orderLabel}</div>

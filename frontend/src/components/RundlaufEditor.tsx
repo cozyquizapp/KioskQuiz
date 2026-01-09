@@ -32,14 +32,14 @@ export function RundlaufEditor({ config, onChange }: RundlaufEditorProps) {
   return (
     <div style={{ padding: 20, maxWidth: 700, margin: '0 auto' }}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9', marginBottom: 24 }}>
-        🏁 Rundlauf Konfiguration
+        🏁 K.O.-Rallye Konfiguration
       </h2>
 
       {/* Category Pool */}
       <div style={sectionStyle}>
         <label style={labelStyle}>Kategorien-Pool</label>
         <div style={{ fontSize: 13, opacity: 0.6, marginBottom: 12 }}>
-          Diese Kategorien stehen im Rundlauf zur Auswahl. Anzahl in Klammern = gültige Antworten.
+          Diese Kategorien stehen in der K.O.-Rallye zur Auswahl. Anzahl in Klammern = gültige Antworten.
         </div>
 
         <div style={{ display: 'grid', gap: 8 }}>

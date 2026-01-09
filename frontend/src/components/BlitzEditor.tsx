@@ -14,7 +14,7 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
   const addTheme = () => {
     const newTheme: QuizBlitzTheme = {
       id: `theme_${Date.now()}`,
-      title: 'Neues Fotoblitz-Thema',
+      title: 'Neues Fotosprint-Thema',
       items: []
     };
     onChange([...themes, newTheme]);
@@ -69,7 +69,7 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
     <div style={{ padding: 20, maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9' }}>
-          📸 Fotoblitz Themen
+          📸 Fotosprint Themen
         </h2>
         <button onClick={addTheme} style={addButtonStyle}>
           + Neues Thema

@@ -3744,32 +3744,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
   const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
   const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
   const sanitized = localized ? sanitizeQuestionForTeams(localized) : null;
-  const potato: PotatoState | null =
-    room.potatoPhase === 'IDLE'
-      ? null
-      : {
-          phase: room.potatoPhase,
-          pool: room.potatoPool.map((theme) => theme.title),
-          bans: Object.entries(room.potatoBans).reduce<Record<string, string[]>>((acc, [teamId, themes]) => {
-            acc[teamId] = themes.map((theme) => theme.title);
-            return acc;
-          }, {}),
-          banLimits: room.potatoBanLimits,
-          selectedThemes: room.potatoSelectedThemes.map((theme) => theme.title),
-          roundIndex: room.potatoRoundIndex,
-          turnOrder: room.potatoTurnOrder,
-          activeTeamId: room.potatoActiveTeamId,
-          lives: room.potatoLives,
-          usedAnswers: room.potatoUsedAnswers,
-          usedAnswersNormalized: room.potatoUsedAnswersNormalized,
-          lastAttempt: room.potatoLastAttempt ?? null,
-          deadline: room.potatoDeadlineAt,
-          turnStartedAt: room.potatoTurnStartedAt,
-          turnDurationMs: room.potatoTurnDurationMs,
-          currentTheme: room.potatoCurrentTheme?.title ?? null,
-          lastWinnerId: room.potatoLastWinnerId,
-          pendingConflict: room.potatoLastConflict
-        };
+  // Potato (heiße Kartoffel) ist abgekündigt – nicht mehr im Sync-State ausliefern
+  const potato: PotatoState | null = null;
   const blitz: BlitzState | null =
     room.blitzPhase === 'IDLE'
       ? null
@@ -4363,11 +4339,6 @@ const handleHostNextAdvance = (room: RoomState) => {
   if (room.gameState === 'SCOREBOARD_PAUSE') {
     if (room.nextStage === 'BLITZ') {
       initializeBlitzStage(room);
-      broadcastState(room);
-      return { stage: room.gameState };
-    }
-    if (room.nextStage === 'POTATO') {
-      initializePotatoStage(room);
       broadcastState(room);
       return { stage: room.gameState };
     }

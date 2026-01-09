@@ -2104,7 +2104,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function submitRundlaufAnswer(pass = false) {
     if (!teamId || !socketRef.current) return;
     if (gameState !== 'RUNDLAUF_PLAY') {
-      setRundlaufError(inlineCopy('Rundlauf ist noch nicht aktiv.', 'Rundlauf is not active yet.'));
+      setRundlaufError(inlineCopy('K.O.-Rallye ist noch nicht aktiv.', 'Knockout relay is not active yet.'));
       return;
     }
     if (!rundlaufState || rundlaufState.activeTeamId !== teamId) {
@@ -2163,13 +2163,13 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!state) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }}>
-          <div style={pillLabel}>Rundlauf</div>
+          <div style={pillLabel}>K.O.-Rallye</div>
           <p style={mutedText}>
             {language === 'de'
-              ? 'Rundlauf wird vorbereitet.'
+              ? 'K.O.-Rallye wird vorbereitet.'
               : language === 'both'
-              ? 'Rundlauf wird vorbereitet / Roundabout is preparing.'
-              : 'Roundabout is preparing.'}
+              ? 'K.O.-Rallye wird vorbereitet / Knockout relay is preparing.'
+              : 'Knockout relay is preparing.'}
           </p>
         </div>
       );
@@ -2205,7 +2205,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
     if (gameState === 'RUNDLAUF_PAUSE') {
       return renderWaiting(
-        language === 'de' ? 'Pause – Rundlauf startet gleich' : language === 'both' ? 'Pause / Roundabout starts soon' : 'Roundabout starts soon',
+        language === 'de' ? 'Pause – K.O.-Rallye startet gleich' : language === 'both' ? 'Pause / Knockout relay starts soon' : 'Knockout relay starts soon',
         language === 'de' ? 'Bleibt bereit.' : 'Stay ready.'
       );
     }
@@ -2213,7 +2213,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }}>
           <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
-          <p style={mutedText}>{language === 'de' ? 'Platzierung vor dem Rundlauf.' : 'Standings before the roundabout.'}</p>
+          <p style={mutedText}>{language === 'de' ? 'Platzierung vor der K.O.-Rallye.' : 'Standings before the knockout relay.'}</p>
           {scoreboardBlock}
         </div>
       );
@@ -2312,7 +2312,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (gameState === 'RUNDLAUF_ROUND_INTRO') {
       return renderWaiting(
-        language === 'de' ? `Rundlauf – ${currentCategory}` : language === 'both' ? `Rundlauf / Roundabout – ${currentCategory}` : `Roundabout – ${currentCategory}`,
+        language === 'de' ? `K.O.-Rallye – ${currentCategory}` : language === 'both' ? `K.O.-Rallye / Knockout relay – ${currentCategory}` : `Knockout relay – ${currentCategory}`,
         language === 'de' ? 'Gleich geht es los.' : 'Starting shortly.'
       );
     }
@@ -2320,7 +2320,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (isEliminated) {
         return (
           <div style={{ ...glassCard, textAlign: 'center' }}>
-            <div style={pillLabel}>{language === 'de' ? 'Rundlauf' : 'Roundabout'}</div>
+            <div style={pillLabel}>{language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de'
                 ? 'Du bist fuer diese Runde raus.'
@@ -2334,7 +2334,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (!isActive) {
         return (
           <div style={{ ...glassCard, textAlign: 'center' }}>
-            <div style={pillLabel}>{language === 'de' ? 'Rundlauf' : 'Roundabout'}</div>
+            <div style={pillLabel}>{language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={mutedText}>
               {activeTeamName
                 ? inlineCopy(`${activeTeamName} ist dran.`, `${activeTeamName} is up.`)
@@ -2452,9 +2452,9 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>
-            {language === 'de' ? 'Fotoblitz startet gleich' : 'Blitz starts soon'}
+            {language === 'de' ? 'Fotosprint startet gleich' : 'Photo sprint starts soon'}
           </div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
             {language === 'de'
@@ -2483,7 +2483,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (phase === 'BANNING') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>
             {language === 'de' ? 'Themen-Auswahl' : 'Theme selection'}
           </div>
@@ -2573,8 +2573,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (phase === 'ROUND_INTRO') {
       return (
-        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotoblitz' : 'Blitz battle'}</div>
+          <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 22, fontWeight: 800 }}>{themeLabel}</div>
           <div style={{ fontSize: 12, color: '#94a3b8' }}>
             {language === 'de' ? 'Runde startet jetzt' : 'Round is starting'}

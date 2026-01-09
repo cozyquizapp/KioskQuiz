@@ -19,6 +19,7 @@ const LOCAL_BACKUP_TS_KEY = 'cozy-builder-timestamp';
 
 const ImprovedCozy60BuilderPage = () => {
   const [drafts, setDrafts] = useState<CozyDraftSummary[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [draft, setDraft] = useState<CozyQuizDraft | null>(null);
   const [status, setStatus] = useState('');
@@ -51,7 +52,8 @@ const ImprovedCozy60BuilderPage = () => {
   const loadDrafts = async () => {
     try {
       const data = await listCozyDrafts();
-      setDrafts(data.drafts);
+      const deduped = Array.from(new Map(data.drafts.map((d) => [d.id, d])).values());
+      setDrafts(deduped);
 
       const localRaw = localStorage.getItem(LOCAL_BACKUP_KEY);
       const localTs = localStorage.getItem(LOCAL_BACKUP_TS_KEY);
@@ -66,8 +68,12 @@ const ImprovedCozy60BuilderPage = () => {
             setSelectedDraftId(localDraft.id);
             setStatus('✓ Lokaler Entwurf wiederhergestellt');
             setRestoredFromLocal(true);
+            localStorage.removeItem(LOCAL_BACKUP_KEY);
+            localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
             return;
           }
+          localStorage.removeItem(LOCAL_BACKUP_KEY);
+          localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
         } catch {
           // Ignoriere fehlerhafte Backups
         }
@@ -82,16 +88,22 @@ const ImprovedCozy60BuilderPage = () => {
   };
 
   const handleCreate = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    localStorage.removeItem(LOCAL_BACKUP_KEY);
+    localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
     setStatus('Erstelle neues Draft...');
     try {
       const data = await createCozyDraft();
+      setDrafts((prev) => [data.draft, ...prev.filter((d) => d.id !== data.draft.id)]);
       setDraft(data.draft);
       setSelectedDraftId(data.draft.id);
-      await loadDrafts();
       setStatus('✓ Neues Draft erstellt');
     } catch (err) {
       setError((err as Error).message);
       setStatus('');
+    } finally {
+      setIsCreating(false);
     }
   };
 

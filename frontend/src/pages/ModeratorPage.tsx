@@ -687,6 +687,63 @@ function ModeratorPage(): React.ReactElement {
     return () => window.clearInterval(id);
   }, []);
 
+  // Keyboard shortcuts for moderator
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if typing in input field
+      if (isTypingTarget(e.target)) return;
+      
+      // Space: Next action (next question, reveal, etc.)
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (socketGameState === 'Q_LOCKED') {
+          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelöst');
+        } else if (socketGameState === 'Q_REVEAL') {
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+        } else if (socketGameState === 'LOBBY') {
+          doAction(() => fetch(`/api/rooms/${roomCode}/start-quiz`, { method: 'POST' }), 'Quiz gestartet');
+        }
+      }
+      
+      // R: Reveal answer
+      if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (socketGameState === 'Q_LOCKED') {
+          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgedeckt');
+        }
+      }
+      
+      // T: Toggle timer
+      if (e.code === 'KeyT' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (timerActive) {
+          doAction(() => stopTimer(roomCode), 'Timer gestoppt');
+        } else if (socketGameState === 'Q_ACTIVE') {
+          doAction(() => startTimer(roomCode, 30), 'Timer gestartet');
+        }
+      }
+      
+      // N: Next question (even when not revealed)
+      if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (socketGameState === 'Q_ACTIVE' || socketGameState === 'Q_LOCKED' || socketGameState === 'Q_REVEAL') {
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+        }
+      }
+      
+      // S: Show scoreboard
+      if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        doAction(() => fetch(`/api/rooms/${roomCode}/scoreboard`, { method: 'POST' }), 'Scoreboard angezeigt');
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [roomCode, socketGameState, timerActive]);
+
   const doAction = async (fn: () => Promise<any>, msg?: string) => {
     try {
       await fn();
@@ -4043,6 +4100,20 @@ const renderCozyStagePanel = () => {
         >
           Quiz beenden & Stats loggen
         </button>
+      </div>
+      
+      {/* Keyboard Shortcuts Help */}
+      <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
+        <div style={{ fontSize: 11, color: '#7dd3fc', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
+          ⌨️ Keyboard Shortcuts
+        </div>
+        <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nächste Frage (überspringen)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>S</kbd> Scoreboard anzeigen</div>
+        </div>
       </div>
           </div>
         </details>

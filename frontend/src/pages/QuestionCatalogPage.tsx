@@ -89,7 +89,7 @@ export default function QuestionCatalogPage() {
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
-    if (!confirm('Frage wirklich löschen?')) return;
+    if (!window.confirm('🗑️ Frage wirklich dauerhaft löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.')) return;
 
     try {
       const response = await fetch(`/api/questions/${questionId}`, {

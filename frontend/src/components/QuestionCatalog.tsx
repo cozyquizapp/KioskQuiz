@@ -33,6 +33,7 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
   const [categoryFilter, setCategoryFilter] = useState<QuizCategory | 'all'>('all');
   const [mechanicFilter, setMechanicFilter] = useState<CozyQuestionType | 'all'>('all');
   const [hideUsed, setHideUsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fragen vom Backend laden
   useEffect(() => {
@@ -40,6 +41,7 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
   }, []);
 
   const loadQuestions = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/questions');
       const data = await response.json();
@@ -47,6 +49,8 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
       setFilteredQuestions(data.questions || []);
     } catch (err) {
       console.error('Fehler beim Laden der Fragen:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -162,7 +166,12 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
 
       {/* Fragenliste */}
       <div style={questionListStyle}>
-        {filteredQuestions.length === 0 && (
+        {isLoading && (
+          <div style={{ textAlign: 'center', padding: 40, opacity: 0.6 }}>
+            <div style={{ marginBottom: 8 }}>⏳ Lade Fragen...</div>
+          </div>
+        )}
+        {!isLoading && filteredQuestions.length === 0 && (
           <div style={{ textAlign: 'center', padding: 40, opacity: 0.4 }}>
             Keine Fragen gefunden
           </div>

@@ -54,6 +54,7 @@ export function KanbanQuestionEditor({
   const [localQuestion, setLocalQuestion] = useState<AnyQuestion>(question);
   const [imagePreview, setImagePreview] = useState<string | null>(question.imageUrl || null);
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const slot = COZY_SLOT_TEMPLATE[slotIndex];
@@ -90,6 +91,7 @@ export function KanbanQuestionEditor({
     reader.readAsDataURL(file);
 
     // Upload to backend
+    setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -113,6 +115,8 @@ export function KanbanQuestionEditor({
       showNotification('error', `❌ Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
       // Revert preview on error
       setImagePreview(question.imageUrl || null);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -334,9 +338,18 @@ export function KanbanQuestionEditor({
               accept="image/*"
               onChange={handleImageSelect}
               style={{ display: 'none' }}
+              disabled={isUploading}
             />
-            <button onClick={() => imageInputRef.current?.click()} style={uploadButtonStyle}>
-              📁 {imagePreview ? 'Bild ändern' : 'Bild auswählen'}
+            <button 
+              onClick={() => imageInputRef.current?.click()} 
+              style={{
+                ...uploadButtonStyle,
+                opacity: isUploading ? 0.6 : 1,
+                cursor: isUploading ? 'not-allowed' : 'pointer'
+              }}
+              disabled={isUploading}
+            >
+              {isUploading ? '⏳ Lädt...' : `📁 ${imagePreview ? 'Bild ändern' : 'Bild auswählen'}`}
             </button>
           </div>
 

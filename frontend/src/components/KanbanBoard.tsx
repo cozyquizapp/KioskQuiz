@@ -39,6 +39,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
   };
 
   const handleQuestionDelete = (slotIndex: number) => {
+    if (!window.confirm('🗑️ Frage wirklich zurücksetzen?\n\nDie Frage wird durch eine leere Vorlage ersetzt.')) {
+      return;
+    }
     const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
     const emptyQuestion = createEmptyQuestion(slotIndex, slot);
     handleQuestionSave(slotIndex, emptyQuestion);

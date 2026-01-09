@@ -27,6 +27,7 @@ const ImprovedCozy60BuilderPage = () => {
   const [showCatalog, setShowCatalog] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [restoredFromLocal, setRestoredFromLocal] = useState(false);
+  const [lastAutoSave, setLastAutoSave] = useState<number | null>(null);
 
   const formatRelative = (ts: number) => {
     const diff = Date.now() - ts;
@@ -146,10 +147,10 @@ const ImprovedCozy60BuilderPage = () => {
 
     const validationErrors = validateDraft(draft);
     if (validationErrors.length > 0) {
-      const confirmMsg = `Es wurden Probleme gefunden:\n\n${validationErrors.join('\n')}\n\nTrotzdem veröffentlichen?`;
+      const confirmMsg = `⚠️ Es wurden Probleme gefunden:\n\n${validationErrors.join('\n')}\n\nTrotzdem veröffentlichen?`;
       if (!window.confirm(confirmMsg)) return;
     } else {
-      const confirmed = window.confirm(`"${draft.meta.title}" publishen?`);
+      const confirmed = window.confirm(`🚀 Quiz "${draft.meta.title}" veröffentlichen?\n\nDies macht das Quiz für alle Spieler verfügbar.`);
       if (!confirmed) return;
     }
 
@@ -176,6 +177,7 @@ const ImprovedCozy60BuilderPage = () => {
       try {
         localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(draft));
         localStorage.setItem(LOCAL_BACKUP_TS_KEY, Date.now().toString());
+        setLastAutoSave(Date.now());
         setStatus((prev) => (prev ? prev : 'Auto-Save ausgeführt'));
       } catch (err) {
         // Auto-save failed silently
@@ -234,6 +236,11 @@ const ImprovedCozy60BuilderPage = () => {
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8, color: '#94a3b8', fontSize: 12 }}>
                     <span>ID: {draft.id}</span>
                     {restoredFromLocal && <span style={{ color: '#4ade80' }}>Lokaler Restore aktiv</span>}
+                    {lastAutoSave && (
+                      <span style={{ color: '#94a3b8', fontSize: 11 }}>
+                        💾 Gespeichert: {new Date(lastAutoSave).toLocaleTimeString()}
+                      </span>
+                    )}
                     {status && <span style={{ color: '#22d3ee' }}>{status}</span>}
                     {error && <span style={{ color: '#f87171' }}>{error}</span>}
                   </div>

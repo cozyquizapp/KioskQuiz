@@ -9,6 +9,7 @@ interface BlitzEditorProps {
 export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
   const [expandedTheme, setExpandedTheme] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ themeId: string; itemId: string } | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const addTheme = () => {
     const newTheme: QuizBlitzTheme = {
@@ -124,59 +125,83 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
                 </button>
 
                 <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
-                  {theme.items.map((item, idx) => (
-                    <div key={item.id} style={itemCardStyle}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        <div style={{ flex: 1 }}>
-                          <label style={labelStyle}>Antwort</label>
-                          <input
-                            type="text"
-                            value={item.answer}
-                            onChange={(e) => updateItem(theme.id, item.id, { answer: e.target.value })}
-                            style={itemInputStyle}
-                          />
+                  {theme.items.map((item, idx) => {
+                    const imageStatus = item.mediaUrl ? '✅' : '⚠️';
+                    const aliasCount = (item.aliases?.length || 0);
+                    
+                    return (
+                      <div
+                        key={item.id}
+                        style={itemCardStyle}
+                        onMouseEnter={() => setHoveredItem(item.id)}
+                        onMouseLeave={() => setHoveredItem(null)}
+                      >
+                        {/* Item Preview Hover Card */}
+                        {hoveredItem === item.id && (
+                          <div style={previewCardStyle}>
+                            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                              {item.answer || 'Ohne Antwort'}
+                            </div>
+                            <div style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+                              <div>Bild: {imageStatus} {item.mediaUrl ? 'gefüllt' : 'leer'}</div>
+                              <div>Varianten: {aliasCount}</div>
+                              {item.prompt && <div>Hinweis: {item.prompt}</div>}
+                            </div>
+                          </div>
+                        )}
 
-                          <label style={labelStyle}>Frage/Hinweis (optional)</label>
-                          <input
-                            type="text"
-                            value={item.prompt || ''}
-                            onChange={(e) => updateItem(theme.id, item.id, { prompt: e.target.value })}
-                            placeholder="z.B. 'Hauptstadt von...'"
-                            style={itemInputStyle}
-                          />
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={labelStyle}>Antwort</label>
+                            <input
+                              type="text"
+                              value={item.answer}
+                              onChange={(e) => updateItem(theme.id, item.id, { answer: e.target.value })}
+                              style={itemInputStyle}
+                            />
 
-                          <label style={labelStyle}>Bild URL (optional)</label>
-                          <input
-                            type="text"
-                            value={item.mediaUrl || ''}
-                            onChange={(e) => updateItem(theme.id, item.id, { mediaUrl: e.target.value })}
-                            placeholder="https://..."
-                            style={itemInputStyle}
-                          />
+                            <label style={labelStyle}>Frage/Hinweis (optional)</label>
+                            <input
+                              type="text"
+                              value={item.prompt || ''}
+                              onChange={(e) => updateItem(theme.id, item.id, { prompt: e.target.value })}
+                              placeholder="z.B. 'Hauptstadt von...'"
+                              style={itemInputStyle}
+                            />
 
-                          <label style={labelStyle}>Alias-Antworten (optional)</label>
-                          <input
-                            type="text"
-                            value={item.aliases?.join(', ') || ''}
-                            onChange={(e) =>
-                              updateItem(theme.id, item.id, {
-                                aliases: e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
-                              })
-                            }
-                            placeholder="Alternative Antworten, kommagetrennt"
-                            style={itemInputStyle}
-                          />
+                            <label style={labelStyle}>Bild URL (optional)</label>
+                            <input
+                              type="text"
+                              value={item.mediaUrl || ''}
+                              onChange={(e) => updateItem(theme.id, item.id, { mediaUrl: e.target.value })}
+                              placeholder="https://..."
+                              style={itemInputStyle}
+                            />
+
+                            <label style={labelStyle}>Alias-Antworten (optional)</label>
+                            <input
+                              type="text"
+                              value={item.aliases?.join(', ') || ''}
+                              onChange={(e) =>
+                                updateItem(theme.id, item.id, {
+                                  aliases: e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                                })
+                              }
+                              placeholder="Alternative Antworten, kommagetrennt"
+                              style={itemInputStyle}
+                            />
+                          </div>
+
+                          <button
+                            onClick={() => deleteItem(theme.id, item.id)}
+                            style={deleteButtonStyle}
+                          >
+                            ✕
+                          </button>
                         </div>
-
-                        <button
-                          onClick={() => deleteItem(theme.id, item.id)}
-                          style={deleteButtonStyle}
-                        >
-                          ✕
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -242,7 +267,22 @@ const itemCardStyle: React.CSSProperties = {
   background: 'rgba(30,41,59,0.6)',
   border: '1px solid rgba(148,163,184,0.15)',
   borderRadius: 8,
-  padding: 16
+  padding: 16,
+  position: 'relative'
+};
+
+const previewCardStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: -60,
+  left: 16,
+  background: 'rgba(15,23,42,0.95)',
+  border: '1px solid rgba(34,197,94,0.4)',
+  borderRadius: 6,
+  padding: 12,
+  minWidth: 200,
+  zIndex: 10,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+  color: '#e2e8f0'
 };
 
 const labelStyle: React.CSSProperties = {

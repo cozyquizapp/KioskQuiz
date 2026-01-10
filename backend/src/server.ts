@@ -77,7 +77,17 @@ import {
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const app = express();
 const httpServer = http.createServer(app);
-const io = new SocketIOServer(httpServer, { cors: { origin: '*' } });
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
 
 app.use(cors());
 app.use(express.json());

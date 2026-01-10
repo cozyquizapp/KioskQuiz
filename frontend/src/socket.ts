@@ -20,7 +20,13 @@ const SOCKET_PATH = '/socket.io';
 const createSocket = () =>
   io(SOCKET_URL, {
     path: SOCKET_PATH,
-    transports: ['websocket', 'polling']
+    transports: ['polling', 'websocket'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 5,
+    timeout: 20000,
+    autoConnect: true
   });
 
 export const connectToRoom = (roomCode?: string): Socket => {

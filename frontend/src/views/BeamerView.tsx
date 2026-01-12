@@ -1906,9 +1906,12 @@ useEffect(() => {
     const questionTextLocalized =
       language === 'both' && question?.question && question?.questionEn
         ? (
-            <>
-              {question.question} <span className="lang-sep" style={{ opacity: 0.4, fontWeight: 600, margin: '0 8px' }}>·</span> {question.questionEn}
-            </>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>{question.question}</div>
+              <div style={{ fontSize: '0.85em', opacity: 0.6, fontWeight: 500, letterSpacing: '0.02em' }}>
+                {question.questionEn}
+              </div>
+            </div>
           )
         : language === 'en'
         ? question?.questionEn ?? question?.question

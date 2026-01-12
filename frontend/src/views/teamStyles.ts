@@ -61,11 +61,11 @@ export const headerBarTeam: CSSProperties = {
   gap: 8,
   padding: '12px 16px',
   borderRadius: 16,
-  background: 'rgba(16,20,31,0.7)',
+  background: 'rgba(255,255,255,0.001)',
+  backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
-  backdropFilter: 'blur(16px)'
+  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)'
 };
 
 export const pillSmall: CSSProperties = {
@@ -83,13 +83,10 @@ export const pillSmall: CSSProperties = {
 export const logoBadge: CSSProperties = {
   padding: '10px 12px',
   borderRadius: 12,
-  background: primary
-    ? `linear-gradient(135deg, ${primary}, ${primary}cc)`
-    : 'linear-gradient(135deg, #6dd5fa, #c471ed)',
+  background: 'rgba(255,255,255,0.02)',
   color: '#0d0f14',
   fontWeight: 900,
-  letterSpacing: '0.04em',
-  boxShadow: '0 14px 28px rgba(0,0,0,0.35)'
+  letterSpacing: '0.04em'
 };
 
 export const heroCard: CSSProperties = {
@@ -104,8 +101,7 @@ export const heroCard: CSSProperties = {
 export const heroIcon: CSSProperties = {
   width: 42,
   height: 42,
-  objectFit: 'contain',
-  filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.25))'
+  objectFit: 'contain'
 };
 
 export const eyebrow: CSSProperties = {
@@ -202,9 +198,10 @@ export const inputStyle: CSSProperties = {
 
 export const primaryButton: CSSProperties = {
   marginTop: 10,
-  background: 'linear-gradient(135deg, #fef3c7, #d8b4fe)',
-  color: '#0d0f14',
-  border: '1px solid rgba(0,0,0,0.12)',
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+  backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
+  color: '#f8fafc',
+  border: '1px solid rgba(255,255,255,0.08)',
   padding: '14px 16px',
   minHeight: 48,
   borderRadius: theme.radius,
@@ -213,8 +210,7 @@ export const primaryButton: CSSProperties = {
   width: '100%',
   fontWeight: 800,
   fontSize: 16,
-  transition: 'transform 0.14s ease, box-shadow 0.14s ease',
-  boxShadow: '0 16px 36px rgba(0,0,0,0.35)'
+  transition: 'transform 0.14s ease, box-shadow 0.14s ease'
 };
 
 export const choiceButton: CSSProperties = {
@@ -304,9 +300,10 @@ export const categoryChip: CSSProperties = {
   gap: 10,
   padding: '8px 12px',
   borderRadius: 999,
-  background: 'rgba(0,0,0,0.4)',
+  background: 'rgba(255,255,255,0.02)',
+  backdropFilter: 'blur(20px)',
   color: '#fff',
-  border: '1px solid rgba(255,255,255,0.14)',
+  border: '1px solid rgba(255,255,255,0.06)',
   fontWeight: 800
 };
 

@@ -13,17 +13,18 @@ const pillBase: CSSProperties = {
   fontSize: 12,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.12)',
-  background: 'rgba(255,255,255,0.06)',
+  borderColor: 'rgba(255,255,255,0.06)',
+  background: 'rgba(255,255,255,0.01)',
+  backdropFilter: 'blur(20px)',
   color: 'var(--text)'
 };
 
 const pillPalette: Record<Tone, CSSProperties> = {
-  neutral: { background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)', color: 'var(--text)' },
-  accent: { background: 'rgba(251,191,36,0.16)', borderColor: 'rgba(251,191,36,0.55)', color: '#fbbf24' },
-  muted: { background: 'rgba(148,163,184,0.16)', borderColor: 'rgba(148,163,184,0.4)', color: '#cbd5e1' },
-  success: { background: 'rgba(34,197,94,0.16)', borderColor: 'rgba(34,197,94,0.5)', color: '#22c55e' },
-  danger: { background: 'rgba(239,68,68,0.16)', borderColor: 'rgba(239,68,68,0.5)', color: '#ef4444' }
+  neutral: { background: 'rgba(255,255,255,0.01)', borderColor: 'rgba(255,255,255,0.06)', color: 'var(--text)' },
+  accent: { background: 'rgba(251,191,36,0.05)', borderColor: 'rgba(251,191,36,0.2)', color: '#fde68a' },
+  muted: { background: 'rgba(148,163,184,0.05)', borderColor: 'rgba(148,163,184,0.15)', color: '#cbd5e1' },
+  success: { background: 'rgba(34,197,94,0.05)', borderColor: 'rgba(34,197,94,0.2)', color: '#86efac' },
+  danger: { background: 'rgba(239,68,68,0.05)', borderColor: 'rgba(239,68,68,0.2)', color: '#fca5a5' }
 };
 
 export const Pill = ({ children, tone = 'neutral', style }: PropsWithChildren<{ tone?: Tone; style?: CSSProperties }>) => (
@@ -39,13 +40,14 @@ const primaryBase: CSSProperties = {
   minHeight: 48,
   padding: '12px 16px',
   borderRadius: 16,
-  border: '1px solid rgba(0,0,0,0.12)',
+  border: '1px solid rgba(255,255,255,0.08)',
   cursor: 'pointer',
   fontWeight: 800,
   fontSize: 16,
-  color: '#0d0f14',
-  background: 'linear-gradient(135deg, var(--accent), var(--accent-strong))',
-  boxShadow: 'var(--shadow-soft)'
+  color: '#f8fafc',
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+  backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
+  boxShadow: 'none'
 };
 
 export const PrimaryButton = ({

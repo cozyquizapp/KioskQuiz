@@ -992,19 +992,19 @@ function TeamView({ roomCode }: TeamViewProps) {
         opacity: transitioning ? 0.4 : 1,
         transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
         transition: 'opacity 0.3s ease, transform 0.35s ease',
-        background: `linear-gradient(145deg, ${accentColor}2a, rgba(12,15,22,0.88))`,
+        background: `linear-gradient(145deg, ${accentColor}44, rgba(12,15,22,0.82))`,
         color: '#e2e8f0',
-        borderColor: timeUp ? 'rgba(239,68,68,0.9)' : `${accentColor}80`,
+        borderColor: timeUp ? 'rgba(239,68,68,0.9)' : `${accentColor}aa`,
         boxShadow: timeUp
           ? '0 0 0 3px rgba(239,68,68,0.35), 0 24px 40px rgba(0,0,0,0.45)'
-          : `0 22px 40px ${accentColor}44`,
+          : `0 22px 40px ${accentColor}55`,
         animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
       }}
     >
       <div
         style={{
           ...gradientHalo,
-          background: `radial-gradient(circle at 24% 20%, ${accentColor}55, transparent 42%), radial-gradient(circle at 78% 12%, ${accentColor}33, transparent 38%)`
+          background: `radial-gradient(circle at 24% 20%, ${accentColor}88, transparent 42%), radial-gradient(circle at 78% 12%, ${accentColor}55, transparent 38%)`
         }}
       />
       <div style={questionHeader}>

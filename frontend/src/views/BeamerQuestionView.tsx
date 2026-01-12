@@ -51,7 +51,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
         )
       : footerMeta ?? '';
 
-  const gradient = `linear-gradient(135deg, ${cardColor}28, rgba(10,12,18,0.85))`;
+  const gradient = `linear-gradient(135deg, ${cardColor}55, rgba(10,12,18,0.78))`;
 
   const progressText = footerLabel;
 

@@ -1576,19 +1576,35 @@ function TeamView({ roomCode }: TeamViewProps) {
           ? 'Ergebnis'
           : 'Result'}
       </div>
-      <p style={{ margin: 0, color: resultCorrect ? '#22c55e' : '#ef4444', fontSize: 24, fontWeight: 900 }}>
-        {t('resultTitle')(resultCorrect)}
-      </p>
-      {resultMessage && <p style={{ margin: 0, color: 'var(--muted)' }}>{resultMessage}</p>}
+      {!evaluating && (
+        <p style={{ margin: 0, color: resultCorrect ? '#22c55e' : '#ef4444', fontSize: 24, fontWeight: 900 }}>
+          {t('resultTitle')(resultCorrect)}
+        </p>
+      )}
+      {evaluating && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '12px 0' }}>
+          <PulseIndicator />
+        </div>
+      )}
+      {answer && (
+        <p style={{ margin: evaluating ? '12px 0 0' : '8px 0 0', color: '#cbd5e1', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>{language === 'de' ? 'Eure Antwort:' : 'Your answer:'}</span>
+          <br />
+          {answer}
+        </p>
+      )}
+      {resultMessage && <p style={{ margin: '8px 0 0', color: '#f3ba27' }}>{resultMessage}</p>}
       {resultPoints !== null && (
-        <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
-          {language === 'de' ? 'Punkte' : 'Points'}: <CountUpNumber value={resultPoints} />
-          {resultDetail ? ` - ${resultDetail}` : ''}
+        <p style={{ margin: '8px 0 0', color: '#22c55e', fontWeight: 700 }}>
+          +{resultPoints} {language === 'de' ? 'Punkte' : 'Points'}
+          {resultDetail ? ` (${resultDetail})` : ''}
         </p>
       )}
       {solution && (
-        <p style={{ margin: '8px 0 0', color: '#e2e8f0', fontWeight: 700 }}>
-          {language === 'de' ? 'Loesung:' : 'Solution:'} {solution}
+        <p style={{ margin: '12px 0 0', color: '#e2e8f0', fontWeight: 700, padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>{language === 'de' ? 'Richtige Antwort:' : 'Correct answer:'}</span>
+          <br />
+          {solution}
         </p>
       )}
     </div>

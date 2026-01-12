@@ -2381,12 +2381,26 @@ function TeamView({ roomCode }: TeamViewProps) {
             <button
               style={{
                 ...primaryButton,
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
-                color: '#cbd5e1',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                color: '#94a3b8',
+                border: '1px solid rgba(255,255,255,0.05)',
                 backdropFilter: 'blur(30px)',
                 transition: 'all 0.3s ease',
-                minHeight: 44
+                minHeight: 44,
+                cursor: rundlaufSubmitting ? 'not-allowed' : 'pointer',
+                opacity: rundlaufSubmitting ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!rundlaufSubmitting) {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))';
+                  e.currentTarget.style.color = '#cbd5e1';
+                  e.currentTarget.style.border = '1px solid rgba(255,255,255,0.12)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))';
+                e.currentTarget.style.color = '#94a3b8';
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.05)';
               }}
               onClick={() => submitRundlaufAnswer(true)}
               disabled={rundlaufSubmitting}
@@ -2955,13 +2969,15 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               padding: '6px 10px',
               borderRadius: 10,
-              border: language === opt.key ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
-              background: language === opt.key ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.01)',
+              border: language === opt.key ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.04)',
+              background: language === opt.key ? `${accentColor}ee` : 'rgba(255,255,255,0.02)',
               backdropFilter: 'blur(20px)',
-              color: '#e2e8f0',
-              fontWeight: 800,
+              color: language === opt.key ? '#0d0f14' : '#94a3b8',
+              fontWeight: language === opt.key ? 900 : 600,
               cursor: 'pointer',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              boxShadow: language === opt.key ? `0 8px 16px ${accentColor}44, inset 0 1px 1px rgba(255,255,255,0.2)` : 'inset 0 1px 1px rgba(255,255,255,0.02)',
+              transform: language === opt.key ? 'scale(1.05)' : 'scale(1)'
             }}
             onClick={() => updateLanguage(opt.key)}
             type="button"
@@ -3323,17 +3339,19 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               marginTop: 12,
               background: isReady 
-                ? `linear-gradient(135deg, ${accentPink}44, ${accentPink}22)`
-                : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
-              color: isReady ? accentPink : '#cbd5e1',
-              border: `1px solid ${isReady ? accentPink : 'rgba(255,255,255,0.08)'}66`,
-              backdropFilter: 'blur(30px)',
+                ? `linear-gradient(135deg, ${accentPink}cc, ${accentPink}aa)`
+                : 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+              color: isReady ? '#0d0f14' : '#94a3b8',
+              border: `1px solid ${isReady ? accentPink : 'rgba(255,255,255,0.04)'}`,
+              backdropFilter: isReady ? 'blur(20px)' : 'blur(30px)',
               boxShadow: isReady 
-                ? `0 8px 24px ${accentPink}44, inset 0 1px 1px rgba(255,255,255,0.1)` 
-                : 'inset 0 1px 1px rgba(255,255,255,0.05)',
-              transition: 'all 0.3s ease',
+                ? `0 12px 32px ${accentPink}66, inset 0 1px 1px rgba(255,255,255,0.3)` 
+                : 'inset 0 1px 1px rgba(255,255,255,0.03)',
+              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
               opacity: connectionStatus === 'connected' ? 1 : 0.5,
-              cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
+              cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
+              fontWeight: isReady ? 900 : 700,
+              transform: isReady ? 'scale(1.02)' : 'scale(1)'
             }}
             onClick={connectionStatus === 'connected' ? toggleReady : undefined}
             disabled={connectionStatus !== 'connected'}

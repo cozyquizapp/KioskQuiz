@@ -3031,17 +3031,6 @@ function TeamView({ roomCode }: TeamViewProps) {
         {subtitle && <p style={mutedText}>{subtitle}</p>}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
         <PulseIndicator style={{ fontSize: 40, color: 'var(--accent)', margin: '20px 0' }} />
-        {hasTimer && (
-        <>
-          <div style={softDivider} />
-          <div style={progressOuter(accentColor)}>
-            <div style={{ ...progressInner(accentColor), width: `${progress}%` }} />
-          </div>
-          <div style={{ marginTop: 6, color: 'var(--muted)', fontWeight: 700 }}>
-            {t('timeLeft')(Math.round(remainingSeconds))}
-          </div>
-        </>
-      )}
       </div>
     );
   }

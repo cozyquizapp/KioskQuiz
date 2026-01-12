@@ -3021,18 +3021,26 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderWaiting(title: string, subtitle?: string) {
     return (
       <div
-      style={{
-        ...glassCard,
-        textAlign: 'center',
-        alignItems: 'center',
-        maxWidth: 620
-      }}
-    >
-      <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'Warten' : 'Info'}</div>
-      <h3 style={{ ...heading, marginBottom: 4 }}>{title}</h3>
-        {subtitle && <p style={mutedText}>{subtitle}</p>}
+        className="waiting-card"
+        style={{
+          ...glassCard,
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          maxWidth: 620,
+          minHeight: 280,
+          background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06))',
+          borderColor: 'rgba(99, 102, 241, 0.2)',
+          animation: 'liquid-shimmer 6s ease-in-out infinite'
+        }}
+      >
+        <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'WARTEN' : 'INFO'}</div>
+        <h3 style={{ ...heading, marginBottom: 8, marginTop: 16, fontSize: 'clamp(24px, 5vw, 36px)' }}>{title}</h3>
+        {subtitle && <p style={{ ...mutedText, marginBottom: 20 }}>{subtitle}</p>}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
-        <PulseIndicator style={{ fontSize: 40, color: 'var(--accent)', margin: '20px 0' }} />
+        <PulseIndicator style={{ fontSize: 48, color: '#a5b4fc', margin: '28px 0 0' }} />
       </div>
     );
   }

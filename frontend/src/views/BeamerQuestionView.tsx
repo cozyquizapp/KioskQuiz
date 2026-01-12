@@ -230,7 +230,7 @@ const cardGlow: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
   background:
-    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.02), transparent 60%)',
+    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.01), transparent 60%)',
   opacity: 1,
   pointerEvents: 'none',
   animation: 'liquid-shimmer 6s ease-in-out infinite'

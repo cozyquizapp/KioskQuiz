@@ -32,6 +32,8 @@ import { categoryIcons } from '../categoryAssets';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { featureFlags } from '../config/features';
+import { CountUpNumber } from '../components/CountUpNumber';
+import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
 import {
   pageStyleTeam,
   contentShell,
@@ -246,6 +248,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [isFinal, setIsFinal] = useState(false);
   const [resultPoints, setResultPoints] = useState<number | null>(null);
   const [resultDetail, setResultDetail] = useState<string | null>(null);
+  const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
@@ -702,8 +705,19 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (payload.results && teamId) {
         const entry = payload.results.find((res) => res.teamId === teamId);
         if (entry) {
-          if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
-          else setResultPoints(null);
+          if (typeof entry.awardedPoints === 'number') {
+            setResultPoints(entry.awardedPoints);
+            // Trigger feedback animation
+            if (entry.awardedPoints > 0) {
+              setFeedbackAnimation('success');
+              setTimeout(() => setFeedbackAnimation(null), 1000);
+            } else {
+              setFeedbackAnimation('error');
+              setTimeout(() => setFeedbackAnimation(null), 500);
+            }
+          } else {
+            setResultPoints(null);
+          }
           setResultDetail(entry.awardedDetail ?? null);
         }
       }
@@ -1545,7 +1559,10 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function renderShowResult() {
     return (
-      <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
+      <div 
+        className={feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}
+        style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
+      >
       <div style={pillLabel}>
         {isFinal
           ? language === 'de'
@@ -1565,7 +1582,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       {resultMessage && <p style={{ margin: 0, color: 'var(--muted)' }}>{resultMessage}</p>}
       {resultPoints !== null && (
         <p style={{ margin: '6px 0 0', color: '#fde68a', fontWeight: 700 }}>
-          {language === 'de' ? 'Punkte' : 'Points'}: {resultPoints}
+          {language === 'de' ? 'Punkte' : 'Points'}: <CountUpNumber value={resultPoints} />
           {resultDetail ? ` - ${resultDetail}` : ''}
         </p>
       )}
@@ -1712,7 +1729,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             >
               <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
               <span>{entry.name}</span>
-              <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+              <CountUpNumber value={entry.score ?? 0} style={{ fontWeight: 800 }} />
             </div>
           ))}
         </div>
@@ -3013,7 +3030,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       <h3 style={{ ...heading, marginBottom: 4 }}>{title}</h3>
         {subtitle && <p style={mutedText}>{subtitle}</p>}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
-        <div style={hourglassStyle}>{'\u23F3'}</div>
+        <PulseIndicator style={{ fontSize: 40, color: 'var(--accent)', margin: '20px 0' }} />
         {hasTimer && (
         <>
           <div style={softDivider} />
@@ -3030,7 +3047,11 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderLoadingCard() {
-    return renderWaiting(language === 'de' ? 'Verbinde ...' : 'Connecting ...');
+    return (
+      <div style={{ maxWidth: 620, margin: '0 auto' }}>
+        <SkeletonCard />
+      </div>
+    );
   }
 
   function renderErrorCard() {

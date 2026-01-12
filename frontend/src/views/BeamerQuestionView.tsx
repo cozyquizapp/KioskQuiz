@@ -147,8 +147,8 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     <section style={sectionStyle}>
       {leftDecorationSrc && <img src={leftDecorationSrc} alt="" style={decorationLeft} />}
       {rightDecorationSrc && <img src={rightDecorationSrc} alt="" style={decorationRight} />}
-      <div style={{ ...cardStyle, background: gradient, borderColor: `${cardColor}cc`, boxShadow: `0 28px 72px ${cardColor}77` }}>
-        <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}66, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}44, transparent 60%)` }} />
+      <div style={{ ...cardStyle, background: `linear-gradient(135deg, rgba(13,15,20,0.25) 0%, ${cardColor}15 100%)`, borderColor: `${cardColor}33`, boxShadow: `0 30px 80px ${cardColor}22, 0 0 60px ${cardColor}11` }}>
+        <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}22, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}11, transparent 60%)` }} />
         <div style={{ ...accentStrip, background: `linear-gradient(180deg, ${cardColor}, ${cardColor}cc)` }} />
 
         <div style={headerRow}>
@@ -218,19 +218,20 @@ const cardStyle: React.CSSProperties = {
   maxWidth: 1100,
   borderRadius: 30,
   padding: '26px 28px 36px',
-  border: '1px solid rgba(255,255,255,0.12)',
+  border: '1px solid rgba(255,255,255,0.15)',
   color: '#f8fafc',
-  boxShadow: 'var(--glass-shadow)',
+  boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
   overflow: 'hidden',
-  backdropFilter: 'blur(10px)'
+  backdropFilter: 'blur(16px) saturate(120%)',
+  background: 'rgba(13,15,20,0.25)'
 };
 
 const cardGlow: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
   background:
-    'radial-gradient(circle at 30% 30%, rgba(0,0,0,0.08), transparent 42%), radial-gradient(circle at 80% 20%, rgba(0,0,0,0.04), transparent 45%)',
-  opacity: 0.5,
+    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 42%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04), transparent 45%)',
+  opacity: 0.6,
   pointerEvents: 'none'
 };
 
@@ -264,9 +265,11 @@ const pill: React.CSSProperties = {
 
 const pillAltStyle = (color: string): React.CSSProperties => ({
   ...pill,
-  background: 'rgba(15,23,42,0.7)',
+  background: `rgba(15,23,42,0.4)`,
   color: '#f8fafc',
-  border: `1px solid ${color}66`
+  border: `1px solid rgba(255,255,255,0.2)`,
+  backdropFilter: 'blur(8px)',
+  boxShadow: `0 0 20px ${color}22`
 });
 
 const statusPillDangerStyle = (color: string): React.CSSProperties => ({
@@ -282,17 +285,17 @@ const titleStyle: React.CSSProperties = {
   fontSize: 36,
   lineHeight: 1.2,
   color: '#f8fafc',
-  textShadow: '0 6px 18px rgba(0,0,0,0.28)'
+  textShadow: '0 2px 8px rgba(0,0,0,0.35)'
 };
 
 const barOuter: React.CSSProperties = {
   width: '100%',
   height: 14,
   borderRadius: 999,
-  background: 'rgba(0,0,0,0.25)',
+  background: 'rgba(0,0,0,0.35)',
   overflow: 'hidden',
   marginBottom: 12,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px rgba(0,0,0,0.35)'
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.25)'
 };
 
 const barInnerStyle = (color: string): React.CSSProperties => ({
@@ -300,7 +303,7 @@ const barInnerStyle = (color: string): React.CSSProperties => ({
   background: color,
   borderRadius: 999,
   transition: 'width 0.2s ease',
-  boxShadow: `0 0 14px ${color}55`
+  boxShadow: `0 0 18px ${color}77, inset 0 1px 2px rgba(255,255,255,0.2)`
 });
 
 const chipMuted: React.CSSProperties = {
@@ -318,7 +321,8 @@ const answerBlock: React.CSSProperties = {
   marginTop: 6,
   padding: '12px 14px',
   borderRadius: 16,
-  background: 'rgba(255,255,255,0.9)',
+  background: 'rgba(248,250,252,0.75)',
+  backdropFilter: 'blur(12px)',
   boxShadow: '0 16px 36px rgba(0,0,0,0.25)'
 };
 

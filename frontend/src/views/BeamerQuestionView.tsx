@@ -147,15 +147,14 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     <section style={sectionStyle}>
       {leftDecorationSrc && <img src={leftDecorationSrc} alt="" style={decorationLeft} />}
       {rightDecorationSrc && <img src={rightDecorationSrc} alt="" style={decorationRight} />}
-      <div style={{ ...cardStyle, borderColor: `rgba(255,255,255,0.3)`, boxShadow: `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2)` }}>
-        <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}22, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}11, transparent 60%)` }} />
-        <div style={{ ...accentStrip, background: `linear-gradient(180deg, ${cardColor}, ${cardColor}cc)` }} />
+      <div style={cardStyle}>
+        <div style={cardGlow} />
 
         <div style={headerRow}>
-          <div style={{ ...pill, background: `${cardColor}33`, borderColor: `${cardColor}66`, color: '#f8fafc' }}>
+          <div style={pill}>
             {categoryLabel || t.waitingForQuestion}
           </div>
-          <div style={isTimeUp ? statusPillDangerStyle(cardColor) : pillAltStyle(cardColor)}>{statusLabel}</div>
+          <div style={isTimeUp ? { ...pill, background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#fecdd3' } : pill}>{statusLabel}</div>
         </div>
 
         <h1 style={titleStyle}>{questionText ?? t.waitingForQuestion}</h1>
@@ -261,7 +260,11 @@ const pill: React.CSSProperties = {
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   fontSize: 12,
-  boxShadow: '0 6px 16px rgba(0,0,0,0.18)'
+  background: 'rgba(255,255,255,0.01)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  color: '#f8fafc',
+  backdropFilter: 'blur(30px)',
+  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
 };
 
 const pillAltStyle = (color: string): React.CSSProperties => ({

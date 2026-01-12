@@ -2028,7 +2028,7 @@ useEffect(() => {
                   </div>
                 )}
               </div>
-              <div className="cozyQuestionText">{questionTextLocalized || questionText || ''}</div>
+              <div className="cozyQuestionText">{questionTextLocalized}</div>
               {promptText && <div className="cozyQuestionHint">{promptText}</div>}
               {mediaUrl && (
                 <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}`}>

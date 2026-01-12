@@ -147,7 +147,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     <section style={sectionStyle}>
       {leftDecorationSrc && <img src={leftDecorationSrc} alt="" style={decorationLeft} />}
       {rightDecorationSrc && <img src={rightDecorationSrc} alt="" style={decorationRight} />}
-      <div style={{ ...cardStyle, background: `linear-gradient(135deg, rgba(13,15,20,0.08) 0%, ${cardColor}08 100%)`, borderColor: `${cardColor}40`, boxShadow: `0 20px 60px ${cardColor}11` }}>
+      <div style={{ ...cardStyle, background: `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, ${cardColor}06 50%, rgba(13,15,20,0.05) 100%)`, borderImage: `linear-gradient(135deg, ${cardColor}44, rgba(255,255,255,0.15), ${cardColor}22) 1`, boxShadow: `0 8px 32px ${cardColor}11, inset 0 1px 2px rgba(255,255,255,0.15)` }}>
         <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}22, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}11, transparent 60%)` }} />
         <div style={{ ...accentStrip, background: `linear-gradient(180deg, ${cardColor}, ${cardColor}cc)` }} />
 
@@ -218,21 +218,22 @@ const cardStyle: React.CSSProperties = {
   maxWidth: 1100,
   borderRadius: 30,
   padding: '26px 28px 36px',
-  border: '1px solid rgba(255,255,255,0.2)',
+  border: '1px solid rgba(255,255,255,0.25)',
   color: '#f8fafc',
-  boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.15)',
   overflow: 'hidden',
-  backdropFilter: 'blur(24px) saturate(150%)',
-  background: 'rgba(13,15,20,0.08)'
+  backdropFilter: 'blur(32px) saturate(180%) brightness(1.1)',
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(13,15,20,0.05) 100%)'
 };
 
 const cardGlow: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
   background:
-    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.03), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.01), transparent 60%)',
+    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.02), transparent 60%)',
   opacity: 1,
-  pointerEvents: 'none'
+  pointerEvents: 'none',
+  animation: 'liquid-shimmer 6s ease-in-out infinite'
 };
 
 const accentStrip: React.CSSProperties = {
@@ -321,9 +322,9 @@ const answerBlock: React.CSSProperties = {
   marginTop: 6,
   padding: '12px 14px',
   borderRadius: 16,
-  background: 'rgba(248,250,252,0.4)',
-  backdropFilter: 'blur(16px)',
-  boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
+  background: 'rgba(248,250,252,0.35)',
+  backdropFilter: 'blur(20px) saturate(160%)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2)'
 };
 
 const answerLabel: React.CSSProperties = {

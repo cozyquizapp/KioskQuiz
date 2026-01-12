@@ -911,7 +911,7 @@
 }
 
 .cozyQuestionHero.locked::after {
-  content: '';
+  content: 'LOCKED';
   position: absolute;
   top: 14px;
   right: 16px;
@@ -925,6 +925,8 @@
   text-transform: uppercase;
   color: #fde68a;
   animation: pulse-dot 2s ease-in-out infinite;
+  z-index: 10;
+  white-space: nowrap;
 }
 
 .cozyQuestionHero.locked {

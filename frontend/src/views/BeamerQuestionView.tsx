@@ -304,10 +304,12 @@ const barOuter: React.CSSProperties = {
 
 const barInnerStyle = (color: string): React.CSSProperties => ({
   height: '100%',
-  background: color,
+  background: `linear-gradient(90deg, ${color}, ${color}dd, ${color})`,
+  backgroundSize: '200% 100%',
   borderRadius: 999,
   transition: 'width 0.2s ease',
-  boxShadow: `0 0 18px ${color}77, inset 0 1px 2px rgba(255,255,255,0.2)`
+  boxShadow: `0 0 18px ${color}77, inset 0 1px 2px rgba(255,255,255,0.2)`,
+  animation: 'timer-flow 3s ease-in-out infinite'
 });
 
 const chipMuted: React.CSSProperties = {

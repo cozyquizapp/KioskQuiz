@@ -99,6 +99,12 @@ body {
   50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
 }
 
+@keyframes timer-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @keyframes skeleton-loading {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -107,6 +113,12 @@ body {
 @keyframes count-up {
   0% { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes timer-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .shake-animation {
@@ -389,4 +401,25 @@ img {
   font-weight: 700;
   color: #cbd5e1;
   text-transform: uppercase;
+}
+
+/* Team answer choice selected state with checkmark */
+.team-choice.is-selected {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 2px currentColor, 0 12px 28px rgba(99, 102, 241, 0.25) !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15)) !important;
+  border-color: rgba(99, 102, 241, 0.6) !important;
+  position: relative;
+}
+
+.team-choice.is-selected::after {
+  content: '✓';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 22px;
+  font-weight: 900;
+  color: #a5b4fc;
+  opacity: 0.9;
 }

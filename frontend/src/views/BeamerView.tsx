@@ -1904,8 +1904,12 @@ useEffect(() => {
       (question as any)?.image ||
       null;
     const questionTextLocalized =
-      language === 'both'
-        ? `${question?.question ?? ''}${question?.questionEn ? ` / ${question.questionEn}` : ''}`
+      language === 'both' && question?.question && question?.questionEn
+        ? (
+            <>
+              {question.question} <span className="lang-sep" style={{ opacity: 0.4, fontWeight: 600, margin: '0 8px' }}>·</span> {question.questionEn}
+            </>
+          )
         : language === 'en'
         ? question?.questionEn ?? question?.question
         : question?.question ?? question?.questionEn ?? '';

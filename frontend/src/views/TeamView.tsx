@@ -1080,7 +1080,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           {language === 'de' ? 'Antworten sind gesperrt.' : 'Answers are locked.'}
         </div>
       )}
-        <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question ?? t('waitingMsg')}</h2>
+        <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}</h2>
       {(() => {
         const q: any = question;
         const mediaUrl = q?.imageUrl || q?.media?.url;

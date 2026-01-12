@@ -1087,7 +1087,7 @@ useEffect(() => {
   const questionText =
     question && language === 'en' && (question as any)?.questionEn
       ? (question as any).questionEn
-      : question?.question;
+      : question?.question?.split('/')[0]?.trim() ?? question?.question;
 
   const timerText =
     timerEndsAt && remainingMs > 0
@@ -1907,7 +1907,7 @@ useEffect(() => {
       language === 'both' && question?.question && question?.questionEn
         ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-              <div>{question.question}</div>
+              <div>{question.question.split('/')[0].trim()}</div>
               <div style={{
                 width: '100%',
                 height: '1px',
@@ -1918,8 +1918,8 @@ useEffect(() => {
             </div>
           )
         : language === 'en'
-        ? question?.questionEn ?? question?.question
-        : question?.question ?? question?.questionEn ?? '';
+        ? question?.questionEn ?? question?.question?.split('/')[0]?.trim() ?? ''
+        : (question?.question?.split('/')[0]?.trim() ?? question?.questionEn ?? '');
 
     const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
       const promptText = getQuestionPromptText();

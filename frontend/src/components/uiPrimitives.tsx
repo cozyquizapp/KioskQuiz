@@ -16,7 +16,8 @@ const pillBase: CSSProperties = {
   borderColor: 'rgba(255,255,255,0.06)',
   background: 'rgba(255,255,255,0.01)',
   backdropFilter: 'blur(20px)',
-  color: 'var(--text)'
+  color: 'var(--text)',
+  transition: 'all 0.3s ease'
 };
 
 const pillPalette: Record<Tone, CSSProperties> = {
@@ -47,7 +48,9 @@ const primaryBase: CSSProperties = {
   color: '#f8fafc',
   background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
-  boxShadow: 'none'
+  boxShadow: 'none',
+  transition: 'all 0.3s ease',
+  animation: 'liquid-shimmer 6s ease-in-out infinite'
 };
 
 export const PrimaryButton = ({

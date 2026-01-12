@@ -383,6 +383,19 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: all 0.3s ease;
+  animation: liquid-shimmer 6s ease-in-out infinite;
+}
+
+.beamer-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.beamer-card:focus-within {
+  outline: 2px solid rgba(251, 191, 36, 0.5);
+  outline-offset: 2px;
 }
 
 .beamer-card.highlight {
@@ -675,6 +688,8 @@
   flex-direction: column;
   gap: 20px;
   min-height: 0;
+  transition: all 0.3s ease;
+  animation: liquid-shimmer 6s ease-in-out infinite;
 }
 
 .cozyLobbyTeamsHeader {
@@ -761,6 +776,8 @@
   align-content: center;
   justify-items: center;
   text-align: center;
+  transition: all 0.3s ease;
+  animation: liquid-shimmer 6s ease-in-out infinite;
 }
 
 .cozyLobbyQrTitle {
@@ -854,6 +871,8 @@
   flex-direction: column;
   gap: 14px;
   box-shadow: none;
+  transition: all 0.3s ease;
+  animation: liquid-shimmer 6s ease-in-out infinite;
 }
 
 .cozyQuestionHero.locked {
@@ -975,7 +994,19 @@
   backdrop-filter: blur(30px) saturate(200%) brightness(1.15);
   font-weight: 600;
   font-size: 18px;
-  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cozyOption:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cozyOption:focus {
+  outline: 2px solid rgba(251, 191, 36, 0.5);
+  outline-offset: 2px;
 }
 
 .cozyOptionPrefix {

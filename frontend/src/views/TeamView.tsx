@@ -3157,8 +3157,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const showTimerProgress = hasTimer && !isLocked;
   const viewState = socketError
     ? 'error'
-    : !hasStateUpdate && connectionStatus === 'connecting'
-    ? 'loading'
     : !teamId
     ? 'join'
     : 'active';

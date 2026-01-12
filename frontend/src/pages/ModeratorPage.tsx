@@ -173,6 +173,7 @@ function ModeratorPage(): React.ReactElement {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
   const [potatoThemeInput, setPotatoThemeInput] = useState('');
   const [potatoBanDrafts, setPotatoBanDrafts] = useState<Record<string, string>>({});
+  const lastTimerAppliedQuestionId = React.useRef<string | null>(null);
   const [potatoAnswerInput, setPotatoAnswerInput] = useState('');
   const [potatoWinnerDraft, setPotatoWinnerDraft] = useState('');
   const [blitzThemeInput, setBlitzThemeInput] = useState('');
@@ -688,6 +689,14 @@ function ModeratorPage(): React.ReactElement {
       .then((res) => setLeaderboard(res.runs || []))
       .catch(() => undefined);
   }, []);
+
+  // Ensure the question timer uses the configured duration instead of the backend default
+  useEffect(() => {
+    if (!roomCode || !socketQuestion?.id || socketGameState !== 'Q_ACTIVE') return;
+    if (lastTimerAppliedQuestionId.current === socketQuestion.id) return;
+    lastTimerAppliedQuestionId.current = socketQuestion.id;
+    startTimer(roomCode, timerSeconds).catch(() => undefined);
+  }, [roomCode, socketQuestion?.id, socketGameState, timerSeconds]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;

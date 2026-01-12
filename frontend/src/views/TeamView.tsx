@@ -992,13 +992,13 @@ function TeamView({ roomCode }: TeamViewProps) {
         opacity: transitioning ? 0.4 : 1,
         transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
         transition: 'opacity 0.3s ease, transform 0.35s ease',
-        background: 'rgba(255,255,255,0.005)',
-        backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
+        background: 'rgba(255,255,255,0.001)',
+        backdropFilter: 'blur(50px) saturate(200%) brightness(1.15)',
         color: '#e2e8f0',
-        borderColor: timeUp ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.15)',
+        borderColor: timeUp ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.08)',
         boxShadow: timeUp
-          ? '0 8px 32px rgba(239,68,68,0.08), inset 0 1px 1px rgba(255,255,255,0.1)'
-          : `0 8px 32px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.1)`,
+          ? 'inset 0 1px 1px rgba(255,255,255,0.05)'
+          : 'inset 0 1px 1px rgba(255,255,255,0.05)',
         animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
       }}
     >
@@ -1013,11 +1013,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div
           style={{
             ...categoryChip,
-            background: 'rgba(255,255,255,0.005)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.001)',
+            border: '1px solid rgba(255,255,255,0.06)',
             color: '#f1f5f9',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(24px) saturate(200%)'
+            boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(30px) saturate(200%)'
           }}
         >
           {accentIcon && (
@@ -1103,11 +1103,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: `linear-gradient(90deg, rgba(255,255,255,0.15) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%)`,
-          backdropFilter: 'blur(24px) saturate(200%) brightness(1.1)',
+          background: `linear-gradient(90deg, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.001) ${Math.max(0, Math.min(100, progress))}%)`,
+          backdropFilter: 'blur(30px) saturate(200%) brightness(1.1)',
           color: '#f8fafc',
-          boxShadow: `0 4px 16px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2)`,
-          border: '1.5px solid rgba(255,255,255,0.3)',
+          boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.06)',
           animation: 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer ? 1 : 0.6,

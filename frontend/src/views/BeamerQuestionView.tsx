@@ -218,19 +218,19 @@ const cardStyle: React.CSSProperties = {
   maxWidth: 1100,
   borderRadius: 30,
   padding: '26px 28px 36px',
-  border: '1px solid rgba(255,255,255,0.15)',
+  border: '1px solid rgba(255,255,255,0.08)',
   color: '#f8fafc',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.05)',
+  boxShadow: 'none',
   overflow: 'hidden',
-  backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
-  background: 'rgba(255,255,255,0.005)'
+  backdropFilter: 'blur(50px) saturate(200%) brightness(1.15)',
+  background: 'rgba(255,255,255,0.001)'
 };
 
 const cardGlow: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
   background:
-    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.01), transparent 60%)',
+    'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.02), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.005), transparent 60%)',
   opacity: 1,
   pointerEvents: 'none',
   animation: 'liquid-shimmer 6s ease-in-out infinite'

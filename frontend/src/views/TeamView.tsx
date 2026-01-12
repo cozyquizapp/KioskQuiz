@@ -1109,8 +1109,17 @@ function TeamView({ roomCode }: TeamViewProps) {
       <div style={{ marginTop: 10 }}>{renderInput(accentColor)}</div>
       {renderBunteDetails()}
       {timeUp && (
-        <p style={{ color: '#ef4444', fontWeight: 700, marginTop: 8 }}>
-          Leider ist die Zeit schon vorbei.
+        <p style={{ 
+          color: '#fb923c', 
+          fontWeight: 700, 
+          marginTop: 8,
+          padding: '8px 12px',
+          borderRadius: 10,
+          background: 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(249,115,22,0.08))',
+          border: '1px solid rgba(251,146,60,0.3)',
+          backdropFilter: 'blur(20px)'
+        }}>
+          {language === 'de' ? 'Leider ist die Zeit schon vorbei.' : 'Time is up.'}
         </p>
       )}
       <button
@@ -1577,9 +1586,33 @@ function TeamView({ roomCode }: TeamViewProps) {
           : 'Result'}
       </div>
       {!evaluating && (
-        <p style={{ margin: 0, color: resultCorrect ? '#22c55e' : '#ef4444', fontSize: 24, fontWeight: 900 }}>
-          {t('resultTitle')(resultCorrect)}
-        </p>
+        <div style={{
+          margin: '12px 0 0',
+          padding: '12px 16px',
+          borderRadius: 14,
+          background: resultCorrect 
+            ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.08))'
+            : 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(249,115,22,0.08))',
+          border: resultCorrect
+            ? '1px solid rgba(34,197,94,0.3)'
+            : '1px solid rgba(251,146,60,0.3)',
+          backdropFilter: 'blur(20px)'
+        }}>
+          <p style={{ 
+            margin: 0, 
+            color: resultCorrect ? '#4ade80' : '#fb923c', 
+            fontSize: 24, 
+            fontWeight: 900,
+            background: resultCorrect
+              ? 'linear-gradient(135deg, #4ade80, #22c55e)'
+              : 'linear-gradient(135deg, #fb923c, #f97316)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            {t('resultTitle')(resultCorrect)}
+          </p>
+        </div>
       )}
       {evaluating && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '12px 0' }}>

@@ -110,10 +110,16 @@
 }
 
 .beamer-header-title {
-  font-size: clamp(32px, 4vw, 52px);
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.6);
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
 .beamer-header-subtitle {
@@ -723,7 +729,7 @@
 
 .cozyLobbyTeamRow {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
@@ -733,6 +739,21 @@
   backdrop-filter: blur(30px) saturate(200%) brightness(1.15);
   font-size: 18px;
   font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.cozyLobbyTeamRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.cozyLobbyTeamRow:nth-child(1) { --rank-medal: '🥇'; }
+.cozyLobbyTeamRow:nth-child(2) { --rank-medal: '🥈'; }
+.cozyLobbyTeamRow:nth-child(3) { --rank-medal: '🥉'; }
+
+.cozyLobbyTeamRow::before {
+  content: var(--rank-medal);
+  font-size: 20px;
 }
 
 .cozyLobbyStatusDot {
@@ -864,6 +885,7 @@
 .cozyQuestionHero {
   border-radius: 32px;
   padding: 26px;
+  padding-left: 30px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.001);
   backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
@@ -873,6 +895,36 @@
   box-shadow: none;
   transition: all 0.3s ease;
   animation: liquid-shimmer 6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.cozyQuestionHero::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--category-color, rgba(255, 255, 255, 0.2));
+  border-radius: 32px 0 0 32px;
+}
+
+.cozyQuestionHero.locked::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  padding: 6px 12px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fde68a;
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 .cozyQuestionHero.locked {
@@ -894,20 +946,21 @@
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.01);
   backdrop-filter: blur(30px) saturate(200%) brightness(1.15);
+  align-self: flex-start;
 }
 
 .cozyQuestionBadge img {
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   border-radius: 16px;
   object-fit: contain;
   background: rgba(255, 255, 255, 0.04);
-  padding: 6px;
+  padding: 8px;
 }
 
 .cozyQuestionBadge span {
@@ -958,6 +1011,15 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.03);
+  transition: all 0.4s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.cozyQuestionHero.locked .cozyQuestionMedia {
+  box-shadow: 
+    0 0 30px rgba(251, 191, 36, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  border-color: rgba(251, 191, 36, 0.3);
 }
 
 .cozyQuestionMedia img {
@@ -988,6 +1050,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
+  padding-left: 18px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.01);
@@ -996,6 +1059,19 @@
   font-size: 18px;
   transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
+  animation: slideIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.cozyOption:nth-child(1) { animation-delay: 0.05s; }
+.cozyOption:nth-child(2) { animation-delay: 0.1s; }
+.cozyOption:nth-child(3) { animation-delay: 0.15s; }
+.cozyOption:nth-child(4) { animation-delay: 0.2s; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .cozyOption:hover {
@@ -1009,10 +1085,19 @@
   outline-offset: 2px;
 }
 
-.cozyOptionPrefix {
+.cozyOption.correct {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 16px 32px rgba(34, 197, 94, 0.2);
+}
+
+.cozyOption.correct::before {
+  content: '✓';
+  position: absolute;
+  left: 12px;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #a5b4fc;
+  color: #86efac;
+  font-size: 16px;
 }
 
 .cozyOption.hopping {
@@ -1020,10 +1105,10 @@
   border-color: rgba(96, 165, 250, 0.5);
 }
 
-.cozyOption.correct {
-  border-color: rgba(34, 197, 94, 0.6);
-  background: rgba(34, 197, 94, 0.12);
-  box-shadow: 0 16px 32px rgba(34, 197, 94, 0.2);
+.cozyOptionPrefix {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #a5b4fc;
 }
 
 .cozyQuestionSupplement .beamer-grid {

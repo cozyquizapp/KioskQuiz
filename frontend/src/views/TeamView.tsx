@@ -992,13 +992,13 @@ function TeamView({ roomCode }: TeamViewProps) {
         opacity: transitioning ? 0.4 : 1,
         transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
         transition: 'opacity 0.3s ease, transform 0.35s ease',
-        background: `linear-gradient(135deg, rgba(255,255,255,0.07) 0%, ${accentColor}06 50%, rgba(12,15,22,0.04) 100%)`,
-        backdropFilter: 'blur(32px) saturate(180%) brightness(1.1)',
+        background: 'rgba(255,255,255,0.02)',
+        backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
         color: '#e2e8f0',
-        borderColor: timeUp ? 'rgba(239,68,68,0.35)' : `${accentColor}35`,
+        borderColor: timeUp ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.3)',
         boxShadow: timeUp
-          ? '0 4px 20px rgba(239,68,68,0.15), inset 0 1px 1px rgba(255,255,255,0.15)'
-          : `0 8px 32px ${accentColor}11, inset 0 1px 1px rgba(255,255,255,0.15)`,
+          ? '0 8px 32px rgba(239,68,68,0.1), inset 0 1px 1px rgba(255,255,255,0.2)'
+          : `0 8px 32px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2)`,
         animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
       }}
     >
@@ -1013,11 +1013,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div
           style={{
             ...categoryChip,
-            background: `linear-gradient(135deg, rgba(255,255,255,0.08), ${accentColor}05)`,
-            border: `1px solid ${accentColor}35`,
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.25)',
             color: '#f1f5f9',
-            boxShadow: `0 2px 8px ${accentColor}08, inset 0 1px 1px rgba(255,255,255,0.2)`,
-            backdropFilter: 'blur(20px) saturate(160%)'
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.2)',
+            backdropFilter: 'blur(24px) saturate(200%)'
           }}
         >
           {accentIcon && (
@@ -1103,11 +1103,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: `linear-gradient(90deg, ${accentColor}35 ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.05) ${Math.max(0, Math.min(100, progress))}%)`,
-          backdropFilter: 'blur(20px) saturate(180%) brightness(1.05)',
+          background: `linear-gradient(90deg, rgba(255,255,255,0.15) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%)`,
+          backdropFilter: 'blur(24px) saturate(200%) brightness(1.1)',
           color: '#f8fafc',
-          boxShadow: `0 4px 16px ${accentColor}15, inset 0 1px 1px rgba(255,255,255,0.2)`,
-          border: `1.5px solid ${accentColor}35`,
+          boxShadow: `0 4px 16px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2)`,
+          border: '1.5px solid rgba(255,255,255,0.3)',
           animation: 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer ? 1 : 0.6,

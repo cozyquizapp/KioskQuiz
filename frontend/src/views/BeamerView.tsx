@@ -1105,10 +1105,9 @@ useEffect(() => {
     () => ({
       position: 'relative',
       minHeight: '100vh',
-      background: draftTheme?.background ? undefined : 'var(--bg) url("/background.png") center/cover fixed',
-      backgroundImage: draftTheme?.background ? `url(${draftTheme.background})` : undefined,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
+      background: draftTheme?.background
+        ? `url(${draftTheme.background}) center/cover fixed`
+        : 'url("/background.png") center/cover fixed',
       color: '#e2e8f0',
       overflow: 'hidden',
       padding: '28px 18px',

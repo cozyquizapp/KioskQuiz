@@ -2976,9 +2976,10 @@ useEffect(() => {
 const beamerAurora = (color: string): React.CSSProperties => ({
   position: 'absolute',
   inset: 0,
-  background: `radial-gradient(circle at 20% 20%, ${color}33, transparent 32%), radial-gradient(circle at 80% 0%, ${color}26, transparent 38%)`,
-  filter: 'blur(8px)',
-  animation: 'aurora-shift 16s ease-in-out infinite'
+  background: 'transparent',
+  filter: 'none',
+  animation: 'none',
+  display: 'none'
 });
 
 const beamerShell: React.CSSProperties = {

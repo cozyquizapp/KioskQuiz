@@ -113,7 +113,6 @@ app.get('/api/rooms/:roomCode', (req, res) => {
 });
 
 app.use('/uploads', express.static(uploadRoot));
-app.use('/api/studio', studioRoutes);
 
 // usage tracking
 const usagePath = path.join(__dirname, 'data', 'questionUsage.json');
@@ -1558,6 +1557,9 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
     res.status(status).json({ error: message });
   }
 });
+
+// Register studio routes AFTER cozy60 routes so specific routes match first
+app.use('/api/studio', studioRoutes);
 
 // Custom Questions (erstellte/aktualisierte Fragen)
 const customQuestionsPath = path.join(__dirname, 'data', 'customQuestions.json');

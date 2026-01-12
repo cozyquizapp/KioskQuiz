@@ -2920,7 +2920,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderNotJoined() {
     const joinDisabled = !roomCode;
     return (
-      <div style={{ ...glassCard, borderColor: 'rgba(255,255,255,0.14)' }}>
+      <div style={glassCard}>
         <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Join
       </Pill>
@@ -2936,8 +2936,9 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               padding: '6px 10px',
               borderRadius: 10,
-              border: language === opt.key ? '1px solid rgba(255,255,255,0.45)' : '1px solid rgba(255,255,255,0.14)',
-              background: language === opt.key ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
+              border: language === opt.key ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
+              background: language === opt.key ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.01)',
+              backdropFilter: 'blur(20px)',
               color: '#e2e8f0',
               fontWeight: 800,
               cursor: 'pointer'
@@ -2980,9 +2981,10 @@ function TeamView({ roomCode }: TeamViewProps) {
           style={{
             ...primaryButton,
             marginTop: 8,
-            background: 'rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.02)',
             color: '#e2e8f0',
-            border: '1px solid rgba(255,255,255,0.2)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(30px)',
             minHeight: 44
           }}
           onClick={() => handleJoin(true)}
@@ -3004,9 +3006,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         ...glassCard,
         textAlign: 'center',
         alignItems: 'center',
-        maxWidth: 620,
-        background: 'rgba(16,20,31,0.8)',
-        boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+        maxWidth: 620
       }}
     >
       <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'Warten' : 'Info'}</div>
@@ -3035,7 +3035,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function renderErrorCard() {
     return (
-      <div style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.6)' }}>
+      <div style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.3)' }}>
         <div style={pillLabel}>{language === 'de' ? 'Fehler' : 'Error'}</div>
         <h3 style={{ ...heading, marginBottom: 6 }}>
           {language === 'de' ? 'Verbindung fehlgeschlagen' : 'Connection failed'}
@@ -3044,9 +3044,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         <button
           style={{
             ...primaryButton,
-            background: 'rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.02)',
             color: '#e2e8f0',
-            border: '1px solid rgba(255,255,255,0.2)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(30px)',
             minHeight: 44
           }}
           onClick={() => window.location.reload()}

@@ -2000,14 +2000,20 @@ useEffect(() => {
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase !== 'reveal' && (
-                  <div className="cozyQuestionPhaseBadge">
-                    {phase === 'active'
-                      ? language === 'de'
-                        ? 'Antworten offen'
-                        : 'Answers open'
-                      : language === 'de'
-                      ? 'Gesperrt'
-                      : 'Locked'}
+                  <div className={`cozyQuestionPhaseBadge${phase === 'locked' ? ' locked' : ''}`}>
+                    {phase === 'active' ? (
+                      language === 'de' ? (
+                        <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
+                      ) : (
+                        <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
+                      )
+                    ) : (
+                      language === 'de' ? (
+                        <span>🔒 Gesperrt <span className="lang-sep">·</span> Locked</span>
+                      ) : (
+                        <span>🔒 Locked <span className="lang-sep">·</span> Gesperrt</span>
+                      )
+                    )}
                   </div>
                 )}
               </div>

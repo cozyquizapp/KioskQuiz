@@ -2958,10 +2958,12 @@ function TeamView({ roomCode }: TeamViewProps) {
               backdropFilter: 'blur(20px)',
               color: '#e2e8f0',
               fontWeight: 800,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
             }}
             onClick={() => updateLanguage(opt.key)}
             type="button"
+            className="lang-button"
           >
             <span style={{ marginRight: 6 }}>{opt.flag}</span>
             {opt.label}
@@ -2974,8 +2976,8 @@ function TeamView({ roomCode }: TeamViewProps) {
         value={teamName}
         onChange={(e) => setTeamName(e.target.value)}
         placeholder={t('joinPlaceholder')}
-        className="team-answer-input"
-        style={inputStyle}
+        className="team-answer-input team-join-input"
+        style={{ ...inputStyle, transition: 'all 0.3s ease' }}
       />
       <PrimaryButton
         style={{

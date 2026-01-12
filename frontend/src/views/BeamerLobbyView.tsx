@@ -39,10 +39,11 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
       <div
         style={{
           ...heroPanel,
-          background: 'rgba(10,12,18,0.78)',
+          background: 'rgba(255,255,255,0.002)',
           color: '#e2e8f0',
-          border: `1px solid ${activeColor}55`,
-          boxShadow: `0 24px 52px ${activeColor}33`
+          border: `1px solid rgba(255,255,255,0.08)`,
+          boxShadow: `inset 0 1px 1px rgba(255,255,255,0.05)`,
+          backdropFilter: 'blur(50px)'
         }}
       >
         <p style={{ ...eyebrow }}>{language === 'de' ? 'Eure Kategorien' : 'Your categories'}</p>
@@ -51,10 +52,11 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
         <div
           style={{
             ...activeCard,
-            borderColor: `${activeColor}88`,
-            boxShadow: `0 22px 52px ${activeColor}33`,
-            background: 'rgba(0,0,0,0.25)',
-            color: '#e2e8f0'
+            borderColor: `rgba(255,255,255,0.08)`,
+            boxShadow: `inset 0 1px 1px rgba(255,255,255,0.05)`,
+            background: 'rgba(255,255,255,0.001)',
+            color: '#e2e8f0',
+            backdropFilter: 'blur(40px)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -84,11 +86,12 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
                 key={cat}
                 style={{
                   ...categoryRow,
-                  borderColor: isActive ? `${color}aa` : `${color}44`,
-                  background: isActive ? `${color}70` : `${color}1f`,
-                  boxShadow: isActive ? `0 12px 28px ${color}50` : 'none',
+                  borderColor: isActive ? `rgba(255,255,255,0.15)` : `rgba(255,255,255,0.05)`,
+                  background: isActive ? `rgba(255,255,255,0.05)` : `rgba(255,255,255,0.01)`,
+                  boxShadow: isActive ? `inset 0 1px 1px rgba(255,255,255,0.1)` : 'inset 0 1px 1px rgba(255,255,255,0.03)',
                   transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                  transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease'
+                  transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+                  backdropFilter: 'blur(40px)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

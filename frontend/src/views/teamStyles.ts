@@ -132,17 +132,17 @@ export const metaChip: CSSProperties = {
 };
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(16,20,31,0.72)',
+  background: 'rgba(255,255,255,0.001)',
   padding: '18px 16px',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: 'rgba(255,255,255,0.06)',
   width: '100%',
   maxWidth: 760,
   margin: '0 auto',
-  boxShadow: '0 30px 60px rgba(0,0,0,0.45)',
-  backdropFilter: 'blur(16px)',
+  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
+  backdropFilter: 'blur(50px)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -153,10 +153,10 @@ export const pillLabel: CSSProperties = {
   gap: 6,
   padding: '6px 10px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.08)',
+  background: 'rgba(255,255,255,0.01)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.12)',
+  borderColor: 'rgba(255,255,255,0.06)',
   fontSize: 11,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -191,12 +191,13 @@ export const inputStyle: CSSProperties = {
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.18)',
-  background: 'rgba(0,0,0,0.28)',
+  borderColor: 'rgba(255,255,255,0.08)',
+  background: 'rgba(255,255,255,0.02)',
   color: '#f8fafc',
   marginTop: 8,
   fontSize: 16,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)'
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+  backdropFilter: 'blur(30px)'
 };
 
 export const primaryButton: CSSProperties = {

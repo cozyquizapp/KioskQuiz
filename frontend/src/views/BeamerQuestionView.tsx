@@ -63,7 +63,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     : showAnswer || isTimeUp
     ? t.timeUp
     : hasTimer
-    ? timerText
+    ? t.timerActiveLabel
     : t.noTimer;
 
   const renderBunteContent = () => {

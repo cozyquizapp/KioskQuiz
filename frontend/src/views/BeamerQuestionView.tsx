@@ -218,12 +218,12 @@ const cardStyle: React.CSSProperties = {
   maxWidth: 1100,
   borderRadius: 30,
   padding: '26px 28px 36px',
-  border: '1px solid rgba(255,255,255,0.3)',
+  border: '1px solid rgba(255,255,255,0.15)',
   color: '#f8fafc',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -1px 1px rgba(0,0,0,0.1)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.05)',
   overflow: 'hidden',
   backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
-  background: 'rgba(255,255,255,0.02)'
+  background: 'rgba(255,255,255,0.005)'
 };
 
 const cardGlow: React.CSSProperties = {

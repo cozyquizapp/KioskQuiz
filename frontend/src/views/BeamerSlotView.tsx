@@ -187,12 +187,13 @@ const revealHeader: React.CSSProperties = {
 const pill: React.CSSProperties = {
   padding: '6px 10px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.01)',
+  border: '1px solid rgba(255,255,255,0.06)',
   fontSize: 11,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
-  fontWeight: 800
+  fontWeight: 800,
+  backdropFilter: 'blur(30px)'
 };
 
 const mechBadge: React.CSSProperties = {
@@ -267,13 +268,15 @@ const metaBadge: React.CSSProperties = {
 const slotBadgeBig: React.CSSProperties = {
   padding: '34px 40px',
   borderRadius: 28,
-  border: '1px solid rgba(255,255,255,0.12)',
+  border: '1px solid rgba(255,255,255,0.08)',
   minHeight: 240,
   minWidth: 560,
   display: 'flex',
   alignItems: 'center',
   gap: 16,
-  justifyContent: 'center'
+  justifyContent: 'center',
+  backdropFilter: 'blur(50px)',
+  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
 };
 
 const targetLabelStyle: React.CSSProperties = {

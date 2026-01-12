@@ -2381,9 +2381,11 @@ function TeamView({ roomCode }: TeamViewProps) {
             <button
               style={{
                 ...primaryButton,
-                background: 'rgba(255,255,255,0.08)',
-                color: '#e2e8f0',
-                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
+                color: '#cbd5e1',
+                border: '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(30px)',
+                transition: 'all 0.3s ease',
                 minHeight: 44
               }}
               onClick={() => submitRundlaufAnswer(true)}
@@ -3320,11 +3322,17 @@ function TeamView({ roomCode }: TeamViewProps) {
           <PrimaryButton
             style={{
               marginTop: 12,
-              background: isReady ? accentPink : `${accentPink}22`,
-              color: isReady ? '#0d0f14' : '#e2e8f0',
-              border: `1px solid ${accentPink}66`,
-              boxShadow: isReady ? `0 12px 26px ${accentPink}55` : `0 14px 26px ${accentPink}33`,
-              opacity: connectionStatus === 'connected' ? 1 : 0.6,
+              background: isReady 
+                ? `linear-gradient(135deg, ${accentPink}44, ${accentPink}22)`
+                : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
+              color: isReady ? accentPink : '#cbd5e1',
+              border: `1px solid ${isReady ? accentPink : 'rgba(255,255,255,0.08)'}66`,
+              backdropFilter: 'blur(30px)',
+              boxShadow: isReady 
+                ? `0 8px 24px ${accentPink}44, inset 0 1px 1px rgba(255,255,255,0.1)` 
+                : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+              transition: 'all 0.3s ease',
+              opacity: connectionStatus === 'connected' ? 1 : 0.5,
               cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
             }}
             onClick={connectionStatus === 'connected' ? toggleReady : undefined}

@@ -3261,11 +3261,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               >
                 {language === 'de' ? 'Gesperrt' : 'Locked'}
               </Pill>
-            ) : hasTimer ? (
-              <Pill tone="muted" style={{ background: 'rgba(0,0,0,0.4)', borderColor: accentColor, color: '#e2e8f0' }}>
-                {timeUp ? t('timerDoneLabel') : t('timerActiveLabel')}
-              </Pill>
             ) : null}
+            {/* Timer Pill removed - using progress bar below instead */}
             {bingoEnabled && board.length === 25 && !showBingoPanel && (
               <button
                 style={{

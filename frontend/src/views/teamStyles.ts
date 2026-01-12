@@ -13,7 +13,7 @@ export const pageStyleTeam: CSSProperties = {
   color: 'white',
   background: draftTheme?.background
     ? `url(${draftTheme.background}) center/cover fixed`
-    : 'var(--bg) url("/background.png") center/cover fixed',
+    : 'url("/background.png") center/cover fixed',
   fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily
 };
 
@@ -23,7 +23,7 @@ export const gridOverlay: CSSProperties = {
   backgroundImage:
     'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
   backgroundSize: '48px 48px',
-  opacity: 0.35,
+  opacity: 0,
   pointerEvents: 'none'
 };
 

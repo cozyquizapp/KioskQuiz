@@ -1046,18 +1046,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 : 'Answering'
               : 'Warten'}
           </div>
-          {hasTimer && (
-            <div
-              style={{
-                ...timerPill,
-                background: 'rgba(0,0,0,0.35)',
-                border: `1px solid ${accentColor}66`,
-                color: '#e2e8f0'
-              }}
-            >
-              {t('timeLeft')(Math.round(remainingSeconds))}
-            </div>
-          )}
+
         </div>
       </div>
       {isLocked && (

@@ -51,7 +51,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
         )
       : footerMeta ?? '';
 
-  const gradient = `linear-gradient(135deg, ${cardColor}55, rgba(10,12,18,0.78))`;
+  const gradient = `linear-gradient(135deg, ${cardColor}99, rgba(10,12,18,0.82))`;
 
   const progressText = footerLabel;
 
@@ -147,8 +147,8 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
     <section style={sectionStyle}>
       {leftDecorationSrc && <img src={leftDecorationSrc} alt="" style={decorationLeft} />}
       {rightDecorationSrc && <img src={rightDecorationSrc} alt="" style={decorationRight} />}
-      <div style={{ ...cardStyle, background: gradient, borderColor: `${cardColor}88`, boxShadow: `0 28px 72px ${cardColor}3a` }}>
-        <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}2e, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}22, transparent 60%)` }} />
+      <div style={{ ...cardStyle, background: gradient, borderColor: `${cardColor}cc`, boxShadow: `0 28px 72px ${cardColor}77` }}>
+        <div style={{ ...cardGlow, background: `radial-gradient(circle at 25% 30%, ${cardColor}66, transparent 60%), radial-gradient(circle at 80% 20%, ${cardColor}44, transparent 60%)` }} />
         <div style={{ ...accentStrip, background: `linear-gradient(180deg, ${cardColor}, ${cardColor}cc)` }} />
 
         <div style={headerRow}>
@@ -287,12 +287,12 @@ const titleStyle: React.CSSProperties = {
 
 const barOuter: React.CSSProperties = {
   width: '100%',
-  height: 12,
+  height: 14,
   borderRadius: 999,
-  background: 'rgba(0,0,0,0.12)',
+  background: 'rgba(0,0,0,0.25)',
   overflow: 'hidden',
   marginBottom: 12,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)'
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px rgba(0,0,0,0.35)'
 };
 
 const barInnerStyle = (color: string): React.CSSProperties => ({

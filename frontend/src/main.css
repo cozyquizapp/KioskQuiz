@@ -40,9 +40,7 @@
 body {
   margin: 0;
   font-family: var(--font);
-  background: radial-gradient(circle at 20% 20%, rgba(86, 178, 255, 0.12), transparent 32%),
-    radial-gradient(circle at 80% 0%, rgba(255, 125, 201, 0.16), transparent 35%),
-    var(--bg) url('/background.png?v=1') center/cover fixed no-repeat;
+  background: var(--bg) url('/background.png?v=1') center/cover fixed no-repeat;
   color: var(--text);
   min-height: 100vh;
 }

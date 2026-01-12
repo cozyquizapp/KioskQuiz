@@ -992,22 +992,30 @@ function TeamView({ roomCode }: TeamViewProps) {
         opacity: transitioning ? 0.4 : 1,
         transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
         transition: 'opacity 0.3s ease, transform 0.35s ease',
-        background: 'rgba(12,15,22,0.9)',
+        background: `linear-gradient(145deg, ${accentColor}2a, rgba(12,15,22,0.88))`,
         color: '#e2e8f0',
-        borderColor: timeUp ? 'rgba(239,68,68,0.9)' : `${accentColor}66`,
+        borderColor: timeUp ? 'rgba(239,68,68,0.9)' : `${accentColor}80`,
         boxShadow: timeUp
           ? '0 0 0 3px rgba(239,68,68,0.35), 0 24px 40px rgba(0,0,0,0.45)'
-          : `0 22px 40px ${accentColor}33`,
+          : `0 22px 40px ${accentColor}44`,
         animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
       }}
     >
+      <div
+        style={{
+          ...gradientHalo,
+          background: `radial-gradient(circle at 24% 20%, ${accentColor}55, transparent 42%), radial-gradient(circle at 78% 12%, ${accentColor}33, transparent 38%)`
+        }}
+      />
       <div style={questionHeader}>
         <div
           style={{
             ...categoryChip,
-            background: 'rgba(0,0,0,0.45)',
+            background: `${accentColor}22`,
             border: `1px solid ${accentColor}66`,
-            color: '#e2e8f0'
+            color: '#0c111b',
+            boxShadow: `0 10px 24px ${accentColor}33`,
+            backdropFilter: 'blur(8px)'
           }}
         >
           {accentIcon && (

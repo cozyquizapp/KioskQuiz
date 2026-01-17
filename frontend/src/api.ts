@@ -461,7 +461,15 @@ export const duplicateCozyDraft = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ newTitle })
   });
-  if (!res.ok) throw new Error('Draft konnte nicht dupliziert werden');
+  if (!res.ok) {
+    try {
+      const data = await res.json();
+      if (data?.error) throw new Error(data.error);
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error('Draft konnte nicht dupliziert werden');
+  }
   return res.json();
 };
 

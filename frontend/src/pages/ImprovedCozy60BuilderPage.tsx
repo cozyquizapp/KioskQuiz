@@ -18,6 +18,19 @@ import { MECHANIC_RULES } from '../config/mechanicRules';
 const LOCAL_BACKUP_KEY = 'cozy-builder-draft';
 const LOCAL_BACKUP_TS_KEY = 'cozy-builder-timestamp';
 
+const summarizeDraft = (draft: CozyQuizDraft): CozyDraftSummary => ({
+  id: draft.id,
+  title: draft.meta.title,
+  language: draft.meta.language,
+  date: draft.meta.date ?? null,
+  status: draft.status ?? 'draft',
+  updatedAt: draft.updatedAt,
+  createdAt: draft.createdAt,
+  questionCount: draft.questions.length,
+  potatoCount: draft.potatoPool?.length ?? 0,
+  blitzThemes: draft.blitz?.pool?.length ?? 0
+});
+
 const ImprovedCozy60BuilderPage = () => {
   const [drafts, setDrafts] = useState<CozyDraftSummary[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -117,8 +130,9 @@ const ImprovedCozy60BuilderPage = () => {
     if (isCreating) return;
     setIsCreating(true);
     setStatus('🔄 Quiz wird kopiert...');
+    const newTitle = `Kopie von ${drafts.find(d => d.id === sourceDraftId)?.title || 'Quiz'}`;
     try {
-      const data = await duplicateCozyDraft(sourceDraftId, `Kopie von ${drafts.find(d => d.id === sourceDraftId)?.title || 'Quiz'}`);
+      const data = await duplicateCozyDraft(sourceDraftId, newTitle);
       setDrafts((prev) => [data.draft, ...prev]);
       setDraft(data.draft);
       setSelectedDraftId(data.draft.id);
@@ -126,6 +140,33 @@ const ImprovedCozy60BuilderPage = () => {
       setShowCreateDialog(false);
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {
+      const offlineLikely = isOffline || typeof navigator !== 'undefined' && !navigator.onLine;
+      const isNetworkErr = err instanceof Error && err.message && err.message.toLowerCase().includes('fetch');
+      const canUseLocal = draft && draft.id === sourceDraftId;
+
+      if ((offlineLikely || isNetworkErr) && canUseLocal && draft) {
+        const now = Date.now();
+        const cloned: CozyQuizDraft = {
+          ...JSON.parse(JSON.stringify(draft)),
+          id: `local-dup-${Math.random().toString(36).slice(2, 10)}`,
+          meta: { ...draft.meta, title: newTitle },
+          status: 'draft',
+          createdAt: now,
+          updatedAt: now,
+          lastPublishedAt: undefined
+        };
+
+        setDrafts((prev) => [summarizeDraft(cloned), ...prev]);
+        setDraft(cloned);
+        setSelectedDraftId(cloned.id);
+        setStatus('✓ Offline kopiert (lokal gespeichert)');
+        setShowCreateDialog(false);
+        localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(cloned));
+        localStorage.setItem(LOCAL_BACKUP_TS_KEY, String(now));
+        setTimeout(() => setStatus(''), 3000);
+        return;
+      }
+
       setError((err as Error).message);
       setStatus('');
     } finally {

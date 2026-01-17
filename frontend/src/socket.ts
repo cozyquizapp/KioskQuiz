@@ -9,10 +9,14 @@ const derivedFromApi =
     ? apiBase.replace(/\/api\/?$/, '')
     : null;
 
-export const SOCKET_URL =
-  (import.meta.env.VITE_SOCKET_URL as string | undefined) ||
-  derivedFromApi ||
-  `${window.location.protocol}//${window.location.hostname}:4000`;
+export const SOCKET_URL = (() => {
+  const envSocket = import.meta.env.VITE_SOCKET_URL as string | undefined;
+  if (envSocket) return envSocket;
+  if (derivedFromApi) return derivedFromApi;
+  const { protocol, hostname, origin } = window.location;
+  const isLocal = hostname === 'localhost' || hostname.startsWith('127.');
+  return isLocal ? `${protocol}//${hostname}:4000` : origin;
+})();
 
 const SOCKET_PATH = '/socket.io';
 

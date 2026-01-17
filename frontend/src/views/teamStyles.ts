@@ -8,7 +8,7 @@ const primary = draftTheme?.color || '#6dd5fa';
 export const pageStyleTeam: CSSProperties = {
   position: 'relative',
   minHeight: '100vh',
-  padding: '24px 14px 32px',
+  padding: 'clamp(12px, 4vw, 24px) clamp(8px, 3vw, 14px) clamp(24px, 6vw, 32px)',
   overflow: 'hidden',
   color: 'white',
   background: draftTheme?.background
@@ -29,11 +29,19 @@ export const gridOverlay: CSSProperties = {
 
 export const contentShell: CSSProperties = {
   position: 'relative',
-  maxWidth: 760,
+  maxWidth: '90vw',
+  width: '100%',
   margin: '0 auto',
   display: 'grid',
-  gap: 14,
-  zIndex: 2
+  gap: 'clamp(8px, 2vw, 14px)',
+  zIndex: 2,
+  // Responsive max-widths
+  // Mobile: ~320-380px, Tablet: ~600px, Desktop: ~760px
+  ...(typeof window !== 'undefined' && window.innerWidth < 640
+    ? { maxWidth: 'min(calc(100vw - 16px), 380px)' }
+    : typeof window !== 'undefined' && window.innerWidth < 1024
+    ? { maxWidth: 'min(calc(100vw - 24px), 600px)' }
+    : { maxWidth: '760px' })
 };
 
 export const footerLogo: CSSProperties = {
@@ -47,7 +55,7 @@ export const footerLogo: CSSProperties = {
 };
 
 export const hourglassStyle: CSSProperties = {
-  fontSize: 28,
+  fontSize: 'clamp(20px, 6vw, 28px)',
   marginTop: 6,
   opacity: 0.8,
   animation: 'hourglass-wiggle 1.6s ease-in-out infinite'
@@ -58,8 +66,8 @@ export const headerBarTeam: CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   flexWrap: 'wrap',
-  gap: 8,
-  padding: '12px 16px',
+  gap: 'clamp(6px, 2vw, 8px)',
+  padding: 'clamp(8px, 2vw, 12px) clamp(10px, 3vw, 16px)',
   borderRadius: 16,
   background: 'rgba(255,255,255,0.001)',
   backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
@@ -69,28 +77,29 @@ export const headerBarTeam: CSSProperties = {
 };
 
 export const pillSmall: CSSProperties = {
-  padding: '8px 12px',
+  padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 12px)',
   borderRadius: 999,
   background: primary ? `${primary}11` : 'rgba(255,255,255,0.06)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
-  fontSize: 12,
+  fontSize: 'clamp(11px, 2vw, 12px)',
   fontWeight: 700,
   color: '#e2e8f0'
 };
 
 export const logoBadge: CSSProperties = {
-  padding: '10px 12px',
+  padding: 'clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px)',
   borderRadius: 12,
   background: 'rgba(255,255,255,0.02)',
   color: '#0d0f14',
   fontWeight: 900,
-  letterSpacing: '0.04em'
+  letterSpacing: '0.04em',
+  fontSize: 'clamp(12px, 2vw, 14px)'
 };
 
 export const heroCard: CSSProperties = {
-  padding: 18,
+  padding: 'clamp(12px, 4vw, 18px)',
   borderRadius: 20,
   background: 'var(--glass-bg)',
   border: '1px solid rgba(255,255,255,0.1)',
@@ -99,15 +108,15 @@ export const heroCard: CSSProperties = {
 };
 
 export const heroIcon: CSSProperties = {
-  width: 42,
-  height: 42,
+  width: 'clamp(32px, 8vw, 42px)',
+  height: 'clamp(32px, 8vw, 42px)',
   objectFit: 'contain'
 };
 
 export const eyebrow: CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.18em',
-  fontSize: 11,
+  fontSize: 'clamp(10px, 2vw, 11px)',
   color: 'rgba(255,255,255,0.66)',
   margin: 0,
   marginBottom: 2
@@ -115,7 +124,7 @@ export const eyebrow: CSSProperties = {
 
 export const metaRow: CSSProperties = {
   display: 'flex',
-  gap: 8,
+  gap: 'clamp(6px, 2vw, 8px)',
   flexWrap: 'wrap',
   marginTop: 10
 };
@@ -129,13 +138,13 @@ export const metaChip: CSSProperties = {
 
 export const glassCard: CSSProperties = {
   background: 'rgba(255,255,255,0.001)',
-  padding: '18px 16px',
+  padding: 'clamp(12px, 4vw, 18px) clamp(12px, 4vw, 16px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'rgba(255,255,255,0.06)',
   width: '100%',
-  maxWidth: 760,
+  maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
   boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
   backdropFilter: 'blur(50px)',
@@ -146,14 +155,14 @@ export const glassCard: CSSProperties = {
 export const pillLabel: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 6,
-  padding: '6px 10px',
+  gap: 'clamp(4px, 1vw, 6px)',
+  padding: 'clamp(5px, 1vw, 6px) clamp(8px, 2vw, 10px)',
   borderRadius: 999,
   background: 'rgba(255,255,255,0.01)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'rgba(255,255,255,0.06)',
-  fontSize: 11,
+  fontSize: 'clamp(10px, 2vw, 11px)',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   fontWeight: 800,
@@ -163,14 +172,15 @@ export const pillLabel: CSSProperties = {
 export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
-  fontSize: 22,
+  fontSize: 'clamp(18px, 5vw, 22px)',
   lineHeight: 1.3
 };
 
 export const mutedText: CSSProperties = {
   color: 'var(--muted)',
   marginTop: 0,
-  marginBottom: 12
+  marginBottom: 12,
+  fontSize: 'clamp(13px, 2.5vw, 15px)'
 };
 
 export const softDivider: CSSProperties = {
@@ -182,8 +192,8 @@ export const softDivider: CSSProperties = {
 
 export const inputStyle: CSSProperties = {
   width: '100%',
-  padding: '13px 12px',
-  minHeight: 48,
+  padding: 'clamp(10px, 2.5vw, 13px) clamp(10px, 2.5vw, 12px)',
+  minHeight: 'clamp(40px, 10vw, 48px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
@@ -191,7 +201,7 @@ export const inputStyle: CSSProperties = {
   background: 'rgba(255,255,255,0.02)',
   color: '#f8fafc',
   marginTop: 8,
-  fontSize: 16,
+  fontSize: 'clamp(14px, 2.5vw, 16px)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
   backdropFilter: 'blur(30px)'
 };
@@ -202,14 +212,14 @@ export const primaryButton: CSSProperties = {
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
   color: '#f8fafc',
   border: '1px solid rgba(255,255,255,0.08)',
-  padding: '14px 16px',
-  minHeight: 48,
+  padding: 'clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 16px)',
+  minHeight: 'clamp(40px, 10vw, 48px)',
   borderRadius: theme.radius,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
   fontWeight: 800,
-  fontSize: 16,
+  fontSize: 'clamp(14px, 2.5vw, 16px)',
   transition: 'transform 0.14s ease, box-shadow 0.14s ease'
 };
 
@@ -219,17 +229,17 @@ export const choiceButton: CSSProperties = {
   border: '1px solid rgba(255,255,255,0.16)',
   color: '#e2e8f0',
   borderRadius: theme.radius,
-  padding: '14px 12px',
+  padding: 'clamp(10px, 2vw, 14px) clamp(10px, 2vw, 12px)',
   cursor: 'pointer',
   fontWeight: 700,
-  fontSize: 15,
-  minHeight: 52
+  fontSize: 'clamp(13px, 2.5vw, 15px)',
+  minHeight: 'clamp(44px, 10vw, 52px)'
 };
 
 export const progressOuter = (color: string): CSSProperties => ({
   marginTop: 10,
   width: '100%',
-  height: 12,
+  height: 'clamp(8px, 2vw, 12px)',
   borderRadius: 999,
   background: 'linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1))',
   overflow: 'hidden',
@@ -248,8 +258,8 @@ export const progressInner = (color: string): CSSProperties => ({
 export const progressKnob = (color: string): CSSProperties => ({
   position: 'absolute',
   top: '50%',
-  width: 20,
-  height: 20,
+  width: 'clamp(16px, 4vw, 20px)',
+  height: 'clamp(16px, 4vw, 20px)',
   borderRadius: '50%',
   transform: 'translate(-50%, -50%)',
   transition: 'left 0.18s ease',
@@ -260,7 +270,7 @@ export const progressKnob = (color: string): CSSProperties => ({
 
 export const questionShell: CSSProperties = {
   position: 'relative',
-  padding: '20px 20px 22px',
+  padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 20px) clamp(16px, 4vw, 22px)',
   margin: '0 auto',
   borderRadius: 22,
   borderWidth: 1,

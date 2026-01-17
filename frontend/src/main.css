@@ -471,3 +471,148 @@ img {
 .waiting-card {
   animation: glow-pulse 3s ease-in-out infinite;
 }
+
+/* ========================================
+   RESPONSIVE DESIGN - Mobile First
+   ======================================== */
+
+/* Mobile: < 640px (phones in portrait) */
+@media (max-width: 639px) {
+  body {
+    font-size: 14px;
+  }
+  
+  #team-root {
+    padding: 12px 8px 24px !important;
+  }
+  
+  /* All cards and containers */
+  [class*="glassCard"],
+  [class*="pillLabel"],
+  .waiting-card,
+  [style*="maxWidth: 760"] {
+    padding: 12px 12px !important;
+  }
+  
+  h1 { font-size: 24px !important; }
+  h2 { font-size: 20px !important; }
+  h3 { font-size: 16px !important; }
+  
+  /* Buttons shrink slightly */
+  button {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    min-height: 40px !important;
+  }
+  
+  /* Input fields */
+  input[type="text"],
+  input[type="number"],
+  input[placeholder] {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Flex wrap for cramped spaces */
+  [style*="display: flex"] {
+    flex-wrap: wrap !important;
+  }
+  
+  /* Reduce gaps */
+  [style*="gap: 14"],
+  [style*="gap: 16"],
+  [style*="gap: 18"],
+  [style*="gap: 20"] {
+    gap: 8px !important;
+  }
+  
+  /* Question text smaller on mobile */
+  [class*="cozyQuestionText"],
+  .beamer-question-text {
+    font-size: 16px !important;
+  }
+  
+  /* Header bar adjustments */
+  header {
+    padding: 10px 12px !important;
+    gap: 6px !important;
+  }
+  
+  /* Scoreboard grid */
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tablet: 640px - 1024px */
+@media (min-width: 640px) and (max-width: 1023px) {
+  body {
+    font-size: 15px;
+  }
+  
+  h1 { font-size: 28px !important; }
+  h2 { font-size: 22px !important; }
+  h3 { font-size: 18px !important; }
+  
+  button {
+    padding: 11px 16px !important;
+    min-height: 42px !important;
+  }
+  
+  input[type="text"],
+  input[type="number"],
+  input[placeholder] {
+    padding: 11px 14px !important;
+    font-size: 15px !important;
+  }
+  
+  [style*="gap: 20"] {
+    gap: 16px !important;
+  }
+}
+
+/* Desktop: >= 1024px */
+@media (min-width: 1024px) {
+  /* Default large sizes already set in inline styles */
+}
+
+/* ========================================
+   LANDSCAPE/PORTRAIT ORIENTATION
+   ======================================== */
+
+@media (orientation: landscape) and (max-height: 600px) {
+  body {
+    padding: 8px 0;
+  }
+  
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 14px !important; }
+  
+  button {
+    padding: 8px 12px !important;
+    min-height: 36px !important;
+    font-size: 13px !important;
+  }
+  
+  input {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY & HIGH DPI
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  h1 { font-size: 40px !important; }
+  h2 { font-size: 32px !important; }
+  button { padding: 14px 20px !important; }
+}

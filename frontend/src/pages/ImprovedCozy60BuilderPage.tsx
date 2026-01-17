@@ -181,10 +181,41 @@ const ImprovedCozy60BuilderPage = () => {
   };
 
   const getQuizProgress = (currentDraft: CozyQuizDraft): { filled: number; total: number; percent: number } => {
-    const filled = currentDraft.questions.filter(q => q.question && q.question !== `Frage 1`).length;
     const total = currentDraft.questions.length || 60;
+    const filled = currentDraft.questions.reduce((acc, q, idx) => {
+      const text = (q.question || '').trim();
+      if (!text) return acc;
+      const placeholder = text.toLowerCase() === `frage ${idx + 1}`.toLowerCase();
+      return placeholder ? acc : acc + 1;
+    }, 0);
     return { filled, total, percent: Math.round((filled / total) * 100) };
   };
+
+  const buildChecklist = (currentDraft: CozyQuizDraft) => {
+    const progress = getQuizProgress(currentDraft);
+    const hasMeta = Boolean(currentDraft.meta.title?.trim());
+    const hasBlitz = Boolean(currentDraft.blitz?.pool?.length) && currentDraft.blitz.pool.some((t) => (t.items?.length ?? 0) > 0);
+    const hasRundlauf = Boolean(currentDraft.rundlauf?.pool?.length);
+
+    return [
+      { label: 'Titel & Sprache gesetzt', done: hasMeta },
+      { label: '10 Fragen gefüllt', done: progress.filled >= 10 },
+      { label: 'Fotosprint vorbereitet', done: hasBlitz },
+      { label: 'K.O.-Rallye konfiguriert', done: hasRundlauf },
+      { label: 'Alle Fragen fertig', done: progress.filled >= progress.total }
+    ];
+  };
+
+  const getMedal = (percent: number) => {
+    if (percent >= 100) return { label: '🏆 Gold', color: '#fbbf24' };
+    if (percent >= 60) return { label: '🥈 Silber', color: '#cbd5e1' };
+    if (percent >= 30) return { label: '🥉 Bronze', color: '#f59e0b' };
+    return { label: '🌱 Start', color: '#4ade80' };
+  };
+
+  const progress = draft ? getQuizProgress(draft) : { filled: 0, total: 60, percent: 0 };
+  const checklist = draft ? buildChecklist(draft) : [];
+  const medal = getMedal(progress.percent);
 
   const handlePublish = async () => {
     if (!draft) return;
@@ -355,6 +386,75 @@ const ImprovedCozy60BuilderPage = () => {
                   <button onClick={handlePublish} style={buttonPrimaryStyle}>🚀 Publish</button>
                 </div>
               </header>
+
+              <div
+                style={{
+                  margin: '12px 16px 0',
+                  padding: '12px 14px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 12
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>
+                      Fortschritt: {progress.filled}/{progress.total} Fragen
+                    </div>
+                    <div style={{ position: 'relative', height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 999 }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: `${Math.min(100, Math.max(0, progress.percent))}%`,
+                          background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
+                          borderRadius: 999,
+                          boxShadow: '0 0 12px rgba(34,211,238,0.35)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(15,23,42,0.7)',
+                      color: medal.color,
+                      fontWeight: 700,
+                      fontSize: 13
+                    }}
+                    title={`Meilenstein bei ${progress.percent}%`}
+                  >
+                    {medal.label}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                  {checklist.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: item.done ? 'rgba(34,197,94,0.12)' : 'rgba(148,163,184,0.06)',
+                        border: item.done ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(148,163,184,0.15)',
+                        color: item.done ? '#bbf7d0' : '#cbd5e1',
+                        fontSize: 12
+                      }}
+                    >
+                      <span>{item.done ? '✅' : '⬜'}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div style={tabsStyle}>
                 <button

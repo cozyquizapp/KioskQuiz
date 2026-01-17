@@ -1,53 +1,94 @@
 [
   {
-    "id": "cozy-draft-16f2dd61",
+    "id": "cozy-demo-schnellstart",
     "meta": {
-      "title": "Neues Cozy Quiz 60",
+      "title": "🎯 Demo Quiz – Schnellstart",
       "language": "de",
-      "date": 1767961395143,
-      "description": null
+      "date": null,
+      "description": "Kurzes Probe-Quiz zum Testen aller Mechaniken – im Builder anpassen!"
     },
     "questions": [
       {
-        "id": "cozy-draft-16f2dd61-q01",
-        "question": "Slot 1 - Multiple Choice Warmup",
-        "points": 1,
-        "segmentIndex": 0,
-        "category": "Mu-Cho",
-        "mechanic": "multipleChoice",
-        "options": [
-          "Option A",
-          "Option B",
-          "Option C",
-          "Option D"
-        ],
-        "correctIndex": 0
-      },
-      {
-        "id": "cozy-draft-16f2dd61-q02",
-        "question": "Slot 2 - Schaetzfrage",
-        "points": 1,
+        "id": "demo-q01",
+        "question": "Wie viele Einwohner hat Berlin?",
+        "questionEn": "How many inhabitants does Berlin have?",
+        "points": 100,
         "segmentIndex": 0,
         "category": "Schaetzchen",
         "mechanic": "estimate",
-        "targetValue": 0,
-        "unit": ""
+        "targetValue": 3700000,
+        "unit": "Einwohner"
       },
       {
-        "id": "cozy-draft-16f2dd61-q03",
-        "question": "Slot 3 - Stimmts / 10 Punkte verteilen",
-        "points": 1,
+        "id": "demo-q02",
+        "question": "Was ist die Hauptstadt von Frankreich?",
+        "questionEn": "What is the capital of France?",
+        "points": 100,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": ["Paris", "Lyon", "Marseille", "Toulouse"],
+        "correctIndex": 0
+      },
+      {
+        "id": "demo-q03",
+        "question": "Die Erde ist flach.",
+        "questionEn": "The Earth is flat.",
+        "points": 100,
         "segmentIndex": 0,
         "category": "Stimmts",
-        "mechanic": "betting",
-        "options": [
-          "Option A",
-          "Option B",
-          "Option C"
-        ],
-        "correctIndex": 0,
-        "pointsPool": 10
+        "mechanic": "trueFalse",
+        "correctIndex": 1
       },
+      {
+        "id": "demo-q04",
+        "question": "Welche Stadt liegt am weitesten nördlich?",
+        "questionEn": "Which city is located furthest north?",
+        "points": 100,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": ["Hamburg", "München", "Berlin", "Köln"],
+        "correctIndex": 0
+      },
+      {
+        "id": "demo-q05",
+        "question": "Wie viele Bundesländer hat Deutschland?",
+        "questionEn": "How many federal states does Germany have?",
+        "points": 100,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 16,
+        "unit": "Bundesländer"
+      }
+    ],
+    "potato": {
+      "themes": [
+        { "id": "theme-1", "title": "Europäische Hauptstädte" },
+        { "id": "theme-2", "title": "Deutsche Flüsse" },
+        { "id": "theme-3", "title": "Berühmte Musiker" }
+      ]
+    },
+    "blitz": {
+      "themes": [
+        {
+          "id": "blitz-demo-1",
+          "title": "Schnelle Städte",
+          "items": [
+            { "id": "b1", "prompt": "Hauptstadt von Italien", "answer": "Rom" },
+            { "id": "b2", "prompt": "Hauptstadt von Spanien", "answer": "Madrid" },
+            { "id": "b3", "prompt": "Hauptstadt von Polen", "answer": "Warschau" },
+            { "id": "b4", "prompt": "Hauptstadt von Österreich", "answer": "Wien" },
+            { "id": "b5", "prompt": "Hauptstadt von Niederlande", "answer": "Amsterdam" }
+          ]
+        }
+      ]
+    },
+    "updatedAt": 1737158000000,
+    "createdAt": 1737158000000
+  }
+]
       {
         "id": "cozy-draft-16f2dd61-q04",
         "question": "Slot 4 - Cheese (Bildfrage)",

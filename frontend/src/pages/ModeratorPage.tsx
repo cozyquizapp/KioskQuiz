@@ -835,9 +835,9 @@ function ModeratorPage(): React.ReactElement {
     setShowJoinScreen(false);
   };
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
     if (!selectedQuiz) {
-      setToast('Bitte zuerst ein Quiz auswÃ¤hlen');
+      setToast('Bitte zuerst ein Quiz auswählen');
       return;
     }
     const socket = controlSocketRef.current;
@@ -846,18 +846,30 @@ function ModeratorPage(): React.ReactElement {
     socket.emit(
       'host:createSession',
       { quizId: selectedQuiz, language },
-      (resp?: { ok: boolean; roomCode?: string; error?: string }) => {
-        setCreatingSession(false);
+      async (resp?: { ok: boolean; roomCode?: string; error?: string }) => {
         if (!resp?.ok || !resp.roomCode) {
+          setCreatingSession(false);
           setToast(resp?.error || 'Session konnte nicht erstellt werden');
           return;
         }
         const nextCode = resp.roomCode || DEFAULT_ROOM_CODE;
+        
+        // Quiz SOFORT setzen, kein zweiter Schritt mehr nötig
+        try {
+          await useQuiz(nextCode, selectedQuiz);
+          await setLanguage(nextCode, language);
+        } catch (err) {
+          console.warn('Quiz konnte nicht sofort gesetzt werden:', err);
+        }
+        
         setRoomCode(nextCode);
         setRoomInput(nextCode);
         localStorage.setItem('moderatorRoom', nextCode);
         setShowJoinScreen(true);
         setShowSessionSetup(false);
+        setCreatingSession(false);
+        setToast(`Session ${nextCode} bereit – Quiz geladen!`);
+        setTimeout(() => setToast(null), 2500);
       }
     );
   };

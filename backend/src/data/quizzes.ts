@@ -408,44 +408,17 @@ const buildQuiz = (id: string, name: string, mode: 'ordered' | 'random'): QuizTe
   };
 };
 
+// WICHTIG: Haupt-Quizze werden jetzt über den Studio Builder (cozyQuizDrafts.json) erstellt!
+// Hier nur noch ein minimales Demo-Quiz für Tests.
 export const defaultQuizzes: QuizTemplate[] = [
   buildCozyQuiz60('ordered', {
-    id: 'cozy-quiz-60-2025-01-12',
-    name: 'Cozy Quiz 60 #1 – 12.01.2026',
-    meta: { date: Date.parse('2026-01-12'), description: 'Klassischer Auftakt im Januar' },
-    questionIds: cozyLineupClassic,
-    blitzPool: defaultBlitzPool,
-    potatoPool: potatoPoolClassic
-  }),
-  buildCozyQuiz60('ordered', {
-    id: 'cozy-quiz-60-2025-01-26',
-    name: 'Cozy Quiz 60 #2 – 26.01.2026',
-    meta: { date: Date.parse('2026-01-26'), description: 'Frischer Mix mit Fokus auf Musik & Bilder' },
-    questionIds: cozyLineupFresh,
-    blitzPool: blitzUrbanCreatives,
-    potatoPool: potatoPoolWinter
-  }),
-  buildCozyQuiz60('ordered', {
-    id: 'cozy-quiz-60-popculture-special',
-    name: 'Cozy Quiz 60 – Popkultur Special',
-    meta: { date: Date.parse('2026-02-02'), description: 'Streaming, Nostalgie und Popkultur' },
-    questionIds: cozyLineupPop,
-    blitzPool: blitzPopCulture,
-    potatoPool: potatoPoolPop
-  }),
-  buildCozyQuiz60('ordered', {
-    id: 'cozy-quiz-60-hamburg-light',
-    name: 'Cozy Quiz 60 – Hamburg Light',
-    meta: { date: Date.parse('2026-02-14'), description: 'Nordlichter Edition mit Hamburg Flavor' },
-    questionIds: cozyLineupHamburg,
-    blitzPool: blitzHamburgMoments,
-    potatoPool: potatoPoolHamburg
-  }),
-  // TODO(LEGACY): Fallback-Templates ohne vollstaendigen Blitz/Potato-Pool.
-  buildCozyQuiz60('ordered'),
-  buildCozyQuiz60('random'),
-  buildQuiz('quiz-1-ordered', 'Quiz 1 (Legacy geordnet)', 'ordered'), // TODO(LEGACY): Altbestand, migrieren
-  buildQuiz('quiz-1-random', 'Quiz 1 (Legacy randomisiert)', 'random')
+    id: 'demo-quiz-probe',
+    name: '🎯 Demo Quiz (Probe)',
+    meta: { description: 'Test-Quiz für schnelle Sessions – im Builder anpassen!' },
+    questionIds: cozyLineupClassic.slice(0, 5), // Nur 5 Fragen für schnelles Testen
+    blitzPool: defaultBlitzPool.slice(0, 3),
+    potatoPool: potatoPoolClassic.slice(0, 5)
+  })
 ];
 
 export const quizById = new Map(defaultQuizzes.map((q) => [q.id, q]));

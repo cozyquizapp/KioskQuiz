@@ -402,10 +402,36 @@ export interface CozyDraftSummary {
   blitzThemes: number;
 }
 
-export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[] }> => {
-  const res = await fetch(`${API_BASE}/studio/cozy60`);
-  if (!res.ok) throw new Error('Cozy-Drafts konnten nicht geladen werden');
-  return res.json();
+export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; offline?: boolean }> => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    
+    const res = await fetch(`${API_BASE}/studio/cozy60`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    
+    if (!res.ok) throw new Error('Cozy-Drafts konnten nicht geladen werden');
+    const data = await res.json();
+    
+    // Cache the result for offline fallback
+    localStorage.setItem('cozy-drafts-backup', JSON.stringify(data));
+    
+    return { drafts: data.drafts, offline: false };
+  } catch (err) {
+    // Try to load from local cache
+    const cached = localStorage.getItem('cozy-drafts-backup');
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        return { drafts: data.drafts || [], offline: true };
+      } catch {
+        return { drafts: [], offline: true };
+      }
+    }
+    throw new Error('Cozy-Drafts konnten nicht geladen werden (offline, kein Cache)');
+  }
 };
 
 export const createCozyDraft = async (meta?: Partial<CozyQuizDraft['meta']>): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {

@@ -24,6 +24,7 @@ const ImprovedCozy60BuilderPage = () => {
   const [draft, setDraft] = useState<CozyQuizDraft | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [isOffline, setIsOffline] = useState(false);
   const [tab, setTab] = useState<'board' | 'meta' | 'blitz' | 'rundlauf' | 'catalog' | 'help'>('board');
   const [showCatalog, setShowCatalog] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
@@ -54,6 +55,7 @@ const ImprovedCozy60BuilderPage = () => {
       const data = await listCozyDrafts();
       const deduped = Array.from(new Map(data.drafts.map((d) => [d.id, d])).values());
       setDrafts(deduped);
+      setIsOffline(data.offline || false);
 
       const localRaw = localStorage.getItem(LOCAL_BACKUP_KEY);
       const localTs = localStorage.getItem(LOCAL_BACKUP_TS_KEY);
@@ -202,7 +204,20 @@ const ImprovedCozy60BuilderPage = () => {
       <div style={containerStyle}>
         <aside style={sidebarStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <strong style={{ fontSize: 14 }}>Quiz Drafts</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <strong style={{ fontSize: 14 }}>Quiz Drafts</strong>
+              {isOffline && (
+                <span style={{
+                  fontSize: 11,
+                  padding: '2px 6px',
+                  background: 'rgba(248,113,113,0.2)',
+                  color: '#fca5a5',
+                  borderRadius: 4
+                }}>
+                  📡 Offline
+                </span>
+              )}
+            </div>
             <button onClick={handleCreate} style={buttonPrimaryStyle}>
               + Neu
             </button>

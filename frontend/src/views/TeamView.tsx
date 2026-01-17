@@ -993,7 +993,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       setTimeout(() => setTransitioning(false), 500);
     } catch (error) {
       console.error(error);
-      setMessage(language === 'de' ? 'Antwort konnte nicht gesendet werden. Bitte Verbindung pruefen.' : 'Could not submit answer.');
+      const msg = error instanceof Error ? error.message : (language === 'de' ? 'Antwort konnte nicht gesendet werden.' : 'Could not submit answer.');
+      setMessage(msg);
     }
   };
 
@@ -1161,7 +1162,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           }}
         />
       </button>
-      {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
+      {message && <div className="message-state message-error">{message}</div>}
     </div>
   );
   }
@@ -1626,12 +1627,12 @@ function TeamView({ roomCode }: TeamViewProps) {
           {answer}
         </p>
       )}
-      {resultMessage && <p style={{ margin: '8px 0 0', color: '#f3ba27' }}>{resultMessage}</p>}
+      {resultMessage && <div className="message-state message-accent">{resultMessage}</div>}
       {resultPoints !== null && (
-        <p style={{ margin: '8px 0 0', color: '#22c55e', fontWeight: 700 }}>
+        <div className="message-state message-success">
           +{resultPoints} {language === 'de' ? 'Punkte' : 'Points'}
           {resultDetail ? ` (${resultDetail})` : ''}
-        </p>
+        </div>
       )}
       {solution && (
         <p style={{ margin: '12px 0 0', color: '#e2e8f0', fontWeight: 700, padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -1991,12 +1992,12 @@ function TeamView({ roomCode }: TeamViewProps) {
                       )}
                     </div>
                     {attemptMessage && (
-                      <p style={{ margin: '6px 0 0', color: '#cbd5e1', fontSize: 13 }}>{attemptMessage}</p>
+                      <div className="message-state message-info" style={{ fontSize: 13 }}>{attemptMessage}</div>
                     )}
                   </div>
                 )}
                 {potatoError && (
-                  <div style={{ color: '#fca5a5', fontSize: 13, fontWeight: 600 }}>{potatoError}</div>
+                  <div className="message-state message-error" style={{ fontSize: 13 }}>{potatoError}</div>
                 )}
               </div>
             ) : (
@@ -2457,7 +2458,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               {language === 'de' ? 'Pass' : 'Pass'}
             </button>
           </div>
-          {rundlaufError && <div style={{ color: '#fbbf24', fontWeight: 700 }}>{rundlaufError}</div>}
+          
           {ownAttempt && ownAttempt.verdict === 'pending' && (
             <div style={{ color: '#cbd5e1', fontWeight: 700 }}>
               {language === 'de' ? 'Warte auf Moderator...' : 'Waiting for host...'}
@@ -3058,9 +3059,9 @@ function TeamView({ roomCode }: TeamViewProps) {
         {t('joinButton')}
       </PrimaryButton>
       {!roomCode && (
-        <p style={{ color: '#f97316', marginTop: 8, fontWeight: 700 }}>
+        <div className="message-state message-error">
           {language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.'}
-        </p>
+        </div>
       )}
       {savedIdRef.current && (
         <button
@@ -3080,7 +3081,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             : `Resume team${teamName ? ` (${teamName})` : ''}`}
         </button>
       )}
-        {message && <p style={{ color: 'var(--accent-strong)', marginTop: 10 }}>{message}</p>}
+        {message && <div className="message-state message-error">{message}</div>}
       </div>
     );
   }
@@ -3415,13 +3416,13 @@ function TeamView({ roomCode }: TeamViewProps) {
           </PrimaryButton>
         )}
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && connectionStatus !== 'connected' && (
-          <p style={{ marginTop: 6, color: '#f97316', fontWeight: 700 }}>
+          <div className="message-state message-error">
             {language === 'both'
               ? `Keine Verbindung (${SOCKET_URL}). Bitte neu verbinden. / Not connected (${SOCKET_URL}). Please reconnect.`
               : language === 'de'
               ? `Keine Verbindung (${SOCKET_URL}). Bitte neu verbinden.`
               : `Not connected (${SOCKET_URL}). Please reconnect.`}
-          </p>
+          </div>
         )}
       </div>
       {bingoEnabled && board.length === 25 && !showBingoPanel && (
@@ -3459,6 +3460,32 @@ function TeamView({ roomCode }: TeamViewProps) {
 }
 
 export default TeamView;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
 
 
 

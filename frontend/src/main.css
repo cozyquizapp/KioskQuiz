@@ -615,4 +615,88 @@ img {
   h1 { font-size: 40px !important; }
   h2 { font-size: 32px !important; }
   button { padding: 14px 20px !important; }
+
+/* ========================================
+   MESSAGE STATES - Error, Warning, Success, Info
+   ======================================== */
+
+.message-state {
+  margin-top: clamp(8px, 2vw, 12px);
+  padding: clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 16px);
+  border-radius: 12px;
+  border: 1px solid;
+  font-weight: 700;
+  font-size: clamp(13px, 2.5vw, 14px);
+  backdrop-filter: blur(30px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeInScale 0.3s ease;
+}
+
+/* ERROR STATE - Red/Danger */
+.message-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fecdd3;
+}
+
+.message-error::before {
+  content: '⚠';
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* WARNING STATE - Orange/Caution */
+.message-warning {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #fed7aa;
+}
+
+.message-warning::before {
+  content: '⚡';
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* SUCCESS STATE - Green */
+.message-success {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #dcfce7;
+}
+
+.message-success::before {
+  content: '✓';
+  font-size: 16px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* INFO STATE - Blue/Primary */
+.message-info {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #e0e7ff;
+}
+
+.message-info::before {
+  content: 'ⓘ';
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* GOLD/ACCENT STATE - For important notices */
+.message-accent {
+  background: rgba(251, 146, 60, 0.12);
+  border-color: rgba(251, 146, 60, 0.4);
+  color: #fed7aa;
+}
+
+.message-accent::before {
+  content: '★';
+  font-size: 16px;
+  flex-shrink: 0;
+}
 }

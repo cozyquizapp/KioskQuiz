@@ -59,7 +59,18 @@ export const submitAnswer = async (roomCode: string, teamId: string, answer: unk
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ teamId, answer })
   });
-  if (!res.ok) throw new Error('Antwort konnte nicht gesendet werden');
+  if (!res.ok) {
+    let detail = 'Antwort konnte nicht gesendet werden';
+    try {
+      const data = await res.json();
+      if (data && typeof data.error === 'string') {
+        detail = data.error;
+      }
+    } catch {
+      // ignore JSON parse errors; keep generic message
+    }
+    throw new Error(detail);
+  }
   return res.json();
 };
 

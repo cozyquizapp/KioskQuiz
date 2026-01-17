@@ -6,7 +6,8 @@ import {
   saveCozyDraft,
   publishCozyDraft,
   CozyDraftSummary,
-  createCozyDraft
+  createCozyDraft,
+  duplicateCozyDraft
 } from '../api';
 import KanbanBoard from '../components/KanbanBoard';
 import { BlitzEditor } from '../components/BlitzEditor';
@@ -25,6 +26,7 @@ const ImprovedCozy60BuilderPage = () => {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [isOffline, setIsOffline] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [tab, setTab] = useState<'board' | 'meta' | 'blitz' | 'rundlauf' | 'catalog' | 'help'>('board');
   const [showCatalog, setShowCatalog] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
@@ -94,13 +96,35 @@ const ImprovedCozy60BuilderPage = () => {
     setIsCreating(true);
     localStorage.removeItem(LOCAL_BACKUP_KEY);
     localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
-    setStatus('Erstelle neues Draft...');
+    setStatus('✨ Neues Quiz erstellt...');
     try {
       const data = await createCozyDraft();
       setDrafts((prev) => [data.draft, ...prev.filter((d) => d.id !== data.draft.id)]);
       setDraft(data.draft);
       setSelectedDraftId(data.draft.id);
-      setStatus('✓ Neues Draft erstellt');
+      setStatus('✓ Bereit zum Bearbeiten!');
+      setShowCreateDialog(false);
+      setTimeout(() => setStatus(''), 3000);
+    } catch (err) {
+      setError((err as Error).message);
+      setStatus('');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDuplicate = async (sourceDraftId: string) => {
+    if (isCreating) return;
+    setIsCreating(true);
+    setStatus('🔄 Quiz wird kopiert...');
+    try {
+      const data = await duplicateCozyDraft(sourceDraftId, `Kopie von ${drafts.find(d => d.id === sourceDraftId)?.title || 'Quiz'}`);
+      setDrafts((prev) => [data.draft, ...prev]);
+      setDraft(data.draft);
+      setSelectedDraftId(data.draft.id);
+      setStatus('✓ Quiz erfolgreich kopiert!');
+      setShowCreateDialog(false);
+      setTimeout(() => setStatus(''), 3000);
     } catch (err) {
       setError((err as Error).message);
       setStatus('');
@@ -154,6 +178,12 @@ const ImprovedCozy60BuilderPage = () => {
     }
 
     return errors;
+  };
+
+  const getQuizProgress = (currentDraft: CozyQuizDraft): { filled: number; total: number; percent: number } => {
+    const filled = currentDraft.questions.filter(q => q.question && q.question !== `Frage 1`).length;
+    const total = currentDraft.questions.length || 60;
+    return { filled, total, percent: Math.round((filled / total) * 100) };
   };
 
   const handlePublish = async () => {
@@ -218,7 +248,7 @@ const ImprovedCozy60BuilderPage = () => {
                 </span>
               )}
             </div>
-            <button onClick={handleCreate} style={buttonPrimaryStyle}>
+            <button onClick={() => setShowCreateDialog(true)} style={buttonPrimaryStyle} disabled={isCreating}>
               + Neu
             </button>
           </div>
@@ -249,8 +279,12 @@ const ImprovedCozy60BuilderPage = () => {
                   }}
                 >
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
-                  <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
-                    {new Date(d.updatedAt).toLocaleDateString()}
+                  <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4, display: 'flex', gap: 8 }}>
+                    <span>{new Date(d.updatedAt).toLocaleDateString()}</span>
+                    <span style={{ color: '#cbd5e1' }}>•</span>
+                    <span style={{ color: '#22d3ee', fontWeight: 500 }}>
+                      {draft?.id === d.id ? `${getQuizProgress(draft).filled}/${getQuizProgress(draft).total} Fragen` : `${d.questionCount || 0}/60`}
+                    </span>
                   </div>
                 </button>
                 <button
@@ -616,6 +650,139 @@ const ImprovedCozy60BuilderPage = () => {
             </div>
           </div>
         )}
+
+        {showCreateDialog && (
+          <div style={previewOverlayStyle} onClick={() => !isCreating && setShowCreateDialog(false)}>
+            <div
+              style={{
+                background: '#0f172a',
+                color: '#e2e8f0',
+                borderRadius: 12,
+                padding: 28,
+                width: 'min(500px, 90vw)',
+                boxShadow: '0 20px 80px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(34,211,238,0.3)',
+                animation: 'slideUp 0.3s ease-out'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 style={{ margin: '0 0 24px', textAlign: 'center', fontSize: 18 }}>🎯 Neues Quiz erstellen</h2>
+              
+              <div style={{ display: 'grid', gap: 16 }}>
+                {/* Option 1: Quick Start mit Demo */}
+                <button
+                  onClick={() => handleDuplicate('cozy-demo-schnellstart')}
+                  disabled={isCreating}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(34,211,238,0.1))',
+                    border: '2px solid rgba(34,211,238,0.4)',
+                    borderRadius: 8,
+                    padding: 16,
+                    textAlign: 'left',
+                    cursor: isCreating ? 'not-allowed' : 'pointer',
+                    opacity: isCreating ? 0.5 : 1,
+                    transition: 'all 0.2s',
+                    color: '#e2e8f0'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCreating) (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(34,211,238,0.2))';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.background = 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(34,211,238,0.1))';
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>⚡ Quick Start – Demo kopieren</div>
+                  <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 8 }}>Starte mit dem vorgefertigten Probe-Quiz und passe es an</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', gap: 12 }}>
+                    <span>✓ 5 Beispiel-Fragen</span>
+                    <span>✓ Fotosprint & K.O.-Rallye</span>
+                    <span>✓ Sofort spielbar</span>
+                  </div>
+                </button>
+
+                {/* Option 2: Leeres Quiz */}
+                <button
+                  onClick={() => handleCreate()}
+                  disabled={isCreating}
+                  style={{
+                    background: 'rgba(148,163,184,0.1)',
+                    border: '2px solid rgba(148,163,184,0.3)',
+                    borderRadius: 8,
+                    padding: 16,
+                    textAlign: 'left',
+                    cursor: isCreating ? 'not-allowed' : 'pointer',
+                    opacity: isCreating ? 0.5 : 1,
+                    transition: 'all 0.2s',
+                    color: '#e2e8f0'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCreating) (e.target as HTMLButtonElement).style.background = 'rgba(148,163,184,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.background = 'rgba(148,163,184,0.1)';
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>📝 Von Grund auf – Leeres Quiz</div>
+                  <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 8 }}>Starte mit 60 leeren Slots und fülle alles selbst aus</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Für Profis die genau wissen was sie tun</div>
+                </button>
+
+                {/* Option 3: Von existierendem kopieren */}
+                {drafts.filter(d => d.id !== 'cozy-demo-schnellstart').length > 0 && (
+                  <button
+                    onClick={() => handleDuplicate(drafts.find(d => d.id !== 'cozy-demo-schnellstart')?.id || '')}
+                    disabled={isCreating}
+                    style={{
+                      background: 'rgba(167,139,250,0.1)',
+                      border: '2px solid rgba(167,139,250,0.3)',
+                      borderRadius: 8,
+                      padding: 16,
+                      textAlign: 'left',
+                      cursor: isCreating ? 'not-allowed' : 'pointer',
+                      opacity: isCreating ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                      color: '#e2e8f0'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isCreating) (e.target as HTMLButtonElement).style.background = 'rgba(167,139,250,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.target as HTMLButtonElement).style.background = 'rgba(167,139,250,0.1)';
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>📋 Ähnliches kopieren</div>
+                    <div style={{ fontSize: 12, color: '#cbd5e1' }}>Dupliziere "{drafts.find(d => d.id !== 'cozy-demo-schnellstart')?.title}" und passe es an</div>
+                  </button>
+                )}
+
+                {/* Close button */}
+                <button
+                  onClick={() => setShowCreateDialog(false)}
+                  disabled={isCreating}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(148,163,184,0.3)',
+                    borderRadius: 6,
+                    padding: 10,
+                    cursor: isCreating ? 'not-allowed' : 'pointer',
+                    color: '#94a3b8',
+                    fontSize: 12,
+                    opacity: isCreating ? 0.5 : 1
+                  }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+
+              {/* Loading state */}
+              {isCreating && (
+                <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#cbd5e1' }}>
+                  ⏳ {status}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -777,3 +944,24 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default ImprovedCozy60BuilderPage;
+
+  // Add animation styles on mount
+  useEffect(() => {
+    if (typeof document !== 'undefined' && !document.querySelector('#cozy-builder-styles')) {
+      const style = document.createElement('style');
+      style.id = 'cozy-builder-styles';
+      style.textContent = `
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);

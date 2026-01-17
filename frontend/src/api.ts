@@ -450,6 +450,19 @@ export const fetchCozyDraft = async (draftId: string): Promise<{ draft: CozyQuiz
   return res.json();
 };
 
+export const duplicateCozyDraft = async (
+  sourceDraftId: string,
+  newTitle: string
+): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {
+  const res = await fetch(`${API_BASE}/studio/cozy60/${sourceDraftId}/duplicate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newTitle })
+  });
+  if (!res.ok) throw new Error('Draft konnte nicht dupliziert werden');
+  return res.json();
+};
+
 export const saveCozyDraft = async (
   draftId: string,
   payload: Partial<CozyQuizDraft>

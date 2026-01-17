@@ -1558,6 +1558,33 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
   }
 });
 
+app.post('/api/studio/cozy60/:id/duplicate', (req, res) => {
+  try {
+    const { draft } = getCozyDraftOrFail(req.params.id);
+    const newTitle = typeof req.body?.newTitle === 'string' ? req.body.newTitle : `${draft.meta.title} (Kopie)`;
+    
+    const newDraft: CozyQuizDraft = {
+      ...JSON.parse(JSON.stringify(draft)), // Deep clone
+      id: `cozy-draft-${uuid().slice(0, 8)}`,
+      meta: {
+        ...draft.meta,
+        title: newTitle
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      lastPublishedAt: undefined
+    };
+    
+    cozyDrafts.push(newDraft);
+    persistCozyDrafts();
+    res.json({ draft: newDraft, warnings: collectCozyDraftWarnings(newDraft) });
+  } catch (err) {
+    const message = (err as Error).message;
+    const status = message === 'Draft nicht gefunden' ? 404 : 400;
+    res.status(status).json({ error: message });
+  }
+});
+
 // Register studio routes AFTER cozy60 routes so specific routes match first
 app.use('/api/studio', studioRoutes);
 

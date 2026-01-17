@@ -1721,6 +1721,13 @@ const ensureRoom = (roomCode: string): RoomState => {
       rundlaufPointsTie: RUNDLAUF_DEFAULT_POINTS_TIE,
       rundlaufRoundWinners: [],
       rundlaufRoundIntroTimeout: null,
+      oneOfEightTurnOrder: [],
+      oneOfEightTurnIndex: 0,
+      oneOfEightActiveTeamId: null,
+      oneOfEightUsedChoiceIds: [],
+      oneOfEightLoserTeamId: null,
+      oneOfEightWinnerTeamIds: [],
+      oneOfEightFinished: false,
       validationWarnings: [],
       nextStage: null,
       scoreboardOverlayForced: false

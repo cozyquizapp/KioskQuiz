@@ -1044,24 +1044,3 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default ImprovedCozy60BuilderPage;
-
-  // Add animation styles on mount
-  useEffect(() => {
-    if (typeof document !== 'undefined' && !document.querySelector('#cozy-builder-styles')) {
-      const style = document.createElement('style');
-      style.id = 'cozy-builder-styles';
-      style.textContent = `
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);

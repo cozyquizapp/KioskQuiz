@@ -430,7 +430,9 @@ export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; of
         return { drafts: [], offline: true };
       }
     }
-    throw new Error('Cozy-Drafts konnten nicht geladen werden (offline, kein Cache)');
+    // No cache available, return empty list in offline mode instead of throwing
+    console.warn('Cozy-Drafts offline und kein Cache vorhanden');
+    return { drafts: [], offline: true };
   }
 };
 

@@ -285,69 +285,95 @@ const ImprovedCozy60BuilderPage = () => {
           </div>
 
           <div style={draftListStyle}>
-            {drafts.map((d) => (
-              <div
-                key={d.id}
-                style={{
-                  ...draftItemStyle,
-                  borderColor: selectedDraftId === d.id ? 'rgba(34,211,238,0.5)' : 'rgba(255,255,255,0.08)',
-                  background: selectedDraftId === d.id ? 'rgba(34,211,238,0.1)' : 'rgba(15,23,42,0.5)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <button
-                  onClick={() => loadDraft(d.id)}
-                  style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'inherit',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    padding: 0
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
-                  <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4, display: 'flex', gap: 8 }}>
-                    <span>{new Date(d.updatedAt).toLocaleDateString()}</span>
-                    <span style={{ color: '#cbd5e1' }}>•</span>
-                    <span style={{ color: '#22d3ee', fontWeight: 500 }}>
-                      {draft?.id === d.id ? `${getQuizProgress(draft).filled}/${getQuizProgress(draft).total} Fragen` : `${d.questionCount || 0}/60`}
-                    </span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`"${d.title}" wirklich löschen?`)) {
-                      const updated = drafts.filter((draft) => draft.id !== d.id);
-                      setDrafts(updated);
-                      localStorage.setItem('cozyQuizDrafts', JSON.stringify(updated));
-                      if (selectedDraftId === d.id) {
-                        setSelectedDraftId(null);
-                        setDraft(null);
-                      }
-                      setStatus('Draft gelöscht');
-                    }
-                  }}
-                  style={{
-                    background: 'rgba(239,68,68,0.2)',
-                    border: '1px solid rgba(239,68,68,0.4)',
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    color: '#f87171',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    marginLeft: 8,
-                    whiteSpace: 'nowrap'
-                  }}
-                  title="Draft löschen"
-                >
-                  🗑️
-                </button>
+            {drafts.length === 0 ? (
+              <div style={{
+                padding: 12,
+                textAlign: 'center',
+                color: '#94a3b8',
+                fontSize: 12,
+                lineHeight: 1.5
+              }}>
+                {isOffline ? (
+                  <>
+                    <div>📡 Offline – Keine Drafts im Cache</div>
+                    <div style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}>
+                      Bitte Backend verbinden oder klicke „+ Neu"
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>Noch keine Drafts</div>
+                    <div style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}>
+                      Klicke „+ Neu" um einen neuen Draft zu erstellen
+                    </div>
+                  </>
+                )}
               </div>
-            ))}
+            ) : (
+              drafts.map((d) => (
+                <div
+                  key={d.id}
+                  style={{
+                    ...draftItemStyle,
+                    borderColor: selectedDraftId === d.id ? 'rgba(34,211,238,0.5)' : 'rgba(255,255,255,0.08)',
+                    background: selectedDraftId === d.id ? 'rgba(34,211,238,0.1)' : 'rgba(15,23,42,0.5)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <button
+                    onClick={() => loadDraft(d.id)}
+                    style={{
+                      flex: 1,
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      padding: 0
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{d.title}</div>
+                    <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4, display: 'flex', gap: 8 }}>
+                      <span>{new Date(d.updatedAt).toLocaleDateString()}</span>
+                      <span style={{ color: '#cbd5e1' }}>•</span>
+                      <span style={{ color: '#22d3ee', fontWeight: 500 }}>
+                        {draft?.id === d.id ? `${getQuizProgress(draft).filled}/${getQuizProgress(draft).total} Fragen` : `${d.questionCount || 0}/60`}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`"${d.title}" wirklich löschen?`)) {
+                        const updated = drafts.filter((draft) => draft.id !== d.id);
+                        setDrafts(updated);
+                        localStorage.setItem('cozyQuizDrafts', JSON.stringify(updated));
+                        if (selectedDraftId === d.id) {
+                          setSelectedDraftId(null);
+                          setDraft(null);
+                        }
+                        setStatus('Draft gelöscht');
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(239,68,68,0.2)',
+                      border: '1px solid rgba(239,68,68,0.4)',
+                      borderRadius: 4,
+                      padding: '4px 8px',
+                      color: '#f87171',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      marginLeft: 8,
+                      whiteSpace: 'nowrap'
+                    }}
+                    title="Draft löschen"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))
+            )}
           </div>
 
           {status && (

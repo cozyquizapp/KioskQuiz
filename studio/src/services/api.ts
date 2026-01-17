@@ -38,6 +38,7 @@ export async function uploadDraft(draft: unknown) {
         ...(cfg.token ? { Authorization: `Bearer ${cfg.token}` } : {}),
       },
       body: JSON.stringify(draft),
+      signal: AbortSignal.timeout(5000) // 5s timeout, damit es nicht ewig hängt
     })
     if (!res.ok) {
       const text = await res.text()
@@ -47,7 +48,7 @@ export async function uploadDraft(draft: unknown) {
     return { ok: true, data: json }
   } catch (e) {
     console.error('Upload fehlgeschlagen', e)
-    return { ok: false, message: 'Upload fehlgeschlagen' }
+    return { ok: false, message: 'Upload fehlgeschlagen (Server offline?)', offline: true }
   }
 }
 
@@ -65,12 +66,39 @@ export async function fetchQuestionsApi(): Promise<{ ok: boolean; questions: Que
     return { ok: false, questions: [] }
   }
   try {
-    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/api/questions`)
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/api/questions`, {
+      signal: AbortSignal.timeout(5000)
+    })
     if (!res.ok) throw new Error('failed')
     const data = await res.json()
     return { ok: true, questions: data.questions ?? [] }
   } catch (e) {
-    console.error('Fragen konnten nicht geladen werden', e)
+    console.error('Fragen konnten nicht geladen werden (Server offline?)', e)
     return { ok: false, questions: [] }
+  }
+}
+
+/** Cozy60 Drafts vom Backend laden (mit Offline-Fallback auf LocalStorage) */
+export async function fetchCozyDraftsApi(): Promise<{ drafts: any[]; offline?: boolean }> {
+  const cfg = loadApiConfig()
+  if (!cfg?.baseUrl) {
+    return { drafts: [], offline: true }
+  }
+  try {
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/api/studio/cozy60`, {
+      signal: AbortSignal.timeout(5000)
+    })
+    if (!res.ok) throw new Error('failed')
+    const data = await res.json()
+    // Speichere die Drafts lokal, falls Backend später offline geht
+    if (data.drafts?.length) {
+      localStorage.setItem('cozy-drafts-backup', JSON.stringify(data.drafts))
+    }
+    return { drafts: data.drafts ?? [] }
+  } catch (e) {
+    console.error('Drafts von Backend fehlgeschlagen, nutze lokalen Cache', e)
+    // Fallback auf lokal gespeicherte Drafts
+    const backup = localStorage.getItem('cozy-drafts-backup')
+    return { drafts: backup ? JSON.parse(backup) : [], offline: true }
   }
 }

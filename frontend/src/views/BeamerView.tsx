@@ -1086,7 +1086,7 @@ useEffect(() => {
 
   const questionText =
     question && language === 'en' && (question as any)?.questionEn
-      ? (question as any).questionEn
+      ? (question as any).questionEn.trim()
       : question?.question?.split('/')[0]?.trim() ?? question?.question;
 
   const timerText =
@@ -1903,23 +1903,43 @@ useEffect(() => {
       (question as any)?.imageUrl ||
       (question as any)?.image ||
       null;
+    
+    // Extract German text (remove anything after '/')
+    const getGermanText = (text?: string): string => {
+      if (!text) return '';
+      return text.split('/')[0].trim();
+    };
+    
+    // Extract English text (prioritize questionEn, fallback to after '/')
+    const getEnglishText = (enText?: string, questionText?: string): string => {
+      if (enText) return enText.trim();
+      if (questionText) {
+        const parts = questionText.split('/');
+        return parts.length > 1 ? parts[1].trim() : '';
+      }
+      return '';
+    };
+    
+    const germanText = getGermanText(question?.question);
+    const englishText = getEnglishText(question?.questionEn, question?.question);
+    
     const questionTextLocalized =
-      language === 'both' && question?.question && question?.questionEn
+      language === 'both' && germanText && englishText
         ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-              <div>{question.question.split('/')[0].trim()}</div>
+              <div>{germanText}</div>
               <div style={{
                 width: '100%',
                 height: '1px',
                 background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
                 margin: '4px 0'
               }} />
-              <div>{question.questionEn}</div>
+              <div>{englishText}</div>
             </div>
           )
         : language === 'en'
-        ? question?.questionEn ?? question?.question?.split('/')[0]?.trim() ?? ''
-        : (question?.question?.split('/')[0]?.trim() ?? question?.questionEn ?? '');
+        ? englishText || germanText || ''
+        : germanText || englishText || '';
 
     const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
       const promptText = getQuestionPromptText();

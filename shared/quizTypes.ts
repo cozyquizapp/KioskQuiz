@@ -567,6 +567,15 @@ export interface RundlaufState {
   remainingAnswers?: string[]; // Answers not yet used (normalized)
 }
 
+export interface OneOfEightState {
+  turnOrder: string[];
+  activeTeamId: string | null;
+  usedChoiceIds: string[];
+  loserTeamId?: string | null;
+  winnerTeamIds?: string[];
+  finished?: boolean;
+}
+
 export interface BlitzThemeOption {
   id: string;
   title: string;
@@ -637,6 +646,7 @@ export type StateUpdatePayload = {
   potato?: PotatoState | null;
   blitz?: BlitzState | null;
   rundlauf?: RundlaufState | null;
+  oneOfEight?: OneOfEightState | null;
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
   results?: AnswerAwardSnapshot[];

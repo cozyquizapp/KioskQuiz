@@ -228,6 +228,14 @@ type RoomState = {
   rundlaufTurnDurationMs: number;
   rundlaufPointsWinner: number;
   rundlaufPointsTie: number;
+  // One-of-Eight (Bunte Tüte) turn-based state
+  oneOfEightTurnOrder: string[];
+  oneOfEightTurnIndex: number;
+  oneOfEightActiveTeamId: string | null;
+  oneOfEightUsedChoiceIds: string[];
+  oneOfEightLoserTeamId: string | null;
+  oneOfEightWinnerTeamIds: string[];
+  oneOfEightFinished: boolean;
   rundlaufRoundWinners: string[];
   rundlaufRoundIntroTimeout: NodeJS.Timeout | null;
   validationWarnings: string[];
@@ -3296,6 +3304,13 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.rundlaufPointsTie = rundlaufConfig.pointsTie ?? RUNDLAUF_DEFAULT_POINTS_TIE;
   room.rundlaufRoundWinners = [];
   room.rundlaufRoundIntroTimeout = null;
+  room.oneOfEightTurnOrder = [];
+  room.oneOfEightTurnIndex = 0;
+  room.oneOfEightActiveTeamId = null;
+  room.oneOfEightUsedChoiceIds = [];
+  room.oneOfEightLoserTeamId = null;
+  room.oneOfEightWinnerTeamIds = [];
+  room.oneOfEightFinished = false;
   recomputeRoomWarnings(room);
   applyRoomState(room, { type: 'START_SESSION' });
   broadcastTeamsReady(room);
@@ -3845,6 +3860,19 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           remainingAnswers
         };
       })();
+  const oneOfEight = (() => {
+    if (!activeQuestion) return null;
+    const payload = (activeQuestion as any).bunteTuete;
+    if (!payload || payload.kind !== 'oneOfEight') return null;
+    return {
+      turnOrder: room.oneOfEightTurnOrder,
+      activeTeamId: room.oneOfEightActiveTeamId,
+      usedChoiceIds: room.oneOfEightUsedChoiceIds,
+      loserTeamId: room.oneOfEightLoserTeamId,
+      winnerTeamIds: room.oneOfEightWinnerTeamIds,
+      finished: room.oneOfEightFinished
+    } satisfies StateUpdatePayload['oneOfEight'];
+  })();
   const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
   const connectedTeamIds = getConnectedTeamIds(room);
   const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({
@@ -3891,6 +3919,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     potato,
     blitz,
     rundlauf,
+    oneOfEight,
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
     results,
@@ -3919,6 +3948,24 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
   clearQuestionTimers(room);
   applyRoomState(room, { type: 'HOST_LOCK' });
   const basePoints = getQuestionPoints(room, question);
+
+  const buntePayload = (question as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    // Falls noch nicht entschieden: als Unentschieden werten
+    if (!room.oneOfEightFinished) {
+      concludeOneOfEight(
+        room,
+        question,
+        null,
+        [],
+        'Unentschieden',
+        'Unentschieden',
+        'Unentschieden – falsche Aussage nicht gewählt'
+      );
+      return true;
+    }
+    return false;
+  }
 
   if (question.mechanic === 'estimate') {
     const parsed = Object.entries(room.answers).map(([teamId, ans]) => {
@@ -4161,6 +4208,10 @@ const enterQuestionActive = (room: RoomState, questionId: string, remainingOverr
   const meta = buildQuestionMeta(room, questionId);
   const localized = localizeQuestion(questionWithImage, room.language);
   room.questionPhase = 'answering';
+  const buntePayload = (questionWithImage as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    startOneOfEightTurnState(room, questionWithImage);
+  }
   applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
   startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
   io.to(room.roomCode).emit('questionStarted', {
@@ -4189,6 +4240,13 @@ const startQuestionWithSlot = (
 
   room.currentQuestionId = questionId;
   room.answers = {};
+  room.oneOfEightTurnOrder = [];
+  room.oneOfEightTurnIndex = 0;
+  room.oneOfEightActiveTeamId = null;
+  room.oneOfEightUsedChoiceIds = [];
+  room.oneOfEightLoserTeamId = null;
+  room.oneOfEightWinnerTeamIds = [];
+  room.oneOfEightFinished = false;
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
   clearQuestionTimers(room);
@@ -4242,6 +4300,138 @@ const runNextQuestion = (room: RoomState) => {
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };
+};
+
+const startOneOfEightTurnState = (room: RoomState, question: AnyQuestion) => {
+  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string }> | undefined) || [];
+  const teamIds = getConnectedTeamIds(room);
+  const order = teamIds.length ? [...teamIds] : Object.keys(room.teams);
+  room.oneOfEightTurnOrder = order;
+  room.oneOfEightTurnIndex = 0;
+  room.oneOfEightActiveTeamId = order[0] ?? null;
+  room.oneOfEightUsedChoiceIds = [];
+  room.oneOfEightLoserTeamId = null;
+  room.oneOfEightWinnerTeamIds = [];
+  room.oneOfEightFinished = statements.length === 0 || order.length === 0;
+  if (room.oneOfEightFinished) {
+    room.oneOfEightActiveTeamId = null;
+  }
+};
+
+const concludeOneOfEight = (
+  room: RoomState,
+  question: AnyQuestion,
+  loserTeamId: string | null,
+  winnerTeamIds: string[],
+  detailWinner: string,
+  detailLoser: string,
+  detailNeutral: string
+) => {
+  const basePoints = getQuestionPoints(room, question);
+  const winnerSet = new Set(winnerTeamIds);
+  Object.keys(room.teams).forEach((id) => {
+    const existing = room.answers[id] || { value: null };
+    let awardedPoints = 0;
+    let isCorrect = false;
+    let awardedDetail: string | null = null;
+    if (winnerSet.has(id)) {
+      awardedPoints = basePoints;
+      isCorrect = true;
+      awardedDetail = detailWinner;
+    } else if (loserTeamId && id === loserTeamId) {
+      awardedDetail = detailLoser;
+    } else {
+      awardedDetail = detailNeutral;
+    }
+    room.answers[id] = {
+      ...existing,
+      isCorrect,
+      awardedPoints,
+      awardedDetail,
+      autoGraded: true,
+      tieBreaker: null
+    };
+  });
+
+  room.oneOfEightWinnerTeamIds = winnerTeamIds;
+  room.oneOfEightLoserTeamId = loserTeamId;
+  room.oneOfEightFinished = true;
+  room.oneOfEightActiveTeamId = null;
+  room.questionPhase = 'evaluated';
+  room.timerEndsAt = null;
+  applyRoomState(room, { type: 'HOST_LOCK' });
+
+  const solution = formatSolution(question, room.language);
+  broadcastState(room);
+  io.to(room.roomCode).emit('evaluation:started');
+  io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
+  io.to(room.roomCode).emit('timerStopped');
+};
+
+const advanceOneOfEightTurn = (room: RoomState) => {
+  room.oneOfEightTurnIndex += 1;
+  const nextTeam = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
+  room.oneOfEightActiveTeamId = nextTeam ?? null;
+};
+
+const handleOneOfEightSubmission = (
+  room: RoomState,
+  question: AnyQuestion,
+  teamId: string,
+  answer: unknown
+) => {
+  const payload = answer as { choiceId?: string };
+  const choiceId = typeof payload?.choiceId === 'string' ? payload.choiceId.trim() : '';
+  if (!choiceId) throw new Error('Antwort ungültig');
+  if (room.oneOfEightFinished) throw new Error('Runde bereits beendet');
+  if (room.oneOfEightActiveTeamId && room.oneOfEightActiveTeamId !== teamId) {
+    throw new Error('Dieses Team ist nicht am Zug');
+  }
+
+  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string; isFalse?: boolean }> | undefined) || [];
+  const choiceNormalized = choiceId.toLowerCase();
+  const alreadyUsed = room.oneOfEightUsedChoiceIds.some((id) => id.toLowerCase() === choiceNormalized);
+  if (alreadyUsed) throw new Error('Antwort wurde schon gewählt');
+
+  room.answers[teamId] = { value: payload };
+  room.oneOfEightUsedChoiceIds.push(choiceId);
+
+  const falseStmt = statements.find((stmt) => stmt.isFalse);
+  const pickedFalse = falseStmt && choiceNormalized === String(falseStmt.id).toLowerCase();
+
+  if (pickedFalse) {
+    const winners = room.oneOfEightTurnOrder.filter((id) => id !== teamId && room.teams[id]);
+    concludeOneOfEight(
+      room,
+      question,
+      teamId,
+      winners,
+      'Gewonnen durch Fehlpick',
+      'Falsche Aussage gewählt',
+      'Keine Auswahl'
+    );
+    return;
+  }
+
+  // Keine falsche Aussage gewählt: weiter zum nächsten Team oder Unentschieden, wenn alle durch sind
+  const submissions = room.oneOfEightUsedChoiceIds.length;
+  const maxTurns = Math.min(statements.length || 0, room.oneOfEightTurnOrder.length || statements.length || 0);
+  advanceOneOfEightTurn(room);
+
+  if (submissions >= maxTurns || room.oneOfEightUsedChoiceIds.length >= (statements.length || 0)) {
+    concludeOneOfEight(
+      room,
+      question,
+      null,
+      [],
+      'Unentschieden',
+      'Unentschieden',
+      'Unentschieden – falsche Aussage nicht gewählt'
+    );
+    return;
+  }
+
+  broadcastState(room);
 };
 
 const shouldShowSegmentScoreboard = (room: RoomState) => {
@@ -4572,9 +4762,21 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
   if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
+  const currentQuestion = questionById.get(room.currentQuestionId);
+  if (!currentQuestion) return res.status(400).json({ error: 'Keine aktive Frage' });
   if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
   if (!isQuestionInputOpen(room.gameState)) {
     return res.status(400).json({ error: 'Antworten aktuell nicht erlaubt' });
+  }
+
+  const buntePayload = (currentQuestion as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    try {
+      handleOneOfEightSubmission(room, currentQuestion, teamId, answer);
+    } catch (err) {
+      return res.status(400).json({ error: (err as Error).message });
+    }
+    return res.json({ ok: true });
   }
 
   room.answers[teamId] = { value: answer };

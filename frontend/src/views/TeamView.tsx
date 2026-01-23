@@ -2628,11 +2628,14 @@ function TeamView({ roomCode }: TeamViewProps) {
             <button
               style={{
                 ...primaryButton,
-                background: isReady ? accentPink : `${accentPink}22`,
-                color: isReady ? '#0d0f14' : '#e2e8f0',
-                border: `1px solid ${accentPink}66`,
+                background: isReady ? `linear-gradient(135deg, ${accentPink}, rgba(217, 70, 239, 0.8))` : `${accentPink}15`,
+                color: isReady ? '#ffffff' : '#e2e8f0',
+                border: `2px solid ${accentPink}`,
+                boxShadow: isReady ? `0 0 20px ${accentPink}40, 0 4px 20px ${accentPink}40` : 'none',
                 opacity: connectionStatus === 'connected' ? 1 : 0.6,
-                cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed'
+                cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
+                fontWeight: isReady ? 700 : 600,
+                fontSize: 15
               }}
               onClick={connectionStatus === 'connected' ? toggleReady : undefined}
               disabled={connectionStatus !== 'connected'}

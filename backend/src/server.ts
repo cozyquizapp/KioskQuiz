@@ -1015,20 +1015,122 @@ const sanitizeRundlaufDraft = (config?: RundlaufConfig | null): RundlaufConfig =
 // Cozy60 Studio Drafts / Builder
 const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
 let cozyDrafts: CozyQuizDraft[] = [];
-try {
-  if (fs.existsSync(cozyDraftsPath)) {
-    cozyDrafts = JSON.parse(fs.readFileSync(cozyDraftsPath, 'utf-8'));
-  }
-} catch {
-  cozyDrafts = [];
-}
-const persistCozyDrafts = () => {
+
+// Initialize with default on first run
+let persistCozyDrafts = () => {
   try {
     fs.writeFileSync(cozyDraftsPath, JSON.stringify(cozyDrafts, null, 2), 'utf-8');
   } catch {
     // ignore persistence issues, builder kann erneut speichern
   }
 };
+
+// Default demo draft when no persisted drafts exist
+const createDefaultDemoDraft = (): CozyQuizDraft => {
+  const now = Date.now();
+  return {
+    id: 'cozy-demo-schnellstart',
+    meta: {
+      title: '🎯 Demo Quiz – Schnellstart',
+      language: 'de',
+      date: null,
+      description: 'Kurzes Probe-Quiz zum Testen aller Mechaniken – im Builder anpassen!'
+    },
+    questions: [
+      {
+        id: 'demo-q01',
+        question: 'Wie viele Einwohner hat Berlin?',
+        questionEn: 'How many inhabitants does Berlin have?',
+        points: 100,
+        segmentIndex: 0,
+        category: 'Schaetzchen',
+        mechanic: 'estimate',
+        targetValue: 3700000,
+        unit: 'Einwohner'
+      } as any,
+      {
+        id: 'demo-q02',
+        question: 'Was ist die Hauptstadt von Frankreich?',
+        questionEn: 'What is the capital of France?',
+        points: 100,
+        segmentIndex: 0,
+        category: 'Mu-Cho',
+        mechanic: 'multipleChoice',
+        options: ['Paris', 'Lyon', 'Marseille', 'Toulouse'],
+        correctIndex: 0
+      } as any,
+      {
+        id: 'demo-q03',
+        question: 'Die Erde ist flach.',
+        questionEn: 'The Earth is flat.',
+        points: 100,
+        segmentIndex: 0,
+        category: 'Stimmts',
+        mechanic: 'trueFalse',
+        isTrue: false
+      } as any,
+      {
+        id: 'demo-q04',
+        question: 'Welche Stadt liegt am weitesten nördlich?',
+        questionEn: 'Which city is located furthest north?',
+        points: 100,
+        segmentIndex: 0,
+        category: 'Mu-Cho',
+        mechanic: 'multipleChoice',
+        options: ['Hamburg', 'München', 'Berlin', 'Köln'],
+        correctIndex: 0
+      } as any,
+      {
+        id: 'demo-q05',
+        question: 'Wie viele Bundesländer hat Deutschland?',
+        questionEn: 'How many federal states does Germany have?',
+        points: 100,
+        segmentIndex: 0,
+        category: 'Schaetzchen',
+        mechanic: 'estimate',
+        targetValue: 16,
+        unit: 'Bundesländer'
+      } as any
+    ],
+    potatoPool: [
+      { id: 'theme-1', title: 'Europäische Hauptstädte' },
+      { id: 'theme-2', title: 'Deutsche Flüsse' },
+      { id: 'theme-3', title: 'Berühmte Musiker' }
+    ],
+    blitz: {
+      pool: [
+        {
+          id: 'blitz-demo-1',
+          title: 'Schnelle Städte',
+          items: [
+            { id: 'b1', prompt: 'Hauptstadt von Italien', answer: 'Rom' },
+            { id: 'b2', prompt: 'Hauptstadt von Spanien', answer: 'Madrid' },
+            { id: 'b3', prompt: 'Hauptstadt von Polen', answer: 'Warschau' },
+            { id: 'b4', prompt: 'Hauptstadt von Österreich', answer: 'Wien' },
+            { id: 'b5', prompt: 'Hauptstadt von Niederlande', answer: 'Amsterdam' }
+          ]
+        }
+      ]
+    },
+    updatedAt: now,
+    createdAt: now,
+    status: 'draft'
+  };
+};
+
+try {
+  if (fs.existsSync(cozyDraftsPath)) {
+    const loaded = JSON.parse(fs.readFileSync(cozyDraftsPath, 'utf-8'));
+    cozyDrafts = Array.isArray(loaded) && loaded.length > 0 ? loaded : [createDefaultDemoDraft()];
+  } else {
+    // File doesn't exist, create with default
+    cozyDrafts = [createDefaultDemoDraft()];
+    persistCozyDrafts();
+  }
+} catch {
+  // Fallback: create default draft if JSON is corrupted
+  cozyDrafts = [createDefaultDemoDraft()];
+}
 
 const BLITZ_PLACEHOLDER_TITLES = [
   'City Skylines',

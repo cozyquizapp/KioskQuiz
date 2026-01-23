@@ -1039,10 +1039,11 @@ function TeamView({ roomCode }: TeamViewProps) {
           style={{
             ...categoryChip,
             background: 'rgba(255,255,255,0.001)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.08)',
             color: '#f1f5f9',
-            boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(30px) saturate(200%)'
+            boxShadow: '0 0 12px rgba(255,79,158,0.08), inset 0 1px 1px rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(30px) saturate(200%)',
+            transition: 'all 0.3s ease'
           }}
         >
           {accentIcon && (
@@ -1140,8 +1141,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           background: `linear-gradient(90deg, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.001) ${Math.max(0, Math.min(100, progress))}%)`,
           backdropFilter: 'blur(30px) saturate(200%) brightness(1.1)',
           color: '#f8fafc',
-          boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: canAnswer ? '0 2px 12px rgba(255,79,158,0.15), inset 0 1px 1px rgba(255,255,255,0.08)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+          border: canAnswer ? '1px solid rgba(255,79,158,0.25)' : '1px solid rgba(255,255,255,0.06)',
           animation: 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer ? 1 : 0.6,
@@ -3346,11 +3347,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       <div style={contentShell}>
         <header style={{
           ...headerBarTeam,
-          border: '2px solid transparent',
-          backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.85), rgba(13, 15, 20, 0.85)), linear-gradient(135deg, #ff4f9e, #d946ef, #a855f7, #ff4f9e)',
+          border: '1px solid transparent',
+          backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.9), rgba(13, 15, 20, 0.9)), linear-gradient(135deg, rgba(255,79,158,0.5), rgba(217,70,239,0.5), rgba(168,85,247,0.5), rgba(255,79,158,0.5))',
           backgroundOrigin: 'border-box',
           backgroundClip: 'padding-box, border-box',
-          animation: 'border-gradient 3s ease infinite',
+          animation: 'border-gradient 6s ease infinite',
           backgroundSize: '100% 100%, 300% 300%'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -3440,19 +3441,19 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               marginTop: 12,
               background: isReady 
-                ? `linear-gradient(135deg, ${accentPink}cc, ${accentPink}aa)`
+                ? `linear-gradient(135deg, rgba(255,79,158,0.18), rgba(217,70,239,0.15))`
                 : 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-              color: isReady ? '#0d0f14' : '#94a3b8',
-              border: `1px solid ${isReady ? accentPink : 'rgba(255,255,255,0.04)'}`,
-              backdropFilter: isReady ? 'blur(20px)' : 'blur(30px)',
+              color: isReady ? '#ffc9e3' : '#94a3b8',
+              border: `1px solid ${isReady ? 'rgba(255,79,158,0.4)' : 'rgba(255,255,255,0.04)'}`,
+              backdropFilter: 'blur(30px)',
               boxShadow: isReady 
-                ? `0 12px 32px ${accentPink}66, inset 0 1px 1px rgba(255,255,255,0.3)` 
+                ? `0 4px 16px rgba(255,79,158,0.2), inset 0 1px 1px rgba(255,255,255,0.1)` 
                 : 'inset 0 1px 1px rgba(255,255,255,0.03)',
               transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
               opacity: connectionStatus === 'connected' ? 1 : 0.5,
               cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
-              fontWeight: isReady ? 900 : 700,
-              transform: isReady ? 'scale(1.02)' : 'scale(1)'
+              fontWeight: isReady ? 800 : 700,
+              transform: isReady ? 'scale(1.01)' : 'scale(1)'
             }}
             onClick={connectionStatus === 'connected' ? toggleReady : undefined}
             disabled={connectionStatus !== 'connected'}

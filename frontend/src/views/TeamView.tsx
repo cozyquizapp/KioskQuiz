@@ -1162,28 +1162,18 @@ function TeamView({ roomCode }: TeamViewProps) {
           <span
             style={{
               position: 'absolute',
-              right: 0,
+              left: 0,
               top: 0,
               bottom: 0,
-              width: `${Math.max(0, Math.min(100, progress))}%`,
-              background: 'linear-gradient(180deg, rgba(255,79,158,0.16), rgba(217,70,239,0.10))',
-              boxShadow: 'inset 0 0 18px rgba(255,79,158,0.22)',
+              right: `${Math.max(0, Math.min(100, 100 - progress))}%`,
+              background: `linear-gradient(90deg, rgba(255,79,158,0.08) 0%, rgba(217,70,239,0.12) 50%, rgba(255,79,158,0.06) 100%)`,
+              boxShadow: 'inset 0 0 12px rgba(255,79,158,0.15)',
               borderRadius: 12,
               zIndex: 0,
-              overflow: 'hidden',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              transition: 'right 100ms ease-out'
             }}
-          >
-            <span
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 50%)',
-                opacity: 0.25,
-                animation: 'water-flow 2.4s linear infinite'
-              }}
-            />
-          </span>
+          />
         )}
         <span
           style={{

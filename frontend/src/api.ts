@@ -1,8 +1,15 @@
 import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language, CozyQuizDraft } from '@shared/quizTypes';
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  `${window.location.protocol}//${window.location.hostname}:4000/api`;
+const API_BASE = (() => {
+  const envBase = import.meta.env.VITE_API_BASE as string | undefined;
+  if (envBase) return envBase;
+  const { protocol, hostname, port, origin } = window.location;
+  // Dev: localhost/127.* mit Port 5173 -> backend auf 4000
+  const isLocal = hostname === 'localhost' || hostname.startsWith('127.');
+  if (isLocal) return `${protocol}//${hostname}:4000/api`;
+  // Prod: gleicher Origin + /api
+  return `${origin}/api`;
+})();
 
 export interface JoinResponse {
   team: Team;

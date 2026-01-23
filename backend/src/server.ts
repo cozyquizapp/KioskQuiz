@@ -4517,7 +4517,8 @@ app.delete('/api/upload/question-image', (req, res) => {
   return res.json({ ok: true });
 });
 
-// Admin Session Generation
+// Admin Session Generation Endpoint
+// POST /api/rooms/:roomCode/admin-session - Creates a new admin session token
 app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);

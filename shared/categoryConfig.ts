@@ -10,7 +10,7 @@ export type CategoryConfig = {
 
 export const CATEGORY_CONFIG: Record<QuizCategory, CategoryConfig> = {
   Schaetzchen: {
-    label: 'Schaetzchen',
+    label: 'Schätzchen',
     labelEn: 'Close Call',
     icon: '/categories/schaetzchen_logo.png',
     color: '#f3c367',

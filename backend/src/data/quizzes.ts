@@ -416,8 +416,9 @@ export const defaultQuizzes: QuizTemplate[] = [
     name: '🎯 Demo Quiz (Probe)',
     meta: { description: 'Test-Quiz für schnelle Sessions – im Builder anpassen!' },
     questionIds: cozyLineupClassic.slice(0, 5), // Nur 5 Fragen für schnelles Testen
-    blitzPool: defaultBlitzPool.slice(0, 3),
-    potatoPool: potatoPoolClassic.slice(0, 5)
+    // Fülle Pools ausreichend für neue Modi (>=9 Blitz, >=14 Potato)
+    blitzPool: [...defaultBlitzPool, ...blitzHamburgMoments].slice(0, 10),
+    potatoPool: potatoPoolClassic.slice(0, 15)
   })
 ];
 

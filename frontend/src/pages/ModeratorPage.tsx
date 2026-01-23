@@ -151,14 +151,21 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
   const key = adminTokenKey(roomCode);
   const existing = sessionStorage.getItem(key);
   if (existing) return existing;
-  const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
-  if (!res.ok) throw new Error('Admin-Session konnte nicht gestartet werden');
-  const { token } = await res.json();
-  if (token) {
-    sessionStorage.setItem(key, token);
-    return token as string;
+  try {
+    const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+    if (!res.ok) {
+      console.warn(`[Auth] Admin-Session endpoint returned ${res.status}; will proceed without token`);
+      return null;
+    }
+    const { token } = await res.json();
+    if (token) {
+      sessionStorage.setItem(key, token);
+      return token as string;
+    }
+  } catch (err) {
+    console.warn('[Auth] Admin-Session request failed; will proceed without token', err);
   }
-  throw new Error('Admin-Token fehlt');
+  return null;
 };
 
 function ModeratorPage(): React.ReactElement {
@@ -317,9 +324,8 @@ function ModeratorPage(): React.ReactElement {
 
   useEffect(() => {
     if (!roomCode) return;
-    ensureAdminSession(roomCode).catch((err) => {
-      setToast((err as Error).message || 'Admin-Session fehlgeschlagen');
-      setTimeout(() => setToast(null), 2200);
+    ensureAdminSession(roomCode).catch(() => {
+      // Silent fail — endpoint may not exist on older backends
     });
   }, [roomCode]);
 

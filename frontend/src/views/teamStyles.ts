@@ -6,10 +6,14 @@ const draftTheme = getDraftTheme();
 const primary = draftTheme?.color || '#6dd5fa';
 
 export const pageStyleTeam: CSSProperties = {
-  position: 'relative',
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  width: '100%',
+  height: '100vh',
   height: '100dvh',
-  minHeight: '100dvh',
-  maxHeight: '100dvh',
   paddingTop: 'calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-top))',
   paddingRight: 'clamp(8px, 3vw, 14px)',
   paddingBottom: 'calc(clamp(24px, 6vw, 32px) + env(safe-area-inset-bottom))',
@@ -19,10 +23,9 @@ export const pageStyleTeam: CSSProperties = {
   overscrollBehavior: 'contain',
   color: 'white',
   background: draftTheme?.background
-    ? `url(${draftTheme.background}) center/cover` // drop fixed for mobile jank
+    ? `url(${draftTheme.background}) center/cover`
     : 'url("/background.png") center/cover',
-  backgroundAttachment:
-    typeof window !== 'undefined' && window.innerWidth < 768 ? 'scroll' : 'fixed',
+  backgroundAttachment: 'fixed',
   fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily
 };
 
@@ -43,7 +46,8 @@ export const contentShell: CSSProperties = {
   margin: '0 auto',
   display: 'grid',
   gap: 'clamp(8px, 2vw, 14px)',
-  zIndex: 2
+  zIndex: 2,
+  pointerEvents: 'auto'
 };
 
 export const footerLogo: CSSProperties = {
@@ -205,7 +209,10 @@ export const inputStyle: CSSProperties = {
   marginTop: 8,
   fontSize: 'clamp(14px, 2.5vw, 16px)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-  backdropFilter: 'blur(30px)'
+  backdropFilter: 'blur(30px)',
+  WebkitAppearance: 'none',
+  WebkitBorderRadius: theme.radius,
+  WebkitBoxSizing: 'border-box'
 };
 
 export const primaryButton: CSSProperties = {

@@ -199,6 +199,17 @@ const COPY = {
   }
 } as const;
 
+// Feedback only makes sense for questions with numeric proximity (estimate / precision variants)
+const isClosenessQuestion = (q: AnyQuestion | null) => {
+  if (!q) return false;
+  if (q.mechanic === 'estimate') return true;
+  const bunte = (q as any)?.bunteTuete;
+  if (bunte && bunte.kind === 'precision') return true;
+  const mixedType = (q as any)?.mixedMechanic;
+  if (mixedType === 'praezise-antwort') return true;
+  return false;
+};
+
 function TeamView({ roomCode }: TeamViewProps) {
   const draftTheme = getDraftTheme();
   const teamMarker = 'teamview-marker-2026-01-02b';
@@ -718,6 +729,15 @@ function TeamView({ roomCode }: TeamViewProps) {
             setResultPoints(null);
           }
           setResultDetail(entry.awardedDetail ?? null);
+          if (
+            isClosenessQuestion(question) &&
+            entry.deviation !== undefined &&
+            entry.bestDeviation !== undefined
+          ) {
+            setResultMessage(
+              entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse')
+            );
+          }
         }
       }
       if (typeof payload.supportsBingo === 'boolean') {
@@ -736,7 +756,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        if (entry.isCorrect && entry.deviation !== undefined && entry.bestDeviation !== undefined) {
+        if (
+          isClosenessQuestion(question) &&
+          entry.deviation !== undefined &&
+          entry.bestDeviation !== undefined
+        ) {
           setResultMessage(entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
@@ -758,7 +782,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       }) => {
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
-        if (isCorrect && deviation !== undefined && bestDeviation !== undefined) {
+        if (
+          isClosenessQuestion(question) &&
+          deviation !== undefined &&
+          bestDeviation !== undefined
+        ) {
           setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         setPhase('showResult');

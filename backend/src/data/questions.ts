@@ -335,13 +335,13 @@ export const questions: AnyQuestion[] = [
     category: 'GemischteTuete',
     mechanic: 'custom',
     type: 'BUNTE_TUETE',
-    question: 'TOP 5: Wer eroeffnet die Festival-Buehne zuerst?',
-    questionEn: 'Top 5: Order the festival headliners by start time (early to late).',
+    question: 'TOP 5: Welche Acts spielen zuerst?',
+    questionEn: 'Top 5: Which headliners are earliest?',
     points: 5,
     segmentIndex: 0,
     bunteTuete: {
       kind: 'top5',
-      prompt: 'Ordnet die Acts nach Startzeit: 1 = erster Auftritt, 5 = letzter.',
+      prompt: 'Waehlt die Acts, die in den Top 5 der Startzeiten sind. Reihenfolge egal.',
       items: [
         { id: 'act-lizzo', label: 'Lizzo' },
         { id: 'act-harry', label: 'Harry Styles' },
@@ -350,7 +350,7 @@ export const questions: AnyQuestion[] = [
         { id: 'act-paramore', label: 'Paramore' }
       ],
       correctOrder: ['act-paramore', 'act-stormzy', 'act-lizzo', 'act-billy', 'act-harry'],
-      scoringMode: 'position'
+      scoringMode: 'contains'
     }
   },
   {

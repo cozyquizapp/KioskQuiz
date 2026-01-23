@@ -1369,7 +1369,7 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
-        return { hotkey: '1', label: 'WEITER', detail: 'Zur naechsten Frage', context: 'Reveal beendet' };
+        return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
       case 'SCOREBOARD_PAUSE':
@@ -4030,31 +4030,34 @@ const renderCozyStagePanel = () => {
             )}
           </section>
 
-          <AnswerList
-            answers={answers}
-            answersCount={answersCount}
-            teamsCount={teamsCount}
-            unreviewedCount={unreviewedCount}
-            statChip={statChip}
-            inputStyle={inputStyle}
-            onOverride={(teamId, isCorrect) =>
-              doAction(async () => {
-                await overrideAnswer(roomCode, teamId, isCorrect);
-                setAnswers((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        answers: {
-                          ...prev.answers,
-                          [teamId]: { ...(prev.answers[teamId] || {}), isCorrect }
-                        }
-                      }
-                    : prev
-                );
-              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-            }
-          />
         </>
+      )}
+
+      {answers && (
+        <AnswerList
+          answers={answers}
+          answersCount={answersCount}
+          teamsCount={teamsCount}
+          unreviewedCount={unreviewedCount}
+          statChip={statChip}
+          inputStyle={inputStyle}
+          onOverride={(teamId, isCorrect) =>
+            doAction(async () => {
+              await overrideAnswer(roomCode, teamId, isCorrect);
+              setAnswers((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      answers: {
+                        ...prev.answers,
+                        [teamId]: { ...(prev.answers[teamId] || {}), isCorrect }
+                      }
+                    }
+                  : prev
+              );
+            }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+          }
+        />
       )}
 
       {/* Lobby view: nur Teams und Start */}
@@ -4111,7 +4114,7 @@ const renderCozyStagePanel = () => {
           <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
             <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
             <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am naechsten dran gewinnt.</li>
+            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
             <li>Bilder & Cheese: genau hinsehen.</li>
           </ul>
           <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>

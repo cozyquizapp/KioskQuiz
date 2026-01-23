@@ -26,8 +26,8 @@ export const INTRO_SLIDES: IntroSlide[] = [
   },
   {
     title: 'Schaetzfragen',
-    subtitle: 'Am naechsten dran gewinnt',
-    body: 'Bei Schaetzfragen zaehlt, wer am naechsten liegt. Extremwerte riskieren oder konservativ bleiben? Eure Entscheidung.',
+    subtitle: 'Am nächsten dran gewinnt',
+    body: 'Bei Schaetzfragen zaehlt, wer am nächsten liegt. Extremwerte riskieren oder konservativ bleiben? Eure Entscheidung.',
     badge: 'Regel'
   },
   {

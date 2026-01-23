@@ -1111,7 +1111,7 @@ const phaseLabel =
           <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
             <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
             <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am naechsten dran gewinnt.</li>
+            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
             <li>Bilder & Cheese: genau hinsehen.</li>
           </ul>
           <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>

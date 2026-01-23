@@ -3775,39 +3775,38 @@ const evaluateBunteSubmission = (
         ? setup.correctOrder
         : setup.items?.map((item: any) => item.id) ?? [];
     if (!target.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
+    const distinctOrder = Array.from(new Set(order.filter(Boolean)));
+    const hits = distinctOrder.filter((id) => target.includes(id));
     let positionMatches = 0;
     target.forEach((correctId: string, idx: number) => {
       if (order[idx] === correctId) positionMatches += 1;
     });
-    if (setup.scoringMode === 'contains') {
-      const hits = Array.from(new Set(order.filter(Boolean))).filter((id) => target.includes(id)).length;
-      const containsOnly = Math.max(0, hits - positionMatches);
-      const weighted = positionMatches * 2 + containsOnly; // Wertung: exakte Position doppelt so stark wie bloß enthalten
-      const normalized = weighted / Math.max(target.length * 2, 1);
+    if (setup.scoringMode === 'position') {
+      const normalized = positionMatches / (target.length || 1);
       const points = quantizePoints(normalized * safeMax, safeMax);
       return {
         awardedPoints: points,
-        awardedDetail: `Pos ${positionMatches}/${target.length}, enthält ${hits}/${target.length}`,
-        isCorrect: hits >= target.length,
+        awardedDetail: `${positionMatches}/${target.length} Positionen`,
+        isCorrect: positionMatches >= target.length,
         tieBreaker: {
           label: 'TOP5',
           primary: positionMatches,
-          secondary: hits,
-          detail: 'Positionen vor Contains'
+          secondary: positionMatches,
+          detail: 'Positionen'
         }
       };
     }
-    const normalized = positionMatches / (target.length || 1);
+    const normalized = hits.length / Math.max(target.length, 1);
     const points = quantizePoints(normalized * safeMax, safeMax);
     return {
       awardedPoints: points,
-      awardedDetail: `${positionMatches}/${target.length} Positionen`,
-      isCorrect: positionMatches >= target.length,
+      awardedDetail: `${hits.length}/${target.length} Treffer`,
+      isCorrect: hits.length >= target.length,
       tieBreaker: {
         label: 'TOP5',
-        primary: positionMatches,
-        secondary: positionMatches,
-        detail: 'Positionen'
+        primary: hits.length,
+        secondary: hits.length,
+        detail: 'Treffer'
       }
     };
   }
@@ -4505,6 +4504,19 @@ const startQuestionWithSlot = (
 const runNextQuestion = (room: RoomState) => {
   if (!room.quizId || room.remainingQuestionIds.length === 0) {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
+  }
+  const askedCount = room.askedQuestionIds.length;
+  if (askedCount === 10 && !room.nextStage) {
+    room.nextStage = 'BLITZ';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, halftimeTrigger: true };
+  }
+  if (askedCount === 20 && !room.nextStage) {
+    room.nextStage = 'RUNDLAUF';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, finalsTrigger: true };
   }
   room.nextStage = null;
   const nextId = room.remainingQuestionIds.shift();

@@ -152,7 +152,7 @@ const COPY = {
     loginError: 'Bitte zuerst beitreten.',
     markError: 'Du kannst ein Feld nur nach einer richtigen Antwort markieren.',
     kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
-    estimateBest: 'Ihr wart am naechsten dran!',
+    estimateBest: 'Ihr wart am nächsten dran!',
     estimateWorse: 'Leider weiter weg als das beste Team.',
     betHint: (pool: number) => `Verteile genau ${pool} Punkte auf A/B/C.`,
     betRemaining: (remaining: number) =>
@@ -404,9 +404,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     const payload = question.bunteTuete as BunteTuetePayload;
     if (payload.kind === 'top5') {
-      setBunteTop5Order((prev) =>
-        prev.length === payload.items.length ? prev : Array(payload.items.length).fill('')
-      );
+      setBunteTop5Order([]);
     }
     if (payload.kind === 'order') {
       setBunteOrderSelection((prev) =>
@@ -737,12 +735,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        if (entry.deviation !== undefined && entry.bestDeviation !== undefined) {
-          if (entry.deviation === entry.bestDeviation) {
-            setResultMessage(t('estimateBest'));
-          } else {
-            setResultMessage(t('estimateWorse'));
-          }
+        if (!entry.isCorrect && entry.deviation !== undefined && entry.bestDeviation !== undefined) {
+          setResultMessage(entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
@@ -762,10 +756,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       }) => {
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
-        if (deviation !== undefined && bestDeviation !== undefined) {
-          setResultMessage(
-            deviation === bestDeviation ? t('estimateBest') : t('estimateWorse')
-          );
+        if (!isCorrect && deviation !== undefined && bestDeviation !== undefined) {
+          setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         setPhase('showResult');
         if (isCorrect) {
@@ -867,6 +859,15 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     return next;
   }
+
+  const toggleTop5Selection = (id: string, limit: number) => {
+    setBunteTop5Order((prev) => {
+      const alreadySelected = prev.includes(id);
+      if (alreadySelected) return prev.filter((entry) => entry !== id);
+      if (prev.length >= limit) return prev;
+      return [...prev, id];
+    });
+  };
 
   const loadQuestion = async () => {
     const data = await fetchCurrentQuestion(roomCode);
@@ -1193,9 +1194,14 @@ function TeamView({ roomCode }: TeamViewProps) {
   function buildBunteSubmission(payload: BunteTuetePayload | undefined) {
     if (!question || !payload) return null;
     if (payload.kind === 'top5') {
-      const values = bunteTop5Order;
-      if (values.length !== payload.items.length || values.some((val) => !val)) {
-        setMessage(language === 'de' ? 'Bitte alle Positionen waehlen.' : 'Please fill all positions.');
+      const requiredCount = Math.min(payload.correctOrder?.length ?? 5, payload.items?.length ?? 5);
+      const values = bunteTop5Order.filter(Boolean);
+      if (values.length !== requiredCount) {
+        setMessage(
+          language === 'de'
+            ? `Bitte genau ${requiredCount} Elemente waehlen.`
+            : `Please pick exactly ${requiredCount} items.`
+        );
         return null;
       }
       return { kind: 'top5', order: values };
@@ -1251,31 +1257,44 @@ function TeamView({ roomCode }: TeamViewProps) {
   };
 
   function renderBunteInput(payload: BunteTuetePayload, accent: string) {
-    if (payload.kind === 'top5') {
+    if (payload.kind === 'top5' && payload.items) {
+      const requiredCount = Math.min(payload.correctOrder?.length ?? 5, payload.items.length);
       return (
         <div style={{ display: 'grid', gap: 10 }}>
-          {payload.items.map((item, idx) => (
-            <div key={item.id} style={{ display: 'grid', gap: 4 }}>
-              <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                {language === 'de' ? 'Position' : 'Position'} {idx + 1}
-              </label>
-              <select
-                value={bunteTop5Order[idx] ?? ''}
-                onChange={(e) =>
-                  setBunteTop5Order((prev) => applyRankingSelection(prev, idx, e.target.value))
-                }
-                disabled={!canAnswer}
-                style={{ ...inputStyle, background: 'rgba(0,0,0,0.45)' }}
-              >
-                <option value="">{language === 'de' ? 'Waehlen...' : 'Select...'}</option>
-                {payload.items.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+          <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+            {language === 'de'
+              ? `Waehle bis zu ${requiredCount} Elemente`
+              : `Pick up to ${requiredCount} items`}
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {payload.items.map((item) => {
+              const selected = bunteTop5Order.includes(item.id);
+              const limitReached = bunteTop5Order.length >= requiredCount && !selected;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`team-choice${selected ? ' is-selected' : ''}`}
+                  onClick={() => toggleTop5Selection(item.id, requiredCount)}
+                  disabled={!canAnswer || limitReached}
+                  style={{
+                    ...choiceButton,
+                    justifyContent: 'flex-start',
+                    border: `1px solid ${selected ? accent : 'rgba(255,255,255,0.12)'}`,
+                    background: selected ? `${accent}22` : 'rgba(255,255,255,0.06)',
+                    color: '#e2e8f0',
+                    opacity: limitReached ? 0.7 : 1,
+                    cursor: canAnswer && !limitReached ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  <span style={{ fontWeight: 800, marginRight: 8 }}>
+                    {selected ? '✓' : '+'}
+                  </span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -1557,6 +1576,19 @@ function TeamView({ roomCode }: TeamViewProps) {
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             disabled={!canAnswer}
+          />
+        );
+      }
+      case 'imageQuestion': {
+        return (
+          <input
+            className="team-answer-input"
+            style={inputStyle}
+            placeholder={t('inputAnswer')}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            disabled={!canAnswer}
+            autoFocus
           />
         );
       }

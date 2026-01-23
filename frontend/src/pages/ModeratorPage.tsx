@@ -206,6 +206,22 @@ function ModeratorPage(): React.ReactElement {
   const showPotatoUI = false;
 
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
+  const emitHost = (
+    event: string,
+    payload: Record<string, unknown>,
+    ack?: (resp?: { ok?: boolean; error?: string }) => void
+  ) => {
+    const ctrl = controlSocketRef.current;
+    if (ctrl?.connected) {
+      ctrl.emit(event, payload, ack);
+      return true;
+    }
+    if (socketEmit) {
+      socketEmit(event, payload, ack as any);
+      return true;
+    }
+    return false;
+  };
   const {
     currentQuestion: socketQuestion,
     questionMeta: socketMeta,
@@ -933,10 +949,6 @@ function ModeratorPage(): React.ReactElement {
       setToast('Kein aktiver Roomcode');
       return;
     }
-    if (!socketConnected) {
-      setToast('Socket nicht verbunden');
-      return;
-    }
     const keyMap = {
       'host:next': 'next',
       'host:lock': 'lock',
@@ -944,7 +956,7 @@ function ModeratorPage(): React.ReactElement {
     } as const;
     const key = keyMap[eventName];
     setActionState((prev) => ({ ...prev, [key]: true }));
-    socketEmit(eventName, { roomCode }, (resp?: { ok: boolean; error?: string }) => {
+    const emitted = emitHost(eventName, { roomCode }, (resp?: { ok: boolean; error?: string }) => {
       setActionState((prev) => ({ ...prev, [key]: false }));
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
@@ -952,6 +964,10 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
+    if (!emitted) {
+      setActionState((prev) => ({ ...prev, [key]: false }));
+      setToast('Socket nicht verbunden');
+    }
   };
 
   function handleNextQuestion() {
@@ -982,12 +998,8 @@ function ModeratorPage(): React.ReactElement {
       setToast('Roomcode fehlt');
       return;
     }
-    if (!socketConnected) {
-      setToast('Socket nicht verbunden');
-      return;
-    }
     setShowReconnectModal(false);
-    socketEmit('host:restartSession', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+    const emitted = emitHost('host:restartSession', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Restart fehlgeschlagen');
         return;
@@ -995,6 +1007,9 @@ function ModeratorPage(): React.ReactElement {
       loadCurrentQuestion().catch(() => undefined);
       loadAnswers().catch(() => undefined);
     });
+    if (!emitted) {
+      setToast('Socket nicht verbunden');
+    }
   }
 
   function emitPotatoEvent(
@@ -1018,12 +1033,7 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketConnected) {
-      setToast('Socket nicht verbunden');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    socketEmit(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+    const emitted = emitHost(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
         setTimeout(() => setToast(null), 2200);
@@ -1031,6 +1041,10 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
+    if (!emitted) {
+      setToast('Socket nicht verbunden');
+      setTimeout(() => setToast(null), 2000);
+    }
   }
 
   function handlePotatoStart() {
@@ -1068,17 +1082,16 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketConnected) {
-      setToast('Socket nicht verbunden');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    socketEmit('host:showAwards', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+    const emitted = emitHost('host:showAwards', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
         setTimeout(() => setToast(null), 2200);
       }
     });
+    if (!emitted) {
+      setToast('Socket nicht verbunden');
+      setTimeout(() => setToast(null), 2000);
+    }
   }
   function handlePotatoNextTurn() {
     emitPotatoEvent('host:potatoNextTurn');
@@ -1143,12 +1156,7 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketConnected) {
-      setToast('Socket nicht verbunden');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    socketEmit(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+    const emitted = emitHost(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
         setTimeout(() => setToast(null), 2200);
@@ -1156,6 +1164,10 @@ function ModeratorPage(): React.ReactElement {
       }
       onSuccess?.();
     });
+    if (!emitted) {
+      setToast('Socket nicht verbunden');
+      setTimeout(() => setToast(null), 2000);
+    }
   }
 
   function emitRundlaufEvent(

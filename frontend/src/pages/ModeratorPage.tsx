@@ -841,12 +841,24 @@ function ModeratorPage(): React.ReactElement {
       return;
     }
     const socket = controlSocketRef.current;
-    if (!socket) return;
+    if (!socket) {
+      setToast('Socket nicht verbunden');
+      return;
+    }
     setCreatingSession(true);
+    
+        // Timeout nach 10 Sekunden falls keine Antwort kommt
+        const timeoutId = setTimeout(() => {
+          setCreatingSession(false);
+          setToast('Session-Erstellung timeout - bitte erneut versuchen');
+        }, 10000);
+    
     socket.emit(
       'host:createSession',
       { quizId: selectedQuiz, language },
       async (resp?: { ok: boolean; roomCode?: string; error?: string }) => {
+          clearTimeout(timeoutId);
+        
         if (!resp?.ok || !resp.roomCode) {
           setCreatingSession(false);
           setToast(resp?.error || 'Session konnte nicht erstellt werden');

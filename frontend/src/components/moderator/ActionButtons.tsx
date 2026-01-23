@@ -259,9 +259,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           border: '1px solid rgba(99,229,255,0.5)',
           boxShadow: 'none'
         }}
-        onClick={() =>
+        onClick={() => {
+          setActionState((s) => ({ ...s, next: true }));
           doAction(async () => {
-            setActionState((s) => ({ ...s, next: true }));
             if (onNext) {
               await onNext();
             } else {
@@ -276,8 +276,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                   .catch(() => setToast('Timer-Status unbekannt'));
               }, 800);
             }
-          }, 'Naechste Frage gestartet').finally(() => setActionState((s) => ({ ...s, next: false })))
-        }
+          }, 'Naechste Frage gestartet').finally(() => setActionState((s) => ({ ...s, next: false })));
+        }}
         disabled={actionState.next}
       >
         {actionState.next ? 'Startet ...' : 'Naechste Frage starten'}
@@ -296,12 +296,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }}
         title="Timer starten"
         aria-label="Timer starten"
-        onClick={() =>
+        onClick={() => {
+          setActionState((s) => ({ ...s, timerStart: true }));
           doAction(async () => {
-            setActionState((s) => ({ ...s, timerStart: true }));
             await startTimer(roomCode, timerSeconds);
-          }, 'Timer gestartet').finally(() => setActionState((s) => ({ ...s, timerStart: false })))
-        }
+          }, 'Timer gestartet').finally(() => setActionState((s) => ({ ...s, timerStart: false })));
+        }}
         disabled={actionState.timerStart}
       >
         {actionState.timerStart ? 'Startet ...' : 'Timer starten'}
@@ -320,12 +320,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }}
         title="Timer stoppen"
         aria-label="Timer stoppen"
-        onClick={() =>
+        onClick={() => {
+          setActionState((s) => ({ ...s, timerStop: true }));
           doAction(async () => {
-            setActionState((s) => ({ ...s, timerStop: true }));
             await stopTimer(roomCode);
-          }, 'Timer gestoppt').finally(() => setActionState((s) => ({ ...s, timerStop: false })))
-        }
+          }, 'Timer gestoppt').finally(() => setActionState((s) => ({ ...s, timerStop: false })));
+        }}
         disabled={actionState.timerStop}
       >
         {actionState.timerStop ? 'Stoppt ...' : 'Timer stoppen'}
@@ -344,17 +344,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }}
         title="Aufloesung senden"
         aria-label="Aufloesung senden"
-        onClick={() =>
+        onClick={() => {
+          setActionState((s) => ({ ...s, reveal: true }));
           doAction(async () => {
-            setActionState((s) => ({ ...s, reveal: true }));
             if (onReveal) {
               await onReveal();
             } else {
               // TODO(LEGACY): remove REST fallback once host:reveal used überall
               await fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' });
             }
-          }, 'Aufloesung gesendet').finally(() => setActionState((s) => ({ ...s, reveal: false })))
-        }
+          }, 'Aufloesung gesendet').finally(() => setActionState((s) => ({ ...s, reveal: false })));
+        }}
         disabled={actionState.reveal}
       >
         {actionState.reveal ? 'Sendet ...' : 'Aufloesen / Senden'}
@@ -373,17 +373,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }}
         title="Antworten sperren"
         aria-label="Antworten sperren"
-        onClick={() =>
+        onClick={() => {
+          setActionState((s) => ({ ...s, lock: true }));
           doAction(async () => {
-            setActionState((s) => ({ ...s, lock: true }));
             if (onLock) {
               await onLock();
             } else {
               // TODO(LEGACY): fallback stopTimer approximates locking
               await stopTimer(roomCode);
             }
-          }, 'Antworten gesperrt').finally(() => setActionState((s) => ({ ...s, lock: false })))
-        }
+          }, 'Antworten gesperrt').finally(() => setActionState((s) => ({ ...s, lock: false })));
+        }}
         disabled={actionState.lock}
       >
         {actionState.lock ? 'Sperrt ...' : 'Antworten sperren'}

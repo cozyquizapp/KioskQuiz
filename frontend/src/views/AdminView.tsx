@@ -64,7 +64,7 @@ export default function AdminView({ roomCode }: Props) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [language, setLanguageState] = useState<Language>('de');
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
-  const [defaultTimer, setDefaultTimer] = useState(30);
+  const [defaultTimer, setDefaultTimer] = useState(60);
   const [activeTab, setActiveTab] = useState<Tab>('answers');
   const [message, setMessage] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');

@@ -1311,18 +1311,6 @@ useEffect(() => {
                 <span key={`lobby-line-${textLine}`}>{textLine}</span>
               ))}
             </div>
-            {sortedScoreTeams.length > 0 && (
-              <>
-                <div className="beamer-label">
-                  {language === 'de'
-                    ? 'Teams im Raum'
-                    : language === 'both'
-                    ? 'Teams im Raum / Teams in room'
-                    : 'Teams in room'}
-                </div>
-                {renderCozyScoreboardGrid(sortedScoreTeams.slice(0, 6))}
-              </>
-            )}
           </div>
         </BeamerFrame>
       );
@@ -1549,6 +1537,54 @@ useEffect(() => {
       );
     }
     return null;
+  };
+
+  const renderTop5Solution = (): JSX.Element | null => {
+    const q: any = question;
+    if (!q?.bunteTuete || q.bunteTuete.kind !== 'top5') return null;
+    
+    return (
+      <div className="beamer-stack">
+        {solution && (
+          <div className="beamer-intro-card">
+            <h2>{language === 'de' ? 'Lösung' : 'Solution'}</h2>
+            <p style={{ fontSize: 16, fontWeight: 700, marginTop: 12 }}>{solution}</p>
+          </div>
+        )}
+        
+        {answerResults && answerResults.length > 0 && (
+          <div>
+            <div className="beamer-label">
+              {language === 'de' ? 'Team-Antworten' : 'Team answers'}
+            </div>
+            <div className="beamer-scoreboard-grid">
+              {answerResults.map((result: any, idx: number) => {
+                const answer = result.answer?.kind === 'top5' 
+                  ? result.answer.order?.join(' → ') 
+                  : result.answer?.order?.join(' → ')
+                  ? result.answer.order.join(' → ')
+                  : '-';
+                return (
+                  <div
+                    key={`top5-answer-${result.teamId}-${idx}`}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: result.isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(107,114,128,0.12)',
+                      color: '#e2e8f0'
+                    }}
+                  >
+                    <strong>{result.displayName || result.teamId}</strong>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{answer}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderRevealResultsSection = (): JSX.Element | null => {
@@ -2070,6 +2106,7 @@ useEffect(() => {
             </div>
           </div>
           {phase === 'reveal' && renderRevealResultsSection()}
+          {phase === 'reveal' && renderTop5Solution()}
         </BeamerFrame>
       );
     };

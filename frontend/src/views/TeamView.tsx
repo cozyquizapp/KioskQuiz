@@ -735,7 +735,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        if (!entry.isCorrect && entry.deviation !== undefined && entry.bestDeviation !== undefined) {
+        if (entry.isCorrect && entry.deviation !== undefined && entry.bestDeviation !== undefined) {
           setResultMessage(entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
@@ -756,7 +756,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       }) => {
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
-        if (!isCorrect && deviation !== undefined && bestDeviation !== undefined) {
+        if (isCorrect && deviation !== undefined && bestDeviation !== undefined) {
           setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         setPhase('showResult');

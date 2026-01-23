@@ -3592,6 +3592,31 @@ const normalizeString = (value: unknown) =>
     .trim()
     .toLowerCase();
 
+const levenshteinDistance = (str1: string, str2: string): number => {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  if (longer.length === 0) return 0;
+  
+  const costs = [];
+  for (let i = 0; i <= longer.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= shorter.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else if (j > 0) {
+        let newValue = costs[j - 1];
+        if (longer.charAt(i - 1) !== shorter.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+        }
+        costs[j - 1] = lastValue;
+        lastValue = newValue;
+      }
+    }
+    if (i > 0) costs[shorter.length] = lastValue;
+  }
+  return costs[shorter.length];
+};
+
 const normalizeAnswer = (value: unknown) => {
   const raw = String(value ?? '').trim().toLowerCase();
   if (!raw) return '';
@@ -3610,12 +3635,25 @@ const matchesAnswer = (userInput: unknown, expected: unknown) => {
   const user = normalizeAnswer(userInput);
   const expectedNorm = normalizeAnswer(expected);
   if (!user || !expectedNorm) return false;
+  
+  // Exakter Match
   if (user === expectedNorm) return true;
+  
+  // Substring Match (für kurze Antworten)
   const userLen = user.length;
   const expectedLen = expectedNorm.length;
   if (userLen < 4) return false;
   if (expectedLen > 10 && userLen < Math.ceil(expectedLen * 0.4)) return false;
-  return expectedNorm.includes(user) || user.includes(expectedNorm);
+  if (expectedNorm.includes(user) || user.includes(expectedNorm)) return true;
+  
+  // Fuzzy Match mit Levenshtein Distance (für Schreibfehler)
+  const longer = userLen > expectedLen ? user : expectedNorm;
+  const shorter = userLen > expectedLen ? expectedNorm : user;
+  const distance = levenshteinDistance(longer, shorter);
+  const similarity = (longer.length - distance) / longer.length;
+  
+  // Tolerant bei Schreibfehlern: 0.85 Ähnlichkeit (1-2 Fehler bei 10+ Zeichen)
+  return similarity >= 0.85;
 };
 
 const getQuestionType = (question: AnyQuestion): CozyQuestionType => {

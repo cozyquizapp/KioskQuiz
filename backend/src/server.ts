@@ -2481,7 +2481,9 @@ const initializeBlitzStage = (room: RoomState) => {
   const standings = getTeamStandings(room);
   room.blitzTopTeamId = standings[0]?.id ?? null;
   room.blitzLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
-  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: 2 } : {};
+  const activeTeamsCount = getConnectedTeamIds(room).length || Object.keys(room.teams).length;
+  const dynamicBanLimit = activeTeamsCount <= 2 || visibleCount <= 4 ? 1 : 2;
+  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: dynamicBanLimit } : {};
   room.blitzPinnedTheme = null;
   room.blitzSelectedThemes = [];
   room.blitzSetIndex = -1;
@@ -4524,15 +4526,15 @@ const runNextQuestion = (room: RoomState) => {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
 
-  // After Q10 or Q20 reveal, transition to SCOREBOARD
+  // After Q10 or Q20 reveal, transition to SCOREBOARD (only when coming from Q_REVEAL)
   const askedCountBefore = room.askedQuestionIds.length;
-  if (askedCountBefore === 10) {
+  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10) {
     room.nextStage = 'BLITZ';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
   }
-  if (askedCountBefore === 20) {
+  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 20) {
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);

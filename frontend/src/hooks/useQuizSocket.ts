@@ -43,12 +43,14 @@ type SocketEvents = {
 
 export const useQuizSocket = (roomCode: string) => {
   const [events, setEvents] = useState<SocketEvents>({});
+  const [connected, setConnected] = useState(false);
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
 
   useEffect(() => {
     if (!roomCode) return;
     const socket = connectToRoom(roomCode);
     socketRef.current = socket;
+    setConnected(socket.connected);
     let active = true;
 
     const mapAnswers = (input?: Record<string, AnswerEntry>) => {
@@ -167,6 +169,8 @@ export const useQuizSocket = (roomCode: string) => {
       }));
     };
 
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
     socket.on('syncState', onSync);
     socket.on('beamer:show-question', onBeamerQuestion);
     socket.on('team:show-question', onTeamQuestion);
@@ -182,6 +186,8 @@ export const useQuizSocket = (roomCode: string) => {
 
     return () => {
       active = false;
+      socket.off('connect');
+      socket.off('disconnect');
       socket.off('syncState', onSync);
       socket.off('beamer:show-question', onBeamerQuestion);
       socket.off('team:show-question', onTeamQuestion);
@@ -199,8 +205,10 @@ export const useQuizSocket = (roomCode: string) => {
   }, [roomCode]);
 
   const emit = (event: string, ...args: unknown[]) => {
-    socketRef.current?.emit(event, ...args);
+    if (!socketRef.current?.connected) return false;
+    socketRef.current.emit(event, ...args);
+    return true;
   };
 
-  return { ...events, emit };
+  return { ...events, emit, connected };
 };

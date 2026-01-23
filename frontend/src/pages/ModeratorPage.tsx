@@ -223,6 +223,7 @@ function ModeratorPage(): React.ReactElement {
     timerEndsAt: socketTimerEndsAt,
     teamsConnected: socketTeamsConnected,
     teamStatus: socketTeamStatus,
+    connected: socketConnected,
     emit: socketEmit,
     config: socketConfig,
     nextStage: socketNextStage,
@@ -380,8 +381,8 @@ function ModeratorPage(): React.ReactElement {
       handleShowAwards();
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
       return;
     }
@@ -931,8 +932,8 @@ function ModeratorPage(): React.ReactElement {
       setToast('Kein aktiver Roomcode');
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       return;
     }
     const keyMap = {
@@ -980,8 +981,8 @@ function ModeratorPage(): React.ReactElement {
       setToast('Roomcode fehlt');
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       return;
     }
     setShowReconnectModal(false);
@@ -1016,8 +1017,8 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
       return;
     }
@@ -1066,8 +1067,8 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
       return;
     }
@@ -1141,8 +1142,8 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
       return;
     }
@@ -1174,8 +1175,8 @@ function ModeratorPage(): React.ReactElement {
       setTimeout(() => setToast(null), 2000);
       return;
     }
-    if (!socketEmit) {
-      setToast('Socket nicht bereit');
+    if (!socketConnected) {
+      setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
       return;
     }

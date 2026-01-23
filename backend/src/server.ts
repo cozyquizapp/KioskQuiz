@@ -4523,25 +4523,28 @@ const runNextQuestion = (room: RoomState) => {
   if (!room.quizId || room.remainingQuestionIds.length === 0) {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
-  const askedCount = room.askedQuestionIds.length;
-  if (askedCount === 10 && !room.nextStage) {
-    room.nextStage = 'BLITZ';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-    broadcastState(room);
-    return { stage: room.gameState, halftimeTrigger: true };
-  }
-  if (askedCount === 20 && !room.nextStage) {
-    room.nextStage = 'RUNDLAUF';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-    broadcastState(room);
-    return { stage: room.gameState, finalsTrigger: true };
-  }
+  const askedCountBefore = room.askedQuestionIds.length;
   room.nextStage = null;
   const nextId = room.remainingQuestionIds.shift();
   if (!nextId) {
     throw new Error('Keine naechste Frage gefunden');
   }
   startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
+  const askedCountAfter = room.askedQuestionIds.length;
+  
+  if (askedCountAfter === 10 && !room.nextStage) {
+    room.nextStage = 'BLITZ';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, halftimeTrigger: true };
+  }
+  if (askedCountAfter === 20 && !room.nextStage) {
+    room.nextStage = 'RUNDLAUF';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, finalsTrigger: true };
+  }
+  
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

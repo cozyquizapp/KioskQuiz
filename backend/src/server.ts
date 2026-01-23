@@ -243,6 +243,7 @@ type RoomState = {
   scoreboardOverlayForced: boolean;
   halftimeTriggered?: boolean;
   finalsTriggered?: boolean;
+};
 
 const rooms = new Map<string, RoomState>();
 const quizzes = new Map<string, QuizTemplate>(defaultQuizzes.map((q) => [q.id, q]));
@@ -3820,4 +3821,2448 @@ const evaluateBunteSubmission = (
     (setup.ladder || []).forEach((step: { label: string; acceptedAnswers: string[]; points: number }) => {
       (step.acceptedAnswers || []).forEach((candidate) => {
         const score = similarityScore(normalized, normalizeText(candidate));
-        if (score >= thr
+        if (score >= threshold && step.points > bestPoints) {
+          bestPoints = Math.min(step.points, safeMax);
+          bestLabel = step.label;
+        }
+      });
+    });
+    return {
+      awardedPoints: bestPoints,
+      awardedDetail: bestLabel ? `Treffer: ${bestLabel}` : null,
+      isCorrect: bestPoints >= safeMax,
+      tieBreaker: null
+    };
+  }
+  if (setup.kind === 'oneOfEight') {
+    const submission = payload as BunteTueteOneOfEightSubmission;
+    const selection = typeof submission.choiceId === 'string' ? submission.choiceId.trim() : '';
+    const falseStatement = (setup.statements || []).find((stmt: { id: string; isFalse?: boolean }) => stmt.isFalse);
+    const isMatch =
+      Boolean(falseStatement) &&
+      selection &&
+      selection.toLowerCase() === String(falseStatement?.id ?? '').toLowerCase();
+    return {
+      awardedPoints: isMatch ? safeMax : 0,
+      awardedDetail: selection ? `Gewählt: ${selection.toUpperCase()}` : null,
+      isCorrect: Boolean(isMatch),
+      tieBreaker: null
+    };
+  }
+  if (setup.kind === 'order') {
+    const submission = payload as BunteTueteOrderSubmission;
+    const selectedCriteria =
+      submission.criteriaId || setup.defaultCriteriaId || Object.keys(setup.correctByCriteria || {})[0];
+    const expected = (setup.correctByCriteria || {})[selectedCriteria] || [];
+    const order = Array.isArray(submission.order) ? submission.order : [];
+    let matches = 0;
+    expected.forEach((val: string, idx: number) => {
+      if (order[idx] === val) matches += 1;
+    });
+    const perIndexWeight =
+      typeof setup.partialPoints === 'number' && setup.partialPoints > 0
+        ? setup.partialPoints
+        : safeMax / Math.max(expected.length, 1);
+    let points = quantizePoints(matches * perIndexWeight, safeMax);
+    const isCorrect = expected.length > 0 && matches === expected.length;
+    if (isCorrect && typeof setup.fullPoints === 'number') {
+      points = quantizePoints(setup.fullPoints, safeMax);
+    }
+    return {
+      awardedPoints: points,
+      awardedDetail: expected.length ? `${matches}/${expected.length} Positionen` : null,
+      isCorrect,
+      tieBreaker: expected.length
+        ? {
+            label: 'ORDNEN',
+            primary: matches,
+            secondary: expected.length,
+            detail: 'Positionen korrekt'
+          }
+        : null
+    };
+  }
+  return { awardedPoints: 0, awardedDetail: null, isCorrect: false, tieBreaker: null };
+};
+
+const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
+  if (!question) return false;
+  if (question.mechanic === 'estimate') {
+    const target = (question as any).targetValue;
+    if (target === undefined || target === null) return false;
+    const num = Number(String(answer).replace(',', '.'));
+    if (!Number.isFinite(num)) return false;
+    const tolerance = Math.max(Math.abs(target) * 0.05, 1); // 5% oder mindestens 1
+    return Math.abs(num - target) <= tolerance;
+  }
+  if (question.mechanic === 'multipleChoice') {
+    const idx = Number(answer);
+    return idx === (question as any).correctIndex;
+  }
+  if (question.mechanic === 'betting') {
+    // Bewertung erfolgt in evaluateCurrentQuestion; hier keine Einzelpruefung
+    return false;
+  }
+  if (question.mechanic === 'trueFalse') {
+    const boolVal = String(answer).toLowerCase() === 'true';
+    return boolVal === (question as any).isTrue;
+  }
+  const order = (question as any).correctOrder as string[] | undefined;
+  const orderEn = (question as any).correctOrderEn as string[] | undefined;
+  if (order && order.length > 0) {
+    const orderStr = normalizeString(answer).replace(/\s+/g, '');
+    const targetOrder = order.join(',').toLowerCase();
+    const targetOrderEn = orderEn ? orderEn.join(',').toLowerCase() : undefined;
+    if (orderStr === targetOrder.replace(/\s+/g, '')) return true;
+    if (targetOrderEn && orderStr === targetOrderEn.replace(/\s+/g, '')) return true;
+    return false;
+  }
+  if ((question as any).answer) {
+    const deAnswer = (question as any).answer;
+    const enAnswer = (question as any).answerEn;
+    if (matchesAnswer(answer, deAnswer)) return true;
+    if (enAnswer && matchesAnswer(answer, enAnswer)) return true;
+    return false;
+  }
+  return false;
+};
+
+const formatSolution = (question: AnyQuestion, language: Language): string | undefined => {
+  if (!question) return undefined;
+  if (question.mechanic === 'estimate') {
+    const unit = (question as any).unit ? ` ${(question as any).unit}` : '';
+    return `${(question as any).targetValue ?? ''}${unit}`.trim();
+  }
+  if (question.mechanic === 'multipleChoice') {
+    const idx = (question as any).correctIndex;
+    if (idx === undefined) return undefined;
+    const opts = combineArray(
+      (question as any).options ?? [],
+      (question as any).optionsEn,
+      language
+    );
+    return Array.isArray(opts) ? opts[idx] : undefined;
+  }
+  if (question.mechanic === 'betting') {
+    const idx = (question as any).correctIndex;
+    const opts = combineArray((question as any).options ?? [], (question as any).optionsEn, language);
+    return Array.isArray(opts) ? opts[idx] : undefined;
+  }
+  if (question.mechanic === 'trueFalse') {
+    const de = (question as any).isTrue ? 'Wahr' : 'Falsch';
+    const en = (question as any).isTrue ? 'True' : 'False';
+    return combineText(de, en, language);
+  }
+  if ((question as any).correctOrder) {
+    const ord = combineArray(
+      (question as any).correctOrder ?? [],
+      (question as any).correctOrderEn,
+      language
+    );
+    return Array.isArray(ord) ? ord.join(' / ') : undefined;
+  }
+  const deAnswer = (question as any).answer ?? undefined;
+  const enAnswer = (question as any).answerEn ?? undefined;
+  return combineText(deAnswer, enAnswer, language);
+};
+
+const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => question;
+
+const applyRoomState = (room: RoomState, action: GameStateAction) => {
+  const prev = room.gameState;
+  const next = applyGameAction(room.gameState, action);
+  if (next !== room.gameState) {
+    room.gameState = next;
+    room.stateHistory = [...room.stateHistory.slice(-9), next];
+    if ((next.startsWith('BLITZ') || next === 'BLITZ' || next === 'POTATO' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
+      room.scoreboardOverlayForced = false;
+    }
+    if (prev === 'RUNDLAUF_PLAY' && next !== 'RUNDLAUF_PLAY') {
+      clearRundlaufTurnTimer(room.roomCode);
+    }
+  }
+  return room.gameState;
+};
+
+const buildTimerSnapshot = (room: RoomState) => {
+  let endsAt = room.timerEndsAt;
+  let running = Boolean(endsAt);
+  let durationMs: number | null = room.questionTimerDurationMs;
+
+  if ((room.gameState === 'BLITZ_PLAYING' || room.gameState === 'BLITZ') && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
+    endsAt = room.blitzDeadlineAt;
+    running = true;
+    durationMs = BLITZ_ANSWER_TIME_MS;
+  } else if (room.gameState === 'POTATO' && room.potatoPhase === 'PLAYING' && room.potatoDeadlineAt) {
+    endsAt = room.potatoDeadlineAt;
+    running = true;
+    durationMs = room.potatoTurnDurationMs;
+  } else if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufDeadlineAt) {
+    endsAt = room.rundlaufDeadlineAt;
+    running = true;
+    durationMs = room.rundlaufTurnDurationMs;
+  } else if (!running) {
+    durationMs = null;
+  }
+
+  return { endsAt, running, durationMs };
+};
+
+const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
+  const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+  const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
+  const sanitized = localized ? sanitizeQuestionForTeams(localized) : null;
+  // Potato (heiße Kartoffel) ist abgekündigt – nicht mehr im Sync-State ausliefern
+  const potato: PotatoState | null = null;
+  const blitz: BlitzState | null =
+    room.blitzPhase === 'IDLE'
+      ? null
+      : {
+          phase: room.blitzPhase,
+          pool: room.blitzPool,
+          bans: room.blitzBans,
+          banLimits: room.blitzBanLimits,
+          selectedThemes: room.blitzSelectedThemes,
+          selectionComplete: hasBlitzSelectionReady(room),
+          pinnedTheme: room.blitzPinnedTheme ?? null,
+          topTeamId: room.blitzTopTeamId ?? null,
+          lastTeamId: room.blitzLastTeamId ?? null,
+          setIndex: room.blitzSetIndex,
+          deadline: room.blitzDeadlineAt,
+          theme: room.blitzTheme,
+          items: room.blitzItems,
+          submissions: room.blitzSubmittedTeamIds,
+          results: room.blitzResultsByTeam,
+          itemIndex: room.blitzItemIndex >= 0 ? room.blitzItemIndex : undefined,
+          itemDeadline: room.blitzItemDeadlineAt ?? undefined,
+          itemDurationMs: room.blitzItemDurationMs ?? undefined
+        };
+  const shouldIncludeRundlauf =
+    room.gameState.startsWith('RUNDLAUF') || room.gameState === 'SIEGEREHRUNG' || room.rundlaufPool.length > 0;
+  const currentRundlaufCategory =
+    room.rundlaufRoundIndex >= 0 ? room.rundlaufSelectedCategories[room.rundlaufRoundIndex] ?? null : null;
+  const rundlauf: RundlaufState | null = !shouldIncludeRundlauf
+    ? null
+    : (() => {
+        // Get available answers for current category
+        const currentCatId = room.rundlaufSelectedCategories[room.rundlaufRoundIndex]?.id;
+        const allAnswers = currentCatId ? RUN_LOOP_DATA[currentCatId] || [] : [];
+        const allAnswersNormalized = new Set(allAnswers.map((a) => normalizeText(a)));
+        const usedNormalized = new Set(room.rundlaufUsedAnswersNormalized);
+        const remainingAnswers = Array.from(allAnswersNormalized).filter((a) => !usedNormalized.has(a));
+
+        return {
+          pool: room.rundlaufPool,
+          bans: room.rundlaufBans,
+          selected: room.rundlaufSelectedCategories,
+          pinned: room.rundlaufPinnedCategory ?? null,
+          topTeamId: room.rundlaufTopTeamId ?? null,
+          lastTeamId: room.rundlaufLastTeamId ?? null,
+          roundIndex: room.rundlaufRoundIndex,
+          turnOrder: room.rundlaufTurnOrder,
+          activeTeamId: room.rundlaufActiveTeamId,
+          eliminatedTeamIds: room.rundlaufEliminatedTeamIds,
+          usedAnswers: room.rundlaufUsedAnswers,
+          usedAnswersNormalized: room.rundlaufUsedAnswersNormalized,
+          lastAttempt: room.rundlaufLastAttempt ?? null,
+          deadline: room.rundlaufDeadlineAt,
+          turnStartedAt: room.rundlaufTurnStartedAt,
+          turnDurationMs: room.rundlaufTurnDurationMs,
+          currentCategory: currentRundlaufCategory,
+          roundWinners: room.rundlaufRoundWinners,
+          availableAnswers: allAnswers,
+          remainingAnswers
+        };
+      })();
+  const oneOfEight = (() => {
+    if (!activeQuestion) return null;
+    const payload = (activeQuestion as any).bunteTuete;
+    if (!payload || payload.kind !== 'oneOfEight') return null;
+    return {
+      turnOrder: room.oneOfEightTurnOrder,
+      activeTeamId: room.oneOfEightActiveTeamId,
+      usedChoiceIds: room.oneOfEightUsedChoiceIds,
+      loserTeamId: room.oneOfEightLoserTeamId,
+      winnerTeamIds: room.oneOfEightWinnerTeamIds,
+      finished: room.oneOfEightFinished
+    } satisfies StateUpdatePayload['oneOfEight'];
+  })();
+  const includeResults = room.questionPhase === 'evaluated' || room.questionPhase === 'revealed';
+  const connectedTeamIds = getConnectedTeamIds(room);
+  const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({
+    id: team.id,
+    name: team.name,
+    connected: connectedTeamIds.includes(team.id),
+    submitted: Boolean(room.answers[team.id]),
+    isReady: team.isReady
+  }));
+  const results = includeResults
+    ? Object.entries(room.answers).map(([teamId, entry]) => ({
+        teamId,
+        teamName: room.teams[teamId]?.name ?? teamId,
+        answer: entry.value,
+        isCorrect: entry.isCorrect,
+        awardedPoints: entry.awardedPoints ?? null,
+        awardedDetail: entry.awardedDetail ?? null,
+        tieBreaker: entry.tieBreaker ?? null
+      }))
+    : undefined;
+  const warnings = [
+    ...room.validationWarnings,
+    ...(localized ? validateQuestionStructure(localized) : [])
+  ];
+  const timerSnapshot = buildTimerSnapshot(room);
+  return {
+    roomCode: room.roomCode,
+    state: room.gameState,
+    phase: room.questionPhase,
+    currentQuestion: sanitized,
+    timer: {
+      endsAt: timerSnapshot.endsAt,
+      running: timerSnapshot.running,
+      durationMs: timerSnapshot.durationMs || undefined
+    },
+    scores: Object.values(room.teams).map((team) => ({
+      id: team.id,
+      name: team.name,
+      score: team.score ?? 0
+    })),
+    teamsConnected: connectedTeamIds.length,
+    teamStatus,
+    questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
+    potato,
+    blitz,
+    rundlauf,
+    oneOfEight,
+    nextStage: room.nextStage ?? undefined,
+    scoreboardOverlayForced: room.scoreboardOverlayForced,
+    results,
+    warnings: warnings.length ? warnings : undefined,
+    supportsBingo: Boolean(room.bingoEnabled),
+    config: {
+      potatoAutopilot: POTATO_AUTOPILOT,
+      potatoTimeoutAutostrike: POTATO_TIMEOUT_AUTOSTRIKE
+    }
+  };
+};
+
+const broadcastState = (room: RoomState) => {
+  io.to(room.roomCode).emit('server:stateUpdate', buildStateUpdatePayload(room));
+};
+const broadcastStateByCode = (roomCode: string) => {
+  const room = rooms.get(roomCode);
+  if (room) broadcastState(room);
+};
+
+const evaluateCurrentQuestion = (room: RoomState): boolean => {
+  if (!room.currentQuestionId) return false;
+  if (room.questionPhase === 'evaluated' || room.questionPhase === 'revealed') return false;
+  const question = questionById.get(room.currentQuestionId);
+  if (!question) return false;
+  clearQuestionTimers(room);
+  applyRoomState(room, { type: 'HOST_LOCK' });
+  const basePoints = getQuestionPoints(room, question);
+
+  const buntePayload = (question as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    // Falls noch nicht entschieden: als Unentschieden werten
+    if (!room.oneOfEightFinished) {
+      concludeOneOfEight(
+        room,
+        question,
+        null,
+        [],
+        'Unentschieden',
+        'Unentschieden',
+        'Unentschieden – falsche Aussage nicht gewählt'
+      );
+      return true;
+    }
+    return false;
+  }
+
+  if (question.mechanic === 'estimate') {
+    const parsed = Object.entries(room.answers).map(([teamId, ans]) => {
+      const num = Number(String(ans.value ?? '').replace(',', '.'));
+      return {
+        teamId,
+        diff:
+          Number.isFinite(num) && (question as any).targetValue !== undefined
+            ? Math.abs(num - (question as any).targetValue)
+            : Number.POSITIVE_INFINITY
+      };
+    });
+    const minDiff = parsed.reduce((m, p) => Math.min(m, p.diff), Number.POSITIVE_INFINITY);
+    const bestDeviation = Number.isFinite(minDiff) ? minDiff : null;
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const p = parsed.find((x) => x.teamId === teamId);
+      const isCorrect = p ? p.diff === minDiff : false;
+      const awardedPoints = isCorrect ? basePoints : 0;
+      const deviation = p?.diff ?? null;
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect,
+        deviation,
+        bestDeviation,
+        awardedPoints,
+                awardedDetail:
+          deviation !== null && Number.isFinite(deviation) ? `Diff ${Math.round(deviation * 100) / 100}` : null,
+        autoGraded: true,
+        tieBreaker:
+          deviation !== null && Number.isFinite(deviation)
+            ? { label: 'DIFF', primary: deviation, detail: 'Naeher dran gewinnt' }
+            : null
+      };
+    });
+  } else if (question.mechanic === 'betting') {
+    const correctIdx = (question as any).correctIndex ?? 0;
+    const pool = (question as any).pointsPool ?? 10;
+    const betPointsByTeam = Object.entries(room.answers).map(([teamId, ans]) => {
+      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
+      const ptsRaw = Number(arr[correctIdx] ?? 0);
+      const points = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      return { teamId, points };
+    });
+    const maxPoints = betPointsByTeam.reduce((max, entry) => Math.max(max, entry.points), 0);
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
+      const ptsRaw = Number(arr[correctIdx] ?? 0);
+      const betPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
+      const awardedPoints = maxPoints > 0 && betPoints === maxPoints ? 1 : 0;
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect: awardedPoints > 0,
+        betPoints,
+        betPool: pool,
+        awardedPoints,
+        awardedDetail: awardedPoints > 0 ? '1 Punkt' : '0 Punkte',
+        autoGraded: true,
+        tieBreaker: null
+      };
+    });
+  } else if (getQuestionType(question) === 'BUNTE_TUETE') {
+    const evaluations: Record<string, ReturnType<typeof evaluateBunteSubmission>> = {};
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const evaluation = evaluateBunteSubmission(question, ans.value, basePoints);
+      evaluations[teamId] = evaluation;
+    });
+
+    // Winner-takes-all for TOP5: most hits gets full basePoints (or 2 in later rounds). Ties share full points each.
+    if ((question as any).bunteTuete?.kind === 'top5') {
+      const hitsPerTeam = Object.entries(evaluations).map(([teamId, ev]) => ({ teamId, hits: ev.tieBreaker?.primary ?? 0 }));
+      const bestHits = hitsPerTeam.reduce((max, { hits }) => Math.max(max, hits), 0);
+      const winners = hitsPerTeam.filter(({ hits }) => hits === bestHits && hits > 0).map(({ teamId }) => teamId);
+
+      Object.entries(room.answers).forEach(([teamId, ans]) => {
+        const ev = evaluations[teamId];
+        const isWinner = winners.includes(teamId);
+        room.answers[teamId] = {
+          ...ans,
+          isCorrect: isWinner,
+          awardedPoints: isWinner ? basePoints : 0,
+          awardedDetail: `${ev.tieBreaker?.primary ?? 0} Treffer${isWinner ? ' (Bestwert)' : ''}`,
+          autoGraded: true,
+          tieBreaker: ev.tieBreaker ?? null
+        };
+      });
+    } else {
+      Object.entries(room.answers).forEach(([teamId, ans]) => {
+        const evaluation = evaluations[teamId];
+        room.answers[teamId] = {
+          ...ans,
+          isCorrect: evaluation.isCorrect,
+          awardedPoints: evaluation.awardedPoints,
+          awardedDetail: evaluation.awardedDetail,
+          autoGraded: true,
+          tieBreaker: evaluation.tieBreaker ?? null
+        };
+      });
+    }
+  } else {
+    Object.entries(room.answers).forEach(([teamId, ans]) => {
+      const isCorrect = evaluateAnswer(question, ans.value);
+      room.answers[teamId] = {
+        ...ans,
+        isCorrect,
+        awardedPoints: isCorrect ? basePoints : 0,
+        autoGraded: true,
+        tieBreaker: null
+      };
+    });
+  }
+
+  room.questionPhase = 'evaluated';
+  room.timerEndsAt = null;
+  const solution = formatSolution(question, room.language);
+  broadcastState(room);
+  io.to(room.roomCode).emit('evaluation:started');
+  io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
+  io.to(room.roomCode).emit('timerStopped');
+  return true;
+};
+
+// --- API Routes -------------------------------------------------------------
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+if (DEBUG) {
+  app.get('/debug/state/:roomCode', (req, res) => {
+    const game = rooms.get(req.params.roomCode);
+    if (!game) return res.status(404).json({ error: 'not-found' });
+    return res.json(game);
+  });
+}
+
+app.get('/api/questions', (_req, res) => {
+  const mapped = questions.map((q) => {
+    const usage = questionUsageMap[q.id] ?? {};
+    const isCustom = customQuestions.some((c) => c.id === q.id);
+    return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom };
+  });
+  res.json({ questions: mapped });
+});
+
+app.get('/api/questions/custom', (_req, res) => {
+  const mapped = customQuestions.map((q) => {
+    const usage = questionUsageMap[q.id] ?? {};
+    return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom: true };
+  });
+  res.json({ questions: mapped });
+});
+
+// Katalogliste
+app.get('/api/catalogs', (_req, res) => {
+  const set = new Set<string>();
+  [...questions, ...customQuestions].forEach((q) => set.add((q as any).catalogId || 'default'));
+  res.json({ catalogs: Array.from(set).sort() });
+});
+
+app.get('/api/questions/custom/export', (_req, res) => {
+  res.json({ questions: customQuestions });
+});
+
+app.get('/api/quizzes', (_req, res) => {
+  res.json({ quizzes: Array.from(quizzes.values()) });
+});
+
+app.post('/api/quizzes/custom', (req, res) => {
+  const { name, questionIds, meta, categories, mode } = req.body as {
+    name?: string;
+    questionIds?: string[];
+    meta?: unknown;
+    categories?: unknown;
+    mode?: 'ordered' | 'random';
+  };
+  if (!name || !Array.isArray(questionIds)) return res.status(400).json({ error: 'name oder questionIds fehlen' });
+  if (questionIds.length !== 25) return res.status(400).json({ error: 'Es muessen genau 25 questionIds sein' });
+
+  const counts: Record<QuizCategory, number> = {
+    Schaetzchen: 0,
+    'Mu-Cho': 0,
+    Stimmts: 0,
+    Cheese: 0,
+    GemischteTuete: 0
+  };
+  for (const id of questionIds) {
+    const q = questionById.get(id);
+    if (!q) return res.status(400).json({ error: `Unbekannte questionId: ${id}` });
+    counts[q.category] = (counts[q.category] ?? 0) + 1;
+  }
+  if (!Object.values(counts).every((c) => c === 5)) {
+    return res.status(400).json({ error: 'Jede Kategorie muss genau 5 Fragen enthalten' });
+  }
+
+  const id = `custom-${Date.now()}`;
+  const template: QuizTemplate = {
+    id,
+    name,
+    mode: mode === 'ordered' || mode === 'random' ? mode : 'random',
+    questionIds: [...questionIds],
+    meta,
+    categories
+  } as QuizTemplate;
+  quizzes.set(id, template);
+  // usage aktualisieren
+  const now = new Date().toISOString();
+  questionIds.forEach((qid) => {
+    const entry = questionUsageMap[qid] ?? { usedIn: [], lastUsedAt: null };
+    const set = new Set(entry.usedIn ?? []);
+    set.add(name);
+    questionUsageMap[qid] = { usedIn: Array.from(set), lastUsedAt: now };
+  });
+  persistQuestionUsage();
+
+  return res.status(201).json({ quiz: template });
+});
+
+// Bild-Upload
+app.post('/api/upload/question-image', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
+  const { questionId } = req.body as { questionId?: string };
+  const url = `/uploads/questions/${req.file.filename}`;
+  if (questionId) {
+    questionImageMap[questionId] = url;
+    persistQuestionImages();
+  }
+  return res.json({ imageUrl: url });
+});
+
+app.delete('/api/upload/question-image', (req, res) => {
+  const { questionId, imageUrl } = req.body as { questionId?: string; imageUrl?: string };
+  const url = imageUrl || (questionId ? questionImageMap[questionId] : null);
+  if (!url) return res.status(400).json({ error: 'imageUrl oder questionId fehlt' });
+  const filename = path.basename(url);
+  const filePath = path.join(uploadDir, filename);
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      // ignore
+    }
+  }
+  if (questionId && questionImageMap[questionId]) {
+    delete questionImageMap[questionId];
+    persistQuestionImages();
+  }
+  return res.json({ ok: true });
+});
+
+app.post('/api/rooms/:roomCode/use-quiz', (req, res) => {
+  const { roomCode } = req.params;
+  const { quizId } = req.body as { quizId?: string };
+  if (!quizId || !quizzes.has(quizId)) return res.status(400).json({ error: 'Ungueltiges quizId' });
+
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  const remaining = configureRoomForQuiz(room, quizId);
+
+  io.to(roomCode).emit('quizSelected', { quizId, remaining }); // TODO(LEGACY): remove when stateUpdate adopted
+  return res.json({ ok: true, quizId, remaining });
+});
+
+const enterQuestionActive = (room: RoomState, questionId: string, remainingOverride?: number) => {
+  const question = questionById.get(questionId);
+  if (!question) return;
+  const questionWithImage = applyOverrides(question);
+  room.questionIntroTimeout = null;
+  room.screen = 'question';
+  const meta = buildQuestionMeta(room, questionId);
+  const localized = localizeQuestion(questionWithImage, room.language);
+  room.questionPhase = 'answering';
+  const buntePayload = (questionWithImage as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    startOneOfEightTurnState(room, questionWithImage);
+  }
+  applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
+  startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
+  io.to(room.roomCode).emit('questionStarted', {
+    questionId,
+    remaining: remainingOverride ?? room.remainingQuestionIds.length,
+    meta
+  });
+  io.to(room.roomCode).emit('beamer:show-question', { question: localized, meta });
+  io.to(room.roomCode).emit('team:show-question', { question: sanitizeQuestionForTeams(localized) });
+  broadcastState(room);
+};
+
+const startQuestionWithSlot = (
+  room: RoomState,
+  questionId: string,
+  remainingOverride?: number,
+  res?: express.Response
+) => {
+  touchRoom(room);
+  const question = questionById.get(questionId);
+  const questionWithImage = question ? applyOverrides(question) : null;
+  if (!questionWithImage) {
+    if (res) res.status(400).json({ error: 'Ungueltige questionId' });
+    return;
+  }
+
+  room.currentQuestionId = questionId;
+  room.answers = {};
+  room.oneOfEightTurnOrder = [];
+  room.oneOfEightTurnIndex = 0;
+  room.oneOfEightActiveTeamId = null;
+  room.oneOfEightUsedChoiceIds = [];
+  room.oneOfEightLoserTeamId = null;
+  room.oneOfEightWinnerTeamIds = [];
+  room.oneOfEightFinished = false;
+  room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
+  clearQuestionTimers(room);
+  room.nextStage = null;
+  room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
+  ensureSegmentTwoBaseline(room);
+  room.screen = 'slot';
+  room.questionPhase = 'idle';
+  applyRoomState(room, { type: 'FORCE', next: 'QUESTION_INTRO' });
+  broadcastState(room);
+
+  const askedInCategory = room.askedQuestionIds.filter(
+    (id) => questionById.get(id)?.category === questionWithImage.category
+  ).length;
+  const totalInCategory = room.questionOrder.filter(
+    (id) => questionById.get(id)?.category === questionWithImage.category
+  ).length;
+
+  const slotMeta = buildSlotMeta(
+    questionWithImage,
+    Math.max(0, askedInCategory - 1),
+    totalInCategory || 5,
+    room.language
+  );
+  log(room.roomCode, `Slot-Transition for question ${questionWithImage.id}`);
+  io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
+
+  room.questionIntroTimeout = setTimeout(() => {
+    enterQuestionActive(room, questionId, remainingOverride);
+  }, QUESTION_INTRO_MS);
+
+  if (res) {
+    res.json({
+      ok: true,
+      questionId,
+      remaining: remainingOverride ?? room.remainingQuestionIds.length
+    });
+  }
+};
+
+const runNextQuestion = (room: RoomState) => {
+  if (!room.quizId || room.remainingQuestionIds.length === 0) {
+    throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
+  }
+
+  // After Q10 or Q20 reveal, transition to SCOREBOARD (only when coming from Q_REVEAL and not yet triggered)
+  const askedCountBefore = room.askedQuestionIds.length;
+  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10 && !room.halftimeTriggered) {
+    room.halftimeTriggered = true;
+    room.nextStage = 'BLITZ';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, halftimeTrigger: true };
+  }
+  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 20 && !room.finalsTriggered) {
+    room.finalsTriggered = true;
+    room.nextStage = 'RUNDLAUF';
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    broadcastState(room);
+    return { stage: room.gameState, finalsTrigger: true };
+  }
+
+  // Otherwise start the next question normally
+  const nextId = room.remainingQuestionIds.shift();
+  if (!nextId) {
+    throw new Error('Keine naechste Frage gefunden');
+  }
+  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
+  Object.values(room.teams).forEach((t) => (t.isReady = false));
+  broadcastTeamsReady(room);
+  return { questionId: nextId, remaining: room.remainingQuestionIds.length };
+};
+
+const startOneOfEightTurnState = (room: RoomState, question: AnyQuestion) => {
+  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string }> | undefined) || [];
+  const teamIds = getConnectedTeamIds(room);
+  const order = teamIds.length ? [...teamIds] : Object.keys(room.teams);
+  room.oneOfEightTurnOrder = order;
+  room.oneOfEightTurnIndex = 0;
+  room.oneOfEightActiveTeamId = order[0] ?? null;
+  room.oneOfEightUsedChoiceIds = [];
+  room.oneOfEightLoserTeamId = null;
+  room.oneOfEightWinnerTeamIds = [];
+  room.oneOfEightFinished = statements.length === 0 || order.length === 0;
+  if (room.oneOfEightFinished) {
+    room.oneOfEightActiveTeamId = null;
+  }
+};
+
+const concludeOneOfEight = (
+  room: RoomState,
+  question: AnyQuestion,
+  loserTeamId: string | null,
+  winnerTeamIds: string[],
+  detailWinner: string,
+  detailLoser: string,
+  detailNeutral: string
+) => {
+  const basePoints = getQuestionPoints(room, question);
+  const winnerSet = new Set(winnerTeamIds);
+  Object.keys(room.teams).forEach((id) => {
+    const existing = room.answers[id] || { value: null };
+    let awardedPoints = 0;
+    let isCorrect = false;
+    let awardedDetail: string | null = null;
+    if (winnerSet.has(id)) {
+      awardedPoints = basePoints;
+      isCorrect = true;
+      awardedDetail = detailWinner;
+    } else if (loserTeamId && id === loserTeamId) {
+      awardedDetail = detailLoser;
+    } else {
+      awardedDetail = detailNeutral;
+    }
+    room.answers[id] = {
+      ...existing,
+      isCorrect,
+      awardedPoints,
+      awardedDetail,
+      autoGraded: true,
+      tieBreaker: null
+    };
+  });
+
+  room.oneOfEightWinnerTeamIds = winnerTeamIds;
+  room.oneOfEightLoserTeamId = loserTeamId;
+  room.oneOfEightFinished = true;
+  room.oneOfEightActiveTeamId = null;
+  room.questionPhase = 'evaluated';
+  room.timerEndsAt = null;
+  applyRoomState(room, { type: 'HOST_LOCK' });
+
+  const solution = formatSolution(question, room.language);
+  broadcastState(room);
+  io.to(room.roomCode).emit('evaluation:started');
+  io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
+  io.to(room.roomCode).emit('timerStopped');
+};
+
+const advanceOneOfEightTurn = (room: RoomState) => {
+  room.oneOfEightTurnIndex += 1;
+  const nextTeam = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
+  room.oneOfEightActiveTeamId = nextTeam ?? null;
+};
+
+const handleOneOfEightSubmission = (
+  room: RoomState,
+  question: AnyQuestion,
+  teamId: string,
+  answer: unknown
+) => {
+  const payload = answer as { choiceId?: string };
+  const choiceId = typeof payload?.choiceId === 'string' ? payload.choiceId.trim() : '';
+  if (!choiceId) throw new Error('Antwort ungültig');
+  if (room.oneOfEightFinished) throw new Error('Runde bereits beendet');
+  if (room.oneOfEightActiveTeamId && room.oneOfEightActiveTeamId !== teamId) {
+    throw new Error('Dieses Team ist nicht am Zug');
+  }
+
+  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string; isFalse?: boolean }> | undefined) || [];
+  const choiceNormalized = choiceId.toLowerCase();
+  const alreadyUsed = room.oneOfEightUsedChoiceIds.some((id) => id.toLowerCase() === choiceNormalized);
+  if (alreadyUsed) throw new Error('Antwort wurde schon gewählt');
+
+  room.answers[teamId] = { value: payload };
+  room.oneOfEightUsedChoiceIds.push(choiceId);
+
+  const falseStmt = statements.find((stmt) => stmt.isFalse);
+  const pickedFalse = falseStmt && choiceNormalized === String(falseStmt.id).toLowerCase();
+
+  if (pickedFalse) {
+    const winners = room.oneOfEightTurnOrder.filter((id) => id !== teamId && room.teams[id]);
+    concludeOneOfEight(
+      room,
+      question,
+      teamId,
+      winners,
+      'Gewonnen durch Fehlpick',
+      'Falsche Aussage gewählt',
+      'Keine Auswahl'
+    );
+    return;
+  }
+
+  // Keine falsche Aussage gewählt: weiter zum nächsten Team oder Unentschieden, wenn alle durch sind
+  const submissions = room.oneOfEightUsedChoiceIds.length;
+  const maxTurns = Math.min(statements.length || 0, room.oneOfEightTurnOrder.length || statements.length || 0);
+  advanceOneOfEightTurn(room);
+
+  if (submissions >= maxTurns || room.oneOfEightUsedChoiceIds.length >= (statements.length || 0)) {
+    concludeOneOfEight(
+      room,
+      question,
+      null,
+      [],
+      'Unentschieden',
+      'Unentschieden',
+      'Unentschieden – falsche Aussage nicht gewählt'
+    );
+    return;
+  }
+
+  broadcastState(room);
+};
+
+const shouldShowSegmentScoreboard = (room: RoomState) => {
+  const askedCount = room.askedQuestionIds.length;
+  return askedCount === 10 || askedCount === 20 || room.remainingQuestionIds.length === 0;
+};
+
+const handleHostNextAdvance = (room: RoomState) => {
+  if (room.gameState === 'LOBBY') {
+    const connectedTeamIds = getConnectedTeamIds(room);
+    if (connectedTeamIds.length > 0) {
+      const allReady = connectedTeamIds.every((teamId) => room.teams[teamId]?.isReady);
+      if (!allReady) {
+        throw new Error('Nicht alle Teams bereit');
+      }
+    }
+  }
+  if (room.gameState === 'QUESTION_INTRO' && room.currentQuestionId) {
+    clearQuestionTimers(room);
+    enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'Q_ACTIVE') {
+    applyRoomState(room, { type: 'HOST_LOCK' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'Q_LOCKED') {
+    const payload = revealAnswersForRoom(room);
+    return { stage: room.gameState, ...payload };
+  }
+  if (room.gameState === 'SCOREBOARD_PRE_BLITZ') {
+    initializeBlitzStage(room);
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_READY') {
+    room.blitzPhase = 'BANNING';
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_BANNING' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_BANNING') {
+    if (!hasBlitzSelectionReady(room)) {
+      throw new Error('Blitz-Auswahl noch nicht abgeschlossen');
+    }
+    // Only transition if not already transitioning (blitzPhase check)
+    if (room.blitzPhase === 'BANNING') {
+      finalizeBlitzSelection(room);
+      startBlitzSet(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SET_INTRO') {
+    if (room.blitzPhase === 'ROUND_INTRO') {
+      clearBlitzRoundIntroTimer(room);
+      room.blitzPhase = 'PLAYING';
+      room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
+      room.blitzItemIndex = 0;
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
+      scheduleBlitzItemTicker(room, true);
+      scheduleBlitzSetTimer(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_PLAYING') {
+    enforceBlitzDeadline(room);
+    if (room.blitzPhase === 'PLAYING') {
+      lockBlitzSet(room);
+      computeBlitzResults(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SET_END') {
+    const totalSets = Math.min(BLITZ_SETS, room.blitzSelectedThemes.length || BLITZ_SETS);
+    if (room.blitzSetIndex >= totalSets - 1) {
+      finishBlitzStage(room);
+    } else {
+      startBlitzSet(room);
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SCOREBOARD') {
+    applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PAUSE' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_PAUSE') {
+    return runNextQuestion(room);
+  }
+  if (room.gameState === 'RUNDLAUF_PAUSE') {
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SCOREBOARD_PRE' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_CATEGORY_SELECT') {
+    if (!hasRundlaufSelectionReady(room)) {
+      throw new Error('Rundlauf-Auswahl noch nicht abgeschlossen');
+    }
+    finalizeRundlaufSelection(room);
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_ROUND_INTRO') {
+    startRundlaufRound(room);
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_PLAY') {
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_ROUND_END') {
+    if (room.rundlaufRoundIndex >= RUNDLAUF_ROUNDS - 1) {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SCOREBOARD_FINAL' });
+    } else {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+    }
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_SCOREBOARD_FINAL' || room.gameState === 'SIEGEREHRUNG') {
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    broadcastState(room);
+    return { stage: room.gameState };
+  }
+  if (room.gameState === 'SCOREBOARD_PAUSE') {
+    if (room.nextStage === 'BLITZ') {
+      initializeBlitzStage(room);
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    if (room.nextStage === 'Q11') {
+      room.nextStage = null;
+      applyRoomState(room, { type: 'HOST_NEXT' });
+      return runNextQuestion(room);
+    }
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    return runNextQuestion(room);
+  }
+  if (room.gameState === 'Q_REVEAL') {
+    return runNextQuestion(room);
+  }
+  if (room.gameState === 'SCOREBOARD') {
+    const askedCount = room.askedQuestionIds.length;
+    const totalQuestions = room.questionOrder.length;
+    if (room.nextStage === 'BLITZ') {
+      applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    const shouldStartRundlauf =
+      room.nextStage === 'RUNDLAUF' ||
+      (askedCount >= totalQuestions && room.rundlaufPool.length === 0);
+    if (shouldStartRundlauf) {
+      initializeRundlaufStage(room);
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    if (room.remainingQuestionIds.length === 0) {
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
+    applyRoomState(room, { type: 'HOST_NEXT' });
+    return runNextQuestion(room);
+  }
+  return runNextQuestion(room);
+};
+
+const revealAnswersForRoom = (room: RoomState) => {
+  if (!room.currentQuestionId) throw new Error('Keine aktive Frage');
+  const question = questionById.get(room.currentQuestionId);
+  if (!question) throw new Error('Frage nicht gefunden');
+
+  if (room.questionPhase === 'answering') {
+    evaluateCurrentQuestion(room);
+  }
+  if (room.questionPhase === 'revealed') {
+    return { answers: room.answers, teams: room.teams };
+  }
+
+  applyRoomState(room, { type: 'HOST_REVEAL' });
+  const basePoints = getQuestionPoints(room, question);
+  Object.entries(room.answers).forEach(([teamId, ans]) => {
+    const isCorrect = ans.isCorrect ?? evaluateAnswer(question, ans.value);
+    const deviation = ans.deviation ?? null;
+    const bestDeviation = ans.bestDeviation ?? null;
+    const awardedPoints =
+      ans.awardedPoints !== undefined && ans.awardedPoints !== null
+        ? ans.awardedPoints
+        : isCorrect
+        ? basePoints
+        : 0;
+    room.answers[teamId] = {
+      ...ans,
+      isCorrect,
+      deviation,
+      bestDeviation,
+      awardedPoints
+    };
+    if (awardedPoints > 0 && room.teams[teamId]) {
+      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + awardedPoints;
+    }
+    io.to(room.roomCode).emit('teamResult', {
+      teamId,
+      isCorrect,
+      deviation,
+      bestDeviation,
+      awardedPoints,
+      awardedDetail: room.answers[teamId].awardedDetail ?? null
+    });
+  });
+
+  room.questionPhase = 'revealed';
+  const askedCount = room.askedQuestionIds.length;
+  const noQuestionsLeft = room.remainingQuestionIds.length === 0;
+  if (askedCount === 10) {
+    room.nextStage = 'BLITZ';
+  } else if (askedCount >= 20 || noQuestionsLeft) {
+    room.nextStage = 'RUNDLAUF';
+  } else {
+    room.nextStage = null;
+  }
+  broadcastState(room);
+  io.to(room.roomCode).emit('scoreUpdated'); // TODO(LEGACY): scoreboard now via stateUpdate
+  io.to(room.roomCode).emit('evaluation:revealed');
+  return { answers: room.answers, teams: room.teams };
+};
+
+app.post('/api/rooms/:roomCode/next-question', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  try {
+    const result = runNextQuestion(room);
+    if (res.headersSent) return;
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/rooms/:roomCode/start-question', (req, res) => {
+  const { roomCode } = req.params;
+  const { questionId } = req.body as { questionId?: string };
+  if (!questionId || !questionById.has(questionId)) {
+    return res.status(400).json({ error: 'Ungueltige questionId' });
+  }
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  startQuestionWithSlot(room, questionId, room.remainingQuestionIds.length, res);
+  Object.values(room.teams).forEach((t) => (t.isReady = false));
+  broadcastTeamsReady(room);
+});
+
+// Slot-Intro ausloesen, ohne Frage-Reihenfolge anzupassen
+app.post('/api/rooms/:roomCode/slot-intro', (req, res) => {
+  const { roomCode } = req.params;
+  const { questionId } = req.body as { questionId?: string };
+  if (!questionId || !questionById.has(questionId)) {
+    return res.status(400).json({ error: 'Ungueltige questionId' });
+  }
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  const question = questionById.get(questionId)!;
+  const localized = localizeQuestion(applyOverrides(question), room.language);
+  const askedInCategory = room.askedQuestionIds.filter((id) => questionById.get(id)?.category === question.category).length;
+  const totalInCategory = room.questionOrder.filter((id) => questionById.get(id)?.category === question.category).length || 5;
+  const slotMeta = buildSlotMeta(localized, Math.max(0, askedInCategory - 1), totalInCategory, room.language);
+  log(room.roomCode, `Slot intro only for question ${questionId}`);
+  io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
+  broadcastState(room);
+  res.json({ ok: true, slotMeta });
+});
+
+// Intro-Slides auf Beamer schicken
+app.post('/api/rooms/:roomCode/show-intro', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  room.screen = 'intro' as ScreenState;
+  applyRoomState(room, { type: 'FORCE', next: 'INTRO' });
+  broadcastState(room);
+  io.to(room.roomCode).emit('beamer:show-intro', { slides: INTRO_SLIDES });
+  res.json({ ok: true });
+});
+
+app.get('/api/rooms/:roomCode/current-question', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  if (!room.currentQuestionId) return res.json({ question: null });
+  const question = questionById.get(room.currentQuestionId);
+  if (!question) return res.json({ question: null });
+  const meta = buildQuestionMeta(room, room.currentQuestionId);
+  const localized = localizeQuestion(applyOverrides(question), room.language);
+  return res.json({ question: localized, meta });
+});
+
+// Team join (mit Bingo-Board)
+app.post('/api/rooms/:roomCode/join', (req, res) => {
+  const { roomCode } = req.params;
+  const { teamName, teamId } = req.body as { teamName?: string; teamId?: string };
+  if (!teamName) return res.status(400).json({ error: 'teamName fehlt' });
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+
+  try {
+    const result = joinTeamToRoom(room, teamName, teamId);
+    const payload = { team: result.team, roomCode, board: result.board };
+    return result.created ? res.status(201).json(payload) : res.json(payload);
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+// Antworten (speichern, keine Auto-Evaluation)
+app.post('/api/rooms/:roomCode/answer', (req, res) => {
+  const { roomCode } = req.params;
+  const { teamId, answer } = req.body as { teamId?: string; answer?: unknown };
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
+  const currentQuestion = questionById.get(room.currentQuestionId);
+  if (!currentQuestion) return res.status(400).json({ error: 'Keine aktive Frage' });
+  if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
+  if (!isQuestionInputOpen(room.gameState)) {
+    return res.status(400).json({ error: 'Antworten aktuell nicht erlaubt' });
+  }
+
+  const buntePayload = (currentQuestion as any).bunteTuete;
+  if (buntePayload && buntePayload.kind === 'oneOfEight') {
+    try {
+      handleOneOfEightSubmission(room, currentQuestion, teamId, answer);
+    } catch (err) {
+      return res.status(400).json({ error: (err as Error).message });
+    }
+    return res.json({ ok: true });
+  }
+
+  room.answers[teamId] = { value: answer };
+  io.to(roomCode).emit('answerReceived', { teamId });
+  io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
+
+  const connectedTeamIds = getConnectedTeamIds(room);
+  const activeTeamIds = connectedTeamIds.length ? connectedTeamIds : Object.keys(room.teams);
+  const answeredActive = activeTeamIds.filter((activeId) => room.answers[activeId]).length;
+  if (activeTeamIds.length > 0 && answeredActive >= activeTeamIds.length && room.timerEndsAt) {
+    evaluateCurrentQuestion(room);
+  }
+
+  broadcastState(room);
+  return res.json({ ok: true });
+});
+
+// Antworten automatisch bewerten (ohne reveal)
+app.post('/api/rooms/:roomCode/resolve', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
+  const ran = evaluateCurrentQuestion(room);
+  if (!ran) return res.status(400).json({ error: 'Keine Auswertung moeglich' });
+  return res.json({ ok: true, answers: room.answers });
+});
+
+// // Legacy Pfad fuer Schaetzfrage / generisch -> gleiche Logik
+app.post('/api/rooms/:roomCode/resolve/estimate', (req, res) => {
+  const { roomCode } = req.params;
+  req.url = `/api/rooms/${roomCode}/resolve`;
+  return app._router.handle(req, res);
+});
+app.post('/api/rooms/:roomCode/resolve/generic', (req, res) => {
+  const { roomCode } = req.params;
+  req.url = `/api/rooms/${roomCode}/resolve`;
+  return app._router.handle(req, res);
+});
+
+// Ergebnisse aufdecken + Scores gutschreiben
+app.post('/api/rooms/:roomCode/reveal', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  try {
+    const payload = revealAnswersForRoom(room);
+    return res.json({ ok: true, ...payload });
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/api/rooms/:roomCode/answers', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  const solution = room.currentQuestionId
+    ? formatSolution(questionById.get(room.currentQuestionId)!, room.language)
+    : undefined;
+  return res.json({ answers: room.answers, teams: room.teams, solution });
+});
+
+app.delete('/api/rooms/:roomCode/teams/:teamId', (req, res) => {
+  const { roomCode, teamId } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+
+  if (!teamId || !room.teams[teamId]) return res.status(404).json({ error: 'Team nicht gefunden' });
+
+  delete room.teams[teamId];
+  delete room.teamBoards[teamId];
+  delete room.answers[teamId];
+
+  broadcastTeamsReady(room);
+  io.to(roomCode).emit('teamKicked', { teamId });
+  broadcastState(room);
+
+  return res.json({ ok: true });
+});
+
+app.post('/api/rooms/:roomCode/answers/override', (req, res) => {
+  const { roomCode } = req.params;
+  const { teamId, isCorrect } = req.body as { teamId?: string; isCorrect?: boolean };
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  if (!teamId || typeof isCorrect !== 'boolean') return res.status(400).json({ error: 'teamId oder isCorrect fehlt' });
+  if (!room.answers[teamId]) room.answers[teamId] = { value: null };
+  const previous = room.answers[teamId].isCorrect;
+  room.answers[teamId].isCorrect = isCorrect;
+
+  // Score anpassen, falls bereits aufgedeckt
+  if (room.questionPhase === 'revealed' && room.currentQuestionId) {
+    const question = questionById.get(room.currentQuestionId);
+    const pts = (question as any)?.points ?? 1;
+    if (room.teams[teamId]) {
+      const delta = (isCorrect ? pts : 0) - (previous ? pts : 0);
+      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + delta;
+    }
+
+    io.to(roomCode).emit('teamResult', { teamId, isCorrect });
+    io.to(roomCode).emit('scoreUpdated'); // TODO(LEGACY)
+    broadcastState(room);
+    return res.json({ ok: true });
+  }
+
+  broadcastState(room);
+  return res.json({ ok: true });
+});
+
+// Bingo markieren
+app.post('/api/rooms/:roomCode/bingo/mark', (req, res) => {
+  const { roomCode } = req.params;
+  const { teamId, cellIndex } = req.body as { teamId?: string; cellIndex?: number };
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
+  if (cellIndex === undefined || cellIndex < 0 || cellIndex > 24)
+    return res.status(400).json({ error: 'cellIndex ungueltig' });
+  const board = room.teamBoards[teamId];
+  if (!board) return res.status(400).json({ error: 'Kein Board' });
+  if (board[cellIndex].marked) return res.status(400).json({ error: 'Feld bereits markiert' });
+
+  // Optional: nur aktuelle Kategorie erlauben
+  if (room.currentQuestionId) {
+    const q = questionById.get(room.currentQuestionId);
+    if (q && q.category !== board[cellIndex].category) {
+      return res.status(400).json({ error: 'Falsche Kategorie' });
+    }
+  }
+
+  board[cellIndex].marked = true;
+  io.to(roomCode).emit('bingoUpdated', { teamId, board }); // TODO(LEGACY)
+  broadcastState(room);
+  return res.json({ ok: true, board });
+});
+
+// Scoreboard
+app.get('/api/rooms/:roomCode/scoreboard', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  const teams = Object.values(room.teams);
+  return res.json({ teams, boards: room.teamBoards });
+});
+
+// Ergebnis-Export (JSON oder CSV)
+const buildResultRows = (room: RoomState) => {
+  const rows: Array<{
+    teamId: string;
+    teamName: string;
+    score: number;
+    questionId: string;
+    questionText: string;
+    category: QuizCategory;
+    answer: unknown;
+    isCorrect: boolean | null | undefined;
+    deviation: number | null | undefined;
+    bestDeviation: number | null | undefined;
+  }> = [];
+
+  const teams = Object.values(room.teams);
+  const answeredIds = room.askedQuestionIds.length ? room.askedQuestionIds : room.questionOrder;
+
+  answeredIds.forEach((qid) => {
+    const q = questionById.get(qid);
+    if (!q) return;
+    teams.forEach((team) => {
+      const ans = room.answers[team.id];
+      rows.push({
+        teamId: team.id,
+        teamName: team.name,
+        score: team.score ?? 0,
+        questionId: qid,
+        questionText: (q as any).question ?? '',
+        category: q.category,
+        answer: ans?.value ?? null,
+        isCorrect: ans?.isCorrect,
+        deviation: ans?.deviation,
+        bestDeviation: ans?.bestDeviation
+      });
+    });
+  });
+
+  return rows;
+};
+
+const rowsToCsv = (rows: ReturnType<typeof buildResultRows>) => {
+  const header = [
+    'teamId',
+    'teamName',
+    'score',
+    'questionId',
+    'questionText',
+    'category',
+    'answer',
+    'isCorrect',
+    'deviation',
+    'bestDeviation'
+  ];
+  const escape = (v: unknown) => {
+    const str = v === null || v === undefined ? '' : String(v);
+    const needsQuote = str.includes('"') || str.includes(',') || str.includes('\n');
+    const safe = str.replace(/"/g, '""');
+    return needsQuote ? `"${safe}"` : safe;
+  };
+  const lines = rows.map((r) =>
+    [
+      r.teamId,
+      r.teamName,
+      r.score,
+      r.questionId,
+      r.questionText,
+      r.category,
+      r.answer ?? '',
+      r.isCorrect ?? '',
+      r.deviation ?? '',
+      r.bestDeviation ?? ''
+    ].map(escape).join(',')
+  );
+  return [header.join(','), ...lines].join('\n');
+};
+
+app.get('/api/rooms/:roomCode/export', (req, res) => {
+  const { roomCode } = req.params;
+  const format = (req.query as { format?: string }).format;
+  const room = rooms.get(roomCode);
+  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
+
+  const rows = buildResultRows(room);
+  if (format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=\"${roomCode}-results.csv\"`);
+    return res.send(rowsToCsv(rows));
+  }
+  return res.json({ room: roomCode, results: rows });
+});
+
+// Timer
+app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
+  const { roomCode } = req.params;
+  const { seconds } = req.body as { seconds?: number };
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  const secs = Number(seconds ?? DEFAULT_QUESTION_TIME);
+  if (!Number.isFinite(secs) || secs <= 0) return res.status(400).json({ error: 'seconds muss > 0 sein' });
+  const durationMs = Math.round(secs * 1000);
+  startQuestionTimer(room, durationMs);
+  broadcastState(room);
+  return res.json({ ok: true, endsAt: room.timerEndsAt });
+});
+
+app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  clearQuestionTimers(room);
+  room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
+  io.to(roomCode).emit('timerStopped');
+   // automatisches Bewerten, wenn noch nicht erfolgt
+  evaluateCurrentQuestion(room);
+  broadcastState(room);
+  return res.json({ ok: true });
+});
+
+app.get('/api/rooms/:roomCode/timer', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  return res.json({
+    timer: {
+      endsAt: room.timerEndsAt,
+      running: Boolean(room.timerEndsAt),
+      durationMs: room.questionTimerDurationMs
+    }
+  });
+});
+
+// Sprache
+app.get('/api/rooms/:roomCode/language', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  return res.json({ language: room.language });
+});
+
+app.post('/api/rooms/:roomCode/language', (req, res) => {
+  const { roomCode } = req.params;
+  const { language } = req.body as { language?: Language };
+  if (language !== 'de' && language !== 'en' && language !== 'both')
+    return res.status(400).json({ error: 'language muss de, en oder both sein' });
+  const room = ensureRoom(roomCode);
+  room.language = language;
+  touchRoom(room);
+  io.to(roomCode).emit('languageChanged', { language });
+  broadcastState(room);
+  return res.json({ ok: true, language });
+});
+
+// Frage-Metadaten setzen (z. B. mixedMechanic)
+app.post('/api/questions/:id/meta', (req, res) => {
+  const { id } = req.params;
+  const { mixedMechanic, catalogId, mediaSlots } = req.body as { mixedMechanic?: string | null; catalogId?: string | null; mediaSlots?: { count?: number; urls?: string[] } | null };
+  if (!id || !questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
+  const question = questionById.get(id)!;
+  if (mixedMechanic && question.category !== 'GemischteTuete') {
+    return res.status(400).json({ error: 'mixedMechanic nur f?r Gemischte T?te erlaubt' });
+  }
+  if (!questionOverrideMap[id]) questionOverrideMap[id] = {};
+  questionOverrideMap[id].mixedMechanic = mixedMechanic ?? null;
+  if (catalogId !== undefined) {
+    questionOverrideMap[id].catalogId = catalogId || null;
+  }
+  if (mediaSlots) {
+    const count = typeof mediaSlots.count === 'number' ? Math.max(1, Math.min(6, Math.round(mediaSlots.count))) : undefined;
+    questionOverrideMap[id].mediaSlots = { count: count ?? mediaSlots.urls?.length ?? 0, urls: mediaSlots.urls };
+  }
+  persistQuestionOverrides();
+  return res.json({ ok: true, override: questionOverrideMap[id] });
+});
+
+// Frage-Layout (Offsets) setzen
+app.post('/api/questions/:id/layout', (req, res) => {
+  const { id } = req.params;
+  const { imageOffsetX, imageOffsetY, logoOffsetX, logoOffsetY } = req.body as {
+    imageOffsetX?: number;
+    imageOffsetY?: number;
+    logoOffsetX?: number;
+    logoOffsetY?: number;
+  };
+  if (!id || !questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
+  if (!questionOverrideMap[id]) questionOverrideMap[id] = {};
+  const clamp = (n: number | undefined) =>
+    typeof n === 'number' && Number.isFinite(n) ? Math.max(-100, Math.min(100, n)) : 0;
+  questionOverrideMap[id].imageOffsetX = clamp(imageOffsetX);
+  questionOverrideMap[id].imageOffsetY = clamp(imageOffsetY);
+  questionOverrideMap[id].logoOffsetX = clamp(logoOffsetX);
+  questionOverrideMap[id].logoOffsetY = clamp(logoOffsetY);
+  persistQuestionOverrides();
+  return res.json({ ok: true, override: questionOverrideMap[id] });
+});
+
+// Layout-Offsets zur?cksetzen
+app.delete('/api/questions/:id/layout', (req, res) => {
+  const { id } = req.params;
+  if (!id || !questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
+  if (questionOverrideMap[id]) {
+    delete questionOverrideMap[id].imageOffsetX;
+    delete questionOverrideMap[id].imageOffsetY;
+    delete questionOverrideMap[id].logoOffsetX;
+    delete questionOverrideMap[id].logoOffsetY;
+    persistQuestionOverrides();
+  }
+  return res.json({ ok: true });
+});
+
+// Neue Frage anlegen
+app.post('/api/questions', (req, res) => {
+  const { id, category, mechanic, question, points = 1, ...rest } = req.body as Partial<AnyQuestion>;
+  if (!category || !mechanic || !question) {
+    return res.status(400).json({ error: 'category, mechanic, question erforderlich' });
+  }
+  const newId = id && typeof id === 'string' ? id : uuid();
+  if (questionById.has(newId)) return res.status(400).json({ error: 'ID bereits vorhanden' });
+  const created: AnyQuestion = {
+    id: newId,
+    category: category as QuizCategory,
+    mechanic: mechanic as AnyQuestion['mechanic'],
+    question,
+    points: Number(points) || 1,
+    createdAt: Date.now(),
+    catalogId: (rest as any)?.catalogId || 'default',
+    mediaSlots: (rest as any)?.mediaSlots,
+    ...(rest as any)
+  };
+  customQuestions.push(created);
+  questions.push(created);
+  questionById.set(newId, created);
+  persistCustomQuestions();
+  return res.json({ ok: true, question: created });
+});
+
+// Bulk-Upload von Fragen
+app.post('/api/questions/bulk', (req, res) => {
+  const { questions: questionsToAdd } = req.body as { questions: Partial<AnyQuestion>[] };
+  if (!Array.isArray(questionsToAdd) || questionsToAdd.length === 0) {
+    return res.status(400).json({ error: 'questions array erforderlich' });
+  }
+
+  const created: AnyQuestion[] = [];
+  for (const q of questionsToAdd) {
+    const { id, category, mechanic, question, points = 1, ...rest } = q;
+    if (!category || !mechanic || !question) continue; // Skip invalid questions
+    
+    const newId = id && typeof id === 'string' ? id : uuid();
+    if (questionById.has(newId)) continue; // Skip duplicates
+    
+    const newQuestion: AnyQuestion = {
+      id: newId,
+      category: category as QuizCategory,
+      mechanic: mechanic as AnyQuestion['mechanic'],
+      question,
+      points: Number(points) || 1,
+      createdAt: Date.now(),
+      catalogId: (rest as any)?.catalogId || 'default',
+      mediaSlots: (rest as any)?.mediaSlots,
+      ...(rest as any)
+    };
+    
+    customQuestions.push(newQuestion);
+    questions.push(newQuestion);
+    questionById.set(newId, newQuestion);
+    created.push(newQuestion);
+  }
+
+  persistCustomQuestions();
+  return res.json({ ok: true, count: created.length, questions: created });
+});
+
+// Frage aktualisieren (nur f?r Custom empfohlen)
+app.put('/api/questions/:id', (req, res) => {
+  const { id } = req.params;
+  if (!questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
+  const prev = questionById.get(id)!;
+  const updated = { ...prev, ...req.body, id, updatedAt: Date.now() };
+  // replace in customQuestions if exists, else allow patching base in-memory
+  const idx = customQuestions.findIndex((q) => q.id === id);
+  if (idx >= 0) {
+    customQuestions[idx] = updated;
+    persistCustomQuestions();
+  }
+  const baseIdx = questions.findIndex((q) => q.id === id);
+  if (baseIdx >= 0) questions[baseIdx] = updated;
+  questionById.set(id, updated);
+  return res.json({ ok: true, question: updated });
+});
+
+// Quizzes l?schen
+app.delete('/api/quizzes/:id', (req, res) => {
+  const { id } = req.params;
+  if (!id || !quizzes.has(id)) return res.status(404).json({ error: 'Quiz nicht gefunden' });
+  quizzes.delete(id);
+  return res.json({ ok: true });
+});
+
+// --- Socket.IO --------------------------------------------------------------
+io.on('connection', (socket: Socket) => {
+  socket.on('joinRoom', (roomCode: string) => {
+    const resolved = normalizeRoomCode(roomCode);
+    if (!resolved) {
+      socket.emit('error', 'roomCode fehlt');
+      return;
+    }
+    socket.join(resolved);
+    const room = ensureRoom(resolved);
+    const snapshot = buildSyncState(room);
+    socket.emit('syncState', snapshot);
+    socket.emit('server:stateUpdate', buildStateUpdatePayload(room));
+  });
+  socket.on(
+    'host:createSession',
+    (
+      payload: { quizId?: string; language?: Language },
+      ack?: (resp: { ok: boolean; roomCode?: string; error?: string }) => void
+    ) => {
+      try {
+        const { quizId, language } = payload || {};
+        if (!quizId || !quizzes.has(quizId)) throw new Error('quizId fehlt oder unbekannt');
+        const code = SINGLE_SESSION_MODE ? DEFAULT_ROOM_CODE : createRoomCode();
+        if (SINGLE_SESSION_MODE) {
+          rooms.delete(code);
+        }
+        const room = ensureRoom(code);
+        if (language === 'de' || language === 'en' || language === 'both') {
+          room.language = language;
+        }
+        configureRoomForQuiz(room, quizId);
+        broadcastStateByCode(room.roomCode);
+        respond(ack, { ok: true, roomCode: code, state: buildStateUpdatePayload(room) });
+      } catch (err) {
+        respond(ack, { ok: false, error: (err as Error).message });
+      }
+    }
+  );
+
+  socket.on(
+    'team:join',
+    (
+      payload: { roomCode?: string; teamName?: string; teamId?: string },
+      ack?: (resp: { ok: boolean; error?: string; team?: Team; board?: BingoBoard }) => void
+    ) => {
+      try {
+        const { roomCode, teamName, teamId } = payload || {};
+        const resolved = requireRoomCode(roomCode);
+        if (!teamName) throw new Error('teamName fehlt');
+        const room = ensureRoom(resolved);
+        touchRoom(room);
+        const result = joinTeamToRoom(room, teamName, teamId);
+        const previousTeamId = socket.data.teamId as string | undefined;
+        const previousRoom = socket.data.roomCode as string | undefined;
+        if (previousTeamId && previousRoom && (previousTeamId !== result.team.id || previousRoom !== room.roomCode)) {
+          const oldRoom = rooms.get(previousRoom);
+          if (oldRoom) {
+            markTeamDisconnected(oldRoom, previousTeamId);
+            broadcastState(oldRoom);
+          }
+        }
+        if (!previousTeamId || previousTeamId !== result.team.id || previousRoom !== room.roomCode) {
+          markTeamConnected(room, result.team.id);
+        }
+        socket.data.teamId = result.team.id;
+        socket.data.roomCode = room.roomCode;
+        socket.data.role = 'team';
+        broadcastState(room);
+        respond(ack, { ok: true, team: result.team, board: result.board });
+      } catch (err) {
+        respond(ack, { ok: false, error: (err as Error).message });
+      }
+    }
+  );
+
+  const withRoom = (
+    roomCode: string | undefined,
+    ack: unknown,
+    handler: (room: RoomState) => unknown
+  ) => {
+    const resolved = normalizeRoomCode(roomCode);
+    if (!resolved) {
+      respond(ack, { ok: false, error: 'roomCode fehlt' });
+      return;
+    }
+    const room = ensureRoom(resolved);
+    touchRoom(room);
+    try {
+      const result = handler(room);
+      respond(ack, { ok: true, ...((result || {}) as object) });
+    } catch (err) {
+      respond(ack, { ok: false, error: (err as Error).message });
+    }
+  };
+
+  socket.on('host:next', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => handleHostNextAdvance(room));
+  });
+
+  socket.on('host:restartSession', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => restartRoomSession(room));
+  });
+
+  socket.on('host:lock', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      const success = evaluateCurrentQuestion(room);
+      return { locked: success };
+    });
+  });
+
+  socket.on('host:reveal', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => revealAnswersForRoom(room));
+  });
+
+  socket.on('host:toggleScoreboardOverlay', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      room.scoreboardOverlayForced = !room.scoreboardOverlayForced;
+      broadcastState(room);
+      return { forced: room.scoreboardOverlayForced };
+    });
+  });
+
+  socket.on(
+    'host:startPotato',
+    (
+      payload: { roomCode?: string; themes?: string[]; themesText?: string },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        initializePotatoStage(room, payload);
+        broadcastState(room);
+        return { pool: room.potatoPool };
+      });
+    }
+  );
+
+  socket.on(
+    'host:banPotatoTheme',
+    (payload: { roomCode?: string; teamId?: string; theme?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        const limit = room.potatoBanLimits[payload.teamId] ?? 0;
+        if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
+        const current = room.potatoBans[payload.teamId] ?? [];
+        if (current.length >= limit) throw new Error('Ban-Limit erreicht');
+        const themeName = (payload?.theme || '').trim();
+        if (!themeName) throw new Error('Theme fehlt');
+        const index = room.potatoPool.findIndex(
+          (t) => t.title.toLowerCase() === themeName.toLowerCase()
+        );
+        if (index === -1) throw new Error('Theme nicht verfügbar');
+        const actualTheme = room.potatoPool.splice(index, 1)[0];
+        room.potatoBans[payload.teamId] = [...current, actualTheme];
+        recomputeRoomWarnings(room);
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:confirmPotatoThemes', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.potatoPhase !== 'BANNING' && room.potatoPhase !== 'ROUND_END') {
+        throw new Error('Themes können aktuell nicht gesetzt werden');
+      }
+      if (room.potatoPool.length < POTATO_ROUNDS) {
+        throw new Error('Nicht genug Themen übrig');
+      }
+      const shuffled = [...room.potatoPool].sort(() => Math.random() - 0.5);
+      room.potatoSelectedThemes = shuffled.slice(0, POTATO_ROUNDS);
+      room.potatoPhase = 'ROUND_END';
+      room.potatoRoundIndex = -1;
+      room.potatoCurrentTheme = null;
+      room.potatoUsedAnswers = [];
+      room.potatoUsedAnswersNormalized = [];
+      room.potatoLives = {};
+      room.potatoTurnOrder = [];
+      room.potatoLastConflict = null;
+      setPotatoActiveTeam(room, null);
+      broadcastState(room);
+      return { selected: room.potatoSelectedThemes };
+    });
+  });
+
+  socket.on('host:potatoStartRound', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      startPotatoRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:potatoSubmitTurn',
+    (
+      payload: {
+        roomCode?: string;
+        answer?: string;
+        verdict: 'correct' | 'strike';
+        override?: boolean;
+      },
+      ack
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'PLAYING') throw new Error('Keine aktive Runde');
+        if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
+        if (payload.verdict === 'correct') {
+          const attempt = evaluatePotatoAttempt(
+            room,
+            room.potatoActiveTeamId,
+            payload?.answer ?? '',
+            { overrideDuplicate: payload?.override }
+          );
+          handlePotatoAttemptAftermath(room, attempt);
+          broadcastState(room);
+          return { attempt };
+        } else {
+          applyPotatoStrike(room, room.potatoActiveTeamId);
+          broadcastState(room);
+          return { strike: true };
+        }
+      });
+    }
+  );
+
+  socket.on(
+    'team:submitPotatoAnswer',
+    (payload: { roomCode?: string; teamId?: string; text?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (!payload?.teamId) throw new Error('teamId fehlt');
+        const attempt = evaluatePotatoAttempt(room, payload.teamId, payload?.text ?? '');
+         handlePotatoAttemptAftermath(room, attempt);
+        broadcastState(room);
+        return { attempt };
+      });
+    }
+  );
+
+  socket.on('host:potatoStrikeActive', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
+      applyPotatoStrike(room, room.potatoActiveTeamId);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:potatoNextTurn', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      advancePotatoTurn(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:potatoOverrideAttempt',
+    (
+      payload: { roomCode?: string; attemptId?: string; action: 'accept' | 'acceptDuplicate' | 'reject' },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (!room.potatoLastAttempt) throw new Error('Kein Versuch vorhanden');
+        if (!payload?.attemptId || room.potatoLastAttempt.id !== payload.attemptId) {
+          throw new Error('Attempt nicht gefunden');
+        }
+        const attempt = { ...room.potatoLastAttempt };
+        if (payload.action === 'accept' || payload.action === 'acceptDuplicate') {
+          if (attempt.verdict !== 'ok') {
+            const alreadyUsed = room.potatoUsedAnswersNormalized.includes(attempt.normalized);
+            if (!alreadyUsed) {
+              room.potatoUsedAnswers = [...room.potatoUsedAnswers, attempt.text];
+              room.potatoUsedAnswersNormalized = [...room.potatoUsedAnswersNormalized, attempt.normalized];
+            }
+            attempt.verdict = 'ok';
+            attempt.reason = payload.action === 'acceptDuplicate' ? 'duplicate-override' : undefined;
+            attempt.overridden = true;
+            room.potatoLastConflict = null;
+            room.potatoLastAttempt = attempt;
+            handlePotatoAttemptAftermath(room, attempt);
+          }
+        } else if (payload.action === 'reject') {
+          attempt.verdict = 'invalid';
+          attempt.reason = 'rejected';
+          attempt.overridden = true;
+          room.potatoLastConflict = null;
+          room.potatoLastAttempt = attempt;
+        }
+        broadcastState(room);
+        return { attempt: room.potatoLastAttempt };
+      });
+    }
+  );
+
+  socket.on(
+    'host:potatoEndRound',
+    (payload: { roomCode?: string; winnerId?: string | null }, ack) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.potatoPhase !== 'PLAYING') {
+          throw new Error('Runde ist nicht aktiv');
+        }
+        const winnerId =
+          payload?.winnerId && room.teams[payload.winnerId] ? payload.winnerId : null;
+        if (!winnerId) {
+          const alive = alivePotatoTeams(room);
+          if (!alive.length) throw new Error('Kein Team verfügbar');
+          completePotatoRound(room, alive[0]);
+        } else {
+          completePotatoRound(room, winnerId);
+        }
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:potatoNextRound', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.potatoPhase !== 'ROUND_END') {
+        throw new Error('Runde ist noch aktiv');
+      }
+      if (room.potatoRoundIndex >= POTATO_ROUNDS - 1) {
+        throw new Error('Alle Runden abgeschlossen');
+      }
+      startPotatoRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:potatoFinish', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      finishPotatoStage(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:showAwards', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:rundlaufBanCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') throw new Error('Rundlauf-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufTopTeamId && payload.teamId !== room.rundlaufTopTeamId) {
+          throw new Error('Nur Platz 1 darf bannen');
+        }
+        const limit = Math.min(2, Math.max(0, room.rundlaufPool.length - 1));
+        if (room.rundlaufBans.length >= limit) throw new Error('Ban-Limit erreicht');
+        const categoryId = (payload.categoryId ?? '').trim();
+        if (!categoryId) throw new Error('Kategorie fehlt');
+        const exists = room.rundlaufPool.find((entry) => entry.id === categoryId);
+        if (!exists) throw new Error('Kategorie nicht verfuegbar');
+        if (room.rundlaufBans.includes(categoryId)) throw new Error('Kategorie bereits gebannt');
+        if (room.rundlaufPinnedCategory?.id === categoryId) throw new Error('Kategorie ist bereits ausgewaehlt');
+        room.rundlaufBans = [...room.rundlaufBans, categoryId];
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'host:rundlaufPickCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') throw new Error('Rundlauf-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufLastTeamId && payload.teamId !== room.rundlaufLastTeamId) {
+          throw new Error('Nur letzter Platz darf waehlen');
+        }
+        if (room.rundlaufPinnedCategory) throw new Error('Kategorie bereits gesetzt');
+        const categoryId = (payload.categoryId ?? '').trim();
+        if (!categoryId) throw new Error('Kategorie fehlt');
+        const exists = room.rundlaufPool.find((entry) => entry.id === categoryId);
+        if (!exists) throw new Error('Kategorie nicht verfuegbar');
+        if (room.rundlaufBans.includes(categoryId)) throw new Error('Kategorie ist gebannt');
+        room.rundlaufPinnedCategory = exists;
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on('host:rundlaufConfirmCategories', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+        throw new Error('Rundlauf-Auswahl nicht aktiv');
+      }
+      if (!hasRundlaufSelectionReady(room)) {
+        throw new Error('Auswahl nicht abgeschlossen');
+      }
+      finalizeRundlaufSelection(room);
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+      broadcastState(room);
+      return { selected: room.rundlaufSelectedCategories };
+    });
+  });
+
+  socket.on(
+    'team:rundlaufBanCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+          throw new Error('Rundlauf-Auswahl nicht aktiv');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyRundlaufBan(room, payload.teamId, payload.categoryId || '');
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'team:rundlaufPickCategory',
+    (payload: { roomCode?: string; teamId?: string; categoryId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SELECT') {
+          throw new Error('Rundlauf-Auswahl nicht aktiv');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyRundlaufPick(room, payload.teamId, payload.categoryId || '');
+        broadcastState(room);
+        return { pinned: room.rundlaufPinnedCategory };
+      });
+    }
+  );
+
+  socket.on('host:rundlaufStartRound', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_ROUND_INTRO') throw new Error('Rundlauf-Intro nicht aktiv');
+      startRundlaufRound(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'team:submitRundlaufAnswer',
+    (payload: { roomCode?: string; teamId?: string; text?: string; pass?: boolean }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        if (room.rundlaufActiveTeamId !== payload.teamId) throw new Error('Team ist nicht am Zug');
+        if (payload.pass) {
+          eliminateRundlaufTeam(room, payload.teamId, 'pass');
+          broadcastState(room);
+          return { eliminated: true };
+        }
+        const attempt = evaluateRundlaufAttempt(room, payload.teamId, payload?.text ?? '');
+        room.rundlaufLastAttempt = attempt;
+        if (attempt.verdict === 'timeout') {
+          eliminateRundlaufTeam(room, payload.teamId, 'timeout');
+        } else if (attempt.verdict === 'ok') {
+          if (!room.rundlaufUsedAnswersNormalized.includes(attempt.normalized)) {
+            room.rundlaufUsedAnswers = [...room.rundlaufUsedAnswers, attempt.text];
+            room.rundlaufUsedAnswersNormalized = [...room.rundlaufUsedAnswersNormalized, attempt.normalized];
+          }
+          if (!maybeEndRundlaufOnExhaustedList(room)) {
+            advanceRundlaufTurn(room);
+          }
+        }
+        broadcastState(room);
+        return { attempt };
+      });
+    }
+  );
+
+  socket.on(
+    'host:rundlaufMarkAnswer',
+    (payload: { roomCode?: string; attemptId?: string; verdict?: 'ok' | 'dup' | 'invalid' }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        if (!room.rundlaufLastAttempt) throw new Error('Kein Versuch vorhanden');
+        if (!payload?.attemptId || payload.attemptId !== room.rundlaufLastAttempt.id) {
+          throw new Error('Attempt nicht gefunden');
+        }
+        const verdict = payload.verdict ?? 'invalid';
+        const attempt = { ...room.rundlaufLastAttempt, verdict };
+        room.rundlaufLastAttempt = attempt;
+        if (verdict === 'ok') {
+          if (!room.rundlaufUsedAnswersNormalized.includes(attempt.normalized)) {
+            room.rundlaufUsedAnswers = [...room.rundlaufUsedAnswers, attempt.text];
+            room.rundlaufUsedAnswersNormalized = [...room.rundlaufUsedAnswersNormalized, attempt.normalized];
+          }
+          advanceRundlaufTurn(room);
+        }
+        broadcastState(room);
+        return { attempt };
+      });
+    }
+  );
+
+  socket.on('host:rundlaufEliminateTeam', (payload: { roomCode?: string; teamId?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+      if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+      eliminateRundlaufTeam(room, payload.teamId, 'eliminated');
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:rundlaufNextTeam', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+      advanceRundlaufTurn(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'host:rundlaufEndRound',
+    (payload: { roomCode?: string; winnerIds?: string[] }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'RUNDLAUF_PLAY') throw new Error('Rundlauf ist nicht aktiv');
+        const winners =
+          payload?.winnerIds?.filter((id) => room.teams[id]) ?? aliveRundlaufTeams(room);
+        const unique = Array.from(new Set(winners));
+        unique.forEach((teamId) => {
+          if (room.teams[teamId]) {
+            room.teams[teamId].score = (room.teams[teamId].score ?? 0) + RUNDLAUF_ROUND_POINTS;
+          }
+        });
+        room.rundlaufRoundWinners = unique;
+        room.rundlaufActiveTeamId = null;
+        room.rundlaufDeadlineAt = null;
+        room.rundlaufTurnStartedAt = null;
+        clearRundlaufTurnTimer(room.roomCode);
+        applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'host:startBlitz',
+    (payload: { roomCode?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        const pool = initializeBlitzStage(room);
+        broadcastState(room);
+        return { pool };
+      });
+    }
+  );
+
+  socket.on('host:blitzOpenSelection', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzPhase !== 'READY' && room.blitzPhase !== 'BANNING') {
+        throw new Error('Blitz ist nicht bereit');
+      }
+      room.blitzPhase = 'BANNING';
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_BANNING' });
+      broadcastState(room);
+      return { phase: room.blitzPhase };
+    });
+  });
+
+  socket.on(
+    'host:banBlitzTheme',
+    (payload: { roomCode?: string; teamId?: string; theme?: string; themeId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.blitzPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        const themeKey = (payload?.themeId || payload?.theme || '').trim();
+        applyBlitzBan(room, payload.teamId, themeKey);
+        recomputeRoomWarnings(room);
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'host:pickBlitzTheme',
+    (payload: { roomCode?: string; teamId?: string; themeId?: string; theme?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.blitzPhase !== 'BANNING') throw new Error('Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        const themeKey = (payload?.themeId || payload?.theme || '').trim();
+        applyBlitzPick(room, payload.teamId, themeKey);
+        broadcastState(room);
+        return { pinned: room.blitzPinnedTheme };
+      });
+    }
+  );
+
+  socket.on('host:confirmBlitzThemes', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzPhase !== 'BANNING') {
+        throw new Error('Themes koennen aktuell nicht gesetzt werden');
+      }
+      if (!hasBlitzSelectionReady(room)) {
+        throw new Error('Auswahl nicht abgeschlossen');
+      }
+      finalizeBlitzSelection(room);
+      startBlitzSet(room);
+      broadcastState(room);
+      return { selected: room.blitzSelectedThemes };
+    });
+  });
+
+  socket.on(
+    'team:blitzBanCategory',
+    (payload: { roomCode?: string; teamId?: string; themeId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyBlitzBan(room, payload.teamId, payload.themeId || '');
+        broadcastState(room);
+      });
+    }
+  );
+
+  socket.on(
+    'team:blitzPickCategory',
+    (payload: { roomCode?: string; teamId?: string; themeId?: string }, ack?: AckFn) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
+        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
+        applyBlitzPick(room, payload.teamId, payload.themeId || '');
+        broadcastState(room);
+        return { pinned: room.blitzPinnedTheme };
+      });
+    }
+  );
+
+  socket.on('host:blitzStartSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      startBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:lockBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      enforceBlitzDeadline(room);
+      lockBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:revealBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.blitzPhase === 'PLAYING') {
+        lockBlitzSet(room);
+      }
+      if (room.blitzPhase !== 'SET_END') throw new Error('Set noch nicht abgeschlossen');
+      computeBlitzResults(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:nextBlitzSet', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      const totalSets = Math.min(BLITZ_SETS, room.blitzSelectedThemes.length || BLITZ_SETS);
+      if (room.blitzSetIndex >= totalSets - 1) {
+        throw new Error('Alle Sets gespielt');
+      }
+      startBlitzSet(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on('host:finishBlitz', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      finishBlitzStage(room);
+      broadcastState(room);
+    });
+  });
+
+  socket.on(
+    'team:submitBlitzAnswers',
+    (
+      payload: { roomCode?: string; teamId?: string; answers?: string[] },
+      ack?: AckFn
+    ) => {
+      withRoom(payload?.roomCode, ack, (room) => {
+        enforceBlitzDeadline(room);
+        if (room.blitzPhase !== 'PLAYING' || (room.gameState !== 'BLITZ_PLAYING' && room.gameState !== 'BLITZ')) {
+          broadcastState(room);
+          throw new Error('Blitz ist nicht aktiv');
+        }
+        if (room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
+          lockBlitzSet(room);
+          broadcastState(room);
+          throw new Error('Zeit abgelaufen');
+        }
+        if (!payload?.teamId || !room.teams[payload.teamId]) {
+          throw new Error('Team unbekannt');
+        }
+        const answers = Array.isArray(payload.answers) ? payload.answers : [];
+        room.blitzAnswersByTeam[payload.teamId] = answers
+          .map((value) => String(value ?? '').slice(0, 120))
+          .slice(0, BLITZ_ITEMS_PER_SET);
+        if (!room.blitzSubmittedTeamIds.includes(payload.teamId)) {
+          room.blitzSubmittedTeamIds = [...room.blitzSubmittedTeamIds, payload.teamId];
+        }
+        broadcastState(room);
+        return { submitted: true };
+      });
+    }
+  );
+
+  socket.on('beamer:show-rules', (roomCode: string) => {
+    const room = ensureRoom(roomCode);
+    room.screen = 'lobby';
+    room.questionPhase = 'idle';
+    io.to(roomCode).emit('beamer:show-rules');
+  });
+
+  socket.on('teamReady', ({ roomCode, teamId, isReady }: { roomCode: string; teamId: string; isReady: boolean }) => {
+    const room = ensureRoom(roomCode);
+    const team = room.teams[teamId];
+    if (!team) return;
+    team.isReady = isReady;
+    broadcastTeamsReady(room);
+    broadcastState(room);
+  });
+
+  socket.on('disconnect', () => {
+    const role = socket.data.role as string | undefined;
+    const teamId = socket.data.teamId as string | undefined;
+    const roomCode = socket.data.roomCode as string | undefined;
+    if (role !== 'team' || !teamId || !roomCode) return;
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    markTeamDisconnected(room, teamId);
+    const connectedTeamIds = getConnectedTeamIds(room);
+    const answeredConnected = connectedTeamIds.filter((id) => room.answers[id]).length;
+    if (room.gameState === 'Q_ACTIVE' && room.timerEndsAt && connectedTeamIds.length > 0) {
+      if (answeredConnected >= connectedTeamIds.length) {
+        clearQuestionTimers(room);
+        evaluateCurrentQuestion(room);
+      }
+    }
+    if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufActiveTeamId === teamId) {
+      advanceRundlaufTurn(room);
+    }
+    broadcastState(room);
+  });
+});
+
+// Periodic cleanup
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of rooms.entries()) {
+    if (now - room.lastActivityAt > ROOM_IDLE_CLEANUP_MS) {
+      rooms.delete(code);
+      log(code, 'Room removed due to inactivity');
+    }
+  }
+}, ROOM_IDLE_CLEANUP_MS);
+
+// --- Start server -----------------------------------------------------------
+const listenWithFallback = (port: number, attemptsLeft: number) => {
+  httpServer
+    .listen(port, () => {
+      console.log(`Quiz-Backend l?uft auf Port ${port}`);
+    })
+    .on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {
+        const nextPort = port + 1;
+        console.warn(`Port ${port} belegt, versuche ${nextPort} ...`);
+        httpServer.close(() => listenWithFallback(nextPort, attemptsLeft - 1));
+      } else {
+        console.error('Serverstart fehlgeschlagen:', err);
+        process.exit(1);
+      }
+    });
+};
+
+listenWithFallback(PORT, 3);
+
+
+
+
+type AckFn<T = unknown> = (payload: T) => void;
+const respond = <T>(ack: unknown, payload: T) => {
+  if (typeof ack === 'function') {
+    (ack as AckFn<T>)(payload);
+  }
+};
+
+// End of server module
+

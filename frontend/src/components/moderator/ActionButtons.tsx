@@ -3,6 +3,23 @@ import { QuizTemplate } from '@shared/quizTypes';
 import { startTimer, stopTimer, useQuiz, fetchTimer } from '../../api';
 import { ViewPhase } from './types';
 
+const adminTokenKey = (roomCode: string) => `admin-token-${roomCode}`;
+
+const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
+  if (!roomCode || typeof window === 'undefined') return null;
+  const key = adminTokenKey(roomCode);
+  const existing = sessionStorage.getItem(key);
+  if (existing) return existing;
+  const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+  if (!res.ok) throw new Error('Admin-Session konnte nicht gestartet werden');
+  const { token } = await res.json();
+  if (token) {
+    sessionStorage.setItem(key, token);
+    return token as string;
+  }
+  throw new Error('Admin-Token fehlt');
+};
+
 type ActionState = {
   quiz: boolean;
   next: boolean;
@@ -101,6 +118,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               doAction(async () => {
                 setActionState((s) => ({ ...s, quiz: true }));
                 if (!selectedQuiz) throw new Error('Bitte ein Quiz waehlen');
+                await ensureAdminSession(roomCode);
                 await useQuiz(roomCode, selectedQuiz);
                 localStorage.setItem('moderatorSelectedQuiz', selectedQuiz);
               }, 'Quiz gesetzt').finally(() => setActionState((s) => ({ ...s, quiz: false })))

@@ -144,6 +144,23 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
   return TYPING_TAGS.has(tagName);
 };
 
+const adminTokenKey = (roomCode: string) => `admin-token-${roomCode}`;
+
+const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
+  if (!roomCode || typeof window === 'undefined') return null;
+  const key = adminTokenKey(roomCode);
+  const existing = sessionStorage.getItem(key);
+  if (existing) return existing;
+  const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+  if (!res.ok) throw new Error('Admin-Session konnte nicht gestartet werden');
+  const { token } = await res.json();
+  if (token) {
+    sessionStorage.setItem(key, token);
+    return token as string;
+  }
+  throw new Error('Admin-Token fehlt');
+};
+
 function ModeratorPage(): React.ReactElement {
   const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
@@ -297,6 +314,14 @@ function ModeratorPage(): React.ReactElement {
     if (!SINGLE_SESSION_MODE || typeof window === 'undefined') return;
     localStorage.setItem('moderatorRoom', DEFAULT_ROOM_CODE);
   }, []);
+
+  useEffect(() => {
+    if (!roomCode) return;
+    ensureAdminSession(roomCode).catch((err) => {
+      setToast((err as Error).message || 'Admin-Session fehlgeschlagen');
+      setTimeout(() => setToast(null), 2200);
+    });
+  }, [roomCode]);
 
   useEffect(() => {
     if (reconnectPromptedRef.current) return;
@@ -886,6 +911,7 @@ function ModeratorPage(): React.ReactElement {
         
         // Quiz SOFORT setzen, kein zweiter Schritt mehr nötig
         try {
+          await ensureAdminSession(nextCode);
           await useQuiz(nextCode, selectedQuiz);
           await setLanguage(nextCode, language);
         } catch (err) {
@@ -1514,6 +1540,7 @@ function ModeratorPage(): React.ReactElement {
       onNext={handleNextQuestion}
       onLock={handleLockQuestion}
       onReveal={handleReveal}
+      ensureAdminSession={ensureAdminSession}
     />
   );
 

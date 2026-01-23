@@ -8,12 +8,17 @@ const primary = draftTheme?.color || '#6dd5fa';
 export const pageStyleTeam: CSSProperties = {
   position: 'relative',
   minHeight: '100vh',
-  padding: 'clamp(12px, 4vw, 24px) clamp(8px, 3vw, 14px) clamp(24px, 6vw, 32px)',
+  paddingTop: 'calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-top))',
+  paddingRight: 'clamp(8px, 3vw, 14px)',
+  paddingBottom: 'calc(clamp(24px, 6vw, 32px) + env(safe-area-inset-bottom))',
+  paddingLeft: 'clamp(8px, 3vw, 14px)',
   overflow: 'hidden',
   color: 'white',
   background: draftTheme?.background
-    ? `url(${draftTheme.background}) center/cover fixed`
-    : 'url("/background.png") center/cover fixed',
+    ? `url(${draftTheme.background}) center/cover` // drop fixed for mobile jank
+    : 'url("/background.png") center/cover',
+  backgroundAttachment:
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'scroll' : 'fixed',
   fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily
 };
 
@@ -29,25 +34,18 @@ export const gridOverlay: CSSProperties = {
 
 export const contentShell: CSSProperties = {
   position: 'relative',
-  maxWidth: '90vw',
   width: '100%',
+  maxWidth: 'min(760px, calc(100vw - 16px))',
   margin: '0 auto',
   display: 'grid',
   gap: 'clamp(8px, 2vw, 14px)',
-  zIndex: 2,
-  // Responsive max-widths
-  // Mobile: ~320-380px, Tablet: ~600px, Desktop: ~760px
-  ...(typeof window !== 'undefined' && window.innerWidth < 640
-    ? { maxWidth: 'min(calc(100vw - 16px), 380px)' }
-    : typeof window !== 'undefined' && window.innerWidth < 1024
-    ? { maxWidth: 'min(calc(100vw - 24px), 600px)' }
-    : { maxWidth: '760px' })
+  zIndex: 2
 };
 
 export const footerLogo: CSSProperties = {
   position: 'fixed',
   left: '50%',
-  bottom: 32,
+  bottom: 'calc(32px + env(safe-area-inset-bottom))',
   transform: 'translateX(-50%)',
   pointerEvents: 'none',
   zIndex: 0,

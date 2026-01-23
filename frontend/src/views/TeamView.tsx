@@ -82,7 +82,7 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
     <div
       style={{
         position: 'fixed',
-        top: 8,
+        top: 'calc(8px + env(safe-area-inset-top))',
         left: '50%',
         transform: 'translateX(-50%)',
         padding: '8px 12px',
@@ -3507,7 +3507,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           onClick={() => setShowBingoPanel((v) => (canMarkBingo ? true : !v))}
           style={{
             position: 'fixed',
-            bottom: 14,
+            bottom: 'calc(14px + env(safe-area-inset-bottom))',
             left: '50%',
             transform: 'translateX(-50%)',
             padding: '12px 18px',

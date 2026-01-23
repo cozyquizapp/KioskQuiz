@@ -2533,9 +2533,8 @@ const initializeBlitzStage = (room: RoomState) => {
   const standings = getTeamStandings(room);
   room.blitzTopTeamId = standings[0]?.id ?? null;
   room.blitzLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
-  const activeTeamsCount = getConnectedTeamIds(room).length || Object.keys(room.teams).length;
-  const dynamicBanLimit = activeTeamsCount <= 2 || visibleCount <= 4 ? 1 : 2;
-  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: dynamicBanLimit } : {};
+  const BAN_LIMIT = 2; // always two bans for the top team
+  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: BAN_LIMIT } : {};
   room.blitzPinnedTheme = null;
   room.blitzSelectedThemes = [];
   room.blitzSetIndex = -1;

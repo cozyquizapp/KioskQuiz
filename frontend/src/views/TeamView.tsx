@@ -994,6 +994,16 @@ function TeamView({ roomCode }: TeamViewProps) {
     } catch (error) {
       console.error(error);
       const msg = error instanceof Error ? error.message : (language === 'de' ? 'Antwort konnte nicht gesendet werden.' : 'Could not submit answer.');
+      const normalized = msg.toLowerCase();
+      if (normalized.includes('team unbekannt') || normalized.includes('team unknown')) {
+        // Team-ID ist ungültig (Session neu gestartet oder altes Team). Erzwinge Rejoin.
+        localStorage.removeItem(storageKey('id'));
+        savedIdRef.current = null;
+        setTeamId(null);
+        setPhase('notJoined');
+        setMessage(language === 'de' ? 'Team nicht mehr verbunden. Bitte neu beitreten.' : 'Team not recognized. Please rejoin.');
+        return;
+      }
       setMessage(msg);
     }
   };

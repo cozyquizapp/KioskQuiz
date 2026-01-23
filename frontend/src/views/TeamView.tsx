@@ -1172,19 +1172,22 @@ function TeamView({ roomCode }: TeamViewProps) {
         {hasTimer && remainingSeconds > 0 && (
           <span
             style={{
-              position: 'relative',
-              zIndex: 1,
-              fontSize: 11,
-              fontWeight: 700,
-              color: remainingSeconds <= 10 
-                ? `hsl(0, 100%, ${Math.max(40, 60 - remainingSeconds * 2)}%)`
+              position: 'absolute',
+              right: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              fontSize: remainingSeconds <= 10 ? 20 : 16,
+              fontWeight: 900,
+              color: remainingSeconds <= 10
+                ? `hsl(0, 100%, ${Math.max(35, 60 - remainingSeconds * 2)}%)`
                 : '#cbd5e1',
-              opacity: remainingSeconds <= 10 ? 1 : 0.8,
-              animation: remainingSeconds <= 10 ? 'pulse-timer 0.6s ease-in-out infinite' : 'none',
-              textShadow: remainingSeconds <= 5 ? '0 0 8px rgba(255, 107, 107, 0.6)' : 'none'
+              opacity: 1,
+              animation: remainingSeconds <= 10 ? 'pulse-timer 0.8s ease-in-out infinite' : 'none',
+              textShadow: remainingSeconds <= 5 ? '0 0 10px rgba(255, 79, 158, 0.6)' : 'none'
             }}
           >
-            {t('timeLeft')(Math.max(0, remainingSeconds))}
+            {Math.max(0, remainingSeconds)}s
           </span>
         )}
         <span

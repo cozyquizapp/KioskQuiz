@@ -4524,7 +4524,6 @@ const runNextQuestion = (room: RoomState) => {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
   const askedCountBefore = room.askedQuestionIds.length;
-  room.nextStage = null;
   const nextId = room.remainingQuestionIds.shift();
   if (!nextId) {
     throw new Error('Keine naechste Frage gefunden');
@@ -4532,19 +4531,22 @@ const runNextQuestion = (room: RoomState) => {
   startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
   const askedCountAfter = room.askedQuestionIds.length;
   
-  if (askedCountAfter === 10 && !room.nextStage) {
+  // Check for halftime after question 10 or finals after question 20
+  if (askedCountAfter === 10) {
     room.nextStage = 'BLITZ';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
   }
-  if (askedCountAfter === 20 && !room.nextStage) {
+  if (askedCountAfter === 20) {
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, finalsTrigger: true };
   }
   
+  // Normal question flow
+  room.nextStage = null;
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

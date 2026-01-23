@@ -38,31 +38,6 @@ import {
   pageStyleTeam,
   contentShell,
   footerLogo,
-        {hasTimer && (
-          <span
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: `${Math.max(0, Math.min(100, progress))}%`,
-              background: 'linear-gradient(180deg, rgba(255,79,158,0.16), rgba(217,70,239,0.10))',
-              boxShadow: 'inset 0 0 18px rgba(255,79,158,0.22)',
-              zIndex: 0,
-              overflow: 'hidden'
-            }}
-          >
-            <span
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 50%)',
-                opacity: 0.25,
-                animation: 'water-flow 2.4s linear infinite'
-              }}
-            />
-          </span>
-        )}
   hourglassStyle,
   headerBarTeam,
   pillSmall,
@@ -1184,39 +1159,31 @@ function TeamView({ roomCode }: TeamViewProps) {
         disabled={!canAnswer}
       >
         {hasTimer && canAnswer && (
-          <>
-            <div
+          <span
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: `${Math.max(0, Math.min(100, progress))}%`,
+              background: 'linear-gradient(180deg, rgba(255,79,158,0.16), rgba(217,70,239,0.10))',
+              boxShadow: 'inset 0 0 18px rgba(255,79,158,0.22)',
+              borderRadius: 12,
+              zIndex: 0,
+              overflow: 'hidden',
+              pointerEvents: 'none'
+            }}
+          >
+            <span
               style={{
                 position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: `${Math.max(0, Math.min(100, progress))}%`,
-                backgroundImage:
-                  `linear-gradient(90deg, rgba(255,79,158,0.18), rgba(217,70,239,0.14)), ` +
-                  `repeating-linear-gradient(-45deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 8px, transparent 8px, transparent 16px)`,
-                backgroundSize: '300% 100%, 16px 16px',
-                animation: 'timer-flow 8s linear infinite',
-                borderRadius: 12,
-                filter: 'saturate(140%)',
-                zIndex: 0,
-                pointerEvents: 'none'
+                inset: 0,
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 50%)',
+                opacity: 0.25,
+                animation: 'water-flow 2.4s linear infinite'
               }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                left: `calc(${Math.max(0, Math.min(100, progress))}% - 2px)`,
-                top: 0,
-                bottom: 0,
-                width: 2,
-                background: 'rgba(255,79,158,0.6)',
-                boxShadow: '0 0 12px rgba(255,79,158,0.6)',
-                zIndex: 0,
-                pointerEvents: 'none'
-              }}
-            />
-          </>
+          </span>
         )}
         <span
           style={{

@@ -3767,45 +3767,37 @@ const evaluateBunteSubmission = (
   const segmentCap = getBunteMaxAward(question, maxPoints);
   const safeMax = Math.max(1, Math.min(maxPoints, segmentCap));
   if (setup.kind === 'top5') {
-    // TODO(TOP5): Unordered "hits-only" mode (order irrelevant), score per hit.
     const submission = payload as BunteTueteTop5Submission;
-    const order = Array.isArray(submission.order) ? submission.order : [];
-    const target =
+    const rawOrder = Array.isArray(submission.order) ? submission.order : [];
+    const normalizedOrder = Array.from(new Set(rawOrder))
+      .map((entry) => (typeof entry === 'string' ? entry.trim().toLowerCase() : ''))
+      .filter(Boolean);
+
+    const targetRaw =
       Array.isArray(setup.correctOrder) && setup.correctOrder.length > 0
         ? setup.correctOrder
         : setup.items?.map((item: any) => item.id) ?? [];
-    if (!target.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
-    const distinctOrder = Array.from(new Set(order.filter(Boolean)));
-    const hits = distinctOrder.filter((id) => target.includes(id));
-    let positionMatches = 0;
-    target.forEach((correctId: string, idx: number) => {
-      if (order[idx] === correctId) positionMatches += 1;
-    });
-    if (setup.scoringMode === 'position') {
-      const normalized = positionMatches / (target.length || 1);
-      const points = quantizePoints(normalized * safeMax, safeMax);
-      return {
-        awardedPoints: points,
-        awardedDetail: `${positionMatches}/${target.length} Positionen`,
-        isCorrect: positionMatches >= target.length,
-        tieBreaker: {
-          label: 'TOP5',
-          primary: positionMatches,
-          secondary: positionMatches,
-          detail: 'Positionen'
-        }
-      };
-    }
-    const normalized = hits.length / Math.max(target.length, 1);
-    const points = quantizePoints(normalized * safeMax, safeMax);
+    const targetLabels = (setup.items ?? []).map((i: any) => i.label?.trim().toLowerCase()).filter(Boolean);
+    const targetNormalized = Array.from(
+      new Set(
+        targetRaw
+          .map((t: string) => t?.trim().toLowerCase())
+          .filter(Boolean)
+          .concat(targetLabels)
+      )
+    );
+
+    if (!targetNormalized.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
+
+    const hits = normalizedOrder.filter((val) => targetNormalized.includes(val)).length;
     return {
-      awardedPoints: points,
-      awardedDetail: `${hits.length}/${target.length} Treffer`,
-      isCorrect: hits.length >= target.length,
+      awardedPoints: 0, // Winner-takes-all handled after evaluating all teams
+      awardedDetail: `${hits}/${targetNormalized.length} Treffer`,
+      isCorrect: false,
       tieBreaker: {
         label: 'TOP5',
-        primary: hits.length,
-        secondary: hits.length,
+        primary: hits,
+        secondary: hits,
         detail: 'Treffer'
       }
     };
@@ -4241,17 +4233,43 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       };
     });
   } else if (getQuestionType(question) === 'BUNTE_TUETE') {
+    const evaluations: Record<string, ReturnType<typeof evaluateBunteSubmission>> = {};
     Object.entries(room.answers).forEach(([teamId, ans]) => {
       const evaluation = evaluateBunteSubmission(question, ans.value, basePoints);
-      room.answers[teamId] = {
-        ...ans,
-        isCorrect: evaluation.isCorrect,
-        awardedPoints: evaluation.awardedPoints,
-        awardedDetail: evaluation.awardedDetail,
-        autoGraded: true,
-        tieBreaker: evaluation.tieBreaker ?? null
-      };
+      evaluations[teamId] = evaluation;
     });
+
+    // Winner-takes-all for TOP5: most hits gets full basePoints (or 2 in later rounds). Ties share full points each.
+    if ((question as any).bunteTuete?.kind === 'top5') {
+      const hitsPerTeam = Object.entries(evaluations).map(([teamId, ev]) => ({ teamId, hits: ev.tieBreaker?.primary ?? 0 }));
+      const bestHits = hitsPerTeam.reduce((max, { hits }) => Math.max(max, hits), 0);
+      const winners = hitsPerTeam.filter(({ hits }) => hits === bestHits && hits > 0).map(({ teamId }) => teamId);
+
+      Object.entries(room.answers).forEach(([teamId, ans]) => {
+        const ev = evaluations[teamId];
+        const isWinner = winners.includes(teamId);
+        room.answers[teamId] = {
+          ...ans,
+          isCorrect: isWinner,
+          awardedPoints: isWinner ? basePoints : 0,
+          awardedDetail: `${ev.tieBreaker?.primary ?? 0} Treffer${isWinner ? ' (Bestwert)' : ''}`,
+          autoGraded: true,
+          tieBreaker: ev.tieBreaker ?? null
+        };
+      });
+    } else {
+      Object.entries(room.answers).forEach(([teamId, ans]) => {
+        const evaluation = evaluations[teamId];
+        room.answers[teamId] = {
+          ...ans,
+          isCorrect: evaluation.isCorrect,
+          awardedPoints: evaluation.awardedPoints,
+          awardedDetail: evaluation.awardedDetail,
+          autoGraded: true,
+          tieBreaker: evaluation.tieBreaker ?? null
+        };
+      });
+    }
   } else {
     Object.entries(room.answers).forEach(([teamId, ans]) => {
       const isCorrect = evaluateAnswer(question, ans.value);

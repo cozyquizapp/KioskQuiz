@@ -404,7 +404,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     const payload = question.bunteTuete as BunteTuetePayload;
     if (payload.kind === 'top5') {
-      setBunteTop5Order([]);
+      setBunteTop5Order(Array(5).fill(''));
     }
     if (payload.kind === 'order') {
       setBunteOrderSelection((prev) =>
@@ -860,12 +860,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     return next;
   }
 
-  const toggleTop5Selection = (id: string, limit: number) => {
+  const updateTop5Text = (index: number, value: string) => {
     setBunteTop5Order((prev) => {
-      const alreadySelected = prev.includes(id);
-      if (alreadySelected) return prev.filter((entry) => entry !== id);
-      if (prev.length >= limit) return prev;
-      return [...prev, id];
+      const next = [...prev];
+      next[index] = value;
+      return next;
     });
   };
 
@@ -1194,14 +1193,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   function buildBunteSubmission(payload: BunteTuetePayload | undefined) {
     if (!question || !payload) return null;
     if (payload.kind === 'top5') {
-      const requiredCount = Math.min(payload.correctOrder?.length ?? 5, payload.items?.length ?? 5);
-      const values = bunteTop5Order.filter(Boolean);
-      if (values.length !== requiredCount) {
-        setMessage(
-          language === 'de'
-            ? `Bitte genau ${requiredCount} Elemente waehlen.`
-            : `Please pick exactly ${requiredCount} items.`
-        );
+      const values = bunteTop5Order.map((v) => v.trim()).filter(Boolean).slice(0, 5);
+      if (values.length === 0) {
+        setMessage(language === 'de' ? 'Mindestens eine Antwort eingeben.' : 'Enter at least one answer.');
         return null;
       }
       return { kind: 'top5', order: values };
@@ -1257,43 +1251,27 @@ function TeamView({ roomCode }: TeamViewProps) {
   };
 
   function renderBunteInput(payload: BunteTuetePayload, accent: string) {
-    if (payload.kind === 'top5' && payload.items) {
-      const requiredCount = Math.min(payload.correctOrder?.length ?? 5, payload.items.length);
+    if (payload.kind === 'top5') {
+      const maxEntries = 5;
       return (
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ color: '#cbd5e1', fontSize: 12 }}>
             {language === 'de'
-              ? `Waehle bis zu ${requiredCount} Elemente`
-              : `Pick up to ${requiredCount} items`}
+              ? 'Bis zu 5 Antworten, Reihenfolge egal.'
+              : 'Up to 5 answers, order irrelevant.'}
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
-            {payload.items.map((item) => {
-              const selected = bunteTop5Order.includes(item.id);
-              const limitReached = bunteTop5Order.length >= requiredCount && !selected;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`team-choice${selected ? ' is-selected' : ''}`}
-                  onClick={() => toggleTop5Selection(item.id, requiredCount)}
-                  disabled={!canAnswer || limitReached}
-                  style={{
-                    ...choiceButton,
-                    justifyContent: 'flex-start',
-                    border: `1px solid ${selected ? accent : 'rgba(255,255,255,0.12)'}`,
-                    background: selected ? `${accent}22` : 'rgba(255,255,255,0.06)',
-                    color: '#e2e8f0',
-                    opacity: limitReached ? 0.7 : 1,
-                    cursor: canAnswer && !limitReached ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  <span style={{ fontWeight: 800, marginRight: 8 }}>
-                    {selected ? '✓' : '+'}
-                  </span>
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+            {Array.from({ length: maxEntries }).map((_, idx) => (
+              <input
+                key={idx}
+                className="team-answer-input"
+                style={inputStyle}
+                placeholder={`${language === 'de' ? 'Antwort' : 'Answer'} ${idx + 1}`}
+                value={bunteTop5Order[idx] ?? ''}
+                onChange={(e) => updateTop5Text(idx, e.target.value)}
+                disabled={!canAnswer}
+              />
+            ))}
           </div>
         </div>
       );

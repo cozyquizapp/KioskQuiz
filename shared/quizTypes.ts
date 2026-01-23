@@ -691,4 +691,40 @@ export type TeamShowQuestionPayload = {
 export type AdminNextQuestionPayload = { roomCode: string };
 export type TeamReadyPayload = { roomCode: string; teamId: string; isReady: boolean };
 
+// --- Lobby Stats & Highlights ---
+export interface FastestAnswer {
+  teamName: string;
+  answer: string | number;
+  timeMs: number;
+  questionText: string;
+  questionId: string;
+  isCorrect: boolean;
+  timestamp: number;
+}
+
+export interface FunnyAnswer {
+  teamName: string;
+  answer: string;
+  questionText: string;
+  questionId: string;
+  markedAt: number;
+  markedByModerator: boolean; // true = Moderator hat es markiert
+}
+
+export interface CommonWrongAnswer {
+  answer: string;
+  questionText: string;
+  questionId: string;
+  count: number;
+  percentage: number;
+  teams: string[];
+}
+
+export interface LobbyStats {
+  fastestAnswers: FastestAnswer[];
+  funnyAnswers: FunnyAnswer[];
+  commonWrongAnswers: CommonWrongAnswer[];
+  lastUpdated: number;
+}
+
 

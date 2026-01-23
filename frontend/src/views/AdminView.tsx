@@ -27,6 +27,7 @@ import {
 import { connectToRoom } from '../socket';
 import AdminLayout from '../admin/AdminLayout';
 import AdminRoomHeader from '../admin/AdminRoomHeader';
+import { ModeratorFunnyAnswersPanel } from '../admin/ModeratorFunnyAnswersPanel';
 import { theme } from '../theme';
 
 type Phase = 'setup' | 'live' | 'evaluating' | 'final';
@@ -68,6 +69,7 @@ export default function AdminView({ roomCode }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('answers');
   const [message, setMessage] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
 
   const answersCount = Object.keys(answerState.answers).length;
@@ -88,6 +90,14 @@ export default function AdminView({ roomCode }: Props) {
         setTimerEndsAt(timer.timer.endsAt ?? null);
         const langRes = await fetchLanguage(roomCode);
         setLanguageState(langRes.language);
+        
+        // Request admin session token
+        const sessionRes = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+        if (sessionRes.ok) {
+          const { token } = await sessionRes.json();
+          setAdminToken(token);
+          sessionStorage.setItem(`admin-token-${roomCode}`, token);
+        }
       } catch (err) {
         setMessage((err as Error).message);
       }
@@ -515,6 +525,8 @@ export default function AdminView({ roomCode }: Props) {
           {activeTab === 'teams' && renderTeams()}
           {activeTab === 'bingo' && renderBingo()}
         </div>
+
+        <ModeratorFunnyAnswersPanel roomCode={roomCode} language={language} />
       </div>
     </AdminLayout>
   );

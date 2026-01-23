@@ -77,7 +77,9 @@ const sortItemsHandler: MechanicHandler = {
 
 const imageQuestionHandler: MechanicHandler = {
   evaluate: (question: AnyQuestion, answers: Answers) => {
-    const correctAnswer = normalizeStr((question as any).answer);
+    if (question.mechanic !== 'imageQuestion') return [];
+    const q = question as any;
+    const correctAnswer = normalizeStr(q.answer);
     return Object.entries(answers).map(([teamId, raw]) => {
       const val = normalizeStr(raw);
       const isCorrect = val === correctAnswer;

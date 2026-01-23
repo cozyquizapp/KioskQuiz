@@ -11,6 +11,20 @@ const API_BASE = (() => {
   return `${origin}/api`;
 })();
 
+// Helper: Füge Admin-Token zu Admin-Requests hinzu
+const getAdminToken = (roomCode: string): string | null => {
+  return sessionStorage.getItem(`admin-token-${roomCode}`);
+};
+
+const addAdminTokenIfPresent = (url: string, roomCode: string): string => {
+  const token = getAdminToken(roomCode);
+  if (token) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+  }
+  return url;
+};
+
 export interface JoinResponse {
   team: Team;
   roomCode: string;
@@ -92,20 +106,22 @@ export const fetchAnswers = async (roomCode: string) => {
 };
 
 export const resolveEstimate = async (roomCode: string) => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/resolve`, { method: 'POST' });
+  const url = addAdminTokenIfPresent(`${API_BASE}/rooms/${roomCode}/resolve`, roomCode);
+  const res = await fetch(url, { method: 'POST' });
   if (!res.ok) throw new Error('Auswertung fehlgeschlagen');
   return res.json();
 };
 
 export const resolveGeneric = async (roomCode: string) => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/resolve`, { method: 'POST' });
+  const url = addAdminTokenIfPresent(`${API_BASE}/rooms/${roomCode}/resolve`, roomCode);
+  const res = await fetch(url, { method: 'POST' });
   if (!res.ok) throw new Error('Auswertung fehlgeschlagen');
   return res.json();
 };
 
-// Neue API: Aufdecken / reveal
 export const revealAnswers = async (roomCode: string) => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/reveal`, { method: 'POST' });
+  const url = addAdminTokenIfPresent(`${API_BASE}/rooms/${roomCode}/reveal`, roomCode);
+  const res = await fetch(url, { method: 'POST' });
   if (!res.ok) throw new Error('Aufdecken fehlgeschlagen');
   return res.json();
 };
@@ -138,7 +154,8 @@ export const deleteQuiz = async (quizId: string) => {
 };
 
 export const useQuiz = async (roomCode: string, quizId: string) => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/use-quiz`, {
+  const url = addAdminTokenIfPresent(`${API_BASE}/rooms/${roomCode}/use-quiz`, roomCode);
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ quizId })

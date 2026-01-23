@@ -460,8 +460,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   );
 
   const t = <K extends keyof (typeof COPY)['de']>(key: K) => {
-    const deVal = COPY.de[key] as any;
-    const enVal = (COPY.en as any)[key] as any;
+    const deVal = COPY.de[key];
+    const enVal = COPY.en[key];
     if (language === 'both') {
       if (typeof deVal === 'function' && typeof enVal === 'function') {
         return ((...args: any[]) => `${deVal(...args)} / ${enVal(...args)}`) as any;
@@ -470,7 +470,8 @@ function TeamView({ roomCode }: TeamViewProps) {
         return `${deVal} / ${enVal}` as any;
       }
     }
-    return (COPY as any)[language]?.[key] ?? COPY.de[key];
+    const langKey = language as keyof typeof COPY;
+    return COPY[langKey]?.[key] ?? COPY.de[key];
   }
   function inlineCopy(de: string, en: string) {
     if (language === 'en') return en;
@@ -739,7 +740,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           setResultMessage(entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
-        if ((entry as any).awardedDetail) setResultDetail((entry as any).awardedDetail);
+        const detail = (entry as any)?.awardedDetail;
+        if (detail) setResultDetail(detail);
         setPhase('waitingForResult');
       }
     });
@@ -1485,8 +1487,8 @@ function TeamView({ roomCode }: TeamViewProps) {
         );
       }
       case 'betting': {
-        const opts = (question as any).options ?? ['A', 'B', 'C'];
-        const pool = (question as any).pointsPool ?? 10;
+        const opts = Array.isArray((question as any)?.options) ? (question as any).options : ['A', 'B', 'C'];
+        const pool = typeof (question as any)?.pointsPool === 'number' ? (question as any).pointsPool : 10;
         const total = bettingPoints.reduce((a, b) => a + b, 0);
         const remaining = pool - total;
         const updateBet = (idx: number, value: number) => {
@@ -1615,7 +1617,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         );
       }
       default: {
-        const unit = (question as any).unit;
+        const unit = typeof (question as any)?.unit === 'string' ? (question as any).unit : undefined;
         return (
           <input
             className="team-answer-input"
@@ -3334,7 +3336,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const accentLabel =
     categoryLabels[accentCategory]?.[labelLang] ?? categoryLabels[accentCategory]?.de ?? accentCategory;
   const layout =
-    (question as any)?.layout || { imageOffsetX: 0, imageOffsetY: 0, logoOffsetX: 0, logoOffsetY: 0 };
+    (question as any)?.layout ?? { imageOffsetX: 0, imageOffsetY: 0, logoOffsetX: 0, logoOffsetY: 0 };
 
   const phaseLabel =
     phase === 'answering'

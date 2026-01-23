@@ -8,6 +8,16 @@ import path from 'path';
 import fs from 'fs';
 import studioRoutes from './routes/studio';
 import {
+  validateTeamName,
+  validateAnswer,
+  validateQuizId,
+  validateRoomCode,
+  validateLanguage,
+  validateQuestionId,
+  validateNumber,
+  validateTeamId
+} from './validation';
+import {
   AnyQuestion,
   AnswerEntry,
   AnswerTieBreaker,
@@ -46,7 +56,16 @@ import {
   NextStageHint,
   CozyQuizMeta,
   CozyQuestionSlotTemplate,
-  CozyPotatoThemeInput
+  CozyPotatoThemeInput,
+  LobbyStats,
+  FastestAnswer,
+  FunnyAnswer,
+  CommonWrongAnswer,
+  EstimateQuestion,
+  MultipleChoiceQuestion,
+  TrueFalseQuestion,
+  ImageQuestion,
+  SortItemsQuestion
 } from '../../shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
@@ -243,6 +262,10 @@ type RoomState = {
   scoreboardOverlayForced: boolean;
   halftimeTriggered?: boolean;
   finalsTriggered?: boolean;
+  // Lobby Stats Tracking
+  statsAnswerTimings: Map<string, { teamName: string; timeMs: number; answer: unknown; isCorrect: boolean; questionId: string; timestamp: number }[]>;
+  statsFunnyAnswers: Map<string, { teamName: string; answer: string; questionId: string; markedAt: number }[]>;
+  statsWrongAnswerCounts: Map<string, Map<string, number>>;
 };
 
 const rooms = new Map<string, RoomState>();
@@ -1049,7 +1072,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         mechanic: 'estimate',
         targetValue: 3700000,
         unit: 'Einwohner'
-      } as any,
+      } as EstimateQuestion,
       {
         id: 'demo-q02',
         question: 'Was ist die Hauptstadt von Frankreich?',
@@ -1060,7 +1083,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         mechanic: 'multipleChoice',
         options: ['Paris', 'Lyon', 'Marseille', 'Toulouse'],
         correctIndex: 0
-      } as any,
+      } as MultipleChoiceQuestion,
       {
         id: 'demo-q03',
         question: 'Die Erde ist flach.',
@@ -1070,7 +1093,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         category: 'Stimmts',
         mechanic: 'trueFalse',
         isTrue: false
-      } as any,
+      } as TrueFalseQuestion,
       {
         id: 'demo-q04',
         question: 'Welche Stadt liegt am weitesten nördlich?',
@@ -1081,7 +1104,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         mechanic: 'multipleChoice',
         options: ['Hamburg', 'München', 'Berlin', 'Köln'],
         correctIndex: 0
-      } as any,
+      } as MultipleChoiceQuestion,
       {
         id: 'demo-q05',
         question: 'Wie viele Bundesländer hat Deutschland?',
@@ -1092,7 +1115,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         mechanic: 'estimate',
         targetValue: 16,
         unit: 'Bundesländer'
-      } as any
+      } as EstimateQuestion
     ],
     potatoPool: [
       { id: 'theme-1', title: 'Europäische Hauptstädte' },
@@ -1277,7 +1300,7 @@ const buildPlaceholderBlitzPool = (draftId: string): QuizBlitzTheme[] =>
         prompt: item.prompt,
         answer: item.answer,
         aliases: item.aliases,
-        mediaUrl: (item as any).mediaUrl
+        mediaUrl: typeof (item as any)?.mediaUrl === 'string' ? (item as any).mediaUrl : undefined
       }))
     };
   });
@@ -1479,17 +1502,39 @@ const sanitizeCozyQuestions = (draftId: string, payload?: AnyQuestion[]): AnyQue
   return payload.map((entry, idx) => {
     const fallbackQuestion = fallback[idx];
     if (!entry || typeof entry !== 'object') return fallbackQuestion;
+    
+    // Cast to any for merge (entry might be partial/custom format)
+    const entryAny = entry as any;
     const merged = {
       ...fallbackQuestion,
-      ...(entry as AnyQuestion)
+      ...entryAny
     } as AnyQuestion;
-    const rawId = (entry as AnyQuestion).id;
-    merged.id = typeof rawId === 'string' && rawId.trim() ? rawId.trim() : fallbackQuestion.id;
-    merged.points = Number((entry as any)?.points) || fallbackQuestion.points;
-    (merged as any).segmentIndex = COZY_SLOT_TEMPLATE[idx].segmentIndex;
-    if (!(entry as any)?.bunteTuete && fallbackQuestion && (fallbackQuestion as any).bunteTuete) {
+    
+    // Safe ID assignment
+    const rawId = entryAny?.id;
+    if (typeof rawId === 'string' && rawId.trim()) {
+      merged.id = rawId.trim();
+    }
+    
+    // Safe points assignment with type-check
+    const entryPoints = entryAny?.points;
+    if (typeof entryPoints === 'number') {
+      merged.points = entryPoints;
+    } else {
+      merged.points = fallbackQuestion.points;
+    }
+    
+    // Safe segment index from template
+    const template = COZY_SLOT_TEMPLATE[idx];
+    if (template && typeof template.segmentIndex === 'number') {
+      (merged as any).segmentIndex = template.segmentIndex;
+    }
+    
+    // Safe bunteTuete inheritance
+    if (!entryAny?.bunteTuete && fallbackQuestion && (fallbackQuestion as any).bunteTuete) {
       (merged as any).bunteTuete = (fallbackQuestion as any).bunteTuete;
     }
+    
     return merged;
   });
 };
@@ -1942,7 +1987,10 @@ const ensureRoom = (roomCode: string): RoomState => {
       nextStage: null,
       scoreboardOverlayForced: false,
       halftimeTriggered: false,
-      finalsTriggered: false
+      finalsTriggered: false,
+      statsAnswerTimings: new Map(),
+      statsFunnyAnswers: new Map(),
+      statsWrongAnswerCounts: new Map()
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -4464,17 +4512,36 @@ app.delete('/api/upload/question-image', (req, res) => {
   return res.json({ ok: true });
 });
 
+// Admin Session Generation
+app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  const session = createAdminSession(roomCode);
+  console.log(`[Auth] Admin-Session erstellt für Room ${roomCode}: ${session.token.substring(0, 8)}...`);
+  return res.json({ token: session.token, expiresAt: session.expiresAt });
+});
+
 app.post('/api/rooms/:roomCode/use-quiz', (req, res) => {
   const { roomCode } = req.params;
+  const token = req.query.token as string;
+  
+  // Auth check
+  if (!validateAdminSession(roomCode, token)) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
   const { quizId } = req.body as { quizId?: string };
-  if (!quizId || !quizzes.has(quizId)) return res.status(400).json({ error: 'Ungueltiges quizId' });
+  
+  // Validate quiz ID
+  const quizValidation = validateQuizId(quizId, quizzes);
+  if (!quizValidation.valid) return res.status(400).json({ error: quizValidation.error });
 
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  const remaining = configureRoomForQuiz(room, quizId);
+  const remaining = configureRoomForQuiz(room, quizValidation.value);
 
-  io.to(roomCode).emit('quizSelected', { quizId, remaining }); // TODO(LEGACY): remove when stateUpdate adopted
-  return res.json({ ok: true, quizId, remaining });
+  io.to(roomCode).emit('quizSelected', { quizId: quizValidation.value, remaining });
+  return res.json({ ok: true, quizId: quizValidation.value, remaining });
 });
 
 const enterQuestionActive = (room: RoomState, questionId: string, remainingOverride?: number) => {
@@ -4949,6 +5016,26 @@ const revealAnswersForRoom = (room: RoomState) => {
       awardedPoints,
       awardedDetail: room.answers[teamId].awardedDetail ?? null
     });
+
+    // Update stats after evaluation
+    if (room.currentQuestionId && room.statsAnswerTimings.has(room.currentQuestionId)) {
+      const timings = room.statsAnswerTimings.get(room.currentQuestionId)!;
+      const teamTiming = timings.find(t => t.teamName === room.teams[teamId]?.name);
+      if (teamTiming) {
+        teamTiming.isCorrect = isCorrect;
+      }
+    }
+
+    // Track wrong answers for common mistakes
+    if (!isCorrect && room.currentQuestionId) {
+      if (!room.statsWrongAnswerCounts.has(room.currentQuestionId)) {
+        room.statsWrongAnswerCounts.set(room.currentQuestionId, new Map());
+      }
+      const answerStr = String(ans.value ?? '');
+      const counts = room.statsWrongAnswerCounts.get(room.currentQuestionId)!;
+      const currentCount = counts.get(answerStr) || 0;
+      counts.set(answerStr, currentCount + 1);
+    }
   });
 
   room.questionPhase = 'revealed';
@@ -4983,12 +5070,18 @@ app.post('/api/rooms/:roomCode/next-question', (req, res) => {
 app.post('/api/rooms/:roomCode/start-question', (req, res) => {
   const { roomCode } = req.params;
   const { questionId } = req.body as { questionId?: string };
-  if (!questionId || !questionById.has(questionId)) {
-    return res.status(400).json({ error: 'Ungueltige questionId' });
+  
+  // Validate question ID
+  const qIdValidation = validateQuestionId(questionId);
+  if (!qIdValidation.valid) return res.status(400).json({ error: qIdValidation.error });
+  
+  if (!questionById.has(qIdValidation.value)) {
+    return res.status(400).json({ error: 'Frage nicht gefunden' });
   }
+  
   const room = ensureRoom(roomCode);
   touchRoom(room);
-  startQuestionWithSlot(room, questionId, room.remainingQuestionIds.length, res);
+  startQuestionWithSlot(room, qIdValidation.value, room.remainingQuestionIds.length, res);
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
 });
@@ -5041,12 +5134,19 @@ app.get('/api/rooms/:roomCode/current-question', (req, res) => {
 app.post('/api/rooms/:roomCode/join', (req, res) => {
   const { roomCode } = req.params;
   const { teamName, teamId } = req.body as { teamName?: string; teamId?: string };
-  if (!teamName) return res.status(400).json({ error: 'teamName fehlt' });
-  const room = ensureRoom(roomCode);
+  
+  // Validate and sanitize input
+  const roomValidation = validateRoomCode(roomCode);
+  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
+  
+  const teamNameValidation = validateTeamName(teamName);
+  if (!teamNameValidation.valid) return res.status(400).json({ error: teamNameValidation.error });
+  
+  const room = ensureRoom(roomValidation.value);
   touchRoom(room);
 
   try {
-    const result = joinTeamToRoom(room, teamName, teamId);
+    const result = joinTeamToRoom(room, teamNameValidation.value, teamId);
     const payload = { team: result.team, roomCode, board: result.board };
     return result.created ? res.status(201).json(payload) : res.json(payload);
   } catch (err) {
@@ -5058,12 +5158,23 @@ app.post('/api/rooms/:roomCode/join', (req, res) => {
 app.post('/api/rooms/:roomCode/answer', (req, res) => {
   const { roomCode } = req.params;
   const { teamId, answer } = req.body as { teamId?: string; answer?: unknown };
-  const room = ensureRoom(roomCode);
+  
+  // Validate inputs
+  const roomValidation = validateRoomCode(roomCode);
+  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
+  
+  const teamIdValidation = validateTeamId(teamId);
+  if (!teamIdValidation.valid) return res.status(400).json({ error: teamIdValidation.error });
+  
+  const answerValidation = validateAnswer(answer);
+  // Note: validateAnswer always returns valid=true (sanitizes but doesn't reject)
+  
+  const room = ensureRoom(roomValidation.value);
   touchRoom(room);
   if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
   const currentQuestion = questionById.get(room.currentQuestionId);
   if (!currentQuestion) return res.status(400).json({ error: 'Keine aktive Frage' });
-  if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
+  if (!room.teams[teamIdValidation.value]) return res.status(400).json({ error: 'Team unbekannt' });
   if (!isQuestionInputOpen(room.gameState)) {
     return res.status(400).json({ error: 'Antworten aktuell nicht erlaubt' });
   }
@@ -5071,15 +5182,32 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   const buntePayload = (currentQuestion as any).bunteTuete;
   if (buntePayload && buntePayload.kind === 'oneOfEight') {
     try {
-      handleOneOfEightSubmission(room, currentQuestion, teamId, answer);
+      handleOneOfEightSubmission(room, currentQuestion, teamIdValidation.value, answerValidation.value);
     } catch (err) {
       return res.status(400).json({ error: (err as Error).message });
     }
     return res.json({ ok: true });
   }
 
-  room.answers[teamId] = { value: answer };
-  io.to(roomCode).emit('answerReceived', { teamId });
+  room.answers[teamIdValidation.value] = { value: answerValidation.value };
+  
+  // Record timing for stats
+  if (room.timerEndsAt && room.questionTimerDurationMs) {
+    const timeElapsedMs = room.questionTimerDurationMs - (room.timerEndsAt - Date.now());
+    if (!room.statsAnswerTimings.has(room.currentQuestionId)) {
+      room.statsAnswerTimings.set(room.currentQuestionId, []);
+    }
+    room.statsAnswerTimings.get(room.currentQuestionId)!.push({
+      teamName: room.teams[teamIdValidation.value]?.name || 'Unknown',
+      timeMs: Math.max(0, timeElapsedMs),
+      answer: answerValidation.value,
+      isCorrect: false, // Will be updated after evaluation
+      questionId: room.currentQuestionId,
+      timestamp: Date.now()
+    });
+  }
+
+  io.to(roomCode).emit('answerReceived', { teamId: teamIdValidation.value });
   io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
 
   const connectedTeamIds = getConnectedTeamIds(room);
@@ -5096,6 +5224,13 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
 // Antworten automatisch bewerten (ohne reveal)
 app.post('/api/rooms/:roomCode/resolve', (req, res) => {
   const { roomCode } = req.params;
+  const token = req.query.token as string;
+  
+  // Auth check
+  if (!validateAdminSession(roomCode, token)) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
   const room = ensureRoom(roomCode);
   touchRoom(room);
   if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
@@ -5119,6 +5254,13 @@ app.post('/api/rooms/:roomCode/resolve/generic', (req, res) => {
 // Ergebnisse aufdecken + Scores gutschreiben
 app.post('/api/rooms/:roomCode/reveal', (req, res) => {
   const { roomCode } = req.params;
+  const token = req.query.token as string;
+  
+  // Auth check
+  if (!validateAdminSession(roomCode, token)) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
   const room = ensureRoom(roomCode);
   touchRoom(room);
   try {
@@ -5314,15 +5456,68 @@ app.get('/api/rooms/:roomCode/export', (req, res) => {
   return res.json({ room: roomCode, results: rows });
 });
 
+// Lobby Stats
+app.get('/api/rooms/:roomCode/lobby-stats', (req, res) => {
+  const { roomCode } = req.params;
+  const room = rooms.get(roomCode);
+  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
+
+  const stats = buildLobbyStats(room);
+  return res.json(stats);
+});
+
+// Mark answer as funny/best
+app.post('/api/rooms/:roomCode/mark-funny', (req, res) => {
+  const { roomCode } = req.params;
+  const token = req.query.token as string;
+  
+  // Auth check
+  if (!validateAdminSession(roomCode, token)) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
+  const { teamName, questionId, answer } = req.body as { teamName?: string; questionId?: string; answer?: string };
+  const room = rooms.get(roomCode);
+  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
+  if (!questionId || answer === undefined) {
+    return res.status(400).json({ error: 'questionId, answer erforderlich' });
+  }
+
+  if (!room.statsFunnyAnswers.has(questionId)) {
+    room.statsFunnyAnswers.set(questionId, []);
+  }
+
+  const funnies = room.statsFunnyAnswers.get(questionId)!;
+  const name = teamName || 'Unknown';
+  const existing = funnies.find(f => f.teamName === name);
+  if (!existing) {
+    funnies.push({
+      teamName: name,
+      answer: String(answer),
+      questionId,
+      markedAt: Date.now()
+    });
+  }
+
+  return res.json({ ok: true, stats: buildLobbyStats(room) });
+});
+
 // Timer
 app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
   const { roomCode } = req.params;
   const { seconds } = req.body as { seconds?: number };
-  const room = ensureRoom(roomCode);
+  
+  // Validate room code
+  const roomValidation = validateRoomCode(roomCode);
+  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
+  
+  // Validate timer seconds (1-3600 seconds = 1 hour max)
+  const timerValidation = validateNumber(seconds ?? DEFAULT_QUESTION_TIME, 1, 3600);
+  if (!timerValidation.valid) return res.status(400).json({ error: timerValidation.error });
+  
+  const room = ensureRoom(roomValidation.value);
   touchRoom(room);
-  const secs = Number(seconds ?? DEFAULT_QUESTION_TIME);
-  if (!Number.isFinite(secs) || secs <= 0) return res.status(400).json({ error: 'seconds muss > 0 sein' });
-  const durationMs = Math.round(secs * 1000);
+  const durationMs = Math.round(timerValidation.value * 1000);
   startQuestionTimer(room, durationMs);
   broadcastState(room);
   return res.json({ ok: true, endsAt: room.timerEndsAt });
@@ -5365,14 +5560,17 @@ app.get('/api/rooms/:roomCode/language', (req, res) => {
 app.post('/api/rooms/:roomCode/language', (req, res) => {
   const { roomCode } = req.params;
   const { language } = req.body as { language?: Language };
-  if (language !== 'de' && language !== 'en' && language !== 'both')
-    return res.status(400).json({ error: 'language muss de, en oder both sein' });
+  
+  // Validate language
+  const langValidation = validateLanguage(language);
+  if (!langValidation.valid) return res.status(400).json({ error: langValidation.error });
+  
   const room = ensureRoom(roomCode);
-  room.language = language;
+  room.language = langValidation.value as any; // Allow 'both' at runtime
   touchRoom(room);
-  io.to(roomCode).emit('languageChanged', { language });
+  io.to(roomCode).emit('languageChanged', { language: langValidation.value });
   broadcastState(room);
-  return res.json({ ok: true, language });
+  return res.json({ ok: true, language: langValidation.value });
 });
 
 // Frage-Metadaten setzen (z. B. mixedMechanic)
@@ -5513,13 +5711,175 @@ app.put('/api/questions/:id', (req, res) => {
   return res.json({ ok: true, question: updated });
 });
 
-// Quizzes l?schen
+// Quizzes löschen
 app.delete('/api/quizzes/:id', (req, res) => {
   const { id } = req.params;
   if (!id || !quizzes.has(id)) return res.status(404).json({ error: 'Quiz nicht gefunden' });
   quizzes.delete(id);
   return res.json({ ok: true });
 });
+
+// --- Lobby Stats Helper Functions ---
+
+const buildLobbyStats = (room: RoomState): LobbyStats => {
+  const fastestAnswers: FastestAnswer[] = [];
+  const funnyAnswers: FunnyAnswer[] = [];
+  const commonWrongAnswersMap = new Map<string, { answer: string; count: number; teams: Set<string>; questionId: string }>();
+
+  // Collect fastest correct answers
+  const allTimings = Array.from(room.statsAnswerTimings.values()).flat();
+  allTimings.sort((a, b) => a.timeMs - b.timeMs);
+  const topFastestCorrect = allTimings.filter(t => t.isCorrect).slice(0, 5);
+
+  for (const timing of topFastestCorrect) {
+    const q = questionById.get(timing.questionId);
+    if (q) {
+      fastestAnswers.push({
+        teamName: timing.teamName,
+        answer: typeof timing.answer === 'string' || typeof timing.answer === 'number' ? timing.answer : String(timing.answer),
+        timeMs: timing.timeMs,
+        questionText: q.question,
+        questionId: timing.questionId,
+        isCorrect: true,
+        timestamp: timing.timestamp
+      });
+    }
+  }
+
+  // Collect funny answers marked by moderator
+  for (const funnies of room.statsFunnyAnswers.values()) {
+    for (const funny of funnies) {
+      const q = questionById.get(funny.questionId);
+      if (q) {
+        funnyAnswers.push({
+          teamName: funny.teamName,
+          answer: funny.answer,
+          questionText: q.question,
+          questionId: funny.questionId,
+          markedAt: funny.markedAt,
+          markedByModerator: true
+        });
+      }
+    }
+  }
+
+  // Collect common wrong answers
+  for (const [qId, answerCounts] of room.statsWrongAnswerCounts.entries()) {
+    const q = questionById.get(qId);
+    if (!q) continue;
+
+    let totalAnswers = 0;
+    for (const count of answerCounts.values()) {
+      totalAnswers += count;
+    }
+    if (totalAnswers === 0) continue;
+
+    for (const [answer, count] of answerCounts.entries()) {
+      const percentage = Math.round((count / totalAnswers) * 100);
+      if (percentage >= 20) { // Only show if >20% chose this
+        const key = `${qId}-${answer}`;
+        commonWrongAnswersMap.set(key, {
+          answer,
+          count,
+          teams: new Set(),
+          questionId: qId
+        });
+      }
+    }
+  }
+
+  const commonWrongAnswers: CommonWrongAnswer[] = Array.from(commonWrongAnswersMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(item => ({
+      answer: item.answer,
+      questionText: questionById.get(item.questionId)?.question || 'Unknown',
+      questionId: item.questionId,
+      count: item.count,
+      percentage: 0, // Will be calculated properly in future if needed
+      teams: Array.from(item.teams)
+    }));
+
+  return {
+    fastestAnswers,
+    funnyAnswers,
+    commonWrongAnswers,
+    lastUpdated: Date.now()
+  };
+};
+
+// --- Room Cleanup (Memory Management) ---
+const ROOM_IDLE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // Check every hour
+
+const cleanupInactiveRooms = () => {
+  const now = Date.now();
+  const roomsToDelete: string[] = [];
+
+  for (const [code, room] of rooms.entries()) {
+    const idleTime = now - room.lastActivityAt;
+    if (idleTime > ROOM_IDLE_TIMEOUT) {
+      roomsToDelete.push(code);
+    }
+  }
+
+  if (roomsToDelete.length > 0) {
+    roomsToDelete.forEach(code => rooms.delete(code));
+    console.log(`[Cleanup] Gelöschte ${roomsToDelete.length} inaktive Rooms (>${(ROOM_IDLE_TIMEOUT / 1000 / 3600).toFixed(0)}h idle)`);
+  }
+};
+
+setInterval(cleanupInactiveRooms, CLEANUP_INTERVAL);
+
+// --- Admin Session Management ---
+type AdminSession = {
+  roomCode: string;
+  token: string;
+  createdAt: number;
+  expiresAt: number;
+};
+
+const adminSessions = new Map<string, AdminSession>();
+const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
+const SESSION_CLEANUP_INTERVAL = 60 * 60 * 1000;
+
+const generateSessionToken = (): string => uuid().split('-').join('').substring(0, 32);
+
+const createAdminSession = (roomCode: string): AdminSession => {
+  const now = Date.now();
+  const session: AdminSession = {
+    roomCode,
+    token: generateSessionToken(),
+    createdAt: now,
+    expiresAt: now + SESSION_DURATION
+  };
+  adminSessions.set(session.token, session);
+  return session;
+};
+
+const validateAdminSession = (roomCode: string, token?: string): boolean => {
+  if (!token) return false;
+  const session = adminSessions.get(token);
+  if (!session || session.roomCode !== roomCode) return false;
+  if (Date.now() > session.expiresAt) {
+    adminSessions.delete(token);
+    return false;
+  }
+  return true;
+};
+
+// Cleanup expired sessions
+setInterval(() => {
+  const now = Date.now();
+  let deleted = 0;
+  for (const [token, session] of adminSessions.entries()) {
+    if (now > session.expiresAt) {
+      adminSessions.delete(token);
+      deleted++;
+    }
+  }
+  if (deleted > 0) console.log(`[Sessions] ${deleted} abgelaufene Sessions gelöscht`);
+}, SESSION_CLEANUP_INTERVAL);
 
 // --- Socket.IO --------------------------------------------------------------
 io.on('connection', (socket: Socket) => {

@@ -30,6 +30,7 @@ import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
 import { loadPlayDraft } from '../utils/draft';
 import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
+import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -1262,61 +1263,65 @@ useEffect(() => {
             }`;
       const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
       return (
-        <BeamerFrame
-          scene="lobby"
-          leftLabel={headerLeftLabel}
-          leftHint={headerLeftHint}
-          title={language === 'de' ? 'Room offen' : language === 'both' ? 'Room offen / room open' : 'Room open'}
-          subtitle={
-            language === 'de'
-              ? 'Moderator startet gleich'
-              : language === 'both'
-              ? 'Moderator startet / host starts soon'
-              : 'Moderator starts soon'
-          }
-          badgeLabel="LOBBY"
-          badgeTone="muted"
-          progressText={progressText}
-          progressValue={progressValue}
-          timerText={headerTimerText}
-          footerMessage={
-            language === 'de'
-              ? 'Teams via QR oder Code beitreten lassen'
-              : language === 'both'
-              ? 'Teams via QR / Code beitreten lassen'
-              : 'Let teams join via QR or code'
-          }
-          status="info"
-          rightNode={
-            teamJoinQr ? (
-              <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
-                <img
-                  src={teamJoinQr}
-                  alt="Team QR"
-                  style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 6 }}
-                />
-                <div>{joinDisplay}</div>
+        <>
+          <BeamerFrame
+            scene="lobby"
+            leftLabel={headerLeftLabel}
+            leftHint={headerLeftHint}
+            title={language === 'de' ? 'Room offen' : language === 'both' ? 'Room offen / room open' : 'Room open'}
+            subtitle={
+              language === 'de'
+                ? 'Moderator startet gleich'
+                : language === 'both'
+                ? 'Moderator startet / host starts soon'
+                : 'Moderator starts soon'
+            }
+            badgeLabel="LOBBY"
+            badgeTone="muted"
+            progressText={progressText}
+            progressValue={progressValue}
+            timerText={headerTimerText}
+            footerMessage={
+              language === 'de'
+                ? 'Teams via QR oder Code beitreten lassen'
+                : language === 'both'
+                ? 'Teams via QR / Code beitreten lassen'
+                : 'Let teams join via QR or code'
+            }
+            status="info"
+            rightNode={
+              teamJoinQr ? (
+                <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+                  <img
+                    src={teamJoinQr}
+                    alt="Team QR"
+                    style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 6 }}
+                  />
+                  <div>{joinDisplay}</div>
+                </div>
+              ) : undefined
+            }
+          >
+            <div className="beamer-stack">
+              <div className="beamer-intro-card">
+                <h2>{language === 'de' ? 'Room Code' : language === 'both' ? 'Room Code / Code' : 'Room code'}</h2>
+                <p style={{ fontSize: 48, fontWeight: 800 }}>{roomCode || '----'}</p>
+                <p>{connectedInfo}</p>
               </div>
-            ) : undefined
-          }
-        >
-          <div className="beamer-stack">
-            <div className="beamer-intro-card">
-              <h2>{language === 'de' ? 'Room Code' : language === 'both' ? 'Room Code / Code' : 'Room code'}</h2>
-              <p style={{ fontSize: 48, fontWeight: 800 }}>{roomCode || '----'}</p>
-              <p>{connectedInfo}</p>
+              <div className="beamer-list">
+                {steps.map((textLine) => (
+                  <span key={`lobby-line-${textLine}`}>{textLine}</span>
+                ))}
+              </div>
             </div>
-            <div className="beamer-list">
-              {steps.map((textLine) => (
-                <span key={`lobby-line-${textLine}`}>{textLine}</span>
-              ))}
-            </div>
-          </div>
-        </BeamerFrame>
+          </BeamerFrame>
+          <LobbyStatsDisplay roomCode={roomCode} language={language} />
+        </>
       );
     }
     return (
-      <BeamerLobbyView
+      <>
+        <BeamerLobbyView
         t={t}
         language={language}
         roomCode={roomCode}
@@ -1331,6 +1336,8 @@ useEffect(() => {
         getCategoryLabel={getCategoryLabel}
         getCategoryDescription={getCategoryDescription}
       />
+      <LobbyStatsDisplay roomCode={roomCode} language={language} />
+      </>
     );
   };
 

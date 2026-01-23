@@ -111,7 +111,7 @@ export default function Creator() {
             </div>
             <div className="field">
               <label>Modus</label>
-              <select value={structure.mode} onChange={(e) => setStructure({ ...structure, mode: e.target.value as any })}>
+              <select value={structure.mode} onChange={(e) => setStructure({ ...structure, mode: e.target.value as 'standard' | 'bingo' | 'mixed' })}>
                 <option value="standard">Standard</option>
                 <option value="bingo">Bingo</option>
                 <option value="mixed">Mixed Bag</option>

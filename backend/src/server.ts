@@ -2554,8 +2554,9 @@ const initializeBlitzStage = (room: RoomState) => {
 const hasBlitzSelectionReady = (room: RoomState) => {
   const topId = room.blitzTopTeamId;
   const lastId = room.blitzLastTeamId;
+  const required = topId ? room.blitzBanLimits[topId] ?? 0 : 0;
   const bans = topId ? room.blitzBans[topId]?.length ?? 0 : 0;
-  const banReady = topId ? bans >= 2 : true;
+  const banReady = topId ? bans >= required : true;
   const pickReady = lastId ? Boolean(room.blitzPinnedTheme) : true;
   return banReady && pickReady;
 };
@@ -2578,6 +2579,9 @@ const finalizeBlitzSelection = (room: RoomState) => {
 const applyBlitzBan = (room: RoomState, teamId: string, themeKey: string) => {
   if (room.blitzTopTeamId && teamId !== room.blitzTopTeamId) {
     throw new Error('Nur Platz 1 darf bannen');
+  }
+  if (room.blitzPinnedTheme) {
+    throw new Error('Thema bereits gewaehlt');
   }
   const limit = room.blitzBanLimits[teamId] ?? 0;
   if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
@@ -2612,6 +2616,8 @@ const applyBlitzPick = (room: RoomState, teamId: string, themeKey: string) => {
     (entry) => entry.id === themeId || entry.title.toLowerCase() === themeId.toLowerCase()
   );
   if (!theme) throw new Error('Thema nicht verfuegbar');
+  const bannedIds = new Set(Object.values(room.blitzBans).flat());
+  if (bannedIds.has(theme.id)) throw new Error('Thema gebannt');
   room.blitzPinnedTheme = theme;
 };
 
@@ -4642,7 +4648,7 @@ const runNextQuestion = (room: RoomState) => {
   if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10 && !room.halftimeTriggered) {
     room.halftimeTriggered = true;
     room.nextStage = 'BLITZ';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
   }

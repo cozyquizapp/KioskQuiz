@@ -2632,6 +2632,10 @@ function TeamView({ roomCode }: TeamViewProps) {
     const isLastTeam = Boolean(teamId && blitzState.lastTeamId === teamId);
     const banLimit = teamId ? blitzState.banLimits?.[teamId] ?? 0 : 0;
     const banCount = teamId ? blitzState.bans?.[teamId]?.length ?? 0 : 0;
+    const bansRemaining = Math.max(0, banLimit - banCount);
+    const banPhaseDone = banLimit === 0 || banCount >= banLimit;
+    const selectionLocked = Boolean(blitzState.pinnedTheme);
+    const pickUnlocked = banPhaseDone;
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
@@ -2645,23 +2649,22 @@ function TeamView({ roomCode }: TeamViewProps) {
               : 'Please get ready.'}
           </div>
           {teamId && (
-            <button
+            <PrimaryButton
               style={{
-                ...primaryButton,
-                background: isReady ? `linear-gradient(135deg, ${accentPink}, rgba(217, 70, 239, 0.8))` : `${accentPink}15`,
-                color: isReady ? '#ffffff' : '#e2e8f0',
-                border: `2px solid ${accentPink}`,
-                boxShadow: isReady ? `0 0 20px ${accentPink}40, 0 4px 20px ${accentPink}40` : 'none',
-                opacity: connectionStatus === 'connected' ? 1 : 0.6,
-                cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
-                fontWeight: isReady ? 700 : 600,
-                fontSize: 15
+                background: isReady
+                  ? `linear-gradient(135deg, ${accentPink}, rgba(217, 70, 239, 0.85))`
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                border: isReady ? `1px solid ${accentPink}` : '1px solid rgba(255,255,255,0.12)',
+                boxShadow: isReady ? `0 0 24px ${accentPink}35, 0 6px 22px ${accentPink}35` : 'none',
+                color: '#f8fafc',
+                minHeight: 48,
+                width: '100%'
               }}
               onClick={connectionStatus === 'connected' ? toggleReady : undefined}
               disabled={connectionStatus !== 'connected'}
             >
               {isReady ? t('readyOn') : language === 'de' ? 'Bereit' : 'Ready'}
-            </button>
+            </PrimaryButton>
           )}
         </div>
       );
@@ -2676,15 +2679,19 @@ function TeamView({ roomCode }: TeamViewProps) {
           {isTopTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de'
-                ? `Du bist Platz 1: streiche ${Math.max(0, banLimit - banCount)} Kategorien`
-                : `You are top: ban ${Math.max(0, banLimit - banCount)} categories`}
+                ? `Du bist Platz 1: streiche ${bansRemaining} Kategorien`
+                : `You are top: ban ${bansRemaining} categories`}
             </div>
           )}
           {isLastTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de'
-                ? 'Du bist letzter Platz: waehle 1 Kategorie'
-                : 'You are last: pick 1 category'}
+                ? pickUnlocked
+                  ? 'Du bist letzter Platz: waehle 1 Kategorie'
+                  : 'Bitte warten bis die Bans durch sind.'
+                : pickUnlocked
+                ? 'You are last: pick 1 category'
+                : 'Wait for bans to finish.'}
             </div>
           )}
           {!isTopTeam && !isLastTeam && (
@@ -2722,10 +2729,10 @@ function TeamView({ roomCode }: TeamViewProps) {
                           background: 'rgba(248,113,113,0.2)',
                           border: '1px solid rgba(248,113,113,0.4)',
                           color: '#fecaca',
-                          opacity: isBanned || banCount >= banLimit || isPinned ? 0.4 : 1,
-                          cursor: isBanned || banCount >= banLimit || isPinned ? 'not-allowed' : 'pointer'
+                          opacity: isBanned || banCount >= banLimit || isPinned || selectionLocked ? 0.4 : 1,
+                          cursor: isBanned || banCount >= banLimit || isPinned || selectionLocked ? 'not-allowed' : 'pointer'
                         }}
-                        disabled={isBanned || banCount >= banLimit || isPinned}
+                        disabled={isBanned || banCount >= banLimit || isPinned || selectionLocked}
                         onClick={() => submitBlitzBan(theme.id)}
                       >
                         {language === 'de' ? 'Bannen' : 'Ban'}
@@ -2740,10 +2747,10 @@ function TeamView({ roomCode }: TeamViewProps) {
                           background: 'rgba(34,197,94,0.2)',
                           border: '1px solid rgba(34,197,94,0.45)',
                           color: '#bbf7d0',
-                          opacity: isPinned || isBanned ? 0.4 : 1,
-                          cursor: isPinned || isBanned ? 'not-allowed' : 'pointer'
+                          opacity: isPinned || isBanned || !pickUnlocked ? 0.35 : 1,
+                          cursor: isPinned || isBanned || !pickUnlocked ? 'not-allowed' : 'pointer'
                         }}
-                        disabled={isPinned || isBanned}
+                        disabled={isPinned || isBanned || !pickUnlocked}
                         onClick={() => submitBlitzPick(theme.id)}
                       >
                         {language === 'de' ? 'Waehlen' : 'Pick'}

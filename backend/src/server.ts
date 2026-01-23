@@ -4529,14 +4529,7 @@ const runNextQuestion = (room: RoomState) => {
   const willBeQuestion10 = askedCountBefore === 9;
   const willBeQuestion20 = askedCountBefore === 19;
   
-  const nextId = room.remainingQuestionIds.shift();
-  if (!nextId) {
-    throw new Error('Keine naechste Frage gefunden');
-  }
-  
-  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
-  
-  // Trigger halftime after Q10 or finals after Q20
+  // If halftime/finals, don't start the next question yet - go to scoreboard first
   if (willBeQuestion10) {
     room.nextStage = 'BLITZ';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
@@ -4550,7 +4543,14 @@ const runNextQuestion = (room: RoomState) => {
     return { stage: room.gameState, finalsTrigger: true };
   }
   
-  // Normal question flow - reset nextStage (it was already reset in startQuestionWithSlot, but be explicit)
+  // Normal question flow - load next question
+  const nextId = room.remainingQuestionIds.shift();
+  if (!nextId) {
+    throw new Error('Keine naechste Frage gefunden');
+  }
+  
+  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
+  
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

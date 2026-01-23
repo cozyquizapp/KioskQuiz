@@ -4542,19 +4542,6 @@ const runNextQuestion = (room: RoomState) => {
     throw new Error('Keine naechste Frage gefunden');
   }
   startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
-  const updatedAskedCount = room.askedQuestionIds.length;
-  if (updatedAskedCount === 10 && !room.nextStage) {
-    room.nextStage = 'BLITZ';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-    broadcastState(room);
-    return { stage: room.gameState, halftimeTrigger: true };
-  }
-  if (updatedAskedCount === 20 && !room.nextStage) {
-    room.nextStage = 'RUNDLAUF';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-    broadcastState(room);
-    return { stage: room.gameState, finalsTrigger: true };
-  }
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

@@ -599,12 +599,13 @@ function ModeratorPage(): React.ReactElement {
           ...(cozy.drafts || []).map((d: any) => ({ id: d.id, name: `${d.title} (Draft)`, mode: 'cozy60', questionIds: [] }))
         ];
         const filtered = featureFlags.showLegacyPanels ? merged : merged.filter(isCozyPlayableQuiz);
-        setQuizzes(filtered);
-        if (filtered.length) {
+        const usable = filtered.length ? filtered : merged; // Fallback: zeige auch kurze Demo-Quizzes, sonst ist die Liste leer
+        setQuizzes(usable);
+        if (usable.length) {
           setSelectedQuiz((prev) => {
-            if (prev) return prev;
-            const fallback = savedQuiz && filtered.find((q) => q.id === savedQuiz)?.id;
-            return fallback || filtered[0]?.id || '';
+            if (prev && usable.find((q) => q.id === prev)) return prev;
+            const fallback = savedQuiz && usable.find((q) => q.id === savedQuiz)?.id;
+            return fallback || usable[0]?.id || '';
           });
         }
       } catch {

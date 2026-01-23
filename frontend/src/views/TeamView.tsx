@@ -1147,7 +1147,12 @@ function TeamView({ roomCode }: TeamViewProps) {
           opacity: canAnswer ? 1 : 0.6,
           transform: canAnswer ? undefined : 'scale(0.99)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4
         }}
         onClick={handleSubmit}
         disabled={!canAnswer}
@@ -1161,6 +1166,20 @@ function TeamView({ roomCode }: TeamViewProps) {
         >
           {t('send')}
         </span>
+        {hasTimer && remainingSeconds > 0 && (
+          <span
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              fontSize: 11,
+              fontWeight: 700,
+              color: remainingSeconds <= 5 ? '#ff6b6b' : '#cbd5e1',
+              opacity: 0.8
+            }}
+          >
+            {t('timeLeft')(Math.max(0, remainingSeconds))}
+          </span>
+        )}
         <span
           style={{
             position: 'absolute',
@@ -3263,7 +3282,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const isLocked = gameState === 'Q_LOCKED';
   const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn || isRundlaufActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
-  const showTimerProgress = hasTimer && !isLocked;
+  const showTimerProgress = hasTimer && !isLocked && gameState === 'Q_ACTIVE';
   const viewState = socketError
     ? 'error'
     : !teamId

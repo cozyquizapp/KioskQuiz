@@ -434,11 +434,11 @@ const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_ANSWER_TIME_MS = 30000;
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_ANSWER_TIME_MS / BLITZ_ITEMS_PER_SET);
-const BLITZ_CATEGORY_COUNT = 6;
+const BLITZ_CATEGORY_COUNT = 3;
 const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
-const RUNDLAUF_CATEGORY_COUNT = 6;
+const RUNDLAUF_CATEGORY_COUNT = 3;
 const RUNDLAUF_TURN_TIME_MS = (() => {
   const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 7000);
   if (!Number.isFinite(raw)) return 7000;
@@ -1215,7 +1215,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
     createdAt: now,
     status: 'draft',
     rundlauf: {
-      pool: ['Europäische Hauptstädte', 'Deutsche Flüsse', 'Berühmte Musiker', 'Olympische Sportarten', 'Automobilmarken', 'Fruechte'],
+      pool: ['Europäische Hauptstädte', 'Deutsche Flüsse', 'Berühmte Musiker', 'Olympische Sportarten', 'Automobilmarken', 'Fruechte', 'Weltmeere', 'Chemische Elemente', 'Fußball Bundesligisten'],
       turnDurationMs: 7000,
       pointsWinner: 3,
       pointsTie: 1
@@ -2511,7 +2511,7 @@ const finalizeBlitzSelection = (room: RoomState) => {
   const pinned = room.blitzPinnedTheme ?? null;
   const remaining = room.blitzPool.filter((entry) => !bannedIds.has(entry.id) && entry.id !== pinned?.id);
   const shuffled = [...remaining].sort(() => Math.random() - 0.5);
-  const needed = Math.max(0, BLITZ_SETS - (pinned ? 1 : 0));
+  const needed = 2; // Always pick 2 random themes
   const randomPick = shuffled.slice(0, needed);
   room.blitzSelectedThemes = pinned ? [pinned, ...randomPick] : randomPick;
   room.blitzSetIndex = -1;
@@ -2991,7 +2991,7 @@ const finalizeRundlaufSelection = (room: RoomState) => {
   const pinned = room.rundlaufPinnedCategory ?? null;
   const remaining = room.rundlaufPool.filter((entry) => !banned.has(entry.id) && entry.id !== pinned?.id);
   const shuffled = [...remaining].sort(() => Math.random() - 0.5);
-  const needed = Math.max(0, RUNDLAUF_ROUNDS - (pinned ? 1 : 0));
+  const needed = 2; // Always pick 2 random categories
   const randomPick = shuffled.slice(0, needed);
   room.rundlaufSelectedCategories = pinned ? [pinned, ...randomPick] : randomPick;
   room.rundlaufRoundIndex = -1;

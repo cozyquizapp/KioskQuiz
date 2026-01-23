@@ -1112,13 +1112,101 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
       pool: [
         {
           id: 'blitz-demo-1',
-          title: 'Schnelle Städte',
+          title: 'Europäische Hauptstädte',
           items: [
-            { id: 'b1', prompt: 'Hauptstadt von Italien', answer: 'Rom' },
-            { id: 'b2', prompt: 'Hauptstadt von Spanien', answer: 'Madrid' },
-            { id: 'b3', prompt: 'Hauptstadt von Polen', answer: 'Warschau' },
-            { id: 'b4', prompt: 'Hauptstadt von Österreich', answer: 'Wien' },
-            { id: 'b5', prompt: 'Hauptstadt von Niederlande', answer: 'Amsterdam' }
+            { id: 'b1-1', prompt: 'Hauptstadt von Italien', answer: 'Rom' },
+            { id: 'b1-2', prompt: 'Hauptstadt von Spanien', answer: 'Madrid' },
+            { id: 'b1-3', prompt: 'Hauptstadt von Polen', answer: 'Warschau' },
+            { id: 'b1-4', prompt: 'Hauptstadt von Österreich', answer: 'Wien' },
+            { id: 'b1-5', prompt: 'Hauptstadt von Niederlande', answer: 'Amsterdam' }
+          ]
+        },
+        {
+          id: 'blitz-demo-2',
+          title: 'Deutsche Bundesländer',
+          items: [
+            { id: 'b2-1', prompt: 'Bundesland mit München', answer: 'Bayern' },
+            { id: 'b2-2', prompt: 'Bundesland mit Hamburg', answer: 'Hamburg' },
+            { id: 'b2-3', prompt: 'Bundesland mit Stuttgart', answer: 'Baden-Württemberg' },
+            { id: 'b2-4', prompt: 'Bundesland mit Hannover', answer: 'Niedersachsen' },
+            { id: 'b2-5', prompt: 'Bundesland mit Dresden', answer: 'Sachsen' }
+          ]
+        },
+        {
+          id: 'blitz-demo-3',
+          title: 'Bekannte Marken',
+          items: [
+            { id: 'b3-1', prompt: 'Swoosh-Logo', answer: 'Nike' },
+            { id: 'b3-2', prompt: 'Angebissener Apfel', answer: 'Apple' },
+            { id: 'b3-3', prompt: 'Drei Streifen', answer: 'Adidas' },
+            { id: 'b3-4', prompt: 'Goldene Bögen', answer: 'McDonalds' },
+            { id: 'b3-5', prompt: 'Blauer Elefant', answer: 'WDR' }
+          ]
+        },
+        {
+          id: 'blitz-demo-4',
+          title: 'Olympische Sportarten',
+          items: [
+            { id: 'b4-1', prompt: 'Mit Schläger über Netz', answer: 'Tennis' },
+            { id: 'b4-2', prompt: 'Im Pool mit Bahnen', answer: 'Schwimmen' },
+            { id: 'b4-3', prompt: 'Mit Ball ins Tor', answer: 'Fußball' },
+            { id: 'b4-4', prompt: 'Auf Matten turnen', answer: 'Turnen' },
+            { id: 'b4-5', prompt: 'Mit Pfeil und Bogen', answer: 'Bogenschießen' }
+          ]
+        },
+        {
+          id: 'blitz-demo-5',
+          title: 'Beliebte Gerichte',
+          items: [
+            { id: 'b5-1', prompt: 'Italienisch mit Käse', answer: 'Pizza' },
+            { id: 'b5-2', prompt: 'Zwischen zwei Brötchen', answer: 'Burger' },
+            { id: 'b5-3', prompt: 'Lange dünne Nudeln', answer: 'Spaghetti' },
+            { id: 'b5-4', prompt: 'Frittierte Kartoffeln', answer: 'Pommes' },
+            { id: 'b5-5', prompt: 'Im Fladenbrot', answer: 'Döner' }
+          ]
+        },
+        {
+          id: 'blitz-demo-6',
+          title: 'Berühmte Filme',
+          items: [
+            { id: 'b6-1', prompt: 'Eiskönigin', answer: 'Frozen' },
+            { id: 'b6-2', prompt: 'Löwenkönig', answer: 'Der König der Löwen' },
+            { id: 'b6-3', prompt: 'Spielzeug wird lebendig', answer: 'Toy Story' },
+            { id: 'b6-4', prompt: 'Clownfisch sucht Sohn', answer: 'Findet Nemo' },
+            { id: 'b6-5', prompt: 'Zauberer mit Brille', answer: 'Harry Potter' }
+          ]
+        },
+        {
+          id: 'blitz-demo-7',
+          title: 'Musikinstrumente',
+          items: [
+            { id: 'b7-1', prompt: 'Mit 6 Saiten', answer: 'Gitarre' },
+            { id: 'b7-2', prompt: 'Schwarz-weiße Tasten', answer: 'Klavier' },
+            { id: 'b7-3', prompt: 'Mit Stöcken schlagen', answer: 'Schlagzeug' },
+            { id: 'b7-4', prompt: 'Blasen mit Löchern', answer: 'Flöte' },
+            { id: 'b7-5', prompt: 'Mit Bogen streichen', answer: 'Geige' }
+          ]
+        },
+        {
+          id: 'blitz-demo-8',
+          title: 'Tiere in Afrika',
+          items: [
+            { id: 'b8-1', prompt: 'König der Tiere', answer: 'Löwe' },
+            { id: 'b8-2', prompt: 'Größtes Landtier', answer: 'Elefant' },
+            { id: 'b8-3', prompt: 'Langer Hals', answer: 'Giraffe' },
+            { id: 'b8-4', prompt: 'Schwarz-weiß gestreift', answer: 'Zebra' },
+            { id: 'b8-5', prompt: 'Mit Horn vorne', answer: 'Nashorn' }
+          ]
+        },
+        {
+          id: 'blitz-demo-9',
+          title: 'Obstarten',
+          items: [
+            { id: 'b9-1', prompt: 'Rot und rund', answer: 'Apfel' },
+            { id: 'b9-2', prompt: 'Gelb und krumm', answer: 'Banane' },
+            { id: 'b9-3', prompt: 'Orange Zitrusfrucht', answer: 'Orange' },
+            { id: 'b9-4', prompt: 'Grün oder rot, klein', answer: 'Traube' },
+            { id: 'b9-5', prompt: 'Braun und behaart', answer: 'Kiwi' }
           ]
         }
       ]

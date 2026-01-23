@@ -1095,7 +1095,18 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
     potatoPool: [
       { id: 'theme-1', title: 'Europäische Hauptstädte' },
       { id: 'theme-2', title: 'Deutsche Flüsse' },
-      { id: 'theme-3', title: 'Berühmte Musiker' }
+      { id: 'theme-3', title: 'Berühmte Musiker' },
+      { id: 'theme-4', title: 'Olympische Sportarten' },
+      { id: 'theme-5', title: 'Automobilmarken' },
+      { id: 'theme-6', title: 'Disney Filme' },
+      { id: 'theme-7', title: 'Afrikanische Säugetiere' },
+      { id: 'theme-8', title: 'Obstarten' },
+      { id: 'theme-9', title: 'Gemüsesorten' },
+      { id: 'theme-10', title: 'Musikinstrumente' },
+      { id: 'theme-11', title: 'US Bundesstaaten' },
+      { id: 'theme-12', title: 'Deutsche Bundesländer' },
+      { id: 'theme-13', title: 'Länder mit A' },
+      { id: 'theme-14', title: 'Länder mit S' }
     ],
     blitz: {
       pool: [

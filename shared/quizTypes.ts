@@ -1,7 +1,7 @@
 // Zentrale Typdefinitionen für Fragen, Mechaniken und Räume
 
 export type QuizCategory =
-  | 'Schaetzchen'
+  | 'Schätzchen'
   | 'Mu-Cho'
   | 'Stimmts'
   | 'Cheese'

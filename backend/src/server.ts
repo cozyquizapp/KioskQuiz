@@ -1114,7 +1114,14 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
     },
     updatedAt: now,
     createdAt: now,
-    status: 'draft'
+    status: 'draft',
+    rundlauf: {
+      pool: ['Europäische Hauptstädte', 'Deutsche Flüsse', 'Berühmte Musiker', 'Olympische Sportarten', 'Automobilmarken', 'Fruechte'],
+      turnDurationMs: 7000,
+      pointsWinner: 3,
+      pointsTie: 1
+    },
+    enableBingo: false
   };
 };
 

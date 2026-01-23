@@ -7,12 +7,16 @@ const primary = draftTheme?.color || '#6dd5fa';
 
 export const pageStyleTeam: CSSProperties = {
   position: 'relative',
-  minHeight: '100vh',
+  height: '100dvh',
+  minHeight: '100dvh',
+  maxHeight: '100dvh',
   paddingTop: 'calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-top))',
   paddingRight: 'clamp(8px, 3vw, 14px)',
   paddingBottom: 'calc(clamp(24px, 6vw, 32px) + env(safe-area-inset-bottom))',
   paddingLeft: 'clamp(8px, 3vw, 14px)',
-  overflow: 'hidden',
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  overscrollBehavior: 'contain',
   color: 'white',
   background: draftTheme?.background
     ? `url(${draftTheme.background}) center/cover` // drop fixed for mobile jank

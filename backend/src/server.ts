@@ -4482,6 +4482,7 @@ const startQuestionWithSlot = (
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
   clearQuestionTimers(room);
+  room.nextStage = null;
   room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
   ensureSegmentTwoBaseline(room);
   room.screen = 'slot';
@@ -4522,30 +4523,34 @@ const runNextQuestion = (room: RoomState) => {
   if (!room.quizId || room.remainingQuestionIds.length === 0) {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
+  
+  // Check if we will hit halftime (Q10) or finals (Q20) AFTER loading the next question
   const askedCountBefore = room.askedQuestionIds.length;
+  const willBeQuestion10 = askedCountBefore === 9;
+  const willBeQuestion20 = askedCountBefore === 19;
+  
   const nextId = room.remainingQuestionIds.shift();
   if (!nextId) {
     throw new Error('Keine naechste Frage gefunden');
   }
-  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
-  const askedCountAfter = room.askedQuestionIds.length;
   
-  // Check for halftime after question 10 or finals after question 20
-  if (askedCountAfter === 10) {
+  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
+  
+  // Trigger halftime after Q10 or finals after Q20
+  if (willBeQuestion10) {
     room.nextStage = 'BLITZ';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
   }
-  if (askedCountAfter === 20) {
+  if (willBeQuestion20) {
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, finalsTrigger: true };
   }
   
-  // Normal question flow
-  room.nextStage = null;
+  // Normal question flow - reset nextStage (it was already reset in startQuestionWithSlot, but be explicit)
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

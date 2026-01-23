@@ -715,4 +715,13 @@ img {
   font-size: 16px;
   flex-shrink: 0;
 }
+/* Flowing water shimmer for submit progress fill */
+@keyframes water-flow {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
 }

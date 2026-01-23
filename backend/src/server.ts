@@ -434,7 +434,7 @@ const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_ANSWER_TIME_MS = 30000;
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_ANSWER_TIME_MS / BLITZ_ITEMS_PER_SET);
-const BLITZ_CATEGORY_COUNT = 3;
+const BLITZ_CATEGORY_COUNT = 5;
 const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
@@ -4523,34 +4523,28 @@ const runNextQuestion = (room: RoomState) => {
   if (!room.quizId || room.remainingQuestionIds.length === 0) {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
-  
-  // Check if we will hit halftime (Q10) or finals (Q20) AFTER loading the next question
+
+  // After Q10 or Q20 reveal, transition to SCOREBOARD
   const askedCountBefore = room.askedQuestionIds.length;
-  const willBeQuestion10 = askedCountBefore === 9;
-  const willBeQuestion20 = askedCountBefore === 19;
-  
-  // If halftime/finals, don't start the next question yet - go to scoreboard first
-  if (willBeQuestion10) {
+  if (askedCountBefore === 10) {
     room.nextStage = 'BLITZ';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
   }
-  if (willBeQuestion20) {
+  if (askedCountBefore === 20) {
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, finalsTrigger: true };
   }
-  
-  // Normal question flow - load next question
+
+  // Otherwise start the next question normally
   const nextId = room.remainingQuestionIds.shift();
   if (!nextId) {
     throw new Error('Keine naechste Frage gefunden');
   }
-  
   startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
-  
   Object.values(room.teams).forEach((t) => (t.isReady = false));
   broadcastTeamsReady(room);
   return { questionId: nextId, remaining: room.remainingQuestionIds.length };

@@ -4482,7 +4482,6 @@ const startQuestionWithSlot = (
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
   clearQuestionTimers(room);
-  room.nextStage = null;
   room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
   ensureSegmentTwoBaseline(room);
   room.screen = 'slot';

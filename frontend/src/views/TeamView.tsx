@@ -3274,7 +3274,10 @@ function TeamView({ roomCode }: TeamViewProps) {
     socketRef.current.emit('teamReady', { roomCode, teamId, isReady: next });
   }
 
-  const remainingSeconds = timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0;
+  const remainingSeconds = useMemo(() => 
+    timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0,
+    [timerEndsAt, timerTick]
+  );
   const progress =
     timerEndsAt && timerDuration > 0
       ? Math.max(0, Math.min(100, (remainingSeconds / timerDuration) * 100))

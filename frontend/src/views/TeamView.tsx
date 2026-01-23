@@ -1138,11 +1138,13 @@ function TeamView({ roomCode }: TeamViewProps) {
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: `linear-gradient(90deg, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.001) ${Math.max(0, Math.min(100, progress))}%)`,
+          background: canAnswer 
+            ? `linear-gradient(135deg, rgba(255,79,158,0.08), rgba(217,70,239,0.06))`
+            : `linear-gradient(90deg, rgba(255,255,255,0.02) ${Math.max(0, Math.min(100, progress))}%, rgba(255,255,255,0.001) ${Math.max(0, Math.min(100, progress))}%)`,
           backdropFilter: 'blur(30px) saturate(200%) brightness(1.1)',
           color: '#f8fafc',
-          boxShadow: canAnswer ? '0 2px 12px rgba(255,79,158,0.15), inset 0 1px 1px rgba(255,255,255,0.08)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
-          border: canAnswer ? '1px solid rgba(255,79,158,0.25)' : '1px solid rgba(255,255,255,0.06)',
+          boxShadow: canAnswer ? '0 4px 20px rgba(255,79,158,0.25), inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+          border: canAnswer ? '1px solid rgba(255,79,158,0.5)' : '1px solid rgba(255,255,255,0.06)',
           animation: 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer ? 1 : 0.6,

@@ -2676,33 +2676,45 @@ function TeamView({ roomCode }: TeamViewProps) {
           <div style={{ fontSize: 16, fontWeight: 700 }}>
             {language === 'de' ? 'Themen-Auswahl' : 'Theme selection'}
           </div>
-          {isTopTeam && (
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+          {isTopTeam && !selectionLocked && (
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
               {language === 'de'
-                ? `Du bist Platz 1: streiche ${bansRemaining} Kategorien`
-                : `You are top: ban ${bansRemaining} categories`}
+                ? `✓ Du bist Platz 1: bannen Sie ${bansRemaining} Kategorien (${banCount}/${banLimit} erledigt)`
+                : `✓ You are top: ban ${bansRemaining} categories (${banCount}/${banLimit} done)`}
             </div>
           )}
-          {isLastTeam && (
+          {isTopTeam && selectionLocked && (
+            <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
+              {language === 'de'
+                ? '✓ Alle Bans erledigt – warte auf Auswahl'
+                : '✓ All bans done – waiting for pick'}
+            </div>
+          )}
+          {isLastTeam && !pickUnlocked && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de'
-                ? pickUnlocked
-                  ? 'Du bist letzter Platz: waehle 1 Kategorie'
-                  : 'Bitte warten bis die Bans durch sind.'
-                : pickUnlocked
-                ? 'You are last: pick 1 category'
-                : 'Wait for bans to finish.'}
+                ? 'Bitte warten bis Platz 1 fertig gebannt hat.'
+                : 'Please wait until team 1 finishes banning.'}
+            </div>
+          )}
+          {isLastTeam && pickUnlocked && (
+            <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
+              {language === 'de'
+                ? '✓ Deine Runde: waehlen Sie 1 Kategorie'
+                : '✓ Your turn: pick 1 category'}
             </div>
           )}
           {!isTopTeam && !isLastTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              {language === 'de' ? 'Bitte warten, gleich geht es los.' : 'Please wait, starting soon.'}
+              {language === 'de' ? 'Bitte warten, Auswahl läuft...' : 'Please wait, selection in progress...'}
             </div>
           )}
           <div style={{ display: 'grid', gap: 8 }}>
             {pool.map((theme) => {
               const isBanned = bannedIds.has(theme.id);
               const isPinned = pinnedId === theme.id;
+              const canBan = isTopTeam && !selectionLocked && banCount < banLimit && !isBanned && !isPinned;
+              const canPick = isLastTeam && pickUnlocked && !isBanned && !isPinned;
               return (
                 <div
                   key={`blitz-team-pick-${theme.id}`}
@@ -2729,10 +2741,10 @@ function TeamView({ roomCode }: TeamViewProps) {
                           background: 'rgba(248,113,113,0.2)',
                           border: '1px solid rgba(248,113,113,0.4)',
                           color: '#fecaca',
-                          opacity: isBanned || banCount >= banLimit || isPinned || selectionLocked ? 0.4 : 1,
-                          cursor: isBanned || banCount >= banLimit || isPinned || selectionLocked ? 'not-allowed' : 'pointer'
+                          opacity: canBan ? 1 : 0.35,
+                          cursor: canBan ? 'pointer' : 'not-allowed'
                         }}
-                        disabled={isBanned || banCount >= banLimit || isPinned || selectionLocked}
+                        disabled={!canBan}
                         onClick={() => submitBlitzBan(theme.id)}
                       >
                         {language === 'de' ? 'Bannen' : 'Ban'}
@@ -2747,13 +2759,13 @@ function TeamView({ roomCode }: TeamViewProps) {
                           background: 'rgba(34,197,94,0.2)',
                           border: '1px solid rgba(34,197,94,0.45)',
                           color: '#bbf7d0',
-                          opacity: isPinned || isBanned || !pickUnlocked ? 0.35 : 1,
-                          cursor: isPinned || isBanned || !pickUnlocked ? 'not-allowed' : 'pointer'
+                          opacity: canPick ? 1 : 0.35,
+                          cursor: canPick ? 'pointer' : 'not-allowed'
                         }}
-                        disabled={isPinned || isBanned || !pickUnlocked}
+                        disabled={!canPick}
                         onClick={() => submitBlitzPick(theme.id)}
                       >
-                        {language === 'de' ? 'Waehlen' : 'Pick'}
+                        {language === 'de' ? 'Wählen' : 'Pick'}
                       </button>
                     )}
                   </div>

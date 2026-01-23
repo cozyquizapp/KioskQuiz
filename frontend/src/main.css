@@ -110,6 +110,11 @@ body {
   }
 }
 
+@keyframes border-gradient {
+  0%, 100% { background-position: 0% 50%, 0% 50%; }
+  50% { background-position: 0% 50%, 100% 50%; }
+}
+
 @keyframes timer-flow {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

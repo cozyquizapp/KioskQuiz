@@ -1616,7 +1616,13 @@ function TeamView({ roomCode }: TeamViewProps) {
         className={feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}
         style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
       >
-      <div style={pillLabel}>
+      <div style={{
+        ...pillLabel,
+        background: 'linear-gradient(135deg, rgba(255,79,158,0.15), rgba(217,70,239,0.12))',
+        border: '1px solid rgba(255,79,158,0.4)',
+        color: '#ffc9e3',
+        textShadow: '0 0 12px rgba(255,79,158,0.3)'
+      }}>
         {isFinal
           ? language === 'de'
             ? 'Final'
@@ -3338,7 +3344,15 @@ function TeamView({ roomCode }: TeamViewProps) {
       </span>
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
       <div style={contentShell}>
-        <header style={headerBarTeam}>
+        <header style={{
+          ...headerBarTeam,
+          border: '2px solid transparent',
+          backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.85), rgba(13, 15, 20, 0.85)), linear-gradient(135deg, #ff4f9e, #d946ef, #a855f7, #ff4f9e)',
+          backgroundOrigin: 'border-box',
+          backgroundClip: 'padding-box, border-box',
+          animation: 'border-gradient 3s ease infinite',
+          backgroundSize: '100% 100%, 300% 300%'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link
               to="/menu"

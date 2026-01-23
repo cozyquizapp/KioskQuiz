@@ -1173,8 +1173,12 @@ function TeamView({ roomCode }: TeamViewProps) {
               zIndex: 1,
               fontSize: 11,
               fontWeight: 700,
-              color: remainingSeconds <= 5 ? '#ff6b6b' : '#cbd5e1',
-              opacity: 0.8
+              color: remainingSeconds <= 10 
+                ? `hsl(0, 100%, ${Math.max(40, 60 - remainingSeconds * 2)}%)`
+                : '#cbd5e1',
+              opacity: remainingSeconds <= 10 ? 1 : 0.8,
+              animation: remainingSeconds <= 10 ? 'pulse-timer 0.6s ease-in-out infinite' : 'none',
+              textShadow: remainingSeconds <= 5 ? '0 0 8px rgba(255, 107, 107, 0.6)' : 'none'
             }}
           >
             {t('timeLeft')(Math.max(0, remainingSeconds))}
@@ -3410,16 +3414,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           </div>
         </header>
 
-        {showTimerProgress && (
-          <div style={{ marginTop: 12 }}>
-            <div style={progressOuter(accentColor)}>
-              <div style={{ ...progressInner(accentColor), width: `${progress}%` }} />
-            </div>
-            <div style={{ marginTop: 6, color: '#cbd5e1', fontWeight: 700 }}>
-              {t('timeLeft')(Math.max(0, Math.round(remainingSeconds)))}
-            </div>
-          </div>
-        )}
+        {/* Timer progress bar removed - now integrated in Submit button with enhanced styling */}
 
         {mainContent}
 

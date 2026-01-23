@@ -1514,7 +1514,7 @@ useEffect(() => {
       );
     }
     const bunte = q.bunteTuete;
-    if (bunte?.items?.length) {
+    if (bunte?.items?.length && bunte.kind !== 'top5') {
       return (
         <div className="beamer-grid">
           {bunte.items.map((item: any) => (

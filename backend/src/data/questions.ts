@@ -335,21 +335,21 @@ export const questions: AnyQuestion[] = [
     category: 'GemischteTuete',
     mechanic: 'custom',
     type: 'BUNTE_TUETE',
-    question: 'TOP 5: Welche Acts spielen zuerst?',
-    questionEn: 'Top 5: Which headliners are earliest?',
+    question: 'TOP 5: Meistgehoerte Artists auf Spotify (All Time)',
+    questionEn: 'Top 5: Most streamed artists on Spotify (all time)',
     points: 5,
     segmentIndex: 0,
     bunteTuete: {
       kind: 'top5',
-      prompt: 'Waehlt die Acts, die in den Top 5 der Startzeiten sind. Reihenfolge egal.',
+      prompt: 'Nenne bis zu 5 Artists, die weltweit die meisten Spotify-Streams haben (All Time). Reihenfolge egal.',
       items: [
-        { id: 'act-lizzo', label: 'Lizzo' },
-        { id: 'act-harry', label: 'Harry Styles' },
-        { id: 'act-billy', label: 'Billie Eilish' },
-        { id: 'act-stormzy', label: 'Stormzy' },
-        { id: 'act-paramore', label: 'Paramore' }
+        { id: 'artist-drake', label: 'Drake' },
+        { id: 'artist-taylor', label: 'Taylor Swift' },
+        { id: 'artist-bad-bunny', label: 'Bad Bunny' },
+        { id: 'artist-weeknd', label: 'The Weeknd' },
+        { id: 'artist-bieber', label: 'Justin Bieber' }
       ],
-      correctOrder: ['act-paramore', 'act-stormzy', 'act-lizzo', 'act-billy', 'act-harry'],
+      correctOrder: ['artist-drake', 'artist-taylor', 'artist-bad-bunny', 'artist-weeknd', 'artist-bieber'],
       scoringMode: 'contains'
     }
   },

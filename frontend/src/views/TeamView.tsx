@@ -1373,7 +1373,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       return null;
     }
     const payload = question.bunteTuete as BunteTuetePayload;
-    if (payload.kind === 'top5' || payload.kind === 'order') {
+    if (payload.kind === 'order') {
       return (
         <div style={{ marginTop: 12 }}>
           <div style={pillLabel}>{language === 'de' ? 'Liste' : 'List'}</div>

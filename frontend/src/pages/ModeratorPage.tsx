@@ -3019,25 +3019,41 @@ function ModeratorPage(): React.ReactElement {
       <div
         style={{
           display: 'grid',
-          gap: 6,
-          padding: 16,
-          borderRadius: 16,
-          border: '1px solid rgba(96,165,250,0.5)',
-          background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(15,23,42,0.85))',
-          minWidth: 240,
-          flex: '1 1 280px'
+          gap: 8,
+          padding: 18,
+          borderRadius: 18,
+          border: '1px solid rgba(96,165,250,0.55)',
+          background: 'linear-gradient(135deg, rgba(37,99,235,0.22), rgba(15,23,42,0.92))',
+          boxShadow: '0 18px 40px rgba(15,23,42,0.45)',
+          width: '100%',
+          maxWidth: 540,
+          minWidth: 0,
+          flex: '1 1 320px'
         }}
       >
         <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NAECHSTER SCHRITT</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span
+            style={{
+              padding: '6px 10px',
+              borderRadius: 999,
+              background: 'rgba(99,229,255,0.12)',
+              border: '1px solid rgba(99,229,255,0.45)',
+              color: '#e0f2fe',
+              fontWeight: 800,
+              letterSpacing: '0.06em'
+            }}
+          >
+            Taste {nextActionHint.hotkey}
+          </span>
+          <span style={{ fontWeight: 900, fontSize: 22 }}>{nextActionHint.label}</span>
+        </div>
         {nextActionHint.context && (
           <div style={{ fontSize: 12, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {nextActionHint.context}
           </div>
         )}
-        <div style={{ fontWeight: 900, fontSize: 24 }}>
-          Taste {nextActionHint.hotkey} | {nextActionHint.label}
-        </div>
-        <div style={{ fontSize: 15, color: '#e2e8f0' }}>{nextActionHint.detail}</div>
+        <div style={{ fontSize: 15, color: '#e2e8f0', lineHeight: 1.4 }}>{nextActionHint.detail}</div>
       </div>
     );
   };
@@ -3128,6 +3144,7 @@ function ModeratorPage(): React.ReactElement {
 
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 720;
     const actionHintCard = renderNextActionHint();
     const submissionCard = renderTeamSubmissionStatus();
     const stageHintCard = renderSpecialStageHints();
@@ -3139,7 +3156,9 @@ function ModeratorPage(): React.ReactElement {
       fontWeight: 800,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
+      minHeight: 52
     };
     const buttonConfigs: Array<{
       label: string;
@@ -3168,7 +3187,15 @@ function ModeratorPage(): React.ReactElement {
     return (
       <section style={{ ...card, marginTop: 12 }}>
         {(actionHintCard || submissionCard || stageHintCard) && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: 12,
+              marginBottom: 12,
+              alignItems: 'stretch'
+            }}
+          >
             {actionHintCard}
             {submissionCard}
             {stageHintCard}
@@ -3177,8 +3204,8 @@ function ModeratorPage(): React.ReactElement {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: 10
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 12
           }}
         >
           {buttonConfigs.map(({ label, onClick, busy, tone, disabled }) => (
@@ -3197,7 +3224,15 @@ function ModeratorPage(): React.ReactElement {
             </button>
           ))}
         </div>
-        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div
+          style={{
+            marginTop: 12,
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(150px, 1fr))' : 'repeat(auto-fit, minmax(180px, auto))',
+            gap: 8,
+            alignItems: 'center'
+          }}
+        >
           <span style={statChip}>Antworten {answersCount}/{teamsCount || '0'}</span>
           <span style={statChip}>Teams online {connectedTeams || teamsCount || 0}</span>
           {readyCount.total > 0 && (
@@ -3218,7 +3253,7 @@ function ModeratorPage(): React.ReactElement {
               }}
               style={{
                 marginLeft: 6,
-                width: 70,
+                width: 72,
                 background: 'rgba(15,23,42,0.7)',
                 border: '1px solid rgba(148,163,184,0.4)',
                 borderRadius: 8,

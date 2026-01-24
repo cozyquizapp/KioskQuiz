@@ -782,15 +782,6 @@
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-.cozyLobbyTeamRow:nth-child(1) { --rank-medal: '🥇'; }
-.cozyLobbyTeamRow:nth-child(2) { --rank-medal: '🥈'; }
-.cozyLobbyTeamRow:nth-child(3) { --rank-medal: '🥉'; }
-
-.cozyLobbyTeamRow::before {
-  content: var(--rank-medal);
-  font-size: 20px;
-}
-
 .cozyLobbyStatusDot {
   width: 10px;
   height: 10px;

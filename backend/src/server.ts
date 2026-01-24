@@ -4912,8 +4912,9 @@ const handleHostNextAdvance = (room: RoomState) => {
     // Only transition if not already transitioning (blitzPhase check)
     if (room.blitzPhase === 'BANNING') {
       finalizeBlitzSelection(room);
-      startBlitzSet(room);
+      startBlitzSet(room); // This sets state to BLITZ_SET_INTRO
     }
+    // State already changed by startBlitzSet, no need to re-transition
     broadcastState(room);
     return { stage: room.gameState };
   }

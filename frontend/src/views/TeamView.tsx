@@ -3169,7 +3169,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderNotJoined() {
     const joinDisabled = !roomCode;
     return (
-      <div style={glassCard}>
+      <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
         <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Join
       </Pill>
@@ -3251,6 +3251,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderWaiting(title: string, subtitle?: string) {
     return (
       <div
+        key={`waiting-${phase}-${title}`}
         className="waiting-card"
         style={{
           ...glassCard,
@@ -3263,7 +3264,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           minHeight: 280,
           background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06))',
           borderColor: 'rgba(99, 102, 241, 0.2)',
-          animation: `${transitioning ? 'messageSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), ' : ''}liquid-shimmer 6s ease-in-out infinite`,
+          animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, liquid-shimmer 6s ease-in-out infinite',
           willChange: 'transform, opacity'
         }}
       >
@@ -3278,7 +3279,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function renderLoadingCard() {
     return (
-      <div style={{ maxWidth: 620, margin: '0 auto' }}>
+      <div key="loading-screen" style={{ maxWidth: 620, margin: '0 auto', animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
         <SkeletonCard />
       </div>
     );
@@ -3286,7 +3287,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function renderErrorCard() {
     return (
-      <div style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.3)' }}>
+      <div key="error-screen" style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.3)', animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
         <div style={pillLabel}>{language === 'de' ? 'Fehler' : 'Error'}</div>
         <h3 style={{ ...heading, marginBottom: 6 }}>
           {language === 'de' ? 'Verbindung fehlgeschlagen' : 'Connection failed'}

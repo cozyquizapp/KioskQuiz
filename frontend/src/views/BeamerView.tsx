@@ -1553,9 +1553,12 @@ useEffect(() => {
     return (
       <div className="beamer-stack">
         {solution && (
-          <div className="beamer-intro-card">
-            <h2>{language === 'de' ? 'Lösung' : 'Solution'}</h2>
-            <p style={{ fontSize: 16, fontWeight: 700, marginTop: 12 }}>{solution}</p>
+          <div
+            key={`solution-${revealStamp}`}
+            className="beamer-intro-card beamer-solution-card"
+          >
+            <h2 className="beamer-solution-title">{language === 'de' ? 'Lösung' : 'Solution'}</h2>
+            <p className="beamer-solution-text" style={{ fontSize: 18, fontWeight: 800, marginTop: 12 }}>{solution}</p>
           </div>
         )}
         
@@ -1579,7 +1582,11 @@ useEffect(() => {
                       borderRadius: 12,
                       border: '1px solid rgba(255,255,255,0.12)',
                       background: result.isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(107,114,128,0.12)',
-                      color: '#e2e8f0'
+                      color: '#e2e8f0',
+                      willChange: 'transform, opacity',
+                      animation: `beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                      animationDelay: `${idx * 80}ms`,
+                      animationFillMode: 'backwards'
                     }}
                   >
                     <strong>{result.displayName || result.teamId}</strong>
@@ -1635,7 +1642,11 @@ useEffect(() => {
                   borderRadius: 12,
                   border: `1px solid ${borderColor}`,
                   background: backgroundColor,
-                  color: '#e2e8f0'
+                  color: '#e2e8f0',
+                  willChange: 'transform, opacity',
+                  animation: `beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                  animationDelay: `${idx * 80}ms`,
+                  animationFillMode: 'backwards'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>

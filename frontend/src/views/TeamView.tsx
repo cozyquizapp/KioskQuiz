@@ -230,7 +230,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [bunteOneChoice, setBunteOneChoice] = useState('');
   const [bunteOrderSelection, setBunteOrderSelection] = useState<string[]>([]);
   const [bunteOrderCriteria, setBunteOrderCriteria] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [board, setBoard] = useState<BingoBoard>([]);
   const [phase, setPhase] = useState<Phase>('notJoined');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -248,6 +248,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     const saved = localStorage.getItem('teamLanguage');
     return saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
   });
+
+  // Helper-Funktionen für Message
+  const showError = (text: string) => setMessage({ text, type: 'error' });
+  const showSuccess = (text: string) => setMessage({ text, type: 'success' });
+  const clearMessage = () => setMessage(null);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [allowReadyToggle, setAllowReadyToggle] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -802,7 +807,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
     socket.on('teamKicked', ({ teamId: kicked }) => {
       if (kicked === teamId) {
-        setMessage(t('kicked'));
+        showError(t('kicked'));
         setTeamId(null);
         setPhase('notJoined');
       }
@@ -918,11 +923,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     try {
       const cleanName = teamName.trim();
       if (!cleanName) {
-        setMessage(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
+        showError(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
         return;
       }
       if (!roomCode) {
-        setMessage(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
+        showError(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
         return;
       }
       const socket = socketRef.current;
@@ -967,9 +972,9 @@ function TeamView({ roomCode }: TeamViewProps) {
         // ignore
       }
       await loadQuestion();
-      setMessage(null);
+      clearMessage();
     } catch (err) {
-      setMessage(
+      showError(
           language === 'de'
           ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung pruefen.`
           : `Join failed (${SOCKET_URL}). Please check room code/connection.`
@@ -983,16 +988,16 @@ function TeamView({ roomCode }: TeamViewProps) {
         try {
           await handleJoin();
         } catch {
-          setMessage(t('loginError'));
+          showError(t('loginError'));
           return;
         }
       } else {
-        setMessage(t('loginError'));
+        showError(t('loginError'));
         return;
       }
     }
     if (!canAnswer) {
-      setMessage(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
+      showError(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
       return;
     }
     try {
@@ -1001,7 +1006,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         const pool = (question as any).pointsPool ?? 10;
         const sum = bettingPoints.reduce((a, b) => a + b, 0);
         if (sum !== pool) {
-          setMessage(t('betInvalid'));
+          showError(t('betInvalid'));
           return;
         }
         await submitAnswer(roomCode, teamId, bettingPoints);
@@ -1019,7 +1024,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       setPhase('waitingForResult');
       setAllowReadyToggle(false);
       setTransitioning(true);
-      setMessage(null);
+      clearMessage();
       setTimeout(() => setTransitioning(false), 500);
     } catch (error) {
       console.error(error);
@@ -1031,10 +1036,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         savedIdRef.current = null;
         setTeamId(null);
         setPhase('notJoined');
-        setMessage(language === 'de' ? 'Team nicht mehr verbunden. Bitte neu beitreten.' : 'Team not recognized. Please rejoin.');
+        showError(language === 'de' ? 'Team nicht mehr verbunden. Bitte neu beitreten.' : 'Team not recognized. Please rejoin.');
         return;
       }
-      setMessage(msg);
+      showError(msg);
     }
   };
 
@@ -1246,7 +1251,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           }}
         />
       </button>
-      {message && <div className="message-state message-error">{message}</div>}
+      {message && <div className={`message-state message-${message.type}`}>{message.text}</div>}
     </div>
   );
   }
@@ -1269,21 +1274,21 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (payload.kind === 'top5') {
       const values = bunteTop5Order.map((v) => (v || '').trim()).filter(Boolean).slice(0, 5);
       if (values.length === 0) {
-        setMessage(language === 'de' ? 'Mindestens eine Antwort eingeben.' : 'Enter at least one answer.');
+        showError(language === 'de' ? 'Mindestens eine Antwort eingeben.' : 'Enter at least one answer.');
         return null;
       }
       return { kind: 'top5', order: values };
     }
     if (payload.kind === 'precision') {
       if (!buntePrecisionText.trim()) {
-        setMessage(language === 'de' ? 'Bitte Antwort eingeben.' : 'Please enter an answer.');
+        showError(language === 'de' ? 'Bitte Antwort eingeben.' : 'Please enter an answer.');
         return null;
       }
       return { kind: 'precision', text: buntePrecisionText.trim() };
     }
     if (payload.kind === 'oneOfEight') {
       if (!bunteOneChoice) {
-        setMessage(language === 'de' ? 'Bitte eine Option waehlen.' : 'Please choose an option.');
+        showError(language === 'de' ? 'Bitte eine Option waehlen.' : 'Please choose an option.');
         return null;
       }
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
@@ -1291,7 +1296,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (payload.kind === 'order') {
       const values = bunteOrderSelection;
       if (values.length !== payload.items.length || values.some((val) => !val)) {
-        setMessage(language === 'de' ? 'Bitte jede Position belegen.' : 'Please fill every position.');
+        showError(language === 'de' ? 'Bitte jede Position belegen.' : 'Please fill every position.');
         return null;
       }
       return {
@@ -1305,7 +1310,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   const handleMarkCell = async (cellIndex: number) => {
     if (!teamId) {
-      setMessage(t('loginError'));
+      showError(t('loginError'));
       return;
     }
     if (!canMarkBingo) return;
@@ -1314,9 +1319,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       setBoard(res.board);
       setCanMarkBingo(false);
       setShowBingoPanel(true);
-      setMessage(null);
+      clearMessage();
     } catch (err) {
-      setMessage(
+      showError(
         language === 'de'
           ? t('markError')
           : t('markError')
@@ -3243,7 +3248,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             : `Resume team${teamName ? ` (${teamName})` : ''}`}
         </button>
       )}
-        {message && <div className="message-state message-error">{message}</div>}
+        {message && <div className={`message-state message-${message.type}`}>{message.text}</div>}
       </div>
     );
   }
@@ -3263,7 +3268,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           minHeight: 280,
           background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06))',
           borderColor: 'rgba(99, 102, 241, 0.2)',
-          animation: 'liquid-shimmer 6s ease-in-out infinite'
+          animation: `${transitioning ? 'messageSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), ' : ''}liquid-shimmer 6s ease-in-out infinite`,
+          willChange: 'transform, opacity'
         }}
       >
         <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'WARTEN' : 'INFO'}</div>

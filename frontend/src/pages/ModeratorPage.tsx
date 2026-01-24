@@ -200,6 +200,8 @@ function ModeratorPage(): React.ReactElement {
   const [blitzThemeInput, setBlitzThemeInput] = useState('');
   const [blitzBanDrafts, setBlitzBanDrafts] = useState<Record<string, string>>({});
   const [blitzPickDraft, setBlitzPickDraft] = useState('');
+  const [blitzDisplayTimeSec, setBlitzDisplayTimeSec] = useState(30);
+  const [blitzAnswerTimeSec, setBlitzAnswerTimeSec] = useState(30);
   const [rundlaufBanDraft, setRundlaufBanDraft] = useState('');
   const [rundlaufPickDraft, setRundlaufPickDraft] = useState('');
   const [countdownTick, setCountdownTick] = useState(0);
@@ -324,6 +326,27 @@ function ModeratorPage(): React.ReactElement {
     ensureAdminSession(roomCode).catch(() => {
       // Silent fail � endpoint may not exist on older backends
     });
+  }, [roomCode]);
+
+  useEffect(() => {
+    if (!roomCode) return;
+    // Load Fotoblitz timer settings
+    const loadBlitzTimers = async () => {
+      try {
+        const token = localStorage.getItem('adminToken') || '';
+        const response = await fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setBlitzDisplayTimeSec(Math.round(data.displayTimeMs / 1000));
+          setBlitzAnswerTimeSec(Math.round(data.answerTimeMs / 1000));
+        }
+      } catch (err) {
+        console.error('Failed to load blitz timers:', err);
+      }
+    };
+    loadBlitzTimers();
   }, [roomCode]);
 
   useEffect(() => {
@@ -2754,6 +2777,76 @@ const renderCozyStagePanel = () => {
                   return;
                 }
                 doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt');
+              }}
+            >
+              Setzen
+            </button>
+          </div>
+        </div>
+
+        {/* Fotoblitz Timer Sektion */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Fotoblitz Timer
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <label style={{ fontSize: 13, color: '#cbd5e1', minWidth: 100 }}>
+                Bild-Phase:
+              </label>
+              <input
+                type="number"
+                min={5}
+                max={120}
+                value={blitzDisplayTimeSec}
+                onChange={(e) => setBlitzDisplayTimeSec(Math.max(5, Math.min(120, Number(e.target.value) || 30)))}
+                style={{ ...inputStyle, width: 80 }}
+              />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Sekunden</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <label style={{ fontSize: 13, color: '#cbd5e1', minWidth: 100 }}>
+                Eingabe-Phase:
+              </label>
+              <input
+                type="number"
+                min={5}
+                max={120}
+                value={blitzAnswerTimeSec}
+                onChange={(e) => setBlitzAnswerTimeSec(Math.max(5, Math.min(120, Number(e.target.value) || 30)))}
+                style={{ ...inputStyle, width: 80 }}
+              />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Sekunden</span>
+            </div>
+            <button
+              style={{
+                ...inputStyle,
+                background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                color: '#0b1020',
+                cursor: 'pointer',
+                fontWeight: 700
+              }}
+              onClick={async () => {
+                if (!roomCode) {
+                  setToast('Roomcode fehlt');
+                  return;
+                }
+                try {
+                  const token = localStorage.getItem('adminToken') || '';
+                  const response = await fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                      displayTimeMs: blitzDisplayTimeSec * 1000,
+                      answerTimeMs: blitzAnswerTimeSec * 1000
+                    })
+                  });
+                  if (!response.ok) throw new Error('Timer-Update fehlgeschlagen');
+                  setToast('Fotoblitz-Timer gesetzt');
+                } catch (err) {
+                  setToast('Timer-Update Fehler');
+                  console.error('Blitz timer update error:', err);
+                }
               }}
             >
               Setzen

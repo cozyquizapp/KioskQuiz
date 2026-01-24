@@ -269,6 +269,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     reason?: string;
   } | null>(null);
   const [revealStamp, setRevealStamp] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [estimateDisplay, setEstimateDisplay] = useState<string | null>(null);
   const [muChoHopIndex, setMuChoHopIndex] = useState<number | null>(null);
   const [muChoLockedIndex, setMuChoLockedIndex] = useState<number | null>(null);
@@ -464,6 +465,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   useEffect(() => {
     if (previousGameStateRef.current !== 'Q_REVEAL' && gameState === 'Q_REVEAL') {
       setRevealStamp((stamp) => stamp + 1);
+      setShowConfetti(true);
+      window.setTimeout(() => setShowConfetti(false), 1600);
     }
     previousGameStateRef.current = gameState;
     if (gameState !== 'Q_REVEAL') {
@@ -1063,6 +1066,7 @@ useEffect(() => {
   const readyCount = teams.filter((tTeam) => tTeam.isReady).length;
 
   const currentCategory = question?.category ?? slotMeta?.categoryId;
+  const accentColor = (currentCategory && categoryColors[currentCategory as QuizCategory]) || '#9fbfd3';
   const categoryLabel = currentCategory ? getCategoryLabel(currentCategory, language) : '';
   const categoryTotal =
     currentCategory && categoryTotals[currentCategory]
@@ -1559,6 +1563,24 @@ useEffect(() => {
           >
             <h2 className="beamer-solution-title">{language === 'de' ? 'Lösung' : 'Solution'}</h2>
             <p className="beamer-solution-text" style={{ fontSize: 18, fontWeight: 800, marginTop: 12 }}>{solution}</p>
+          </div>
+        )}
+        {showConfetti && (
+          <div className="confetti-overlay" aria-hidden>
+            {[...Array(30)].map((_, i) => {
+              const left = Math.round((i / 30) * 100);
+              const delay = (i % 10) * 80;
+              const size = 6 + (i % 4);
+              const hueShift = (i * 17) % 360;
+              const color = accentColor;
+              return (
+                <span
+                  key={`confetti-${revealStamp}-${i}`}
+                  className="confetti-piece"
+                  style={{ left: `${left}%`, animationDelay: `${delay}ms`, width: size, height: size, background: color, filter: `hue-rotate(${hueShift}deg)` }}
+                />
+              );
+            })}
           </div>
         )}
         

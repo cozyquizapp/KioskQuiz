@@ -48,6 +48,43 @@
   position: relative;
   z-index: 1;
 }
+/* Stabilize section label height to reduce vertical jumps */
+.beamer-label {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+/* Confetti overlay */
+.confetti-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confettiFall 1.6s ease-in forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-12px) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(540deg);
+    opacity: 0;
+  }
+}
 /* Fancy solution reveal */
 .beamer-solution-card {
   position: relative;

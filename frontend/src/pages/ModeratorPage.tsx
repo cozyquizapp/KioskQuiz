@@ -684,9 +684,9 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'Space') {
         e.preventDefault();
         if (socketGameState === 'Q_LOCKED') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgel�st');
+          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelöst');
         } else if (socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'N�chste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
         } else if (socketGameState === 'LOBBY') {
           doAction(() => fetch(`/api/rooms/${roomCode}/start-quiz`, { method: 'POST' }), 'Quiz gestartet');
         }
@@ -714,7 +714,7 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         if (socketGameState === 'Q_ACTIVE' || socketGameState === 'Q_LOCKED' || socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'N�chste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
         }
       }
       
@@ -1194,7 +1194,7 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
-        return { hotkey: '1', label: 'WEITER', detail: 'Zur n�chsten Frage', context: 'Reveal beendet' };
+        return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
       case 'SCOREBOARD_PAUSE':
@@ -3419,7 +3419,7 @@ const renderCozyStagePanel = () => {
           <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
             <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
             <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am n�chsten dran gewinnt.</li>
+            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
             <li>Bilder & Cheese: genau hinsehen.</li>
           </ul>
           <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>
@@ -3497,10 +3497,10 @@ const renderCozyStagePanel = () => {
           ?? Keyboard Shortcuts
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> N�chste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> N�chste Frage (�berspringen)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nächste Frage (Überspringen)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>S</kbd> Scoreboard anzeigen</div>
         </div>
       </div>

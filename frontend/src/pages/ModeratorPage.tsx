@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   fetchCurrentQuestion,
@@ -278,8 +278,8 @@ function ModeratorPage(): React.ReactElement {
     LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
     INTRO: { label: 'Intro', hint: 'Intro/Regeln', tone: 'setup' },
     QUESTION_INTRO: { label: 'Frage intro', hint: 'Neue Frage startet', tone: 'live' },
-    Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antwortphase lÃ¤uft', tone: 'live' },
-    Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflÃ¶sen', tone: 'eval' },
+    Q_ACTIVE: { label: 'Frage aktiv', hint: 'Antwortphase läuft', tone: 'live' },
+    Q_LOCKED: { label: 'Gesperrt', hint: 'Host kann auflösen', tone: 'eval' },
     Q_REVEAL: { label: 'Reveal', hint: 'Antworten werden gezeigt', tone: 'eval' },
     SCOREBOARD: { label: 'Scoreboard', hint: 'Zwischenstand wird gezeigt', tone: 'eval' },
     SCOREBOARD_PRE_BLITZ: { label: 'Scoreboard', hint: 'Standings vor Fotosprint', tone: 'eval' },
@@ -326,7 +326,7 @@ function ModeratorPage(): React.ReactElement {
   useEffect(() => {
     if (!roomCode) return;
     ensureAdminSession(roomCode).catch(() => {
-      // Silent fail — endpoint may not exist on older backends
+      // Silent fail � endpoint may not exist on older backends
     });
   }, [roomCode]);
 
@@ -766,9 +766,9 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'Space') {
         e.preventDefault();
         if (socketGameState === 'Q_LOCKED') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelöst');
+          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgel�st');
         } else if (socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'N�chste Frage');
         } else if (socketGameState === 'LOBBY') {
           doAction(() => fetch(`/api/rooms/${roomCode}/start-quiz`, { method: 'POST' }), 'Quiz gestartet');
         }
@@ -796,7 +796,7 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         if (socketGameState === 'Q_ACTIVE' || socketGameState === 'Q_LOCKED' || socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'N�chste Frage');
         }
       }
       
@@ -887,7 +887,7 @@ function ModeratorPage(): React.ReactElement {
 
   const handleCreateSession = async () => {
     if (!selectedQuiz) {
-      setToast('Bitte zuerst ein Quiz auswählen');
+      setToast('Bitte zuerst ein Quiz ausw�hlen');
       return;
     }
     const socket = controlSocketRef.current;
@@ -916,7 +916,7 @@ function ModeratorPage(): React.ReactElement {
         }
         const nextCode = resp.roomCode || DEFAULT_ROOM_CODE;
         
-        // Quiz SOFORT setzen, kein zweiter Schritt mehr nötig
+        // Quiz SOFORT setzen, kein zweiter Schritt mehr n�tig
         try {
           await ensureAdminSession(nextCode);
           await useQuiz(nextCode, selectedQuiz);
@@ -931,7 +931,7 @@ function ModeratorPage(): React.ReactElement {
         setShowJoinScreen(true);
         setShowSessionSetup(false);
         setCreatingSession(false);
-        setToast(`Session ${nextCode} bereit – Quiz geladen!`);
+        setToast(`Session ${nextCode} bereit � Quiz geladen!`);
         setTimeout(() => setToast(null), 2500);
       }
     );
@@ -1043,132 +1043,6 @@ function ModeratorPage(): React.ReactElement {
     if (!emitted) {
       setToast('Socket nicht verbunden');
     }
-  }
-
-  function emitPotatoEvent(
-    eventName:
-      | 'host:startPotato'
-      | 'host:banPotatoTheme'
-      | 'host:confirmPotatoThemes'
-      | 'host:potatoStartRound'
-      | 'host:potatoSubmitTurn'
-      | 'host:potatoStrikeActive'
-      | 'host:potatoNextTurn'
-      | 'host:potatoEndRound'
-      | 'host:potatoNextRound'
-      | 'host:potatoFinish'
-      | 'host:potatoOverrideAttempt',
-    payload?: Record<string, unknown>,
-    onSuccess?: () => void
-  ) {
-    if (!roomCode) {
-      setToast('Roomcode fehlt');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    const emitted = emitHost(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
-      if (!resp?.ok) {
-        setToast(resp?.error || 'Aktion fehlgeschlagen');
-        setTimeout(() => setToast(null), 2200);
-        return;
-      }
-      onSuccess?.();
-    });
-    if (!emitted) {
-      setToast('Socket nicht verbunden');
-      setTimeout(() => setToast(null), 2000);
-    }
-  }
-
-  function handlePotatoStart() {
-    const text = potatoThemeInput.trim();
-    emitPotatoEvent('host:startPotato', text ? { themesText: text } : {}, () => setPotatoThemeInput(''));
-  }
-
-  function handlePotatoBan(teamId: string) {
-    const selection = (potatoBanDrafts[teamId] || '').trim();
-    if (!selection) {
-      setToast('Bitte zuerst ein Thema auswÃ¤hlen');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    emitPotatoEvent('host:banPotatoTheme', { teamId, theme: selection }, () =>
-      setPotatoBanDrafts((prev) => ({ ...prev, [teamId]: '' }))
-    );
-  }
-
-  function handlePotatoConfirmThemes() {
-    emitPotatoEvent('host:confirmPotatoThemes');
-  }
-  function handlePotatoStartRound() {
-    emitPotatoEvent('host:potatoStartRound');
-  }
-  function handlePotatoNextRound() {
-    emitPotatoEvent('host:potatoNextRound');
-  }
-  function handlePotatoFinish() {
-    emitPotatoEvent('host:potatoFinish');
-  }
-  function handleShowAwards() {
-    if (!roomCode) {
-      setToast('Roomcode fehlt');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    const emitted = emitHost('host:showAwards', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
-      if (!resp?.ok) {
-        setToast(resp?.error || 'Aktion fehlgeschlagen');
-        setTimeout(() => setToast(null), 2200);
-      }
-    });
-    if (!emitted) {
-      setToast('Socket nicht verbunden');
-      setTimeout(() => setToast(null), 2000);
-    }
-  }
-  function handlePotatoNextTurn() {
-    emitPotatoEvent('host:potatoNextTurn');
-  }
-  function handlePotatoStrike() {
-    emitPotatoEvent('host:potatoStrikeActive');
-  }
-  function handlePotatoEndRound() {
-    emitPotatoEvent(
-      'host:potatoEndRound',
-      potatoWinnerDraft ? { winnerId: potatoWinnerDraft } : {},
-      () => setPotatoWinnerDraft('')
-    );
-  }
-
-  const handlePotatoSubmit = (
-    verdict: 'correct' | 'strike',
-    options?: { override?: boolean }
-  ) => {
-    if (verdict === 'correct') {
-      const trimmed = potatoAnswerInput.trim();
-      if (!trimmed) {
-        setToast('Antwort fehlt');
-        setTimeout(() => setToast(null), 2000);
-        return;
-      }
-      emitPotatoEvent(
-        'host:potatoSubmitTurn',
-        { verdict, answer: trimmed, override: options?.override },
-        () => setPotatoAnswerInput('')
-      );
-      return;
-    }
-    emitPotatoEvent('host:potatoSubmitTurn', { verdict });
-  };
-
-  function handlePotatoOverrideAttempt(action: 'accept' | 'acceptDuplicate' | 'reject') {
-    const attemptId = potato?.lastAttempt?.id;
-    if (!attemptId) {
-      setToast('Kein Versuch zum Uebersteuern');
-      setTimeout(() => setToast(null), 2000);
-      return;
-    }
-    emitPotatoEvent('host:potatoOverrideAttempt', { attemptId, action });
   }
 
   function emitBlitzEvent(
@@ -1338,7 +1212,7 @@ function ModeratorPage(): React.ReactElement {
     if (question?.mechanic === 'multipleChoice' && (question as any)?.options) {
       Object.values(answers.answers).forEach((a: any) => {
         const raw = a?.answer ?? a?.value;
-        const key = raw !== undefined ? String(raw) : 'â€”';
+        const key = raw !== undefined ? String(raw) : '—';
         perOption[key] = (perOption[key] || 0) + 1;
       });
     }
@@ -1402,7 +1276,7 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
-        return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
+        return { hotkey: '1', label: 'WEITER', detail: 'Zur n�chsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
       case 'SCOREBOARD_PAUSE':
@@ -1419,7 +1293,7 @@ function ModeratorPage(): React.ReactElement {
       case 'BLITZ_PAUSE':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
       case 'POTATO':
-        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: '—' };
+        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: '�' };
       case 'AWARDS':
         return { hotkey: '1', label: 'WEITER', detail: 'Awards zeigen', context: 'Finale' };
       default:
@@ -1551,645 +1425,6 @@ function ModeratorPage(): React.ReactElement {
     />
   );
 
-  const renderPotatoControls = () => {
-    if (!showPotatoUI) return null;
-    const shouldShow =
-      Boolean(roomCode) && (potato || (meta?.globalIndex ?? 0) >= 19 || scoreboard.length > 0);
-    if (!shouldShow) return null;
-    const phase = potato?.phase ?? 'IDLE';
-    const selectedThemes = potato?.selectedThemes ?? [];
-    const banLimits = potato?.banLimits ?? {};
-    const bans = potato?.bans ?? {};
-    const pool = potato?.pool ?? [];
-    const lives = potato?.lives ?? {};
-    const turnOrder = potato?.turnOrder ?? [];
-    const usedAnswers = potato?.usedAnswers ?? [];
-    const isRoundEnd = phase === 'ROUND_END';
-    const isPlaying = phase === 'PLAYING';
-    const isBanning = phase === 'BANNING';
-    const roundsPlayed = potato?.roundIndex ?? -1;
-    const firstRoundPending = isRoundEnd && roundsPlayed < 0;
-    const allRoundsComplete =
-      isRoundEnd && potatoRoundsTotal > 0 && roundsPlayed >= potatoRoundsTotal - 1;
-    const activeTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato.activeTeamId : null;
-    const lastWinnerName = potato?.lastWinnerId ? teamLookup[potato.lastWinnerId]?.name || potato.lastWinnerId : null;
-    const lastAttempt = potato?.lastAttempt ?? null;
-    const lastAttemptTeamName = lastAttempt ? teamLookup[lastAttempt.teamId]?.name || lastAttempt.teamId : null;
-    const relevantConflict =
-      lastAttempt && potatoConflict && potatoConflict.answer === lastAttempt.text ? potatoConflict : null;
-    const lastAttemptVerdictLabel = lastAttempt
-      ? {
-          ok: 'OK',
-          dup: 'DUPLIKAT',
-          invalid: 'UNGUELTIG',
-          timeout: 'TIMEOUT',
-          pending: 'PRUEFUNG'
-        }[lastAttempt.verdict]
-      : null;
-    const lastAttemptTone = lastAttempt
-      ? {
-          ok: 'rgba(34,197,94,0.85)',
-          dup: 'rgba(250,204,21,0.85)',
-          invalid: 'rgba(248,113,113,0.85)',
-          timeout: 'rgba(248,113,113,0.85)',
-          pending: '#cbd5e1'
-        }[lastAttempt.verdict]
-      : '#cbd5e1';
-    const lastAttemptMessage = (() => {
-      if (!lastAttempt) return null;
-      if (lastAttempt.verdict === 'ok') return 'Automatisch akzeptiert.';
-      if (lastAttempt.verdict === 'dup') {
-        if (lastAttempt.reason === 'similar') {
-          return `Sehr aehnlich zu ${relevantConflict?.conflictingAnswer || 'bestehender Antwort'}.`;
-        }
-        return `Schon genannt: ${relevantConflict?.conflictingAnswer || 'eine andere Antwort'}.`;
-      }
-      if (lastAttempt.verdict === 'invalid') {
-        if (lastAttempt.reason === 'not-listed') return 'Nicht in der Themenliste.';
-        if (lastAttempt.reason === 'empty') return 'Team hat nichts eingegeben.';
-        if (lastAttempt.reason === 'rejected') return 'Bereits abgelehnt.';
-        return 'Ungueltig.';
-      }
-      if (lastAttempt.verdict === 'timeout') return 'Zeitlimit ueberschritten.';
-      return 'Wird aktuell geprueft.';
-    })();
-    const canOverrideAttempt = Boolean(lastAttempt && lastAttempt.verdict !== 'ok');
-    return (
-      <section style={{ ...card, marginTop: 12 }}>
-        {/* TODO(DESIGN_LATER): polish potato admin layout */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            flexWrap: 'wrap'
-          }}
-        >
-          <div>
-            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Finale Â· Heisse Kartoffel</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              Phase: {phase}{' '}
-              {potatoRoundsTotal > 0 && `| Runde ${(roundsPlayed >= 0 ? roundsPlayed + 1 : 0)}/${potatoRoundsTotal}`}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {potatoTimeLeft !== null && isPlaying && (
-              <span
-                style={{
-                  ...statChip,
-                  borderColor: 'rgba(248,113,113,0.45)',
-                  color: '#fecaca',
-                  background: 'rgba(248,113,113,0.12)'
-                }}
-              >
-                Restzeit {potatoTimeLeft}s
-              </span>
-            )}
-            {selectedThemes.length > 0 && (
-              <span style={{ ...statChip, background: 'rgba(255,255,255,0.08)' }}>
-                Themen: {selectedThemes.join(', ')}
-              </span>
-            )}
-          </div>
-        </div>
-        {showPotatoConfigBadges && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-            <span
-              style={{
-                ...statChip,
-                borderColor: potatoAutopilotEnabled ? 'rgba(34,197,94,0.45)' : 'rgba(248,113,113,0.45)',
-                color: potatoAutopilotEnabled ? '#bbf7d0' : '#fecaca',
-                background: potatoAutopilotEnabled ? 'rgba(34,197,94,0.12)' : 'rgba(248,113,113,0.12)'
-              }}
-            >
-              Autopilot: {potatoAutopilotEnabled ? 'AN' : 'AUS'}
-            </span>
-            <span
-              style={{
-                ...statChip,
-                borderColor: potatoTimeoutAutostrikeEnabled ? 'rgba(251,191,36,0.4)' : 'rgba(148,163,184,0.4)',
-                color: potatoTimeoutAutostrikeEnabled ? '#fcd34d' : '#cbd5e1',
-                background: potatoTimeoutAutostrikeEnabled ? 'rgba(251,191,36,0.12)' : 'rgba(148,163,184,0.12)'
-              }}
-            >
-              Timeout-Strike: {potatoTimeoutAutostrikeEnabled ? 'AN' : 'AUS'}
-            </span>
-          </div>
-        )}
-
-        <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
-          {!potato && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ color: '#94a3b8', fontSize: 13 }}>
-                Nach Frage 20 kannst du hier die Heisse Kartoffel starten. Optional kannst du eigene Themen (eine pro Zeile)
-                einfÃ¼gen, sonst nutzen wir das Standard-Set.
-              </div>
-              <textarea
-                value={potatoThemeInput}
-                onChange={(e) => setPotatoThemeInput(e.target.value)}
-                style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
-                placeholder="Optional: Eigene Themen pro Zeile"
-              />
-              <button
-                style={{
-                  ...inputStyle,
-                  background: 'linear-gradient(135deg, #fbbf24, #fb923c)',
-                  border: '1px solid rgba(251,146,60,0.5)',
-                  color: '#1f1305',
-                  cursor: 'pointer'
-                }}
-                onClick={handlePotatoStart}
-              >
-                FINAL: HEISSE KARTOFFEL STARTEN
-              </button>
-            </div>
-          )}
-
-          {potato && isBanning && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ fontWeight: 700 }}>Bans setzen Â· {pool.length} Themen noch frei</div>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 6,
-                  flexWrap: 'wrap',
-                  fontSize: 12,
-                  color: '#cbd5e1'
-                }}
-              >
-                {pool.map((theme) => (
-                  <span key={theme} style={statChip}>
-                    {theme}
-                  </span>
-                ))}
-                {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen mehr verfÃ¼gbar</span>}
-              </div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {scoreboard.map((team) => {
-                  const limit = banLimits[team.id] ?? 0;
-                  if (limit <= 0) {
-                    return (
-                      <div
-                        key={team.id}
-                        style={{
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 12,
-                          padding: 10,
-                          opacity: 0.6
-                        }}
-                      >
-                        <div style={{ fontWeight: 700 }}>{team.name}</div>
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>Keine Bans fÃ¼r dieses Team</div>
-                      </div>
-                    );
-                  }
-                  const used = bans[team.id]?.length ?? 0;
-                  const exhausted = used >= limit;
-                  return (
-                    <div
-                      key={team.id}
-                      style={{
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 12,
-                        padding: 10,
-                        display: 'grid',
-                        gap: 6
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontWeight: 700 }}>{team.name}</div>
-                        <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                          {used}/{limit} genutzt
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-                        Bans: {bans[team.id]?.join(', ') || 'â€”'}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <select
-                          value={potatoBanDrafts[team.id] ?? ''}
-                          onChange={(e) =>
-                            setPotatoBanDrafts((prev) => ({ ...prev, [team.id]: e.target.value }))
-                          }
-                          disabled={exhausted || pool.length === 0}
-                          style={{ ...inputStyle, flex: '1 1 220px', minWidth: 180 }}
-                        >
-                          <option value="">Thema wÃ¤hlen</option>
-                          {pool.map((theme) => (
-                            <option key={`${team.id}-${theme}`} value={theme}>
-                              {theme}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          style={{
-                            ...inputStyle,
-                            width: 'auto',
-                            background: exhausted ? 'rgba(15,23,42,0.35)' : 'rgba(37,99,235,0.2)',
-                            border: '1px solid rgba(96,165,250,0.5)',
-                            color: '#bfdbfe',
-                            cursor: exhausted ? 'not-allowed' : 'pointer'
-                          }}
-                          disabled={exhausted}
-                          onClick={() => handlePotatoBan(team.id)}
-                        >
-                          Bann setzen
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <button
-                style={{
-                  ...inputStyle,
-                  width: 'auto',
-                  background: 'rgba(59,130,246,0.18)',
-                  border: '1px solid rgba(59,130,246,0.4)',
-                  color: '#bfdbfe',
-                  cursor: 'pointer'
-                }}
-                onClick={handlePotatoConfirmThemes}
-              >
-                Themen auslosen und Reihenfolge festlegen
-              </button>
-            </div>
-          )}
-
-          {potato && isPlaying && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ fontWeight: 700 }}>
-                Runde {Math.max(1, roundsPlayed + 1)} / {Math.max(1, potatoRoundsTotal)} Â· Thema:{' '}
-                {potato.currentTheme || 'n/a'}
-              </div>
-              <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-                Aktives Team: {activeTeamName || 'â€”'} Â· Antworten bisher: {usedAnswers.length}
-              </div>
-              {potatoDeadlinePassed && (
-                <span
-                  style={{
-                    ...statChip,
-                    borderColor: 'rgba(248,113,113,0.5)',
-                    color: '#fecaca',
-                    background: 'rgba(248,113,113,0.14)'
-                  }}
-                >
-                  TIMEOUT â€“ bitte entscheiden
-                </span>
-              )}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {turnOrder.map((teamId) => (
-                  <span
-                    key={teamId}
-                    style={{
-                      ...statChip,
-                      background: teamId === potato.activeTeamId ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
-                      borderColor: teamId === potato.activeTeamId ? 'rgba(129,140,248,0.45)' : 'rgba(255,255,255,0.1)'
-                    }}
-                  >
-                    {teamLookup[teamId]?.name || teamId} Â· Leben {lives[teamId] ?? '-'}
-                  </span>
-                ))}
-              </div>
-              {usedAnswers.length > 0 && (
-                <div style={{ display: 'grid', gap: 4 }}>
-                  <div style={{ fontSize: 12, color: '#94a3b8' }}>Schon genannt</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {usedAnswers.map((answer, idx) => (
-                      <span
-                        key={`potato-used-admin-${idx}`}
-                        style={{
-                          ...statChip,
-                          background: 'rgba(148,163,184,0.16)',
-                          borderColor: 'rgba(148,163,184,0.35)',
-                          color: '#e2e8f0'
-                        }}
-                      >
-                        {answer}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {lastAttempt && (
-                <div
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 12,
-                    padding: 12,
-                    display: 'grid',
-                    gap: 6,
-                    background: 'rgba(15,23,42,0.55)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                    <div style={{ fontWeight: 700 }}>
-                      {lastAttemptTeamName || lastAttempt.teamId} Â· {new Date(lastAttempt.at).toLocaleTimeString()}
-                    </div>
-                    {lastAttemptVerdictLabel && (
-                      <span
-                        style={{
-                          ...statChip,
-                          borderColor: lastAttemptTone,
-                          color: lastAttemptTone,
-                          background: 'transparent'
-                        }}
-                      >
-                        {lastAttemptVerdictLabel}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    Antwort: <strong>"{lastAttempt.text || 'â€”'}"</strong>
-                  </div>
-                  {relevantConflict && (
-                    <div style={{ fontSize: 12, color: '#fde68a' }}>
-                      Konflikt mit {relevantConflict.conflictingAnswer || 'anderer Antwort'}
-                    </div>
-                  )}
-                  {lastAttemptMessage && <div style={{ fontSize: 13, color: '#cbd5e1' }}>{lastAttemptMessage}</div>}
-                  {canOverrideAttempt && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button
-                        style={{
-                          ...inputStyle,
-                          width: 'auto',
-                          background: 'rgba(34,197,94,0.25)',
-                          border: '1px solid rgba(34,197,94,0.45)',
-                          color: '#bbf7d0'
-                        }}
-                        onClick={() => handlePotatoOverrideAttempt('accept')}
-                      >
-                        Akzeptieren
-                      </button>
-                      {lastAttempt.verdict === 'dup' && (
-                        <button
-                          style={{
-                            ...inputStyle,
-                            width: 'auto',
-                            background: 'rgba(250,204,21,0.18)',
-                            border: '1px solid rgba(250,204,21,0.4)',
-                            color: '#fef9c3'
-                          }}
-                          onClick={() => handlePotatoOverrideAttempt('acceptDuplicate')}
-                        >
-                          Duplikat akzeptieren
-                        </button>
-                      )}
-                      <button
-                        style={{
-                          ...inputStyle,
-                          width: 'auto',
-                          background: 'rgba(248,113,113,0.18)',
-                          border: '1px solid rgba(248,113,113,0.4)',
-                          color: '#fecaca'
-                        }}
-                        onClick={() => handlePotatoOverrideAttempt('reject')}
-                      >
-                        Ablehnen
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {featureFlags.showLegacyPanels && (
-                  <>
-                    {/* TODO(LEGACY): Host typed potato answers fallback */}
-                    <input
-                      value={potatoAnswerInput}
-                      onChange={(e) => setPotatoAnswerInput(e.target.value)}
-                      placeholder="Antwort des Teams"
-                      style={{ ...inputStyle, flex: '1 1 220px', minWidth: 200 }}
-                    />
-                    <button
-                      style={{
-                        ...inputStyle,
-                        width: 'auto',
-                        background: 'rgba(34,197,94,0.18)',
-                        border: '1px solid rgba(34,197,94,0.45)',
-                        color: '#bbf7d0',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => handlePotatoSubmit('correct')}
-                    >
-                      Antwort OK
-                    </button>
-                    <button
-                      style={{
-                        ...inputStyle,
-                        width: 'auto',
-                        background: 'rgba(239,68,68,0.18)',
-                        border: '1px solid rgba(239,68,68,0.4)',
-                        color: '#fecdd3',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => handlePotatoSubmit('strike')}
-                    >
-                      Strike
-                    </button>
-                  </>
-                )}
-                <button style={{ ...inputStyle, width: 'auto' }} onClick={handlePotatoNextTurn}>
-                  NÃ¤chster Zug
-                </button>
-                <button
-                  style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.18)' }}
-                  onClick={handlePotatoStrike}
-                >
-                  Leben -1
-                </button>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                <select
-                  value={potatoWinnerDraft}
-                  onChange={(e) => setPotatoWinnerDraft(e.target.value)}
-                  style={{ ...inputStyle, flex: '1 1 200px', minWidth: 180 }}
-                >
-                  <option value="">Sieger wÃ¤hlen (optional)</option>
-                  {turnOrder.map((teamId) => (
-                    <option key={`winner-${teamId}`} value={teamId}>
-                      {teamLookup[teamId]?.name || teamId}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'linear-gradient(135deg, #fcd34d, #f97316)',
-                    color: '#1f1305',
-                    cursor: 'pointer'
-                  }}
-                  onClick={handlePotatoEndRound}
-                >
-                  Runde abschlieÃŸen (+3 Punkte)
-                </button>
-              </div>
-              {featureFlags.showLegacyPanels && potatoConflict && (
-                <div
-                  style={{
-                    border: '1px solid rgba(248,113,113,0.45)',
-                    borderRadius: 12,
-                    padding: 10,
-                    background: 'rgba(248,113,113,0.08)',
-                    color: '#fecaca',
-                    display: 'grid',
-                    gap: 6
-                  }}
-                >
-                  <div style={{ fontWeight: 800 }}>
-                    {potatoConflict.type === 'duplicate' ? 'DUPLIKAT' : 'Ã„HNLICH'} erkannt
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    â€ž{potatoConflict.answer}â€œ
-                    {potatoConflict.conflictingAnswer ? ` vs. â€ž${potatoConflict.conflictingAnswer}â€œ` : ''}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      style={{
-                        ...inputStyle,
-                        width: 'auto',
-                        background: 'rgba(34,197,94,0.25)',
-                        border: '1px solid rgba(34,197,94,0.5)',
-                        color: '#bbf7d0'
-                      }}
-                      onClick={() => handlePotatoSubmit('correct', { override: true })}
-                    >
-                      Trotzdem akzeptieren
-                    </button>
-                    <button
-                      style={{
-                        ...inputStyle,
-                        width: 'auto',
-                        background: 'rgba(239,68,68,0.2)',
-                        border: '1px solid rgba(239,68,68,0.4)',
-                        color: '#fecdd3'
-                      }}
-                      onClick={() => handlePotatoSubmit('strike')}
-                    >
-                      Strike vergeben
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {potato && isRoundEnd && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ fontWeight: 700 }}>
-                {firstRoundPending
-                  ? 'Bans erledigt Â· Themes bereit.'
-                  : allRoundsComplete
-                  ? 'Alle Runden abgeschlossen.'
-                  : `Runde ${roundsPlayed + 1} beendet.`}
-              </div>
-              {lastWinnerName && (
-                <div style={{ fontSize: 12, color: '#cbd5e1' }}>Sieger Runde: {lastWinnerName}</div>
-              )}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {selectedThemes.map((theme, idx) => {
-                  const done = idx <= roundsPlayed;
-                  return (
-                    <span
-                      key={`theme-${theme}-${idx}`}
-                      style={{
-                        ...statChip,
-                        background: done ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.05)',
-                        borderColor: done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'
-                      }}
-                    >
-                      {theme}
-                    </span>
-                  );
-                })}
-                {selectedThemes.length === 0 && (
-                  <span style={{ color: '#94a3b8', fontSize: 12 }}>Noch keine Themen ausgewÃ¤hlt</span>
-                )}
-              </div>
-              {firstRoundPending && (
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'linear-gradient(135deg, #93c5fd, #3b82f6)',
-                    color: '#0b1020',
-                    cursor: 'pointer'
-                  }}
-                  onClick={handlePotatoStartRound}
-                >
-                  Runde 1 starten
-                </button>
-              )}
-              {!firstRoundPending && !allRoundsComplete && (
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'linear-gradient(135deg, #6ee7b7, #3b82f6)',
-                    color: '#0b1020',
-                    cursor: 'pointer'
-                  }}
-                  onClick={handlePotatoNextRound}
-                >
-                  NÃ¤chste Runde starten
-                </button>
-              )}
-              {allRoundsComplete && (
-                <button
-                  style={{
-                    ...inputStyle,
-                    width: 'auto',
-                    background: 'linear-gradient(135deg, #fcd34d, #f97316)',
-                    color: '#1f1305',
-                    cursor: 'pointer'
-                  }}
-                  onClick={handlePotatoFinish}
-                >
-                  Finale abschlieÃŸen Â· weiter zu Awards
-                </button>
-              )}
-            </div>
-          )}
-
-          {potato && potato.phase === 'DONE' && (
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-              Heisse Kartoffel abgeschlossen. Warte auf Awards oder wechsle zum Scoreboard.
-            </div>
-          )}
-        </div>
-
-        {scoreboard.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Scoreboard</div>
-            <div style={{ display: 'grid', gap: 6 }}>
-              {scoreboard.map((entry, idx) => (
-                <div
-                  key={`potato-score-${entry.id}`}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr auto',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(0,0,0,0.3)'
-                  }}
-                >
-                  <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
-                  <span>{entry.name}</span>
-                  <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  };
-
   const renderRundlaufControls = () => {
     if (!roomCode || !isRundlaufState || singleActionMode) return null;
     const pool = rundlauf?.pool ?? [];
@@ -2287,7 +1522,7 @@ function ModeratorPage(): React.ReactElement {
             </div>
             {selectedTitles.length > 0 && (
               <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-                Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' · ')}
+                Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' � ')}
               </div>
             )}
           </div>
@@ -2381,19 +1616,19 @@ function ModeratorPage(): React.ReactElement {
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye live</div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-            Runde {roundLabel} · Kategorie: {currentCategoryTitle || 'n/a'}
+            Runde {roundLabel} � Kategorie: {currentCategoryTitle || 'n/a'}
           </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span style={statChip}>Aktiv: {activeTeamName || 'n/a'}</span>
             {rundlaufTimeLeft !== null && <span style={statChip}>Restzeit {rundlaufTimeLeft}s</span>}
             <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}/{totalCount}</span>
-            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>Übrig: {remainingCount}</span>}
+            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>�brig: {remainingCount}</span>}
           </div>
 
           {/* Remaining answers hint */}
           {totalCount > 0 && remainingCount > 0 && remainingCount <= 5 && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} übrig:</div>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} �brig:</div>
               <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {(rundlauf?.remainingAnswers ?? []).slice(0, 10).map((answer, idx) => (
                   <span key={idx} style={{ background: 'rgba(148,163,184,0.2)', padding: '4px 8px', borderRadius: 4 }}>
@@ -2410,13 +1645,13 @@ function ModeratorPage(): React.ReactElement {
               <div style={{ fontWeight: 700, marginBottom: 4 }}>
                 Letzter Versuch: {lastAttemptTeamName || lastAttempt.teamId}
               </div>
-              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || '—'}</div>
+              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || '�'}</div>
               {lastAttemptLabel && <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
               
               {/* Validation hint: show if answer is similar to any available answer */}
               {lastAttempt.verdict === 'invalid' && lastAttempt.reason === 'not-listed' && rundlauf?.availableAnswers && (
                 <div style={{ marginTop: 8, padding: 8, background: 'rgba(248,113,113,0.1)', borderRadius: 6 }}>
-                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>Ähnliche Antworten:</div>
+                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>�hnliche Antworten:</div>
                   <div style={{ fontSize: 12, color: '#fecaca', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {rundlauf.availableAnswers.slice(0, 5).map((answer, idx) => (
                       <span key={idx} style={{ background: 'rgba(248,113,113,0.2)', padding: '3px 6px', borderRadius: 3 }}>
@@ -2582,7 +1817,7 @@ function ModeratorPage(): React.ReactElement {
               disabled={disabled}
               style={{ ...inputStyle, flex: '1 1 160px', minWidth: 160 }}
             >
-              <option value="">Theme wÃ¤hlen</option>
+              <option value="">Theme wählen</option>
               {pool.map((theme) => (
                 <option key={`${teamId}-${theme.id}`} value={theme.id}>
                   {theme.title}
@@ -2609,7 +1844,7 @@ function ModeratorPage(): React.ReactElement {
           <div>
             <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Blitz Battle</div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              Phase: {phase} Â· Set {Math.max(0, setIndex + 1)}/{Math.max(3, selected.length || 3)}
+              Phase: {phase} · Set {Math.max(0, setIndex + 1)}/{Math.max(3, selected.length || 3)}
             </div>
           </div>
           {blitzTimeLeft !== null && phase === 'PLAYING' && (
@@ -2751,7 +1986,7 @@ function ModeratorPage(): React.ReactElement {
 
         {selected.length > 0 && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>AusgewÃ¤hlte Themen</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Ausgewählte Themen</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {selected.map((theme, idx) => (
                 <span
@@ -2778,7 +2013,7 @@ function ModeratorPage(): React.ReactElement {
         {phase === 'PLAYING' && (
           <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
             <div style={{ fontWeight: 700 }}>
-              Set {Math.max(1, setIndex + 1)} Â· Thema: {currentTheme?.title || '-'}
+              Set {Math.max(1, setIndex + 1)} · Thema: {currentTheme?.title || '-'}
             </div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               Einsendungen: {submissions.length}/{scoreboard.length}
@@ -2862,7 +2097,7 @@ function ModeratorPage(): React.ReactElement {
               style={{ ...inputStyle, width: 'auto' }}
               onClick={() => emitBlitzEvent('host:blitzStartSet')}
             >
-              {setIndex < 0 ? 'Set starten' : 'NÃ¤chstes Set starten'}
+              {setIndex < 0 ? 'Set starten' : 'Nächstes Set starten'}
             </button>
           </div>
         )}
@@ -3526,7 +2761,7 @@ const renderCozyStagePanel = () => {
           (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
         }}
       >
-        ⚙️
+        ??
       </button>
     </div>
         {showSettingsPanel && (
@@ -3538,7 +2773,7 @@ const renderCozyStagePanel = () => {
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
-              Roomcode: <strong>{roomCode || '—'}</strong>
+              Roomcode: <strong>{roomCode || '�'}</strong>
             </span>
             {currentQuizName && (
               <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
@@ -3560,7 +2795,7 @@ const renderCozyStagePanel = () => {
               onClick={() => setShowSessionSetup(true)}
               title="Wechsle zu einem anderen Quiz"
             >
-              🔄 Quiz wechseln
+              ?? Quiz wechseln
             </button>
             <button
               style={{
@@ -3573,9 +2808,9 @@ const renderCozyStagePanel = () => {
                 width: '100%'
               }}
               onClick={handleRoomReset}
-              title="Beende das aktuelle Quiz und zurück zur Setup"
+              title="Beende das aktuelle Quiz und zur�ck zur Setup"
             >
-              🛑 Quiz beenden
+              ?? Quiz beenden
             </button>
           </div>
         </div>
@@ -4157,7 +3392,7 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
+      {/* Antwort-Panel f�r Moderator: zeige alle Team-Antworten live */}
       {viewPhase === 'quiz' && answers && (normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
         <AdminAnswersPanel
           answers={answers.answers}
@@ -4170,7 +3405,7 @@ const renderCozyStagePanel = () => {
                   setAnswers(res);
                 }
               },
-              'Schätzfrage ausgewertet'
+              'Sch�tzfrage ausgewertet'
             )
           }
           onResolveGeneric={() =>
@@ -4280,7 +3515,7 @@ const renderCozyStagePanel = () => {
           <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
             <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
             <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
+            <li>Schaetzfragen: am n�chsten dran gewinnt.</li>
             <li>Bilder & Cheese: genau hinsehen.</li>
           </ul>
           <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>
@@ -4355,13 +3590,13 @@ const renderCozyStagePanel = () => {
       {/* Keyboard Shortcuts Help */}
       <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
         <div style={{ fontSize: 11, color: '#7dd3fc', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
-          ⌨️ Keyboard Shortcuts
+          ?? Keyboard Shortcuts
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> N�chste Aktion (Quiz starten / Reveal / Weiter)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nächste Frage (überspringen)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> N�chste Frage (�berspringen)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>S</kbd> Scoreboard anzeigen</div>
         </div>
       </div>
@@ -4373,8 +3608,6 @@ const renderCozyStagePanel = () => {
 }
 
 export default ModeratorPage;
-
-
 
 
 

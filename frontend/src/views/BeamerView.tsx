@@ -1584,41 +1584,7 @@ useEffect(() => {
           </div>
         )}
         
-        {answerResults && answerResults.length > 0 && (
-          <div>
-            <div className="beamer-label">
-              {language === 'de' ? 'Team-Antworten' : 'Team answers'}
-            </div>
-            <div className="beamer-scoreboard-grid">
-              {answerResults.map((result: any, idx: number) => {
-                const answer = result.answer?.kind === 'top5' 
-                  ? result.answer.order?.join(' → ') 
-                  : result.answer?.order?.join(' → ')
-                  ? result.answer.order.join(' → ')
-                  : '-';
-                return (
-                  <div
-                    key={`top5-answer-${result.teamId}-${idx}`}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: result.isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(107,114,128,0.12)',
-                      color: '#e2e8f0',
-                      willChange: 'transform, opacity',
-                      animation: `${result.isCorrect ? 'correctGlow 0.8s ease-out, ' : ''}beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)`,
-                      animationDelay: `${idx * 80}ms`,
-                      animationFillMode: 'backwards'
-                    }}
-                  >
-                    <strong>{result.displayName || result.teamId}</strong>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{answer}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {renderTeamAnswersSection()}
       </div>
     );
   };

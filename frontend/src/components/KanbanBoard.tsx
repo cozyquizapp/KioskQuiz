@@ -20,15 +20,29 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [draggedSlot, setDraggedSlot] = useState<number | null>(null);
   const [draggedCategory, setDraggedCategory] = useState<QuizCategory | null>(null);
+  const [filterQuery, setFilterQuery] = useState<string>('');
+  const [isDense, setIsDense] = useState<boolean>(false);
+  const [collapsed, setCollapsed] = useState<Record<QuizCategory, boolean>>({
+    Schaetzchen: false,
+    'Mu-Cho': false,
+    Stimmts: false,
+    Cheese: false,
+    GemischteTuete: false
+  });
   const language = draft.meta.language === 'en' ? 'en' : 'de'; // Vereinfacht
 
   const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
 
   // Gruppiere Fragen nach Kategorie
   const getQuestionsByCategory = (category: QuizCategory) => {
-    return draft.questions
+    const items = draft.questions
       .map((q: AnyQuestion, idx: number) => ({ question: q, index: idx }))
       .filter(({ question }: { question: AnyQuestion; index: number }) => question.category === category);
+    if (!filterQuery.trim()) return items;
+    const qLower = filterQuery.trim().toLowerCase();
+    return items.filter(({ question }) =>
+      (question.question || '').toLowerCase().includes(qLower)
+    );
   };
 
   const handleQuestionSave = (slotIndex: number, updatedQuestion: AnyQuestion) => {
@@ -128,7 +142,26 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
           📋 Kanban-Board - Fragen nach Kategorien
         </h3>
-        <small style={{ opacity: 0.6 }}>Drag & Drop zwischen Kategorien. Click zum Editieren.</small>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Suchen… (Fragentext)"
+            style={{
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: 'rgba(0,0,0,0.25)',
+              color: '#e2e8f0'
+            }}
+          />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, opacity: 0.8 }}>
+            <input type="checkbox" checked={isDense} onChange={(e) => setIsDense(e.target.checked)} />
+            Dichtes Layout
+          </label>
+          <small style={{ opacity: 0.6 }}>Drag & Drop zwischen Kategorien. Click zum Editieren.</small>
+        </div>
       </div>
 
       <div style={boardStyle}>
@@ -173,10 +206,28 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                 }}>
                   {count}/5
                 </div>
+                <button
+                  onClick={() => setCollapsed(prev => ({ ...prev, [category]: !prev[category] }))}
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'rgba(0,0,0,0.2)',
+                    color: '#e2e8f0',
+                    fontSize: 11,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {collapsed[category] ? 'Aufklappen' : 'Zuklappen'}
+                </button>
               </div>
 
               {/* Questions */}
-              <div style={questionsListStyle}>
+              <div style={{
+                ...questionsListStyle,
+                display: collapsed[category] ? 'none' : 'flex'
+              }}>
                 {questions.map(({ question, index }: { question: AnyQuestion; index: number }) => {
                   const slot = COZY_SLOT_TEMPLATE[index] || COZY_SLOT_TEMPLATE[0];
                   const isBeingDragged = draggedSlot === index;
@@ -191,6 +242,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                       onClick={() => setEditingSlot(index)}
                       style={{
                         ...questionCardStyle,
+                        padding: isDense ? 8 : 10,
                         opacity: isBeingDragged ? 0.5 : 1,
                         borderColor: isBeingDragged ? `${catColor}88` : catColor,
                         background: isBeingDragged
@@ -200,7 +252,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <div style={{ fontSize: 11, opacity: 0.5 }}>
+                        <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
                           Slot {index + 1} • {slot.defaultPoints}pts
                         </div>
                         {isUsed && (
@@ -208,8 +260,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                             background: 'rgba(251,191,36,0.2)',
                             border: '1px solid rgba(251,191,36,0.4)',
                             borderRadius: 4,
-                            padding: '2px 6px',
-                            fontSize: 10,
+                            padding: isDense ? '1px 5px' : '2px 6px',
+                            fontSize: isDense ? 9 : 10,
                             fontWeight: 600,
                             color: '#fbbf24'
                           }}>
@@ -217,19 +269,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                           </div>
                         )}
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                      <div style={{ fontSize: isDense ? 11 : 12, fontWeight: 600, marginBottom: isDense ? 4 : 6, lineHeight: 1.35 }}>
                         {question.question || '(leer)'}
                       </div>
                       {question.imageUrl && (
                         <div style={{
                           width: '100%',
-                          height: 60,
+                          height: isDense ? 48 : 60,
                           background: `url(${question.imageUrl}) center/cover`,
                           borderRadius: 6,
-                          marginBottom: 6
+                          marginBottom: isDense ? 4 : 6
                         }} />
                       )}
-                      <div style={{ fontSize: 11, opacity: 0.6 }}>
+                      <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.6 }}>
                         {question.mechanic} • {question.category}
                       </div>
                     </div>

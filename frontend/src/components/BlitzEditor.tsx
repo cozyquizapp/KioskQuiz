@@ -169,14 +169,50 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
                               style={itemInputStyle}
                             />
 
-                            <label style={labelStyle}>Bild URL (optional)</label>
-                            <input
-                              type="text"
-                              value={item.mediaUrl || ''}
-                              onChange={(e) => updateItem(theme.id, item.id, { mediaUrl: e.target.value })}
-                              placeholder="https://..."
-                              style={itemInputStyle}
-                            />
+                            <label style={labelStyle}>Bild (URL oder Upload)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                              <input
+                                type="text"
+                                value={item.mediaUrl || ''}
+                                onChange={(e) => updateItem(theme.id, item.id, { mediaUrl: e.target.value })}
+                                placeholder="https://... oder wird nach Upload gefüllt"
+                                style={itemInputStyle}
+                              />
+                              <button
+                                onClick={async () => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = 'image/*';
+                                  input.onchange = async () => {
+                                    const file = input.files?.[0];
+                                    if (!file) return;
+                                    const form = new FormData();
+                                    form.append('file', file);
+                                    try {
+                                      const res = await fetch('/api/upload/blitz-image', { method: 'POST', body: form });
+                                      if (!res.ok) throw new Error('Upload fehlgeschlagen');
+                                      const data = await res.json();
+                                      updateItem(theme.id, item.id, { mediaUrl: data.imageUrl });
+                                    } catch (err) {
+                                      alert(`Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+                                    }
+                                  };
+                                  input.click();
+                                }}
+                                style={{
+                                  background: 'rgba(59,130,246,0.2)',
+                                  border: '1px solid rgba(59,130,246,0.4)',
+                                  borderRadius: 8,
+                                  padding: '8px 12px',
+                                  color: '#60a5fa',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  fontSize: 12
+                                }}
+                              >
+                                📤 Upload
+                              </button>
+                            </div>
 
                             <label style={labelStyle}>Alias-Antworten (optional)</label>
                             <input

@@ -56,6 +56,7 @@ export function KanbanQuestionEditor({
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'basic' | 'mechanic' | 'media' | 'points'>('basic');
 
   const slot = COZY_SLOT_TEMPLATE[slotIndex];
   const mechanic = slot?.type || question.type;
@@ -286,113 +287,147 @@ export function KanbanQuestionEditor({
           <button onClick={onCancel} style={closeButtonStyle}>✕</button>
         </div>
 
+        {/* Tab Switcher */}
+        <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.2)' }}>
+          {[
+            { key: 'basic', label: 'Basis' },
+            { key: 'mechanic', label: 'Mechanik' },
+            { key: 'media', label: 'Medien & Deko' },
+            { key: 'points', label: 'Punkte' }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 999,
+                border: '1px solid rgba(255,255,255,0.14)',
+                background: activeTab === tab.key ? 'rgba(59,130,246,0.25)' : 'rgba(0,0,0,0.2)',
+                color: '#e2e8f0',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Content */}
         <div style={modalContentStyle}>
-          {/* Frage */}
-          <div style={formSectionStyle}>
-            <label style={labelStyle}>Frage (Deutsch)</label>
-            <textarea
-              value={localQuestion.question || ''}
-              onChange={(e) => setLocalQuestion(prev => ({ ...prev, question: e.target.value }))}
-              style={textareaStyle}
-              rows={3}
-              placeholder="Gib deine Frage ein..."
-            />
-          </div>
+          {activeTab === 'basic' && (
+            <>
+              <div style={formSectionStyle}>
+                <label style={labelStyle}>Frage (Deutsch)</label>
+                <textarea
+                  value={localQuestion.question || ''}
+                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, question: e.target.value }))}
+                  style={textareaStyle}
+                  rows={3}
+                  placeholder="Gib deine Frage ein..."
+                />
+              </div>
+              <div style={formSectionStyle}>
+                <label style={labelStyle}>Fun Fact / Moderationsnotiz</label>
+                <textarea
+                  value={localQuestion.funFact || ''}
+                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, funFact: e.target.value }))}
+                  style={textareaStyle}
+                  rows={2}
+                  placeholder="Interessante Info für den Moderator..."
+                />
+              </div>
+            </>
+          )}
 
-          {/* Mechanik-spezifische Felder */}
-          {renderMechanicFields()}
+          {activeTab === 'mechanic' && (
+            <>{renderMechanicFields()}</>
+          )}
 
-          {/* Fun Fact */}
-          <div style={formSectionStyle}>
-            <label style={labelStyle}>Fun Fact / Moderationsnotiz</label>
-            <textarea
-              value={localQuestion.funFact || ''}
-              onChange={(e) => setLocalQuestion(prev => ({ ...prev, funFact: e.target.value }))}
-              style={textareaStyle}
-              rows={2}
-              placeholder="Interessante Info für den Moderator..."
-            />
-          </div>
-
-          {/* Bild-Upload */}
-          <div style={formSectionStyle}>
-            <label style={labelStyle}>📸 Bild</label>
-            {imagePreview && (
-              <div style={imagePreviewStyle}>
-                <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 8 }} />
-                <button
-                  onClick={() => {
-                    setImagePreview(null);
-                    setLocalQuestion(prev => ({ ...prev, imageUrl: '' }));
+          {activeTab === 'media' && (
+            <>
+              <div style={formSectionStyle}>
+                <label style={labelStyle}>📸 Bild</label>
+                {imagePreview && (
+                  <div style={imagePreviewStyle}>
+                    <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 8 }} />
+                    <button
+                      onClick={() => {
+                        setImagePreview(null);
+                        setLocalQuestion(prev => ({ ...prev, imageUrl: '' }));
+                      }}
+                      style={{ marginTop: 8, padding: '4px 8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  style={{ display: 'none' }}
+                  disabled={isUploading}
+                />
+                <button 
+                  onClick={() => imageInputRef.current?.click()} 
+                  style={{
+                    ...uploadButtonStyle,
+                    opacity: isUploading ? 0.6 : 1,
+                    cursor: isUploading ? 'not-allowed' : 'pointer'
                   }}
-                  style={{ marginTop: 8, padding: '4px 8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                  disabled={isUploading}
                 >
-                  Löschen
+                  {isUploading ? '⏳ Lädt...' : `📁 ${imagePreview ? 'Bild ändern' : 'Bild auswählen'}`}
                 </button>
               </div>
-            )}
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              style={{ display: 'none' }}
-              disabled={isUploading}
-            />
-            <button 
-              onClick={() => imageInputRef.current?.click()} 
-              style={{
-                ...uploadButtonStyle,
-                opacity: isUploading ? 0.6 : 1,
-                cursor: isUploading ? 'not-allowed' : 'pointer'
-              }}
-              disabled={isUploading}
-            >
-              {isUploading ? '⏳ Lädt...' : `📁 ${imagePreview ? 'Bild ändern' : 'Bild auswählen'}`}
-            </button>
-          </div>
 
-          {/* Deko-Icons */}
-          <div style={formSectionStyle}>
-            <label style={labelStyle}>✨ Deko-Icons</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-              <div>
-                <small style={{ opacity: 0.6 }}>Links:</small>
-                <select
-                  value={localQuestion.decorationLeft || ''}
-                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, decorationLeft: e.target.value as DecorationKey || null }))}
-                  style={selectStyle}
-                >
-                  <option value="">Keine</option>
-                  {decorations.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+              <div style={formSectionStyle}>
+                <label style={labelStyle}>✨ Deko-Icons</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  <div>
+                    <small style={{ opacity: 0.6 }}>Links:</small>
+                    <select
+                      value={localQuestion.decorationLeft || ''}
+                      onChange={(e) => setLocalQuestion(prev => ({ ...prev, decorationLeft: e.target.value as DecorationKey || null }))}
+                      style={selectStyle}
+                    >
+                      <option value="">Keine</option>
+                      {decorations.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <small style={{ opacity: 0.6 }}>Rechts:</small>
+                    <select
+                      value={localQuestion.decorationRight || ''}
+                      onChange={(e) => setLocalQuestion(prev => ({ ...prev, decorationRight: e.target.value as DecorationKey || null }))}
+                      style={selectStyle}
+                    >
+                      <option value="">Keine</option>
+                      {decorations.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <small style={{ opacity: 0.6 }}>Rechts:</small>
-                <select
-                  value={localQuestion.decorationRight || ''}
-                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, decorationRight: e.target.value as DecorationKey || null }))}
-                  style={selectStyle}
-                >
-                  <option value="">Keine</option>
-                  {decorations.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
 
-          {/* Points */}
-          <div style={formSectionStyle}>
-            <label style={labelStyle}>Punkte</label>
-            <input
-              type="number"
-              value={localQuestion.points}
-              onChange={(e) => setLocalQuestion(prev => ({ ...prev, points: Number(e.target.value) }))}
-              style={{ ...inputStyle, width: 100 }}
-              min={0}
-            />
-          </div>
+          {activeTab === 'points' && (
+            <>
+              <div style={formSectionStyle}>
+                <label style={labelStyle}>Punkte</label>
+                <input
+                  type="number"
+                  value={localQuestion.points}
+                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, points: Number(e.target.value) }))}
+                  style={{ ...inputStyle, width: 100 }}
+                  min={0}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

@@ -114,6 +114,7 @@ app.use(express.json());
 // static files for uploads
 const uploadRoot = path.join(__dirname, '..', '..', 'uploads');
 const uploadDir = path.join(uploadRoot, 'questions');
+const blitzUploadDir = path.join(uploadRoot, 'blitz');
 
 // Healthcheck / Room-Check
 app.get('/api/health', (_req, res) => {
@@ -155,6 +156,25 @@ const persistQuestionUsage = () => {
 const upload = multer({
   storage: multer.diskStorage({
     destination: uploadDir,
+    filename: (_req, file, cb) => cb(null, `${uuid()}${path.extname(file.originalname)}`)
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Nur Bildformate erlaubt'));
+  }
+});
+
+const blitzUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      try {
+        if (!fs.existsSync(blitzUploadDir)) fs.mkdirSync(blitzUploadDir, { recursive: true });
+      } catch {
+        // ignore mkdir errors
+      }
+      cb(null, blitzUploadDir);
+    },
     filename: (_req, file, cb) => cb(null, `${uuid()}${path.extname(file.originalname)}`)
   }),
   limits: { fileSize: 2 * 1024 * 1024 },
@@ -4495,6 +4515,28 @@ app.post('/api/upload/question-image', upload.single('file'), (req, res) => {
     persistQuestionImages();
   }
   return res.json({ imageUrl: url });
+});
+
+// Blitz image upload
+app.post('/api/upload/blitz-image', blitzUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
+  const url = `/uploads/blitz/${req.file.filename}`;
+  return res.json({ imageUrl: url });
+});
+
+app.delete('/api/upload/blitz-image', (req, res) => {
+  const { imageUrl } = req.body as { imageUrl?: string };
+  if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
+  const filename = path.basename(imageUrl);
+  const filePath = path.join(blitzUploadDir, filename);
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      // ignore
+    }
+  }
+  return res.json({ ok: true });
 });
 
 app.delete('/api/upload/question-image', (req, res) => {

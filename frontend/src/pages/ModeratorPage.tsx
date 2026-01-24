@@ -2666,7 +2666,7 @@ const renderCozyStagePanel = () => {
           (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
         }}
       >
-        ??
+        ⚙️
       </button>
     </div>
         {showSettingsPanel && (

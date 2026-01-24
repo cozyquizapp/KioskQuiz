@@ -246,7 +246,9 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [timerTick, setTimerTick] = useState(0);
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('teamLanguage');
-    return saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
+    const lang = saved === 'de' || saved === 'en' || saved === 'both' ? (saved as Language) : 'de';
+    // Team-View soll nur einsprachig sein, nicht 'both'
+    return lang === 'both' ? 'de' : lang;
   });
 
   // Helper-Funktionen für Message
@@ -565,9 +567,11 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function updateLanguage(lang: Language) {
-    setLanguageState(lang);
-    localStorage.setItem('teamLanguage', lang);
-    setLanguageApi(roomCode, lang).catch(() => undefined);
+    // Team-View soll nur einsprachig sein, nicht 'both'
+    const singleLang = lang === 'both' ? 'de' : lang;
+    setLanguageState(singleLang);
+    localStorage.setItem('teamLanguage', singleLang);
+    setLanguageApi(roomCode, singleLang).catch(() => undefined);
   }
 
   // Socket connection & live updates
@@ -604,8 +608,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         return;
       }
       if (payload.language) {
-        setLanguageState(payload.language);
-        localStorage.setItem('teamLanguage', payload.language);
+        // Team-View soll nur einsprachig sein, nicht 'both'
+        const singleLang = payload.language === 'both' ? 'de' : payload.language;
+        setLanguageState(singleLang);
+        localStorage.setItem('teamLanguage', singleLang);
       }
       if (payload.question) {
         resetInputs();
@@ -965,8 +971,10 @@ function TeamView({ roomCode }: TeamViewProps) {
       try {
         const langRes = await fetchLanguage(roomCode);
         if (langRes?.language) {
-          setLanguageState(langRes.language);
-          localStorage.setItem('teamLanguage', langRes.language);
+          // Team-View soll nur einsprachig sein, nicht 'both'
+          const singleLang = langRes.language === 'both' ? 'de' : langRes.language;
+          setLanguageState(singleLang);
+          localStorage.setItem('teamLanguage', singleLang);
         }
       } catch {
         // ignore

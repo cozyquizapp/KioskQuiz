@@ -12,7 +12,6 @@ export const pageStyleTeam: CSSProperties = {
   right: 0,
   bottom: 0,
   width: '100%',
-  height: '100vh',
   height: '100dvh',
   paddingTop: 'calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-top))',
   paddingRight: 'clamp(8px, 3vw, 14px)',

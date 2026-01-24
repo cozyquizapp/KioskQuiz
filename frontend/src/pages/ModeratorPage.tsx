@@ -3514,58 +3514,79 @@ const renderCozyStagePanel = () => {
       </button>
     </div>
         {showSettingsPanel && (
-      <div style={{ ...actionWrap, marginTop: 10 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {currentQuizName && (
+      <div style={{ ...actionWrap, marginTop: 10, display: 'grid', gap: 12 }}>
+        {/* Session & Quiz Sektion */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Session & Quiz
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
             <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
-              Quiz: {currentQuizName}
+              Roomcode: <strong>{roomCode || '—'}</strong>
             </span>
-          )}
-          <span style={statChip}>Sprache: {language.toUpperCase()}</span>
+            {currentQuizName && (
+              <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
+                Quiz: {currentQuizName}
+              </span>
+            )}
+          </div>
           {showJoinScreen && (
             <button
               style={{
                 ...inputStyle,
-                width: 'auto',
-                background: 'rgba(255,255,255,0.08)',
+                width: '100%',
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(239,68,68,0.4)',
+                color: '#fca5a5',
+                fontWeight: 700,
                 cursor: 'pointer'
               }}
               onClick={handleRoomReset}
             >
-              Session wechseln
+              🔄 Quiz beenden & neu starten
             </button>
           )}
-          <select
-            value={language}
-            onChange={(e) => {
-              const val = e.target.value as Language;
-              setLang(val);
-              localStorage.setItem('moderatorLanguage', val);
-            }}
-            style={{ ...inputStyle, width: 'auto', minWidth: 120 }}
-          >
-            <option value="de">Deutsch</option>
-            <option value="en">English</option>
-            <option value="both">DE/EN</option>
-          </select>
-          <button
-            style={{
-              ...inputStyle,
-              width: 'auto',
-              background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-              color: '#0b1020',
-              cursor: 'pointer'
-            }}
-            onClick={() => {
-              if (!roomCode) {
-                setToast('Roomcode fehlt');
-                return;
-              }
-              doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt');
-            }}
-          >
-            Sprache setzen
-          </button>
+        </div>
+
+        {/* Sprache Sektion */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Sprache
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
+              value={language}
+              onChange={(e) => {
+                const val = e.target.value as Language;
+                setLang(val);
+                localStorage.setItem('moderatorLanguage', val);
+              }}
+              style={{ ...inputStyle, width: 'auto', minWidth: 120, flex: 1 }}
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+              <option value="both">DE/EN</option>
+            </select>
+            <button
+              style={{
+                ...inputStyle,
+                width: 'auto',
+                background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                color: '#0b1020',
+                cursor: 'pointer',
+                fontWeight: 700
+              }}
+              onClick={() => {
+                if (!roomCode) {
+                  setToast('Roomcode fehlt');
+                  return;
+                }
+                doAction(() => setLanguage(roomCode, language), 'Sprache gesetzt');
+              }}
+            >
+              Setzen
+            </button>
+          </div>
         </div>
       </div>
     )}

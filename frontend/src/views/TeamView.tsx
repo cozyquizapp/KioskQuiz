@@ -740,14 +740,18 @@ function TeamView({ roomCode }: TeamViewProps) {
             setResultPoints(null);
           }
           setResultDetail(entry.awardedDetail ?? null);
-          if (
-            isClosenessQuestion(question) &&
-            entry.deviation !== undefined &&
-            entry.bestDeviation !== undefined
-          ) {
-            setResultMessage(
-              entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse')
-            );
+          {
+            const dev = (entry as any)?.deviation;
+            const bestDev = (entry as any)?.bestDeviation;
+            if (
+              isClosenessQuestion(question) &&
+              typeof dev === 'number' &&
+              typeof bestDev === 'number' &&
+              Number.isFinite(dev) &&
+              Number.isFinite(bestDev)
+            ) {
+              setResultMessage(dev === bestDev ? t('estimateBest') : t('estimateWorse'));
+            }
           }
         }
       }
@@ -767,12 +771,18 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        if (
-          isClosenessQuestion(question) &&
-          entry.deviation !== undefined &&
-          entry.bestDeviation !== undefined
-        ) {
-          setResultMessage(entry.deviation === entry.bestDeviation ? t('estimateBest') : t('estimateWorse'));
+        {
+          const dev = (entry as any)?.deviation;
+          const bestDev = (entry as any)?.bestDeviation;
+          if (
+            isClosenessQuestion(question) &&
+            typeof dev === 'number' &&
+            typeof bestDev === 'number' &&
+            Number.isFinite(dev) &&
+            Number.isFinite(bestDev)
+          ) {
+            setResultMessage(dev === bestDev ? t('estimateBest') : t('estimateWorse'));
+          }
         }
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         const detail = (entry as any)?.awardedDetail;
@@ -795,8 +805,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         setResultCorrect(Boolean(isCorrect));
         if (
           isClosenessQuestion(question) &&
-          deviation !== undefined &&
-          bestDeviation !== undefined
+          typeof deviation === 'number' &&
+          typeof bestDeviation === 'number' &&
+          Number.isFinite(deviation) &&
+          Number.isFinite(bestDeviation)
         ) {
           setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
@@ -3469,7 +3481,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   padding: '6px 12px',
                   borderRadius: 999,
                   background: 'rgba(0,0,0,0.35)',
-                  border: '1px solid rgba(255,255,255,0.16)'
+                  border: 'none'
                 }}
               >
                 <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
@@ -3507,7 +3519,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             {isLocked ? (
               <Pill
                 tone="muted"
-                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'rgba(250,204,21,0.5)', color: '#fcd34d', fontSize: 18 }}
+                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18 }}
               >
                 🔒
               </Pill>

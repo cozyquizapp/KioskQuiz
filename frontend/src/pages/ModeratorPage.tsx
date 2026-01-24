@@ -19,7 +19,8 @@ import {
   fetchHealth,
   listPublishedQuizzes,
   listCozyDrafts,
-  fetchCozyDraft
+  fetchCozyDraft,
+  API_BASE
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, RundlaufState } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';

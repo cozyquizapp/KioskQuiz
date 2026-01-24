@@ -1,6 +1,6 @@
 import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language, CozyQuizDraft } from '@shared/quizTypes';
 
-const API_BASE = (() => {
+export const API_BASE = (() => {
   const envBase = import.meta.env.VITE_API_BASE as string | undefined;
   if (envBase) return envBase;
   const { protocol, hostname, port, origin } = window.location;

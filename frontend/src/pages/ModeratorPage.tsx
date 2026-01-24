@@ -2938,10 +2938,9 @@ const renderCozyStagePanel = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <img
                     src="/logo.png?v=3"
-                    alt="Cozy Kiosk Quiz"
+                    alt="Logo"
                     style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'contain', boxShadow: 'none' }}
                   />
-                  <span style={{ fontWeight: 900, fontSize: 16 }}>Cozy Kiosk Quiz</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {readyCount.total > 0 && (

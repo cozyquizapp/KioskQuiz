@@ -1164,7 +1164,7 @@ useEffect(() => {
             boxShadow: '0 30px 64px rgba(0,0,0,0.5)',
             overflow: 'hidden',
             minHeight: 360,
-            transition: 'opacity 240ms ease, transform 240ms ease'
+            transition: 'opacity 350ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}
         >
           <div
@@ -1347,7 +1347,7 @@ useEffect(() => {
         ...cardFrame,
         opacity: questionFlyIn ? 0 : 1,
         transform: questionFlyIn ? 'translateY(40px)' : 'translateY(0)',
-        transition: 'opacity 420ms ease, transform 420ms ease'
+        transition: 'opacity 500ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
       }}
     >
       <BeamerQuestionView

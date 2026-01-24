@@ -423,7 +423,7 @@
 }
 
 .beamer-scoreboard-grid.rundlauf-final .beamer-score-card {
-  animation: scoreboardPop 0.6s ease both;
+  animation: scoreboardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .beamer-scoreboard-grid.rundlauf-final .beamer-score-card:nth-child(1) {
@@ -450,6 +450,31 @@
   animation-delay: 0.36s;
 }
 
+/* Staggered animation für Scoreboard Cards */
+.beamer-scoreboard-grid .beamer-score-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.beamer-scoreboard-grid .beamer-score-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.beamer-scoreboard-grid .beamer-score-card:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.beamer-scoreboard-grid .beamer-score-card:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.beamer-scoreboard-grid .beamer-score-card:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.beamer-scoreboard-grid .beamer-score-card:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
 .beamer-score-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -460,11 +485,21 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.01);
   backdrop-filter: blur(30px) saturate(200%) brightness(1.15);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scoreboardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.beamer-score-card:hover {
+  border-color: rgba(99, 229, 255, 0.4);
+  background: rgba(99, 229, 255, 0.05);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
 }
 
 .beamer-score-card.highlight {
   border-color: rgba(251, 191, 36, 0.5);
   box-shadow: 0 12px 32px rgba(251, 191, 36, 0.25);
+  animation: smoothPulse 2.5s ease-in-out infinite;
 }
 
 .beamer-score-rank {
@@ -1397,4 +1432,336 @@
   100% {
     text-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
   }
+}
+/* ===== SMOOTH PRESENTATION ANIMATIONS (Canva-style) ===== */
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes revealZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.85) rotateY(10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0);
+  }
+}
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 229, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(99, 229, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 229, 255, 0);
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Anwendung auf Elemente */
+.beamer-frame {
+  animation: beamerFade 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.beamer-intro-card {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.beamer-label {
+  animation: slideInLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-list > span {
+  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+.beamer-list > span:nth-child(1) { animation-delay: 0.1s; }
+.beamer-list > span:nth-child(2) { animation-delay: 0.2s; }
+.beamer-list > span:nth-child(3) { animation-delay: 0.3s; }
+.beamer-list > span:nth-child(4) { animation-delay: 0.4s; }
+.beamer-list > span:nth-child(5) { animation-delay: 0.5s; }
+
+.beamer-stack {
+  animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-scoreboard-grid {
+  display: grid;
+  gap: 12px;
+  animation: fadeInScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-scoreboard-card {
+  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-scoreboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.beamer-card {
+  animation: floatIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 229, 255, 0.4);
+}
+
+.beamer-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.beamer-grid > .beamer-card {
+  animation: fadeInScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+.beamer-grid > .beamer-card:nth-child(1) { animation-delay: 0.05s; }
+.beamer-grid > .beamer-card:nth-child(2) { animation-delay: 0.1s; }
+.beamer-grid > .beamer-card:nth-child(3) { animation-delay: 0.15s; }
+.beamer-grid > .beamer-card:nth-child(4) { animation-delay: 0.2s; }
+.beamer-grid > .beamer-card:nth-child(5) { animation-delay: 0.25s; }
+.beamer-grid > .beamer-card:nth-child(6) { animation-delay: 0.3s; }
+
+.cozyQuestionText {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+  transition: all 0.3s ease;
+}
+
+.cozyQuestionHint {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.cozyQuestionMedia {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both;
+  transition: all 0.4s ease;
+}
+
+.cozyQuestionBody {
+  animation: fadeInScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
+.cozyRevealNumber {
+  animation: revealZoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyRevealGeneric {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyOptionList {
+  animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyOption {
+  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyOption:nth-child(1) { animation-delay: 0.1s; }
+.cozyOption:nth-child(2) { animation-delay: 0.15s; }
+.cozyOption:nth-child(3) { animation-delay: 0.2s; }
+.cozyOption:nth-child(4) { animation-delay: 0.25s; }
+
+.cozyTeamStatusBar {
+  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cozyTeamStatusChip {
+  animation: fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+.cozyTeamStatusChip:nth-child(1) { animation-delay: 0.1s; }
+.cozyTeamStatusChip:nth-child(2) { animation-delay: 0.15s; }
+.cozyTeamStatusChip:nth-child(3) { animation-delay: 0.2s; }
+.cozyTeamStatusChip:nth-child(4) { animation-delay: 0.25s; }
+
+.beamer-question-main {
+  animation: slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-question-text {
+  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+.blitz-current-card {
+  animation: scaleReveal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.blitz-timeline {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.blitz-chip {
+  animation: fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.blitz-chip:nth-child(1) { animation-delay: 0.1s; }
+.blitz-chip:nth-child(2) { animation-delay: 0.15s; }
+.blitz-chip:nth-child(3) { animation-delay: 0.2s; }
+.blitz-chip:nth-child(4) { animation-delay: 0.25s; }
+.blitz-chip:nth-child(5) { animation-delay: 0.3s; }
+
+.cozyLobbyShell {
+  animation: fadeInScale 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyLobbyHeader {
+  animation: slideInDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyLobbyTeams {
+  animation: slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.cozyLobbyTeamRow {
+  animation: staggerFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+  transition: all 0.3s ease;
+}
+
+.cozyLobbyTeamRow:nth-child(1) { animation-delay: 0.1s; }
+.cozyLobbyTeamRow:nth-child(2) { animation-delay: 0.15s; }
+.cozyLobbyTeamRow:nth-child(3) { animation-delay: 0.2s; }
+.cozyLobbyTeamRow:nth-child(4) { animation-delay: 0.25s; }
+.cozyLobbyTeamRow:nth-child(5) { animation-delay: 0.3s; }
+
+.cozyLobbyTeamRow:hover {
+  transform: translateX(4px);
+  background: rgba(99, 229, 255, 0.08);
+}
+
+.cozyLobbyQrPane {
+  animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.cozyQuestionIntro {
+  animation: fadeInScaleUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth transition between phases */
+.beamer-frame[class*="reveal"] {
+  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Enhanced transitions for better flow */
+* {
+  transition: color 0.2s ease, border-color 0.2s ease;
 }

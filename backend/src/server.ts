@@ -4569,6 +4569,15 @@ app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
   return res.json({ token: session.token, expiresAt: session.expiresAt });
 });
 
+// GET alias for environments where POST may be restricted
+app.get('/api/rooms/:roomCode/admin-session', (req, res) => {
+  const { roomCode } = req.params;
+  ensureRoom(roomCode);
+  const session = createAdminSession(roomCode);
+  console.log(`[Auth] Admin-Session erstellt (GET) für Room ${roomCode}: ${session.token.substring(0, 8)}...`);
+  return res.json({ token: session.token, expiresAt: session.expiresAt });
+});
+
 app.post('/api/rooms/:roomCode/use-quiz', async (req, res) => {
   const { roomCode } = req.params;
   let token = req.query.token as string;

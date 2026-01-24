@@ -228,7 +228,7 @@ export const primaryButton: CSSProperties = {
   width: '100%',
   fontWeight: 800,
   fontSize: 'clamp(14px, 2.5vw, 16px)',
-  transition: 'transform 0.14s ease, box-shadow 0.14s ease'
+  transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
 export const choiceButton: CSSProperties = {
@@ -259,7 +259,7 @@ export const progressInner = (color: string): CSSProperties => ({
   height: '100%',
   background: `linear-gradient(90deg, ${color} 0%, #cbd5e1 100%)`,
   borderRadius: 999,
-  transition: 'width 0.18s ease',
+  transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
   boxShadow: `0 0 18px ${color}55`
 });
 
@@ -270,7 +270,7 @@ export const progressKnob = (color: string): CSSProperties => ({
   height: 'clamp(16px, 4vw, 20px)',
   borderRadius: '50%',
   transform: 'translate(-50%, -50%)',
-  transition: 'left 0.18s ease',
+  transition: 'left 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
   pointerEvents: 'none',
   background: 'linear-gradient(135deg, #fff, #cbd5e1)',
   boxShadow: `0 0 0 3px ${color}55, 0 10px 18px rgba(0,0,0,0.3)`
@@ -290,7 +290,7 @@ export const questionShell: CSSProperties = {
   backdropFilter: 'blur(14px)',
   width: '100%',
   maxWidth: 720,
-  transition: 'transform 0.25s ease, box-shadow 0.25s ease'
+  transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
 export const gradientHalo: CSSProperties = {

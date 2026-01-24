@@ -17,7 +17,7 @@ const pillBase: CSSProperties = {
   background: 'rgba(255,255,255,0.01)',
   backdropFilter: 'blur(20px)',
   color: 'var(--text)',
-  transition: 'all 0.3s ease'
+  transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
 const pillPalette: Record<Tone, CSSProperties> = {
@@ -49,7 +49,7 @@ const primaryBase: CSSProperties = {
   background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
   boxShadow: 'none',
-  transition: 'all 0.3s ease',
+  transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
   animation: 'liquid-shimmer 6s ease-in-out infinite'
 };
 
@@ -67,6 +67,18 @@ export const PrimaryButton = ({
       opacity: disabled ? 0.6 : 1,
       cursor: disabled ? 'not-allowed' : 'pointer',
       ...style
+    }}
+    onMouseEnter={(e) => {
+      if (!disabled) {
+        (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)';
+        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!disabled) {
+        (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+        (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+      }
     }}
   >
     {children}

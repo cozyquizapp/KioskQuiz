@@ -2700,7 +2700,7 @@ const renderCozyStagePanel = () => {
               onClick={() => setShowSessionSetup(true)}
               title="Wechsle zu einem anderen Quiz"
             >
-              ?? Quiz wechseln
+              Quiz wechseln
             </button>
             <button
               style={{
@@ -2715,7 +2715,7 @@ const renderCozyStagePanel = () => {
               onClick={handleRoomReset}
               title="Beende das aktuelle Quiz und zur�ck zur Setup"
             >
-              ?? Quiz beenden
+              Quiz beenden
             </button>
           </div>
         </div>

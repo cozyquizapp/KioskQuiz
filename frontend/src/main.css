@@ -767,6 +767,30 @@ img {
   }
 }
 
+/* Stronger slide-up with slight blur clear */
+@keyframes fadeSlideUpStrong {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+    filter: blur(6px);
+  }
+  65% {
+    transform: translateY(-3px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+}
+
+/* Gentle pop for CTAs */
+@keyframes popSoft {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
 /* Pop animation for interactive elements */
 @keyframes pop {
   0% {

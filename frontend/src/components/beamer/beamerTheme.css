@@ -168,15 +168,18 @@
 @keyframes beamerRevealItem {
   0% {
     opacity: 0;
-    transform: translateY(14px) scale(0.96);
+    transform: translateY(18px) scale(0.94);
+    filter: blur(6px);
     box-shadow: none;
   }
   70% {
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-4px) scale(1.03);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: none;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
   }
 }
 

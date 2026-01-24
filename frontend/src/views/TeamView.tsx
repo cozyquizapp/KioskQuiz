@@ -1047,20 +1047,23 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderAnswering() {
     return (
       <div
-      style={{
-        ...questionShell,
-        opacity: transitioning ? 0.4 : 1,
-        transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
-        transition: 'opacity 0.3s ease, transform 0.35s ease',
-        background: 'rgba(255,255,255,0.001)',
-        backdropFilter: 'blur(50px) saturate(200%) brightness(1.15)',
-        color: '#e2e8f0',
-        borderColor: timeUp ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.08)',
-        boxShadow: timeUp
-          ? 'inset 0 1px 1px rgba(255,255,255,0.05)'
-          : 'inset 0 1px 1px rgba(255,255,255,0.05)',
-        animation: timeUp ? 'timeup-pulse 0.35s ease-in-out 2' : undefined
-      }}
+        key={question?.id || phase}
+        style={{
+          ...questionShell,
+          opacity: transitioning ? 0.4 : 1,
+          transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
+          transition: 'opacity 0.3s ease, transform 0.35s ease',
+          background: 'rgba(255,255,255,0.001)',
+          backdropFilter: 'blur(50px) saturate(200%) brightness(1.15)',
+          color: '#e2e8f0',
+          borderColor: timeUp ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.08)',
+          boxShadow: timeUp
+            ? 'inset 0 1px 1px rgba(255,255,255,0.05)'
+            : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+          animation: timeUp
+            ? 'timeup-pulse 0.35s ease-in-out 2'
+            : 'fadeSlideUpStrong 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both'
+        }}
     >
       <div
         style={{
@@ -1127,13 +1130,29 @@ function TeamView({ roomCode }: TeamViewProps) {
           {language === 'de' ? 'Antworten sind gesperrt.' : 'Answers are locked.'}
         </div>
       )}
-        <h2 style={{ ...questionStyleTeam, color: '#f8fafc' }}>{question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}</h2>
+        <h2
+          style={{
+            ...questionStyleTeam,
+            color: '#f8fafc',
+            animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both'
+          }}
+        >
+          {question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}
+        </h2>
       {(() => {
         const q: any = question;
         const mediaUrl = q?.imageUrl || q?.media?.url;
         if (!q || !mediaUrl) return null;
         return (
-          <div style={{ margin: '10px 0 6px', display: 'flex', justifyContent: 'center' }}>
+          <div
+            style={{
+              margin: '10px 0 6px',
+              display: 'flex',
+              justifyContent: 'center',
+              animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+              animationDelay: '60ms'
+            }}
+          >
             <img
               src={mediaUrl}
               alt="Fragebild"
@@ -1178,7 +1197,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           color: '#f8fafc',
           boxShadow: canAnswer ? '0 4px 20px rgba(255,79,158,0.25), inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
           border: canAnswer ? '1px solid rgba(255,79,158,0.5)' : '1px solid rgba(255,255,255,0.06)',
-          animation: 'none',
+          animation: canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer ? 1 : 0.6,
           transform: canAnswer ? undefined : 'scale(0.99)',

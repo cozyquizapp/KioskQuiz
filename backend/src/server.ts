@@ -229,6 +229,8 @@ type RoomState = {
   presetPotatoPool: PotatoThemeDefinition[];
   blitzPool: BlitzThemeOption[];
   blitzThemeLibrary: Record<string, QuizBlitzTheme>;
+  blitzDisplayTimeMs: number;
+  blitzAnswerTimeMs: number;
   blitzBans: Record<string, string[]>;
   blitzBanLimits: Record<string, number>;
   blitzSelectedThemes: BlitzThemeOption[];
@@ -477,8 +479,9 @@ app.post('/api/quizzes/publish', (req, res) => {
 
 const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
-const BLITZ_ANSWER_TIME_MS = 30000;
-const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_ANSWER_TIME_MS / BLITZ_ITEMS_PER_SET);
+const BLITZ_DISPLAY_TIME_MS = 30000; // Image display phase
+const BLITZ_ANSWER_TIME_MS = 30000;  // Answer input phase
+const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_DISPLAY_TIME_MS / BLITZ_ITEMS_PER_SET);
 const BLITZ_CATEGORY_COUNT = 5;
 const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
@@ -1956,6 +1959,8 @@ const ensureRoom = (roomCode: string): RoomState => {
       presetPotatoPool: [],
       blitzPool: [],
       blitzThemeLibrary: {},
+      blitzDisplayTimeMs: BLITZ_DISPLAY_TIME_MS,
+      blitzAnswerTimeMs: BLITZ_ANSWER_TIME_MS,
       blitzBans: {},
       blitzBanLimits: {},
       blitzSelectedThemes: [],
@@ -2765,8 +2770,8 @@ const startBlitzSet = (room: RoomState) => {
     room.blitzRoundIntroTimeout = null;
     if (room.blitzPhase !== 'ROUND_INTRO') return;
     applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
-    room.blitzPhase = 'PLAYING';
-    room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
+    room.blitzPhase = 'DISPLAYING';
+    room.blitzDeadlineAt = Date.now() + room.blitzDisplayTimeMs;
     room.blitzItemIndex = 0;
     scheduleBlitzItemTicker(room, true);
     scheduleBlitzSetTimer(room);
@@ -2774,6 +2779,15 @@ const startBlitzSet = (room: RoomState) => {
 };
 
 const lockBlitzSet = (room: RoomState) => {
+  if (room.blitzPhase === 'DISPLAYING') {
+    // Transition from display to answer phase
+    room.blitzPhase = 'PLAYING';
+    room.blitzDeadlineAt = Date.now() + room.blitzAnswerTimeMs;
+    clearBlitzItemTimer(room.roomCode);
+    clearBlitzSetTimer(room.roomCode);
+    scheduleBlitzSetTimer(room);
+    return;
+  }
   if (room.blitzPhase !== 'PLAYING') return;
   room.blitzPhase = 'SET_END';
   room.blitzDeadlineAt = null;
@@ -2785,9 +2799,15 @@ const lockBlitzSet = (room: RoomState) => {
 };
 
 const enforceBlitzDeadline = (room: RoomState) => {
-  if (room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
-    lockBlitzSet(room);
-    computeBlitzResults(room);
+  if (room.blitzDeadlineAt && Date.now() > room.blitzDeadlineAt) {
+    const phaseBefore = room.blitzPhase;
+    if (phaseBefore === 'DISPLAYING' || phaseBefore === 'PLAYING') {
+      lockBlitzSet(room);
+      // After lockBlitzSet, phase might have changed
+      if (phaseBefore === 'PLAYING') {
+        computeBlitzResults(room);
+      }
+    }
   }
 };
 
@@ -3564,6 +3584,8 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
     return acc;
   }, {});
   room.blitzPool = normalizedThemes.map(toBlitzOption);
+  room.blitzDisplayTimeMs = BLITZ_DISPLAY_TIME_MS;
+  room.blitzAnswerTimeMs = BLITZ_ANSWER_TIME_MS;
   room.blitzBans = {};
   room.blitzBanLimits = {};
   room.blitzSelectedThemes = [];
@@ -4100,10 +4122,14 @@ const buildTimerSnapshot = (room: RoomState) => {
   let running = Boolean(endsAt);
   let durationMs: number | null = room.questionTimerDurationMs;
 
-  if ((room.gameState === 'BLITZ_PLAYING' || room.gameState === 'BLITZ') && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
+  if ((room.gameState === 'BLITZ_PLAYING' || room.gameState === 'BLITZ') && room.blitzPhase === 'DISPLAYING' && room.blitzDeadlineAt) {
     endsAt = room.blitzDeadlineAt;
     running = true;
-    durationMs = BLITZ_ANSWER_TIME_MS;
+    durationMs = room.blitzDisplayTimeMs;
+  } else if ((room.gameState === 'BLITZ_PLAYING' || room.gameState === 'BLITZ') && room.blitzPhase === 'PLAYING' && room.blitzDeadlineAt) {
+    endsAt = room.blitzDeadlineAt;
+    running = true;
+    durationMs = room.blitzAnswerTimeMs;
   } else if (room.gameState === 'POTATO' && room.potatoPhase === 'PLAYING' && room.potatoDeadlineAt) {
     endsAt = room.potatoDeadlineAt;
     running = true;
@@ -4921,8 +4947,8 @@ const handleHostNextAdvance = (room: RoomState) => {
   if (room.gameState === 'BLITZ_SET_INTRO') {
     if (room.blitzPhase === 'ROUND_INTRO') {
       clearBlitzRoundIntroTimer(room);
-      room.blitzPhase = 'PLAYING';
-      room.blitzDeadlineAt = Date.now() + BLITZ_ANSWER_TIME_MS;
+      room.blitzPhase = 'DISPLAYING';
+      room.blitzDeadlineAt = Date.now() + room.blitzDisplayTimeMs;
       room.blitzItemIndex = 0;
       applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
       scheduleBlitzItemTicker(room, true);
@@ -4933,7 +4959,11 @@ const handleHostNextAdvance = (room: RoomState) => {
   }
   if (room.gameState === 'BLITZ_PLAYING') {
     enforceBlitzDeadline(room);
-    if (room.blitzPhase === 'PLAYING') {
+    if (room.blitzPhase === 'DISPLAYING') {
+      // Skip to answer phase
+      lockBlitzSet(room);
+    } else if (room.blitzPhase === 'PLAYING') {
+      // End answer phase and compute results
       lockBlitzSet(room);
       computeBlitzResults(room);
     }
@@ -5654,6 +5684,37 @@ app.post('/api/rooms/:roomCode/language', (req, res) => {
   io.to(roomCode).emit('languageChanged', { language: langValidation.value });
   broadcastState(room);
   return res.json({ ok: true, language: langValidation.value });
+});
+
+// Fotoblitz timer settings
+app.post('/api/rooms/:roomCode/blitz-timers', (req, res) => {
+  const { roomCode } = req.params;
+  const { displayTimeMs, answerTimeMs } = req.body as { displayTimeMs?: number; answerTimeMs?: number };
+  const room = ensureRoom(roomCode);
+  
+  if (typeof displayTimeMs === 'number' && displayTimeMs >= 5000 && displayTimeMs <= 120000) {
+    room.blitzDisplayTimeMs = displayTimeMs;
+  }
+  if (typeof answerTimeMs === 'number' && answerTimeMs >= 5000 && answerTimeMs <= 120000) {
+    room.blitzAnswerTimeMs = answerTimeMs;
+  }
+  
+  touchRoom(room);
+  broadcastState(room);
+  return res.json({ 
+    ok: true, 
+    displayTimeMs: room.blitzDisplayTimeMs, 
+    answerTimeMs: room.blitzAnswerTimeMs 
+  });
+});
+
+app.get('/api/rooms/:roomCode/blitz-timers', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  return res.json({ 
+    displayTimeMs: room.blitzDisplayTimeMs, 
+    answerTimeMs: room.blitzAnswerTimeMs 
+  });
 });
 
 // Frage-Metadaten setzen (z. B. mixedMechanic)

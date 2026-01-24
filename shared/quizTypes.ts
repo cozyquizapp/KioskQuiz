@@ -525,7 +525,7 @@ export interface PotatoState {
   pendingConflict?: PotatoConflict | null;
 }
 
-export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'PLAYING' | 'SET_END' | 'DONE';
+export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'DISPLAYING' | 'PLAYING' | 'SET_END' | 'DONE';
 
 export type RundlaufVerdict = 'ok' | 'dup' | 'invalid' | 'timeout' | 'pending';
 

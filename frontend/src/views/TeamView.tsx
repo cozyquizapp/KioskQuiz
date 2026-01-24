@@ -2662,7 +2662,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           return blitzState.phase ?? 'IDLE';
       }
     })();
-    const canAnswer = phase === 'PLAYING' && !blitzSubmitted;
+    const canAnswer = (phase === 'PLAYING' || phase === 'DISPLAYING') && !blitzSubmitted;
     const results = blitzState.results || {};
     const themeLabel = blitzState.theme?.title || '?';
     const submissionCount = blitzState.submissions?.length ?? 0;

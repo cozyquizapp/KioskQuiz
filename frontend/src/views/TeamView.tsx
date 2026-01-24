@@ -3519,9 +3519,9 @@ function TeamView({ roomCode }: TeamViewProps) {
             {isLocked ? (
               <Pill
                 tone="muted"
-                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'rgba(250,204,21,0.5)', color: '#fcd34d' }}
+                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'rgba(250,204,21,0.5)', color: '#fcd34d', fontSize: 18 }}
               >
-                {language === 'de' ? 'Gesperrt' : 'Locked'}
+                🔒
               </Pill>
             ) : null}
             {/* Timer Pill removed - using progress bar below instead */}

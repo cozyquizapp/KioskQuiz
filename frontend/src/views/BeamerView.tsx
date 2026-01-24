@@ -2124,7 +2124,6 @@ useEffect(() => {
 
       return (
         <BeamerFrame
-          key={`${sceneKey}-${phase}`}
           {...baseFrameProps}
           title={questionTitle}
           subtitle={questionSubtitle}
@@ -2146,11 +2145,7 @@ useEffect(() => {
                         <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
                       )
                     ) : (
-                      language === 'de' ? (
-                        <span>🔒 Gesperrt <span className="lang-sep">·</span> Locked</span>
-                      ) : (
-                        <span>🔒 Locked <span className="lang-sep">·</span> Gesperrt</span>
-                      )
+                      <span>🔒</span>
                     )}
                   </div>
                 )}

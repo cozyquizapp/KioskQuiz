@@ -1594,6 +1594,70 @@ useEffect(() => {
     );
   };
 
+  const renderTeamAnswersSection = (): JSX.Element | null => {
+    if (!answerResults?.length) return null;
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-label">
+          {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
+        </div>
+        <div className="beamer-scoreboard-grid">
+          {answerResults.map((entry, idx) => {
+            const answerText = (() => {
+              if (entry.answer === null || entry.answer === undefined) return '-';
+              if (typeof entry.answer === 'string') return entry.answer;
+              if (typeof entry.answer === 'number') return String(entry.answer);
+              if (Array.isArray(entry.answer)) return entry.answer.join(', ');
+              if (typeof entry.answer === 'object') {
+                if ('order' in entry.answer && Array.isArray(entry.answer.order)) {
+                  return entry.answer.order.join(' → ');
+                }
+                return JSON.stringify(entry.answer);
+              }
+              return String(entry.answer);
+            })();
+            const isCorrect = entry.isCorrect === true;
+            const backgroundColor = isCorrect 
+              ? 'rgba(34,197,94,0.12)' 
+              : entry.isCorrect === false
+              ? 'rgba(239,68,68,0.12)'
+              : 'rgba(107,114,128,0.12)';
+            const borderColor = isCorrect 
+              ? 'rgba(34,197,94,0.3)' 
+              : entry.isCorrect === false
+              ? 'rgba(239,68,68,0.3)'
+              : 'rgba(107,114,128,0.3)';
+            return (
+              <div
+                key={`team-answer-${entry.teamId}-${idx}`}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: `1px solid ${borderColor}`,
+                  background: backgroundColor,
+                  color: '#e2e8f0'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div>
+                    <strong>{entry.teamName || entry.teamId}</strong>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, wordBreak: 'break-word' }}>
+                      {answerText}
+                    </div>
+                  </div>
+                  <div>
+                    {isCorrect && <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>}
+                    {entry.isCorrect === false && <span style={{ color: '#ef4444', fontWeight: 700 }}>✗</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderRevealResultsSection = (): JSX.Element | null => {
     if (!revealResultRows.length) return null;
     return (
@@ -2112,6 +2176,7 @@ useEffect(() => {
               )}
             </div>
           </div>
+          {phase === 'reveal' && renderTeamAnswersSection()}
           {phase === 'reveal' && renderRevealResultsSection()}
           {phase === 'reveal' && renderTop5Solution()}
         </BeamerFrame>

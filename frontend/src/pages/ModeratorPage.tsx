@@ -27,6 +27,7 @@ import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
 import TimerCard from '../components/moderator/TimerCard';
 import AnswerList from '../components/moderator/AnswerList';
+import AdminAnswersPanel from '../admin/AdminAnswersPanel';
 import TeamsList from '../components/moderator/TeamsList';
 import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
@@ -4101,6 +4102,48 @@ const renderCozyStagePanel = () => {
           </section>
 
         </>
+      )}
+
+      {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
+      {viewPhase === 'quiz' && answers && (normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
+        <AdminAnswersPanel
+          answers={answers.answers}
+          teams={answers.teams}
+          onResolveEstimate={() =>
+            doAction(
+              async () => {
+                const res = await fetchAnswers(roomCode);
+                if (res) {
+                  setAnswers(res);
+                }
+              },
+              'Schätzfrage ausgewertet'
+            )
+          }
+          onResolveGeneric={() =>
+            doAction(
+              async () => {
+                const res = await fetchAnswers(roomCode);
+                if (res) {
+                  setAnswers(res);
+                }
+              },
+              'Frage ausgewertet'
+            )
+          }
+          onOverride={(teamId, isCorrect) =>
+            doAction(
+              async () => {
+                await overrideAnswer(roomCode, teamId, isCorrect);
+                const res = await fetchAnswers(roomCode);
+                if (res) {
+                  setAnswers(res);
+                }
+              },
+              isCorrect ? 'Als richtig markiert' : 'Als falsch markiert'
+            )
+          }
+        />
       )}
 
       {answers && (

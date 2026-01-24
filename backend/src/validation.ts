@@ -125,13 +125,15 @@ export const validateRoomCode = (input: unknown): { valid: boolean; value: strin
 };
 
 /**
- * Validate language: only 'de' or 'en'
+ * Validate language: allow 'de', 'en', or 'both'
  */
-export const validateLanguage = (input: unknown): { valid: boolean; value: 'de' | 'en'; error?: string } => {
-  if (input !== 'de' && input !== 'en') {
-    return { valid: false, value: 'de', error: 'Language must be "de" or "en"' };
+export const validateLanguage = (
+  input: unknown
+): { valid: boolean; value: 'de' | 'en' | 'both'; error?: string } => {
+  if (input !== 'de' && input !== 'en' && input !== 'both') {
+    return { valid: false, value: 'de', error: 'Language must be "de", "en", or "both"' };
   }
-  return { valid: true, value: input };
+  return { valid: true, value: input as 'de' | 'en' | 'both' };
 };
 
 /**

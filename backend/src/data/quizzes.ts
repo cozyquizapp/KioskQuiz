@@ -39,77 +39,110 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
     id: 'blitz-buildings',
     title: '🏢 Berühmte Gebäude',
     items: [
-      { id: 'blitz-buildings-1', prompt: 'Gotisches Meisterwerk in London', answer: 'Big Ben', aliases: ['Elizabeth Tower', 'Palace of Westminster'] },
-      { id: 'blitz-buildings-2', prompt: 'Weißes Mausoleum in Indien', answer: 'Taj Mahal', aliases: ['Agra'] },
-      { id: 'blitz-buildings-3', prompt: 'Kupferstatue im New Yorker Hafen', answer: 'Statue of Liberty', aliases: ['Liberty Statue'] },
-      { id: 'blitz-buildings-4', prompt: 'Bogenbrücke über die Themse', answer: 'Tower Bridge', aliases: ['London Bridge'] },
-      { id: 'blitz-buildings-5', prompt: 'Kathedrale mit schiefen Säulen in Barcelona', answer: 'Sagrada Familia', aliases: ['Gaudí'] }
+      { id: 'blitz-buildings-1', prompt: 'Gotisches Meisterwerk in London', mediaUrl: '/blitz/buildings/1.jpg', answer: 'Big Ben', aliases: ['Elizabeth Tower', 'Palace of Westminster'] },
+      { id: 'blitz-buildings-2', prompt: 'Weißes Mausoleum in Indien', mediaUrl: '/blitz/buildings/2.jpg', answer: 'Taj Mahal', aliases: ['Agra'] },
+      { id: 'blitz-buildings-3', prompt: 'Kupferstatue im New Yorker Hafen', mediaUrl: '/blitz/buildings/3.jpg', answer: 'Statue of Liberty', aliases: ['Liberty Statue'] },
+      { id: 'blitz-buildings-4', prompt: 'Bogenbrücke über die Themse', mediaUrl: '/blitz/buildings/4.jpg', answer: 'Tower Bridge', aliases: ['London Bridge'] },
+      { id: 'blitz-buildings-5', prompt: 'Kathedrale mit schiefen Säulen in Barcelona', mediaUrl: '/blitz/buildings/5.jpg', answer: 'Sagrada Familia', aliases: ['Gaudí'] }
     ]
   },
   {
     id: 'blitz-films',
     title: '🎬 Blockbuster Poster',
     items: [
-      { id: 'blitz-films-1', prompt: 'Science-Fiction mit blauem humanoidem Alien', answer: 'Avatar', aliases: ['Pandora'] },
-      { id: 'blitz-films-2', prompt: 'Schiff sinkt im Eiswasser', answer: 'Titanic', aliases: ['Jack Rose'] },
-      { id: 'blitz-films-3', prompt: 'Traum in Traum in Traum', answer: 'Inception', aliases: ['Nolan'] },
-      { id: 'blitz-films-4', prompt: 'Grüne digitale Welt mit schwarzem Anzug', answer: 'The Matrix', aliases: ['Neo'] },
-      { id: 'blitz-films-5', prompt: 'Dinosaurier im modernen Park', answer: 'Jurassic Park', aliases: ['Dino'] }
+      { id: 'blitz-films-1', prompt: 'Science-Fiction mit blauem humanoidem Alien', mediaUrl: '/blitz/films/1.jpg', answer: 'Avatar', aliases: ['Pandora'] },
+      { id: 'blitz-films-2', prompt: 'Schiff sinkt im Eiswasser', mediaUrl: '/blitz/films/2.jpg', answer: 'Titanic', aliases: ['Jack Rose'] },
+      { id: 'blitz-films-3', prompt: 'Traum in Traum in Traum', mediaUrl: '/blitz/films/3.jpg', answer: 'Inception', aliases: ['Nolan'] },
+      { id: 'blitz-films-4', prompt: 'Grüne digitale Welt mit schwarzem Anzug', mediaUrl: '/blitz/films/4.jpg', answer: 'The Matrix', aliases: ['Neo'] },
+      { id: 'blitz-films-5', prompt: 'Dinosaurier im modernen Park', mediaUrl: '/blitz/films/5.jpg', answer: 'Jurassic Park', aliases: ['Dino'] }
     ]
   },
   {
     id: 'blitz-gaming',
     title: '🎮 Gaming Icons',
     items: [
-      { id: 'blitz-gaming-1', prompt: 'Springender Klempner mit Schnurrbart', answer: 'Mario', aliases: ['Super Mario', 'Nintendo'] },
-      { id: 'blitz-gaming-2', prompt: 'Gelbes rundes Elektro-Pokémon', answer: 'Pikachu', aliases: ['Pokemon'] },
-      { id: 'blitz-gaming-3', prompt: 'Blauer schneller Igel mit Spikes', answer: 'Sonic', aliases: ['Sonic the Hedgehog'] },
-      { id: 'blitz-gaming-4', prompt: 'Grüner Held mit Schwert und Schild', answer: 'Link', aliases: ['Zelda'] },
-      { id: 'blitz-gaming-5', prompt: 'Brauner starker Affe in Fässern', answer: 'Donkey Kong', aliases: ['Kong'] }
+      { id: 'blitz-gaming-1', prompt: 'Springender Klempner mit Schnurrbart', mediaUrl: '/blitz/gaming/1.jpg', answer: 'Mario', aliases: ['Super Mario', 'Nintendo'] },
+      { id: 'blitz-gaming-2', prompt: 'Gelbes rundes Elektro-Pokémon', mediaUrl: '/blitz/gaming/2.jpg', answer: 'Pikachu', aliases: ['Pokemon'] },
+      { id: 'blitz-gaming-3', prompt: 'Blauer schneller Igel mit Spikes', mediaUrl: '/blitz/gaming/3.jpg', answer: 'Sonic', aliases: ['Sonic the Hedgehog'] },
+      { id: 'blitz-gaming-4', prompt: 'Grüner Held mit Schwert und Schild', mediaUrl: '/blitz/gaming/4.jpg', answer: 'Link', aliases: ['Zelda'] },
+      { id: 'blitz-gaming-5', prompt: 'Brauner starker Affe in Fässern', mediaUrl: '/blitz/gaming/5.jpg', answer: 'Donkey Kong', aliases: ['Kong'] }
     ]
   },
   {
     id: 'blitz-sports',
     title: '🏀 Sportler Silhouetten',
     items: [
-      { id: 'blitz-sports-1', prompt: 'Portugiesischer Fußball-Megastar', answer: 'Cristiano Ronaldo', aliases: ['Ronaldo', 'CR7'] },
-      { id: 'blitz-sports-2', prompt: 'Argentinischer Fußballer mit Nummer 10', answer: 'Messi', aliases: ['Lionel Messi'] },
-      { id: 'blitz-sports-3', prompt: 'Basketball-Legende mit Nummer 23', answer: 'Michael Jordan', aliases: ['Jordan', 'MJ'] },
-      { id: 'blitz-sports-4', prompt: 'Jamaikanischer Sprint-Weltrekordler', answer: 'Usain Bolt', aliases: ['Bolt'] },
-      { id: 'blitz-sports-5', prompt: 'Amerikanische Tennis-Großmeisterin', answer: 'Serena Williams', aliases: ['Williams'] }
+      { id: 'blitz-sports-1', prompt: 'Portugiesischer Fußball-Megastar', mediaUrl: '/blitz/sports/1.jpg', answer: 'Cristiano Ronaldo', aliases: ['Ronaldo', 'CR7'] },
+      { id: 'blitz-sports-2', prompt: 'Argentinischer Fußballer mit Nummer 10', mediaUrl: '/blitz/sports/2.jpg', answer: 'Messi', aliases: ['Lionel Messi'] },
+      { id: 'blitz-sports-3', prompt: 'Basketball-Legende mit Nummer 23', mediaUrl: '/blitz/sports/3.jpg', answer: 'Michael Jordan', aliases: ['Jordan', 'MJ'] },
+      { id: 'blitz-sports-4', prompt: 'Jamaikanischer Sprint-Weltrekordler', mediaUrl: '/blitz/sports/4.jpg', answer: 'Usain Bolt', aliases: ['Bolt'] },
+      { id: 'blitz-sports-5', prompt: 'Amerikanische Tennis-Großmeisterin', mediaUrl: '/blitz/sports/5.jpg', answer: 'Serena Williams', aliases: ['Williams'] }
     ]
   },
   {
     id: 'blitz-stadiums',
     title: '🏟️ Stadion Silhouetten',
     items: [
-      { id: 'blitz-stadiums-1', prompt: 'Englisches Fußball-Tempel in London', answer: 'Wembley Stadium', aliases: ['Wembley'] },
-      { id: 'blitz-stadiums-2', prompt: 'Größtes Stadion von FC Barcelona', answer: 'Camp Nou', aliases: ['Barcelona Stadium'] },
-      { id: 'blitz-stadiums-3', prompt: 'Heimat von Manchester United', answer: 'Old Trafford', aliases: ['Manchester'] },
-      { id: 'blitz-stadiums-4', prompt: 'Bayerns rotes Fußball-Stadion', answer: 'Allianz Arena', aliases: ['Bayern München'] },
-      { id: 'blitz-stadiums-5', prompt: 'Brasilianisches Fußball-Wahrzeichen', answer: 'Maracanã', aliases: ['Rio'] }
+      { id: 'blitz-stadiums-1', prompt: 'Englisches Fußball-Tempel in London', mediaUrl: '/blitz/stadiums/1.jpg', answer: 'Wembley Stadium', aliases: ['Wembley'] },
+      { id: 'blitz-stadiums-2', prompt: 'Größtes Stadion von FC Barcelona', mediaUrl: '/blitz/stadiums/2.jpg', answer: 'Camp Nou', aliases: ['Barcelona Stadium'] },
+      { id: 'blitz-stadiums-3', prompt: 'Heimat von Manchester United', mediaUrl: '/blitz/stadiums/3.jpg', answer: 'Old Trafford', aliases: ['Manchester'] },
+      { id: 'blitz-stadiums-4', prompt: 'Bayerns rotes Fußball-Stadion', mediaUrl: '/blitz/stadiums/4.jpg', answer: 'Allianz Arena', aliases: ['Bayern München'] },
+      { id: 'blitz-stadiums-5', prompt: 'Brasilianisches Fußball-Wahrzeichen', mediaUrl: '/blitz/stadiums/5.jpg', answer: 'Maracanã', aliases: ['Rio'] }
     ]
   },
   {
     id: 'blitz-theater',
     title: '🎭 Theater & Kino',
     items: [
-      { id: 'blitz-theater-1', prompt: 'Weißes muschelförmiges Gebäude am Hafen', answer: 'Sydney Opera House', aliases: ['Sydney Opera'] },
-      { id: 'blitz-theater-2', prompt: 'Prächtiges Opernhaus in Paris', answer: 'Palais Garnier', aliases: ['Opera Paris'] },
-      { id: 'blitz-theater-3', prompt: 'Weltberühmtes Opernhaus in Mailand', answer: 'Teatro alla Scala', aliases: ['La Scala'] },
-      { id: 'blitz-theater-4', prompt: 'Russisches Balletttheater in Moskau', answer: 'Bolschoi Theater', aliases: ['Bolshoi'] },
-      { id: 'blitz-theater-5', prompt: 'Legendäres Jazztheater in New York', answer: 'Apollo Theater', aliases: ['Apollo'] }
+      { id: 'blitz-theater-1', prompt: 'Weißes muschelförmiges Gebäude am Hafen', mediaUrl: '/blitz/theater/1.jpg', answer: 'Sydney Opera House', aliases: ['Sydney Opera'] },
+      { id: 'blitz-theater-2', prompt: 'Prächtiges Opernhaus in Paris', mediaUrl: '/blitz/theater/2.jpg', answer: 'Palais Garnier', aliases: ['Opera Paris'] },
+      { id: 'blitz-theater-3', prompt: 'Weltberühmtes Opernhaus in Mailand', mediaUrl: '/blitz/theater/3.jpg', answer: 'Teatro alla Scala', aliases: ['La Scala'] },
+      { id: 'blitz-theater-4', prompt: 'Russisches Balletttheater in Moskau', mediaUrl: '/blitz/theater/4.jpg', answer: 'Bolschoi Theater', aliases: ['Bolshoi'] },
+      { id: 'blitz-theater-5', prompt: 'Legendäres Jazztheater in New York', mediaUrl: '/blitz/theater/5.jpg', answer: 'Apollo Theater', aliases: ['Apollo'] }
     ]
   },
   {
     id: 'blitz-herbs',
     title: '🌿 Kräuter',
     items: [
-      { id: 'blitz-herbs-1', prompt: 'Grüne breite Blätter, italienisches Aroma', answer: 'Basilikum', aliases: ['Basil'] },
-      { id: 'blitz-herbs-2', prompt: 'Kleine Blätter auf dünnem Stiel, Mittelmeer', answer: 'Oregano', aliases: ['Oreganum'] },
-      { id: 'blitz-herbs-3', prompt: 'Feine kleine Blätter auf verholztem Stiel', answer: 'Thymian', aliases: ['Thyme'] },
-      { id: 'blitz-herbs-4', prompt: 'Nadelartige Blätter, intensiver Geschmack', answer: 'Rosmarin', aliases: ['Rosemary'] },
-      { id: 'blitz-herbs-5', prompt: 'Herzförmige grüne Blätter, erfrischend', answer: 'Minze', aliases: ['Mint', 'Pfefferminze'] }
+      { id: 'blitz-herbs-1', prompt: 'Grüne breite Blätter, italienisches Aroma', mediaUrl: '/blitz/herbs/1.jpg', answer: 'Basilikum', aliases: ['Basil'] },
+      { id: 'blitz-herbs-2', prompt: 'Kleine Blätter auf dünnem Stiel, Mittelmeer', mediaUrl: '/blitz/herbs/2.jpg', answer: 'Oregano', aliases: ['Oreganum'] },
+      { id: 'blitz-herbs-3', prompt: 'Feine kleine Blätter auf verholztem Stiel', mediaUrl: '/blitz/herbs/3.jpg', answer: 'Thymian', aliases: ['Thyme'] },
+      { id: 'blitz-herbs-4', prompt: 'Nadelartige Blätter, intensiver Geschmack', mediaUrl: '/blitz/herbs/4.jpg', answer: 'Rosmarin', aliases: ['Rosemary'] },
+      { id: 'blitz-herbs-5', prompt: 'Herzförmige grüne Blätter, erfrischend', mediaUrl: '/blitz/herbs/5.jpg', answer: 'Minze', aliases: ['Mint', 'Pfefferminze'] }
+    ]
+  },
+  {
+    id: 'blitz-mountains',
+    title: '⛰️ Berge der Welt',
+    items: [
+      { id: 'blitz-mountains-1', prompt: 'Höchster Berg der Erde in Nepal', mediaUrl: '/blitz/mountains/1.jpg', answer: 'Mount Everest', aliases: ['Everest'] },
+      { id: 'blitz-mountains-2', prompt: 'Schweizer Alpenriese mit Matterhorn', mediaUrl: '/blitz/mountains/2.jpg', answer: 'Matterhorn', aliases: ['Berg'] },
+      { id: 'blitz-mountains-3', prompt: 'Vulkanischer Gipfel in Japan', mediaUrl: '/blitz/mountains/3.jpg', answer: 'Fuji', aliases: ['Mount Fuji'] },
+      { id: 'blitz-mountains-4', prompt: 'Kolumbianischer schneebedeckter Andengipfel', mediaUrl: '/blitz/mountains/4.jpg', answer: 'Nevado del Ruiz', aliases: ['Ruiz'] },
+      { id: 'blitz-mountains-5', prompt: 'Schwefelberg mit heißen Quellen in Island', mediaUrl: '/blitz/mountains/5.jpg', answer: 'Hekla', aliases: ['Volcano'] }
+    ]
+  },
+  {
+    id: 'blitz-cars',
+    title: '🏎️ Klassische Autos',
+    items: [
+      { id: 'blitz-cars-1', prompt: 'Italienischer Sportwagen von Ferrari', mediaUrl: '/blitz/cars/1.jpg', answer: 'Ferrari', aliases: ['Ferrari Testarossa'] },
+      { id: 'blitz-cars-2', prompt: 'Britischer Luxuswagen aus dem 20. Jh', mediaUrl: '/blitz/cars/2.jpg', answer: 'Rolls-Royce', aliases: ['Phantom'] },
+      { id: 'blitz-cars-3', prompt: 'Deutscher Sportwagen aus Porsche', mediaUrl: '/blitz/cars/3.jpg', answer: 'Porsche', aliases: ['911'] },
+      { id: 'blitz-cars-4', prompt: 'Amerikanischer Muskelwagen von Chevrolet', mediaUrl: '/blitz/cars/4.jpg', answer: 'Corvette', aliases: ['Stingray'] },
+      { id: 'blitz-cars-5', prompt: 'Britischer Sportwagen mit keilförmiger Form', mediaUrl: '/blitz/cars/5.jpg', answer: 'Jaguar E-Type', aliases: ['E-Type'] }
+    ]
+  },
+  {
+    id: 'blitz-flags',
+    title: '🚩 Länder Flaggen',
+    items: [
+      { id: 'blitz-flags-1', prompt: 'Rot-Gelb-Rot mit Wappenschild', mediaUrl: '/blitz/flags/1.jpg', answer: 'Österreich', aliases: ['Austria'] },
+      { id: 'blitz-flags-2', prompt: 'Rot-Weiß-Rot horizontale Streifen', mediaUrl: '/blitz/flags/2.jpg', answer: 'Dänemark', aliases: ['Denmark'] },
+      { id: 'blitz-flags-3', prompt: 'Rot-Weiß-Grün mit orange Rad', mediaUrl: '/blitz/flags/3.jpg', answer: 'Indien', aliases: ['India'] },
+      { id: 'blitz-flags-4', prompt: 'Orange-Weiß-Grün tricolore', mediaUrl: '/blitz/flags/4.jpg', answer: 'Irland', aliases: ['Ireland'] },
+      { id: 'blitz-flags-5', prompt: 'Rot-Weiß-Blau mit Kreuz', mediaUrl: '/blitz/flags/5.jpg', answer: 'Schweiz', aliases: ['Switzerland'] }
     ]
   }
 ];

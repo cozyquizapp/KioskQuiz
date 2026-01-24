@@ -196,11 +196,7 @@ function ModeratorPage(): React.ReactElement {
   const [viewPhase, setViewPhase] = useState<ViewPhase>('pre');
   const [userViewPhase, setUserViewPhase] = useState<ViewPhase | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
-  const [potatoThemeInput, setPotatoThemeInput] = useState('');
-  const [potatoBanDrafts, setPotatoBanDrafts] = useState<Record<string, string>>({});
   const lastTimerAppliedQuestionId = React.useRef<string | null>(null);
-  const [potatoAnswerInput, setPotatoAnswerInput] = useState('');
-  const [potatoWinnerDraft, setPotatoWinnerDraft] = useState('');
   const [blitzThemeInput, setBlitzThemeInput] = useState('');
   const [blitzBanDrafts, setBlitzBanDrafts] = useState<Record<string, string>>({});
   const [blitzPickDraft, setBlitzPickDraft] = useState('');
@@ -326,7 +322,7 @@ function ModeratorPage(): React.ReactElement {
   useEffect(() => {
     if (!roomCode) return;
     ensureAdminSession(roomCode).catch(() => {
-      // Silent fail — endpoint may not exist on older backends
+      // Silent fail ï¿½ endpoint may not exist on older backends
     });
   }, [roomCode]);
 
@@ -382,25 +378,7 @@ function ModeratorPage(): React.ReactElement {
     });
     return map;
   }, [answers, scoreboard]);
-  const potatoActiveTeamName = potato?.activeTeamId ? teamLookup[potato.activeTeamId]?.name || potato?.activeTeamId : null;
   const blitzPhase = blitz?.phase ?? 'IDLE';
-  const potatoPhase = potato?.phase ?? 'IDLE';
-  const potatoDeadline = potato?.deadline ?? null;
-  const potatoTimeLeft = useMemo(() => {
-    if (!potatoDeadline) return null;
-    return Math.max(0, Math.ceil((potatoDeadline - Date.now()) / 1000));
-  }, [potatoDeadline, countdownTick]);
-  const potatoRoundsTotal = potato?.selectedThemes?.length ?? 0;
-  const potatoDeadlinePassed = potatoTimeLeft !== null && potatoTimeLeft <= 0;
-  const potatoConflict = potato?.pendingConflict ?? null;
-  const potatoRoundIndex = potato?.roundIndex ?? -1;
-  const potatoFirstRoundPending = potatoPhase === 'ROUND_END' && potatoRoundIndex < 0;
-  const potatoAllRoundsComplete =
-    potatoPhase === 'ROUND_END' && potatoRoundsTotal > 0 && potatoRoundIndex >= potatoRoundsTotal - 1;
-  const hasWinnerDraft = Boolean(potatoWinnerDraft && potatoWinnerDraft.trim());
-  const potatoAutopilotEnabled = socketConfig?.potatoAutopilot ?? true;
-  const potatoTimeoutAutostrikeEnabled = socketConfig?.potatoTimeoutAutostrike ?? false;
-  const showPotatoConfigBadges = socketGameState === 'POTATO';
   const blitzDeadline = blitz?.deadline ?? null;
   const blitzTimeLeft = useMemo(() => {
     if (!blitzDeadline) return null;
@@ -488,47 +466,6 @@ function ModeratorPage(): React.ReactElement {
       }
     };
 
-    const handlePotatoAction = () => {
-      if (!roomCode) return;
-      if (!potato || potatoPhase === 'IDLE') {
-        if ((isScoreboardState || isScoreboardPauseState) && askedCount >= totalQuestions) {
-          handlePotatoStart();
-        }
-        return;
-      }
-      if (potatoPhase === 'BANNING') {
-        handlePotatoConfirmThemes();
-        return;
-      }
-      if (potatoPhase === 'PLAYING') {
-        if (potatoConflict) {
-          handlePotatoStrike();
-        } else {
-          handlePotatoNextTurn();
-        }
-        return;
-      }
-      if (potatoPhase === 'ROUND_END') {
-        if (hasWinnerDraft) {
-          handlePotatoEndRound();
-          return;
-        }
-        if (potatoFirstRoundPending) {
-          handlePotatoStartRound();
-          return;
-        }
-        if (!potatoAllRoundsComplete) {
-          handlePotatoNextRound();
-          return;
-        }
-        handlePotatoFinish();
-        return;
-      }
-      if (potatoPhase === 'DONE') {
-        handlePotatoFinish();
-      }
-    };
-
     const matchesHotkey = (event: KeyboardEvent, combos: string[]) => {
       const key = (event.key || '').toLowerCase();
       const code = (event.code || '').toLowerCase();
@@ -565,10 +502,6 @@ function ModeratorPage(): React.ReactElement {
         return;
       }
       if (matchesHotkey(event, ['f17', 'digit5', 'numpad5', '5'])) {
-        event.preventDefault();
-        handlePotatoAction();
-        return;
-      }
       if (matchesHotkey(event, ['f18', 'digit6', 'numpad6', '6'])) {
         event.preventDefault();
         handleScoreboardAction();
@@ -580,12 +513,6 @@ function ModeratorPage(): React.ReactElement {
   }, [
     roomCode,
     showJoinScreen,
-    potato,
-    potatoPhase,
-    potatoConflict,
-    hasWinnerDraft,
-    potatoFirstRoundPending,
-    potatoAllRoundsComplete,
     totalQuestions,
     blitzPhase,
     blitzResultsCount,
@@ -597,14 +524,6 @@ function ModeratorPage(): React.ReactElement {
     normalizedGameState,
     socketEmit,
     handleScoreboardAction,
-    handlePotatoStart,
-    handlePotatoConfirmThemes,
-    handlePotatoNextTurn,
-    handlePotatoStrike,
-    handlePotatoStartRound,
-    handlePotatoEndRound,
-    handlePotatoNextRound,
-    handlePotatoFinish,
     emitBlitzEvent,
     handleNextQuestion,
     handleLockQuestion,
@@ -766,9 +685,9 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'Space') {
         e.preventDefault();
         if (socketGameState === 'Q_LOCKED') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelöst');
+          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelï¿½st');
         } else if (socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nï¿½chste Frage');
         } else if (socketGameState === 'LOBBY') {
           doAction(() => fetch(`/api/rooms/${roomCode}/start-quiz`, { method: 'POST' }), 'Quiz gestartet');
         }
@@ -796,7 +715,7 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         if (socketGameState === 'Q_ACTIVE' || socketGameState === 'Q_LOCKED' || socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nï¿½chste Frage');
         }
       }
       
@@ -887,7 +806,7 @@ function ModeratorPage(): React.ReactElement {
 
   const handleCreateSession = async () => {
     if (!selectedQuiz) {
-      setToast('Bitte zuerst ein Quiz auswählen');
+      setToast('Bitte zuerst ein Quiz auswï¿½hlen');
       return;
     }
     const socket = controlSocketRef.current;
@@ -916,7 +835,7 @@ function ModeratorPage(): React.ReactElement {
         }
         const nextCode = resp.roomCode || DEFAULT_ROOM_CODE;
         
-        // Quiz SOFORT setzen, kein zweiter Schritt mehr nötig
+        // Quiz SOFORT setzen, kein zweiter Schritt mehr nï¿½tig
         try {
           await ensureAdminSession(nextCode);
           await useQuiz(nextCode, selectedQuiz);
@@ -931,7 +850,7 @@ function ModeratorPage(): React.ReactElement {
         setShowJoinScreen(true);
         setShowSessionSetup(false);
         setCreatingSession(false);
-        setToast(`Session ${nextCode} bereit – Quiz geladen!`);
+        setToast(`Session ${nextCode} bereit ï¿½ Quiz geladen!`);
         setTimeout(() => setToast(null), 2500);
       }
     );
@@ -1276,7 +1195,7 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
-        return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
+        return { hotkey: '1', label: 'WEITER', detail: 'Zur nï¿½chsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
       case 'SCOREBOARD_PAUSE':
@@ -1293,7 +1212,7 @@ function ModeratorPage(): React.ReactElement {
       case 'BLITZ_PAUSE':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
       case 'POTATO':
-        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: '—' };
+        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: 'ï¿½' };
       case 'AWARDS':
         return { hotkey: '1', label: 'WEITER', detail: 'Awards zeigen', context: 'Finale' };
       default:
@@ -1304,10 +1223,7 @@ function ModeratorPage(): React.ReactElement {
     nextStage,
     submissionStatus.submittedCount,
     submissionStatus.total,
-    blitz?.phase,
-    potatoPhase,
-    potatoActiveTeamName,
-    potatoAutopilotEnabled
+    blitz?.phase
   ]);
 
   const catKey = (question as any)?.category as keyof typeof categoryColors;
@@ -1522,7 +1438,7 @@ function ModeratorPage(): React.ReactElement {
             </div>
             {selectedTitles.length > 0 && (
               <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-                Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' · ')}
+                Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' ï¿½ ')}
               </div>
             )}
           </div>
@@ -1616,19 +1532,19 @@ function ModeratorPage(): React.ReactElement {
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye live</div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-            Runde {roundLabel} · Kategorie: {currentCategoryTitle || 'n/a'}
+            Runde {roundLabel} ï¿½ Kategorie: {currentCategoryTitle || 'n/a'}
           </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span style={statChip}>Aktiv: {activeTeamName || 'n/a'}</span>
             {rundlaufTimeLeft !== null && <span style={statChip}>Restzeit {rundlaufTimeLeft}s</span>}
             <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}/{totalCount}</span>
-            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>Übrig: {remainingCount}</span>}
+            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>ï¿½brig: {remainingCount}</span>}
           </div>
 
           {/* Remaining answers hint */}
           {totalCount > 0 && remainingCount > 0 && remainingCount <= 5 && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} übrig:</div>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} ï¿½brig:</div>
               <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {(rundlauf?.remainingAnswers ?? []).slice(0, 10).map((answer, idx) => (
                   <span key={idx} style={{ background: 'rgba(148,163,184,0.2)', padding: '4px 8px', borderRadius: 4 }}>
@@ -1645,13 +1561,13 @@ function ModeratorPage(): React.ReactElement {
               <div style={{ fontWeight: 700, marginBottom: 4 }}>
                 Letzter Versuch: {lastAttemptTeamName || lastAttempt.teamId}
               </div>
-              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || '—'}</div>
+              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || 'ï¿½'}</div>
               {lastAttemptLabel && <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
               
               {/* Validation hint: show if answer is similar to any available answer */}
               {lastAttempt.verdict === 'invalid' && lastAttempt.reason === 'not-listed' && rundlauf?.availableAnswers && (
                 <div style={{ marginTop: 8, padding: 8, background: 'rgba(248,113,113,0.1)', borderRadius: 6 }}>
-                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>Ähnliche Antworten:</div>
+                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>ï¿½hnliche Antworten:</div>
                   <div style={{ fontSize: 12, color: '#fecaca', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {rundlauf.availableAnswers.slice(0, 5).map((answer, idx) => (
                       <span key={idx} style={{ background: 'rgba(248,113,113,0.2)', padding: '3px 6px', borderRadius: 3 }}>
@@ -2127,16 +2043,7 @@ function ModeratorPage(): React.ReactElement {
         </button>
       );
     }
-    if (isScoreboardState && askedCount >= totalQuestions && potatoPhase === 'IDLE') {
-      ctas.push(
-        <button
-          key="cta-potato"
-          style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #fbbf24, #fb923c)', color: '#1f1305' }}
-          onClick={handlePotatoStart}
-        >
-          FINAL: HEISSE KARTOFFEL
-        </button>
-      );
+    if (isScoreboardState && askedCount >= totalQuestions) {
       ctas.push(
         <button
           key="cta-awards"
@@ -2520,7 +2427,6 @@ const renderCozyStagePanel = () => {
   if (!roomCode) return null;
   if (isRundlaufState) return renderRundlaufControls();
   if (isBlitzState) return renderBlitzControls();
-  if (normalizedGameState === 'POTATO') return renderPotatoControls();
   if (normalizedGameState === 'AWARDS') {
     return (
       <section style={{ ...card, marginTop: 12 }}>
@@ -2773,7 +2679,7 @@ const renderCozyStagePanel = () => {
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
-              Roomcode: <strong>{roomCode || '—'}</strong>
+              Roomcode: <strong>{roomCode || 'ï¿½'}</strong>
             </span>
             {currentQuizName && (
               <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
@@ -2808,7 +2714,7 @@ const renderCozyStagePanel = () => {
                 width: '100%'
               }}
               onClick={handleRoomReset}
-              title="Beende das aktuelle Quiz und zurück zur Setup"
+              title="Beende das aktuelle Quiz und zurï¿½ck zur Setup"
             >
               ?? Quiz beenden
             </button>
@@ -3297,7 +3203,6 @@ const renderCozyStagePanel = () => {
       </div>
     </div>
 
-    {renderPotatoControls()}
     {renderBlitzControls()}
 
     {/* Fehler/Info Banner oben, besser sichtbar auf Mobile */}
@@ -3392,7 +3297,7 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
+      {/* Antwort-Panel fï¿½r Moderator: zeige alle Team-Antworten live */}
       {viewPhase === 'quiz' && answers && (normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
         <AdminAnswersPanel
           answers={answers.answers}
@@ -3405,7 +3310,7 @@ const renderCozyStagePanel = () => {
                   setAnswers(res);
                 }
               },
-              'Schätzfrage ausgewertet'
+              'Schï¿½tzfrage ausgewertet'
             )
           }
           onResolveGeneric={() =>
@@ -3515,7 +3420,7 @@ const renderCozyStagePanel = () => {
           <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
             <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
             <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
+            <li>Schaetzfragen: am nï¿½chsten dran gewinnt.</li>
             <li>Bilder & Cheese: genau hinsehen.</li>
           </ul>
           <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>
@@ -3593,10 +3498,10 @@ const renderCozyStagePanel = () => {
           ?? Keyboard Shortcuts
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nï¿½chste Aktion (Quiz starten / Reveal / Weiter)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>
-          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nächste Frage (überspringen)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nï¿½chste Frage (ï¿½berspringen)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>S</kbd> Scoreboard anzeigen</div>
         </div>
       </div>

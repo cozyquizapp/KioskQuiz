@@ -1091,7 +1091,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               }}
             />
           )}
-          <span>{accentLabel}</span>
+          {/* Only logo in header; label removed to keep header minimal */}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ ...pillLabel, marginBottom: 0 }}>

@@ -180,7 +180,7 @@ const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> =
     en: 'All about the picture \u2013 look closely.'
   },
   GemischteTuete: {
-    de: 'Bunte Tuete: Ranking, Praezision, Ordnung.',
+    de: 'Bunte Tüte: Ranking, Präzision, Ordnung.',
     en: 'Mixed bag: rankings, precision, order.'
   }
 };

@@ -1267,7 +1267,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function buildBunteSubmission(payload: BunteTuetePayload | undefined) {
     if (!question || !payload) return null;
     if (payload.kind === 'top5') {
-      const values = bunteTop5Order.map((v) => v.trim()).filter(Boolean).slice(0, 5);
+      const values = bunteTop5Order.map((v) => (v || '').trim()).filter(Boolean).slice(0, 5);
       if (values.length === 0) {
         setMessage(language === 'de' ? 'Mindestens eine Antwort eingeben.' : 'Enter at least one answer.');
         return null;

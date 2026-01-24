@@ -3521,17 +3521,19 @@ const renderCozyStagePanel = () => {
             </span>
           )}
           <span style={statChip}>Sprache: {language.toUpperCase()}</span>
-          <button
-            style={{
-              ...inputStyle,
-              width: 'auto',
-              background: 'rgba(255,255,255,0.08)',
-              cursor: 'pointer'
-            }}
-            onClick={handleRoomReset}
-          >
-            Session wechseln
-          </button>
+          {showJoinScreen && (
+            <button
+              style={{
+                ...inputStyle,
+                width: 'auto',
+                background: 'rgba(255,255,255,0.08)',
+                cursor: 'pointer'
+              }}
+              onClick={handleRoomReset}
+            >
+              Session wechseln
+            </button>
+          )}
           <select
             value={language}
             onChange={(e) => {

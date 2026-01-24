@@ -3139,19 +3139,32 @@ function TeamView({ roomCode }: TeamViewProps) {
           <button
             key={opt.key}
             style={{
-              padding: '6px 10px',
-              borderRadius: 10,
-              border: language === opt.key ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.04)',
-              background: language === opt.key ? `${accentColor}ee` : 'rgba(255,255,255,0.02)',
+              padding: '8px 14px',
+              borderRadius: 12,
+              border: language === opt.key ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.08)',
+              background: language === opt.key ? `${accentColor}ee` : 'rgba(255,255,255,0.05)',
               backdropFilter: 'blur(20px)',
-              color: language === opt.key ? '#0d0f14' : '#94a3b8',
-              fontWeight: language === opt.key ? 900 : 600,
+              color: language === opt.key ? '#0d0f14' : '#cbd5e1',
+              fontWeight: language === opt.key ? 900 : 700,
               cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              boxShadow: language === opt.key ? `0 8px 16px ${accentColor}44, inset 0 1px 1px rgba(255,255,255,0.2)` : 'inset 0 1px 1px rgba(255,255,255,0.02)',
-              transform: language === opt.key ? 'scale(1.05)' : 'scale(1)'
+              transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              boxShadow: language === opt.key ? `0 12px 24px ${accentColor}55, inset 0 1px 2px rgba(255,255,255,0.2)` : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+              transform: language === opt.key ? 'scale(1.08)' : 'scale(1)',
+              letterSpacing: '0.02em'
             }}
             onClick={() => updateLanguage(opt.key)}
+            onMouseEnter={(e) => {
+              if (language !== opt.key) {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (language !== opt.key) {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+              }
+            }}
             type="button"
             className="lang-button"
           >
@@ -3167,13 +3180,40 @@ function TeamView({ roomCode }: TeamViewProps) {
         onChange={(e) => setTeamName(e.target.value)}
         placeholder={t('joinPlaceholder')}
         className="team-answer-input team-join-input"
-        style={{ ...inputStyle, transition: 'all 0.3s ease' }}
+        style={{ 
+          ...inputStyle, 
+          transition: 'all 0.25s ease',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
+        }}
+        onFocus={(e) => {
+          (e.currentTarget as HTMLInputElement).style.boxShadow = `inset 0 2px 4px rgba(0,0,0,0.3), 0 0 12px ${accentColor}77`;
+          (e.currentTarget as HTMLInputElement).style.borderColor = accentColor;
+        }}
+        onBlur={(e) => {
+          (e.currentTarget as HTMLInputElement).style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.3)';
+          (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
+        }}
       />
       <PrimaryButton
         style={{
           marginTop: 12,
-          opacity: joinDisabled ? 0.6 : 1,
-          cursor: joinDisabled ? 'not-allowed' : 'pointer'
+          opacity: joinDisabled ? 0.5 : 1,
+          cursor: joinDisabled ? 'not-allowed' : 'pointer',
+          transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transform: 'scale(1)',
+          boxShadow: joinDisabled ? 'none' : '0 8px 20px rgba(99,229,255,0.3)'
+        }}
+        onMouseEnter={(e) => {
+          if (!joinDisabled) {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 28px rgba(99,229,255,0.5)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!joinDisabled) {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 20px rgba(99,229,255,0.3)';
+          }
         }}
         onClick={!joinDisabled ? () => handleJoin(false) : undefined}
         disabled={joinDisabled}

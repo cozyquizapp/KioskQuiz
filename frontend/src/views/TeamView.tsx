@@ -3464,8 +3464,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   border: '1px solid rgba(255,255,255,0.16)'
                 }}
               >
-                <img src="/logo.png?v=3" alt="Cozy Kiosk Quiz" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
-                <span style={{ fontWeight: 800 }}>Cozy Kiosk Quiz</span>
+                <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
               </div>
             </Link>
             {teamId && (

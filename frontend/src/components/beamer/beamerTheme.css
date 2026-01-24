@@ -180,6 +180,19 @@
   }
 }
 
+/* Brief glow pulse for correct answers */
+@keyframes correctGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(34, 197, 94, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
 .beamer-frame.scene-blitz {
   background: linear-gradient(160deg, rgba(21, 26, 52, 0.96), rgba(13, 17, 30, 0.9));
 }

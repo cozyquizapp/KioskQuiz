@@ -1606,7 +1606,7 @@ useEffect(() => {
                       background: result.isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(107,114,128,0.12)',
                       color: '#e2e8f0',
                       willChange: 'transform, opacity',
-                      animation: `beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                      animation: `${result.isCorrect ? 'correctGlow 0.8s ease-out, ' : ''}beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
                       animationDelay: `${idx * 80}ms`,
                       animationFillMode: 'backwards'
                     }}
@@ -1666,7 +1666,7 @@ useEffect(() => {
                   background: backgroundColor,
                   color: '#e2e8f0',
                   willChange: 'transform, opacity',
-                  animation: `beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                  animation: `${isCorrect ? 'correctGlow 0.8s ease-out, ' : ''}beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
                   animationDelay: `${idx * 80}ms`,
                   animationFillMode: 'backwards'
                 }}

@@ -3504,13 +3504,29 @@ const renderCozyStagePanel = () => {
       <button
         style={{
           ...inputStyle,
-          width: 'auto',
+          width: 40,
+          height: 40,
+          padding: 0,
           background: 'rgba(255,255,255,0.08)',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 20,
+          transition: 'all 0.2s ease'
         }}
         onClick={() => setShowSettingsPanel((prev) => !prev)}
+        title={showSettingsPanel ? 'Einstellungen schliessen' : 'Einstellungen'}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.12)';
+          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+        }}
       >
-        {showSettingsPanel ? 'Einstellungen schliessen' : 'Einstellungen'}
+        ⚙️
       </button>
     </div>
         {showSettingsPanel && (
@@ -3530,22 +3546,38 @@ const renderCozyStagePanel = () => {
               </span>
             )}
           </div>
-          {showJoinScreen && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <button
               style={{
                 ...inputStyle,
-                width: '100%',
+                background: 'rgba(59,130,246,0.15)',
+                border: '1px solid rgba(59,130,246,0.4)',
+                color: '#93c5fd',
+                fontWeight: 700,
+                cursor: 'pointer',
+                width: '100%'
+              }}
+              onClick={() => setShowSessionSetup(true)}
+              title="Wechsle zu einem anderen Quiz"
+            >
+              🔄 Quiz wechseln
+            </button>
+            <button
+              style={{
+                ...inputStyle,
                 background: 'rgba(239,68,68,0.15)',
                 border: '1px solid rgba(239,68,68,0.4)',
                 color: '#fca5a5',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                width: '100%'
               }}
               onClick={handleRoomReset}
+              title="Beende das aktuelle Quiz und zurück zur Setup"
             >
-              🔄 Quiz beenden & neu starten
+              🛑 Quiz beenden
             </button>
-          )}
+          </div>
         </div>
 
         {/* Sprache Sektion */}

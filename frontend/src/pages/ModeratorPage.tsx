@@ -1191,7 +1191,7 @@ function ModeratorPage(): React.ReactElement {
           context: `Antworten ${submissionStatus.submittedCount}/${submissionStatus.total || '-'}`
         };
       case 'Q_LOCKED':
-        return { hotkey: '3', label: 'AUFDECKEN', detail: 'Aufloesung zeigen', context: 'Antworten geprueft' };
+        return { hotkey: '3', label: 'AUFDECKEN', detail: 'Auflösung zeigen', context: 'Antworten geprüft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
         return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
@@ -2173,7 +2173,7 @@ function ModeratorPage(): React.ReactElement {
           flex: '1 1 320px'
         }}
       >
-        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NAECHSTER SCHRITT</div>
+        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NÄCHSTER SCHRITT</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span
             style={{
@@ -2217,7 +2217,7 @@ function ModeratorPage(): React.ReactElement {
         <div style={{ ...card, maxWidth: 420, width: '92%', textAlign: 'left' }}>
           <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 6 }}>Session aktiv</div>
           <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 12 }}>
-            Eine Session laeuft bereits. Willst du reconnecten oder neu starten?
+            Eine Session läuft bereits. Willst du reconnecten oder neu starten?
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
             <button
@@ -3297,10 +3297,10 @@ const renderCozyStagePanel = () => {
       )}
 
       {/* Antwort-Panel f�r Moderator: zeige alle Team-Antworten live */}
-      {viewPhase === 'quiz' && answers && (normalizedGameState === 'Q_ACTIVE' || normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
+      {viewPhase === 'quiz' && (normalizedGameState === 'Q_ACTIVE' || normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
         <AdminAnswersPanel
-          answers={answers.answers}
-          teams={answers.teams}
+          answers={answers?.answers || {}}
+          teams={answers?.teams || {}}
           onResolveEstimate={() =>
             doAction(
               async () => {
@@ -3309,7 +3309,7 @@ const renderCozyStagePanel = () => {
                   setAnswers(res);
                 }
               },
-              'Sch�tzfrage ausgewertet'
+              'Schätzfrage ausgewertet'
             )
           }
           onResolveGeneric={() =>

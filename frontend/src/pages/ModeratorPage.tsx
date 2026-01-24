@@ -501,7 +501,6 @@ function ModeratorPage(): React.ReactElement {
         handleBlitzAction();
         return;
       }
-      if (matchesHotkey(event, ['f17', 'digit5', 'numpad5', '5'])) {
       if (matchesHotkey(event, ['f18', 'digit6', 'numpad6', '6'])) {
         event.preventDefault();
         handleScoreboardAction();

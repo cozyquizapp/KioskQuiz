@@ -628,8 +628,10 @@ function ModeratorPage(): React.ReactElement {
     setQuestion(nextQuestion);
     const hasQuestion = Boolean(nextQuestion);
     setPhase(hasQuestion ? 'question' : 'setup');
-    // Don't change viewPhase here - let it stay as it was
-    // viewPhase should only change on explicit user action via changeViewPhase()
+    // Change viewPhase to 'quiz' when we get a question
+    if (hasQuestion) {
+      changeViewPhase('quiz');
+    }
   }, [socketQuestion]);
 
   useEffect(() => {

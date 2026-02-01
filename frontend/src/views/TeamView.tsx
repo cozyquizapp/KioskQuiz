@@ -132,7 +132,7 @@ const COPY = {
     joinHint: "Gib deinen Teamnamen ein, bestaetige und dann geht's los.",
     timerActiveLabel: 'Timer aktiv',
     timerDoneLabel: 'Zeit vorbei',
-    evaluating: 'Wir pruefen alle Antworten ...',
+    evaluating: 'Wir prüfen alle Antworten ...',
     bingoTitle: 'Bingo',
     bingoReady: 'Du hast die Frage richtig - setze jetzt ein X auf ein freies Feld der aktuellen Kategorie.',
     readyOn: 'Wir sind bereit',
@@ -156,7 +156,7 @@ const COPY = {
     estimateWorse: 'Leider weiter weg als das beste Team.',
     betHint: (pool: number) => `Verteile genau ${pool} Punkte auf A/B/C.`,
     betRemaining: (remaining: number) =>
-      remaining === 0 ? 'Alle Punkte verteilt.' : `${remaining} Punkt(e) uebrig.`,
+      remaining === 0 ? 'Alle Punkte verteilt.' : `${remaining} Punkt(e) übrig.`,
     betInvalid: 'Bitte genau 10 Punkte verteilen.'
   },
   en: {
@@ -996,7 +996,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     } catch (err) {
       showError(
           language === 'de'
-          ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung pruefen.`
+          ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung prüfen.`
           : `Join failed (${SOCKET_URL}). Please check room code/connection.`
         );
     }
@@ -1304,7 +1304,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         : 'Antwort gesendet ✅';
     return renderWaiting(
       answerSubmitted ? submittedTitle : t('waiting'),
-      language === 'de' ? 'Wir pruefen alle Antworten ...' : t('evaluating')
+      language === 'de' ? 'Wir prüfen alle Antworten ...' : t('evaluating')
     );
   }
 
@@ -1998,7 +1998,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           <>
             <p style={mutedText}>
               {language === 'de'
-                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen uebrig bleiben.'
+                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
                 : language === 'both'
                 ? 'Teams bannen Themen / Teams are banning topics.'
                 : 'Teams are banning topics before the final.'}

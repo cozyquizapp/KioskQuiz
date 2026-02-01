@@ -296,7 +296,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               setTimeout(() => {
                 fetchTimer(roomCode)
                   .then((t) => {
-                    if (!t?.timer?.endsAt) setToast('Timer nicht aktiv? Bitte pruefen.');
+                    if (!t?.timer?.endsAt) setToast('Timer nicht aktiv? Bitte prüfen.');
                   })
                   .catch(() => setToast('Timer-Status unbekannt'));
               }, 800);

@@ -2753,70 +2753,78 @@ function TeamView({ roomCode }: TeamViewProps) {
               {language === 'de' ? 'Bitte warten, Auswahl läuft...' : 'Please wait, selection in progress...'}
             </div>
           )}
-          <div style={{ display: 'grid', gap: 8 }}>
-            {pool.map((theme) => {
-              const isBanned = bannedIds.has(theme.id);
-              const isPinned = pinnedId === theme.id;
-              const canBan = isTopTeam && !selectionLocked && banCount < banLimit && !isBanned && !isPinned;
-              const canPick = isLastTeam && pickUnlocked && !isBanned && !isPinned;
-              return (
-                <div
-                  key={`blitz-team-pick-${theme.id}`}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    opacity: isBanned ? 0.5 : 1
-                  }}
-                >
-                  <span>{theme.title}</span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {isTopTeam && (
-                      <button
-                        style={{
-                          ...primaryButton,
-                          padding: '6px 10px',
-                          fontSize: 12,
-                          background: 'rgba(248,113,113,0.2)',
-                          border: '1px solid rgba(248,113,113,0.4)',
-                          color: '#fecaca',
-                          opacity: canBan ? 1 : 0.35,
-                          cursor: canBan ? 'pointer' : 'not-allowed'
-                        }}
-                        disabled={!canBan}
-                        onClick={() => submitBlitzBan(theme.id)}
-                      >
-                        {language === 'de' ? 'Bannen' : 'Ban'}
-                      </button>
-                    )}
-                    {isLastTeam && (
-                      <button
-                        style={{
-                          ...primaryButton,
-                          padding: '6px 10px',
-                          fontSize: 12,
-                          background: 'rgba(34,197,94,0.2)',
-                          border: '1px solid rgba(34,197,94,0.45)',
-                          color: '#bbf7d0',
-                          opacity: canPick ? 1 : 0.35,
-                          cursor: canPick ? 'pointer' : 'not-allowed'
-                        }}
-                        disabled={!canPick}
-                        onClick={() => submitBlitzPick(theme.id)}
-                      >
-                        {language === 'de' ? 'Wählen' : 'Pick'}
-                      </button>
-                    )}
+          {(isTopTeam && !selectionLocked) || (isLastTeam && pickUnlocked && !selectionLocked) ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {pool.map((theme) => {
+                const isBanned = bannedIds.has(theme.id);
+                const isPinned = pinnedId === theme.id;
+                const canBan = isTopTeam && !selectionLocked && banCount < banLimit && !isBanned && !isPinned;
+                const canPick = isLastTeam && pickUnlocked && !isBanned && !isPinned;
+                return (
+                  <div
+                    key={`blitz-team-pick-${theme.id}`}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      opacity: isBanned ? 0.5 : 1
+                    }}
+                  >
+                    <span>{theme.title}</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {isTopTeam && (
+                        <button
+                          style={{
+                            ...primaryButton,
+                            padding: '6px 10px',
+                            fontSize: 12,
+                            background: 'rgba(248,113,113,0.2)',
+                            border: '1px solid rgba(248,113,113,0.4)',
+                            color: '#fecaca',
+                            opacity: canBan ? 1 : 0.35,
+                            cursor: canBan ? 'pointer' : 'not-allowed'
+                          }}
+                          disabled={!canBan}
+                          onClick={() => submitBlitzBan(theme.id)}
+                        >
+                          {language === 'de' ? 'Bannen' : 'Ban'}
+                        </button>
+                      )}
+                      {isLastTeam && (
+                        <button
+                          style={{
+                            ...primaryButton,
+                            padding: '6px 10px',
+                            fontSize: 12,
+                            background: 'rgba(34,197,94,0.2)',
+                            border: '1px solid rgba(34,197,94,0.45)',
+                            color: '#bbf7d0',
+                            opacity: canPick ? 1 : 0.35,
+                            cursor: canPick ? 'pointer' : 'not-allowed'
+                          }}
+                          disabled={!canPick}
+                          onClick={() => submitBlitzPick(theme.id)}
+                        >
+                          {language === 'de' ? 'Wählen' : 'Pick'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: 20, textAlign: 'center', fontSize: 14, color: '#94a3b8' }}>
+              {language === 'de'
+                ? 'Wartet auf andere Teams...'
+                : 'Waiting for other teams...'}
+            </div>
+          )}
         </div>
       );
     }

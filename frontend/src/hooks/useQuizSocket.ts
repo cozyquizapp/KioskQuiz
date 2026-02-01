@@ -91,25 +91,33 @@ export const useQuizSocket = (roomCode: string) => {
     };
 
     const onBeamerQuestion = ({ question, meta }: { question: AnyQuestion; meta?: QuestionMeta | null }) => {
-      setEvents((prev) => ({
-        ...prev,
-        currentQuestion: question,
-        questionMeta: meta ?? prev.questionMeta ?? null,
-        questionPhase: 'answering',
-        // Only clear answers if it's a different question
-        answers: prev.currentQuestion?.id !== question.id ? {} : prev.answers
-      }));
+      setEvents((prev) => {
+        // Only clear answers if we're switching from one question to a different one
+        // Not when starting a new session (prev.currentQuestion is null)
+        const shouldClearAnswers = prev.currentQuestion && prev.currentQuestion.id !== question.id;
+        return {
+          ...prev,
+          currentQuestion: question,
+          questionMeta: meta ?? prev.questionMeta ?? null,
+          questionPhase: 'answering',
+          answers: shouldClearAnswers ? {} : prev.answers
+        };
+      });
     };
 
     const onTeamQuestion = ({ question }: { question: AnyQuestion | null }) => {
       if (!question) return;
-      setEvents((prev) => ({
-        ...prev,
-        currentQuestion: question,
-        questionPhase: 'answering',
-        // Only clear answers if it's a different question
-        answers: prev.currentQuestion?.id !== question.id ? {} : prev.answers
-      }));
+      setEvents((prev) => {
+        // Only clear answers if we're switching from one question to a different one
+        // Not when starting a new session (prev.currentQuestion is null)
+        const shouldClearAnswers = prev.currentQuestion && prev.currentQuestion.id !== question.id;
+        return {
+          ...prev,
+          currentQuestion: question,
+          questionPhase: 'answering',
+          answers: shouldClearAnswers ? {} : prev.answers
+        };
+      });
     };
 
     const onTeamsReady = ({ teams }: { teams: Team[] }) => {
@@ -187,29 +195,37 @@ export const useQuizSocket = (roomCode: string) => {
         );
       }
       // If neither liveAnswers nor results have data, keep previous answers (undefined)
-      setEvents((prev) => ({
-        ...prev,
-        currentQuestion:
-          payload.currentQuestion !== undefined ? payload.currentQuestion : prev.currentQuestion,
-        questionPhase: payload.phase,
-        timerEndsAt: payload.timer?.endsAt ?? prev.timerEndsAt,
-        timerDurationMs: payload.timer?.durationMs ?? prev.timerDurationMs,
-        gameState: payload.state,
-        scores: payload.scores,
-        teamsConnected: payload.teamsConnected,
-        teamStatus: payload.teamStatus ?? prev.teamStatus,
-        potato: payload.potato ?? prev.potato,
-        blitz: payload.blitz ?? prev.blitz,
-        rundlauf: payload.rundlauf ?? prev.rundlauf,
-        questionProgress: payload.questionProgress ?? prev.questionProgress,
-        results: payload.results ?? prev.results,
-        answers: nextAnswers !== undefined ? nextAnswers : prev.answers,
-        warnings: payload.warnings ?? prev.warnings,
-        supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
-        config: payload.config ?? prev.config,
-        nextStage: payload.nextStage ?? prev.nextStage,
-        scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced
-      }));
+      setEvents((prev) => {
+        // Clear answers if switching to a new question
+        const isSwitchingQuestion = payload.currentQuestion !== undefined && 
+          prev.currentQuestion && 
+          prev.currentQuestion.id !== payload.currentQuestion.id;
+        
+        return {
+          ...prev,
+          currentQuestion:
+            payload.currentQuestion !== undefined ? payload.currentQuestion : prev.currentQuestion,
+          questionPhase: payload.phase,
+          timerEndsAt: payload.timer?.endsAt ?? prev.timerEndsAt,
+          timerDurationMs: payload.timer?.durationMs ?? prev.timerDurationMs,
+          gameState: payload.state,
+          scores: payload.scores,
+          teamsConnected: payload.teamsConnected,
+          teamStatus: payload.teamStatus ?? prev.teamStatus,
+          potato: payload.potato ?? prev.potato,
+          blitz: payload.blitz ?? prev.blitz,
+          rundlauf: payload.rundlauf ?? prev.rundlauf,
+          questionProgress: payload.questionProgress ?? prev.questionProgress,
+          results: payload.results ?? prev.results,
+          // Clear answers if switching question, otherwise use nextAnswers or previous
+          answers: isSwitchingQuestion ? {} : (nextAnswers !== undefined ? nextAnswers : prev.answers),
+          warnings: payload.warnings ?? prev.warnings,
+          supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
+          config: payload.config ?? prev.config,
+          nextStage: payload.nextStage ?? prev.nextStage,
+          scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced
+        };
+      });
     };
 
     socket.on('connect', () => setConnected(true));

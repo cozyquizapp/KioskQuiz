@@ -3393,8 +3393,15 @@ const renderCozyStagePanel = () => {
       {/* Answer Panel - displays live answers using polling hook */}
       {viewPhase === 'quiz' && (
         <section style={{ ...card, marginTop: 12 }}>
+          <h2 style={{color: 'red'}}>DEBUG: viewPhase={viewPhase}, answers={JSON.stringify(answers).substring(0, 100)}</h2>
           <AnswerList
-            answers={answers}
+            answers={answers || {
+              answers: {
+                'team1': { teamId: 'team1', answer: 'TEST ANSWER', isCorrect: null, timestamp: Date.now() }
+              },
+              teams: { 'team1': 'Test Team' },
+              solution: 'TEST'
+            }}
             answersCount={answersCount}
             teamsCount={teamsCount}
             unreviewedCount={unreviewedCount}

@@ -27,7 +27,7 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('socket.io-client')) return 'vendor-socket';
             if (id.includes('html2canvas')) return 'vendor-canvas';
-            if (id.includes('react-dom')) return 'vendor-react';
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
           }
           if (id.includes('/admin/')) return 'admin';
           if (id.includes('/components/') && (id.includes('Editor') || id.includes('Editor'))) return 'editors';

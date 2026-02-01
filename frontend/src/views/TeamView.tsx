@@ -2682,6 +2682,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     const banPhaseDone = banLimit === 0 || banCount >= banLimit;
     const selectionLocked = Boolean(blitzState.pinnedTheme);
     const pickUnlocked = banPhaseDone;
+    const canShowBan = isTopTeam && !selectionLocked && !pickUnlocked;
+    const canShowPick = isLastTeam && pickUnlocked && !selectionLocked;
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
@@ -2722,14 +2724,14 @@ function TeamView({ roomCode }: TeamViewProps) {
           <div style={{ fontSize: 16, fontWeight: 700 }}>
             {language === 'de' ? 'Themen-Auswahl' : 'Theme selection'}
           </div>
-          {isTopTeam && !selectionLocked && (
+          {canShowBan && (
             <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
               {language === 'de'
                 ? `✓ Du bist Platz 1: bannen Sie ${bansRemaining} Kategorien (${banCount}/${banLimit} erledigt)`
                 : `✓ You are top: ban ${bansRemaining} categories (${banCount}/${banLimit} done)`}
             </div>
           )}
-          {isTopTeam && selectionLocked && (
+          {isTopTeam && pickUnlocked && !selectionLocked && (
             <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
               {language === 'de'
                 ? '✓ Alle Bans erledigt – warte auf Auswahl'
@@ -2743,25 +2745,25 @@ function TeamView({ roomCode }: TeamViewProps) {
                 : 'Please wait until team 1 finishes banning.'}
             </div>
           )}
-          {isLastTeam && pickUnlocked && (
+          {canShowPick && (
             <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
               {language === 'de'
                 ? '✓ Deine Runde: waehlen Sie 1 Kategorie'
                 : '✓ Your turn: pick 1 category'}
             </div>
           )}
-          {!isTopTeam && !isLastTeam && (
+          {!canShowBan && !canShowPick && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de' ? 'Bitte warten, Auswahl läuft...' : 'Please wait, selection in progress...'}
             </div>
           )}
-          {(isTopTeam && !selectionLocked) || (isLastTeam && pickUnlocked && !selectionLocked) ? (
+          {canShowBan || canShowPick ? (
             <div style={{ display: 'grid', gap: 8 }}>
               {pool.map((theme) => {
                 const isBanned = bannedIds.has(theme.id);
                 const isPinned = pinnedId === theme.id;
-                const canBan = isTopTeam && !selectionLocked && banCount < banLimit && !isBanned && !isPinned;
-                const canPick = isLastTeam && pickUnlocked && !isBanned && !isPinned;
+                const canBan = canShowBan && banCount < banLimit && !isBanned && !isPinned;
+                const canPick = canShowPick && !isBanned && !isPinned;
                 return (
                   <div
                     key={`blitz-team-pick-${theme.id}`}
@@ -2779,7 +2781,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   >
                     <span>{theme.title}</span>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      {isTopTeam && (
+                      {canShowBan && (
                         <button
                           style={{
                             ...primaryButton,
@@ -2797,7 +2799,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                           {language === 'de' ? 'Bannen' : 'Ban'}
                         </button>
                       )}
-                      {isLastTeam && (
+                      {canShowPick && (
                         <button
                           style={{
                             ...primaryButton,

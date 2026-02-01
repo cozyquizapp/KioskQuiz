@@ -95,13 +95,19 @@ export const useQuizSocket = (roomCode: string) => {
         ...prev,
         currentQuestion: question,
         questionMeta: meta ?? prev.questionMeta ?? null,
-        questionPhase: 'answering'
+        questionPhase: 'answering',
+        answers: {} // Clear previous answers for new question
       }));
     };
 
     const onTeamQuestion = ({ question }: { question: AnyQuestion | null }) => {
       if (!question) return;
-      setEvents((prev) => ({ ...prev, currentQuestion: question, questionPhase: 'answering' }));
+      setEvents((prev) => ({
+        ...prev,
+        currentQuestion: question,
+        questionPhase: 'answering',
+        answers: {} // Clear previous answers for new question
+      }));
     };
 
     const onTeamsReady = ({ teams }: { teams: Team[] }) => {
@@ -166,9 +172,7 @@ export const useQuizSocket = (roomCode: string) => {
             },
             {} as Record<string, AnswerEntry>
           )
-        : payload.phase === 'answering'
-        ? {} // Reset to empty when answering phase starts
-        : undefined; // Keep previous when not in answering phase
+        : undefined; // Keep previous answers (don't reset)
       setEvents((prev) => ({
         ...prev,
         currentQuestion:

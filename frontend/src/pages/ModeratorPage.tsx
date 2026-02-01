@@ -3390,10 +3390,13 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
+      {/* ALWAYS VISIBLE - DEBUG */}
+      <h2 style={{color: 'red', position: 'fixed', top: 0, left: 0, zIndex: 9999}}>DEBUG: viewPhase="{viewPhase}" (quiz={viewPhase === 'quiz'}) answers={answers ? 'YES' : 'NO'}</h2>
+
       {/* Answer Panel - displays live answers using polling hook */}
       {viewPhase === 'quiz' && (
         <section style={{ ...card, marginTop: 12 }}>
-          <h2 style={{color: 'red'}}>DEBUG: viewPhase={viewPhase}, answers={JSON.stringify(answers).substring(0, 100)}</h2>
+          <h3 style={{color: 'green'}}>✓ ViewPhase IS quiz!</h3>
           <AnswerList
             answers={answers || {
               answers: {

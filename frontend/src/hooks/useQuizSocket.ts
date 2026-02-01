@@ -115,7 +115,11 @@ export const useQuizSocket = (roomCode: string) => {
       setEvents((prev) => ({ ...prev, teams: byId }));
     };
 
-    const onAnswerReceived = () => loadAnswers();
+    // Note: onAnswerReceived no longer loads answers via REST API
+    // because answers are now provided via server:stateUpdate with liveAnswers
+    const onAnswerReceived = () => {
+      // No-op: answers come via stateUpdate
+    };
 
     const onAnswersEvaluated = ({ answers, solution }: { answers: Record<string, AnswerEntry>; solution?: string }) => {
       setEvents((prev) => ({

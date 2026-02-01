@@ -3418,12 +3418,14 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* Antwort-Panel f�r Moderator: zeige alle Team-Antworten live */}
+      {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
       {viewPhase === 'quiz' && (normalizedGameState === 'Q_ACTIVE' || normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
-        <AdminAnswersPanel
-          answers={answers?.answers || {}}
-          teams={answers?.teams || {}}
-          onResolveEstimate={() =>
+        <section style={{ ...card, marginTop: 12 }}>
+          <AdminAnswersPanel
+            answers={answers?.answers || {}}
+            teams={answers?.teams || {}}
+            solution={answers?.solution}
+            onResolveEstimate={() =>
             doAction(
               async () => {
                 const res = await fetchAnswers(roomCode);
@@ -3458,6 +3460,7 @@ const renderCozyStagePanel = () => {
             )
           }
         />
+        </section>
       )}
 
       {answers && (

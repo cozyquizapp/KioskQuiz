@@ -3408,28 +3408,6 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* Answer Panel - displays when teams have answered */}
-      {Object.keys(answers?.answers || {}).length > 0 && (
-        <>
-          <h2 style={{color: 'lime', fontSize: '24px', fontWeight: 'bold'}}>✓✓✓ ANTWORTEN SECTION RENDERT ✓✓✓</h2>
-          <section style={{ ...card, marginTop: 12 }}>
-            <AnswerList
-              answers={answers}
-              answersCount={answersCount}
-              teamsCount={teamsCount}
-              unreviewedCount={unreviewedCount}
-              statChip={statChip}
-              inputStyle={inputStyle}
-              onOverride={(teamId, isCorrect) =>
-                doAction(async () => {
-                  await hookOverrideAnswer(teamId, isCorrect);
-                }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-              }
-            />
-          </section>
-        </>
-      )}
-
       {/* Lobby view: nur Teams und Start */}
       {viewPhase === 'lobby' && (
         <TeamsList
@@ -3552,6 +3530,25 @@ const renderCozyStagePanel = () => {
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>S</kbd> Scoreboard anzeigen</div>
         </div>
       </div>
+
+      {/* Answer Panel - displays when teams have answered */}
+      {Object.keys(answers?.answers || {}).length > 0 && (
+        <section style={{ ...card, marginTop: 12 }}>
+          <AnswerList
+            answers={answers}
+            answersCount={answersCount}
+            teamsCount={teamsCount}
+            unreviewedCount={unreviewedCount}
+            statChip={statChip}
+            inputStyle={inputStyle}
+            onOverride={(teamId, isCorrect) =>
+              doAction(async () => {
+                await hookOverrideAnswer(teamId, isCorrect);
+              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+            }
+          />
+        </section>
+      )}
           </div>
         </details>
       )}

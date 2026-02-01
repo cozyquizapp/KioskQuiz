@@ -157,11 +157,11 @@ export const useQuizSocket = (roomCode: string) => {
     const onStateUpdate = (payload: StateUpdatePayload) => {
       // Only update answers if we have new data. 
       // If liveAnswers or results are provided, use them.
-      // Otherwise keep previous answers unless we're in a phase change.
+      // Otherwise keep previous answers.
       let nextAnswers: Record<string, AnswerEntry> | undefined;
       
-      if (payload.liveAnswers) {
-        // Always update with liveAnswers (even if empty array)
+      if (payload.liveAnswers !== undefined && payload.liveAnswers.length > 0) {
+        // Update with liveAnswers only if there are answers
         nextAnswers = payload.liveAnswers.reduce(
           (acc, item) => {
             acc[item.teamId] = { value: item.answer };
@@ -169,7 +169,7 @@ export const useQuizSocket = (roomCode: string) => {
           },
           {} as Record<string, AnswerEntry>
         );
-      } else if (payload.results) {
+      } else if (payload.results !== undefined && payload.results.length > 0) {
         // Or use results if liveAnswers not present
         nextAnswers = payload.results.reduce(
           (acc, item) => {
@@ -184,7 +184,7 @@ export const useQuizSocket = (roomCode: string) => {
           {} as Record<string, AnswerEntry>
         );
       }
-      // If neither liveAnswers nor results, keep previous answers (undefined)
+      // If neither liveAnswers nor results have data, keep previous answers (undefined)
       setEvents((prev) => ({
         ...prev,
         currentQuestion:

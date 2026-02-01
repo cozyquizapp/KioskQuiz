@@ -2996,6 +2996,9 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
+      <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', fontSize: '18px', fontWeight: 'bold', zIndex: 9999}}>
+        viewPhase: "{viewPhase}"
+      </div>
       {renderReconnectModal()}
       {renderCozyLayout()}
       {featureFlags.showLegacyPanels && (

@@ -3417,7 +3417,7 @@ const renderCozyStagePanel = () => {
       )}
 
       {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
-      {viewPhase === 'quiz' && question && (
+      {viewPhase === 'quiz' && (
         <section style={{ ...card, marginTop: 12 }}>
           <AdminAnswersPanel
             answers={answers?.answers || {}}

@@ -6643,6 +6643,11 @@ io.on('connection', (socket: Socket) => {
         if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
         applyBlitzPick(room, payload.teamId, payload.themeId || '');
+        // Auto-transition if selection is complete
+        if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
+          finalizeBlitzSelection(room);
+          startBlitzSet(room);
+        }
         broadcastState(room);
         return { pinned: room.blitzPinnedTheme };
       });

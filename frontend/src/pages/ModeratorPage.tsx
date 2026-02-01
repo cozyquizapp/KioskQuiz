@@ -182,6 +182,11 @@ function ModeratorPage(): React.ReactElement {
   
   // Use live polling for answers - this is the single source of truth
   const { answers, overrideAnswer: hookOverrideAnswer } = useLiveAnswers(roomCode);
+
+  useEffect(() => {
+    console.log('[ModeratorPage] answers state:', answers);
+    console.log('[ModeratorPage] answers.answers keys:', Object.keys(answers?.answers || {}));
+  }, [answers]);
   
   const [toast, setToast] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(() => {

@@ -295,7 +295,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const lastQuestionIdRef = useRef<string | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const recoveringRef = useRef(false);
   const potatoInputRef = useRef<HTMLInputElement | null>(null);
   const lastPotatoActiveRef = useRef<string | null>(null);
@@ -1029,15 +1029,17 @@ function TeamView({ roomCode }: TeamViewProps) {
           showError(t('betInvalid'));
           return;
         }
+        if (!teamId) return;
         await submitAnswer(roomCode, teamId, bettingPoints);
         setAnswerSubmitted(true);
         setAnswer(bettingPoints);
       } else if (isBunteQuestion) {
         const payload = buildBunteSubmission(question.bunteTuete as BunteTuetePayload);
-        if (!payload) return;
+        if (!payload || !teamId) return;
         await submitAnswer(roomCode, teamId, payload);
         setAnswerSubmitted(true);
       } else {
+        if (!teamId) return;
         await submitAnswer(roomCode, teamId, answer);
         setAnswerSubmitted(true);
       }
@@ -1934,8 +1936,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       return (
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {selectedThemes.map((theme, idx) => {
-          const done = potatoState.roundIndex >= idx;
-          const current = potatoState.roundIndex === idx;
+          const done = (potatoState?.roundIndex ?? -1) >= idx;
+          const current = (potatoState?.roundIndex ?? -1) === idx;
           return (
             <span
               key={`potato-theme-${idx}`}
@@ -1972,7 +1974,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 alignItems: 'center',
                 padding: '8px 10px',
                 borderRadius: 12,
-                border: teamId === potatoState.activeTeamId ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                border: teamId === potatoState?.activeTeamId ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(15,23,42,0.65)'
               }}
             >

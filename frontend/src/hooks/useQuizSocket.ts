@@ -62,23 +62,9 @@ export const useQuizSocket = (roomCode: string) => {
       return normalized;
     };
 
-    const loadAnswers = async () => {
-      try {
-        const res = await fetchAnswers(roomCode);
-        if (!active) return;
-        setEvents((prev) => ({
-          ...prev,
-          answers: mapAnswers(res.answers) ?? prev.answers ?? {},
-          teams: res.teams ?? prev.teams ?? {},
-          solution: res.solution ?? prev.solution
-        }));
-      } catch {
-        // ignore fetch errors in passive listener
-      }
-    };
-
-    // initial hydrate of teams/answers
-    loadAnswers().catch(() => undefined);
+    // Note: loadAnswers via REST API is no longer called on init
+    // Answers now come exclusively via server:stateUpdate with liveAnswers/results
+    // This prevents race conditions and unnecessary network requests
 
     const onSync = (payload: SyncStatePayload) => {
       const next: SocketEvents = {

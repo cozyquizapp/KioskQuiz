@@ -3437,19 +3437,24 @@ const renderCozyStagePanel = () => {
       )}
 
       {/* Answer Panel - always visible */}
-      <AnswerList
-        answers={answers}
-        answersCount={answersCount}
-        teamsCount={teamsCount}
-        unreviewedCount={unreviewedCount}
-        statChip={statChip}
-        inputStyle={inputStyle}
-        onOverride={(teamId, isCorrect) =>
-          doAction(async () => {
-            await hookOverrideAnswer(teamId, isCorrect);
-          }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-        }
-      />
+      {viewPhase === 'quiz' && (
+        <>
+          {/* Answer Panel - always visible in quiz mode */}
+          <AnswerList
+            answers={answers}
+            answersCount={answersCount}
+            teamsCount={teamsCount}
+            unreviewedCount={unreviewedCount}
+            statChip={statChip}
+            inputStyle={inputStyle}
+            onOverride={(teamId, isCorrect) =>
+              doAction(async () => {
+                await hookOverrideAnswer(teamId, isCorrect);
+              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+            }
+          />
+        </>
+      )}
 
       {/* Lobby view: nur Teams und Start */}
       {viewPhase === 'lobby' && (

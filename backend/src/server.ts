@@ -4257,11 +4257,12 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     ...(localized ? validateQuestionStructure(localized) : [])
   ];
   const timerSnapshot = buildTimerSnapshot(room);
-  return {
+  const payload: StateUpdatePayload = {
     roomCode: room.roomCode,
     state: room.gameState,
     phase: room.questionPhase,
-    currentQuestion: sanitized,
+    // Only include currentQuestion if it's not null (don't send null to clear it)
+    ...(sanitized !== null ? { currentQuestion: sanitized } : {}),
     timer: {
       endsAt: timerSnapshot.endsAt,
       running: timerSnapshot.running,
@@ -4290,6 +4291,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
       potatoTimeoutAutostrike: POTATO_TIMEOUT_AUTOSTRIKE
     }
   };
+  
+  return payload;
 };
 
 const broadcastState = (room: RoomState) => {

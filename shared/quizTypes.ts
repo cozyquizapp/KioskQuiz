@@ -638,7 +638,7 @@ export type StateUpdatePayload = {
   roomCode: string;
   state: CozyGameState;
   phase: QuestionPhase;
-  currentQuestion: AnyQuestion | null;
+  currentQuestion?: AnyQuestion | null;
   timer: { endsAt: number | null; running: boolean; durationMs?: number | null };
   scores: Array<{ id: string; name: string; score: number }>;
   teamsConnected: number;

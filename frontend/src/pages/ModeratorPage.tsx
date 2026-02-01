@@ -3402,18 +3402,11 @@ const renderCozyStagePanel = () => {
         viewPhase="{viewPhase}" | answers={answers ? '✓' : 'null'} | answersCount={answersCount} | teamsCount={teamsCount}
       </div>
 
-      {/* Answer Panel - displays live answers using polling hook */}
-      {viewPhase === 'quiz' && (
+      {/* Answer Panel - displays when teams have answered */}
+      {Object.keys(answers?.answers || {}).length > 0 && (
         <section style={{ ...card, marginTop: 12 }}>
-          <div style={{color: 'lime', fontWeight: 'bold'}}>✓ AnswerList Section rendering - answers is {answers ? 'defined' : 'undefined'}</div>
           <AnswerList
-            answers={answers || {
-              answers: {
-                'team1': { teamId: 'team1', answer: 'TEST ANSWER', isCorrect: null, timestamp: Date.now() }
-              },
-              teams: { 'team1': 'Test Team' },
-              solution: 'TEST'
-            }}
+            answers={answers}
             answersCount={answersCount}
             teamsCount={teamsCount}
             unreviewedCount={unreviewedCount}

@@ -96,7 +96,8 @@ export const useQuizSocket = (roomCode: string) => {
         currentQuestion: question,
         questionMeta: meta ?? prev.questionMeta ?? null,
         questionPhase: 'answering',
-        answers: {} // Clear previous answers for new question
+        // Only clear answers if it's a different question
+        answers: prev.currentQuestion?.id !== question.id ? {} : prev.answers
       }));
     };
 
@@ -106,7 +107,8 @@ export const useQuizSocket = (roomCode: string) => {
         ...prev,
         currentQuestion: question,
         questionPhase: 'answering',
-        answers: {} // Clear previous answers for new question
+        // Only clear answers if it's a different question
+        answers: prev.currentQuestion?.id !== question.id ? {} : prev.answers
       }));
     };
 

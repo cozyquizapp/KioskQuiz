@@ -645,11 +645,17 @@ function ModeratorPage(): React.ReactElement {
   }, [socketMeta]);
 
   useEffect(() => {
-    setAnswers((prev) => ({
-      answers: socketAnswers ?? prev?.answers ?? {},
-      teams: socketTeams ?? prev?.teams ?? {},
-      solution: socketSolution ?? prev?.solution
-    }));
+    setAnswers((prev) => {
+      // Only update if we have actual data, otherwise keep previous
+      const hasAnswers = socketAnswers && Object.keys(socketAnswers).length > 0;
+      const hasTeams = socketTeams && Object.keys(socketTeams).length > 0;
+      
+      return {
+        answers: hasAnswers ? socketAnswers : (prev?.answers ?? {}),
+        teams: hasTeams ? socketTeams : (prev?.teams ?? {}),
+        solution: socketSolution ?? prev?.solution
+      };
+    });
   }, [socketAnswers, socketTeams, socketSolution]);
 
   useEffect(() => {

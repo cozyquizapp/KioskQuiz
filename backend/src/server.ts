@@ -4245,6 +4245,13 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
         tieBreaker: entry.tieBreaker ?? null
       }))
     : undefined;
+  const liveAnswers = !includeResults
+    ? Object.entries(room.answers).map(([teamId, entry]) => ({
+        teamId,
+        teamName: room.teams[teamId]?.name ?? teamId,
+        answer: entry.value
+      }))
+    : undefined;
   const warnings = [
     ...room.validationWarnings,
     ...(localized ? validateQuestionStructure(localized) : [])
@@ -4275,6 +4282,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
     results,
+    liveAnswers,
     warnings: warnings.length ? warnings : undefined,
     supportsBingo: Boolean(room.bingoEnabled),
     config: {

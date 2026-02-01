@@ -651,6 +651,7 @@ export type StateUpdatePayload = {
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
   results?: AnswerAwardSnapshot[];
+  liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;
   warnings?: string[];
   supportsBingo?: boolean;
   config?: {

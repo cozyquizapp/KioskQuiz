@@ -145,6 +145,15 @@ export const useQuizSocket = (roomCode: string) => {
       setEvents((prev) => ({ ...prev, timerEndsAt: endsAt }));
     const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null }));
     const onStateUpdate = (payload: StateUpdatePayload) => {
+      const nextAnswers = payload.liveAnswers
+        ? payload.liveAnswers.reduce(
+            (acc, item) => {
+              acc[item.teamId] = { value: item.answer };
+              return acc;
+            },
+            {} as Record<string, AnswerEntry>
+          )
+        : undefined;
       setEvents((prev) => ({
         ...prev,
         currentQuestion:
@@ -161,6 +170,7 @@ export const useQuizSocket = (roomCode: string) => {
         rundlauf: payload.rundlauf ?? prev.rundlauf,
         questionProgress: payload.questionProgress ?? prev.questionProgress,
         results: payload.results ?? prev.results,
+        answers: nextAnswers ?? prev.answers,
         warnings: payload.warnings ?? prev.warnings,
         supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
         config: payload.config ?? prev.config,

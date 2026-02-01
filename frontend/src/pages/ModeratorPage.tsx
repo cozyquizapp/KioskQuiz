@@ -645,13 +645,11 @@ function ModeratorPage(): React.ReactElement {
   }, [socketMeta]);
 
   useEffect(() => {
-    if (socketAnswers || socketTeams || socketSolution) {
-      setAnswers((prev) => ({
-        answers: socketAnswers ?? prev?.answers ?? {},
-        teams: socketTeams ?? prev?.teams ?? {},
-        solution: socketSolution ?? prev?.solution
-      }));
-    }
+    setAnswers((prev) => ({
+      answers: socketAnswers ?? prev?.answers ?? {},
+      teams: socketTeams ?? prev?.teams ?? {},
+      solution: socketSolution ?? prev?.solution
+    }));
   }, [socketAnswers, socketTeams, socketSolution]);
 
   useEffect(() => {

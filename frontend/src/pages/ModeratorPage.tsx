@@ -629,12 +629,9 @@ function ModeratorPage(): React.ReactElement {
     setQuestion(nextQuestion);
     const hasQuestion = Boolean(nextQuestion);
     setPhase(hasQuestion ? 'question' : 'setup');
-    if (hasQuestion) {
-      setViewPhase(userViewPhase ?? 'quiz');
-    } else if (!userViewPhase) {
-      setViewPhase('pre');
-    }
-  }, [socketQuestion, userViewPhase]);
+    // Don't change viewPhase here - let it stay as it was
+    // viewPhase should only change on explicit user action via changeViewPhase()
+  }, [socketQuestion]);
 
   useEffect(() => {
     if (socketMeta !== undefined) {

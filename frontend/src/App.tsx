@@ -1,19 +1,23 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
-import AdminPage from './pages/AdminPage';
+import React, { useEffect, useState, Suspense } from 'react';
+
+// Eager load: Fast paths
+import LandingPage from './pages/LandingPage';
 import TeamPage from './pages/TeamPage';
 import BeamerPage from './pages/BeamerPage';
-import MenuPage from './pages/MenuPage';
-import QuestionEditorPage from './pages/QuestionEditorPage';
-import ModeratorPage from './pages/ModeratorPage';
-import IntroSlidesPage from './pages/IntroSlidesPage';
-import StatsPage from './pages/StatsPage';
-import DraftImportPage from './pages/DraftImportPage';
-import BaukastenNeuPage from './pages/BaukastenNeuPage';
-import BingoPrintPage from './pages/BingoPrintPage';
-import ImprovedCozy60BuilderPage from './pages/ImprovedCozy60BuilderPage';
-import QuestionCatalogPage from './pages/QuestionCatalogPage';
-import LandingPage from './pages/LandingPage';
+
+// Lazy load: Heavy pages
+const AdminPage = React.lazy(() => import('./pages/AdminPage'));
+const MenuPage = React.lazy(() => import('./pages/MenuPage'));
+const QuestionEditorPage = React.lazy(() => import('./pages/QuestionEditorPage'));
+const ModeratorPage = React.lazy(() => import('./pages/ModeratorPage'));
+const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
+const StatsPage = React.lazy(() => import('./pages/StatsPage'));
+const DraftImportPage = React.lazy(() => import('./pages/DraftImportPage'));
+const BaukastenNeuPage = React.lazy(() => import('./pages/BaukastenNeuPage'));
+const BingoPrintPage = React.lazy(() => import('./pages/BingoPrintPage'));
+const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
+const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -109,32 +113,34 @@ function App() {
   return (
     <AppErrorBoundary>
       <GlobalErrorOverlay />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/welcome" element={<LandingPage />} />
-        <Route path="/menu" element={<MenuPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/team" element={<TeamPage />} />
-        <Route path="/beamer" element={<BeamerPage />} />
-        <Route path="/beamer/:roomCode" element={<BeamerPage />} />
-        <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
-        <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/question-editor" element={<QuestionEditorPage />} />
-        <Route path="/moderator" element={<ModeratorPage />} />
-        <Route path="/intro" element={<IntroSlidesPage />} />
-        <Route path="/bingo" element={<BingoPrintPage />} />
-        <Route path="/question-catalog" element={<QuestionCatalogPage />} />
-        <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
-        <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="/draft-import" element={<DraftImportPage />} />
-        <Route path="*" element={<Navigate to="/team" replace />} />
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0b0d14' }} />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/welcome" element={<LandingPage />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/team" element={<TeamPage />} />
+          <Route path="/beamer" element={<BeamerPage />} />
+          <Route path="/beamer/:roomCode" element={<BeamerPage />} />
+          <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
+          <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/question-editor" element={<QuestionEditorPage />} />
+          <Route path="/moderator" element={<ModeratorPage />} />
+          <Route path="/intro" element={<IntroSlidesPage />} />
+          <Route path="/bingo" element={<BingoPrintPage />} />
+          <Route path="/question-catalog" element={<QuestionCatalogPage />} />
+          <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
+          <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/draft-import" element={<DraftImportPage />} />
+          <Route path="*" element={<Navigate to="/team" replace />} />
+        </Routes>
+      </Suspense>
     </AppErrorBoundary>
   );
 }

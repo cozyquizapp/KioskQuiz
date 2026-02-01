@@ -151,28 +151,36 @@ export const useQuizSocket = (roomCode: string) => {
       setEvents((prev) => ({ ...prev, timerEndsAt: endsAt }));
     const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null }));
     const onStateUpdate = (payload: StateUpdatePayload) => {
-      const nextAnswers = payload.liveAnswers
-        ? payload.liveAnswers.reduce(
-            (acc, item) => {
-              acc[item.teamId] = { value: item.answer };
-              return acc;
-            },
-            {} as Record<string, AnswerEntry>
-          )
-        : payload.results
-        ? payload.results.reduce(
-            (acc, item) => {
-              acc[item.teamId] = { 
-                value: item.answer, 
-                isCorrect: item.isCorrect,
-                awardedPoints: item.awardedPoints ?? undefined,
-                awardedDetail: item.awardedDetail ?? undefined
-              };
-              return acc;
-            },
-            {} as Record<string, AnswerEntry>
-          )
-        : undefined; // Keep previous answers (don't reset)
+      // Only update answers if we have new data. 
+      // If liveAnswers or results are provided, use them.
+      // Otherwise keep previous answers unless we're in a phase change.
+      let nextAnswers: Record<string, AnswerEntry> | undefined;
+      
+      if (payload.liveAnswers) {
+        // Always update with liveAnswers (even if empty array)
+        nextAnswers = payload.liveAnswers.reduce(
+          (acc, item) => {
+            acc[item.teamId] = { value: item.answer };
+            return acc;
+          },
+          {} as Record<string, AnswerEntry>
+        );
+      } else if (payload.results) {
+        // Or use results if liveAnswers not present
+        nextAnswers = payload.results.reduce(
+          (acc, item) => {
+            acc[item.teamId] = { 
+              value: item.answer, 
+              isCorrect: item.isCorrect,
+              awardedPoints: item.awardedPoints ?? undefined,
+              awardedDetail: item.awardedDetail ?? undefined
+            };
+            return acc;
+          },
+          {} as Record<string, AnswerEntry>
+        );
+      }
+      // If neither liveAnswers nor results, keep previous answers (undefined)
       setEvents((prev) => ({
         ...prev,
         currentQuestion:

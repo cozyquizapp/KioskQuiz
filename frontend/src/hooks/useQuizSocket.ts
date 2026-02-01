@@ -153,6 +153,19 @@ export const useQuizSocket = (roomCode: string) => {
             },
             {} as Record<string, AnswerEntry>
           )
+        : payload.results
+        ? payload.results.reduce(
+            (acc, item) => {
+              acc[item.teamId] = { 
+                value: item.answer, 
+                isCorrect: item.isCorrect,
+                awardedPoints: item.awardedPoints ?? undefined,
+                awardedDetail: item.awardedDetail ?? undefined
+              };
+              return acc;
+            },
+            {} as Record<string, AnswerEntry>
+          )
         : payload.phase === 'answering'
         ? {} // Reset to empty when answering phase starts
         : undefined; // Keep previous when not in answering phase

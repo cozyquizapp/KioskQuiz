@@ -26,6 +26,7 @@ import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, Rundla
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
+import { useLiveAnswers } from '../hooks/useLiveAnswers';
 import TimerCard from '../components/moderator/TimerCard';
 import AnswerList from '../components/moderator/AnswerList';
 import AdminAnswersPanel from '../admin/AdminAnswersPanel';
@@ -185,7 +186,18 @@ function ModeratorPage(): React.ReactElement {
   });
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [meta, setMeta] = useState<{ globalIndex?: number; globalTotal?: number; categoryKey?: string } | null>(null);
+  
+  // Use live polling instead of socket-based answers to avoid race conditions
+  const { answers: liveAnswers } = useLiveAnswers(roomCode);
   const [answers, setAnswers] = useState<AnswersState | null>(null);
+  
+  // Keep answers in sync with live polling
+  useEffect(() => {
+    if (liveAnswers) {
+      setAnswers(liveAnswers);
+    }
+  }, [liveAnswers]);
+  
   const [toast, setToast] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(() => {
     const saved = localStorage.getItem('moderatorTimerSeconds');
@@ -643,20 +655,6 @@ function ModeratorPage(): React.ReactElement {
       setMeta(socketMeta ?? null);
     }
   }, [socketMeta]);
-
-  useEffect(() => {
-    setAnswers((prev) => {
-      // Only update if we have actual data, otherwise keep previous
-      const hasAnswers = socketAnswers && Object.keys(socketAnswers).length > 0;
-      const hasTeams = socketTeams && Object.keys(socketTeams).length > 0;
-      
-      return {
-        answers: hasAnswers ? socketAnswers : (prev?.answers ?? {}),
-        teams: hasTeams ? socketTeams : (prev?.teams ?? {}),
-        solution: socketSolution ?? prev?.solution
-      };
-    });
-  }, [socketAnswers, socketTeams, socketSolution]);
 
   useEffect(() => {
     if (socketQuestionPhase === 'evaluated') setPhase('evaluating');

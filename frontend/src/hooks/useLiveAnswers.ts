@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { fetchAnswers } from '../api';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { fetchAnswers, overrideAnswer as apiOverrideAnswer } from '../api';
 import { AnswerEntry, Team } from '@shared/quizTypes';
 
 export type AnswersState = {
@@ -9,8 +9,8 @@ export type AnswersState = {
 };
 
 /**
- * Hook that polls the server for live answers every 500ms
- * This is independent of socket events and avoids all the race conditions
+ * Hook that polls the server for live answers every 1000ms
+ * Maintains answers persistently - only updates when new data is fetched
  */
 export const useLiveAnswers = (roomCode: string | null) => {
   const [answers, setAnswers] = useState<AnswersState>({
@@ -18,48 +18,65 @@ export const useLiveAnswers = (roomCode: string | null) => {
     teams: {},
     solution: undefined
   });
-  const lastUpdateRef = useRef<number>(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const roomCodeRef = useRef(roomCode);
+
+  // Update roomCode ref
+  useEffect(() => {
+    roomCodeRef.current = roomCode;
+  }, [roomCode]);
+
+  const poll = useCallback(async () => {
+    if (!roomCodeRef.current) return;
+    
+    try {
+      const res = await fetchAnswers(roomCodeRef.current);
+      setAnswers({
+        answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
+        teams: res.teams ?? {},
+        solution: res.solution
+      });
+    } catch (err) {
+      // Silently ignore errors, keep polling
+    }
+  }, []);
+
+  const overrideAnswer = useCallback(async (teamId: string, isCorrect: boolean) => {
+    if (!roomCodeRef.current) return;
+    await apiOverrideAnswer(roomCodeRef.current, teamId, isCorrect);
+    // Poll immediately after override to get fresh data
+    await poll();
+  }, [poll]);
 
   useEffect(() => {
     if (!roomCode) {
       setAnswers({ answers: {}, teams: {}, solution: undefined });
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
       return;
     }
 
     let mounted = true;
-    let pollInterval: NodeJS.Timeout | null = null;
 
-    const poll = async () => {
-      try {
-        const res = await fetchAnswers(roomCode);
-        if (!mounted) return;
-        
-        // Only update if we actually got data
-        if (res && (res.answers || res.teams)) {
-          setAnswers({
-            answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
-            teams: res.teams ?? {},
-            solution: res.solution
-          });
-          lastUpdateRef.current = Date.now();
-        }
-      } catch (err) {
-        // Silently fail, keep previous state
-      }
-    };
-
-    // Initial poll
+    // Initial poll immediately
     poll();
 
-    // Poll every 500ms
-    pollInterval = setInterval(poll, 500);
+    // Then poll every 1000ms
+    pollIntervalRef.current = setInterval(poll, 1000);
 
     return () => {
       mounted = false;
-      if (pollInterval) clearInterval(pollInterval);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     };
-  }, [roomCode]);
+  }, [roomCode, poll]);
 
-  return answers;
+  return { answers, overrideAnswer };
 };
+
+
 

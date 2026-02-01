@@ -26,7 +26,7 @@ import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, Rundla
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
-import { useLiveAnswers } from '../hooks/useLiveAnswers';
+import { useLiveAnswers, type AnswersState } from '../hooks/useLiveAnswers';
 import TimerCard from '../components/moderator/TimerCard';
 import AnswerList from '../components/moderator/AnswerList';
 import AdminAnswersPanel from '../admin/AdminAnswersPanel';
@@ -40,12 +40,6 @@ import { featureFlags } from '../config/features';
 
 const DEFAULT_ROOM_CODE = featureFlags.singleSessionRoomCode || 'MAIN';
 const SINGLE_SESSION_MODE = featureFlags.singleSessionMode;
-
-type AnswersState = {
-  answers: Record<string, (AnswerEntry & { answer?: unknown })>;
-  teams: Record<string, { name: string; isReady?: boolean }>;
-  solution?: string;
-};
 
 type Phase = 'setup' | 'question' | 'evaluating' | 'final';
 type ViewPhase = 'pre' | 'lobby' | 'intro' | 'quiz';
@@ -187,14 +181,8 @@ function ModeratorPage(): React.ReactElement {
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [meta, setMeta] = useState<{ globalIndex?: number; globalTotal?: number; categoryKey?: string } | null>(null);
   
-  // Use live polling instead of socket-based answers to avoid race conditions
-  const liveAnswers = useLiveAnswers(roomCode);
-  const [answers, setAnswers] = useState<AnswersState | null>(null);
-  
-  // Keep answers in sync with live polling
-  useEffect(() => {
-    setAnswers(liveAnswers);
-  }, [liveAnswers]);
+  // Use live polling for answers - this is the single source of truth
+  const { answers, overrideAnswer: hookOverrideAnswer } = useLiveAnswers(roomCode);
   
   const [toast, setToast] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(() => {
@@ -782,20 +770,8 @@ function ModeratorPage(): React.ReactElement {
     }
   }
 
-  async function loadAnswers() {
-    if (!roomCode) return;
-    try {
-      const res = await fetchAnswers(roomCode);
-      setAnswers({
-        answers: res.answers ?? {},
-        teams: res.teams ?? {},
-        solution: res.solution
-      });
-    } catch (err) {
-      setToast((err as Error).message);
-    }
-  }
-
+  // Answers are now managed by useLiveAnswers hook via polling
+  
   const handleRoomConnect = () => {
     if (SINGLE_SESSION_MODE) {
       setRoomCode(DEFAULT_ROOM_CODE);
@@ -3463,7 +3439,7 @@ const renderCozyStagePanel = () => {
         </section>
       )}
 
-      {answers && (
+      {Object.keys(answers.answers).length > 0 && (
         <AnswerList
           answers={answers}
           answersCount={answersCount}
@@ -3473,18 +3449,7 @@ const renderCozyStagePanel = () => {
           inputStyle={inputStyle}
           onOverride={(teamId, isCorrect) =>
             doAction(async () => {
-              await overrideAnswer(roomCode, teamId, isCorrect);
-              setAnswers((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      answers: {
-                        ...prev.answers,
-                        [teamId]: { ...(prev.answers[teamId] || {}), isCorrect }
-                      }
-                    }
-                  : prev
-              );
+              await hookOverrideAnswer(teamId, isCorrect);
             }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
           }
         />
@@ -3507,31 +3472,15 @@ const renderCozyStagePanel = () => {
           }
           onKickAll={() =>
             doAction(async () => {
-              const ids = Object.keys(answers?.teams || {});
+              const ids = Object.keys(answers.teams || {});
               await Promise.all(ids.map((id) => kickTeam(roomCode, id).catch(() => undefined)));
-              setAnswers((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      teams: {},
-                      answers: {}
-                    }
-                  : prev
-              );
+              // answers will be updated by useLiveAnswers polling
             }, 'Teams entfernt')
           }
           onKickTeam={(teamId) =>
             doAction(async () => {
               await kickTeam(roomCode, teamId);
-              setAnswers((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      teams: Object.fromEntries(Object.entries(prev.teams).filter(([id]) => id !== teamId)),
-                      answers: Object.fromEntries(Object.entries(prev.answers).filter(([id]) => id !== teamId))
-                    }
-                  : prev
-              );
+              // answers will be updated by useLiveAnswers polling
             }, 'Team entfernt')
           }
         />
@@ -3592,7 +3541,6 @@ const renderCozyStagePanel = () => {
             changeViewPhase('pre');
             setQuestion(null);
             setMeta(null);
-            setAnswers(null);
             setToast('Zurueck zum Start');
             setTimeout(() => setToast(null), 1500);
           }}

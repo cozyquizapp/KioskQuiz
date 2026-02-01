@@ -153,7 +153,9 @@ export const useQuizSocket = (roomCode: string) => {
             },
             {} as Record<string, AnswerEntry>
           )
-        : undefined;
+        : payload.phase === 'answering'
+        ? {} // Reset to empty when answering phase starts
+        : undefined; // Keep previous when not in answering phase
       setEvents((prev) => ({
         ...prev,
         currentQuestion:
@@ -170,7 +172,7 @@ export const useQuizSocket = (roomCode: string) => {
         rundlauf: payload.rundlauf ?? prev.rundlauf,
         questionProgress: payload.questionProgress ?? prev.questionProgress,
         results: payload.results ?? prev.results,
-        answers: nextAnswers ?? prev.answers,
+        answers: nextAnswers !== undefined ? nextAnswers : prev.answers,
         warnings: payload.warnings ?? prev.warnings,
         supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
         config: payload.config ?? prev.config,

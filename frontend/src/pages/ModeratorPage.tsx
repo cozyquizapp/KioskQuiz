@@ -921,19 +921,19 @@ function ModeratorPage(): React.ReactElement {
   function handleNextQuestion() {
     sendHostCommand('host:next', async () => {
       await loadCurrentQuestion();
-      await loadAnswers();
+      // Answers will be updated by useLiveAnswers polling
     });
   }
 
   function handleLockQuestion() {
     sendHostCommand('host:lock', async () => {
-      await loadAnswers();
+      // Answers will be updated by useLiveAnswers polling
     });
   }
 
   function handleReveal() {
     sendHostCommand('host:reveal', async () => {
-      await loadAnswers();
+      // Answers will be updated by useLiveAnswers polling
     });
   }
 
@@ -953,7 +953,7 @@ function ModeratorPage(): React.ReactElement {
         return;
       }
       loadCurrentQuestion().catch(() => undefined);
-      loadAnswers().catch(() => undefined);
+      // Answers will be updated by useLiveAnswers polling
     });
     if (!emitted) {
       setToast('Socket nicht verbunden');

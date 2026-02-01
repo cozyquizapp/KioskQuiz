@@ -3419,7 +3419,7 @@ const renderCozyStagePanel = () => {
       )}
 
       {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
-      {viewPhase === 'quiz' && (normalizedGameState === 'Q_ACTIVE' || normalizedGameState === 'Q_LOCKED' || normalizedGameState === 'Q_REVEAL') && (
+      {viewPhase === 'quiz' && question && (
         <section style={{ ...card, marginTop: 12 }}>
           <AdminAnswersPanel
             answers={answers?.answers || {}}

@@ -3397,28 +3397,26 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* ALWAYS VISIBLE - DEBUG */}
-      <div style={{color: 'red', position: 'fixed', top: 0, left: 0, zIndex: 9999, background: 'black', padding: '10px', fontSize: '14px'}}>
-        viewPhase="{viewPhase}" | answers={answers ? '✓' : 'null'} | answersCount={answersCount} | teamsCount={teamsCount}
-      </div>
-
       {/* Answer Panel - displays when teams have answered */}
       {Object.keys(answers?.answers || {}).length > 0 && (
-        <section style={{ ...card, marginTop: 12 }}>
-          <AnswerList
-            answers={answers}
-            answersCount={answersCount}
-            teamsCount={teamsCount}
-            unreviewedCount={unreviewedCount}
-            statChip={statChip}
-            inputStyle={inputStyle}
-            onOverride={(teamId, isCorrect) =>
-              doAction(async () => {
-                await hookOverrideAnswer(teamId, isCorrect);
-              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-            }
-          />
-        </section>
+        <>
+          <h2 style={{color: 'lime', fontSize: '24px', fontWeight: 'bold'}}>✓✓✓ ANTWORTEN SECTION RENDERT ✓✓✓</h2>
+          <section style={{ ...card, marginTop: 12 }}>
+            <AnswerList
+              answers={answers}
+              answersCount={answersCount}
+              teamsCount={teamsCount}
+              unreviewedCount={unreviewedCount}
+              statChip={statChip}
+              inputStyle={inputStyle}
+              onOverride={(teamId, isCorrect) =>
+                doAction(async () => {
+                  await hookOverrideAnswer(teamId, isCorrect);
+                }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+              }
+            />
+          </section>
+        </>
       )}
 
       {/* Lobby view: nur Teams und Start */}

@@ -29,7 +29,6 @@ import { useQuizSocket } from '../hooks/useQuizSocket';
 import { useLiveAnswers, type AnswersState } from '../hooks/useLiveAnswers';
 import TimerCard from '../components/moderator/TimerCard';
 import AnswerList from '../components/moderator/AnswerList';
-import AdminAnswersPanel from '../admin/AdminAnswersPanel';
 import TeamsList from '../components/moderator/TeamsList';
 import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
@@ -3391,55 +3390,9 @@ const renderCozyStagePanel = () => {
         </>
       )}
 
-      {/* Antwort-Panel für Moderator: zeige alle Team-Antworten live */}
+      {/* Answer Panel - displays live answers using polling hook */}
       {viewPhase === 'quiz' && (
         <section style={{ ...card, marginTop: 12 }}>
-          <AdminAnswersPanel
-            answers={answers?.answers || {}}
-            teams={answers?.teams || {}}
-            solution={answers?.solution}
-            onResolveEstimate={() =>
-            doAction(
-              async () => {
-                const res = await fetchAnswers(roomCode);
-                if (res) {
-                  setAnswers(res);
-                }
-              },
-              'Schätzfrage ausgewertet'
-            )
-          }
-          onResolveGeneric={() =>
-            doAction(
-              async () => {
-                const res = await fetchAnswers(roomCode);
-                if (res) {
-                  setAnswers(res);
-                }
-              },
-              'Frage ausgewertet'
-            )
-          }
-          onOverride={(teamId, isCorrect) =>
-            doAction(
-              async () => {
-                await overrideAnswer(roomCode, teamId, isCorrect);
-                const res = await fetchAnswers(roomCode);
-                if (res) {
-                  setAnswers(res);
-                }
-              },
-              isCorrect ? 'Als richtig markiert' : 'Als falsch markiert'
-            )
-          }
-        />
-        </section>
-      )}
-
-      {/* Answer Panel - always visible */}
-      {viewPhase === 'quiz' && (
-        <>
-          {/* Answer Panel - always visible in quiz mode */}
           <AnswerList
             answers={answers}
             answersCount={answersCount}
@@ -3453,7 +3406,7 @@ const renderCozyStagePanel = () => {
               }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
             }
           />
-        </>
+        </section>
       )}
 
       {/* Lobby view: nur Teams und Start */}

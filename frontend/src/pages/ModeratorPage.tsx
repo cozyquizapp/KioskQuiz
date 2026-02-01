@@ -1957,6 +1957,35 @@ function ModeratorPage(): React.ReactElement {
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               Einsendungen: {submissions.length}/{scoreboard.length}
             </div>
+            
+            {/* Blitz Antworten anzeigen */}
+            {(blitz?.answers && Object.keys(blitz.answers).length > 0) && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 13 }}>Abgeschickte Antworten:</div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {Object.entries(blitz.answers).map(([teamId, teamAnswers]) => {
+                    const teamName = teamLookup[teamId]?.name || teamId;
+                    return (
+                      <div
+                        key={`blitz-ans-${teamId}`}
+                        style={{
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          padding: '8px 10px',
+                          background: 'rgba(15,23,42,0.6)'
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, marginBottom: 4 }}>{teamName}</div>
+                        <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                          {teamAnswers.length > 0 ? teamAnswers.join(', ') : 'Keine Antworten'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
             <div
               style={{
                 display: 'grid',

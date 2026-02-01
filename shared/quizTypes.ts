@@ -607,6 +607,7 @@ export interface BlitzState {
   theme?: BlitzThemeOption | null;
   items: BlitzItemView[];
   submissions: string[];
+  answers: Record<string, string[]>;
   results: Record<string, BlitzSetResult>;
   itemIndex?: number;
   itemDeadline?: number | null;

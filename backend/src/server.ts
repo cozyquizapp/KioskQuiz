@@ -4169,6 +4169,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
           theme: room.blitzTheme,
           items: room.blitzItems,
           submissions: room.blitzSubmittedTeamIds,
+          answers: room.blitzAnswersByTeam,
           results: room.blitzResultsByTeam,
           itemIndex: room.blitzItemIndex >= 0 ? room.blitzItemIndex : undefined,
           itemDeadline: room.blitzItemDeadlineAt ?? undefined,

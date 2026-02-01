@@ -5297,6 +5297,7 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
     } catch (err) {
       return res.status(400).json({ error: (err as Error).message });
     }
+    broadcastState(room);
     return res.json({ ok: true });
   }
 

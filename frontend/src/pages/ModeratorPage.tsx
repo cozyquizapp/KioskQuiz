@@ -623,11 +623,13 @@ function ModeratorPage(): React.ReactElement {
 
   // Socket updates: separate effects to avoid re-running on every render
   useEffect(() => {
+    console.log('[DEBUG] socketQuestion changed:', socketQuestion);
     if (socketQuestion === undefined) return;
     const nextQuestion = socketQuestion ?? null;
     setQuestion(nextQuestion);
     const hasQuestion = Boolean(nextQuestion);
     setPhase(hasQuestion ? 'question' : 'setup');
+    console.log('[DEBUG] Setting viewPhase to quiz because hasQuestion=', hasQuestion);
     // Change viewPhase to 'quiz' when we get a question
     if (hasQuestion) {
       changeViewPhase('quiz');

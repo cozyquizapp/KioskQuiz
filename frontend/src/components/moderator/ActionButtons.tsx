@@ -11,9 +11,9 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
   const existing = sessionStorage.getItem(key);
   if (existing) return existing;
   try {
-    const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+    const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'GET' });
     if (!res.ok) {
-      console.warn(`[Auth] Admin-Session endpoint returned ${res.status}; will proceed without token`);
+      // Silent fail for 405/404 - server may not support admin-session
       return null;
     }
     const { token } = await res.json();
@@ -22,7 +22,7 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
       return token as string;
     }
   } catch (err) {
-    console.warn('[Auth] Admin-Session request failed; will proceed without token', err);
+    // Silent fail - proceed without token
   }
   return null;
 };

@@ -188,14 +188,12 @@ function ModeratorPage(): React.ReactElement {
   const [meta, setMeta] = useState<{ globalIndex?: number; globalTotal?: number; categoryKey?: string } | null>(null);
   
   // Use live polling instead of socket-based answers to avoid race conditions
-  const { answers: liveAnswers } = useLiveAnswers(roomCode);
+  const liveAnswers = useLiveAnswers(roomCode);
   const [answers, setAnswers] = useState<AnswersState | null>(null);
   
   // Keep answers in sync with live polling
   useEffect(() => {
-    if (liveAnswers) {
-      setAnswers(liveAnswers);
-    }
+    setAnswers(liveAnswers);
   }, [liveAnswers]);
   
   const [toast, setToast] = useState<string | null>(null);

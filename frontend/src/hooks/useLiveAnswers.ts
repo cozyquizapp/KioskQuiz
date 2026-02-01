@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchAnswers } from '../api';
 import { AnswerEntry, Team } from '@shared/quizTypes';
 
@@ -13,12 +13,16 @@ export type AnswersState = {
  * This is independent of socket events and avoids all the race conditions
  */
 export const useLiveAnswers = (roomCode: string | null) => {
-  const [answers, setAnswers] = useState<AnswersState | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [answers, setAnswers] = useState<AnswersState>({
+    answers: {},
+    teams: {},
+    solution: undefined
+  });
+  const lastUpdateRef = useRef<number>(0);
 
   useEffect(() => {
     if (!roomCode) {
-      setAnswers(null);
+      setAnswers({ answers: {}, teams: {}, solution: undefined });
       return;
     }
 
@@ -27,19 +31,20 @@ export const useLiveAnswers = (roomCode: string | null) => {
 
     const poll = async () => {
       try {
-        setLoading(true);
         const res = await fetchAnswers(roomCode);
         if (!mounted) return;
         
-        setAnswers({
-          answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
-          teams: res.teams ?? {},
-          solution: res.solution
-        });
+        // Only update if we actually got data
+        if (res && (res.answers || res.teams)) {
+          setAnswers({
+            answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
+            teams: res.teams ?? {},
+            solution: res.solution
+          });
+          lastUpdateRef.current = Date.now();
+        }
       } catch (err) {
         // Silently fail, keep previous state
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -55,5 +60,6 @@ export const useLiveAnswers = (roomCode: string | null) => {
     };
   }, [roomCode]);
 
-  return { answers, loading };
+  return answers;
 };
+

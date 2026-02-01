@@ -688,33 +688,29 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (payload.rundlauf !== undefined) {
         setRundlaufState(payload.rundlauf ?? null);
       }
-      if (payload.currentQuestion !== undefined) {
-        if (payload.currentQuestion) {
-          const nextId = payload.currentQuestion.id;
-          if (nextId && lastQuestionIdRef.current !== nextId) {
-            lastQuestionIdRef.current = nextId;
-            resetInputs();
-            setAnswerSubmitted(false);
-            setResultMessage(null);
-            setResultCorrect(null);
-            setSolution(null);
-          }
-          setQuestion(payload.currentQuestion);
-          if (payload.state === 'QUESTION_INTRO') {
-            setPhase('intro');
-          } else if (payload.state === 'Q_ACTIVE') {
-            const submitted = teamSnapshot?.submitted ?? answerSubmittedRef.current;
-            setPhase(submitted ? 'waitingForResult' : 'answering');
-          } else if (payload.state === 'Q_LOCKED') {
-            setPhase('waitingForResult');
-          } else if (payload.state === 'Q_REVEAL') {
-            setPhase('showResult');
-          } else if (teamId) {
-            setPhase('waitingForQuestion');
-          }
+      // Only update question if explicitly provided and not null
+      if (payload.currentQuestion !== undefined && payload.currentQuestion !== null) {
+        const nextId = payload.currentQuestion.id;
+        if (nextId && lastQuestionIdRef.current !== nextId) {
+          lastQuestionIdRef.current = nextId;
+          resetInputs();
+          setAnswerSubmitted(false);
+          setResultMessage(null);
+          setResultCorrect(null);
+          setSolution(null);
+        }
+        setQuestion(payload.currentQuestion);
+        if (payload.state === 'QUESTION_INTRO') {
+          setPhase('intro');
+        } else if (payload.state === 'Q_ACTIVE') {
+          const submitted = teamSnapshot?.submitted ?? answerSubmittedRef.current;
+          setPhase(submitted ? 'waitingForResult' : 'answering');
+        } else if (payload.state === 'Q_LOCKED') {
+          setPhase('waitingForResult');
+        } else if (payload.state === 'Q_REVEAL') {
+          setPhase('showResult');
         } else if (teamId) {
           setPhase('waitingForQuestion');
-          setQuestion(null);
         }
       }
       if (payload.timer) {

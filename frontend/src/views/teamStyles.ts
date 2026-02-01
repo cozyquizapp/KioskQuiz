@@ -82,13 +82,13 @@ export const headerBarTeam: CSSProperties = {
 };
 
 export const pillSmall: CSSProperties = {
-  padding: 'clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 14px)',
+  padding: 'clamp(10px, 2vw, 12px) clamp(14px, 3vw, 16px)',
   borderRadius: 999,
   background: primary ? `${primary}11` : 'rgba(255,255,255,0.06)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
-  fontSize: 'clamp(13px, 2.5vw, 14px)',
+  fontSize: 'clamp(14px, 3vw, 16px)',
   fontWeight: 700,
   color: '#e2e8f0'
 };
@@ -143,7 +143,7 @@ export const metaChip: CSSProperties = {
 
 export const glassCard: CSSProperties = {
   background: 'rgba(255,255,255,0.001)',
-  padding: 'clamp(16px, 4vw, 20px) clamp(16px, 4vw, 18px)',
+  padding: 'clamp(18px, 5vw, 24px) clamp(18px, 5vw, 22px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
@@ -161,13 +161,13 @@ export const pillLabel: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 'clamp(5px, 1.5vw, 8px)',
-  padding: 'clamp(7px, 1.5vw, 8px) clamp(10px, 2.5vw, 12px)',
+  padding: 'clamp(9px, 2vw, 10px) clamp(12px, 3vw, 14px)',
   borderRadius: 999,
   background: 'rgba(255,255,255,0.01)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'rgba(255,255,255,0.06)',
-  fontSize: 'clamp(12px, 2.5vw, 13px)',
+  fontSize: 'clamp(14px, 3vw, 15px)',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   fontWeight: 800,
@@ -177,7 +177,7 @@ export const pillLabel: CSSProperties = {
 export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
-  fontSize: 'clamp(20px, 5vw, 24px)',
+  fontSize: 'clamp(22px, 6vw, 28px)',
   lineHeight: 1.4
 };
 
@@ -185,7 +185,7 @@ export const mutedText: CSSProperties = {
   color: 'var(--muted)',
   marginTop: 0,
   marginBottom: 12,
-  fontSize: 'clamp(15px, 3vw, 16px)',
+  fontSize: 'clamp(16px, 3.5vw, 18px)',
   lineHeight: 1.5
 };
 
@@ -198,8 +198,8 @@ export const softDivider: CSSProperties = {
 
 export const inputStyle: CSSProperties = {
   width: '100%',
-  padding: 'clamp(14px, 3vw, 16px) clamp(14px, 3vw, 16px)',
-  minHeight: 'clamp(48px, 12vw, 54px)',
+  padding: 'clamp(16px, 4vw, 18px) clamp(16px, 4vw, 18px)',
+  minHeight: 'clamp(56px, 13vw, 64px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
@@ -207,7 +207,7 @@ export const inputStyle: CSSProperties = {
   background: 'rgba(255,255,255,0.02)',
   color: '#f8fafc',
   marginTop: 8,
-  fontSize: 'clamp(16px, 3vw, 17px)',
+  fontSize: 'clamp(18px, 3.8vw, 20px)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
   backdropFilter: 'blur(30px)',
   WebkitAppearance: 'none',
@@ -221,14 +221,14 @@ export const primaryButton: CSSProperties = {
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
   color: '#f8fafc',
   border: '1px solid rgba(255,255,255,0.08)',
-  padding: 'clamp(14px, 3vw, 16px) clamp(16px, 4vw, 20px)',
-  minHeight: 'clamp(48px, 12vw, 56px)',
+  padding: 'clamp(16px, 4vw, 18px) clamp(18px, 5vw, 22px)',
+  minHeight: 'clamp(56px, 13vw, 64px)',
   borderRadius: theme.radius,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
   fontWeight: 800,
-  fontSize: 'clamp(16px, 3.5vw, 17px)',
+  fontSize: 'clamp(18px, 4vw, 20px)',
   transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
@@ -238,11 +238,11 @@ export const choiceButton: CSSProperties = {
   border: '1px solid rgba(255,255,255,0.16)',
   color: '#e2e8f0',
   borderRadius: theme.radius,
-  padding: 'clamp(14px, 3vw, 16px) clamp(12px, 3vw, 14px)',
+  padding: 'clamp(16px, 4vw, 18px) clamp(14px, 4vw, 16px)',
   cursor: 'pointer',
   fontWeight: 700,
-  fontSize: 'clamp(15px, 3vw, 16px)',
-  minHeight: 'clamp(48px, 12vw, 56px)'
+  fontSize: 'clamp(17px, 3.6vw, 19px)',
+  minHeight: 'clamp(56px, 13vw, 64px)'
 };
 
 export const progressOuter = (color: string): CSSProperties => ({

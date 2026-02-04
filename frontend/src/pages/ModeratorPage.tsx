@@ -612,7 +612,11 @@ function ModeratorPage(): React.ReactElement {
         setMeta(res.meta ?? null);
         const hasQuestion = Boolean(res.question);
         setPhase(hasQuestion ? 'question' : 'setup');
-        setViewPhase(userViewPhase ?? (hasQuestion ? 'quiz' : 'pre'));
+        setViewPhase((prev) => {
+          if (userViewPhase) return userViewPhase;
+          if (hasQuestion) return 'quiz';
+          return prev === 'quiz' ? 'quiz' : 'pre';
+        });
         await fetchQuestions(); // just to warm cache
       } catch (err) {
         setToast((err as Error).message);
@@ -758,11 +762,11 @@ function ModeratorPage(): React.ReactElement {
       setMeta(res.meta ?? null);
       const hasQuestion = Boolean(res.question);
       setPhase(hasQuestion ? 'question' : 'setup');
-      if (hasQuestion) {
-        setViewPhase(userViewPhase ?? 'quiz');
-      } else if (!userViewPhase) {
-        setViewPhase('pre');
-      }
+      setViewPhase((prev) => {
+        if (userViewPhase) return userViewPhase;
+        if (hasQuestion) return 'quiz';
+        return prev === 'quiz' ? 'quiz' : 'pre';
+      });
     } catch (err) {
       setToast((err as Error).message);
     }

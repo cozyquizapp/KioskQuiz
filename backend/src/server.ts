@@ -2252,7 +2252,10 @@ const resetBlitzCollections = (room: RoomState) => {
 };
 
 const startBlitzSet = (room: RoomState) => {
-  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO') throw new Error('Blitz-Set laeuft bereits');
+  // Only allow starting a new set if we're in a valid transition state
+  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING') {
+    throw new Error('Blitz-Set laeuft bereits');
+  }
   if (room.blitzSelectedThemes.length < 1) {
     throw new Error('Nicht genug Blitz-Themen ausgewaehlt');
   }

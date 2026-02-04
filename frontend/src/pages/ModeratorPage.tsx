@@ -2998,6 +2998,12 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
+      {/* FIXED DEBUG */}
+      <div style={{position: 'fixed', top: 0, right: 0, background: '#222', color: '#fff', padding: '8px', fontSize: '11px', zIndex: 9999, maxWidth: '300px', border: '1px solid #666'}}>
+        <div>roomCode: {roomCode || 'null'}</div>
+        <div>answers: {answers?.answers ? Object.keys(answers.answers).length + ' answers' : 'null'}</div>
+        <div>answerKeys: {Object.keys(answers?.answers || {}).join(',')}</div>
+      </div>
       <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', fontSize: '18px', fontWeight: 'bold', zIndex: 9999}}>
         viewPhase: "{viewPhase}"
       </div>

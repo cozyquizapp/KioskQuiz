@@ -3008,61 +3008,26 @@ const renderCozyStagePanel = () => {
             position: 'fixed',
             right: 16,
             bottom: 16,
-            width: 360,
+            width: 380,
             maxWidth: '92vw',
-            maxHeight: '60vh',
+            maxHeight: '70vh',
             overflow: 'auto',
-            zIndex: 9999,
-            background: 'rgba(10,14,24,0.92)',
-            border: '1px solid rgba(34,197,94,0.5)',
-            borderRadius: 12,
-            padding: 12,
-            boxShadow: '0 12px 26px rgba(0,0,0,0.35)'
+            zIndex: 9999
           }}
         >
-          <div style={{ fontWeight: 800, marginBottom: 8, color: '#86efac' }}>
-            Antworten ({Object.keys(answers?.answers || {}).length})
-          </div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {Object.entries(answers?.answers || {}).map(([teamId, ans]) => (
-              <div
-                key={teamId}
-                style={{
-                  padding: 8,
-                  borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.03)'
-                }}
-              >
-                <div style={{ fontWeight: 700 }}>{answers?.teams?.[teamId]?.name ?? 'Team'}</div>
-                <div style={{ color: '#cbd5e1', fontSize: 12 }}>
-                  {typeof (ans as any)?.answer === 'string'
-                    ? (ans as any).answer
-                    : typeof (ans as any)?.value === 'string'
-                      ? (ans as any).value
-                      : JSON.stringify((ans as any)?.answer || (ans as any)?.value || '—')}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    marginTop: 4,
-                    color:
-                      (ans as any)?.isCorrect === true
-                        ? '#22c55e'
-                        : (ans as any)?.isCorrect === false
-                          ? '#ef4444'
-                          : '#94a3b8'
-                  }}
-                >
-                  {(ans as any)?.isCorrect === true
-                    ? '✓ Richtig'
-                    : (ans as any)?.isCorrect === false
-                      ? '✗ Falsch'
-                      : 'Offen'}
-                </div>
-              </div>
-            ))}
-          </div>
+          <AnswerList
+            answers={answers}
+            answersCount={answersCount}
+            teamsCount={teamsCount}
+            unreviewedCount={unreviewedCount}
+            statChip={statChip}
+            inputStyle={inputStyle}
+            onOverride={(teamId, isCorrect) =>
+              doAction(async () => {
+                await hookOverrideAnswer(teamId, isCorrect);
+              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+            }
+          />
         </div>
       )}
       {renderReconnectModal()}

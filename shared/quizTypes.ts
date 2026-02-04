@@ -345,17 +345,6 @@ export interface RundlaufConfig {
 }
 
 
-export type CozyPotatoThemeInput =
-  | string
-  | {
-      id?: string;
-      title?: string;
-      allowedAnswers?: string[];
-      aliases?: Record<string, string[]>;
-      allowedNormalized?: string[];
-      aliasNormalized?: string[];
-    };
-
 export interface QuizTemplate {
   id: string;
   name: string;
@@ -367,7 +356,6 @@ export interface QuizTemplate {
     pool: QuizBlitzTheme[];
   } | null;
   rundlauf?: RundlaufConfig | null;
-  potatoPool?: CozyPotatoThemeInput[] | null;
   enableBingo?: boolean;
 }
 
@@ -394,7 +382,6 @@ export interface CozyQuizDraft {
   meta: CozyQuizMeta;
   questions: AnyQuestion[];
   blitz: { pool: QuizBlitzTheme[] };
-  potatoPool: CozyPotatoThemeInput[];
   rundlauf?: RundlaufConfig | null;
   enableBingo?: boolean;
   createdAt: number;
@@ -471,7 +458,6 @@ export type CozyGameState =
   | 'BLITZ_SCOREBOARD'
   | 'BLITZ_PAUSE'
   | 'SCOREBOARD_PAUSE'
-  | 'POTATO'
   | 'AWARDS'
   | 'RUNDLAUF_PAUSE'
   | 'RUNDLAUF_SCOREBOARD_PRE'
@@ -481,49 +467,6 @@ export type CozyGameState =
   | 'RUNDLAUF_ROUND_END'
   | 'RUNDLAUF_SCOREBOARD_FINAL'
   | 'SIEGEREHRUNG';
-
-export type PotatoPhase = 'IDLE' | 'BANNING' | 'PLAYING' | 'ROUND_END' | 'DONE';
-
-export interface PotatoConflict {
-  type: 'duplicate' | 'similar';
-  answer: string;
-  normalized: string;
-  conflictingAnswer?: string | null;
-}
-
-export type PotatoVerdict = 'ok' | 'dup' | 'invalid' | 'timeout' | 'pending';
-
-export interface PotatoAttempt {
-  id: string;
-  teamId: string;
-  text: string;
-  normalized: string;
-  verdict: PotatoVerdict;
-  reason?: string;
-  at: number;
-  overridden?: boolean;
-}
-
-export interface PotatoState {
-  phase: PotatoPhase;
-  pool: string[];
-  bans: Record<string, string[]>;
-  banLimits: Record<string, number>;
-  selectedThemes: string[];
-  roundIndex: number;
-  turnOrder: string[];
-  activeTeamId: string | null;
-  lives: Record<string, number>;
-  usedAnswers: string[];
-  usedAnswersNormalized: string[];
-  lastAttempt?: PotatoAttempt | null;
-  deadline?: number | null;
-  turnStartedAt?: number | null;
-  turnDurationMs?: number | null;
-  currentTheme?: string | null;
-  lastWinnerId?: string | null;
-  pendingConflict?: PotatoConflict | null;
-}
 
 export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'DISPLAYING' | 'PLAYING' | 'SET_END' | 'DONE';
 
@@ -624,7 +567,7 @@ export type SyncStatePayload = {
   slotMeta?: SlotTransitionMeta | null;
 };
 
-export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'POTATO' | 'RUNDLAUF';
+export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'RUNDLAUF';
 
 export type TeamStatusSnapshot = {
   id: string;
@@ -644,7 +587,6 @@ export type StateUpdatePayload = {
   teamsConnected: number;
   teamStatus?: TeamStatusSnapshot[];
   questionProgress?: { asked: number; total: number };
-  potato?: PotatoState | null;
   blitz?: BlitzState | null;
   rundlauf?: RundlaufState | null;
   oneOfEight?: OneOfEightState | null;
@@ -654,10 +596,6 @@ export type StateUpdatePayload = {
   liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;
   warnings?: string[];
   supportsBingo?: boolean;
-  config?: {
-    potatoAutopilot: boolean;
-    potatoTimeoutAutostrike: boolean;
-  };
 };
 
 export interface AnswerAwardSnapshot {

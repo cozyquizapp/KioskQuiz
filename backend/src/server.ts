@@ -31,9 +31,6 @@ import {
   TeamStatusSnapshot,
   SyncStatePayload,
   StateUpdatePayload,
-  PotatoState,
-  PotatoAttempt,
-  PotatoConflict,
   BlitzState,
   BlitzPhase,
   BlitzSetResult,
@@ -56,7 +53,6 @@ import {
   NextStageHint,
   CozyQuizMeta,
   CozyQuestionSlotTemplate,
-  CozyPotatoThemeInput,
   LobbyStats,
   FastestAnswer,
   FunnyAnswer,
@@ -72,7 +68,7 @@ import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
-import { QuizMeta, Language, PotatoPhase } from '../../shared/quizTypes';
+import { QuizMeta, Language } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -207,26 +203,7 @@ type RoomState = {
   language: Language;
   gameState: CozyGameState;
   stateHistory: CozyGameState[];
-  potatoPool: PotatoThemeDefinition[];
-  potatoBans: Record<string, PotatoThemeDefinition[]>;
-  potatoBanLimits: Record<string, number>;
-  potatoSelectedThemes: PotatoThemeDefinition[];
-  potatoRoundIndex: number;
-  potatoTurnOrder: string[];
-  potatoLives: Record<string, number>;
-  potatoUsedAnswers: string[];
-  potatoUsedAnswersNormalized: string[];
-  potatoLastAttempt: PotatoAttempt | null;
-  potatoActiveTeamId: string | null;
-  potatoPhase: PotatoPhase;
-  potatoDeadlineAt: number | null;
-  potatoTurnStartedAt: number | null;
-  potatoTurnDurationMs: number;
-  potatoLastWinnerId: string | null;
-  potatoCurrentTheme: PotatoThemeDefinition | null;
-  potatoLastConflict: PotatoConflict | null;
   segmentTwoBaselineScores: Record<string, number> | null;
-  presetPotatoPool: PotatoThemeDefinition[];
   blitzPool: BlitzThemeOption[];
   blitzThemeLibrary: Record<string, QuizBlitzTheme>;
   blitzDisplayTimeMs: number;
@@ -383,7 +360,6 @@ type PublishedQuiz = {
   meta?: QuizMeta | null;
   blitz?: { pool: QuizBlitzTheme[] } | null;
   rundlauf?: RundlaufConfig | null;
-  potatoPool?: CozyPotatoThemeInput[] | null;
   enableBingo?: boolean;
 };
 let publishedQuizzes: PublishedQuiz[] = [];
@@ -412,7 +388,6 @@ publishedQuizzes.forEach((q) => {
     meta,
     blitz: q.blitz ?? null,
     rundlauf: q.rundlauf ?? null,
-    potatoPool: q.potatoPool ?? null,
     enableBingo: q.enableBingo ?? false
   });
 });
@@ -452,7 +427,6 @@ const upsertPublishedQuiz = (payload: PublishedQuiz) => {
     meta,
     blitz: stored.blitz ?? null,
     rundlauf: stored.rundlauf ?? null,
-    potatoPool: stored.potatoPool ?? null,
     enableBingo: stored.enableBingo ?? false
   });
 
@@ -483,7 +457,6 @@ const BLITZ_DISPLAY_TIME_MS = 30000; // Image display phase
 const BLITZ_ANSWER_TIME_MS = 30000;  // Answer input phase
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_DISPLAY_TIME_MS / BLITZ_ITEMS_PER_SET);
 const BLITZ_CATEGORY_COUNT = 5;
-const POTATO_THEME_RECOMMENDED_MIN = 14;
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
 const RUNDLAUF_CATEGORY_COUNT = 3;
@@ -1140,22 +1113,6 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
         unit: 'Bundesländer'
       } as EstimateQuestion
     ],
-    potatoPool: [
-      { id: 'theme-1', title: 'Europäische Hauptstädte' },
-      { id: 'theme-2', title: 'Deutsche Flüsse' },
-      { id: 'theme-3', title: 'Berühmte Musiker' },
-      { id: 'theme-4', title: 'Olympische Sportarten' },
-      { id: 'theme-5', title: 'Automobilmarken' },
-      { id: 'theme-6', title: 'Disney Filme' },
-      { id: 'theme-7', title: 'Afrikanische Säugetiere' },
-      { id: 'theme-8', title: 'Obstarten' },
-      { id: 'theme-9', title: 'Gemüsesorten' },
-      { id: 'theme-10', title: 'Musikinstrumente' },
-      { id: 'theme-11', title: 'US Bundesstaaten' },
-      { id: 'theme-12', title: 'Deutsche Bundesländer' },
-      { id: 'theme-13', title: 'Länder mit A' },
-      { id: 'theme-14', title: 'Länder mit S' }
-    ],
     blitz: {
       pool: [
         {
@@ -1269,7 +1226,7 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
       pointsTie: 1
     },
     enableBingo: false
-  };
+  } as CozyQuizDraft;
 };
 
 try {
@@ -1303,15 +1260,6 @@ const BLITZ_PLACEHOLDER_TITLES = [
   'Random Mix'
 ];
 
-type PotatoThemeDefinition = {
-  id: string;
-  title: string;
-  allowedAnswers: string[];
-  allowedNormalized: string[];
-  aliases: Record<string, string[]>;
-  aliasNormalized: string[];
-};
-
 const buildPlaceholderBlitzPool = (draftId: string): QuizBlitzTheme[] =>
   defaultBlitzPool.map((theme, themeIdx) => {
     const baseId = theme.id || `blitz-${themeIdx + 1}`;
@@ -1327,16 +1275,6 @@ const buildPlaceholderBlitzPool = (draftId: string): QuizBlitzTheme[] =>
       }))
     };
   });
-
-const buildPlaceholderPotatoPool = (): PotatoThemeDefinition[] =>
-  DEFAULT_POTATO_THEMES.map((title, idx) => ({
-    id: `default-potato-${idx + 1}`,
-    title,
-    allowedAnswers: [],
-    allowedNormalized: [],
-    aliases: {},
-    aliasNormalized: []
-  }));
 
 const ensureCozyMeta = (meta?: Partial<CozyQuizMeta>): CozyQuizMeta => ({
   title: meta?.title?.trim() || 'Neues Cozy Quiz 60',
@@ -1470,14 +1408,13 @@ const hydrateCozyDraft = (draft: CozyQuizDraft): CozyQuizDraft => ({
   meta: ensureCozyMeta(draft.meta),
   questions: Array.isArray(draft.questions) && draft.questions.length === 20 ? draft.questions : buildDefaultCozyQuestions(draft.id),
   blitz: draft.blitz && Array.isArray(draft.blitz.pool) ? draft.blitz : { pool: buildPlaceholderBlitzPool(draft.id) },
-  potatoPool: Array.isArray(draft.potatoPool) ? draft.potatoPool : buildPlaceholderPotatoPool(),
   rundlauf: sanitizeRundlaufDraft(draft.rundlauf ?? null),
   enableBingo: Boolean(draft.enableBingo),
   status: draft.status || 'draft',
   createdAt: draft.createdAt || Date.now(),
   updatedAt: draft.updatedAt || Date.now(),
   lastPublishedAt: draft.lastPublishedAt ?? null
-});
+} as CozyQuizDraft);
 
 cozyDrafts = cozyDrafts.map((draft) => hydrateCozyDraft(draft));
 
@@ -1489,7 +1426,6 @@ const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
     meta: ensureCozyMeta(meta),
     questions: buildDefaultCozyQuestions(id),
     blitz: { pool: buildPlaceholderBlitzPool(id) },
-    potatoPool: buildPlaceholderPotatoPool(),
     rundlauf: sanitizeRundlaufDraft({
       pool: RUN_LOOP_CATEGORIES.map((entry) => entry.title),
       turnDurationMs: RUNDLAUF_TURN_TIME_MS,
@@ -1501,7 +1437,7 @@ const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
     updatedAt: now,
     status: 'draft',
     lastPublishedAt: null
-  };
+  } as CozyQuizDraft;
 };
 
 const summarizeCozyDraft = (draft: CozyQuizDraft) => ({
@@ -1513,7 +1449,6 @@ const summarizeCozyDraft = (draft: CozyQuizDraft) => ({
   updatedAt: draft.updatedAt,
   createdAt: draft.createdAt,
   questionCount: draft.questions.length,
-  potatoCount: draft.potatoPool.length,
   blitzThemes: draft.blitz?.pool.length ?? 0
 });
 
@@ -1598,112 +1533,17 @@ const sanitizeBlitzPool = (draftId: string, pool?: QuizBlitzTheme[] | null): Qui
   });
 };
 
-const normalizePotatoThemeEntry = (value: unknown, idx: number): PotatoThemeDefinition | null => {
-  if (typeof value === 'string') {
-    const title = value.trim();
-    if (!title) return null;
-    const baseId = slugify(title) || `potato-theme-${idx + 1}`;
-    return {
-      id: baseId,
-      title,
-      allowedAnswers: [],
-      allowedNormalized: [],
-      aliases: {},
-      aliasNormalized: []
-    };
-  }
-  if (!value || typeof value !== 'object') return null;
-  const source = value as {
-    id?: string;
-    title?: string;
-    allowedAnswers?: unknown;
-    aliases?: Record<string, unknown>;
-  };
-  const safeTitle =
-    typeof source.title === 'string' && source.title.trim()
-      ? source.title.trim()
-      : typeof source.id === 'string' && source.id.trim()
-      ? source.id.trim()
-      : `Potato Theme ${idx + 1}`;
-  const baseId =
-    typeof source.id === 'string' && source.id.trim()
-      ? source.id.trim()
-      : slugify(safeTitle) || `potato-theme-${idx + 1}`;
-  const allowedAnswers = Array.isArray(source.allowedAnswers)
-    ? source.allowedAnswers
-        .map((entry) => String(entry ?? '').trim())
-        .filter((entry) => entry.length > 0)
-    : [];
-  const aliasValues: string[] = [];
-  const aliasMap: Record<string, string[]> = {};
-  if (source.aliases && typeof source.aliases === 'object') {
-    Object.entries(source.aliases).forEach(([canonicalRaw, list]) => {
-      if (!Array.isArray(list)) return;
-      const canonical = String(canonicalRaw ?? '').trim();
-      if (!canonical) return;
-      const cleaned = Array.from(
-        new Set(
-          list
-            .map((alias) => String(alias ?? '').trim())
-            .filter((alias) => alias.length > 0)
-        )
-      );
-      if (!cleaned.length) return;
-      aliasMap[canonical] = cleaned;
-      cleaned.forEach((entry) => aliasValues.push(entry));
-    });
-  }
-  const allowedNormalized = allowedAnswers
-    .map((entry) => normalizeText(entry))
-    .filter((entry) => entry.length > 0);
-  const aliasNormalized = aliasValues.map((entry) => normalizeText(entry)).filter((entry) => entry.length > 0);
-  return {
-    id: baseId,
-    title: safeTitle,
-    allowedAnswers,
-    allowedNormalized,
-    aliases: aliasMap,
-    aliasNormalized
-  };
-};
-
-const sanitizePotatoPool = (input?: unknown): PotatoThemeDefinition[] => {
-  const normalized: PotatoThemeDefinition[] = [];
-  const pushTheme = (theme: PotatoThemeDefinition | null) => {
-    if (!theme) return;
-    let finalId = theme.id || `potato-theme-${normalized.length + 1}`;
-    let suffix = 1;
-    while (normalized.some((entry) => entry.id === finalId)) {
-      finalId = `${theme.id || `potato-theme-${normalized.length + 1}`}-${suffix++}`;
-    }
-    normalized.push({ ...theme, id: finalId });
-  };
-  if (Array.isArray(input)) {
-    input.forEach((entry, idx) => pushTheme(normalizePotatoThemeEntry(entry, idx)));
-  } else if (typeof input === 'string' && input.trim()) {
-    input
-      .split(/\r?\n/)
-      .map((entry) => entry.trim())
-      .forEach((entry, idx) => pushTheme(normalizePotatoThemeEntry(entry, idx)));
-  }
-  if (normalized.length) return normalized;
-  return buildPlaceholderPotatoPool();
-};
-
-const clonePotatoThemes = (themes: PotatoThemeDefinition[]) => themes.map((theme) => ({ ...theme }));
-
 const applyDraftUpdate = (draft: CozyQuizDraft, payload: Partial<CozyQuizDraft>): CozyQuizDraft => {
   const metaSource = payload.meta ? { ...draft.meta, ...payload.meta } : draft.meta;
-  const updated: CozyQuizDraft = {
+  const updated = {
     ...draft,
     meta: ensureCozyMeta(metaSource),
     questions: payload.questions ? sanitizeCozyQuestions(draft.id, payload.questions as AnyQuestion[]) : draft.questions,
     blitz: { pool: sanitizeBlitzPool(draft.id, payload.blitz?.pool ?? draft.blitz?.pool) },
-    potatoPool: sanitizePotatoPool(payload.potatoPool ?? draft.potatoPool),
     rundlauf: sanitizeRundlaufDraft(payload.rundlauf ?? draft.rundlauf),
     enableBingo: payload.enableBingo ?? draft.enableBingo,
     updatedAt: Date.now()
-  };
+  } as CozyQuizDraft;
   return hydrateCozyDraft(updated);
 };
 
@@ -1831,7 +1671,6 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
       meta: publishedMeta,
       blitz: finalized.blitz,
       rundlauf: finalized.rundlauf ?? null,
-      potatoPool: finalized.potatoPool,
       enableBingo: finalized.enableBingo
     };
     upsertPublishedQuiz(publishedPayload);
@@ -1937,26 +1776,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       language: 'de',
       gameState: INITIAL_GAME_STATE,
       stateHistory: [INITIAL_GAME_STATE],
-      potatoPool: [],
-      potatoBans: {},
-      potatoBanLimits: {},
-      potatoSelectedThemes: [],
-      potatoRoundIndex: -1,
-      potatoTurnOrder: [],
-      potatoLives: {},
-      potatoUsedAnswers: [],
-      potatoUsedAnswersNormalized: [],
-      potatoLastAttempt: null,
-      potatoActiveTeamId: null,
-      potatoPhase: 'IDLE',
-      potatoDeadlineAt: null,
-      potatoTurnStartedAt: null,
-      potatoTurnDurationMs: POTATO_ANSWER_TIME_MS,
-      potatoLastWinnerId: null,
-      potatoCurrentTheme: null,
-      potatoLastConflict: null,
       segmentTwoBaselineScores: null,
-      presetPotatoPool: [],
       blitzPool: [],
       blitzThemeLibrary: {},
       blitzDisplayTimeMs: BLITZ_DISPLAY_TIME_MS,
@@ -2074,24 +1894,6 @@ const log = (roomCode: string, message: string, ...args: unknown[]) => {
   console.log(`[${roomCode}] ${message}`, ...args);
 };
 
-const POTATO_ROUNDS = 3;
-const POTATO_ANSWER_TIME_MS = 30000;
-const DEFAULT_POTATO_THEMES = [
-  'Songs mit Städtenamen',
-  'Filme aus den 90ern',
-  'Berühmte Duos',
-  'Kartoffelgerichte',
-  'Sportarten mit Ball',
-  'Wörter mit Doppelbuchstaben',
-  'Fragen zu Europa',
-  'Süßigkeitenmarken',
-  'Fabelwesen',
-  'Berge in Europa',
-  'Streetfood Klassiker',
-  'Streaming Hits',
-  'Nordische Mythen',
-  'Retro Spielkonsolen'
-]; // TODO(LEGACY): durch echtes Themen-Set ersetzen
 const sanitizeThemeList = (input: unknown): string[] => {
   if (Array.isArray(input)) {
     return Array.from(
@@ -2120,17 +1922,6 @@ const SINGLE_SESSION_MODE = (() => {
   return source?.toString().trim().toLowerCase() === 'true';
 })();
 const DEFAULT_ROOM_CODE = ((process.env.SINGLE_SESSION_ROOM_CODE || 'MAIN').toString().trim().toUpperCase() || 'MAIN');
-const POTATO_SIMILARITY_THRESHOLD = 0.85;
-const POTATO_AUTOPILOT = (() => {
-  const raw = process.env.POTATO_AUTOPILOT;
-  if (raw === undefined || raw === null) return true;
-  return raw.toString().trim().toLowerCase() !== 'false';
-})();
-const POTATO_TIMEOUT_AUTOSTRIKE = (() => {
-  const raw = process.env.POTATO_TIMEOUT_AUTOSTRIKE;
-  if (raw === undefined || raw === null) return false;
-  return raw.toString().trim().toLowerCase() === 'true';
-})();
 const BLITZ_SIMILARITY_THRESHOLD = 0.85;
 const DEFAULT_BLITZ_THEMES = [
   'Musik',
@@ -2275,275 +2066,6 @@ const compareTeamsWithTieBreak = (
 
 const getTeamsByScore = (room: RoomState, direction: 'asc' | 'desc' = 'desc') =>
   Object.values(room.teams).sort((a, b) => compareTeamsWithTieBreak(room, a, b, direction));
-
-const computePotatoBanLimits = (room: RoomState): Record<string, number> => {
-  const teams = getTeamsByScore(room, 'desc');
-  const limits: Record<string, number> = {};
-  if (teams.length <= 1) return limits;
-  if (teams.length === 2) {
-    limits[teams[0].id] = 2;
-    limits[teams[1].id] = 1;
-    return limits;
-  }
-  if (teams.length >= 3 && teams.length <= 6) {
-    teams.forEach((t, idx) => {
-      limits[t.id] = 1;
-      if (idx === 0) limits[t.id] = 2;
-    });
-    return limits;
-  }
-  teams.forEach((team, idx) => {
-    if (idx === 0) limits[team.id] = 2;
-    else if (idx === 1 || idx === 2) limits[team.id] = 1;
-    else limits[team.id] = 0;
-  });
-  return limits;
-};
-
-const alivePotatoTeams = (room: RoomState) =>
-  room.potatoTurnOrder.filter((teamId) => (room.potatoLives[teamId] ?? 0) > 0);
-
-const assignPotatoTurnOrder = (room: RoomState) => {
-  const teamsDesc = getTeamsByScore(room, 'desc');
-  if (teamsDesc.length <= 2) {
-    room.potatoTurnOrder = teamsDesc.map((t) => t.id);
-    return;
-  }
-  room.potatoTurnOrder = getTeamsByScore(room, 'asc').map((t) => t.id);
-};
-
-const initialPotatoLives = (room: RoomState) => {
-  const teamCount = Object.keys(room.teams).length;
-  const lives: Record<string, number> = {};
-  Object.keys(room.teams).forEach((teamId) => {
-    lives[teamId] = teamCount <= 2 ? 1 : 2;
-  });
-  return lives;
-};
-
-const setPotatoActiveTeam = (room: RoomState, teamId: string | null) => {
-  room.potatoActiveTeamId = teamId;
-  if (teamId) {
-    room.potatoTurnStartedAt = Date.now();
-    room.potatoDeadlineAt = room.potatoTurnStartedAt + POTATO_ANSWER_TIME_MS;
-    room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
-  } else {
-    room.potatoTurnStartedAt = null;
-    room.potatoDeadlineAt = null;
-  }
-};
-
-const setFirstPotatoTurn = (room: RoomState) => {
-  const alive = alivePotatoTeams(room);
-  setPotatoActiveTeam(room, alive[0] ?? null);
-};
-
-const advancePotatoTurn = (room: RoomState) => {
-  const alive = alivePotatoTeams(room);
-  if (!alive.length) {
-    setPotatoActiveTeam(room, null);
-    return;
-  }
-  const currentIdx = alive.indexOf(room.potatoActiveTeamId ?? '');
-  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
-  setPotatoActiveTeam(room, alive[nextIdx]);
-  room.potatoLastConflict = null;
-};
-
-const completePotatoRound = (room: RoomState, winnerId: string | null) => {
-  room.potatoPhase = 'ROUND_END';
-  setPotatoActiveTeam(room, null);
-  room.potatoLastConflict = null;
-  room.potatoLastWinnerId = winnerId;
-  if (winnerId && room.teams[winnerId]) {
-    room.teams[winnerId].score = (room.teams[winnerId].score ?? 0) + 3;
-  }
-};
-
-const applyPotatoStrike = (room: RoomState, teamId: string) => {
-  if (!room.potatoLives[teamId]) return;
-  room.potatoLives[teamId] = Math.max(0, room.potatoLives[teamId] - 1);
-  room.potatoLastConflict = null;
-  const alive = alivePotatoTeams(room);
-  if (alive.length <= 1) {
-    completePotatoRound(room, alive[0] ?? null);
-    return;
-  }
-  advancePotatoTurn(room);
-};
-
-const maybeAutoAdvancePotato = (room: RoomState) => {
-  if (!POTATO_AUTOPILOT) return;
-  if (room.potatoPhase !== 'PLAYING') return;
-  advancePotatoTurn(room);
-};
-
-const maybeHandlePotatoTimeoutAutoStrike = (room: RoomState) => {
-  if (!POTATO_TIMEOUT_AUTOSTRIKE) return;
-  if (room.potatoPhase !== 'PLAYING') return;
-  if (!room.potatoActiveTeamId) return;
-  applyPotatoStrike(room, room.potatoActiveTeamId);
-};
-
-const handlePotatoAttemptAftermath = (room: RoomState, attempt: PotatoAttempt) => {
-  if (attempt.verdict === 'timeout') {
-    maybeHandlePotatoTimeoutAutoStrike(room);
-    return;
-  }
-  if (attempt.verdict === 'ok') {
-    maybeAutoAdvancePotato(room);
-  }
-};
-
-const startPotatoRound = (room: RoomState) => {
-  if (room.potatoSelectedThemes.length === 0) {
-    throw new Error('Keine Themen für Heisse Kartoffel ausgewählt');
-  }
-  if (room.potatoRoundIndex >= POTATO_ROUNDS - 1) {
-    throw new Error('Alle Runden wurden bereits gespielt');
-  }
-  const nextIndex = room.potatoRoundIndex + 1;
-  if (!room.potatoSelectedThemes[nextIndex]) {
-    throw new Error('Nicht genug Themen vorhanden');
-  }
-  room.potatoRoundIndex = nextIndex;
-  room.potatoPhase = 'PLAYING';
-  assignPotatoTurnOrder(room);
-  room.potatoLives = initialPotatoLives(room);
-  room.potatoUsedAnswers = [];
-  room.potatoUsedAnswersNormalized = [];
-  room.potatoLastAttempt = null;
-  room.potatoCurrentTheme = room.potatoSelectedThemes[nextIndex] ?? null;
-  room.potatoLastConflict = null;
-  room.potatoActiveTeamId = null;
-  setFirstPotatoTurn(room);
-};
-
-const evaluatePotatoAttempt = (
-  room: RoomState,
-  teamId: string,
-  rawInput: string,
-  options?: { overrideDuplicate?: boolean }
-): PotatoAttempt => {
-  if (room.potatoPhase !== 'PLAYING') throw new Error('Keine aktive Runde');
-  if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
-  if (room.potatoActiveTeamId !== teamId) throw new Error('Dieses Team ist nicht am Zug');
-  const text = (rawInput ?? '').trim().slice(0, 160);
-  const normalized = text ? normalizeText(text) : '';
-  const attempt: PotatoAttempt = {
-    id: uuid(),
-    teamId,
-    text,
-    normalized,
-    verdict: 'pending',
-    at: Date.now()
-  };
-  if (!text) {
-    attempt.verdict = 'invalid';
-    attempt.reason = 'empty';
-    room.potatoLastAttempt = attempt;
-    return attempt;
-  }
-  if (room.potatoDeadlineAt && Date.now() > room.potatoDeadlineAt) {
-    attempt.verdict = 'timeout';
-    attempt.reason = 'timeout';
-    room.potatoLastAttempt = attempt;
-    return attempt;
-  }
-  const duplicateIdx = room.potatoUsedAnswersNormalized.findIndex((entry) => entry === normalized);
-  if (duplicateIdx >= 0 && !options?.overrideDuplicate) {
-    attempt.verdict = 'dup';
-    attempt.reason = 'duplicate';
-    room.potatoLastConflict = {
-      type: 'duplicate',
-      answer: text,
-      normalized,
-      conflictingAnswer: room.potatoUsedAnswers[duplicateIdx] ?? null
-    };
-    room.potatoLastAttempt = attempt;
-    return attempt;
-  }
-  if (!options?.overrideDuplicate) {
-    let bestIdx = -1;
-    let bestScore = 0;
-    room.potatoUsedAnswersNormalized.forEach((entry, idx) => {
-      const score = similarityScore(entry, normalized);
-      if (score > bestScore) {
-        bestScore = score;
-        bestIdx = idx;
-      }
-    });
-    if (bestIdx >= 0 && bestScore >= POTATO_SIMILARITY_THRESHOLD) {
-      attempt.verdict = 'dup';
-      attempt.reason = 'similar';
-      room.potatoLastConflict = {
-        type: 'similar',
-        answer: text,
-        normalized,
-        conflictingAnswer: room.potatoUsedAnswers[bestIdx] ?? null
-      };
-      room.potatoLastAttempt = attempt;
-      return attempt;
-    }
-  }
-  const theme = room.potatoCurrentTheme;
-  if (theme && theme.allowedNormalized.length) {
-    const allowedPool = [...theme.allowedNormalized, ...theme.aliasNormalized];
-    if (!allowedPool.includes(normalized)) {
-      attempt.verdict = 'invalid';
-      attempt.reason = 'not-listed';
-      room.potatoLastConflict = null;
-      room.potatoLastAttempt = attempt;
-      return attempt;
-    }
-  }
-  attempt.verdict = 'ok';
-  room.potatoLastConflict = null;
-  room.potatoUsedAnswers = [...room.potatoUsedAnswers, text];
-  room.potatoUsedAnswersNormalized = [...room.potatoUsedAnswersNormalized, normalized];
-  room.potatoLastAttempt = attempt;
-  return attempt;
-};
-
-const finishPotatoStage = (room: RoomState) => {
-  room.potatoPhase = 'DONE';
-  setPotatoActiveTeam(room, null);
-  room.potatoLastConflict = null;
-  applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
-};
-
-const initializePotatoStage = (room: RoomState, payload?: { themes?: string[]; themesText?: string }) => {
-  const parsed = sanitizePotatoPool(payload?.themes) || sanitizePotatoPool(payload?.themesText);
-  const fallbackPool =
-    room.presetPotatoPool.length >= POTATO_ROUNDS
-      ? clonePotatoThemes(room.presetPotatoPool)
-      : buildPlaceholderPotatoPool();
-  const pool = parsed.length >= POTATO_ROUNDS ? clonePotatoThemes(parsed) : fallbackPool;
-  if (pool.length < POTATO_ROUNDS) {
-    throw new Error('Mindestens drei Themen erforderlich');
-  }
-  room.potatoPool = pool;
-  room.potatoBans = {};
-  room.potatoBanLimits = computePotatoBanLimits(room);
-  room.potatoSelectedThemes = [];
-  room.potatoRoundIndex = -1;
-  room.potatoTurnOrder = [];
-  room.potatoLives = {};
-  room.potatoUsedAnswers = [];
-  room.potatoUsedAnswersNormalized = [];
-  room.potatoActiveTeamId = null;
-  room.potatoPhase = 'BANNING';
-  room.potatoDeadlineAt = null;
-  room.potatoTurnStartedAt = null;
-  room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
-  room.potatoLastWinnerId = null;
-  room.potatoCurrentTheme = null;
-  room.potatoLastConflict = null;
-  room.potatoLastAttempt = null;
-  room.nextStage = null;
-  recomputeRoomWarnings(room);
-  applyRoomState(room, { type: 'FORCE', next: 'POTATO' });
-};
 
 const initializeBlitzStage = (room: RoomState) => {
   const definitions = PHOTO_SPRINT_CATEGORIES.length ? PHOTO_SPRINT_CATEGORIES : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
@@ -3557,25 +3079,6 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.scoreboardOverlayForced = false;
   room.halftimeTriggered = false;
   room.finalsTriggered = false;
-  room.potatoPhase = 'IDLE';
-  room.potatoPool = [];
-  room.presetPotatoPool = sanitizePotatoPool(template.potatoPool ?? []);
-  room.potatoBans = {};
-  room.potatoBanLimits = {};
-  room.potatoSelectedThemes = [];
-  room.potatoRoundIndex = -1;
-  room.potatoTurnOrder = [];
-  room.potatoLives = {};
-  room.potatoUsedAnswers = [];
-  room.potatoUsedAnswersNormalized = [];
-  room.potatoLastAttempt = null;
-  room.potatoActiveTeamId = null;
-  room.potatoDeadlineAt = null;
-  room.potatoTurnStartedAt = null;
-  room.potatoTurnDurationMs = POTATO_ANSWER_TIME_MS;
-  room.potatoLastWinnerId = null;
-  room.potatoCurrentTheme = null;
-  room.potatoLastConflict = null;
   room.segmentTwoBaselineScores = null;
   room.blitzPhase = 'IDLE';
   const normalizedThemes = (template.blitz?.pool || []).map((theme, idx) => normalizeBlitzTheme(theme, idx));
@@ -3788,15 +3291,8 @@ const getBunteMaxAward = (question: AnyQuestion, fallback: number): number => {
   return fallback;
 };
 
-const effectivePotatoPool = (room: RoomState) =>
-  room.potatoPool.length ? room.potatoPool : room.presetPotatoPool;
-
 const recomputeRoomWarnings = (room: RoomState) => {
   const warnings: string[] = [];
-  const potatoSize = effectivePotatoPool(room).length;
-  if (potatoSize > 0 && potatoSize < POTATO_THEME_RECOMMENDED_MIN) {
-    warnings.push(`Potato-Pool enthält nur ${potatoSize} Themen (>=${POTATO_THEME_RECOMMENDED_MIN} empfohlen).`);
-  }
   const blitzSize = room.blitzPool.length || Object.keys(room.blitzThemeLibrary || {}).length;
   if (blitzSize > 0 && blitzSize < BLITZ_THEME_RECOMMENDED_MIN) {
     warnings.push(`Blitz-Pool enthält nur ${blitzSize} Themen (>=${BLITZ_THEME_RECOMMENDED_MIN} empfohlen).`);
@@ -3860,10 +3356,6 @@ const validateQuestionStructure = (question: AnyQuestion): string[] => {
 
 const collectCozyDraftWarnings = (draft: CozyQuizDraft): string[] => {
   const warnings: string[] = [];
-  const potatoSize = Array.isArray(draft.potatoPool) ? draft.potatoPool.length : 0;
-  if (potatoSize < 14) {
-    warnings.push(`Potato-Pool enthaelt nur ${potatoSize} Themen (>=14 empfohlen).`);
-  }
   const blitzThemes = draft.blitz?.pool?.length ?? 0;
   if (blitzThemes < 14) {
     warnings.push(`Blitz-Pool enthaelt nur ${blitzThemes} Themen (>=14 empfohlen).`);
@@ -4107,7 +3599,7 @@ const applyRoomState = (room: RoomState, action: GameStateAction) => {
   if (next !== room.gameState) {
     room.gameState = next;
     room.stateHistory = [...room.stateHistory.slice(-9), next];
-    if ((next.startsWith('BLITZ') || next === 'BLITZ' || next === 'POTATO' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
+    if ((next.startsWith('BLITZ') || next === 'BLITZ' || next.startsWith('RUNDLAUF')) && room.scoreboardOverlayForced) {
       room.scoreboardOverlayForced = false;
     }
     if (prev === 'RUNDLAUF_PLAY' && next !== 'RUNDLAUF_PLAY') {
@@ -4130,10 +3622,6 @@ const buildTimerSnapshot = (room: RoomState) => {
     endsAt = room.blitzDeadlineAt;
     running = true;
     durationMs = room.blitzAnswerTimeMs;
-  } else if (room.gameState === 'POTATO' && room.potatoPhase === 'PLAYING' && room.potatoDeadlineAt) {
-    endsAt = room.potatoDeadlineAt;
-    running = true;
-    durationMs = room.potatoTurnDurationMs;
   } else if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufDeadlineAt) {
     endsAt = room.rundlaufDeadlineAt;
     running = true;
@@ -4149,8 +3637,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
   const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
   const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
   const sanitized = localized ? sanitizeQuestionForTeams(localized) : null;
-  // Potato (heiße Kartoffel) ist abgekündigt – nicht mehr im Sync-State ausliefern
-  const potato: PotatoState | null = null;
+  const potato = null;
   const blitz: BlitzState | null =
     room.blitzPhase === 'IDLE'
       ? null
@@ -4285,11 +3772,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     results,
     liveAnswers,
     warnings: warnings.length ? warnings : undefined,
-    supportsBingo: Boolean(room.bingoEnabled),
-    config: {
-      potatoAutopilot: POTATO_AUTOPILOT,
-      potatoTimeoutAutostrike: POTATO_TIMEOUT_AUTOSTRIKE
-    }
+    supportsBingo: Boolean(room.bingoEnabled)
   };
   
   return payload;
@@ -6158,216 +5641,6 @@ io.on('connection', (socket: Socket) => {
       room.scoreboardOverlayForced = !room.scoreboardOverlayForced;
       broadcastState(room);
       return { forced: room.scoreboardOverlayForced };
-    });
-  });
-
-  socket.on(
-    'host:startPotato',
-    (
-      payload: { roomCode?: string; themes?: string[]; themesText?: string },
-      ack?: AckFn
-    ) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        initializePotatoStage(room, payload);
-        broadcastState(room);
-        return { pool: room.potatoPool };
-      });
-    }
-  );
-
-  socket.on(
-    'host:banPotatoTheme',
-    (payload: { roomCode?: string; teamId?: string; theme?: string }, ack?: AckFn) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        if (room.potatoPhase !== 'BANNING') throw new Error('Bans nicht aktiv');
-        if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
-        const limit = room.potatoBanLimits[payload.teamId] ?? 0;
-        if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
-        const current = room.potatoBans[payload.teamId] ?? [];
-        if (current.length >= limit) throw new Error('Ban-Limit erreicht');
-        const themeName = (payload?.theme || '').trim();
-        if (!themeName) throw new Error('Theme fehlt');
-        const index = room.potatoPool.findIndex(
-          (t) => t.title.toLowerCase() === themeName.toLowerCase()
-        );
-        if (index === -1) throw new Error('Theme nicht verfügbar');
-        const actualTheme = room.potatoPool.splice(index, 1)[0];
-        room.potatoBans[payload.teamId] = [...current, actualTheme];
-        recomputeRoomWarnings(room);
-        broadcastState(room);
-      });
-    }
-  );
-
-  socket.on('host:confirmPotatoThemes', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      if (room.potatoPhase !== 'BANNING' && room.potatoPhase !== 'ROUND_END') {
-        throw new Error('Themes können aktuell nicht gesetzt werden');
-      }
-      if (room.potatoPool.length < POTATO_ROUNDS) {
-        throw new Error('Nicht genug Themen übrig');
-      }
-      const shuffled = [...room.potatoPool].sort(() => Math.random() - 0.5);
-      room.potatoSelectedThemes = shuffled.slice(0, POTATO_ROUNDS);
-      room.potatoPhase = 'ROUND_END';
-      room.potatoRoundIndex = -1;
-      room.potatoCurrentTheme = null;
-      room.potatoUsedAnswers = [];
-      room.potatoUsedAnswersNormalized = [];
-      room.potatoLives = {};
-      room.potatoTurnOrder = [];
-      room.potatoLastConflict = null;
-      setPotatoActiveTeam(room, null);
-      broadcastState(room);
-      return { selected: room.potatoSelectedThemes };
-    });
-  });
-
-  socket.on('host:potatoStartRound', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      startPotatoRound(room);
-      broadcastState(room);
-    });
-  });
-
-  socket.on(
-    'host:potatoSubmitTurn',
-    (
-      payload: {
-        roomCode?: string;
-        answer?: string;
-        verdict: 'correct' | 'strike';
-        override?: boolean;
-      },
-      ack
-    ) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        if (room.potatoPhase !== 'PLAYING') throw new Error('Keine aktive Runde');
-        if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
-        if (payload.verdict === 'correct') {
-          const attempt = evaluatePotatoAttempt(
-            room,
-            room.potatoActiveTeamId,
-            payload?.answer ?? '',
-            { overrideDuplicate: payload?.override }
-          );
-          handlePotatoAttemptAftermath(room, attempt);
-          broadcastState(room);
-          return { attempt };
-        } else {
-          applyPotatoStrike(room, room.potatoActiveTeamId);
-          broadcastState(room);
-          return { strike: true };
-        }
-      });
-    }
-  );
-
-  socket.on(
-    'team:submitPotatoAnswer',
-    (payload: { roomCode?: string; teamId?: string; text?: string }, ack?: AckFn) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        if (!payload?.teamId) throw new Error('teamId fehlt');
-        const attempt = evaluatePotatoAttempt(room, payload.teamId, payload?.text ?? '');
-         handlePotatoAttemptAftermath(room, attempt);
-        broadcastState(room);
-        return { attempt };
-      });
-    }
-  );
-
-  socket.on('host:potatoStrikeActive', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      if (!room.potatoActiveTeamId) throw new Error('Kein aktives Team');
-      applyPotatoStrike(room, room.potatoActiveTeamId);
-      broadcastState(room);
-    });
-  });
-
-  socket.on('host:potatoNextTurn', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      advancePotatoTurn(room);
-      broadcastState(room);
-    });
-  });
-
-  socket.on(
-    'host:potatoOverrideAttempt',
-    (
-      payload: { roomCode?: string; attemptId?: string; action: 'accept' | 'acceptDuplicate' | 'reject' },
-      ack?: AckFn
-    ) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        if (!room.potatoLastAttempt) throw new Error('Kein Versuch vorhanden');
-        if (!payload?.attemptId || room.potatoLastAttempt.id !== payload.attemptId) {
-          throw new Error('Attempt nicht gefunden');
-        }
-        const attempt = { ...room.potatoLastAttempt };
-        if (payload.action === 'accept' || payload.action === 'acceptDuplicate') {
-          if (attempt.verdict !== 'ok') {
-            const alreadyUsed = room.potatoUsedAnswersNormalized.includes(attempt.normalized);
-            if (!alreadyUsed) {
-              room.potatoUsedAnswers = [...room.potatoUsedAnswers, attempt.text];
-              room.potatoUsedAnswersNormalized = [...room.potatoUsedAnswersNormalized, attempt.normalized];
-            }
-            attempt.verdict = 'ok';
-            attempt.reason = payload.action === 'acceptDuplicate' ? 'duplicate-override' : undefined;
-            attempt.overridden = true;
-            room.potatoLastConflict = null;
-            room.potatoLastAttempt = attempt;
-            handlePotatoAttemptAftermath(room, attempt);
-          }
-        } else if (payload.action === 'reject') {
-          attempt.verdict = 'invalid';
-          attempt.reason = 'rejected';
-          attempt.overridden = true;
-          room.potatoLastConflict = null;
-          room.potatoLastAttempt = attempt;
-        }
-        broadcastState(room);
-        return { attempt: room.potatoLastAttempt };
-      });
-    }
-  );
-
-  socket.on(
-    'host:potatoEndRound',
-    (payload: { roomCode?: string; winnerId?: string | null }, ack) => {
-      withRoom(payload?.roomCode, ack, (room) => {
-        if (room.potatoPhase !== 'PLAYING') {
-          throw new Error('Runde ist nicht aktiv');
-        }
-        const winnerId =
-          payload?.winnerId && room.teams[payload.winnerId] ? payload.winnerId : null;
-        if (!winnerId) {
-          const alive = alivePotatoTeams(room);
-          if (!alive.length) throw new Error('Kein Team verfügbar');
-          completePotatoRound(room, alive[0]);
-        } else {
-          completePotatoRound(room, winnerId);
-        }
-        broadcastState(room);
-      });
-    }
-  );
-
-  socket.on('host:potatoNextRound', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      if (room.potatoPhase !== 'ROUND_END') {
-        throw new Error('Runde ist noch aktiv');
-      }
-      if (room.potatoRoundIndex >= POTATO_ROUNDS - 1) {
-        throw new Error('Alle Runden abgeschlossen');
-      }
-      startPotatoRound(room);
-      broadcastState(room);
-    });
-  });
-
-  socket.on('host:potatoFinish', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => {
-      finishPotatoStage(room);
-      broadcastState(room);
     });
   });
 

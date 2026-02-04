@@ -10,7 +10,6 @@ import {
   CozyGameState,
   Team,
   BlitzState,
-  PotatoState,
   BunteTuetePayload,
   RundlaufState
 } from '@shared/quizTypes';
@@ -269,24 +268,10 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
-  const [potatoState, setPotatoState] = useState<PotatoState | null>(null);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
-  const [potatoTick, setPotatoTick] = useState(0);
-  const [potatoInput, setPotatoInput] = useState('');
-  const [potatoSubmitting, setPotatoSubmitting] = useState(false);
-  const [potatoError, setPotatoError] = useState<string | null>(null);
-  const [showPotatoOkToast, setShowPotatoOkToast] = useState(false);
-  // TODO(LEGACY): Potato ist deaktiviert; nur anzeigen, wenn Legacy-Panels aktiv sind.
-  const showPotatoUI = featureFlags.showLegacyPanels;
-
-  useEffect(() => {
-    if (!showPotatoUI && potatoState) {
-      setPotatoState(null);
-    }
-  }, [showPotatoUI, potatoState]);
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
@@ -297,9 +282,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
   const intervalRef = useRef<number | null>(null);
   const recoveringRef = useRef(false);
-  const potatoInputRef = useRef<HTMLInputElement | null>(null);
-  const lastPotatoActiveRef = useRef<string | null>(null);
-  const potatoToastTimeoutRef = useRef<number | null>(null);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const [reconnectKey, setReconnectKey] = useState(0);
   function storageKey(suffix: string) {
@@ -326,51 +308,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   }, [gameState, teamId]);
 
   useEffect(() => {
-    if (!teamId) {
-      setPotatoSubmitting(false);
-      lastPotatoActiveRef.current = null;
-      return;
-    }
-    const activeId = potatoState?.activeTeamId ?? null;
-    const wasActive = lastPotatoActiveRef.current === teamId;
-    const isActive = activeId === teamId;
-    const lastAttempt = potatoState?.lastAttempt ?? null;
-
-    if (isActive && activeId !== lastPotatoActiveRef.current && potatoInputRef.current) {
-      potatoInputRef.current.focus();
-      setPotatoError(null);
-    }
-
-    if (!isActive && wasActive) {
-      setPotatoSubmitting(false);
-      setPotatoInput('');
-    }
-
-    if (lastAttempt && lastAttempt.teamId === teamId) {
-      if (potatoSubmitting) {
-        setPotatoSubmitting(false);
-      }
-      if (lastAttempt.verdict === 'ok') {
-        setPotatoInput('');
-        setPotatoError(null);
-      }
-    }
-
-    if (!potatoState || potatoState.phase !== 'PLAYING') {
-      setPotatoSubmitting(false);
-    }
-
-    lastPotatoActiveRef.current = activeId;
-  }, [
-    potatoState?.activeTeamId,
-    potatoState?.lastAttempt?.id,
-    potatoState?.lastAttempt?.verdict,
-    potatoState?.phase,
-    teamId,
-    potatoSubmitting
-  ]);
-
-  useEffect(() => {
     if (!teamId) return;
     const activeId = rundlaufState?.activeTeamId ?? null;
     const attempt = rundlaufState?.lastAttempt ?? null;
@@ -393,26 +330,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
     }
   }, [rundlaufState?.activeTeamId, rundlaufState?.lastAttempt?.id, teamId, language]);
-
-  useEffect(() => {
-    if (!teamId) return;
-    const attempt = potatoState?.lastAttempt;
-    if (attempt && attempt.teamId === teamId && attempt.verdict === 'ok') {
-      setShowPotatoOkToast(true);
-      if (potatoToastTimeoutRef.current) {
-        window.clearTimeout(potatoToastTimeoutRef.current);
-      }
-      potatoToastTimeoutRef.current = window.setTimeout(() => setShowPotatoOkToast(false), 800);
-    } else if (attempt && attempt.teamId === teamId && attempt.verdict !== 'pending') {
-      setShowPotatoOkToast(false);
-    }
-  }, [potatoState?.lastAttempt?.id, potatoState?.lastAttempt?.verdict, teamId]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const id = window.setInterval(() => setPotatoTick((tick) => tick + 1), 500);
-    return () => window.clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (!question || question.type !== 'BUNTE_TUETE' || !question.bunteTuete) {
@@ -470,9 +387,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   useEffect(
     () => () => {
-      if (potatoToastTimeoutRef.current) {
-        window.clearTimeout(potatoToastTimeoutRef.current);
-      }
+      // Cleanup effects
     },
     []
   );
@@ -507,11 +422,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     () => [...scoreboard].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
     [scoreboard]
   );
-  const potatoCountdown = useMemo(() => {
-    if (!potatoState?.deadline) return null;
-    return Math.max(0, Math.ceil((potatoState.deadline - Date.now()) / 1000));
-  }, [potatoState?.deadline, potatoTick]);
-  const potatoDeadlinePassed = potatoCountdown !== null && potatoCountdown <= 0;
   const blitzCountdown = useMemo(() => {
     if (!blitzState?.deadline) return null;
     return Math.max(0, Math.ceil((blitzState.deadline - Date.now()) / 1000));
@@ -534,11 +444,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   }, [blitzState?.itemDeadline, timerTick]);
   const isBlitzPlaying =
     gameState === 'BLITZ_PLAYING' || (gameState === 'BLITZ' && blitzState?.phase === 'PLAYING');
-  const isPotatoActiveTurn =
-    showPotatoUI &&
-    gameState === 'POTATO' &&
-    potatoState?.phase === 'PLAYING' &&
-    potatoState?.activeTeamId === teamId;
   const isRundlaufActiveTurn = gameState === 'RUNDLAUF_PLAY' && rundlaufState?.activeTeamId === teamId;
 
   useEffect(() => {
@@ -676,11 +581,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.scores) {
         setScoreboard(payload.scores);
-      }
-      if (payload.potato !== undefined) {
-        if (showPotatoUI) {
-          setPotatoState(payload.potato ?? null);
-        }
       }
       if (payload.blitz !== undefined) {
         setBlitzState(payload.blitz ?? null);
@@ -1830,449 +1730,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
   }
 
-  function renderPotatoStage() {
-    if (!teamId) return renderNotJoined();
-    const heading =
-      language === 'en'
-        ? 'Hot Potato Final'
-        : language === 'both'
-        ? 'Heisse Kartoffel / Hot Potato'
-        : 'Heisse Kartoffel Finale';
-    if (!potatoState) {
-      return (
-        <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}>
-          <div style={pillLabel}>{heading}</div>
-          <p style={{ ...mutedText, margin: 0 }}>
-            {language === 'en'
-              ? 'Final stage is being prepared. Stay ready!'
-              : language === 'both'
-              ? 'Finale wird vorbereitet / Final stage is being prepared.'
-              : 'Finale wird vorbereitet. Bleibt bereit!'}
-          </p>
-        </div>
-      );
-    }
-    const roundTotal = potatoState.selectedThemes?.length ?? 0;
-    const phase = potatoState.phase;
-    const roundLabel =
-      roundTotal > 0 && potatoState.roundIndex >= 0
-        ? `${potatoState.roundIndex + 1}/${roundTotal}`
-        : roundTotal > 0
-        ? `0/${roundTotal}`
-        : language === 'en'
-        ? 'Setup'
-        : 'Vorbereitung';
-    const activeTeamName = potatoState.activeTeamId
-      ? scoreboardLookup[potatoState.activeTeamId]?.name || potatoState.activeTeamId
-      : null;
-    const lives = potatoState.lives || {};
-    const turnOrder = potatoState.turnOrder.length ? potatoState.turnOrder : Object.keys(lives);
-    const bans = potatoState.bans || {};
-    const banLimits = potatoState.banLimits || {};
-    const selectedThemes = potatoState.selectedThemes || [];
-    const lastWinner =
-      potatoState.lastWinnerId && scoreboardLookup[potatoState.lastWinnerId]
-        ? scoreboardLookup[potatoState.lastWinnerId].name
-        : potatoState.lastWinnerId || null;
-    const infoCopy =
-      language === 'en'
-        ? 'Max. 30 seconds per answer - duplicates = strike.'
-        : language === 'both'
-        ? 'Max. 30 Sekunden pro Antwort / Max. 30 seconds per answer. Doppelte Antworten verlieren ein Leben.'
-        : 'Max. 30 Sekunden pro Antwort. Doppelte Antworten verlieren ein Leben.';
-    const usedAnswers = potatoState.usedAnswers || [];
-    const isActiveTeam = potatoState.activeTeamId === teamId;
-    const ownAttempt =
-      potatoState.lastAttempt && potatoState.lastAttempt.teamId === teamId ? potatoState.lastAttempt : null;
-    const relevantConflict =
-      ownAttempt && potatoState.pendingConflict && potatoState.pendingConflict.answer === ownAttempt.text
-        ? potatoState.pendingConflict
-        : null;
-    const attemptLabel = ownAttempt
-      ? {
-          ok: inlineCopy('OK', 'OK'),
-          dup: inlineCopy('DUPLIKAT', 'DUPLICATE'),
-          invalid: inlineCopy('UNGUELTIG', 'INVALID'),
-          timeout: inlineCopy('TIMEOUT', 'TIMEOUT'),
-          pending: inlineCopy('PRUEFUNG', 'CHECKING')
-        }[ownAttempt.verdict]
-      : null;
-    const attemptTone = ownAttempt
-      ? {
-          ok: '#22c55e',
-          dup: '#fbbf24',
-          invalid: '#f87171',
-          timeout: '#f87171',
-          pending: '#cbd5e1'
-        }[ownAttempt.verdict]
-      : '#cbd5e1';
-    const attemptMessage = (() => {
-      if (!ownAttempt) return null;
-      if (ownAttempt.verdict === 'ok') {
-        return inlineCopy('Sitzt! Weitergeben.', 'Locked in! Keep it moving.');
-      }
-      if (ownAttempt.verdict === 'dup') {
-        const conflictText =
-          relevantConflict?.conflictingAnswer || inlineCopy('eine fruehere Antwort', 'an earlier answer');
-        if (ownAttempt.reason === 'similar') {
-          return inlineCopy(`Sehr aehnlich zu ${conflictText}.`, `Very similar to ${conflictText}.`);
-        }
-        return inlineCopy(`Schon genannt: ${conflictText}.`, `Already used: ${conflictText}.`);
-      }
-      if (ownAttempt.verdict === 'invalid') {
-        if (ownAttempt.reason === 'not-listed') {
-          return inlineCopy(
-            'Nicht auf der Themenliste. Moderator entscheidet.',
-            'Not on the theme list. Moderator decides.'
-          );
-        }
-        if (ownAttempt.reason === 'empty') {
-          return inlineCopy('Bitte gib etwas ein.', 'Please enter something.');
-        }
-        if (ownAttempt.reason === 'rejected') {
-          return inlineCopy('Moderator hat abgelehnt.', 'Moderator rejected this answer.');
-        }
-        return inlineCopy('Ungueltig. Bitte neu versuchen.', 'Invalid, please try again.');
-      }
-      if (ownAttempt.verdict === 'timeout') {
-        return inlineCopy('Zu spaet. Leben in Gefahr.', 'Too late. Life is in danger.');
-      }
-      return inlineCopy('Wird geprueft ...', 'Checking attempt ...');
-    })();
-    function renderScoreboardBlock() {
-      return (
-      <div style={{ marginTop: 10 }}>
-        <div style={pillLabel}>{language === 'en' ? 'Scoreboard' : language === 'both' ? 'Scoreboard / Punkte' : 'Scoreboard'}</div>
-        <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
-          {sortedScoreboard.length === 0 && (
-            <div style={{ ...mutedText, textAlign: 'center' }}>
-              {language === 'en' ? 'No teams yet.' : language === 'both' ? 'Noch keine Teams / No teams yet.' : 'Noch keine Teams.'}
-            </div>
-          )}
-          {sortedScoreboard.map((entry, idx) => (
-            <div
-              key={`potato-score-${entry.id}`}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'auto 1fr auto',
-                gap: 10,
-                padding: '8px 10px',
-                borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(2,6,23,0.6)'
-              }}
-            >
-              <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
-              <span>{entry.name}</span>
-              <CountUpNumber value={entry.score ?? 0} style={{ fontWeight: 800 }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-    }
-    function renderThemes() {
-      return (
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {selectedThemes.map((theme, idx) => {
-          const done = (potatoState?.roundIndex ?? -1) >= idx;
-          const current = (potatoState?.roundIndex ?? -1) === idx;
-          return (
-            <span
-              key={`potato-theme-${idx}`}
-              style={{
-                ...pillSmall,
-                background: current ? 'rgba(251,191,36,0.18)' : done ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.06)',
-                border: current
-                  ? '1px solid rgba(251,191,36,0.45)'
-                  : done
-                  ? '1px solid rgba(34,197,94,0.35)'
-                  : '1px solid rgba(255,255,255,0.12)',
-                color: '#e2e8f0'
-              }}
-            >
-              {theme}
-            </span>
-          );
-        })}
-        {selectedThemes.length === 0 && <span style={{ ...mutedText }}>{language === 'en' ? 'Themes pending...' : 'Themen folgen...'}</span>}
-      </div>
-    );
-    }
-    function renderLives() {
-      return (
-      <div style={{ display: 'grid', gap: 6 }}>
-        {turnOrder.map((teamId) => {
-          const livesLeft = lives[teamId] ?? (Object.keys(lives).length <= 2 ? 1 : 2);
-          return (
-            <div
-              key={`potato-life-${teamId}`}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 10px',
-                borderRadius: 12,
-                border: teamId === potatoState?.activeTeamId ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(15,23,42,0.65)'
-              }}
-            >
-              <span>{scoreboardLookup[teamId]?.name || teamId}</span>
-              <span style={{ fontWeight: 800 }}>{'?'.repeat(Math.max(1, livesLeft))}</span>
-            </div>
-          );
-        })}
-      </div>
-    );
-    }
-
-    return (
-      <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
-        <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
-          <span>{heading}</span>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>
-            {language === 'en' ? 'Round' : 'Runde'} {roundLabel}
-          </span>
-        </div>
-
-        {phase === 'BANNING' && (
-          <>
-            <p style={mutedText}>
-              {language === 'de'
-                ? 'Teams bannen Themen vor dem Finale. Beobachtet, welche Themen übrig bleiben.'
-                : language === 'both'
-                ? 'Teams bannen Themen / Teams are banning topics.'
-                : 'Teams are banning topics before the final.'}
-            </p>
-            {renderThemes()}
-            <div style={{ display: 'grid', gap: 6 }}>
-              {sortedScoreboard.map((team) => {
-                const limit = banLimits[team.id] ?? 0;
-                return (
-                  <div
-                    key={`ban-${team.id}`}
-                    style={{
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 12,
-                      padding: '8px 10px',
-                      background: 'rgba(2,6,23,0.6)'
-                    }}
-                  >
-                    <div style={{ fontWeight: 700 }}>{team.name}</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                      {language === 'en' ? 'Bans' : language === 'both' ? 'Bans / Verbote' : 'Bans'} ({limit}):
-                      {' '}
-                      {bans[team.id]?.length ? bans[team.id].join(', ') : '?'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {phase === 'PLAYING' && (
-          <>
-            <div style={{ ...pillLabel, justifyContent: 'flex-start', gap: 8 }}>
-              <span>{language === 'en' ? 'Topic' : language === 'both' ? 'Thema / Topic' : 'Thema'}:</span>
-              <strong>{potatoState.currentTheme || '?'}</strong>
-            </div>
-            <div style={{ fontWeight: 700 }}>
-              {language === 'en' ? 'Active team' : language === 'both' ? 'Team am Zug / Active team' : 'Team am Zug'}:{' '}
-              {activeTeamName || '?'}
-            </div>
-            <div style={{ color: potatoCountdown !== null && potatoCountdown <= 1 ? '#f87171' : '#cbd5e1' }}>
-              {potatoCountdown !== null ? `${Math.max(0, potatoCountdown)}s - ${infoCopy}` : infoCopy}
-            </div>
-            {potatoDeadlinePassed && (
-              <div
-                style={{
-                  ...pillSmall,
-                  background: 'rgba(248,113,113,0.18)',
-                  borderColor: 'rgba(248,113,113,0.4)',
-                  color: '#fecaca'
-                }}
-              >
-                {language === 'en' ? 'Time is up!' : language === 'both' ? 'Zeit abgelaufen / Time is up!' : 'Zeit abgelaufen!'}
-              </div>
-            )}
-            {renderLives()}
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              {language === 'en'
-                ? `${usedAnswers.length} answers already used.`
-                : language === 'both'
-                ? `${usedAnswers.length} Antworten genutzt / answers used.`
-                : `${usedAnswers.length} Antworten bereits genutzt.`}
-            </div>
-            {isActiveTeam ? (
-              <div style={{ display: 'grid', gap: 6 }}>
-                <label style={{ fontSize: 12, color: '#cbd5e1' }}>
-                  {language === 'en' ? 'Your answer' : language === 'both' ? 'Deine Antwort / Your answer' : 'Deine Antwort'}
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  <input
-                    ref={potatoInputRef}
-                    className="team-answer-input"
-                    style={{ ...inputStyle, flex: 1, minWidth: 200 }}
-                    value={potatoInput}
-                    disabled={potatoSubmitting || potatoDeadlinePassed}
-                    onChange={(e) => setPotatoInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        submitPotatoAnswer();
-                      }
-                    }}
-                    placeholder={inlineCopy('Antwort eintippen ...', 'Type your answer ...')}
-                  />
-                  <button
-                    style={{
-                      ...primaryButton,
-                      opacity: potatoSubmitting ? 0.7 : 1,
-                      minWidth: 130
-                    }}
-                    disabled={potatoSubmitting || potatoDeadlinePassed}
-                    onClick={submitPotatoAnswer}
-                  >
-                    {potatoSubmitting
-                      ? inlineCopy('Sende...', 'Sending...')
-                      : inlineCopy('Antwort senden', 'Submit answer')}
-                  </button>
-                </div>
-                {showPotatoOkToast && (
-                  <div
-                    style={{
-                      ...pillSmall,
-                      background: 'rgba(34,197,94,0.15)',
-                      borderColor: 'rgba(34,197,94,0.45)',
-                      color: '#bbf7d0',
-                      width: 'fit-content'
-                    }}
-                  >
-                    {inlineCopy('OK Gueltig!', 'OK Accepted!')}
-                  </div>
-                )}
-                {ownAttempt && (
-                  <div
-                    style={{
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 12,
-                      padding: '8px 10px',
-                      background: 'rgba(15,23,42,0.6)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                      <strong style={{ color: '#e2e8f0' }}>"{ownAttempt.text || '?'}"</strong>
-                      {attemptLabel && (
-                        <span
-                          style={{
-                            ...pillSmall,
-                            background: 'transparent',
-                            borderColor: attemptTone,
-                            color: attemptTone
-                          }}
-                        >
-                          {attemptLabel}
-                        </span>
-                      )}
-                    </div>
-                    {attemptMessage && (
-                      <div className="message-state message-info" style={{ fontSize: 13 }}>{attemptMessage}</div>
-                    )}
-                  </div>
-                )}
-                {potatoError && (
-                  <div className="message-state message-error" style={{ fontSize: 13 }}>{potatoError}</div>
-                )}
-              </div>
-            ) : (
-              <div
-                style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 12,
-                  padding: '8px 10px',
-                  background: 'rgba(2,6,23,0.5)',
-                  color: '#e2e8f0',
-                  fontSize: 13,
-                  fontWeight: 600
-                }}
-              >
-                {activeTeamName
-                  ? inlineCopy(
-                      `${activeTeamName} ist dran. Bereit halten!`,
-                      `${activeTeamName} is on the clock. Stand by!`
-                    )
-                  : inlineCopy('Ein anderes Team ist am Zug.', 'Another team is on the clock.')}
-              </div>
-            )}
-            {usedAnswers.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ ...pillLabel }}>
-                  {language === 'en'
-                    ? 'Already used'
-                    : language === 'both'
-                    ? 'Schon genannt / Already used'
-                    : 'Schon genannt'}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                  {usedAnswers.map((answer, idx) => (
-                    <span
-                      key={`potato-used-${idx}`}
-                      style={{
-                        ...pillSmall,
-                        background: 'rgba(148,163,184,0.18)',
-                        borderColor: 'rgba(148,163,184,0.4)',
-                        color: '#e2e8f0'
-                      }}
-                    >
-                      {answer}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {phase === 'ROUND_END' && (
-          <>
-            <div style={{ fontWeight: 700 }}>
-              {language === 'en'
-                ? 'Round finished'
-                : language === 'both'
-                ? 'Runde beendet / Round finished'
-                : 'Runde beendet'}
-            </div>
-            {lastWinner && (
-              <div style={{ color: '#bbf7d0', fontWeight: 700 }}>
-                {language === 'en' ? 'Winner' : language === 'both' ? 'Sieger / Winner' : 'Sieger'}: {lastWinner}
-              </div>
-            )}
-            {renderThemes()}
-            <p style={mutedText}>
-              {language === 'en'
-                ? 'Host prepares the next round.'
-                : language === 'both'
-                ? 'Host startet gleich die naechste Runde / Host prepares next round.'
-                : 'Host bereitet die naechste Runde vor.'}
-            </p>
-          </>
-        )}
-
-        {phase === 'DONE' && (
-          <div style={{ fontWeight: 700 }}>
-            {language === 'en'
-              ? 'Hot Potato finished. Await the awards!'
-              : language === 'both'
-              ? 'Finale beendet ? Awards gleich / Hot Potato finished.'
-              : 'Heisse Kartoffel beendet ? Awards gleich!'}
-          </div>
-        )}
-
-        {renderScoreboardBlock()}
-      </div>
-    );
-  }
 
   function submitBlitzAnswers() {
     if (!teamId || !socketRef.current) return;
@@ -2285,41 +1742,6 @@ function TeamView({ roomCode }: TeamViewProps) {
           setTimeout(() => setToast(null), 2000);
         } else {
           setBlitzSubmitted(true);
-        }
-      }
-    );
-  }
-
-  function submitPotatoAnswer() {
-    if (!teamId || !socketRef.current) return;
-    if (!potatoState || potatoState.phase !== 'PLAYING') {
-      setPotatoError(inlineCopy('Finale ist noch nicht aktiv.', 'Final stage has not started yet.'));
-      return;
-    }
-    if (potatoState.activeTeamId !== teamId) {
-      setPotatoError(
-        inlineCopy('Nur das aktive Team darf antworten.', 'Only the active team may answer right now.')
-      );
-      return;
-    }
-    if (potatoCountdown !== null && potatoCountdown <= 0) {
-      setPotatoError(inlineCopy('Zeit ist abgelaufen.', 'Time is up.'));
-      return;
-    }
-    const trimmed = potatoInput.trim();
-    if (!trimmed) {
-      setPotatoError(inlineCopy('Bitte gib eine Antwort ein.', 'Please enter an answer.'));
-      return;
-    }
-    setPotatoSubmitting(true);
-    setPotatoError(null);
-    socketRef.current.emit(
-      'team:submitPotatoAnswer',
-      { roomCode, teamId, text: trimmed },
-      (resp?: { error?: string }) => {
-        if (resp?.error) {
-          setPotatoSubmitting(false);
-          setPotatoError(resp.error);
         }
       }
     );
@@ -3396,9 +2818,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (gameState === 'BLITZ' || gameState.startsWith('BLITZ_')) {
       return renderBlitzStage();
     }
-    if (gameState === 'POTATO') {
-      return showPotatoUI ? renderPotatoStage() : renderWaiting(t('waitingMsg'));
-    }
     if (bingoEnabled && (showBingoPanel || canMarkBingo)) {
       return renderBingo();
     }
@@ -3461,7 +2880,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const canAnswer = questionAnsweringActive && !timeUp && !answerSubmitted;
   const waitForQuestionHeadline = gameState === 'LOBBY' ? t('waitingStart') : t('waitingMsg');
   const isLocked = gameState === 'Q_LOCKED';
-  const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isPotatoActiveTurn || isRundlaufActiveTurn;
+    const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isRundlaufActiveTurn;
   const hasTimer = Boolean(timerEndsAt && timerDuration > 0 && timerContextActive);
   const showTimerProgress = hasTimer && !isLocked && gameState === 'Q_ACTIVE';
   const viewState = socketError

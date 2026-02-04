@@ -2718,10 +2718,12 @@ function TeamView({ roomCode }: TeamViewProps) {
     const banLimit = teamId ? blitzState.banLimits?.[teamId] ?? 0 : 0;
     const banCount = teamId ? blitzState.bans?.[teamId]?.length ?? 0 : 0;
     const bansRemaining = Math.max(0, banLimit - banCount);
-    const banPhaseDone = banLimit === 0 || banCount >= banLimit;
+    const topBanLimit = blitzState.topTeamId ? blitzState.banLimits?.[blitzState.topTeamId] ?? 0 : 0;
+    const topBanCount = blitzState.topTeamId ? blitzState.bans?.[blitzState.topTeamId]?.length ?? 0 : 0;
+    const banPhaseDone = topBanLimit === 0 || topBanCount >= topBanLimit;
     const selectionLocked = Boolean(blitzState.pinnedTheme);
     const pickUnlocked = banPhaseDone;
-    const canShowBan = isTopTeam && !selectionLocked && !pickUnlocked;
+    const canShowBan = isTopTeam && !selectionLocked && !banPhaseDone;
     const canShowPick = isLastTeam && pickUnlocked && !selectionLocked;
     if (phase === 'READY') {
       return (

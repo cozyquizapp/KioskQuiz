@@ -268,6 +268,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
+  const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
@@ -581,6 +582,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.scores) {
         setScoreboard(payload.scores);
+      }
+      if (payload.teamStatus) {
+        setTeamStatus(payload.teamStatus);
       }
       if (payload.blitz !== undefined) {
         setBlitzState(payload.blitz ?? null);
@@ -1712,6 +1716,37 @@ function TeamView({ roomCode }: TeamViewProps) {
           <br />
           {formatSubmittedAnswer(answer)}
         </p>
+      )}
+      {/* Show other teams' answers during evaluation */}
+      {evaluating && teamStatus && teamStatus.length > 1 && (
+        <div style={{ marginTop: 16 }}>
+          <span style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 8 }}>
+            {language === 'de' ? 'Andere Teams:' : 'Other teams:'}
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {teamStatus
+              .filter(t => t.id !== teamId && t.answer !== undefined)
+              .map(team => (
+                <div
+                  key={team.id}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: 13
+                  }}
+                >
+                  <div style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 2 }}>
+                    {team.name}
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: 12 }}>
+                    {formatSubmittedAnswer(team.answer)}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
       )}
       {resultMessage && <div className="message-state message-accent">{resultMessage}</div>}
       {resultPoints !== null && (

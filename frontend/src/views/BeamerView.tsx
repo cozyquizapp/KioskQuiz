@@ -1529,64 +1529,133 @@ useEffect(() => {
     );
   };
 
+  const formatTeamAnswer = (answer: any): string => {
+    if (!question || answer === null || answer === undefined) return '-';
+    
+    if (question.mechanic === 'multipleChoice') {
+      const q = question as any;
+      const opts = q.options || [];
+      const num = typeof answer === 'number' ? answer : typeof answer === 'string' && answer.trim() !== '' && !Number.isNaN(Number(answer)) ? Number(answer) : null;
+      if (num !== null && num >= 0 && num < opts.length) {
+        const letter = String.fromCharCode(65 + num);
+        return `${letter} – ${opts[num]}`;
+      }
+    }
+    
+    if (question.mechanic === 'trueFalse') {
+      if (answer === true || answer === 'true') return language === 'de' ? 'Wahr' : 'True';
+      if (answer === false || answer === 'false') return language === 'de' ? 'Falsch' : 'False';
+    }
+    
+    if (typeof answer === 'string') return answer;
+    if (typeof answer === 'number') return String(answer);
+    if (Array.isArray(answer)) return answer.join(', ');
+    if (typeof answer === 'object' && 'order' in answer && Array.isArray(answer.order)) {
+      return answer.order.join(' → ');
+    }
+    return JSON.stringify(answer);
+  };
+
   const renderTeamAnswersSection = (): JSX.Element | null => {
-    if (!answerResults?.length) return null;
+    // Use answerResults if available (phase=reveal with full evaluation)
+    if (answerResults?.length) {
+      return (
+        <div className="beamer-stack">
+          <div className="beamer-label">
+            {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
+          </div>
+          <div className="beamer-scoreboard-grid">
+            {answerResults.map((entry, idx) => {
+              const answerText = (() => {
+                if (entry.answer === null || entry.answer === undefined) return '-';
+                if (typeof entry.answer === 'string') return entry.answer;
+                if (typeof entry.answer === 'number') return String(entry.answer);
+                if (Array.isArray(entry.answer)) return entry.answer.join(', ');
+                if (typeof entry.answer === 'object') {
+                  if ('order' in entry.answer && Array.isArray(entry.answer.order)) {
+                    return entry.answer.order.join(' → ');
+                  }
+                  return JSON.stringify(entry.answer);
+                }
+                return String(entry.answer);
+              })();
+              const isCorrect = entry.isCorrect === true;
+              const backgroundColor = isCorrect 
+                ? 'rgba(34,197,94,0.12)' 
+                : entry.isCorrect === false
+                ? 'rgba(239,68,68,0.12)'
+                : 'rgba(107,114,128,0.12)';
+              const borderColor = isCorrect 
+                ? 'rgba(34,197,94,0.3)' 
+                : entry.isCorrect === false
+                ? 'rgba(239,68,68,0.3)'
+                : 'rgba(107,114,128,0.3)';
+              return (
+                <div
+                  key={`team-answer-${entry.teamId}-${idx}`}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    border: `1px solid ${borderColor}`,
+                    background: backgroundColor,
+                    color: '#e2e8f0',
+                    willChange: 'transform, opacity',
+                    animation: `${isCorrect ? 'correctGlow 0.8s ease-out, ' : ''}beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                    animationDelay: `${idx * 80}ms`,
+                    animationFillMode: 'backwards'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div>
+                      <strong>{entry.teamName || entry.teamId}</strong>
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, wordBreak: 'break-word' }}>
+                        {answerText}
+                      </div>
+                    </div>
+                    <div>
+                      {isCorrect && <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>}
+                      {entry.isCorrect === false && <span style={{ color: '#ef4444', fontWeight: 700 }}>✗</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    
+    // Otherwise, show answers from teamStatus during evaluation phase
+    const teamsWithAnswers = teamStatus?.filter(t => t.answer !== undefined) || [];
+    if (!teamsWithAnswers.length) return null;
+    
     return (
       <div className="beamer-stack">
         <div className="beamer-label">
           {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
         </div>
         <div className="beamer-scoreboard-grid">
-          {answerResults.map((entry, idx) => {
-            const answerText = (() => {
-              if (entry.answer === null || entry.answer === undefined) return '-';
-              if (typeof entry.answer === 'string') return entry.answer;
-              if (typeof entry.answer === 'number') return String(entry.answer);
-              if (Array.isArray(entry.answer)) return entry.answer.join(', ');
-              if (typeof entry.answer === 'object') {
-                if ('order' in entry.answer && Array.isArray(entry.answer.order)) {
-                  return entry.answer.order.join(' → ');
-                }
-                return JSON.stringify(entry.answer);
-              }
-              return String(entry.answer);
-            })();
-            const isCorrect = entry.isCorrect === true;
-            const backgroundColor = isCorrect 
-              ? 'rgba(34,197,94,0.12)' 
-              : entry.isCorrect === false
-              ? 'rgba(239,68,68,0.12)'
-              : 'rgba(107,114,128,0.12)';
-            const borderColor = isCorrect 
-              ? 'rgba(34,197,94,0.3)' 
-              : entry.isCorrect === false
-              ? 'rgba(239,68,68,0.3)'
-              : 'rgba(107,114,128,0.3)';
+          {teamsWithAnswers.map((team, idx) => {
+            const answerText = formatTeamAnswer(team.answer);
             return (
               <div
-                key={`team-answer-${entry.teamId}-${idx}`}
+                key={`team-answer-${team.id}-${idx}`}
                 style={{
                   padding: '12px 14px',
                   borderRadius: 12,
-                  border: `1px solid ${borderColor}`,
-                  background: backgroundColor,
+                  border: '1px solid rgba(107,114,128,0.3)',
+                  background: 'rgba(107,114,128,0.12)',
                   color: '#e2e8f0',
                   willChange: 'transform, opacity',
-                  animation: `${isCorrect ? 'correctGlow 0.8s ease-out, ' : ''}beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                  animation: 'beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   animationDelay: `${idx * 80}ms`,
                   animationFillMode: 'backwards'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <div>
-                    <strong>{entry.teamName || entry.teamId}</strong>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, wordBreak: 'break-word' }}>
-                      {answerText}
-                    </div>
-                  </div>
-                  <div>
-                    {isCorrect && <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>}
-                    {entry.isCorrect === false && <span style={{ color: '#ef4444', fontWeight: 700 }}>✗</span>}
+                <div>
+                  <strong>{team.name || team.id}</strong>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, wordBreak: 'break-word' }}>
+                    {answerText}
                   </div>
                 </div>
               </div>

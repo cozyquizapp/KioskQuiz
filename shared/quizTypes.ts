@@ -575,6 +575,7 @@ export type TeamStatusSnapshot = {
   connected: boolean;
   submitted: boolean;
   isReady?: boolean;
+  answer?: any; // The submitted answer value (only included during reveal/evaluation)
 };
 
 export type StateUpdatePayload = {

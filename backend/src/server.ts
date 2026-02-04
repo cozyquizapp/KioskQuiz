@@ -3718,7 +3718,9 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     name: team.name,
     connected: connectedTeamIds.includes(team.id),
     submitted: Boolean(room.answers[team.id]),
-    isReady: team.isReady
+    isReady: team.isReady,
+    // Include the answer during reveal/evaluation so everyone can see what each team chose
+    answer: includeResults && room.answers[team.id] ? room.answers[team.id].value : undefined
   }));
   const results = includeResults
     ? Object.entries(room.answers).map(([teamId, entry]) => ({

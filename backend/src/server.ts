@@ -5860,6 +5860,15 @@ io.on('connection', (socket: Socket) => {
       if (room.blitzPhase !== 'READY' && room.blitzPhase !== 'BANNING') {
         throw new Error('Blitz ist nicht bereit');
       }
+      // Reset selection state to allow new picks/bans
+      room.blitzBans = {};
+      const standings = getTeamStandings(room);
+      room.blitzTopTeamId = standings[0]?.id ?? null;
+      room.blitzLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
+      const BAN_LIMIT = 2; // always two bans for the top team
+      room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: BAN_LIMIT } : {};
+      room.blitzPinnedTheme = null;
+      
       room.blitzPhase = 'BANNING';
       applyRoomState(room, { type: 'FORCE', next: 'BLITZ_BANNING' });
       broadcastState(room);

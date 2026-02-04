@@ -1719,32 +1719,54 @@ function TeamView({ roomCode }: TeamViewProps) {
       )}
       {/* Show other teams' answers during evaluation */}
       {evaluating && teamStatus && teamStatus.length > 1 && (
-        <div style={{ marginTop: 16 }}>
-          <span style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 8 }}>
-            {language === 'de' ? 'Andere Teams:' : 'Other teams:'}
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
+            {language === 'de' ? 'Andere Teams' : 'Other teams'}
           </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {teamStatus
               .filter(t => t.id !== teamId && t.answer !== undefined)
-              .map(team => (
-                <div
-                  key={team.id}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    fontSize: 13
-                  }}
-                >
-                  <div style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 2 }}>
-                    {team.name}
+              .map((team, idx) => {
+                const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
+                const accentColor = colors[idx % colors.length];
+                return (
+                  <div
+                    key={team.id}
+                    style={{
+                      padding: '14px',
+                      borderRadius: 12,
+                      background: 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${accentColor}22`,
+                      borderLeft: `3px solid ${accentColor}`,
+                      transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      animation: 'beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      animationDelay: `${idx * 80}ms`,
+                      animationFillMode: 'backwards',
+                      cursor: 'default'
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                      (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}44`;
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 24px rgba(0,0,0,0.3)`;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                      (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}22`;
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{ color: accentColor, fontWeight: 700, marginBottom: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.3px' }}>
+                      <span style={{ fontSize: 18 }}>●</span>
+                      {team.name}
+                    </div>
+                    <div style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 24, fontWeight: 500 }}>
+                      {formatSubmittedAnswer(team.answer)}
+                    </div>
                   </div>
-                  <div style={{ color: '#94a3b8', fontSize: 12 }}>
-                    {formatSubmittedAnswer(team.answer)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       )}
@@ -1890,26 +1912,54 @@ function TeamView({ roomCode }: TeamViewProps) {
     const isEliminated = state.eliminatedTeamIds?.includes(teamId);
     const winners = state.roundWinners || [];
     const winnerNames = winners.map((id) => scoreboardLookup[id]?.name || id).join(', ');
+    const medals = ['🥇', '🥈', '🥉'];
     const scoreboardBlock = (
       <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
-        {sortedScoreboard.map((entry, idx) => (
-          <div
-            key={`rundlauf-score-${entry.id}`}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              gap: 10,
-              padding: '8px 10px',
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(2,6,23,0.6)'
-            }}
-          >
-            <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
-            <span>{entry.name}</span>
-            <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
-          </div>
-        ))}
+        {sortedScoreboard.map((entry, idx) => {
+          const medal = medals[idx] || '';
+          const colors = ['#fbbf24', '#e5e7eb', '#f97316'];
+          const medalColor = colors[idx] || '#94a3b8';
+          return (
+            <div
+              key={`rundlauf-score-${entry.id}`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto auto 1fr auto',
+                gap: 10,
+                padding: '10px 12px',
+                borderRadius: 12,
+                border: idx < 3 ? `1.5px solid ${medalColor}44` : '1px solid rgba(255,255,255,0.08)',
+                background: idx < 3 ? `${medalColor}11` : 'rgba(2,6,23,0.6)',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                animation: `slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                animationDelay: `${idx * 60}ms`,
+                animationFillMode: 'backwards'
+              }}
+              onMouseEnter={(e) => {
+                if (idx < 3) {
+                  (e.currentTarget as HTMLElement).style.borderColor = `${medalColor}88`;
+                  (e.currentTarget as HTMLElement).style.background = `${medalColor}22`;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (idx < 3) {
+                  (e.currentTarget as HTMLElement).style.borderColor = `${medalColor}44`;
+                  (e.currentTarget as HTMLElement).style.background = `${medalColor}11`;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <span style={{ fontSize: 18, fontWeight: 900 }}>{medal || idx + 1}</span>
+              <span style={{ fontWeight: 800, color: medal ? medalColor : '#e2e8f0' }}>
+                {idx < 3 ? idx + 1 : idx + 1}
+              </span>
+              <span style={{ color: '#e2e8f0' }}>{entry.name}</span>
+              <span style={{ fontWeight: 800, color: medal ? medalColor : '#94a3b8' }}>{entry.score ?? 0}</span>
+            </div>
+          );
+        })}
       </div>
     );
 

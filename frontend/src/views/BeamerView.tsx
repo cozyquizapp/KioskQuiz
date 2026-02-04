@@ -1634,29 +1634,45 @@ useEffect(() => {
         <div className="beamer-label">
           {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
         </div>
-        <div className="beamer-scoreboard-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
           {teamsWithAnswers.map((team, idx) => {
+            const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
+            const accentColor = colors[idx % colors.length];
             const answerText = formatTeamAnswer(team.answer);
             return (
               <div
                 key={`team-answer-${team.id}-${idx}`}
                 style={{
-                  padding: '12px 14px',
+                  padding: '14px 16px',
                   borderRadius: 12,
-                  border: '1px solid rgba(107,114,128,0.3)',
-                  background: 'rgba(107,114,128,0.12)',
+                  border: `1.5px solid ${accentColor}22`,
+                  borderLeft: `4px solid ${accentColor}`,
+                  background: 'rgba(255,255,255,0.04)',
                   color: '#e2e8f0',
                   willChange: 'transform, opacity',
                   animation: 'beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   animationDelay: `${idx * 80}ms`,
-                  animationFillMode: 'backwards'
+                  animationFillMode: 'backwards',
+                  transition: 'all 0.3s ease',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}44`;
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}22`;
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
                 }}
               >
-                <div>
-                  <strong>{team.name || team.id}</strong>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, wordBreak: 'break-word' }}>
-                    {answerText}
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>●</span>
+                  <strong style={{ color: accentColor, fontSize: 14 }}>{team.name || team.id}</strong>
+                </div>
+                <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 20 }}>
+                  {answerText}
                 </div>
               </div>
             );
@@ -1909,21 +1925,94 @@ useEffect(() => {
 
 
 
-  const renderCozyAwardsContent = (): JSX.Element => (
-    <div className="beamer-stack">
-      <div className="beamer-intro-card">
-        <h2>{language === 'de' ? 'Siegerehrung' : language === 'both' ? 'Siegerehrung / Awards' : 'Awards'}</h2>
-        <p>
-          {language === 'de'
-            ? 'Top Teams des Abends'
-            : language === 'both'
-            ? 'Top Teams des Abends / Top teams tonight'
-            : 'Top teams tonight'}
-        </p>
+  const renderCozyAwardsContent = (): JSX.Element => {
+    const medals = ['🥇', '🥈', '🥉'];
+    return (
+      <div className="beamer-stack">
+        <div className="beamer-intro-card">
+          <h2>{language === 'de' ? 'Siegerehrung' : language === 'both' ? 'Siegerehrung / Awards' : 'Awards'}</h2>
+          <p>
+            {language === 'de'
+              ? 'Top Teams des Abends'
+              : language === 'both'
+              ? 'Top Teams des Abends / Top teams tonight'
+              : 'Top teams tonight'}
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 20 }}>
+          {sortedScoreTeams.slice(0, 3).map((team, idx) => {
+            const medal = medals[idx];
+            const colors = ['#fbbf24', '#e5e7eb', '#f97316'];
+            const color = colors[idx];
+            return (
+              <div
+                key={team.id}
+                style={{
+                  padding: '20px 16px',
+                  borderRadius: 16,
+                  background: `${color}12`,
+                  border: `2px solid ${color}`,
+                  textAlign: 'center',
+                  animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                  animationDelay: `${idx * 100}ms`,
+                  animationFillMode: 'backwards',
+                  transform: idx === 0 ? 'scale(1.08)' : 'scale(1)'
+                }}
+              >
+                <div style={{ fontSize: 48, marginBottom: 8 }}>
+                  {medal}
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 900, color, marginBottom: 4 }}>
+                  {idx + 1}.
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>
+                  {team.name}
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 900, background: `linear-gradient(135deg, ${color}, ${color}dd)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  {team.score}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {sortedScoreTeams.length > 3 && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12, fontWeight: 600 }}>
+              {language === 'de' ? 'Weitere Platzierungen' : 'Other rankings'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+              {sortedScoreTeams.slice(3).map((team, idx) => (
+                <div
+                  key={team.id}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                    animationDelay: `${(idx + 3) * 80}ms`,
+                    animationFillMode: 'backwards'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>
+                      {idx + 4}. {team.name}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#94a3b8' }}>
+                    {team.score}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true })}
-    </div>
-  );
+    );
+  };
   const renderCozyScene = () => {
     const sceneKey = `${gameState}-${question?.id ?? 'none'}-${blitz?.phase ?? 'idle'}-${rundlauf?.roundIndex ?? 'nr'}`;
     const baseFrameProps: FrameBaseProps = {
@@ -2099,13 +2188,38 @@ useEffect(() => {
               <div className="cozyQuestionBody">{renderHeroBody()}</div>
               {phase !== 'reveal' && teamStatus?.length > 0 && (
                 <div className="cozyTeamStatusBar">
-                  {teamStatus.map((team) => (
-                    <div key={team.id} className="cozyTeamStatusChip">
-                      <span className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`} />
-                      <span className="cozyTeamStatusName">{team.name || 'Team'}</span>
-                      <span className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`} />
-                    </div>
-                  ))}
+                  {teamStatus.map((team, idx) => {
+                    const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
+                    const accentColor = colors[idx % colors.length];
+                    return (
+                      <div 
+                        key={team.id} 
+                        className="cozyTeamStatusChip"
+                        style={{
+                          animation: team.submitted ? `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none',
+                          borderLeft: `3px solid ${accentColor}`,
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <span 
+                          className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
+                          style={{ backgroundColor: accentColor }}
+                        />
+                        <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 600 }}>
+                          {team.name || 'Team'}
+                        </span>
+                        <span 
+                          className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`}
+                          style={{ 
+                            backgroundColor: team.submitted ? accentColor : 'transparent',
+                            animation: team.submitted ? `pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none'
+                          }}
+                        >
+                          {team.submitted && '✓'}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

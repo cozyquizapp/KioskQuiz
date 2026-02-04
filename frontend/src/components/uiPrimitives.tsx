@@ -62,16 +62,19 @@ export const PrimaryButton = ({
   <button
     {...rest}
     disabled={disabled}
+    className="primary-button"
     style={{
       ...primaryBase,
       opacity: disabled ? 0.6 : 1,
       cursor: disabled ? 'not-allowed' : 'pointer',
+      position: 'relative',
+      overflow: 'hidden',
       ...style
     }}
     onMouseEnter={(e) => {
       if (!disabled) {
-        (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)';
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-3px) scale(1.02)';
+        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 32px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.2)';
       }
     }}
     onMouseLeave={(e) => {

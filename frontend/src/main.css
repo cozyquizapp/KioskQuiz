@@ -549,6 +549,127 @@ img {
   }
 }
 
+/* ========================================
+   ULTRA-MODERN 2026 ANIMATIONS
+   ======================================== */
+
+/* Confetti particles */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-spin {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+/* 3D Card Flip */
+@keyframes flip-in-3d {
+  0% {
+    transform: perspective(1000px) rotateY(-90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: perspective(1000px) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+/* Neon Glow Pulse */
+@keyframes neon-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor,
+                0 0 10px currentColor,
+                0 0 20px currentColor,
+                0 0 40px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 10px currentColor,
+                0 0 20px currentColor,
+                0 0 40px currentColor,
+                0 0 80px currentColor;
+  }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Particle burst */
+@keyframes particle-burst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Gradient flow */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Cyber scan */
+@keyframes cyber-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Bounce scale */
+@keyframes bounce-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* Shake celebration */
+@keyframes shake-celebrate {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg); }
+  20%, 40%, 60%, 80% { transform: rotate(5deg); }
+}
+
+/* Float up particles */
+@keyframes float-up-fade {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+}
+
 /* Team status bar improvements */
 .cozyTeamStatusBar {
   display: flex;
@@ -631,10 +752,32 @@ img {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: left 0.5s ease-in-out;
   pointer-events: none;
+  z-index: 1;
 }
 
 .primary-button:hover::before {
   left: 100%;
+}
+
+/* Ripple effect on click */
+.primary-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.primary-button:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+  transition: width 0.6s ease-out, height 0.6s ease-out, opacity 0.6s ease-out;
 }
 
 /* Team answers grid improvements */
@@ -680,6 +823,96 @@ img {
   WebkitBackgroundClip: text;
   WebkitTextFillColor: transparent;
   backgroundClip: text;
+}
+
+/* Ultra-modern neon effects */
+.neon-gold {
+  color: #fbbf24;
+  text-shadow: 0 0 10px #fbbf24,
+               0 0 20px #fbbf24,
+               0 0 40px #fbbf24;
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-silver {
+  color: #e5e7eb;
+  text-shadow: 0 0 10px #fff,
+               0 0 20px #fff,
+               0 0 40px #cbd5e1;
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-bronze {
+  color: #f97316;
+  text-shadow: 0 0 10px #f97316,
+               0 0 20px #f97316,
+               0 0 40px #f97316;
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+/* 3D Transform cards */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-3d:hover {
+  transform: perspective(1000px) rotateY(5deg) rotateX(5deg) translateZ(20px);
+}
+
+/* Gradient mesh background */
+.gradient-mesh {
+  background: linear-gradient(45deg, #6366f1, #ec4899, #14b8a6, #f59e0b);
+  background-size: 400% 400%;
+  animation: gradient-flow 15s ease infinite;
+}
+
+/* Cyber scan effect */
+.cyber-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-scan::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  animation: cyber-scan 3s linear infinite;
+  opacity: 0.5;
+  z-index: 10;
+}
+
+/* Particle container */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: float-up-fade 2s ease-out forwards;
+}
+
+/* Glass morphism 2.0 */
+.glass-ultra {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 /* Results screen enhancements */

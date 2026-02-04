@@ -29,6 +29,7 @@ import { loadPlayDraft } from '../utils/draft';
 import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
+import { Confetti, ParticleEffect } from '../components/Confetti';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -247,6 +248,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState(0);
   const [lobbyHighlightIndex, setLobbyHighlightIndex] = useState(0);
   const [evaluating, setEvaluating] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [answerVisible, setAnswerVisible] = useState(false);
   const [solution, setSolution] = useState<string | undefined>(undefined);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -261,7 +263,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
 
   const [revealStamp, setRevealStamp] = useState(0);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [estimateDisplay, setEstimateDisplay] = useState<string | null>(null);
   const [muChoHopIndex, setMuChoHopIndex] = useState<number | null>(null);
   const [muChoLockedIndex, setMuChoLockedIndex] = useState<number | null>(null);
@@ -1634,7 +1635,7 @@ useEffect(() => {
         <div className="beamer-label">
           {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {teamsWithAnswers.map((team, idx) => {
             const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
             const accentColor = colors[idx % colors.length];
@@ -1642,36 +1643,66 @@ useEffect(() => {
             return (
               <div
                 key={`team-answer-${team.id}-${idx}`}
+                className="card-3d glass-ultra"
                 style={{
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  border: `1.5px solid ${accentColor}22`,
-                  borderLeft: `4px solid ${accentColor}`,
-                  background: 'rgba(255,255,255,0.04)',
+                  padding: '16px 18px',
+                  borderRadius: 14,
+                  border: `2px solid ${accentColor}33`,
+                  borderLeft: `5px solid ${accentColor}`,
                   color: '#e2e8f0',
                   willChange: 'transform, opacity',
-                  animation: 'beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  animationDelay: `${idx * 80}ms`,
+                  animation: 'flip-in-3d 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  animationDelay: `${idx * 100}ms`,
                   animationFillMode: 'backwards',
-                  transition: 'all 0.3s ease',
-                  cursor: 'default'
+                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  cursor: 'default',
+                  boxShadow: `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`,
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}44`;
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}66`;
+                  (e.currentTarget as HTMLElement).style.transform = 'perspective(1000px) translateY(-8px) rotateX(5deg)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${accentColor}44, 0 12px 32px rgba(0,0,0,0.4)`;
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}22`;
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}33`;
+                  (e.currentTarget as HTMLElement).style.transform = 'perspective(1000px) translateY(0) rotateX(0deg)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`;
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>●</span>
-                  <strong style={{ color: accentColor, fontSize: 14 }}>{team.name || team.id}</strong>
+                {/* Accent glow bar */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+                  opacity: 0.6
+                }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ 
+                    fontSize: 16, 
+                    fontWeight: 700, 
+                    color: accentColor, 
+                    textShadow: `0 0 10px ${accentColor}88` 
+                  }}>●</span>
+                  <strong style={{ 
+                    color: accentColor, 
+                    fontSize: 16, 
+                    fontWeight: 800,
+                    letterSpacing: '0.3px'
+                  }}>{team.name || team.id}</strong>
                 </div>
-                <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 20 }}>
+                <div style={{ 
+                  fontSize: 14, 
+                  color: '#e2e8f0', 
+                  lineHeight: 1.6, 
+                  wordBreak: 'break-word', 
+                  paddingLeft: 26,
+                  fontWeight: 500
+                }}>
                   {answerText}
                 </div>
               </div>
@@ -1927,11 +1958,30 @@ useEffect(() => {
 
   const renderCozyAwardsContent = (): JSX.Element => {
     const medals = ['🥇', '🥈', '🥉'];
+    
+    // Trigger confetti when awards are shown
+    useEffect(() => {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 5000);
+      return () => clearTimeout(timer);
+    }, []);
+
     return (
-      <div className="beamer-stack">
-        <div className="beamer-intro-card">
-          <h2>{language === 'de' ? 'Siegerehrung' : language === 'both' ? 'Siegerehrung / Awards' : 'Awards'}</h2>
-          <p>
+      <div className="beamer-stack" style={{ position: 'relative' }}>
+        <Confetti active={showConfetti} duration={5000} />
+        <div className="beamer-intro-card gradient-mesh" style={{ 
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1), rgba(20, 184, 166, 0.1))',
+          backgroundSize: '200% 200%',
+          animation: 'gradient-flow 8s ease infinite'
+        }}>
+          <h2 style={{ 
+            fontSize: 42, 
+            marginBottom: 8,
+            animation: 'shake-celebrate 0.5s ease-in-out'
+          }}>
+            {language === 'de' ? '🎉 Siegerehrung 🎉' : language === 'both' ? '🎉 Siegerehrung / Awards 🎉' : '🎉 Awards 🎉'}
+          </h2>
+          <p style={{ fontSize: 18, opacity: 0.9 }}>
             {language === 'de'
               ? 'Top Teams des Abends'
               : language === 'both'
@@ -1943,32 +1993,58 @@ useEffect(() => {
           {sortedScoreTeams.slice(0, 3).map((team, idx) => {
             const medal = medals[idx];
             const colors = ['#fbbf24', '#e5e7eb', '#f97316'];
+            const neonClasses = ['neon-gold', 'neon-silver', 'neon-bronze'];
             const color = colors[idx];
+            const neonClass = neonClasses[idx];
             return (
               <div
                 key={team.id}
+                className="card-3d glass-ultra"
                 style={{
-                  padding: '20px 16px',
-                  borderRadius: 16,
-                  background: `${color}12`,
+                  padding: '24px 20px',
+                  borderRadius: 20,
+                  background: `linear-gradient(135deg, ${color}18, ${color}08)`,
                   border: `2px solid ${color}`,
                   textAlign: 'center',
-                  animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`,
-                  animationDelay: `${idx * 100}ms`,
+                  animation: `flip-in-3d 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), bounce-scale 2s ease-in-out ${idx * 0.2}s infinite`,
+                  animationDelay: `${idx * 150}ms, ${idx * 0.2}s`,
                   animationFillMode: 'backwards',
-                  transform: idx === 0 ? 'scale(1.08)' : 'scale(1)'
+                  transform: idx === 0 ? 'scale(1.1)' : 'scale(1)',
+                  boxShadow: `0 0 30px ${color}44, 0 8px 32px rgba(0,0,0,0.3)`,
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
-                <div style={{ fontSize: 48, marginBottom: 8 }}>
+                {/* Cyber scan effect for winner */}
+                {idx === 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+                    animation: 'cyber-scan 2s linear infinite',
+                    opacity: 0.7
+                  }} />
+                )}
+                <div style={{ fontSize: 56, marginBottom: 12, filter: `drop-shadow(0 0 10px ${color})` }}>
                   {medal}
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 900, color, marginBottom: 4 }}>
+                <div className={neonClass} style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
                   {idx + 1}.
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#f8fafc', marginBottom: 14, textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
                   {team.name}
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 900, background: `linear-gradient(135deg, ${color}, ${color}dd)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                <div style={{ 
+                  fontSize: 36, 
+                  fontWeight: 900, 
+                  background: `linear-gradient(135deg, ${color}, ${color}cc)`, 
+                  WebkitBackgroundClip: 'text', 
+                  WebkitTextFillColor: 'transparent',
+                  filter: `drop-shadow(0 0 8px ${color}88)`
+                }}>
                   {team.score}
                 </div>
               </div>
@@ -1984,11 +2060,10 @@ useEffect(() => {
               {sortedScoreTeams.slice(3).map((team, idx) => (
                 <div
                   key={team.id}
+                  className="glass-ultra"
                   style={{
                     padding: '12px 14px',
                     borderRadius: 10,
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.1)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',

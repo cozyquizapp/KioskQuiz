@@ -2725,6 +2725,23 @@ function TeamView({ roomCode }: TeamViewProps) {
     const pickUnlocked = banPhaseDone;
     const canShowBan = isTopTeam && !selectionLocked && !banPhaseDone;
     const canShowPick = isLastTeam && pickUnlocked && !selectionLocked;
+    // Debug logging for Blitz pick button issue
+    if (isLastTeam && blitzState.phase === 'BANNING') {
+      console.log('[BLITZ PICK DEBUG]', {
+        isLastTeam,
+        teamId,
+        lastTeamId: blitzState.lastTeamId,
+        topTeamId: blitzState.topTeamId,
+        topBanLimit,
+        topBanCount,
+        banPhaseDone,
+        selectionLocked,
+        pickUnlocked,
+        canShowPick,
+        banLimits: blitzState.banLimits,
+        bans: blitzState.bans
+      });
+    }
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>

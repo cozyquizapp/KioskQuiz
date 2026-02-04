@@ -799,10 +799,31 @@ function ModeratorPage(): React.ReactElement {
       setShowJoinScreen(false);
       return;
     }
-    setRoomCode('');
-    setRoomInput('');
-    localStorage.removeItem('moderatorRoom');
-    setShowJoinScreen(false);
+    // Send explicit end-quiz event to server to disconnect all teams
+    if (roomCode) {
+      const emitted = emitHost('host:endQuiz', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+        if (!resp?.ok) {
+          console.error('Failed to end quiz:', resp?.error);
+        }
+        // Clear local state regardless
+        setRoomCode('');
+        setRoomInput('');
+        localStorage.removeItem('moderatorRoom');
+        setShowJoinScreen(false);
+      });
+      if (!emitted) {
+        // Fallback if socket not available
+        setRoomCode('');
+        setRoomInput('');
+        localStorage.removeItem('moderatorRoom');
+        setShowJoinScreen(false);
+      }
+    } else {
+      setRoomCode('');
+      setRoomInput('');
+      localStorage.removeItem('moderatorRoom');
+      setShowJoinScreen(false);
+    }
   };
 
   const handleCreateSession = async () => {

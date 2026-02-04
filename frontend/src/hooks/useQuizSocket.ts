@@ -147,6 +147,14 @@ export const useQuizSocket = (roomCode: string) => {
 
     const onEvaluationStarted = () => setEvents((prev) => ({ ...prev, questionPhase: 'evaluated' }));
     const onEvaluationRevealed = () => setEvents((prev) => ({ ...prev, questionPhase: 'revealed' }));
+    const onQuizEnded = ({ reason }: { reason?: string }) => {
+      // Disable reconnection by clearing the socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      // Signal to UI that quiz has ended
+      setEvents((prev) => ({ ...prev, gameState: 'QUIZ_ENDED' as any }));
+    };
     const onTimerStarted = ({ endsAt }: { endsAt: number }) =>
       setEvents((prev) => ({ ...prev, timerEndsAt: endsAt }));
     const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null }));
@@ -225,6 +233,7 @@ export const useQuizSocket = (roomCode: string) => {
     socket.on('teamResult', onTeamResult);
     socket.on('evaluation:started', onEvaluationStarted);
     socket.on('evaluation:revealed', onEvaluationRevealed);
+    socket.on('quizEnded', onQuizEnded);
     socket.on('timerStarted', onTimerStarted);
     socket.on('timerStopped', onTimerStopped);
     socket.on('server:stateUpdate', onStateUpdate);
@@ -242,6 +251,7 @@ export const useQuizSocket = (roomCode: string) => {
       socket.off('teamResult', onTeamResult);
       socket.off('evaluation:started', onEvaluationStarted);
       socket.off('evaluation:revealed', onEvaluationRevealed);
+      socket.off('quizEnded', onQuizEnded);
       socket.off('timerStarted', onTimerStarted);
       socket.off('timerStopped', onTimerStopped);
       socket.off('server:stateUpdate', onStateUpdate);

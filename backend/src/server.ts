@@ -5996,6 +5996,25 @@ io.on('connection', (socket: Socket) => {
     });
   });
 
+  socket.on('host:endQuiz', (payload: { roomCode?: string }, ack?: AckFn) => {
+    try {
+      const code = payload?.roomCode;
+      if (!code) throw new Error('roomCode fehlt');
+      const room = rooms.get(code);
+      if (!room) throw new Error('Room nicht gefunden');
+      // Broadcast to all connected clients in this room that quiz has ended
+      io.to(code).emit('quizEnded', { reason: 'moderator-ended' });
+      // Disconnect all clients from this room
+      io.to(code).disconnectSockets(true);
+      // Delete the room from server
+      rooms.delete(code);
+      log(code, 'Quiz beendet - Room gelöscht');
+      respond(ack, { ok: true });
+    } catch (err) {
+      respond(ack, { ok: false, error: (err as Error).message });
+    }
+  });
+
   socket.on(
     'team:submitBlitzAnswers',
     (

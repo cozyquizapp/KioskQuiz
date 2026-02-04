@@ -2319,8 +2319,37 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 720;
     const actionHintCard = renderNextActionHint();
-    const submissionCard = renderTeamSubmissionStatus();
-    const stageHintCard = renderSpecialStageHints();
+    const answersPanel = Object.keys(answers?.answers || {}).length > 0 ? (
+      <div
+        style={{
+          display: 'grid',
+          gap: 8,
+          padding: 12,
+          borderRadius: 18,
+          border: '1px solid rgba(34,197,94,0.35)',
+          background: 'rgba(10,14,24,0.92)',
+          boxShadow: '0 18px 40px rgba(15,23,42,0.35)',
+          width: '100%',
+          maxWidth: 540,
+          minWidth: 0,
+          flex: '1 1 320px'
+        }}
+      >
+        <AnswerList
+          answers={answers}
+          answersCount={answersCount}
+          teamsCount={teamsCount}
+          unreviewedCount={unreviewedCount}
+          statChip={statChip}
+          inputStyle={inputStyle}
+          onOverride={(teamId, isCorrect) =>
+            doAction(async () => {
+              await hookOverrideAnswer(teamId, isCorrect);
+            }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+          }
+        />
+      </div>
+    ) : null;
     const baseButtonStyle: React.CSSProperties = {
       ...inputStyle,
       width: '100%',
@@ -2359,7 +2388,7 @@ function ModeratorPage(): React.ReactElement {
     };
     return (
       <section style={{ ...card, marginTop: 12 }}>
-        {(actionHintCard || submissionCard || stageHintCard) && (
+        {(actionHintCard || answersPanel) && (
           <div
             style={{
               display: 'grid',
@@ -2370,8 +2399,7 @@ function ModeratorPage(): React.ReactElement {
             }}
           >
             {actionHintCard}
-            {submissionCard}
-            {stageHintCard}
+            {answersPanel}
           </div>
         )}
         <div
@@ -3002,34 +3030,6 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
-      {Object.keys(answers?.answers || {}).length > 0 && (
-        <div
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 16,
-            width: 380,
-            maxWidth: '92vw',
-            maxHeight: '70vh',
-            overflow: 'auto',
-            zIndex: 9999
-          }}
-        >
-          <AnswerList
-            answers={answers}
-            answersCount={answersCount}
-            teamsCount={teamsCount}
-            unreviewedCount={unreviewedCount}
-            statChip={statChip}
-            inputStyle={inputStyle}
-            onOverride={(teamId, isCorrect) =>
-              doAction(async () => {
-                await hookOverrideAnswer(teamId, isCorrect);
-              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-            }
-          />
-        </div>
-      )}
       {renderReconnectModal()}
       {renderCozyLayout()}
       {featureFlags.showLegacyPanels && (

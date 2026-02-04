@@ -181,7 +181,7 @@ function ModeratorPage(): React.ReactElement {
   const [meta, setMeta] = useState<{ globalIndex?: number; globalTotal?: number; categoryKey?: string } | null>(null);
   
   // Use live polling for answers - this is the single source of truth
-  const { answers, overrideAnswer: hookOverrideAnswer } = useLiveAnswers(roomCode);
+  const { answers, overrideAnswer: hookOverrideAnswer } = useLiveAnswers(roomCode, question?.id ?? null);
   
   const [toast, setToast] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(() => {
@@ -2998,15 +2998,6 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
-      {/* FIXED DEBUG */}
-      <div style={{position: 'fixed', top: 0, right: 0, background: '#222', color: '#fff', padding: '8px', fontSize: '11px', zIndex: 9999, maxWidth: '300px', border: '1px solid #666'}}>
-        <div>roomCode: {roomCode || 'null'}</div>
-        <div>answers: {answers?.answers ? Object.keys(answers.answers).length + ' answers' : 'null'}</div>
-        <div>answerKeys: {Object.keys(answers?.answers || {}).join(',')}</div>
-      </div>
-      <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', fontSize: '18px', fontWeight: 'bold', zIndex: 9999}}>
-        viewPhase: "{viewPhase}"
-      </div>
       {renderReconnectModal()}
       {renderCozyLayout()}
       {featureFlags.showLegacyPanels && (
@@ -3337,29 +3328,19 @@ const renderCozyStagePanel = () => {
       {/* Frage-Karte / Quiz view */}
       {viewPhase === 'quiz' && (
         <>
-          {/* Answer Panel - ALWAYS SHOW when we have answers */}
-          {Object.keys(answers?.answers || {}).length > 0 && (
-            <section style={{ ...card, marginTop: 0, marginBottom: 12, background: '#1a3a1a', borderLeft: '4px solid #22c55e' }}>
-              <h3 style={{color: '#22c55e', marginTop: 0, marginBottom: 10}}>📋 Eingehende Antworten ({Object.keys(answers?.answers || {}).length})</h3>
-              <div style={{ color: '#e2e8f0', fontSize: 14, display: 'grid', gap: 8 }}>
-                {Object.entries(answers?.answers || {}).map(([teamId, ans]) => (
-                  <div key={teamId} style={{padding: '10px', border: '1px solid #2d5a2d', borderRadius: 8, background: 'rgba(34,197,94,0.05)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center'}}>
-                    <div>
-                      <div style={{fontWeight: 'bold', color: '#86efac'}}>{answers?.teams?.[teamId]?.name || 'Team'}</div>
-                      <div style={{color: '#cbd5e1', fontSize: 12, marginTop: 4}}>
-                        {typeof (ans as any)?.answer === 'string' ? (ans as any).answer : typeof (ans as any)?.value === 'string' ? (ans as any).value : JSON.stringify((ans as any)?.answer || (ans as any)?.value || '—')}
-                      </div>
-                    </div>
-                    <div style={{textAlign: 'right', fontSize: 11}}>
-                      <div style={{color: (ans as any)?.isCorrect === true ? '#22c55e' : (ans as any)?.isCorrect === false ? '#ef4444' : '#94a3b8', fontWeight: 'bold'}}>
-                        {(ans as any)?.isCorrect === true ? '✓ OK' : (ans as any)?.isCorrect === false ? '✗ NEIN' : 'OFFEN'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <AnswerList
+            answers={answers}
+            answersCount={answersCount}
+            teamsCount={teamsCount}
+            unreviewedCount={unreviewedCount}
+            statChip={statChip}
+            inputStyle={inputStyle}
+            onOverride={(teamId, isCorrect) =>
+              doAction(async () => {
+                await hookOverrideAnswer(teamId, isCorrect);
+              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
+            }
+          />
 
           <section style={{ ...card, marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

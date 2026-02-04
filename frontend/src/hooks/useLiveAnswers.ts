@@ -12,7 +12,7 @@ export type AnswersState = {
  * Hook that polls the server for live answers every 1000ms
  * Maintains answers persistently - only updates when new data is fetched
  */
-export const useLiveAnswers = (roomCode: string | null) => {
+export const useLiveAnswers = (roomCode: string | null, questionId?: string | null) => {
   const [answers, setAnswers] = useState<AnswersState>({
     answers: {},
     teams: {},
@@ -31,11 +31,21 @@ export const useLiveAnswers = (roomCode: string | null) => {
     
     try {
       const res = await fetchAnswers(roomCodeRef.current);
-      setAnswers({
-        answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
-        teams: res.teams ?? {},
-        solution: res.solution
-      });
+      const nextAnswers = (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>;
+      const nextTeams = res.teams ?? {};
+      const nextSolution = res.solution;
+      const hasPayload =
+        Object.keys(nextAnswers).length > 0 ||
+        Object.keys(nextTeams).length > 0 ||
+        nextSolution !== undefined;
+
+      if (hasPayload) {
+        setAnswers({
+          answers: nextAnswers,
+          teams: nextTeams,
+          solution: nextSolution
+        });
+      }
     } catch (err) {
       // Silently ignore errors, keep polling
     }
@@ -47,6 +57,10 @@ export const useLiveAnswers = (roomCode: string | null) => {
     // Poll immediately after override to get fresh data
     await poll();
   }, [poll]);
+
+  useEffect(() => {
+    setAnswers({ answers: {}, teams: {}, solution: undefined });
+  }, [questionId]);
 
   useEffect(() => {
     if (!roomCode) {

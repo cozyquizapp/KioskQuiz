@@ -2725,23 +2725,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     const pickUnlocked = banPhaseDone;
     const canShowBan = isTopTeam && !selectionLocked && !banPhaseDone;
     const canShowPick = isLastTeam && pickUnlocked && !selectionLocked;
-    // Debug logging for Blitz pick button issue
-    if (isLastTeam && blitzState.phase === 'BANNING') {
-      console.log('[BLITZ PICK DEBUG]', {
-        isLastTeam,
-        teamId,
-        lastTeamId: blitzState.lastTeamId,
-        topTeamId: blitzState.topTeamId,
-        topBanLimit,
-        topBanCount,
-        banPhaseDone,
-        selectionLocked,
-        pickUnlocked,
-        canShowPick,
-        banLimits: blitzState.banLimits,
-        bans: blitzState.bans
-      });
-    }
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
@@ -3616,6 +3599,32 @@ function TeamView({ roomCode }: TeamViewProps) {
         </header>
 
         {/* Timer progress bar removed - now integrated in Submit button with enhanced styling */}
+
+        {/* Toast notifications for Blitz/Rundlauf errors */}
+        {toast && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              padding: '12px 16px',
+              borderRadius: 12,
+              border: '1px solid rgba(239,68,68,0.4)',
+              background: 'rgba(239,68,68,0.15)',
+              color: '#fca5a5',
+              fontWeight: 600,
+              fontSize: 14,
+              maxWidth: '90%',
+              textAlign: 'center',
+              boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+              animation: 'slideDown 0.3s ease-out'
+            }}
+          >
+            {toast}
+          </div>
+        )}
 
         {mainContent}
 

@@ -970,6 +970,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     return (
       <div
         key={question?.id || phase}
+        className="glass-reflective shimmer-card"
         style={{
           ...questionShell,
           opacity: transitioning ? 0.4 : 1,
@@ -984,7 +985,9 @@ function TeamView({ roomCode }: TeamViewProps) {
             : 'inset 0 1px 1px rgba(255,255,255,0.05)',
           animation: timeUp
             ? 'timeup-pulse 0.35s ease-in-out 2'
-            : 'fadeSlideUpStrong 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both'
+            : 'spring-entrance 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          position: 'relative',
+          overflow: 'hidden'
         }}
     >
       <div
@@ -1310,14 +1313,14 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (payload.kind === 'oneOfEight') {
       return (
-        <div style={{ display: 'grid', gap: 8 }}>
+        <div style={{ display: 'grid', gap: 8 }} className="stagger-container">
           {payload.statements.map((statement) => {
             const selected = bunteOneChoice === statement.id;
             return (
               <button
                 key={statement.id}
                 type="button"
-                className={`team-choice${selected ? ' is-selected' : ''}`}
+                className={`team-choice shimmer-card hover-spring btn-ripple${selected ? ' is-selected' : ''}`}
                 onClick={() => setBunteOneChoice(statement.id)}
                 disabled={!canAnswer}
                 style={{
@@ -1326,7 +1329,9 @@ function TeamView({ roomCode }: TeamViewProps) {
                   border: `1px solid ${selected ? accent : 'rgba(255,255,255,0.08)'}`,
                   background: selected ? `${accent}22` : 'rgba(255,255,255,0.04)',
                   color: '#e2e8f0',
-                  cursor: canAnswer ? 'pointer' : 'not-allowed'
+                  cursor: canAnswer ? 'pointer' : 'not-allowed',
+                  overflow: 'hidden',
+                  position: 'relative'
                 }}
               >
                 <span style={{ fontWeight: 800, marginRight: 6 }}>{statement.id}</span>
@@ -1439,17 +1444,19 @@ function TeamView({ roomCode }: TeamViewProps) {
       case 'multipleChoice': {
         const q = question as MultipleChoiceQuestion;
         return (
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div style={{ display: 'grid', gap: 10 }} className="stagger-container">
             {q.options.map((opt, idx) => (
               <button
                 key={idx}
-                className={`team-choice${answer === String(idx) ? ' is-selected' : ''}`}
+                className={`team-choice shimmer-card hover-spring btn-ripple${answer === String(idx) ? ' is-selected' : ''}`}
                 style={{
                   ...choiceButton,
                   border: `1px solid ${accent}55`,
                   background: answer === String(idx) ? `${accent}22` : 'rgba(255,255,255,0.08)',
                   color: '#e2e8f0',
-                  boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none'
+                  boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none',
+                  overflow: 'hidden',
+                  position: 'relative'
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
@@ -1723,7 +1730,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
             {language === 'de' ? 'Andere Teams' : 'Other teams'}
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="stagger-container">
             {teamStatus
               .filter(t => t.id !== teamId && t.answer !== undefined)
               .map((team, idx) => {
@@ -1732,29 +1739,15 @@ function TeamView({ roomCode }: TeamViewProps) {
                 return (
                   <div
                     key={team.id}
+                    className="glass-reflective shimmer-card"
                     style={{
                       padding: '14px',
                       borderRadius: 12,
-                      background: 'rgba(255,255,255,0.04)',
                       border: `1.5px solid ${accentColor}22`,
                       borderLeft: `3px solid ${accentColor}`,
                       transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                      animation: 'beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                      animationDelay: `${idx * 80}ms`,
-                      animationFillMode: 'backwards',
-                      cursor: 'default'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                      (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}44`;
-                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-                      (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 24px rgba(0,0,0,0.3)`;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                      (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}22`;
-                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                      overflow: 'hidden',
+                      position: 'relative'
                     }}
                   >
                     <div style={{ color: accentColor, fontWeight: 700, marginBottom: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.3px' }}>
@@ -2813,7 +2806,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     return (
       <div
         key={`waiting-${phase}-${title}`}
-        className="waiting-card"
+        className="waiting-card glass-reflective shimmer-card float-parallax"
         style={{
           ...glassCard,
           textAlign: 'center',
@@ -2825,8 +2818,10 @@ function TeamView({ roomCode }: TeamViewProps) {
           minHeight: 280,
           background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06))',
           borderColor: 'rgba(99, 102, 241, 0.2)',
-          animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, liquid-shimmer 6s ease-in-out infinite',
-          willChange: 'transform, opacity'
+          animation: 'spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          willChange: 'transform, opacity',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
         <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'WARTEN' : 'INFO'}</div>
@@ -3006,11 +3001,14 @@ function TeamView({ roomCode }: TeamViewProps) {
   return (
     <div
       id="team-root"
-      style={pageStyleTeam}
+      style={{...pageStyleTeam, position: 'relative', overflow: 'hidden'}}
       data-timer={timerTick}
       data-team-ui="1"
       data-team-marker={teamMarker}
     >
+      {/* Liquid blob backgrounds */}
+      <div className="liquid-bg" style={{ top: 100, left: -150, opacity: 0.6 }} />
+      <div className="liquid-bg" style={{ bottom: 100, right: -150, animationDelay: '7s', opacity: 0.6 }} />
       <span style={{ display: 'none' }}>{teamMarker}</span>
       <span style={{ display: 'none' }}>
         TEAMVIEW LIVE | phase={phase} | state={gameState} | room={roomCode} | team={teamId ?? '--'}

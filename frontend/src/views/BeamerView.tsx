@@ -1635,7 +1635,7 @@ useEffect(() => {
         <div className="beamer-label">
           {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }} className="stagger-container">
           {teamsWithAnswers.map((team, idx) => {
             const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
             const accentColor = colors[idx % colors.length];
@@ -1643,7 +1643,7 @@ useEffect(() => {
             return (
               <div
                 key={`team-answer-${team.id}-${idx}`}
-                className="card-3d glass-ultra"
+                className="card-3d glass-reflective shimmer-card hover-spring"
                 style={{
                   padding: '16px 18px',
                   borderRadius: 14,
@@ -1651,23 +1651,16 @@ useEffect(() => {
                   borderLeft: `5px solid ${accentColor}`,
                   color: '#e2e8f0',
                   willChange: 'transform, opacity',
-                  animation: 'flip-in-3d 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  animationDelay: `${idx * 100}ms`,
-                  animationFillMode: 'backwards',
-                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   cursor: 'default',
                   boxShadow: `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`,
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}66`;
-                  (e.currentTarget as HTMLElement).style.transform = 'perspective(1000px) translateY(-8px) rotateX(5deg)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${accentColor}44, 0 12px 32px rgba(0,0,0,0.4)`;
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 40px ${accentColor}55, 0 12px 40px rgba(0,0,0,0.4)`;
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}33`;
-                  (e.currentTarget as HTMLElement).style.transform = 'perspective(1000px) translateY(0) rotateX(0deg)';
                   (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`;
                 }}
               >
@@ -1967,7 +1960,10 @@ useEffect(() => {
     }, []);
 
     return (
-      <div className="beamer-stack" style={{ position: 'relative' }}>
+      <div className="beamer-stack" style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Liquid blob backgrounds */}
+        <div className="liquid-bg" style={{ top: -100, left: -100 }} />
+        <div className="liquid-bg" style={{ bottom: -100, right: -100, animationDelay: '5s' }} />
         <Confetti active={showConfetti} duration={5000} />
         <div className="beamer-intro-card gradient-mesh" style={{ 
           background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1), rgba(20, 184, 166, 0.1))',
@@ -1999,15 +1995,15 @@ useEffect(() => {
             return (
               <div
                 key={team.id}
-                className="card-3d glass-ultra"
+                className="card-3d glass-ultra shimmer-card hover-spring"
                 style={{
                   padding: '24px 20px',
                   borderRadius: 20,
                   background: `linear-gradient(135deg, ${color}18, ${color}08)`,
                   border: `2px solid ${color}`,
                   textAlign: 'center',
-                  animation: `flip-in-3d 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), bounce-scale 2s ease-in-out ${idx * 0.2}s infinite`,
-                  animationDelay: `${idx * 150}ms, ${idx * 0.2}s`,
+                  animation: `spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), pulse-depth 3s ease-in-out ${idx * 0.3}s infinite`,
+                  animationDelay: `${idx * 150}ms, ${idx * 0.3}s`,
                   animationFillMode: 'backwards',
                   transform: idx === 0 ? 'scale(1.1)' : 'scale(1)',
                   boxShadow: `0 0 30px ${color}44, 0 8px 32px rgba(0,0,0,0.3)`,
@@ -2060,16 +2056,13 @@ useEffect(() => {
               {sortedScoreTeams.slice(3).map((team, idx) => (
                 <div
                   key={team.id}
-                  className="glass-ultra"
+                  className="glass-reflective hover-spring"
                   style={{
                     padding: '12px 14px',
                     borderRadius: 10,
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
-                    animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`,
-                    animationDelay: `${(idx + 3) * 80}ms`,
-                    animationFillMode: 'backwards'
+                    alignItems: 'center'
                   }}
                 >
                   <div>

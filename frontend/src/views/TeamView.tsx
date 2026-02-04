@@ -1609,7 +1609,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       const q = question as MultipleChoiceQuestion;
       const opts = language === 'en' && q.optionsEn?.length ? q.optionsEn : q.options;
       const num = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
-      const idx = num !== null ? (num >= 1 ? num - 1 : num) : null;
+      // Answer is stored as 0-based index, use it directly
+      const idx = num;
       if (idx !== null && idx >= 0 && idx < opts.length) {
         const letter = String.fromCharCode(65 + idx);
         return `${letter} – ${opts[idx]}`;

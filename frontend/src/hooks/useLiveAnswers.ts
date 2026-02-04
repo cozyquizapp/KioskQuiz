@@ -31,14 +31,13 @@ export const useLiveAnswers = (roomCode: string | null) => {
     
     try {
       const res = await fetchAnswers(roomCodeRef.current);
-      console.log('[useLiveAnswers] Fetched answers:', res);
       setAnswers({
         answers: (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>,
         teams: res.teams ?? {},
         solution: res.solution
       });
     } catch (err) {
-      console.error('[useLiveAnswers] Poll error:', err);
+      // Silently ignore errors, keep polling
     }
   }, []);
 

@@ -182,11 +182,6 @@ function ModeratorPage(): React.ReactElement {
   
   // Use live polling for answers - this is the single source of truth
   const { answers, overrideAnswer: hookOverrideAnswer } = useLiveAnswers(roomCode);
-
-  useEffect(() => {
-    console.log('[ModeratorPage] answers state:', answers);
-    console.log('[ModeratorPage] answers.answers keys:', Object.keys(answers?.answers || {}));
-  }, [answers]);
   
   const [toast, setToast] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(() => {
@@ -628,13 +623,11 @@ function ModeratorPage(): React.ReactElement {
 
   // Socket updates: separate effects to avoid re-running on every render
   useEffect(() => {
-    console.log('[DEBUG] socketQuestion changed:', socketQuestion);
     if (socketQuestion === undefined) return;
     const nextQuestion = socketQuestion ?? null;
     setQuestion(nextQuestion);
     const hasQuestion = Boolean(nextQuestion);
     setPhase(hasQuestion ? 'question' : 'setup');
-    console.log('[DEBUG] Setting viewPhase to quiz because hasQuestion=', hasQuestion);
     // Change viewPhase to 'quiz' when we get a question
     if (hasQuestion) {
       changeViewPhase('quiz');
@@ -3005,12 +2998,6 @@ const renderCozyStagePanel = () => {
         fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
       }}
     >
-      {/* TEST: Show this if we have answers */}
-      {Object.keys(answers?.answers || {}).length > 0 && (
-        <h2 style={{color: 'lime', fontSize: '32px', fontWeight: 'bold', margin: 0, marginBottom: '20px', border: '2px solid lime', padding: '10px'}}>
-          ✓✓✓ ANSWERS EXIST! {Object.keys(answers?.answers || {}).length} answer(s) ✓✓✓
-        </h2>
-      )}
       <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', fontSize: '18px', fontWeight: 'bold', zIndex: 9999}}>
         viewPhase: "{viewPhase}"
       </div>

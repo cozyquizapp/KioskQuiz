@@ -2260,6 +2260,8 @@ const startBlitzSet = (room: RoomState) => {
   if (room.blitzSetIndex >= totalSets - 1) {
     throw new Error('Alle Blitz-Sets wurden gespielt');
   }
+  // Clear pinned theme for next set selection
+  room.blitzPinnedTheme = null;
   const nextIndex = room.blitzSetIndex + 1;
   room.blitzSetIndex = nextIndex;
   room.blitzTheme = room.blitzSelectedThemes[nextIndex] ?? null;
@@ -2424,6 +2426,7 @@ const finishBlitzStage = (room: RoomState) => {
   room.blitzPhase = 'DONE';
   room.blitzDeadlineAt = null;
   room.blitzTheme = null;
+  room.blitzPinnedTheme = null;
   room.blitzItems = [];
   room.blitzItemIndex = -1;
   room.blitzItemDeadlineAt = null;

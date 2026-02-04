@@ -3520,20 +3520,23 @@ const renderCozyStagePanel = () => {
 
       {/* Answer Panel - displays when teams have answered */}
       {Object.keys(answers?.answers || {}).length > 0 && (
-        <section style={{ ...card, marginTop: 12 }}>
-          <AnswerList
-            answers={answers}
-            answersCount={answersCount}
-            teamsCount={teamsCount}
-            unreviewedCount={unreviewedCount}
-            statChip={statChip}
-            inputStyle={inputStyle}
-            onOverride={(teamId, isCorrect) =>
-              doAction(async () => {
-                await hookOverrideAnswer(teamId, isCorrect);
-              }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-            }
-          />
+        <section style={{ ...card, marginTop: 12, background: '#1a1a2e' }}>
+          <h3 style={{color: '#22c55e', marginTop: 0}}>Antworten ({Object.keys(answers?.answers || {}).length})</h3>
+          
+          {/* Simple fallback HTML to test if this renders */}
+          <div style={{ color: '#e2e8f0', fontSize: 14 }}>
+            {Object.entries(answers?.answers || {}).map(([teamId, ans]) => (
+              <div key={teamId} style={{padding: '8px', margin: '4px 0', border: '1px solid #444', borderRadius: 6, background: 'rgba(255,255,255,0.05)'}}>
+                <div style={{fontWeight: 'bold'}}>{answers?.teams?.[teamId]?.name || 'Team'}</div>
+                <div style={{color: '#cbd5e1', fontSize: 12}}>
+                  Antwort: {typeof (ans as any)?.answer === 'string' ? (ans as any).answer : typeof (ans as any)?.value === 'string' ? (ans as any).value : JSON.stringify((ans as any)?.answer || (ans as any)?.value || '')}
+                </div>
+                <div style={{color: (ans as any)?.isCorrect === true ? '#22c55e' : (ans as any)?.isCorrect === false ? '#ef4444' : '#94a3b8', fontSize: 11, marginTop: 4}}>
+                  Status: {(ans as any)?.isCorrect === true ? '✓ Richtig' : (ans as any)?.isCorrect === false ? '✗ Falsch' : 'Offen'}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
           </div>

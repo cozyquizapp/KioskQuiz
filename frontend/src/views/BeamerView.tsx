@@ -2727,7 +2727,7 @@ useEffect(() => {
   };
 
   return (
-    <main style={pageStyle} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
+    <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
       {showTechnicalHud && offlineBar(connectionStatus, language)}
       {toast && <div style={toastStyle}>{toast}</div>}
       {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (

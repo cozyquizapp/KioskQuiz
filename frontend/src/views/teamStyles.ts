@@ -5,6 +5,15 @@ import { getDraftTheme } from '../utils/draft';
 const draftTheme = getDraftTheme();
 const primary = draftTheme?.color || '#6dd5fa';
 
+/**
+ * MOBILE OPTIMIZATIONS:
+ * - iOS Safari notch handling (safe-area-inset)
+ * - Font smoothing for crisp text
+ * - Touch target min-48px for accessibility
+ * - Landscape mode optimization
+ * - Prevent zoom on input focus
+ */
+
 export const pageStyleTeam: CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -25,7 +34,15 @@ export const pageStyleTeam: CSSProperties = {
     ? `url(${draftTheme.background}) center/cover`
     : 'url("/background.png") center/cover',
   backgroundAttachment: 'fixed',
-  fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily
+  fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily,
+  // iOS optimization
+  WebkitFontSmoothing: 'antialiased',
+  WebkitTouchCallout: 'none',
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTapHighlightColor: 'transparent',
+  // Prevent zoom on input focus (iOS)
+  fontSize: 16
 };
 
 export const gridOverlay: CSSProperties = {
@@ -199,7 +216,7 @@ export const softDivider: CSSProperties = {
 export const inputStyle: CSSProperties = {
   width: '100%',
   padding: 'clamp(16px, 4vw, 18px) clamp(16px, 4vw, 18px)',
-  minHeight: 'clamp(56px, 13vw, 64px)',
+  minHeight: 'clamp(48px, 13vw, 64px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
@@ -207,12 +224,14 @@ export const inputStyle: CSSProperties = {
   background: 'rgba(255,255,255,0.02)',
   color: '#f8fafc',
   marginTop: 8,
-  fontSize: 'clamp(18px, 3.8vw, 20px)',
+  fontSize: 'max(16px, clamp(18px, 3.8vw, 20px))',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
   backdropFilter: 'blur(30px)',
   WebkitAppearance: 'none',
   WebkitBorderRadius: theme.radius,
-  WebkitBoxSizing: 'border-box'
+  WebkitBoxSizing: 'border-box',
+  // iOS optimization: Prevents zoom on input focus
+  WebkitFontSmoothing: 'antialiased'
 };
 
 export const primaryButton: CSSProperties = {
@@ -222,14 +241,15 @@ export const primaryButton: CSSProperties = {
   color: '#f8fafc',
   border: '1px solid rgba(255,255,255,0.08)',
   padding: 'clamp(16px, 4vw, 18px) clamp(18px, 5vw, 22px)',
-  minHeight: 'clamp(56px, 13vw, 64px)',
+  minHeight: 'clamp(48px, 13vw, 64px)',
   borderRadius: theme.radius,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
   fontWeight: 800,
-  fontSize: 'clamp(18px, 4vw, 20px)',
-  transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+  fontSize: 'max(16px, clamp(18px, 4vw, 20px))',
+  transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  WebkitFontSmoothing: 'antialiased'
 };
 
 export const choiceButton: CSSProperties = {
@@ -241,8 +261,11 @@ export const choiceButton: CSSProperties = {
   padding: 'clamp(16px, 4vw, 18px) clamp(14px, 4vw, 16px)',
   cursor: 'pointer',
   fontWeight: 700,
-  fontSize: 'clamp(17px, 3.6vw, 19px)',
-  minHeight: 'clamp(56px, 13vw, 64px)'
+  fontSize: 'max(16px, clamp(17px, 3.6vw, 19px))',
+  minHeight: 'clamp(48px, 13vw, 64px)',
+  WebkitFontSmoothing: 'antialiased',
+  WebkitTapHighlightColor: 'transparent',
+  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
 export const progressOuter = (color: string): CSSProperties => ({

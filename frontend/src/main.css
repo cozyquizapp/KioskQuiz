@@ -46,6 +46,39 @@ body {
     var(--bg) url('/background.png?v=1') center/cover fixed no-repeat;
   color: var(--text);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ========================================
+   BEAMER CONTAINER OPTIMIZATION
+   ======================================== */
+main[class*="cozy-beamer-shell"] {
+  /* Ensure beamer content is sharp and readable */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Beamer text should be ultra-crisp */
+.beamer-intro-card,
+.beamer-card,
+.beamer-question-text,
+.beamer-label {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  letter-spacing: 0.02em;
+}
+
+/* Maximum contrast for projectors */
+.beamer-intro-card h2,
+.beamer-intro-card p,
+.beamer-question-text {
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
 
 @keyframes cozy-breathe {
@@ -1095,10 +1128,255 @@ img {
   }
 }
 
+/* ========================================
+   BEAMER / PROJECTOR OPTIMIZATIONS
+   ======================================== */
+
 @media (min-width: 1920px) {
+  /* 4K & Ultra-Wide Displays */
   h1 { font-size: 40px !important; }
   h2 { font-size: 32px !important; }
-  button { padding: 14px 20px !important; }
+  h3 { font-size: 28px !important; }
+  p { font-size: 22px !important; }
+  
+  /* Beamer-specific: Larger text for projector viewing distance */
+  .beamer-intro-card h2 { font-size: 56px !important; }
+  .beamer-intro-card p { font-size: 26px !important; }
+  .beamer-question-text { font-size: 48px !important; }
+  .beamer-card { padding: 32px 40px !important; }
+  .beamer-label { font-size: 20px !important; }
+  
+  /* Awards screen scaling for 4K */
+  .card-3d { padding: 32px 28px !important; }
+  .card-3d div:first-child { font-size: 72px !important; }
+  .neon-gold, .neon-silver, .neon-bronze { font-size: 32px !important; }
+}
+
+/* Ultra-wide displays (32"+ / curved monitors / projection walls) */
+@media (min-width: 2560px) {
+  /* 5K+ Optimization */
+  h1 { font-size: 48px !important; }
+  h2 { font-size: 40px !important; }
+  p { font-size: 28px !important; }
+  
+  .beamer-intro-card h2 { font-size: 72px !important; }
+  .beamer-question-text { font-size: 56px !important; }
+  .beamer-card { padding: 40px 48px !important; }
+  .team-answer-card { font-size: 24px !important; }
+}
+
+/* High DPI / Retina displays - Anti-alias smoothing */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, p, button, span {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Dark room projector optimization - Maximum contrast */
+@media (prefers-contrast: more) {
+  body {
+    background: #000;
+  }
+  
+  .beamer-intro-card {
+    background: rgba(20, 24, 40, 0.95) !important;
+  }
+  
+  h1, h2, h3, p {
+    color: #ffffff;
+  }
+  
+  .neon-gold { text-shadow: 0 0 30px rgba(251, 191, 36, 0.8) !important; }
+  .neon-silver { text-shadow: 0 0 30px rgba(229, 231, 235, 0.8) !important; }
+  .neon-bronze { text-shadow: 0 0 30px rgba(249, 115, 22, 0.8) !important; }
+}
+
+/* ========================================
+   IPHONE / MOBILE LANDSCAPE OPTIMIZATIONS
+   ======================================== */
+
+/* iPhone Landscape (Home Indicator) */
+@media (max-height: 500px) and (orientation: landscape) {
+  #team-root {
+    paddingTop: 0 !important;
+    paddingBottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+  
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 16px !important; }
+  p { font-size: 13px !important; }
+  
+  button {
+    padding: 8px 12px !important;
+    min-height: 40px !important;
+  }
+  
+  .questionShell {
+    padding: 12px 10px !important;
+  }
+  
+  header {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+  }
+}
+
+/* Small phones (< 375px width) */
+@media (max-width: 374px) {
+  #team-root {
+    paddingLeft: 4px !important;
+    paddingRight: 4px !important;
+  }
+  
+  h1 { font-size: 22px !important; }
+  h2 { font-size: 18px !important; }
+  p { font-size: 13px !important; }
+  
+  button {
+    padding: 12px 10px !important;
+    font-size: 13px !important;
+    min-height: 44px !important;
+  }
+  
+  input {
+    padding: 12px 10px !important;
+    font-size: 16px !important;
+  }
+  
+  [style*="gap: 16"],
+  [style*="gap: 14"],
+  [style*="gap: 20"] {
+    gap: 8px !important;
+  }
+}
+
+/* Tall phones with notch (iPhone Pro) */
+@media (min-height: 844px) and (max-width: 430px) {
+  .contentShell {
+    max-width: min(100vw - 8px, 360px) !important;
+  }
+  
+  h1 { font-size: 28px !important; }
+  button { min-height: 48px !important; }
+}
+
+/* ========================================
+   BEAMER HIGH-CONTRAST MODE
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000;
+  }
+  
+  .beamer-stack {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .beamer-intro-card {
+    background: linear-gradient(135deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95));
+  }
+  
+  /* Ultra-high contrast for projectors */
+  .beamer-question-text {
+    color: #fff;
+    font-weight: 900;
+  }
+  
+  .beamer-card {
+    background: rgba(20, 25, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ========================================
+   APPLE DEVICE SPECIFIC FIXES
+   ======================================== */
+
+/* iPhone X, 11, 12, 13, 14, 15, 16 notch & dynamic island */
+@supports (padding: max(0px)) {
+  #team-root {
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+  }
+  
+  header {
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+  }
+}
+
+/* Safari specific: Prevent unwanted text size adjustment */
+@-webkit-keyframes applesystem {
+  from {
+    -webkit-text-size-adjust: 100%;
+  }
+  to {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+body {
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* Fix for iOS Safari input field zoom */
+@media (max-width: 1024px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    min-height: 48px !important;
+  }
+}
+
+/* ========================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices: Larger click targets */
+  button, a, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Disable hover effects on touch */
+  button:hover {
+    transform: none !important;
+  }
+  
+  /* Add active state instead */
+  button:active {
+    opacity: 0.8;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  * {
+    border-color: currentColor !important;
+    background-color: solid !important;
+  }
+  
+  .beamer-intro-card,
+  .beamer-card,
+  .glass-ultra,
+  .glass-reflective {
+    border-width: 2px !important;
+    border-style: solid !important;
+  }
 }
 
 /* ========================================

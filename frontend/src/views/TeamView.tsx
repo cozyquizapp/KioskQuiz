@@ -1703,7 +1703,44 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }
 
+  const formatSubmittedAnswer = (raw: any) => {
+    if (!question) return String(raw ?? '');
+    if (question.mechanic === 'multipleChoice') {
+      const q = question as MultipleChoiceQuestion;
+      const opts = language === 'en' && q.optionsEn?.length ? q.optionsEn : q.options;
+      const num = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
+      const idx = num !== null ? (num >= 1 ? num - 1 : num) : null;
+      if (idx !== null && idx >= 0 && idx < opts.length) {
+        const letter = String.fromCharCode(65 + idx);
+        return `${letter} – ${opts[idx]}`;
+      }
+      return typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
+    }
+    if (question.mechanic === 'betting') {
+      const q = question as BettingQuestion;
+      const opts = language === 'en' && q.optionsEn?.length ? q.optionsEn : q.options;
+      if (Array.isArray(raw)) {
+        return raw
+          .slice(0, 3)
+          .map((points, idx) => {
+            const letter = String.fromCharCode(65 + idx);
+            const label = opts?.[idx] ? ` ${opts[idx]}` : '';
+            return `${letter}${label}: ${points}`;
+          })
+          .join(' | ');
+      }
+      return typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
+    }
+    if (question.mechanic === 'trueFalse') {
+      if (raw === true || raw === 'true') return t('tfTrue');
+      if (raw === false || raw === 'false') return t('tfFalse');
+    }
+    return typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
+  };
+
   function renderShowResult() {
+    const isCorrect = resultCorrect === true;
+    const isIncorrect = resultCorrect === false;
     return (
       <div 
         className={feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}
@@ -1733,22 +1770,28 @@ function TeamView({ roomCode }: TeamViewProps) {
           margin: '12px 0 0',
           padding: '12px 16px',
           borderRadius: 14,
-          background: resultCorrect 
+          background: isCorrect
             ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.08))'
-            : 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(249,115,22,0.08))',
-          border: resultCorrect
+            : isIncorrect
+              ? 'linear-gradient(135deg, rgba(239,68,68,0.14), rgba(220,38,38,0.08))'
+              : 'linear-gradient(135deg, rgba(148,163,184,0.12), rgba(100,116,139,0.08))',
+          border: isCorrect
             ? '1px solid rgba(34,197,94,0.3)'
-            : '1px solid rgba(251,146,60,0.3)',
+            : isIncorrect
+              ? '1px solid rgba(239,68,68,0.35)'
+              : '1px solid rgba(148,163,184,0.35)',
           backdropFilter: 'blur(20px)'
         }}>
           <p style={{ 
             margin: 0, 
-            color: resultCorrect ? '#4ade80' : '#fb923c', 
+            color: isCorrect ? '#4ade80' : isIncorrect ? '#ef4444' : '#cbd5e1', 
             fontSize: 24, 
             fontWeight: 900,
-            background: resultCorrect
+            background: isCorrect
               ? 'linear-gradient(135deg, #4ade80, #22c55e)'
-              : 'linear-gradient(135deg, #fb923c, #f97316)',
+              : isIncorrect
+                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                : 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
@@ -1766,7 +1809,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         <p style={{ margin: evaluating ? '12px 0 0' : '8px 0 0', color: '#cbd5e1', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
           <span style={{ color: '#94a3b8', fontSize: 12 }}>{language === 'de' ? 'Eure Antwort:' : 'Your answer:'}</span>
           <br />
-          {answer}
+          {formatSubmittedAnswer(answer)}
         </p>
       )}
       {resultMessage && <div className="message-state message-accent">{resultMessage}</div>}

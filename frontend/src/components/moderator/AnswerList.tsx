@@ -105,7 +105,13 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
             )}
             {renderTieBreaker(ans)}
           </div>
-          <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 700 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: (ans as any).isCorrect === false ? '#ef4444' : (ans as any).isCorrect ? '#22c55e' : '#94a3b8',
+              fontWeight: 700
+            }}
+          >
             {(ans as any).isCorrect === undefined ? 'Offen' : (ans as any).isCorrect ? 'Richtig' : 'Falsch'}
             <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
               <button

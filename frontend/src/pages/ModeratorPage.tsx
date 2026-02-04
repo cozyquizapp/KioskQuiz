@@ -3337,6 +3337,30 @@ const renderCozyStagePanel = () => {
       {/* Frage-Karte / Quiz view */}
       {viewPhase === 'quiz' && (
         <>
+          {/* Answer Panel - ALWAYS SHOW when we have answers */}
+          {Object.keys(answers?.answers || {}).length > 0 && (
+            <section style={{ ...card, marginTop: 0, marginBottom: 12, background: '#1a3a1a', borderLeft: '4px solid #22c55e' }}>
+              <h3 style={{color: '#22c55e', marginTop: 0, marginBottom: 10}}>📋 Eingehende Antworten ({Object.keys(answers?.answers || {}).length})</h3>
+              <div style={{ color: '#e2e8f0', fontSize: 14, display: 'grid', gap: 8 }}>
+                {Object.entries(answers?.answers || {}).map(([teamId, ans]) => (
+                  <div key={teamId} style={{padding: '10px', border: '1px solid #2d5a2d', borderRadius: 8, background: 'rgba(34,197,94,0.05)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center'}}>
+                    <div>
+                      <div style={{fontWeight: 'bold', color: '#86efac'}}>{answers?.teams?.[teamId]?.name || 'Team'}</div>
+                      <div style={{color: '#cbd5e1', fontSize: 12, marginTop: 4}}>
+                        {typeof (ans as any)?.answer === 'string' ? (ans as any).answer : typeof (ans as any)?.value === 'string' ? (ans as any).value : JSON.stringify((ans as any)?.answer || (ans as any)?.value || '—')}
+                      </div>
+                    </div>
+                    <div style={{textAlign: 'right', fontSize: 11}}>
+                      <div style={{color: (ans as any)?.isCorrect === true ? '#22c55e' : (ans as any)?.isCorrect === false ? '#ef4444' : '#94a3b8', fontWeight: 'bold'}}>
+                        {(ans as any)?.isCorrect === true ? '✓ OK' : (ans as any)?.isCorrect === false ? '✗ NEIN' : 'OFFEN'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section style={{ ...card, marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {question && (
@@ -3397,27 +3421,6 @@ const renderCozyStagePanel = () => {
               </div>
             )}
           </section>
-
-          {/* Answer Panel - displays when teams have answered */}
-          {Object.keys(answers?.answers || {}).length > 0 && (
-            <section style={{ ...card, marginTop: 12, background: '#1a1a2e' }}>
-              <h3 style={{color: '#22c55e', marginTop: 0}}>Antworten ({Object.keys(answers?.answers || {}).length})</h3>
-              
-              <div style={{ color: '#e2e8f0', fontSize: 14 }}>
-                {Object.entries(answers?.answers || {}).map(([teamId, ans]) => (
-                  <div key={teamId} style={{padding: '8px', margin: '4px 0', border: '1px solid #444', borderRadius: 6, background: 'rgba(255,255,255,0.05)'}}>
-                    <div style={{fontWeight: 'bold'}}>{answers?.teams?.[teamId]?.name || 'Team'}</div>
-                    <div style={{color: '#cbd5e1', fontSize: 12}}>
-                      Antwort: {typeof (ans as any)?.answer === 'string' ? (ans as any).answer : typeof (ans as any)?.value === 'string' ? (ans as any).value : JSON.stringify((ans as any)?.answer || (ans as any)?.value || '')}
-                    </div>
-                    <div style={{color: (ans as any)?.isCorrect === true ? '#22c55e' : (ans as any)?.isCorrect === false ? '#ef4444' : '#94a3b8', fontSize: 11, marginTop: 4}}>
-                      Status: {(ans as any)?.isCorrect === true ? '✓ Richtig' : (ans as any)?.isCorrect === false ? '✗ Falsch' : 'Offen'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
         </>
       )}

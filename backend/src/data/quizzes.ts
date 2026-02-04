@@ -1,4 +1,4 @@
-import { QuizTemplate, QuizCategory, QuizBlitzTheme, CozyPotatoThemeInput } from '../../../shared/quizTypes';
+import { QuizTemplate, QuizCategory, QuizBlitzTheme } from '../../../shared/quizTypes';
 import { questions } from './questions';
 
 // Hilfsfunktion: hole 5 Fragen pro Kategorie, mische optional
@@ -145,24 +145,6 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
       { id: 'blitz-flags-5', prompt: 'Rot-Weiß-Blau mit Kreuz', mediaUrl: '/blitz/flags/5.jpg', answer: 'Schweiz', aliases: ['Switzerland'] }
     ]
   }
-];
-
-const defaultPotatoThemes = [
-  'Street-Food-Klassiker',
-  'Streaming-Highlights',
-  '80er-Hits',
-  'Urlaubsregionen in Europa',
-  'Gameshow-Legenden',
-  'Weltrekorde',
-  'Legendäre Duette',
-  'Museen Europas',
-  'Craft-Beer-Sorten',
-  'Deutsche Sprichwörter',
-  'Retro-Spielkonsolen',
-  'Südamerikanische Städte',
-  'Modetrends der 2000er',
-  'Berühmte Cafés',
-  'Eissorten des Jahres'
 ];
 
 const buildBlitzPool = (quizId: string, themes: QuizBlitzTheme[]): QuizBlitzTheme[] =>
@@ -320,75 +302,6 @@ const blitzHamburgMoments: QuizBlitzTheme[] = [
   }
 ];
 
-const potatoPoolClassic = [
-  'Street-Food-Klassiker',
-  'Streaming-Highlights',
-  '80er-Hits',
-  'Urlaubsregionen in Europa',
-  'Gameshow-Legenden',
-  'Weltrekorde',
-  'Legendäre Duette',
-  'Museen Europas',
-  'Craft-Beer-Sorten',
-  'Deutsche Sprichwörter',
-  'Retro-Spielkonsolen',
-  'Südamerikanische Städte',
-  'Modetrends der 2000er',
-  'Berühmte Cafés',
-  'Eissorten des Jahres'
-];
-
-const potatoPoolWinter = [
-  'Winterdrinks',
-  'Holiday Movies',
-  'Skiorte Alpen',
-  'Nordische Mythen',
-  'Brettspiele Klassiker',
-  'Festtags-Desserts',
-  'Cozy Serien',
-  'Schlittenhunderassen',
-  'Winter-Sportgeräte',
-  'Kandierte Snacks',
-  'Lebkuchen-Varianten',
-  'Skandinavische Städte',
-  'Polarlichter Hotspots',
-  'Wintersport-Legenden'
-];
-
-const potatoPoolPop = [
-  'Streaming Hits',
-  'TikTok Trends',
-  'Marvel Charaktere',
-  'Oscargekrönte Filme',
-  'Boybands',
-  'Girlgroups',
-  'Fashion Labels',
-  'Memes der 2010er',
-  'Reality-TV Paare',
-  'Berlin Clubs',
-  'Festival Headliner',
-  'Streetwear Brands',
-  'Hitserien der 90er',
-  'Gaming-Franchises'
-];
-
-const potatoPoolHamburg = [
-  'Speicherstadt Orte',
-  'Hamburger Museen',
-  'Hamburger Hafen',
-  'Kaffeehäuser',
-  'Stadtteile',
-  'Fischgerichte',
-  'Plattdeutsche Wörter',
-  'Reeperbahn-Clubs',
-  'Elbe Strände',
-  'Kaffeespezialitäten',
-  'Hamburger Unternehmen',
-  'Brücken der Stadt',
-  'Parks und Grünflächen',
-  'Musicalbühnen',
-  'Sehenswürdigkeiten Umland'
-];
 const buildCozyQuiz60 = (
   mode: 'ordered' | 'random',
   overrides?: {
@@ -396,7 +309,6 @@ const buildCozyQuiz60 = (
     name?: string;
     meta?: Record<string, unknown>;
     blitzPool?: QuizBlitzTheme[];
-    potatoPool?: CozyPotatoThemeInput[];
     questionIds?: string[];
   }
 ): QuizTemplate => {
@@ -416,7 +328,6 @@ const buildCozyQuiz60 = (
       ...overrides?.meta
     },
     blitz: { pool: buildBlitzPool(templateId, overrides?.blitzPool || defaultBlitzPool) },
-    potatoPool: overrides?.potatoPool ?? defaultPotatoThemes,
     enableBingo: false
   };
 };
@@ -436,8 +347,7 @@ const buildQuiz = (id: string, name: string, mode: 'ordered' | 'random'): QuizTe
     name,
     mode,
     questionIds,
-    blitz: { pool: buildBlitzPool(id, defaultBlitzPool) },
-    potatoPool: defaultPotatoThemes
+    blitz: { pool: buildBlitzPool(id, defaultBlitzPool) }
   };
 };
 
@@ -449,9 +359,8 @@ export const defaultQuizzes: QuizTemplate[] = [
     name: '🎯 Demo Quiz (Probe)',
     meta: { description: 'Test-Quiz für schnelle Sessions – im Builder anpassen!' },
     questionIds: cozyLineupClassic.slice(0, 5), // Nur 5 Fragen für schnelles Testen
-    // Fülle Pools ausreichend für neue Modi (>=9 Blitz, >=14 Potato)
-    blitzPool: [...defaultBlitzPool, ...blitzHamburgMoments].slice(0, 10),
-    potatoPool: potatoPoolClassic.slice(0, 15)
+    // Fülle Pools ausreichend für neue Modi (>=9 Blitz)
+    blitzPool: [...defaultBlitzPool, ...blitzHamburgMoments].slice(0, 10)
   })
 ];
 

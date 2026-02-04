@@ -64,9 +64,6 @@ const transitionTable: Record<CozyGameState, Partial<Record<TransitionKey, CozyG
   SCOREBOARD_PAUSE: {
     HOST_NEXT: 'QUESTION_INTRO'
   },
-  POTATO: {
-    HOST_NEXT: 'AWARDS'
-  },
   AWARDS: {
     HOST_NEXT: 'LOBBY'
   },

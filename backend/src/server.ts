@@ -3637,7 +3637,6 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
   const activeQuestion = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
   const localized = activeQuestion ? localizeQuestion(applyOverrides(activeQuestion), room.language) : null;
   const sanitized = localized ? sanitizeQuestionForTeams(localized) : null;
-  const potato = null;
   const blitz: BlitzState | null =
     room.blitzPhase === 'IDLE'
       ? null
@@ -3763,7 +3762,6 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     teamsConnected: connectedTeamIds.length,
     teamStatus,
     questionProgress: { asked: room.askedQuestionIds.length, total: room.questionOrder.length },
-    potato,
     blitz,
     rundlauf,
     oneOfEight,

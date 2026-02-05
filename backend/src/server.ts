@@ -2252,7 +2252,7 @@ const resetBlitzCollections = (room: RoomState) => {
 
 const startBlitzSet = (room: RoomState) => {
   // Only allow starting a new set if we're in a valid transition state
-  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING') {
+  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING' || room.blitzPhase === 'BANNING') {
     throw new Error('Blitz-Set laeuft bereits');
   }
   if (room.blitzSelectedThemes.length < 1) {
@@ -5918,7 +5918,9 @@ io.on('connection', (socket: Socket) => {
         throw new Error('Auswahl nicht abgeschlossen');
       }
       finalizeBlitzSelection(room);
-      startBlitzSet(room);
+      // Move to SELECTION_COMPLETE so moderator can start the round
+      room.blitzPhase = 'SELECTION_COMPLETE';
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SELECTION_COMPLETE' });
       broadcastState(room);
       return { selected: room.blitzSelectedThemes };
     });
@@ -5956,6 +5958,10 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:blitzStartSet', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => {
+      // Allow starting from SELECTION_COMPLETE or READY
+      if (room.blitzPhase !== 'SELECTION_COMPLETE' && room.blitzPhase !== 'READY') {
+        throw new Error('Set kann noch nicht gestartet werden');
+      }
       startBlitzSet(room);
       broadcastState(room);
     });

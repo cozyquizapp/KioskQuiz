@@ -1724,6 +1724,28 @@ body {
   }
 }
 
+/* Blitz theme reveal with glow pop */
+@keyframes blitz-theme-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 
+      0 0 40px rgba(74, 222, 128, 0.6),
+      0 20px 60px rgba(74, 222, 128, 0.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 
+      0 0 20px rgba(74, 222, 128, 0.3),
+      0 10px 40px rgba(74, 222, 128, 0.15);
+  }
+}
+
 /* Reveal with clip path */
 @keyframes reveal-clip {
   0% {
@@ -1869,6 +1891,10 @@ body {
 /* Pulse with depth */
 .pulse-depth {
   animation: pulse-depth 2s ease-in-out infinite;
+}
+
+.blitz-theme-pop {
+  animation: blitz-theme-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Interactive hover scale with spring */

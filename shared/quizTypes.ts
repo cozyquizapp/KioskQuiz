@@ -452,6 +452,7 @@ export type CozyGameState =
   | 'BLITZ'
   | 'BLITZ_READY'
   | 'BLITZ_BANNING'
+  | 'BLITZ_SELECTION_COMPLETE'
   | 'BLITZ_SET_INTRO'
   | 'BLITZ_PLAYING'
   | 'BLITZ_SET_END'
@@ -468,7 +469,7 @@ export type CozyGameState =
   | 'RUNDLAUF_SCOREBOARD_FINAL'
   | 'SIEGEREHRUNG';
 
-export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'ROUND_INTRO' | 'DISPLAYING' | 'PLAYING' | 'SET_END' | 'DONE';
+export type BlitzPhase = 'IDLE' | 'READY' | 'BANNING' | 'SELECTION_COMPLETE' | 'ROUND_INTRO' | 'DISPLAYING' | 'PLAYING' | 'SET_END' | 'DONE';
 
 export type RundlaufVerdict = 'ok' | 'dup' | 'invalid' | 'timeout' | 'pending';
 

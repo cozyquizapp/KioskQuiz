@@ -46,6 +46,9 @@ const transitionTable: Record<CozyGameState, Partial<Record<TransitionKey, CozyG
     HOST_NEXT: 'BLITZ_BANNING'
   },
   BLITZ_BANNING: {
+    HOST_NEXT: 'BLITZ_SELECTION_COMPLETE'
+  },
+  BLITZ_SELECTION_COMPLETE: {
     HOST_NEXT: 'BLITZ_SET_INTRO'
   },
   BLITZ_SET_INTRO: {

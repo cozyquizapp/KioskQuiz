@@ -1752,6 +1752,8 @@ useEffect(() => {
           return 'READY';
         case 'BLITZ_BANNING':
           return 'BANNING';
+        case 'BLITZ_SELECTION_COMPLETE':
+          return 'SELECTION_COMPLETE';
         case 'BLITZ_SET_INTRO':
           return 'ROUND_INTRO';
         case 'BLITZ_PLAYING':
@@ -1815,6 +1817,72 @@ useEffect(() => {
           <div className="beamer-intro-card">
             <h2>FOTOSPRINT</h2>
             <p>{blitz.theme?.title || '-'}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (phase === 'SELECTION_COMPLETE') {
+      const pickedTheme = selectedThemes[0];
+      const randomThemes = selectedThemes.slice(1);
+      return (
+        <div className="beamer-stack blitz-stack">
+          <div className="beamer-intro-card">
+            <h2>DIE 3 THEMEN SIND AUSGELOST!</h2>
+            <p style={{ fontSize: '18px', marginBottom: '30px', opacity: 0.9 }}>Gleich geht es los...</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '30px' }}>
+            {pickedTheme && (
+              <div
+                className="blitz-theme-pop"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2))',
+                  border: '2px solid rgba(59, 130, 246, 0.6)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  minHeight: '140px',
+                  animationDelay: '0s'
+                } as any}
+              >
+                <div style={{ fontSize: '14px', color: 'rgba(59, 130, 246, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                  Platz 1 wählt
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                  {pickedTheme.title}
+                </div>
+              </div>
+            )}
+            {randomThemes.map((theme, idx) => (
+              <div
+                key={`random-${idx}-${theme.id}`}
+                className="blitz-theme-pop"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.15))',
+                  border: '2px solid rgba(74, 222, 128, 0.5)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  minHeight: '140px',
+                  animationDelay: `${0.2 + idx * 0.15}s`
+                }}
+              >
+                <div style={{ fontSize: '14px', color: 'rgba(74, 222, 128, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                  Zufällig
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                  {theme.title}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       );

@@ -283,6 +283,7 @@ function ModeratorPage(): React.ReactElement {
     BLITZ: { label: 'Fotosprint', hint: 'Schnelle Sets laufen', tone: 'live' },
     BLITZ_READY: { label: 'Fotosprint bereit', hint: 'Teams machen sich bereit', tone: 'live' },
     BLITZ_BANNING: { label: 'Fotosprint Auswahl', hint: 'Teams bannen/waehlen', tone: 'eval' },
+    BLITZ_SELECTION_COMPLETE: { label: 'Fotosprint Bereit', hint: 'Auswahl fertig - Starten?', tone: 'live' },
     BLITZ_SET_INTRO: { label: 'Fotosprint Intro', hint: 'Naechstes Set', tone: 'live' },
     BLITZ_PLAYING: { label: 'Fotosprint', hint: 'Set laeuft', tone: 'live' },
     BLITZ_SET_END: { label: 'Fotosprint Ende', hint: 'Set beendet', tone: 'eval' },
@@ -1945,6 +1946,26 @@ function ModeratorPage(): React.ReactElement {
         {phase === 'ROUND_INTRO' && (
           <div style={{ marginTop: 10, fontSize: 13, color: '#cbd5e1' }}>
             Runde startet gleich. Thema: {currentTheme?.title || '-'}
+          </div>
+        )}
+
+        {phase === 'SELECTION_COMPLETE' && (
+          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+            <div style={{ fontWeight: 700, color: '#4ade80' }}>Auswahl fertig!</div>
+            <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+              Die 3 Themen sind ausgelost. Jetzt kann die erste Runde starten.
+            </div>
+            <button
+              style={{
+                ...inputStyle,
+                background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+                color: '#0b1020',
+                fontWeight: 700
+              }}
+              onClick={() => emitBlitzEvent('host:blitzStartSet')}
+            >
+              ▶ Set starten
+            </button>
           </div>
         )}
 

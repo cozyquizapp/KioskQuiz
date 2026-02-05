@@ -2118,7 +2118,6 @@ const finalizeBlitzSelection = (room: RoomState) => {
   room.blitzSetIndex = -1;
   room.blitzDeadlineAt = null;
   room.blitzTheme = null;
-  room.blitzPhase = 'ROUND_INTRO';
   resetBlitzCollections(room);
 };
 

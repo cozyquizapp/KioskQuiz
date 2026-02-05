@@ -727,73 +727,204 @@
 
 .beamer-select-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  padding: 0 20px;
+  max-width: 100%;
 }
 
+/* 2026 Premium Design - Large, Luxurious Cards */
 .beamer-select-card {
-  padding: 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.001);
-  backdrop-filter: blur(40px) saturate(200%) brightness(1.15);
+  padding: 32px 24px;
+  border-radius: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(60px) saturate(220%) brightness(1.25);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Luxurious glow effect on hover */
+.beamer-select-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 28px;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.beamer-select-card:hover::before {
+  opacity: 1;
+}
+
+.beamer-select-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              0 0 30px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .beamer-select-card.banned {
-  opacity: 0.45;
+  opacity: 0.5;
+  transform: scale(0.95);
+  filter: grayscale(40%);
+}
+
+.beamer-select-card.banned .beamer-select-title {
   text-decoration: line-through;
+  opacity: 0.7;
 }
 
 .beamer-select-title {
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-size: 22px;
+  line-height: 1.3;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  word-break: break-word;
+  z-index: 1;
+  position: relative;
 }
 
 .beamer-select-badge {
   align-self: flex-start;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 800;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  z-index: 2;
+  position: relative;
+  transition: all 0.25s ease;
 }
 
 .beamer-select-badge.pick {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.5);
-  color: #bbf7d0;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.15));
+  border-color: rgba(34, 197, 94, 0.6);
+  color: #a7f3d0;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
 }
 
 .beamer-select-badge.random {
-  background: rgba(99, 102, 241, 0.18);
-  border-color: rgba(99, 102, 241, 0.5);
-  color: #c7d2fe;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0.15));
+  border-color: rgba(99, 102, 241, 0.6);
+  color: #ddd6fe;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
 }
 
 .beamer-select-badge.banned {
-  background: rgba(248, 113, 113, 0.2);
-  border-color: rgba(248, 113, 113, 0.5);
-  color: #fecaca;
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(248, 113, 113, 0.15));
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fda9a9;
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.2);
 }
 
 .beamer-select-status {
-  font-size: 13px;
-  color: var(--beamer-muted);
-  letter-spacing: 0.08em;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-weight: 700;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 800;
+  padding: 12px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.01);
-  backdrop-filter: blur(20px);
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(40px) saturate(210%);
   text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
 }
+
+/* Large 16:9 displays (1920x1080) - More columns */
+@media (min-width: 1920px) {
+  .beamer-select-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 28px;
+    padding: 0 40px;
+  }
+  
+  .beamer-select-card {
+    padding: 40px 28px;
+    border-radius: 32px;
+    min-height: 160px;
+  }
+  
+  .beamer-select-title {
+    font-size: 26px;
+  }
+  
+  .beamer-select-badge {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  
+  .beamer-select-status {
+    font-size: 16px;
+    padding: 14px 24px;
+  }
+}
+
+/* 4K displays (2560x1440) - Even larger */
+@media (min-width: 2560px) {
+  .beamer-select-grid {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 36px;
+    padding: 0 60px;
+  }
+  
+  .beamer-select-card {
+    padding: 48px 32px;
+    border-radius: 36px;
+    min-height: 180px;
+    border-width: 2.5px;
+  }
+  
+  .beamer-select-title {
+    font-size: 32px;
+  }
+  
+  .beamer-select-badge {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .beamer-select-status {
+    font-size: 18px;
+    padding: 16px 28px;
+  }
+}
+
+
 
 .beamer-conflict-badge {
   display: inline-flex;

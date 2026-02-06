@@ -24,7 +24,7 @@ export const pageStyleTeam: CSSProperties = {
   width: '100%',
   height: '100vh', // Fallback for older browsers
   // @ts-ignore - dvh not in CSSProperties yet
-  height: '100dvh', // Modern browsers with dynamic viewport
+  minHeight: '100dvh', // Modern browsers with dynamic viewport
   paddingTop: 'calc(clamp(16px, 4vw, 24px) + env(safe-area-inset-top))',
   paddingRight: 'clamp(12px, 3.5vw, 16px)',
   paddingBottom: 'calc(clamp(28px, 6vw, 36px) + env(safe-area-inset-bottom))',

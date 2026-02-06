@@ -10,7 +10,8 @@ import {
   Team,
   BlitzState,
   BunteTuetePayload,
-  RundlaufState
+  RundlaufState,
+  BettingQuestion
 } from '@shared/quizTypes';
 import {
   fetchCurrentQuestion,
@@ -385,7 +386,9 @@ function TeamView({ roomCode }: TeamViewProps) {
     const enVal = COPY.en[key];
     if (language === 'both') {
       if (typeof deVal === 'function' && typeof enVal === 'function') {
-        return ((...args: any[]) => `${deVal(...args)} / ${enVal(...args)}`) as any;
+        const deFn = deVal as (...args: any[]) => string;
+        const enFn = enVal as (...args: any[]) => string;
+        return ((...args: any[]) => `${deFn(...args)} / ${enFn(...args)}`) as any;
       }
       if (typeof deVal === 'string' && typeof enVal === 'string') {
         return `${deVal} / ${enVal}` as any;
@@ -879,14 +882,14 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       await loadQuestion();
       clearMessage();
-      } catch (error) {
+    } catch (error) {
       showError(
-          language === 'de'
+        language === 'de'
           ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung prüfen.`
-      } finally {
-        setJoinPending(false);
           : `Join failed (${SOCKET_URL}). Please check room code/connection.`
-        );
+      );
+    } finally {
+      setJoinPending(false);
     }
   };
 
@@ -3026,12 +3029,8 @@ function TeamView({ roomCode }: TeamViewProps) {
         );
       case 'waitingForQuestion':
         return evaluating
-          ? renderWaiting(t('evaluating'), null)
-          : renderWaiting(
-              waitForQuestionHeadline,
-              teamId ? null : t('waitingJoin'),
-              Boolean(teamId)
-            );
+          ? renderWaiting(t('evaluating'))
+          : renderWaiting(waitForQuestionHeadline, teamId ? undefined : t('waitingJoin'));
       case 'answering':
         return renderAnswering();
       case 'waitingForResult':
@@ -3039,9 +3038,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       case 'showResult':
         return renderShowResult();
       default:
-        return evaluating
-            ? renderWaiting(t('evaluating'), null)
-            : renderWaiting(waitForQuestionHeadline);
+        return evaluating ? renderWaiting(t('evaluating')) : renderWaiting(waitForQuestionHeadline);
     }
   };
   function toggleReady() {
@@ -3095,8 +3092,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const mainContent =
     viewState === 'error'
       ? renderErrorCard()
-      : viewState === 'loading'
-      ? renderLoadingCard()
       : viewState === 'join'
       ? renderNotJoined()
       : renderByPhase();

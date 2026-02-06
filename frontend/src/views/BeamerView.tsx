@@ -29,7 +29,7 @@ import { loadPlayDraft } from '../utils/draft';
 import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
-import { Confetti, ParticleEffect } from '../components/Confetti';
+import { createConfetti } from '../utils/confetti';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -326,6 +326,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const slotTimeoutRef = useRef<number | null>(null);
   const reconnectTimeoutsRef = useRef<number[]>([]);
   const connectionStatusRef = useRef(connectionStatus);
+  const confettiRef = useRef<ReturnType<typeof createConfetti> | null>(null);
+  const prevGameStateRef = useRef<CozyGameState | null>(null);
 
   const categories = useMemo(() => Object.keys(categoryLabels) as QuizCategory[], []);
   const t = language === 'both' ? translationsBoth : translations[language === 'both' ? 'de' : language];
@@ -871,6 +873,30 @@ useEffect(() => {
       }));
     }
   }, [slotMeta]);
+
+  // Confetti effect for awards
+  useEffect(() => {
+    if (gameState === 'SIEGEREHRUNG' && prevGameStateRef.current !== 'SIEGEREHRUNG') {
+      if (!confettiRef.current && typeof document !== 'undefined') {
+        confettiRef.current = createConfetti(document.body);
+      }
+      setTimeout(() => {
+        confettiRef.current?.explosion(300);
+        setTimeout(() => confettiRef.current?.rain(4000), 500);
+      }, 300);
+    }
+    prevGameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Cleanup confetti on unmount
+  useEffect(() => {
+    return () => {
+      if (confettiRef.current) {
+        confettiRef.current.destroy();
+        confettiRef.current = null;
+      }
+    };
+  }, []);
 
   const rawViewMode: BeamerViewMode =
     screen === 'intro'

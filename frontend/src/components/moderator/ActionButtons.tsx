@@ -98,9 +98,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             }}
             style={{
               ...inputStyle,
-              background: primaryColor ? `${primaryColor}11` : '#0f172a',
-              color: '#f8fafc',
-              border: primaryColor ? `1px solid ${primaryColor}55` : '1px solid rgba(255,255,255,0.16)'
+              background: primaryColor ? `${primaryColor}11` : 'var(--ui-input-bg)',
+              color: 'var(--ui-input-text)',
+              border: primaryColor ? `1px solid ${primaryColor}55` : '1px solid var(--ui-input-border)'
             }}
           >
             {quizzes.map((q) => (
@@ -114,8 +114,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               ...inputStyle,
               background: primaryColor
                 ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
-                : 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-              color: '#0b1020',
+                : 'var(--ui-button-primary)',
+              color: 'var(--ui-button-on-light)',
               cursor: 'pointer',
               opacity: actionState.quiz ? 0.7 : 1,
               border: primaryColor ? `1px solid ${primaryColor}88` : '1px solid rgba(99,229,255,0.5)',
@@ -138,8 +138,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #34d399, #22c55e)',
-            color: '#0b1020',
+            background: 'var(--ui-button-success)',
+            color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -150,12 +150,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         >
           Zur Lobby wechseln
         </button>
-        <div style={{ fontWeight: 700, color: '#cbd5e1' }}>{currentQuizName ? `Gewählt: ${currentQuizName}` : 'Kein Quiz gewählt'}</div>
+        <div style={{ fontWeight: 700, color: 'var(--ui-chip-text)' }}>{currentQuizName ? `Gewählt: ${currentQuizName}` : 'Kein Quiz gewählt'}</div>
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-            color: '#0b1020',
+            background: 'var(--ui-button-info)',
+            color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -184,8 +184,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #34d399, #22c55e)',
-            color: '#0b1020',
+            background: 'var(--ui-button-success)',
+            color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -199,8 +199,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #1f2937, #0f172a)',
-            color: '#f8fafc',
+            background: 'var(--ui-button-neutral)',
+            color: 'var(--ui-button-on-dark)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -226,14 +226,14 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           gap: 10
         }}
       >
-        <div style={{ ...inputStyle, background: 'rgba(255,255,255,0.03)', color: '#e2e8f0', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+        <div style={{ ...inputStyle, background: 'rgba(255,255,255,0.04)', color: 'var(--ui-input-text)', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
           Wichtig: Alle Teams bereit machen, Regeln ansagen.
         </div>
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-            color: '#0b1020',
+            background: 'var(--ui-button-info)',
+            color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -247,8 +247,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #34d399, #22c55e)',
-            color: '#0b1020',
+            background: 'var(--ui-button-success)',
+            color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
             fontSize: 15,
@@ -276,8 +276,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         style={{
           ...inputStyle,
-          background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-          color: '#0b1020',
+          background: 'var(--ui-button-primary)',
+          color: 'var(--ui-button-on-light)',
           cursor: 'pointer',
           height: 56,
           fontSize: 15,
@@ -310,8 +310,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         style={{
           ...inputStyle,
-          background: 'linear-gradient(135deg, #34d399, #22c55e)',
-          color: '#0b1020',
+          background: 'var(--ui-button-success)',
+          color: 'var(--ui-button-on-light)',
           cursor: 'pointer',
           height: 56,
           fontSize: 15,
@@ -334,8 +334,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         style={{
           ...inputStyle,
-          background: 'linear-gradient(135deg, #fca5a5, #f87171)',
-          color: '#0b1020',
+          background: 'var(--ui-button-danger)',
+          color: 'var(--ui-button-on-light)',
           cursor: 'pointer',
           height: 56,
           fontSize: 15,
@@ -358,8 +358,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         style={{
           ...inputStyle,
-          background: 'linear-gradient(135deg, #fcd34d, #fbbf24)',
-          color: '#0b1020',
+          background: 'var(--ui-button-warning)',
+          color: '#1f1305',
           cursor: 'pointer',
           height: 56,
           fontSize: 15,
@@ -387,8 +387,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         style={{
           ...inputStyle,
-          background: 'linear-gradient(135deg, #fde047, #facc15)',
-          color: '#0b1020',
+          background: 'var(--ui-button-warning)',
+          color: '#1f1305',
           cursor: 'pointer',
           height: 56,
           fontSize: 15,

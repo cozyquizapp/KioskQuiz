@@ -4,7 +4,6 @@ import {
   AnswerEntry,
   Team,
   QuizTemplate,
-  BingoBoard,
   SyncStatePayload,
   Language
 } from '@shared/quizTypes';
@@ -31,7 +30,7 @@ import { ModeratorFunnyAnswersPanel } from '../admin/ModeratorFunnyAnswersPanel'
 import { theme } from '../theme';
 
 type Phase = 'setup' | 'live' | 'evaluating' | 'final';
-type Tab = 'answers' | 'teams' | 'bingo';
+type Tab = 'answers' | 'teams';
 
 type AnswerState = {
   answers: Record<string, AnswerEntry>;
@@ -61,7 +60,6 @@ export default function AdminView({ roomCode }: Props) {
   const [currentQuestion, setCurrentQuestion] = useState<AnyQuestion | null>(null);
   const [remaining, setRemaining] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState>({ answers: {}, teams: {} });
-  const [teamBoards, setTeamBoards] = useState<Record<string, BingoBoard>>({});
   const [phase, setPhase] = useState<Phase>('setup');
   const [language, setLanguageState] = useState<Language>('de');
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
@@ -169,7 +167,6 @@ export default function AdminView({ roomCode }: Props) {
 
   const loadBoards = async () => {
     const score = await fetchScoreboard(roomCode);
-    setTeamBoards(score.boards || {});
     setAnswerState((prev) => ({ ...prev, teams: score.teams.reduce((acc: Record<string, Team>, t: Team) => ({ ...acc, [t.id]: t }), {}) }));
   };
 
@@ -371,17 +368,6 @@ export default function AdminView({ roomCode }: Props) {
     </div>
   );
 
-  const renderBingo = () => (
-    <div style={{ display: 'grid', gap: 8 }}>
-      {Object.entries(teamBoards).map(([teamId, board]) => (
-        <div key={teamId} style={{ padding: 10, borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ fontWeight: 800 }}>{answerState.teams[teamId]?.name ?? teamId}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 12 }}>{board.filter((c) => c.marked).length}/25 Felder markiert</div>
-        </div>
-      ))}
-      {Object.keys(teamBoards).length === 0 && <p style={{ color: 'var(--muted)', margin: 0 }}>Keine Boards.</p>}
-    </div>
-  );
 
   const remainingSeconds = timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0;
   const timerActive = Boolean(timerEndsAt);
@@ -510,20 +496,10 @@ export default function AdminView({ roomCode }: Props) {
             >
               Teams
             </button>
-            <button
-              style={{ ...tabStyle(activeTab === 'bingo') }}
-              onClick={() => {
-                setActiveTab('bingo');
-                loadBoards().catch(() => undefined);
-              }}
-            >
-              Bingo
-            </button>
           </div>
 
           {activeTab === 'answers' && renderAnswers()}
           {activeTab === 'teams' && renderTeams()}
-          {activeTab === 'bingo' && renderBingo()}
         </div>
 
         <ModeratorFunnyAnswersPanel roomCode={roomCode} language={language} />
@@ -535,8 +511,9 @@ export default function AdminView({ roomCode }: Props) {
 const tabStyle = (active: boolean) => ({
   padding: '8px 12px',
   borderRadius: 10,
-  border: active ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.12)',
-  background: active ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-  color: '#e2e8f0',
-  fontWeight: 800
+  border: active ? '1px solid rgba(255,255,255,0.28)' : '1px solid var(--ui-panel-border)',
+  background: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+  color: 'var(--ui-input-text)',
+  fontWeight: 800,
+  boxShadow: active ? '0 8px 18px rgba(0,0,0,0.25)' : 'none'
 });

@@ -138,9 +138,9 @@ export const ModeratorFunnyAnswersPanel: React.FC<ModeratorFunnyAnswersProps> = 
           style={{
             padding: '6px 12px',
             borderRadius: 6,
-            border: 'none',
-            background: '#22c55e',
-            color: '#0b1020',
+            border: '1px solid rgba(34, 197, 94, 0.5)',
+            background: 'var(--ui-button-success)',
+            color: 'var(--ui-button-on-light)',
             fontWeight: 700,
             cursor: 'pointer',
             fontSize: 12
@@ -155,18 +155,19 @@ export const ModeratorFunnyAnswersPanel: React.FC<ModeratorFunnyAnswersProps> = 
 
 // Styles
 const panelStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.5)',
-  border: '1px solid rgba(136,197,244,0.3)',
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
   borderRadius: 12,
   padding: 14,
   marginTop: 12,
+  boxShadow: 'var(--ui-card-shadow)',
   backdropFilter: 'blur(10px)'
 };
 
 const headerStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 800,
-  color: '#e2e8f0',
+  color: 'var(--ui-input-text)',
   marginBottom: 10,
   textTransform: 'uppercase',
   letterSpacing: '0.08em'
@@ -180,7 +181,7 @@ const contentStyle: React.CSSProperties = {
 
 const emptyStyle: React.CSSProperties = {
   fontSize: 12,
-  color: '#64748b',
+  color: 'var(--muted)',
   fontStyle: 'italic',
   padding: '8px 0'
 };
@@ -194,8 +195,8 @@ const listStyle: React.CSSProperties = {
 };
 
 const itemStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid var(--ui-panel-border)',
   borderRadius: 8,
   padding: 8,
   display: 'flex',
@@ -213,7 +214,7 @@ const itemHeaderStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
-  color: '#22d3ee',
+  color: '#67e8f9',
   textTransform: 'uppercase',
   letterSpacing: '0.06em'
 };
@@ -221,15 +222,15 @@ const labelStyle: React.CSSProperties = {
 const timeStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#fbbf24',
-  background: 'rgba(251,191,36,0.1)',
+  color: '#facc15',
+  background: 'rgba(251,191,36,0.16)',
   padding: '2px 6px',
   borderRadius: 4
 };
 
 const answerStyle: React.CSSProperties = {
   fontSize: 12,
-  color: '#cbd5e1',
+  color: 'var(--ui-input-text)',
   fontStyle: 'italic'
 };
 
@@ -238,9 +239,9 @@ const markButtonStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
   borderRadius: 4,
-  border: '1px solid rgba(136,197,244,0.4)',
-  background: 'rgba(136,197,244,0.15)',
-  color: '#88c5f4',
+  border: '1px solid rgba(99, 229, 255, 0.45)',
+  background: 'rgba(99, 229, 255, 0.16)',
+  color: '#bae6fd',
   cursor: 'pointer',
   transition: 'all 0.2s ease'
 };

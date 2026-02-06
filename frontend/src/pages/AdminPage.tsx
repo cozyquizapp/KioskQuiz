@@ -52,8 +52,8 @@ const AdminPage = () => {
       <div
         style={{
           minHeight: '100vh',
-          background: '#0b0d14',
-          color: '#e2e8f0',
+          background: 'var(--bg)',
+          color: 'var(--text)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
@@ -70,9 +70,9 @@ const AdminPage = () => {
               width: '100%',
               padding: 12,
               borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.15)',
-              background: 'rgba(255,255,255,0.05)',
-              color: '#f8fafc',
+              border: '1px solid var(--ui-input-border)',
+              background: 'var(--ui-input-bg)',
+              color: 'var(--ui-input-text)',
               letterSpacing: '0.2em'
             }}
           />
@@ -84,8 +84,8 @@ const AdminPage = () => {
               padding: 12,
               borderRadius: 12,
               border: 'none',
-              background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-              color: '#0b1020',
+              background: 'var(--ui-button-primary)',
+              color: 'var(--ui-button-on-light)',
               fontWeight: 800,
               cursor: 'pointer'
             }}

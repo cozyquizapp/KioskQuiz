@@ -18,8 +18,8 @@ const pillStyle: React.CSSProperties = {
   gap: 6,
   padding: '8px 12px',
   borderRadius: 999,
-  border: '1px solid rgba(255,255,255,0.12)',
-  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid var(--ui-panel-border)',
+  background: 'rgba(255,255,255,0.06)',
   fontWeight: 800,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
@@ -71,7 +71,7 @@ const AdminRoomHeader = ({
         {phase && <div style={pillStyle}>Phase: {phase}</div>}
         {typeof remainingQuestions === 'number' && <div style={pillStyle}>Rest: {remainingQuestions}</div>}
         {language && <div style={pillStyle}>{language.toUpperCase()}</div>}
-        <div style={{ ...pillStyle, background: timerActive ? '#16a34a22' : 'rgba(255,255,255,0.05)' }}>
+        <div style={{ ...pillStyle, background: timerActive ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)' }}>
           Timer: {timeLeft}
         </div>
         {extraBadges?.map((b) => (

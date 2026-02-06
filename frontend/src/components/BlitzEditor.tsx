@@ -249,8 +249,8 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
 }
 
 const themeCardStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
   borderRadius: 12,
   padding: 20,
   marginBottom: 16
@@ -259,7 +259,7 @@ const themeCardStyle: React.CSSProperties = {
 const themeTitleInputStyle: React.CSSProperties = {
   background: 'transparent',
   border: 'none',
-  color: '#f1f5f9',
+  color: 'var(--ui-input-text)',
   fontSize: 18,
   fontWeight: 700,
   outline: 'none',
@@ -268,40 +268,40 @@ const themeTitleInputStyle: React.CSSProperties = {
 };
 
 const addButtonStyle: React.CSSProperties = {
-  background: 'rgba(59,130,246,0.2)',
-  border: '1px solid rgba(59,130,246,0.4)',
+  background: 'var(--ui-button-primary)',
+  border: '1px solid rgba(99, 229, 255, 0.45)',
   borderRadius: 8,
   padding: '10px 20px',
-  color: '#60a5fa',
+  color: 'var(--ui-button-on-light)',
   fontWeight: 600,
   cursor: 'pointer',
   fontSize: 14
 };
 
 const addItemButtonStyle: React.CSSProperties = {
-  background: 'rgba(34,197,94,0.2)',
-  border: '1px solid rgba(34,197,94,0.4)',
+  background: 'var(--ui-button-success)',
+  border: '1px solid rgba(34, 197, 94, 0.45)',
   borderRadius: 8,
   padding: '8px 16px',
-  color: '#4ade80',
+  color: 'var(--ui-button-on-light)',
   fontWeight: 600,
   cursor: 'pointer',
   fontSize: 13
 };
 
 const deleteButtonStyle: React.CSSProperties = {
-  background: 'rgba(239,68,68,0.2)',
-  border: '1px solid rgba(239,68,68,0.4)',
+  background: 'var(--ui-button-danger)',
+  border: '1px solid rgba(239, 68, 68, 0.45)',
   borderRadius: 6,
   padding: '6px 12px',
-  color: '#f87171',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontSize: 13
 };
 
 const itemCardStyle: React.CSSProperties = {
-  background: 'rgba(30,41,59,0.6)',
-  border: '1px solid rgba(148,163,184,0.15)',
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
   borderRadius: 8,
   padding: 16,
   position: 'relative'
@@ -312,20 +312,20 @@ const previewCardStyle: React.CSSProperties = {
   top: -60,
   left: 16,
   background: 'rgba(15,23,42,0.95)',
-  border: '1px solid rgba(34,197,94,0.4)',
+  border: '1px solid rgba(34,197,94,0.45)',
   borderRadius: 6,
   padding: 12,
   minWidth: 200,
   zIndex: 10,
   boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-  color: '#e2e8f0'
+  color: 'var(--ui-input-text)'
 };
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 11,
   fontWeight: 600,
-  color: '#94a3b8',
+  color: 'var(--muted)',
   marginBottom: 6,
   marginTop: 12,
   textTransform: 'uppercase',
@@ -333,11 +333,11 @@ const labelStyle: React.CSSProperties = {
 };
 
 const itemInputStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-input-bg)',
+  border: '1px solid var(--ui-input-border)',
   borderRadius: 6,
   padding: '8px 12px',
-  color: '#f1f5f9',
+  color: 'var(--ui-input-text)',
   fontSize: 13,
   width: '100%',
   outline: 'none'

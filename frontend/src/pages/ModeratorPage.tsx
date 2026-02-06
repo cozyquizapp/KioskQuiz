@@ -46,11 +46,11 @@ type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?
 type NextActionHintDetails = { hotkey: string; label: string; detail: string; context?: string };
 
 const card: React.CSSProperties = {
-  background: 'rgba(10,14,24,0.92)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 14,
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
+  borderRadius: 'var(--radius)',
   padding: 16,
-  boxShadow: '0 14px 32px rgba(0,0,0,0.32)',
+  boxShadow: 'var(--ui-card-shadow)',
   backdropFilter: 'blur(10px)',
   overflow: 'hidden'
 };
@@ -59,9 +59,9 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px 14px',
   borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: '#0f172a',
-  color: '#e5e7eb',
+  border: '1px solid var(--ui-input-border)',
+  background: 'var(--ui-input-bg)',
+  color: 'var(--ui-input-text)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
   fontWeight: 600
 };
@@ -75,12 +75,12 @@ const timerButtonStyle: React.CSSProperties = {
 };
 
 const statChip: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'var(--ui-chip-bg)',
+  border: '1px solid var(--ui-chip-border)',
   borderRadius: 9999,
   padding: '6px 10px',
   fontSize: 12,
-  color: '#cbd5e1',
+  color: 'var(--ui-chip-text)',
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
@@ -88,11 +88,11 @@ const statChip: React.CSSProperties = {
 };
 
 const actionWrap: React.CSSProperties = {
-  background: 'rgba(12,16,26,0.82)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 14,
+  background: 'var(--ui-panel-bg)',
+  border: '1px solid var(--ui-panel-border)',
+  borderRadius: 'var(--radius)',
   padding: 12,
-  boxShadow: '0 12px 26px rgba(0,0,0,0.28)',
+  boxShadow: 'var(--ui-panel-shadow)',
   backdropFilter: 'blur(10px)',
   overflow: 'hidden'
 };
@@ -214,6 +214,7 @@ function ModeratorPage(): React.ReactElement {
     timerStop: boolean;
     reveal: boolean;
   }>({ quiz: false, next: false, lock: false, timerStart: false, timerStop: false, reveal: false });
+  const [blitzActionBusy, setBlitzActionBusy] = useState(false);
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>('');
   const [creatingSession, setCreatingSession] = useState(false);
@@ -1000,12 +1001,15 @@ function ModeratorPage(): React.ReactElement {
     payload?: Record<string, unknown>,
     onSuccess?: () => void
   ) {
+    if (blitzActionBusy) return;
     if (!roomCode) {
       setToast('Roomcode fehlt');
       setTimeout(() => setToast(null), 2000);
       return;
     }
+    setBlitzActionBusy(true);
     const emitted = emitHost(eventName, { roomCode, ...(payload || {}) }, (resp?: { ok?: boolean; error?: string }) => {
+      setBlitzActionBusy(false);
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
         setTimeout(() => setToast(null), 2200);
@@ -1014,6 +1018,7 @@ function ModeratorPage(): React.ReactElement {
       onSuccess?.();
     });
     if (!emitted) {
+      setBlitzActionBusy(false);
       setToast('Socket nicht verbunden');
       setTimeout(() => setToast(null), 2000);
     }
@@ -1397,10 +1402,10 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Pause</div>
-          <p style={{ color: '#cbd5e1' }}>K.O.-Rallye startet gleich.</p>
+          <p style={{ color: 'var(--ui-chip-text)' }}>K.O.-Rallye startet gleich.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              style={{ ...inputStyle, width: 'auto', background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' }}
               onClick={handleNextQuestion}
             >
               WEITER
@@ -1414,11 +1419,11 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard vor K.O.-Rallye</div>
-          <p style={{ color: '#cbd5e1' }}>Platzierung entscheidet die Auswahl.</p>
+          <p style={{ color: 'var(--ui-chip-text)' }}>Platzierung entscheidet die Auswahl.</p>
           <div style={{ marginTop: 10 }}>{renderCompactScoreboard('Standings')}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              style={{ ...inputStyle, width: 'auto', background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' }}
               onClick={handleNextQuestion}
             >
               WEITER
@@ -1434,7 +1439,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Kategorien waehlen</div>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
             Platz 1 streicht 2 Kategorien, letzter Platz waehlt 1 Fix-Kategorie.
           </div>
           <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
@@ -1460,7 +1465,7 @@ function ModeratorPage(): React.ReactElement {
               })}
             </div>
             {selectedTitles.length > 0 && (
-              <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+              <div style={{ fontSize: 12, color: 'var(--ui-chip-text)' }}>
                 Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' � ')}
               </div>
             )}
@@ -1765,7 +1770,7 @@ function ModeratorPage(): React.ReactElement {
             </select>
             <button
               style={{ ...inputStyle, width: 'auto' }}
-              disabled={disabled}
+              disabled={disabled || blitzActionBusy}
               onClick={() =>
                 emitBlitzEvent('host:banBlitzTheme', { teamId, themeId: blitzBanDrafts[teamId], theme: blitzBanDrafts[teamId] })
               }
@@ -1814,6 +1819,7 @@ function ModeratorPage(): React.ReactElement {
                 background: 'linear-gradient(135deg, #fde68a, #f97316)',
                 color: '#1f1305'
               }}
+              disabled={blitzActionBusy}
               onClick={() =>
                 emitBlitzEvent(
                   'host:startBlitz',
@@ -1851,6 +1857,7 @@ function ModeratorPage(): React.ReactElement {
             </div>
             <button
               style={{ ...inputStyle, width: 'auto' }}
+              disabled={blitzActionBusy}
               onClick={() => emitBlitzEvent('host:blitzOpenSelection')}
             >
               Auswahl starten
@@ -1904,7 +1911,7 @@ function ModeratorPage(): React.ReactElement {
                     </select>
                     <button
                       style={{ ...inputStyle, width: 'auto' }}
-                      disabled={!blitzPickDraft}
+                      disabled={!blitzPickDraft || blitzActionBusy}
                       onClick={() => emitBlitzEvent('host:pickBlitzTheme', { teamId: lastTeamId, themeId: blitzPickDraft })}
                     >
                       Thema festlegen
@@ -1915,7 +1922,7 @@ function ModeratorPage(): React.ReactElement {
             )}
             <button
               style={{ ...inputStyle, width: 'auto' }}
-              disabled={Boolean(lastTeamId && !pinnedTheme)}
+              disabled={Boolean(lastTeamId && !pinnedTheme) || blitzActionBusy}
               onClick={() => emitBlitzEvent('host:confirmBlitzThemes')}
             >
               Themen auslosen
@@ -1962,6 +1969,7 @@ function ModeratorPage(): React.ReactElement {
                 color: '#0b1020',
                 fontWeight: 700
               }}
+              disabled={blitzActionBusy}
               onClick={() => emitBlitzEvent('host:blitzStartSet')}
             >
               ▶ Set starten
@@ -2040,12 +2048,14 @@ function ModeratorPage(): React.ReactElement {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
                 style={{ ...inputStyle, width: 'auto' }}
+                disabled={blitzActionBusy}
                 onClick={() => emitBlitzEvent('host:lockBlitzSet')}
               >
                 Set sperren
               </button>
               <button
                 style={{ ...inputStyle, width: 'auto' }}
+                disabled={blitzActionBusy}
                 onClick={() => emitBlitzEvent('host:revealBlitzSet')}
               >
                 Ergebnisse berechnen
@@ -2083,6 +2093,7 @@ function ModeratorPage(): React.ReactElement {
           <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               style={{ ...inputStyle, width: 'auto' }}
+              disabled={blitzActionBusy}
               onClick={() => emitBlitzEvent('host:blitzStartSet')}
             >
               {setIndex < 0 ? 'Set starten' : 'Nächstes Set starten'}
@@ -2382,6 +2393,7 @@ function ModeratorPage(): React.ReactElement {
           answersCount={answersCount}
           teamsCount={teamsCount}
           unreviewedCount={unreviewedCount}
+          question={question}
           statChip={statChip}
           inputStyle={inputStyle}
           onOverride={(teamId, isCorrect) =>
@@ -2424,9 +2436,9 @@ function ModeratorPage(): React.ReactElement {
           }
         ];
     const toneStyle = (tone: 'primary' | 'warning' | 'accent') => {
-      if (tone === 'primary') return { background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' };
-      if (tone === 'warning') return { background: 'linear-gradient(135deg, #fed7aa, #fb923c)', color: '#1f1305' };
-      return { background: 'linear-gradient(135deg, #c084fc, #8b5cf6)', color: '#130924' };
+      if (tone === 'primary') return { background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' };
+      if (tone === 'warning') return { background: 'var(--ui-button-warning)', color: '#1f1305' };
+      return { background: 'var(--ui-button-accent)', color: '#130924' };
     };
     return (
       <section style={{ ...card, marginTop: 12 }}>
@@ -3277,13 +3289,13 @@ const renderCozyStagePanel = () => {
               key={p}
               style={{
                 ...inputStyle,
-                background: viewPhase === p ? 'linear-gradient(135deg, #63e5ff, #60a5fa)' : 'rgba(255,255,255,0.05)',
-                color: viewPhase === p ? '#0b1020' : '#e2e8f0',
+                background: viewPhase === p ? 'var(--ui-button-primary)' : 'rgba(255,255,255,0.05)',
+                color: viewPhase === p ? 'var(--ui-button-on-light)' : 'var(--ui-input-text)',
                 cursor: 'pointer',
                 width: 'auto',
                 minWidth: 78,
                 padding: '8px 10px',
-                border: viewPhase === p ? '1px solid rgba(99,229,255,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                border: viewPhase === p ? '1px solid rgba(99,229,255,0.6)' : '1px solid var(--ui-panel-border)',
                 boxShadow: 'none'
               }}
               onClick={() => changeViewPhase(p)}
@@ -3326,9 +3338,9 @@ const renderCozyStagePanel = () => {
                     minWidth: 90,
                     padding: '8px 10px',
                     cursor: 'pointer',
-                    background: statsView === key ? 'linear-gradient(135deg, #63e5ff, #60a5fa)' : 'rgba(255,255,255,0.05)',
-                    color: statsView === key ? '#0b1020' : '#e2e8f0',
-                    border: statsView === key ? '1px solid rgba(99,229,255,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                    background: statsView === key ? 'var(--ui-button-primary)' : 'rgba(255,255,255,0.05)',
+                    color: statsView === key ? 'var(--ui-button-on-light)' : 'var(--ui-input-text)',
+                    border: statsView === key ? '1px solid rgba(99,229,255,0.6)' : '1px solid var(--ui-panel-border)',
                     boxShadow: 'none'
                   }}
                   onClick={() => setStatsView(key)}
@@ -3407,6 +3419,7 @@ const renderCozyStagePanel = () => {
             answersCount={answersCount}
             teamsCount={teamsCount}
             unreviewedCount={unreviewedCount}
+            question={question}
             statChip={statChip}
             inputStyle={inputStyle}
             onOverride={(teamId, isCorrect) =>
@@ -3554,8 +3567,8 @@ const renderCozyStagePanel = () => {
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #1f2937, #0f172a)',
-            color: '#f8fafc',
+            background: 'var(--ui-button-neutral)',
+            color: 'var(--ui-button-on-dark)',
             width: 'auto',
             padding: '10px 14px',
             cursor: 'pointer',
@@ -3575,8 +3588,8 @@ const renderCozyStagePanel = () => {
         <button
           style={{
             ...inputStyle,
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            color: '#0b1020',
+            background: 'var(--ui-button-success)',
+            color: 'var(--ui-button-on-light)',
             width: 'auto',
             padding: '10px 14px',
             cursor: 'pointer',

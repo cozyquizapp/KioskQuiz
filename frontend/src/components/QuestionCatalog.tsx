@@ -281,32 +281,32 @@ const filtersStyle: React.CSSProperties = {
   padding: 16,
   display: 'grid',
   gap: 8,
-  borderBottom: '1px solid rgba(148,163,184,0.2)'
+  borderBottom: '1px solid var(--ui-panel-border)'
 };
 
 const searchInputStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-input-bg)',
+  border: '1px solid var(--ui-input-border)',
   borderRadius: 8,
   padding: '8px 12px',
-  color: '#f1f5f9',
+  color: 'var(--ui-input-text)',
   fontSize: 13,
   outline: 'none'
 };
 
 const selectStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-input-bg)',
+  border: '1px solid var(--ui-input-border)',
   borderRadius: 8,
   padding: '8px 12px',
-  color: '#f1f5f9',
+  color: 'var(--ui-input-text)',
   fontSize: 13,
   outline: 'none'
 };
 
 const checkboxLabelStyle: React.CSSProperties = {
   fontSize: 13,
-  color: '#cbd5e1',
+  color: 'var(--ui-chip-text)',
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer'
@@ -321,7 +321,7 @@ const questionListStyle: React.CSSProperties = {
 };
 
 const questionCardStyle: React.CSSProperties = {
-  background: 'rgba(30,41,59,0.6)',
+  background: 'var(--ui-card-bg)',
   border: '2px solid',
   borderRadius: 10,
   padding: 12,
@@ -330,20 +330,20 @@ const questionCardStyle: React.CSSProperties = {
 };
 
 const tagStyle: React.CSSProperties = {
-  background: 'rgba(59,130,246,0.2)',
-  border: '1px solid rgba(59,130,246,0.3)',
+  background: 'rgba(99, 229, 255, 0.16)',
+  border: '1px solid rgba(99, 229, 255, 0.35)',
   borderRadius: 4,
   padding: '2px 8px',
   fontSize: 10,
-  color: '#60a5fa'
+  color: '#bae6fd'
 };
 
 const createButtonStyle: React.CSSProperties = {
   padding: '8px 14px',
   borderRadius: 8,
-  border: '1px solid rgba(34,197,94,0.4)',
-  background: 'rgba(34,197,94,0.2)',
-  color: '#22c55e',
+  border: '1px solid rgba(34,197,94,0.45)',
+  background: 'var(--ui-button-success)',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: 13,

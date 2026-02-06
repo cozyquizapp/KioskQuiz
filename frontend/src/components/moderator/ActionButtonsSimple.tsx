@@ -29,25 +29,25 @@ const ActionButtonsSimple: React.FC<ActionButtonsSimpleProps> = ({
     }}
   >
     <button
-      style={{ ...inputStyle, background: '#4ade80', color: '#0d0f14', cursor: 'pointer', height: 56, fontSize: 15 }}
+      style={{ ...inputStyle, background: 'var(--ui-button-success)', color: 'var(--ui-button-on-light)', cursor: 'pointer', height: 56, fontSize: 15, border: '1px solid rgba(52, 211, 153, 0.55)' }}
       onClick={onNext}
     >
       Nächste Frage
     </button>
     <button
-      style={{ ...inputStyle, background: '#fbbf24', color: '#0d0f14', cursor: 'pointer', height: 56, fontSize: 15 }}
+      style={{ ...inputStyle, background: 'var(--ui-button-warning)', color: '#1f1305', cursor: 'pointer', height: 56, fontSize: 15, border: '1px solid rgba(251, 191, 36, 0.55)' }}
       onClick={onReveal}
     >
       Antworten aufdecken
     </button>
     <button
-      style={{ ...inputStyle, background: '#6dd5fa', color: '#0d0f14', cursor: 'pointer', height: 56, fontSize: 15 }}
+      style={{ ...inputStyle, background: 'var(--ui-button-info)', color: 'var(--ui-button-on-light)', cursor: 'pointer', height: 56, fontSize: 15, border: '1px solid rgba(99, 229, 255, 0.5)' }}
       onClick={onIntro}
     >
       Intro zeigen
     </button>
     <button
-      style={{ ...inputStyle, background: '#1f2937', color: '#f8fafc', cursor: 'pointer', height: 56, fontSize: 15 }}
+      style={{ ...inputStyle, background: 'var(--ui-button-neutral)', color: 'var(--ui-button-on-dark)', cursor: 'pointer', height: 56, fontSize: 15, border: '1px solid rgba(255, 255, 255, 0.12)' }}
       onClick={onToggleTeleprompter}
     >
       Teleprompter: {teleprompter ? 'An' : 'Aus'}

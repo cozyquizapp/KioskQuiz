@@ -126,11 +126,11 @@ const labelStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-input-bg)',
+  border: '1px solid var(--ui-input-border)',
   borderRadius: 8,
   padding: '10px 12px',
-  color: '#f1f5f9',
+  color: 'var(--ui-input-text)',
   fontSize: 14,
   width: '100%',
   outline: 'none'
@@ -140,18 +140,18 @@ const categoryCardStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  background: 'rgba(15,23,42,0.6)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
   borderRadius: 8,
   padding: '12px 16px'
 };
 
 const removeButtonStyle: React.CSSProperties = {
-  background: 'rgba(239,68,68,0.2)',
-  border: '1px solid rgba(239,68,68,0.4)',
+  background: 'var(--ui-button-danger)',
+  border: '1px solid rgba(239, 68, 68, 0.45)',
   borderRadius: 6,
   padding: '4px 10px',
-  color: '#f87171',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontSize: 13
 };

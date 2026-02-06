@@ -21,8 +21,7 @@ const toolsLinks: LinkItem[] = [
   { path: '/admin', label: 'Admin (Legacy)', note: 'Nur nutzen, falls Moderator ausfaellt' },
   { path: '/Baukasten Neu_neu', label: 'Baukasten Neu', note: 'Alter Struktur-Flow' },
   { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: 'Legacy Builder' },
-  { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' },
-  { path: '/bingo', label: 'Bingo-Print', note: 'Zufaellige Bingofelder als PDF' }
+  { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }
 ];
 
 const LinkWrapper = ({ link, children }: { link: LinkItem; children: React.ReactNode }) => {

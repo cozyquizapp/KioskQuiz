@@ -8,7 +8,6 @@ import { useRef } from 'react'
 type Category = { name: string; questions: number }
 
 const defaultCategories: Category[] = [
-  { name: 'Bingo', questions: 5 },
   { name: 'Mixed Bag', questions: 5 },
   { name: 'Cheese', questions: 5 },
   { name: 'Wildcard', questions: 5 },

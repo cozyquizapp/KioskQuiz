@@ -1,4 +1,4 @@
-import { AnyQuestion, Team, QuizTemplate, BingoBoard, AnswerEntry, Language, CozyQuizDraft } from '@shared/quizTypes';
+import { AnyQuestion, Team, QuizTemplate, AnswerEntry, Language, CozyQuizDraft } from '@shared/quizTypes';
 
 export const API_BASE = (() => {
   const envBase = import.meta.env.VITE_API_BASE as string | undefined;
@@ -28,7 +28,6 @@ const addAdminTokenIfPresent = (url: string, roomCode: string): string => {
 export interface JoinResponse {
   team: Team;
   roomCode: string;
-  board?: BingoBoard;
 }
 
 export const joinRoom = async (roomCode: string, teamName: string, teamId?: string): Promise<JoinResponse> => {
@@ -129,7 +128,7 @@ export const revealAnswers = async (roomCode: string) => {
 export const fetchScoreboard = async (roomCode: string) => {
   const res = await fetch(`${API_BASE}/rooms/${roomCode}/scoreboard`);
   if (!res.ok) throw new Error('Scoreboard konnte nicht geladen werden');
-  return res.json() as Promise<{ teams: Team[]; boards?: Record<string, BingoBoard> }>;
+  return res.json() as Promise<{ teams: Team[] }>;
 };
 
 export const kickTeam = async (roomCode: string, teamId: string) => {
@@ -169,23 +168,6 @@ export const startNextQuestion = async (roomCode: string) => {
     method: 'POST'
   });
   if (!res.ok) throw new Error('N├ñchste Frage konnte nicht gestartet werden');
-  return res.json();
-};
-
-// Bingo
-export const fetchBingoBoard = async (roomCode: string, teamId: string): Promise<{ board: BingoBoard }> => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/board/${teamId}`);
-  if (!res.ok) throw new Error('Bingo-Board konnte nicht geladen werden');
-  return res.json();
-};
-
-export const markBingoCell = async (roomCode: string, teamId: string, cellIndex: number) => {
-  const res = await fetch(`${API_BASE}/rooms/${roomCode}/bingo/mark`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ teamId, cellIndex })
-  });
-  if (!res.ok) throw new Error('Feld konnte nicht markiert werden');
   return res.json();
 };
 

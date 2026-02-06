@@ -10,7 +10,7 @@ export const introSlides: Record<'de' | 'en', IntroSlide[]> = {
     {
       title: 'Willkommen zum Cozy Kiosk Quiz',
       subtitle: 'Kurz erklärt',
-      body: 'Ihr spielt Kategorie für Kategorie. Jede Runde bringt Punkte aufs Bingo-Board, also aufmerksam bleiben und gemeinsam rätseln.',
+      body: 'Ihr spielt Kategorie für Kategorie. Jede Runde bringt Punkte – also aufmerksam bleiben und gemeinsam rätseln.',
       badge: 'Intro'
     },
     {
@@ -48,7 +48,7 @@ export const introSlides: Record<'de' | 'en', IntroSlide[]> = {
     {
       title: 'Welcome to Cozy Kiosk Quiz',
       subtitle: 'Quick overview',
-      body: 'You play category by category. Each round adds points to your bingo board, so stay sharp and solve together.',
+      body: 'You play category by category. Each round adds points, so stay sharp and solve together.',
       badge: 'Intro'
     },
     {

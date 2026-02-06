@@ -578,7 +578,7 @@ const questionListStyle: React.CSSProperties = {
 };
 
 const questionCardStyle: React.CSSProperties = {
-  background: 'rgba(30,41,59,0.6)',
+  background: 'var(--ui-card-bg)',
   border: '2px solid',
   borderRadius: 12,
   padding: 16,
@@ -586,21 +586,21 @@ const questionCardStyle: React.CSSProperties = {
 };
 
 const tagStyle: React.CSSProperties = {
-  background: 'rgba(59,130,246,0.2)',
-  border: '1px solid rgba(59,130,246,0.3)',
+  background: 'rgba(99, 229, 255, 0.16)',
+  border: '1px solid rgba(99, 229, 255, 0.35)',
   borderRadius: 4,
   padding: '3px 10px',
   fontSize: 11,
-  color: '#60a5fa',
+  color: '#bae6fd',
   fontWeight: 600
 };
 
 const buttonPrimaryStyle: React.CSSProperties = {
   padding: '10px 18px',
   borderRadius: 8,
-  border: '1px solid rgba(34,211,238,0.4)',
-  background: 'rgba(34,211,238,0.2)',
-  color: '#22d3ee',
+  border: '1px solid rgba(99, 229, 255, 0.45)',
+  background: 'var(--ui-button-info)',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontWeight: 700,
   fontSize: 14
@@ -609,9 +609,9 @@ const buttonPrimaryStyle: React.CSSProperties = {
 const buttonSecondaryStyle: React.CSSProperties = {
   padding: '10px 18px',
   borderRadius: 8,
-  border: '1px solid rgba(148,163,184,0.3)',
-  background: 'rgba(148,163,184,0.1)',
-  color: '#cbd5e1',
+  border: '1px solid var(--ui-panel-border)',
+  background: 'rgba(255,255,255,0.06)',
+  color: 'var(--ui-chip-text)',
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: 14
@@ -620,9 +620,9 @@ const buttonSecondaryStyle: React.CSSProperties = {
 const editButtonStyle: React.CSSProperties = {
   padding: '8px 14px',
   borderRadius: 6,
-  border: '1px solid rgba(34,197,94,0.4)',
-  background: 'rgba(34,197,94,0.2)',
-  color: '#22c55e',
+  border: '1px solid rgba(34,197,94,0.45)',
+  background: 'var(--ui-button-success)',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: 13,
@@ -632,9 +632,9 @@ const editButtonStyle: React.CSSProperties = {
 const deleteButtonStyle: React.CSSProperties = {
   padding: '8px 14px',
   borderRadius: 6,
-  border: '1px solid rgba(248,113,113,0.4)',
-  background: 'rgba(248,113,113,0.2)',
-  color: '#f87171',
+  border: '1px solid rgba(239, 68, 68, 0.45)',
+  background: 'var(--ui-button-danger)',
+  color: 'var(--ui-button-on-light)',
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: 13,

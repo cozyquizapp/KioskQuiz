@@ -15,7 +15,6 @@ const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 const DraftImportPage = React.lazy(() => import('./pages/DraftImportPage'));
 const BaukastenNeuPage = React.lazy(() => import('./pages/BaukastenNeuPage'));
-const BingoPrintPage = React.lazy(() => import('./pages/BingoPrintPage'));
 const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 
@@ -132,7 +131,6 @@ function App() {
           <Route path="/question-editor" element={<QuestionEditorPage />} />
           <Route path="/moderator" element={<ModeratorPage />} />
           <Route path="/intro" element={<IntroSlidesPage />} />
-          <Route path="/bingo" element={<BingoPrintPage />} />
           <Route path="/question-catalog" element={<QuestionCatalogPage />} />
           <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
           <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />

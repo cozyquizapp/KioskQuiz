@@ -1,20 +1,27 @@
 import React from 'react';
 import StatusDot from './StatusDot';
 import { AnswersState } from './types';
+import { AnyQuestion } from '@shared/quizTypes';
 
 type AnswerListProps = {
   answers: AnswersState | null;
   answersCount: number;
   teamsCount: number;
   unreviewedCount: number;
+  question?: AnyQuestion | null;
   statChip: React.CSSProperties;
   inputStyle: React.CSSProperties;
   onOverride: (teamId: string, isCorrect: boolean) => void;
 };
 
-const formatAnswerValue = (ans: any) => {
+const formatAnswerValue = (ans: any, question?: AnyQuestion | null) => {
   const value = ans?.answer ?? ans?.value;
   if (!value && value !== 0) return '';
+  if (question?.mechanic === 'multipleChoice') {
+    const options = (question as any)?.options ?? [];
+    const index = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(index) && options[index] !== undefined) return String(options[index]);
+  }
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   if (Array.isArray(value)) return value.join(', ');
   if (value && typeof value === 'object') {
@@ -42,7 +49,7 @@ const renderTieBreaker = (ans: any) => {
 
 
 
-const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCount, unreviewedCount, statChip, inputStyle, onOverride }) => (
+const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCount, unreviewedCount, question, statChip, inputStyle, onOverride }) => (
   <section
     style={{
       marginTop: 12,
@@ -96,7 +103,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
               />
               <span>{answers?.teams?.[teamId]?.name ?? 'Team'}</span>
             </div>
-            <div style={{ color: 'var(--muted)', fontSize: 12 }}>{formatAnswerValue(ans)}</div>
+            <div style={{ color: 'var(--muted)', fontSize: 12 }}>{formatAnswerValue(ans, question)}</div>
             {(ans as any).awardedPoints !== undefined && (
               <div style={{ fontSize: 12, color: '#facc15', marginTop: 2, fontWeight: 700 }}>
                 +{(ans as any).awardedPoints}{' '}

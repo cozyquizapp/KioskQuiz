@@ -1,5 +1,4 @@
 import { AnswerEntry, Team } from '@shared/quizTypes';
-import { theme } from '../theme';
 
 interface AdminAnswersPanelProps {
   answers: Record<string, AnswerEntry>;
@@ -28,12 +27,12 @@ const AdminAnswersPanel = ({
           padding: '8px 10px', 
           marginBottom: 10, 
           borderRadius: 12, 
-          background: 'rgba(34,197,94,0.15)', 
-          border: '1px solid rgba(34,197,94,0.35)',
+          background: 'rgba(34,197,94,0.18)', 
+          border: '1px solid rgba(34,197,94,0.45)',
           fontSize: 13,
-          color: '#e2e8f0'
+          color: 'var(--ui-input-text)'
         }}>
-          <strong style={{ color: '#22c55e' }}>Lösung:</strong> {solution}
+          <strong style={{ color: 'var(--success)' }}>Lösung:</strong> {solution}
         </div>
       )}
       
@@ -43,11 +42,11 @@ const AdminAnswersPanel = ({
           return (
             <div key={teamId} style={answerItem}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                <div style={{ fontSize: 13, color: '#e2e8f0' }}>
+                <div style={{ fontSize: 13, color: 'var(--ui-input-text)' }}>
                   <strong>{teams[teamId]?.name ?? 'Team'}</strong>: {String(entry.value)}
                 </div>
-                {isCorrect === true && <span style={{ color: '#22c55e', fontSize: 16 }}>✔️</span>}
-                {isCorrect === false && <span style={{ color: '#ef4444', fontSize: 16 }}>✖️</span>}
+                {isCorrect === true && <span style={{ color: 'var(--success)', fontSize: 16 }}>✔️</span>}
+                {isCorrect === false && <span style={{ color: 'var(--danger)', fontSize: 16 }}>✖️</span>}
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <button style={miniButton} onClick={() => onOverride(teamId, true)}>
@@ -61,7 +60,7 @@ const AdminAnswersPanel = ({
           );
         })}
         {Object.keys(answers).length === 0 && (
-          <p style={{ color: '#94a3b8', fontSize: 12, margin: 0 }}>Noch keine Antworten eingetroffen.</p>
+          <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>Noch keine Antworten eingetroffen.</p>
         )}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -77,16 +76,16 @@ const AdminAnswersPanel = ({
 };
 
 const answerItem: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.6)',
+  background: 'var(--ui-input-bg)',
   padding: '8px 10px',
   borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.12)'
+  border: '1px solid var(--ui-input-border)'
 };
 
 const miniButton: React.CSSProperties = {
   background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  color: '#e2e8f0',
+  border: '1px solid var(--ui-panel-border)',
+  color: 'var(--ui-input-text)',
   padding: '6px 10px',
   borderRadius: 8,
   cursor: 'pointer',
@@ -95,9 +94,9 @@ const miniButton: React.CSSProperties = {
 };
 
 const successButton: React.CSSProperties = {
-  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-  color: 'white',
-  border: 'none',
+  background: 'var(--ui-button-success)',
+  color: 'var(--ui-button-on-light)',
+  border: '1px solid rgba(34, 197, 94, 0.5)',
   padding: '10px 14px',
   borderRadius: 10,
   cursor: 'pointer',
@@ -106,9 +105,9 @@ const successButton: React.CSSProperties = {
 };
 
 const primaryButton: React.CSSProperties = {
-  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-  color: 'white',
-  border: 'none',
+  background: 'var(--ui-button-primary)',
+  color: 'var(--ui-button-on-light)',
+  border: '1px solid rgba(99, 229, 255, 0.45)',
   padding: '10px 14px',
   borderRadius: 10,
   cursor: 'pointer',

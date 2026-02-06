@@ -35,7 +35,6 @@ type SocketEvents = {
   questionProgress?: StateUpdatePayload['questionProgress'];
   results?: StateUpdatePayload['results'];
   warnings?: string[];
-  supportsBingo?: boolean;
   config?: StateUpdatePayload['config'];
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
@@ -214,7 +213,6 @@ export const useQuizSocket = (roomCode: string) => {
           // Clear answers if switching question, otherwise use nextAnswers or previous
           answers: isSwitchingQuestion ? {} : (nextAnswers !== undefined ? nextAnswers : prev.answers),
           warnings: payload.warnings ?? prev.warnings,
-          supportsBingo: payload.supportsBingo ?? prev.supportsBingo,
           config: payload.config ?? prev.config,
           nextStage: payload.nextStage ?? prev.nextStage,
           scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced

@@ -1494,6 +1494,13 @@ useEffect(() => {
   const renderTop5Solution = (): JSX.Element | null => {
     const q: any = question;
     if (!q?.bunteTuete || q.bunteTuete.kind !== 'top5') return null;
+    const top5 = Array.isArray(q.bunteTuete.correctOrder) ? q.bunteTuete.correctOrder : [];
+    const itemMap = new Map(
+      Array.isArray(q.bunteTuete.items)
+        ? q.bunteTuete.items.map((item: any) => [item.id, item.label])
+        : []
+    );
+    const resolveLabel = (value: string) => itemMap.get(value) || value;
     
     return (
       <div className="beamer-stack">
@@ -1504,6 +1511,15 @@ useEffect(() => {
           >
             <h2 className="beamer-solution-title">{language === 'de' ? 'Lösung' : 'Solution'}</h2>
             <p className="beamer-solution-text" style={{ fontSize: 18, fontWeight: 800, marginTop: 12 }}>{solution}</p>
+          </div>
+        )}
+        {top5.length > 0 && (
+          <div className="beamer-grid" key={`top5-${revealStamp}`}>
+            {top5.map((item: string, idx: number) => (
+              <div className="beamer-card" key={`top5-${idx}-${item}`}>
+                <strong>{idx + 1}.</strong> {resolveLabel(item)}
+              </div>
+            ))}
           </div>
         )}
         {showConfetti && (
@@ -1795,8 +1811,13 @@ useEffect(() => {
                 const isPick = pinnedTheme?.id === theme.id;
                 const isRandom = randomIds.has(theme.id);
                 const badge = isPick ? 'PICK' : isRandom ? 'RANDOM' : isBanned ? 'BANNED' : '';
+                const cardClasses = [
+                  'beamer-select-card',
+                  isBanned ? 'banned' : '',
+                  isPick ? 'picked' : ''
+                ].filter(Boolean).join(' ');
                 return (
-                  <div key={theme.id} className={`beamer-select-card${isBanned ? ' banned' : ''}`}>
+                  <div key={theme.id} className={cardClasses}>
                     <div className="beamer-select-title">{theme.title}</div>
                     {badge && <span className={`beamer-select-badge ${badge.toLowerCase()}`}>{badge}</span>}
                   </div>

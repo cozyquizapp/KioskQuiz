@@ -4,7 +4,6 @@ import {
   AnyQuestion,
   MultipleChoiceQuestion,
   SortItemsQuestion,
-  BingoBoard,
   Language,
   StateUpdatePayload,
   CozyGameState,
@@ -17,8 +16,6 @@ import {
   fetchCurrentQuestion,
   joinRoom,
   submitAnswer,
-  fetchBingoBoard,
-  markBingoCell,
   fetchLanguage,
   setLanguage as setLanguageApi
 } from '../api';
@@ -30,7 +27,6 @@ import { categoryLabels } from '../categoryLabels';
 import { categoryIcons } from '../categoryAssets';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
-import { featureFlags } from '../config/features';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
 import {
@@ -132,8 +128,6 @@ const COPY = {
     timerActiveLabel: 'Timer aktiv',
     timerDoneLabel: 'Zeit vorbei',
     evaluating: 'Wir prüfen alle Antworten ...',
-    bingoTitle: 'Bingo',
-    bingoReady: 'Du hast die Frage richtig - setze jetzt ein X auf ein freies Feld der aktuellen Kategorie.',
     readyOn: 'Wir sind bereit',
     readyOff: 'Wir sind noch nicht bereit',
     joinTitle: 'Team beitreten',
@@ -149,7 +143,6 @@ const COPY = {
     resultTitle: (correct: boolean | null) =>
       correct === null ? 'Ergebnis' : correct ? 'Richtig!' : 'Leider falsch',
     loginError: 'Bitte zuerst beitreten.',
-    markError: 'Du kannst ein Feld nur nach einer richtigen Antwort markieren.',
     kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
     estimateBest: 'Ihr wart am nächsten dran!',
     estimateWorse: 'Leider weiter weg als das beste Team.',
@@ -170,8 +163,6 @@ const COPY = {
     timerActiveLabel: 'Timer active',
     timerDoneLabel: 'Time is up',
     evaluating: 'We are checking all answers ...',
-    bingoTitle: 'Bingo',
-    bingoReady: 'You answered correctly - place an X on a free cell of the current category.',
     readyOn: 'We are ready',
     readyOff: 'We are not ready yet',
     joinTitle: 'Join team',
@@ -193,7 +184,6 @@ const COPY = {
       remaining === 0 ? 'All points allocated.' : `${remaining} point(s) left.`,
     betInvalid: 'Please allocate the full 10 points.',
     loginError: 'Please join first.',
-    markError: 'You can only mark a field after a correct answer.',
     kicked: 'You were removed by the admin. Please rejoin.'
   }
 } as const;
@@ -230,7 +220,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [bunteOrderSelection, setBunteOrderSelection] = useState<string[]>([]);
   const [bunteOrderCriteria, setBunteOrderCriteria] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
-  const [board, setBoard] = useState<BingoBoard>([]);
   const [phase, setPhase] = useState<Phase>('notJoined');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [resultCorrect, setResultCorrect] = useState<boolean | null>(null);
@@ -238,10 +227,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [timerDuration, setTimerDuration] = useState<number>(30);
   const [transitioning, setTransitioning] = useState(false);
-  const [canMarkBingo, setCanMarkBingo] = useState(false);
-  const [showBingoPanel, setShowBingoPanel] = useState(false);
-  const [supportsBingo, setSupportsBingo] = useState(false);
-  const bingoEnabled = featureFlags.showBingo && supportsBingo;
   const [timerTick, setTimerTick] = useState(0);
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('teamLanguage');
@@ -273,6 +258,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
+  const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
@@ -456,6 +442,17 @@ function TeamView({ roomCode }: TeamViewProps) {
   }, [teamId, blitzState, isBlitzPlaying]);
 
   useEffect(() => {
+    if (blitzState?.phase !== 'BANNING') {
+      setBlitzSelectionBusy(false);
+      return;
+    }
+    if (blitzState?.pinnedTheme) {
+      setBlitzSelectionBusy(false);
+      return;
+    }
+  }, [blitzState?.phase, blitzState?.pinnedTheme?.id, blitzState?.bans]);
+
+  useEffect(() => {
     if (!isBlitzPlaying) return;
     if (blitzSubmitted) return;
     const ref = blitzInputsRef.current[activeBlitzItemIndex];
@@ -509,8 +506,6 @@ function TeamView({ roomCode }: TeamViewProps) {
         setAnswerSubmitted(false);
         setEvaluating(false);
         setTimerEndsAt(null);
-        setShowBingoPanel(false);
-        setCanMarkBingo(false);
         return;
       }
       if (payload.language) {
@@ -536,16 +531,12 @@ function TeamView({ roomCode }: TeamViewProps) {
         setResultCorrect(null);
         setSolution(null);
         setIsFinal(false);
-        setShowBingoPanel(false);
-        setCanMarkBingo(false);
       } else {
         resetInputs();
         setQuestion(null);
         setQuestionMeta(null);
         setPhase(teamId ? 'waitingForQuestion' : 'notJoined');
         setAllowReadyToggle(true);
-        setShowBingoPanel(false);
-        setCanMarkBingo(false);
       }
       setTimerEndsAt(payload.timerEndsAt ?? null);
       if (payload.timerEndsAt) {
@@ -563,8 +554,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       setAnswerSubmitted(false);
       setResultMessage(null);
       setResultCorrect(null);
-      setShowBingoPanel(false);
-      setCanMarkBingo(false);
     });
 
     socket.on('timerStarted', ({ endsAt }) => {
@@ -655,9 +644,6 @@ function TeamView({ roomCode }: TeamViewProps) {
           }
         }
       }
-      if (typeof payload.supportsBingo === 'boolean') {
-        setSupportsBingo(payload.supportsBingo);
-      }
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
@@ -666,8 +652,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       setEvaluating(true);
       setIsFinal(false);
     });
-    socket.on('answersEvaluated', ({ answers }) => {
+    socket.on('answersEvaluated', ({ answers, solution: sol }: { answers?: Record<string, any>; solution?: string }) => {
       setEvaluating(false);
+      if (sol) setSolution(sol);
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
@@ -713,10 +700,6 @@ function TeamView({ roomCode }: TeamViewProps) {
           setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
         }
         setPhase('showResult');
-        if (isCorrect) {
-          setCanMarkBingo(true);
-          setShowBingoPanel(true);
-        }
         if (typeof awardedPoints === 'number') setResultPoints(awardedPoints);
         if (awardedDetail) setResultDetail(awardedDetail);
         if (sol) setSolution(sol);
@@ -849,7 +832,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         return;
       }
       const socket = socketRef.current;
-      const payload = await new Promise<{ team: Team; board?: BingoBoard }>((resolve, reject) => {
+      const payload = await new Promise<{ team: Team }>((resolve, reject) => {
         if (!socket) {
           // TODO(LEGACY): remove REST fallback once socket join stabilisiert
           joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined)
@@ -860,11 +843,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         socket.emit(
           'team:join',
           { roomCode, teamName: cleanName, teamId: useSavedId ? savedIdRef.current ?? undefined : undefined },
-          (resp?: { ok: boolean; error?: string; team?: Team; board?: BingoBoard }) => {
+          (resp?: { ok: boolean; error?: string; team?: Team }) => {
             if (!resp?.ok || !resp?.team) {
               reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
             } else {
-              resolve({ team: resp.team, board: resp.board });
+              resolve({ team: resp.team });
             }
           }
         );
@@ -874,12 +857,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       localStorage.setItem(storageKey('name'), cleanName);
       localStorage.setItem(storageKey('id'), data.team.id);
       savedIdRef.current = data.team.id;
-      if (data.board) {
-        setBoard(data.board);
-      } else {
-        const fetched = await fetchBingoBoard(roomCode, data.team.id);
-        setBoard(fetched.board);
-      }
       try {
         const langRes = await fetchLanguage(roomCode);
         if (langRes?.language) {
@@ -1252,27 +1229,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     return null;
   }
 
-  const handleMarkCell = async (cellIndex: number) => {
-    if (!teamId) {
-      showError(t('loginError'));
-      return;
-    }
-    if (!canMarkBingo) return;
-    try {
-      const res = await markBingoCell(roomCode, teamId, cellIndex);
-      setBoard(res.board);
-      setCanMarkBingo(false);
-      setShowBingoPanel(true);
-      clearMessage();
-    } catch (err) {
-      showError(
-        language === 'de'
-          ? t('markError')
-          : t('markError')
-      );
-    }
-  };
-
   function renderBunteInput(payload: BunteTuetePayload, accent: string) {
     if (payload.kind === 'top5') {
       const maxEntries = 5;
@@ -1433,6 +1389,43 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     return null;
+  }
+
+  function renderTop5Solution() {
+    if (!question || question.type !== 'BUNTE_TUETE' || !question.bunteTuete) return null;
+    if (!(phase === 'showResult' || isFinal)) return null;
+    const payload = question.bunteTuete as BunteTuetePayload;
+    if (payload.kind !== 'top5') return null;
+    const top5 = Array.isArray(payload.correctOrder) ? payload.correctOrder : [];
+    if (!top5.length) return null;
+    const itemMap = new Map(
+      Array.isArray(payload.items) ? payload.items.map((item) => [item.id, item.label]) : []
+    );
+    const resolveLabel = (value: string) => itemMap.get(value) || value;
+    return (
+      <div
+        style={{
+          margin: '12px 0 0',
+          color: '#e2e8f0',
+          fontWeight: 700,
+          padding: '10px',
+          borderRadius: 10,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }}
+      >
+        <div style={{ color: '#94a3b8', fontSize: 12 }}>
+          {language === 'de' ? 'Top 5 Lösung:' : 'Top 5 solution:'}
+        </div>
+        <ol style={{ margin: '6px 0 0', paddingInlineStart: 18 }}>
+          {top5.map((entry, idx) => (
+            <li key={`${idx}-${entry}`} style={{ marginBottom: 4 }}>
+              {resolveLabel(entry)}
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
   }
 
   function renderInput(accent: string) {
@@ -1777,6 +1770,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           {solution}
         </p>
       )}
+      {renderTop5Solution()}
     </div>
     );
   }
@@ -1800,10 +1794,13 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function submitBlitzBan(themeId: string) {
     if (!teamId || !socketRef.current) return;
+    if (blitzSelectionBusy) return;
+    setBlitzSelectionBusy(true);
     socketRef.current.emit(
       'team:blitzBanCategory',
       { roomCode, teamId, themeId },
       (resp?: { error?: string }) => {
+        setBlitzSelectionBusy(false);
         if (resp?.error) {
           setToast(resp.error);
           setTimeout(() => setToast(null), 2000);
@@ -1814,10 +1811,13 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   function submitBlitzPick(themeId: string) {
     if (!teamId || !socketRef.current) return;
+    if (blitzSelectionBusy) return;
+    setBlitzSelectionBusy(true);
     socketRef.current.emit(
       'team:blitzPickCategory',
       { roomCode, teamId, themeId },
       (resp?: { error?: string }) => {
+        setBlitzSelectionBusy(false);
         if (resp?.error) {
           setToast(resp.error);
           setTimeout(() => setToast(null), 2000);
@@ -2304,24 +2304,40 @@ function TeamView({ roomCode }: TeamViewProps) {
               {pool.map((theme) => {
                 const isBanned = bannedIds.has(theme.id);
                 const isPinned = pinnedId === theme.id;
-                const canBan = canShowBan && banCount < banLimit && !isBanned && !isPinned;
-                const canPick = canShowPick && !isBanned && !isPinned;
+                const canBan = canShowBan && banCount < banLimit && !isBanned && !isPinned && !blitzSelectionBusy;
+                const canPick = canShowPick && !isBanned && !isPinned && !blitzSelectionBusy;
                 return (
                   <div
                     key={`blitz-team-pick-${theme.id}`}
                     style={{
                       padding: '8px 10px',
                       borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
+                      border: isPinned 
+                        ? '2px solid rgba(34,197,94,0.6)' 
+                        : '1px solid rgba(255,255,255,0.12)',
+                      background: isPinned 
+                        ? 'linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.15))' 
+                        : 'rgba(15,23,42,0.6)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 10,
-                      opacity: isBanned ? 0.5 : 1
+                      opacity: isBanned ? 0.5 : 1,
+                      transform: isBanned ? 'scale(0.95)' : isPinned ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: isPinned 
+                        ? '0 0 20px rgba(34,197,94,0.3), 0 8px 24px rgba(0,0,0,0.2)' 
+                        : 'none',
+                      transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      filter: isBanned ? 'grayscale(40%)' : 'none'
                     }}
                   >
-                    <span>{theme.title}</span>
+                    <span style={{ 
+                      textDecoration: isBanned ? 'line-through' : 'none',
+                      fontWeight: isPinned ? 700 : 400,
+                      color: isPinned ? '#a7f3d0' : 'inherit'
+                    }}>
+                      {theme.title}
+                    </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {canShowBan && (
                         <button
@@ -2616,110 +2632,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
   }
 
-  function renderBingo() {
-    if (!bingoEnabled) return null;
-    if (board.length !== 25) return null;
-    const show = canMarkBingo || showBingoPanel;
-    if (!show) return null;
-    const activeCategory = question ? question.category : null;
-    return (
-      <div style={{ ...glassCard, marginTop: theme.spacing(2) }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={pillLabel}>{language === 'de' ? 'Bingofeld' : 'Bingo board'}</div>
-          <button
-            style={{
-              ...primaryButton,
-              background: 'rgba(255,255,255,0.06)',
-              color: '#e2e8f0',
-              border: '1px solid rgba(255,255,255,0.14)',
-              minHeight: 40,
-              padding: '8px 12px',
-              width: 'auto'
-            }}
-            onClick={() => setShowBingoPanel(false)}
-          >
-            {language === 'de' ? 'Bingofeld schliessen' : 'Close bingo board'}
-          </button>
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-            gap: 8,
-            marginTop: 10
-          }}
-        >
-          {board.map((cell, idx) => {
-            const color = categoryColors[cell.category] ?? 'var(--surface)';
-            const isActiveCategory = !activeCategory || cell.category === activeCategory;
-            const isAllowed = canMarkBingo && !cell.marked && isActiveCategory;
-            const icon = categoryIcons[cell.category];
-            return (
-              <button
-                key={idx}
-                onClick={() => handleMarkCell(idx)}
-                style={{
-                  aspectRatio: '1 / 1',
-                  borderRadius: 12,
-                  border: cell.marked ? '2px solid #fff' : '1px solid rgba(255,255,255,0.12)',
-                  background: cell.marked ? '#0d0f14' : color,
-                  color: cell.marked ? '#fff' : '#0d0f14',
-                  fontWeight: 800,
-                  boxShadow: cell.marked ? '0 14px 28px rgba(0,0,0,0.35)' : '0 10px 20px rgba(0,0,0,0.18)',
-                  cursor: isAllowed ? 'pointer' : 'not-allowed',
-                  opacity: isAllowed ? 1 : 0.45,
-                  filter: isActiveCategory ? 'none' : 'grayscale(0.45)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-                disabled={!isAllowed}
-              >
-                {!cell.marked && icon && (
-                  <img
-                    src={icon}
-                    alt=""
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      width: '70%',
-                      height: '70%',
-                      transform: 'translate(-50%, -50%)',
-                      opacity: 0.26,
-                      objectFit: 'contain',
-                      pointerEvents: 'none'
-                    }}
-                  />
-                )}
-                <span style={{ position: 'relative', zIndex: 1 }}>{cell.marked ? 'X' : ''}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  function renderBingoPrompt() {
-    if (!bingoEnabled) return null;
-    return (
-      <div style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '20px 18px' }}>
-        <div style={pillLabel}>{t('bingoTitle')}</div>
-        <h3 style={{ ...heading, marginBottom: 6 }}>
-          {language === 'de' ? 'Richtig! Setzt jetzt euer Feld.' : 'Correct! Place your bingo mark.'}
-        </h3>
-        <p style={{ ...mutedText, margin: 0 }}>
-          {language === 'de'
-            ? 'Waehlt ein freies Feld der aktuellen Kategorie.'
-            : 'Pick a free cell of the current category.'}
-        </p>
-      </div>
-    );
-  }
-
   function renderNotJoined() {
     const joinDisabled = !roomCode;
     return (
@@ -2899,12 +2811,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (gameState === 'BLITZ' || gameState.startsWith('BLITZ_')) {
       return renderBlitzStage();
     }
-    if (bingoEnabled && (showBingoPanel || canMarkBingo)) {
-      return renderBingo();
-    }
-    if (bingoEnabled && canMarkBingo && isFinal) {
-      return renderBingoPrompt();
-    }
     switch (phase) {
       case 'notJoined':
         return renderNotJoined();
@@ -3082,22 +2988,6 @@ function TeamView({ roomCode }: TeamViewProps) {
               </Pill>
             ) : null}
             {/* Timer Pill removed - using progress bar below instead */}
-            {bingoEnabled && board.length === 25 && !showBingoPanel && (
-              <button
-                style={{
-                  ...primaryButton,
-                  background: 'rgba(255,255,255,0.08)',
-                  color: '#e2e8f0',
-                  border: '1px solid rgba(255,255,255,0.16)',
-                  minHeight: 40,
-                  padding: '8px 12px',
-                  width: 'auto'
-                }}
-                onClick={() => setShowBingoPanel(true)}
-              >
-                {language === 'de' ? 'Bingofeld oeffnen' : 'Open bingo board'}
-              </button>
-            )}
           </div>
         </header>
 
@@ -3172,33 +3062,6 @@ function TeamView({ roomCode }: TeamViewProps) {
           </div>
         )}
       </div>
-      {bingoEnabled && board.length === 25 && !showBingoPanel && (
-        <button
-          onClick={() => setShowBingoPanel((v) => (canMarkBingo ? true : !v))}
-          style={{
-            position: 'fixed',
-            bottom: 'calc(14px + env(safe-area-inset-bottom))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '12px 18px',
-            borderRadius: 14,
-            border: `1px solid ${accentColor}66`,
-            background: canMarkBingo ? `${accentColor}cc` : 'rgba(0,0,0,0.6)',
-            color: canMarkBingo ? '#0d0f14' : '#e2e8f0',
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            cursor: 'pointer',
-            boxShadow: canMarkBingo ? `0 14px 28px ${accentColor}55` : '0 12px 24px rgba(0,0,0,0.4)',
-            zIndex: 35
-          }}
-        >
-          {canMarkBingo
-            ? language === 'de'
-              ? 'Bingofeld oeffnen'
-              : 'Open bingo board'
-            : 'Bingofeld'}
-        </button>
-      )}
       <div style={footerLogo}>
         <img src="/logo.png?v=3" alt="Cozy Wolf" style={{ width: 120, opacity: 0.85, objectFit: 'contain' }} />
       </div>

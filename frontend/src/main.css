@@ -1144,9 +1144,9 @@ img {
 .award-position-text {
   font-weight: 900;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  WebkitBackgroundClip: text;
-  WebkitTextFillColor: transparent;
-  backgroundClip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Ultra-modern neon effects */
@@ -1494,8 +1494,8 @@ img {
 /* iPhone Landscape (Home Indicator) */
 @media (max-height: 500px) and (orientation: landscape) {
   #team-root {
-    paddingTop: 0 !important;
-    paddingBottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    padding-top: 0 !important;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
   }
   
   h1 { font-size: 18px !important; }
@@ -1520,8 +1520,8 @@ img {
 /* Small phones (< 375px width) */
 @media (max-width: 374px) {
   #team-root {
-    paddingLeft: 4px !important;
-    paddingRight: 4px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
   }
   
   h1 { font-size: 22px !important; }

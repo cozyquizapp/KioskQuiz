@@ -70,6 +70,73 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.5) rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Scrollbar for Webkit browsers */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(168, 85, 247, 0.6));
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+/* Select Styling */
+select {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+select:focus {
+  outline: none;
+  border-color: rgba(99, 229, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(99, 229, 255, 0.15);
+}
+
+select:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Button Loading State */
+.button-loading {
+  position: relative;
+  pointer-events: none;
+  color: transparent !important;
+}
+
+.button-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: button-spinner 0.6s linear infinite;
+}
+
+@keyframes button-spinner {
+  to { transform: rotate(360deg); }
 }
 
 .ui-panel {
@@ -2218,4 +2285,220 @@ body {
   );
   animation: shimmer-shine 4s ease-in-out infinite;
   pointer-events: none;
+}
+
+/* ========================================
+   STATUS DOT PULSE ANIMATION
+   ======================================== */
+@keyframes status-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4), 0 0 12px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.status-dot--active {
+  position: relative;
+}
+
+.status-dot--active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.4) 0%, transparent 70%);
+  animation: status-ripple 2s ease-in-out infinite;
+}
+
+@keyframes status-ripple {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.2);
+  backdrop-filter: blur(20px);
+  z-index: 10000;
+  animation: toast-slide-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 15px;
+  max-width: 500px;
+}
+
+.toast--success {
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(34, 197, 94, 0.3);
+}
+
+.toast--error {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
+.toast--info {
+  border-color: rgba(99, 229, 255, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 229, 255, 0.3);
+}
+
+.toast.toast--exit {
+  animation: toast-slide-out 0.3s ease forwards;
+}
+
+/* ========================================
+   SKELETON LOADER
+   ======================================== */
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton--text {
+  height: 16px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton--title {
+  height: 28px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  width: 60%;
+}
+
+.skeleton--card {
+  height: 120px;
+  border-radius: 16px;
+}
+
+.skeleton--button {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.skeleton--circle {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+/* ========================================
+   PREMIUM GLOW EFFECTS
+   ======================================== */
+.glow-primary {
+  position: relative;
+}
+
+.glow-primary::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(99, 229, 255, 0.4), rgba(99, 102, 241, 0.4));
+  border-radius: inherit;
+  filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.glow-primary:hover::before {
+  opacity: 1;
+}
+
+.glow-success::before {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(52, 211, 153, 0.4));
+}
+
+.glow-danger::before {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(248, 113, 113, 0.4));
+}
+
+/* Text Selection Styling */
+::selection {
+  background: rgba(99, 229, 255, 0.3);
+  color: #fff;
+}
+
+::-moz-selection {
+  background: rgba(99, 229, 255, 0.3);
+  color: #fff;
+}
+
+/* Focus Visible for Accessibility */
+*:focus-visible {
+  outline: 2px solid rgba(99, 229, 255, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth Transitions on Everything */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Exception: No transition for transforms/opacity (handled per-element) */
+*:not(.no-transition) {
+  transition-property: background-color, border-color, color;
 }

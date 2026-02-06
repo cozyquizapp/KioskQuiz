@@ -303,8 +303,8 @@ const ImprovedCozy60BuilderPage = () => {
   }, [draft]);
 
   return (
-      <div style={containerStyle}>
-        <aside style={sidebarStyle}>
+      <div style={containerStyle} className="tool-page">
+        <aside style={sidebarStyle} className="tool-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <strong style={{ fontSize: 14 }}>Quiz Drafts</strong>
@@ -425,10 +425,13 @@ const ImprovedCozy60BuilderPage = () => {
           )}
         </aside>
 
-        <main style={mainStyle}>
+        <main style={mainStyle} className="page-transition-enter-active">
           {!draft ? (
-            <div style={{ padding: 32, color: '#94a3b8' }}>
+            <div style={{ padding: 32, color: '#94a3b8', display: 'grid', gap: 10, maxWidth: 520 }}>
               Bitte ein Draft auswählen oder neu erstellen.
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-text" />
+              <div className="skeleton skeleton-text" />
             </div>
           ) : (
             <>
@@ -448,9 +451,9 @@ const ImprovedCozy60BuilderPage = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button onClick={() => setShowPreview(true)} style={buttonSecondaryStyle}>👀 Vorschau</button>
-                  <button onClick={handleSave} style={buttonSuccessStyle}>💾 Speichern</button>
-                  <button onClick={handlePublish} style={buttonPrimaryStyle}>🚀 Publish</button>
+                  <button onClick={() => setShowPreview(true)} style={buttonSecondaryStyle} className="tap-squish">👀 Vorschau</button>
+                  <button onClick={handleSave} style={buttonSuccessStyle} className="tap-squish">💾 Speichern</button>
+                  <button onClick={handlePublish} style={buttonPrimaryStyle} className="tap-squish">🚀 Publish</button>
                 </div>
               </header>
 
@@ -958,18 +961,20 @@ const ImprovedCozy60BuilderPage = () => {
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   minHeight: '100vh',
-  background: '#0b0d14',
-  color: '#e2e8f0'
+  background: 'var(--bg)',
+  color: '#e2e8f0',
+  fontFamily: 'var(--font)'
 };
 
 const sidebarStyle: React.CSSProperties = {
   width: 280,
-  background: 'linear-gradient(180deg, rgba(15,23,42,0.8), rgba(10,14,24,0.9))',
+  background: 'rgba(15,23,42,0.6)',
   borderRight: '1px solid rgba(255,255,255,0.08)',
   padding: 16,
   overflowY: 'auto',
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  backdropFilter: 'blur(16px)'
 };
 
 const mainStyle: React.CSSProperties = {
@@ -985,7 +990,8 @@ const headerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  background: 'rgba(15,23,42,0.5)'
+  background: 'rgba(15,23,42,0.5)',
+  backdropFilter: 'blur(12px)'
 };
 
 const tabsStyle: React.CSSProperties = {

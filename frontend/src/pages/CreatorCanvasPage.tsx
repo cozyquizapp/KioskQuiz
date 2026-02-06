@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnyQuestion } from '@shared/quizTypes'
 import { fetchQuestions } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
@@ -26,6 +26,7 @@ const Stepper = ({
       {steps.map((label, idx) => (
         <button
           key={label}
+          className="tap-squish"
           style={{
             ...pill('#7a5bff'),
             justifyContent: 'flex-start',
@@ -166,7 +167,7 @@ export default function CreatorCanvasPage() {
   const [themeColor, setThemeColor] = useState(draft?.theme.color || '#7a5bff')
   const [bg, setBg] = useState(draft?.theme.background || '')
   const [logo, setLogo] = useState(draft?.theme.logoUrl || '')
-  const [font, setFont] = useState(draft?.theme.font || 'Inter')
+  const [font, setFont] = useState(draft?.theme.font || 'Geist')
   const [intro, setIntro] = useState(draft?.structure.introAt || 'start')
   const [rules, setRules] = useState(draft?.structure.rulesAt || 'start')
   const [animation, setAnimation] = useState(draft?.theme.animation || 'Slide')
@@ -181,6 +182,15 @@ export default function CreatorCanvasPage() {
   const [answerX, setAnswerX] = useState(10)
   const [answerY, setAnswerY] = useState(50)
   const [answerSize, setAnswerSize] = useState(16)
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimer = useRef<number | null>(null)
+  const [snapGuides, setSnapGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null })
+
+  const showToast = useCallback((message: string) => {
+    setToast(message)
+    if (toastTimer.current) window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(null), 1600)
+  }, [])
   const [showTimer, setShowTimer] = useState(true)
   const [showPoints, setShowPoints] = useState(true)
   const [timerX, setTimerX] = useState(8)
@@ -274,6 +284,12 @@ export default function CreatorCanvasPage() {
   }
 
   const addCategory = () => {
+                  {snapGuides.x !== null && (
+                    <div className="snap-guide vertical" style={{ left: `${snapGuides.x}%`, top: 0 }} />
+                  )}
+                  {snapGuides.y !== null && (
+                    <div className="snap-guide" style={{ top: `${snapGuides.y}%`, left: 0, width: '100%', height: 1 }} />
+                  )}
     setCategories((prev) => [...prev, { name: `Kategorie ${prev.length + 1}`, questions: 5 }])
   }
 
@@ -314,29 +330,76 @@ export default function CreatorCanvasPage() {
   }
 
   const snap = (val: number) => Math.min(95, Math.max(0, Math.round(val / 2) * 2))
+  const applyMagnet = (val: number, extraPoints: number[] = []) => {
+    const snapPoints = [0, 33.33, 50, 66.67, 95, ...extraPoints]
+    let guide: number | null = null
+    let next = val
+    let nearest = snapPoints[0]
+    let bestDist = Math.abs(val - nearest)
+    for (const p of snapPoints) {
+      const dist = Math.abs(val - p)
+      if (dist < bestDist) {
+        bestDist = dist
+        nearest = p
+      }
+    }
+    if (bestDist <= 2) {
+      next = nearest
+      guide = nearest
+    }
+    return { value: snap(next), guide }
+  }
+
+  const getAlignPoints = (target: typeof editTarget) => {
+    const alignX: number[] = []
+    const alignY: number[] = []
+    const container = previewRef.current
+    if (!container) return { pointsX: alignX, pointsY: alignY }
+    const root = container.getBoundingClientRect()
+    const roles: Array<typeof editTarget> = ['question', 'answer', 'timer', 'points']
+    roles.forEach((role) => {
+      if (role === target) return
+      const el = container.querySelector(`[data-role="${role}"]`) as HTMLElement | null
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const left = ((rect.left - root.left) / root.width) * 100
+      const right = ((rect.right - root.left) / root.width) * 100
+      const top = ((rect.top - root.top) / root.height) * 100
+      const bottom = ((rect.bottom - root.top) / root.height) * 100
+      const centerX = (left + right) / 2
+      const centerY = (top + bottom) / 2
+      alignX.push(left, centerX, right)
+      alignY.push(top, centerY, bottom)
+    })
+    return { pointsX: alignX, pointsY: alignY }
+  }
 
   const handlePreviewMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!previewRef.current) return
     const rect = previewRef.current.getBoundingClientRect()
     const xPct = ((e.clientX - rect.left) / rect.width) * 100
     const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    const { pointsX, pointsY } = getAlignPoints(editTarget)
+    const snapX = applyMagnet(xPct, pointsX)
+    const snapY = applyMagnet(yPct, pointsY)
+    setSnapGuides({ x: snapX.guide, y: snapY.guide })
     setDragging(editTarget)
     setResizing(null)
     if (editTarget === 'question') {
-      setLayoutX(snap(xPct))
-      setLayoutY(snap(yPct))
+      setLayoutX(snapX.value)
+      setLayoutY(snapY.value)
     }
     if (editTarget === 'answer') {
-      setAnswerX(snap(xPct))
-      setAnswerY(snap(yPct))
+      setAnswerX(snapX.value)
+      setAnswerY(snapY.value)
     }
     if (editTarget === 'timer') {
-      setTimerX(snap(xPct))
-      setTimerY(snap(yPct))
+      setTimerX(snapX.value)
+      setTimerY(snapY.value)
     }
     if (editTarget === 'points') {
-      setPointsX(snap(xPct))
-      setPointsY(snap(yPct))
+      setPointsX(snapX.value)
+      setPointsY(snapY.value)
     }
   }
 
@@ -345,21 +408,27 @@ export default function CreatorCanvasPage() {
     const rect = previewRef.current.getBoundingClientRect()
     const xPct = ((e.clientX - rect.left) / rect.width) * 100
     const yPct = ((e.clientY - rect.top) / rect.height) * 100
+    const { pointsX, pointsY } = getAlignPoints(dragging ?? editTarget)
+    const snapX = applyMagnet(xPct, pointsX)
+    const snapY = applyMagnet(yPct, pointsY)
+    if (dragging) {
+      setSnapGuides({ x: snapX.guide, y: snapY.guide })
+    }
     if (dragging === 'question') {
-      setLayoutX(snap(xPct))
-      setLayoutY(snap(yPct))
+      setLayoutX(snapX.value)
+      setLayoutY(snapY.value)
     }
     if (dragging === 'answer') {
-      setAnswerX(snap(xPct))
-      setAnswerY(snap(yPct))
+      setAnswerX(snapX.value)
+      setAnswerY(snapY.value)
     }
     if (dragging === 'timer') {
-      setTimerX(snap(xPct))
-      setTimerY(snap(yPct))
+      setTimerX(snapX.value)
+      setTimerY(snapY.value)
     }
     if (dragging === 'points') {
-      setPointsX(snap(xPct))
-      setPointsY(snap(yPct))
+      setPointsX(snapX.value)
+      setPointsY(snapY.value)
     }
     if (resizing === 'question') {
       const delta = yPct - resizeStartY
@@ -374,6 +443,7 @@ export default function CreatorCanvasPage() {
   const handlePreviewMouseUp = () => {
     setDragging(null)
     setResizing(null)
+    setSnapGuides({ x: null, y: null })
   }
 
   const handleResizeMouseDown = (
@@ -405,15 +475,22 @@ export default function CreatorCanvasPage() {
 
   return (
     <div
+      className="page-transition-enter-active tool-page"
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 40%), #0d0f14',
+        background: 'var(--bg)',
         color: '#e2e8f0',
         padding: '28px 18px',
+        fontFamily: 'var(--font)'
       }}
     >
+      {toast && (
+        <div className="tool-toast toast toast--success">
+          {toast}
+        </div>
+      )}
       <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gap: 14, gridTemplateColumns: '260px 1fr' }}>
-        <div style={sideCard()}>
+        <div style={sideCard()} className="tool-card">
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Schritte</div>
           <Stepper current={currentStep} onChange={setCurrentStep} />
           <div style={{ marginTop: 12, fontSize: 12, color: '#cbd5e1' }}>
@@ -421,18 +498,19 @@ export default function CreatorCanvasPage() {
           </div>
           <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
             <button
+              className="tap-squish"
               style={cta(themeColor)}
               onClick={() => {
                 persist()
-                alert('Draft gespeichert.')
+                showToast('Draft gespeichert')
               }}
             >
               Speichern
             </button>
-            <button style={smallBtn()} onClick={() => setCurrentStep((s) => Math.min(3, s + 1))}>
+            <button className="tap-squish" style={smallBtn()} onClick={() => setCurrentStep((s) => Math.min(3, s + 1))}>
               Weiter
             </button>
-            <button style={smallBtn()} onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}>
+            <button className="tap-squish" style={smallBtn()} onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}>
               Zurueck
             </button>
           </div>
@@ -440,7 +518,7 @@ export default function CreatorCanvasPage() {
 
         <div style={{ display: 'grid', gap: 14 }}>
           {currentStep === 0 && (
-            <section style={card()}>
+            <section style={card()} className="tool-card card-tilt">
               <h2>Struktur</h2>
                 <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                 <div style={field()}>
@@ -517,7 +595,7 @@ export default function CreatorCanvasPage() {
 
           {currentStep === 1 && (
             <>
-              <section style={card()}>
+              <section style={card()} className="tool-card card-tilt">
                 <h2>Fragen auswaehlen</h2>
                 <div style={{ color: '#cbd5e1', marginBottom: 8 }}>
                   Filter/Checks kannst du im Question Editor vertiefen. Hier schnell picken/abwaehlen.
@@ -740,7 +818,7 @@ export default function CreatorCanvasPage() {
                 )}
               </section>
 
-              <section style={card()}>
+              <section style={card()} className="tool-card card-tilt">
                 <h2>Checks</h2>
                 <div style={{ color: '#cbd5e1' }}>
                   Empfohlene Pflichtpruefungen: Bildpflicht (Cheese), Mechanik (Mixed Bag), Frische (60/90 Tage), Duplikate.
@@ -755,7 +833,7 @@ export default function CreatorCanvasPage() {
           )}
 
           {currentStep === 2 && (
-            <section style={card()}>
+            <section style={card()} className="tool-card card-tilt">
               <h2>Praesentation & Branding</h2>
               <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 <div style={field()}>
@@ -772,7 +850,7 @@ export default function CreatorCanvasPage() {
                 </div>
                 <div style={field()}>
                   <label>Font</label>
-                  <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Inter" />
+                  <input value={font} onChange={(e) => setFont(e.target.value)} style={input()} placeholder="Geist" />
                 </div>
                 <div style={field()}>
                   <label>Animation</label>
@@ -848,6 +926,7 @@ export default function CreatorCanvasPage() {
                       </>
                     )}
                     <div
+                      data-role="question"
                       style={{
                         position: 'absolute',
                         left: `${layoutX}%`,
@@ -878,6 +957,7 @@ export default function CreatorCanvasPage() {
                     </div>
                     {answerText && (
                       <div
+                        data-role="answer"
                         style={{
                           position: 'absolute',
                           left: `${answerX}%`,
@@ -909,6 +989,7 @@ export default function CreatorCanvasPage() {
                     )}
                     {showTimer && slideConfig.question.showTimer && (
                       <div
+                        data-role="timer"
                         style={{
                           position: 'absolute',
                           left: `${timerX}%`,
@@ -927,6 +1008,7 @@ export default function CreatorCanvasPage() {
                     )}
                     {showPoints && slideConfig.question.showPoints && (
                       <div
+                        data-role="points"
                         style={{
                           position: 'absolute',
                           left: `${pointsX}%`,
@@ -1060,7 +1142,7 @@ export default function CreatorCanvasPage() {
           )}
 
           {currentStep === 3 && (
-            <section style={card()}>
+            <section style={card()} className="tool-card card-tilt">
               <h2>Preview & Publish</h2>
               <div
                 style={{

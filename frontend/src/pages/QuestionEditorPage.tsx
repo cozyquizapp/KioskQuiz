@@ -218,11 +218,13 @@ const QuestionEditorPage: React.FC = () => {
 
   return (
     <div
+      className="tool-page page-transition-enter-active"
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 40%), #0d0f14',
+        background: 'var(--bg)',
         color: '#e2e8f0',
-        padding: '24px'
+        padding: '24px',
+        fontFamily: 'var(--font)'
       }}
     >
       <input
@@ -267,12 +269,14 @@ const QuestionEditorPage: React.FC = () => {
                 ...badge('#7c8cff'),
                 cursor: 'pointer'
               }}
+              className="tap-squish"
             >
               Refresh
             </button>
             <button
               onClick={handleExportCustom}
               style={{ ...badge('#ffffff', true), cursor: 'pointer' }}
+              className="tap-squish"
             >
               Custom Export
             </button>

@@ -1964,8 +1964,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
-          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
+        <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.15))', border: '1px solid rgba(59,130,246,0.5)', color: '#93c5fd'}}>📊 {language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
           <p style={mutedText}>{language === 'de' ? 'Platzierung vor der K.O.-Rallye.' : 'Standings before the knockout relay.'}</p>
           {scoreboardBlock}
         </div>
@@ -1979,8 +1979,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       const isLastTeam = Boolean(teamId && rundlaufState?.lastTeamId === teamId);
       const banCount = rundlaufState?.bans?.length ?? 0;
       return (
-        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Kategorienwahl' : 'Category select'}</div>
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }} className="card-tilt">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(147,51,234,0.2), rgba(126,34,206,0.15))', border: '1px solid rgba(147,51,234,0.5)', color: '#e9d5ff'}}>🎯 {language === 'de' ? 'Kategorienwahl' : 'Category select'}</div>
           {isTopTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de'
@@ -1999,25 +1999,28 @@ function TeamView({ roomCode }: TeamViewProps) {
             </div>
           )}
           <div style={{ display: 'grid', gap: 8 }}>
-            {pool.map((entry) => {
+            {pool.map((entry, idx) => {
               const isBanned = bans.has(entry.id);
               const isPinned = pinnedId === entry.id;
               return (
                 <div
                   key={`rundlauf-team-pick-${entry.id}`}
                   style={{
-                    padding: '8px 10px',
+                    padding: '10px 12px',
                     borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: isPinned ? 'rgba(96,165,250,0.15)' : 'rgba(15,23,42,0.6)',
+                    border: isPinned ? '2px solid rgba(96,165,250,0.6)' : isBanned ? '1px solid rgba(248,113,113,0.3)' : '1px solid rgba(255,255,255,0.12)',
+                    background: isPinned ? 'rgba(96,165,250,0.2)' : isBanned ? 'rgba(248,113,113,0.08)' : 'rgba(15,23,42,0.5)',
+                    backdropFilter: 'blur(10px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 10,
-                    opacity: isBanned ? 0.5 : 1
+                    opacity: isBanned ? 0.6 : 1,
+                    animation: `fade-transition-enter 0.4s ease ${idx * 0.08}s backwards`,
+                    transition: 'all 0.3s ease'
                   }}
                 >
-                  <span>{entry.title}</span>
+                  <span style={{ fontWeight: isPinned ? 700 : 400 }}>{isPinned ? '✓ ' : ''}{entry.title}</span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {isTopTeam && (
                       <button
@@ -2072,8 +2075,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (gameState === 'RUNDLAUF_PLAY') {
       if (isEliminated) {
         return (
-          <div style={{ ...glassCard, textAlign: 'center' }}>
-            <div style={pillLabel}>{language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
+          <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
+            <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(248,113,113,0.2), rgba(239,68,68,0.15))', border: '1px solid rgba(248,113,113,0.5)', color: '#fecaca'}}>❌ {language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de'
                 ? 'Du bist fuer diese Runde raus.'
@@ -2086,8 +2089,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (!isActive) {
         return (
-          <div style={{ ...glassCard, textAlign: 'center' }}>
-            <div style={pillLabel}>{language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
+          <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
+            <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(147,51,234,0.15))', border: '1px solid rgba(168,85,247,0.5)', color: '#e9d5ff'}}>⏳ {language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={mutedText}>
               {activeTeamName
                 ? inlineCopy(`${activeTeamName} ist dran.`, `${activeTeamName} is up.`)
@@ -2099,9 +2102,9 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       const ownAttempt = state.lastAttempt && state.lastAttempt.teamId === teamId ? state.lastAttempt : null;
       return (
-        <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Du bist dran' : language === 'both' ? 'Du bist dran / Your turn' : 'Your turn'}</div>
-          <div style={{ fontWeight: 700 }}>{currentCategory}</div>
+        <div style={{ ...glassCard, display: 'grid', gap: 10 }} className="card-tilt">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))', border: '1px solid rgba(34,197,94,0.5)', color: '#bbf7d0'}}>⚡ {language === 'de' ? 'Du bist dran' : language === 'both' ? 'Du bist dran / Your turn' : 'Your turn'}</div>
+          <div style={{ fontWeight: 700, fontSize: 18, color: '#e2e8f0' }}>📂 {currentCategory}</div>
           <input
             className="team-answer-input"
             style={inputStyle}
@@ -2155,8 +2158,8 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
     if (gameState === 'RUNDLAUF_ROUND_END') {
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
-          <div style={pillLabel}>{language === 'de' ? 'Runde beendet' : 'Round finished'}</div>
+        <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))', border: '1px solid rgba(34,197,94,0.5)', color: '#bbf7d0'}}>✅ {language === 'de' ? 'Runde beendet' : 'Round finished'}</div>
           {winnerNames && (
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de' ? 'Gewinner' : 'Winner'}: {winnerNames}
@@ -2166,10 +2169,91 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     if (gameState === 'RUNDLAUF_SCOREBOARD_FINAL' || gameState === 'SIEGEREHRUNG') {
+      const topThree = scoreboard.slice(0, 3);
+      const rest = scoreboard.slice(3);
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
-          <div style={pillLabel}>{language === 'de' ? 'Finale' : 'Final'}</div>
-          {scoreboardBlock}
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15))', border: '1px solid rgba(16,185,129,0.5)', color: '#6ee7b7'}}>
+            {gameState === 'SIEGEREHRUNG' ? '🎉 ' : '🏁 '}{language === 'de' ? 'Finale' : 'Final'}{gameState === 'SIEGEREHRUNG' ? ' 🎉' : ' 🏁'}
+          </div>
+          
+          {/* Podium Top 3 */}
+          {topThree.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+              {[1, 0, 2].map((idx) => {
+                const entry = topThree[idx];
+                if (!entry) return null;
+                const actualRank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
+                const heights = { 1: '100px', 2: '80px', 3: '70px' };
+                const colors = { 
+                  1: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(251,146,60,0.2))',
+                  2: 'linear-gradient(135deg, rgba(203,213,225,0.25), rgba(148,163,184,0.15))',
+                  3: 'linear-gradient(135deg, rgba(205,127,50,0.25), rgba(180,83,9,0.15))'
+                };
+                const borderColors = {
+                  1: 'rgba(251,191,36,0.6)',
+                  2: 'rgba(203,213,225,0.5)',
+                  3: 'rgba(205,127,50,0.5)'
+                };
+                return (
+                  <div key={entry.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <div style={{
+                      fontSize: actualRank === 1 ? 32 : 24,
+                      animation: actualRank === 1 ? 'pulse-depth 2s ease-in-out infinite' : 'none'
+                    }}>
+                      {actualRank === 1 ? '🥇' : actualRank === 2 ? '🥈' : '🥉'}
+                    </div>
+                    <div
+                      className={actualRank === 1 ? 'winner-spotlight' : undefined}
+                      style={{
+                      background: colors[actualRank as 1 | 2 | 3],
+                      border: `2px solid ${borderColors[actualRank as 1 | 2 | 3]}`,
+                      borderRadius: 12,
+                      padding: '12px 8px',
+                      height: heights[actualRank as 1 | 2 | 3],
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      width: '100%',
+                      backdropFilter: 'blur(10px)',
+                      animation: `spring-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 0.15}s backwards`
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, wordBreak: 'break-word' }}>{entry.name}</div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: actualRank === 1 ? '#fcd34d' : actualRank === 2 ? '#e2e8f0' : '#fdba74' }}>
+                        {entry.score ?? 0}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Rest of teams */}
+          {rest.length > 0 && (
+            <div style={{ display: 'grid', gap: 6 }}>
+              {rest.map((entry, idx) => (
+                <div
+                  key={`final-${entry.id}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(15,23,42,0.4)',
+                    animation: `fade-transition-enter 0.4s ease ${(idx + 3) * 0.1}s backwards`
+                  }}
+                >
+                  <span style={{ fontWeight: 800, color: '#94a3b8' }}>{idx + 4}.</span>
+                  <span style={{ fontSize: 14 }}>{entry.name}</span>
+                  <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
@@ -2402,28 +2486,91 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     if (gameState === 'BLITZ_SCOREBOARD') {
+      const topThree = scoreboard.slice(0, 3);
+      const rest = scoreboard.slice(3);
       return (
-        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            {scoreboard.map((entry, idx) => (
-              <div
-                key={`blitz-final-${entry.id}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
-                  gap: 10,
-                  padding: '8px 10px',
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.12)'
-                }}
-              >
-                <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
-                <span>{entry.name}</span>
-                <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
-              </div>
-            ))}
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
+          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,146,60,0.15))', border: '1px solid rgba(251,191,36,0.5)', color: '#fcd34d'}}>
+            🏆 {language === 'de' ? 'Zwischenstand' : 'Scoreboard'}
           </div>
+          
+          {/* Podium Top 3 */}
+          {topThree.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+              {[1, 0, 2].map((idx) => {
+                const entry = topThree[idx];
+                if (!entry) return null;
+                const actualRank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
+                const heights = { 1: '100px', 2: '80px', 3: '70px' };
+                const colors = { 
+                  1: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(251,146,60,0.2))',
+                  2: 'linear-gradient(135deg, rgba(203,213,225,0.25), rgba(148,163,184,0.15))',
+                  3: 'linear-gradient(135deg, rgba(205,127,50,0.25), rgba(180,83,9,0.15))'
+                };
+                const borderColors = {
+                  1: 'rgba(251,191,36,0.6)',
+                  2: 'rgba(203,213,225,0.5)',
+                  3: 'rgba(205,127,50,0.5)'
+                };
+                return (
+                  <div key={entry.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <div style={{
+                      fontSize: actualRank === 1 ? 32 : 24,
+                      animation: actualRank === 1 ? 'pulse-depth 2s ease-in-out infinite' : 'none'
+                    }}>
+                      {actualRank === 1 ? '🥇' : actualRank === 2 ? '🥈' : '🥉'}
+                    </div>
+                    <div
+                      className={actualRank === 1 ? 'winner-spotlight' : undefined}
+                      style={{
+                      background: colors[actualRank as 1 | 2 | 3],
+                      border: `2px solid ${borderColors[actualRank as 1 | 2 | 3]}`,
+                      borderRadius: 12,
+                      padding: '12px 8px',
+                      height: heights[actualRank as 1 | 2 | 3],
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      width: '100%',
+                      backdropFilter: 'blur(10px)',
+                      animation: `spring-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 0.15}s backwards`
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, wordBreak: 'break-word' }}>{entry.name}</div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: actualRank === 1 ? '#fcd34d' : actualRank === 2 ? '#e2e8f0' : '#fdba74' }}>
+                        {entry.score ?? 0}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Rest of teams */}
+          {rest.length > 0 && (
+            <div style={{ display: 'grid', gap: 6 }}>
+              {rest.map((entry, idx) => (
+                <div
+                  key={`blitz-final-${entry.id}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(15,23,42,0.4)',
+                    animation: `fade-transition-enter 0.4s ease ${(idx + 3) * 0.1}s backwards`
+                  }}
+                >
+                  <span style={{ fontWeight: 800, color: '#94a3b8' }}>{idx + 4}.</span>
+                  <span style={{ fontSize: 14 }}>{entry.name}</span>
+                  <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }

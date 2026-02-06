@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { theme } from '../theme';
 import { fetchQuizzes, fetchQuestions, setQuestionLayout, fetchQuizLayout, saveQuizLayout } from '../api';
@@ -48,9 +48,9 @@ type RuleSlide = {
 
 const palette = ['#fbbf24', '#f97316', '#22c55e', '#06b6d4', '#818cf8', '#e879f9', '#f43f5e', '#e5e7eb'];
 const fontOptions = [
-  { label: 'Manrope', value: "'Manrope', 'Space Grotesk', sans-serif" },
-  { label: 'Space Grotesk', value: "'Space Grotesk', 'Manrope', sans-serif" },
-  { label: 'Grotesk Mono', value: "'Space Grotesk', 'DM Mono', monospace" }
+  { label: 'Geist Sans', value: "'Geist', 'Manrope', sans-serif" },
+  { label: 'Manrope', value: "'Manrope', 'Geist', sans-serif" },
+  { label: 'Geist Mono', value: "'Geist Mono', 'DM Mono', monospace" }
 ];
 
 const defaultBlocks: PresentationBlock[] = [
@@ -122,6 +122,8 @@ const PresentationCreatorPage: React.FC = () => {
     origin: { x: number; y: number; width: number; height: number };
     stage: { w: number; h: number };
   } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
   const [quizzes, setQuizzes] = useState<QuizTemplate[]>([]);
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizStatus, setQuizStatus] = useState<string | null>(null);
@@ -186,6 +188,14 @@ const PresentationCreatorPage: React.FC = () => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
   }, [blocks]);
+
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    if (toastTimer.current) {
+      window.clearTimeout(toastTimer.current);
+    }
+    toastTimer.current = window.setTimeout(() => setToast(null), 1600);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -453,14 +463,17 @@ const PresentationCreatorPage: React.FC = () => {
         })
       );
     };
-    const handleUp = () => setDragState(null);
+    const handleUp = () => {
+      setDragState(null);
+      showToast('Position gespeichert');
+    };
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [dragState]);
+  }, [dragState, showToast]);
 
   const stageOverlay = (
     <div
@@ -489,6 +502,13 @@ const PresentationCreatorPage: React.FC = () => {
     />
   );
 
+  const guides = dragState ? (
+    <>
+      <div className="snap-guide vertical" style={{ left: '50%', top: 0 }} />
+      <div className="snap-guide" style={{ top: '50%', left: 0, width: '100%', height: 1 }} />
+    </>
+  ) : null;
+
   const stage = (
     <div
       ref={stageRef}
@@ -506,6 +526,7 @@ const PresentationCreatorPage: React.FC = () => {
     >
       {stageOverlay}
       {grid}
+      {guides}
       <div
         style={{
           position: 'absolute',
@@ -585,7 +606,7 @@ const PresentationCreatorPage: React.FC = () => {
   );
 
   const controlCard: React.CSSProperties = {
-    background: 'rgba(16,20,31,0.82)',
+    background: 'rgba(15,23,42,0.6)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 18,
     padding: 16,
@@ -595,14 +616,20 @@ const PresentationCreatorPage: React.FC = () => {
 
   return (
     <main
+      className="page-transition-enter-active tool-page"
       style={{
         minHeight: '100vh',
-        background:
-          'radial-gradient(circle at 20% 20%, rgba(111,142,255,0.16), transparent 40%), radial-gradient(circle at 80% 10%, rgba(248,180,0,0.12), transparent 42%), #0c111a',
+        background: 'var(--bg)',
         color: '#f8fafc',
-        padding: '24px 18px 32px'
+        padding: '24px 18px 32px',
+        fontFamily: 'var(--font)'
       }}
     >
+      {toast && (
+        <div className="tool-toast toast toast--success">
+          {toast}
+        </div>
+      )}
       <div style={{ maxWidth: 1240, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 12 }}>
           <div>
@@ -616,6 +643,7 @@ const PresentationCreatorPage: React.FC = () => {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
+              className="tap-squish"
               style={{
                 padding: '10px 14px',
                 borderRadius: 12,
@@ -630,6 +658,7 @@ const PresentationCreatorPage: React.FC = () => {
               Freies Layout
             </button>
             <button
+              className="tap-squish"
               style={{
                 padding: '10px 14px',
                 borderRadius: 12,
@@ -648,7 +677,7 @@ const PresentationCreatorPage: React.FC = () => {
 
         {mode === 'custom' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.95fr', gap: 14, alignItems: 'start' }}>
-            <div style={{ ...controlCard, padding: 16 }}>
+            <div style={{ ...controlCard, padding: 16 }} className="tool-card card-tilt">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <Pill tone="muted">Preview 16:9</Pill>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#cbd5e1', fontSize: 13 }}>
@@ -659,10 +688,11 @@ const PresentationCreatorPage: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={controlCard}>
+              <div style={controlCard} className="tool-card card-tilt">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ fontWeight: 800 }}>Fenster</div>
                   <button
+                    className="tap-squish"
                     style={{
                       padding: '8px 10px',
                       borderRadius: 12,
@@ -678,6 +708,7 @@ const PresentationCreatorPage: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                   <button
+                    className="tap-squish"
                     style={{
                       padding: '6px 10px',
                       borderRadius: 10,
@@ -691,6 +722,7 @@ const PresentationCreatorPage: React.FC = () => {
                     Auf Standard setzen
                   </button>
                   <button
+                    className="tap-squish"
                     style={{
                       padding: '6px 10px',
                       borderRadius: 10,
@@ -740,6 +772,7 @@ const PresentationCreatorPage: React.FC = () => {
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
+                          className="tap-squish"
                           style={{
                             padding: '6px 10px',
                             borderRadius: 10,
@@ -756,6 +789,7 @@ const PresentationCreatorPage: React.FC = () => {
                           Kopie
                         </button>
                         <button
+                          className="tap-squish"
                           style={{
                             padding: '6px 10px',
                             borderRadius: 10,
@@ -960,7 +994,7 @@ const PresentationCreatorPage: React.FC = () => {
         {mode === 'quiz' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1.35fr', gap: 12, alignItems: 'start' }}>
-              <div style={controlCard}>
+              <div style={controlCard} className="tool-card card-tilt">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
                   <div style={{ fontWeight: 800 }}>Quiz auswählen</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1050,7 +1084,7 @@ const PresentationCreatorPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={controlCard}>
+              <div style={controlCard} className="tool-card card-tilt">
                 <div style={{ fontWeight: 800, marginBottom: 10 }}>Globaler Hintergrund (Quiz)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <label style={{ fontSize: 12, color: '#cbd5e1' }}>
@@ -1091,7 +1125,7 @@ const PresentationCreatorPage: React.FC = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1.35fr', gap: 12, alignItems: 'start' }}>
-              <div style={controlCard}>
+              <div style={controlCard} className="tool-card card-tilt">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
                   <div style={{ fontWeight: 800 }}>Slides ({quizSlides.length || 0})</div>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -1334,7 +1368,7 @@ const PresentationCreatorPage: React.FC = () => {
                 )}
               </div>
 
-              <div style={controlCard}>
+              <div style={controlCard} className="tool-card card-tilt">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10 }}>
                   <div style={{ fontWeight: 800 }}>Preview (Quiz Slide)</div>
                   {currentSlide && currentSlide.kind === 'question' && (

@@ -48,26 +48,31 @@ const IntroSlidesPage: React.FC = () => {
 
   return (
     <main
+      className="page-transition-enter-active tool-page"
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 20% 20%, rgba(111,142,255,0.16), transparent 45%), radial-gradient(circle at 80% 10%, rgba(248,180,0,0.15), transparent 40%), #0c111a',
+        background: 'var(--bg)',
         color: '#f8fafc',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20
+        padding: 20,
+        fontFamily: 'var(--font)'
       }}
     >
       <div
+        className="card-tilt tool-card"
         style={{
           width: '100%',
           maxWidth: 720,
+          position: 'relative',
           borderRadius: 24,
           padding: 24,
           border: '1px solid rgba(255,255,255,0.08)',
-          background: 'linear-gradient(135deg, rgba(15,18,28,0.92), rgba(18,22,32,0.82))',
+          background: 'rgba(15,23,42,0.6)',
           boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          backdropFilter: 'blur(16px)'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -90,6 +95,7 @@ const IntroSlidesPage: React.FC = () => {
                 <button
                   key={lang}
                   onClick={() => setLanguage(lang)}
+                  className="tap-squish"
                   style={{
                     padding: '6px 10px',
                     borderRadius: 10,
@@ -123,6 +129,7 @@ const IntroSlidesPage: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
+              className="tap-squish"
               style={{
                 padding: '10px 14px',
                 borderRadius: 12,
@@ -136,6 +143,7 @@ const IntroSlidesPage: React.FC = () => {
               Zurück
             </button>
             <button
+              className="tap-squish"
               style={{
                 padding: '10px 14px',
                 borderRadius: 12,

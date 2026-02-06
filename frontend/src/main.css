@@ -2640,3 +2640,130 @@ body {
   transform: translateX(-100%);
   transition: all 0.3s ease;
 }
+
+/* ========================================
+   MICRO INTERACTIONS
+   ======================================== */
+button,
+.tap-squish {
+  transition: transform 0.12s ease;
+}
+
+button:active,
+.tap-squish:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .tap-squish {
+    transition: none;
+  }
+  button:active,
+  .tap-squish:active {
+    transform: none;
+  }
+}
+
+/* ========================================
+   WINNER SPOTLIGHT
+   ======================================== */
+.winner-spotlight {
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.6), 0 12px 30px rgba(251, 191, 36, 0.25);
+  animation: winner-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes winner-pulse {
+  0%, 100% {
+    transform: translateZ(0) scale(1);
+  }
+  50% {
+    transform: translateZ(0) scale(1.02);
+  }
+}
+
+/* ========================================
+   AMBIENT BACKGROUND MOTION
+   ======================================== */
+@keyframes ambient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ========================================
+   TOOL PAGES (CREATOR UIs) - SATISFYING UX
+   ======================================== */
+.tool-page input,
+.tool-page select,
+.tool-page textarea {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
+}
+
+.tool-page input:focus,
+.tool-page select:focus,
+.tool-page textarea:focus {
+  border-color: rgba(99, 229, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(99, 229, 255, 0.18);
+  outline: none;
+}
+
+.tool-page button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.tool-page .tool-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-page .tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+}
+
+.snap-guide {
+  position: absolute;
+  background: linear-gradient(90deg, transparent, rgba(99, 229, 255, 0.6), transparent);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: fade-transition-enter 0.2s ease, snap-blip 0.4s ease;
+}
+
+.snap-guide.vertical {
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(99, 229, 255, 0.6), transparent);
+}
+
+@keyframes snap-blip {
+  0% {
+    opacity: 0.3;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+.tool-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9999;
+}

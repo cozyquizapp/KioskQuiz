@@ -3076,12 +3076,12 @@ const renderCozyStagePanel = () => {
         minHeight: '100vh',
         background: draftTheme?.background
           ? `url(${draftTheme.background}) center/cover fixed`
-          : 'url(/background.png) center/cover fixed, radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.2), transparent 34%), radial-gradient(circle at 78% 8%, rgba(56, 189, 248, 0.16), transparent 36%), linear-gradient(180deg, #0b0f1a 0%, #0c111c 100%)',
+          : 'var(--bg)',
         color: '#e2e8f0',
         padding: 12,
         maxWidth: 1100,
         margin: '0 auto',
-        fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
+        fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'
       }}
     >
       {renderReconnectModal()}

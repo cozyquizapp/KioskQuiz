@@ -885,6 +885,15 @@ useEffect(() => {
         setTimeout(() => confettiRef.current?.rain(4000), 500);
       }, 300);
     }
+    if (gameState === 'RUNDLAUF_SCOREBOARD_FINAL' && prevGameStateRef.current !== 'RUNDLAUF_SCOREBOARD_FINAL') {
+      if (!confettiRef.current && typeof document !== 'undefined') {
+        confettiRef.current = createConfetti(document.body);
+      }
+      setTimeout(() => {
+        confettiRef.current?.explosion(200);
+        setTimeout(() => confettiRef.current?.rain(3000), 400);
+      }, 200);
+    }
     prevGameStateRef.current = gameState;
   }, [gameState]);
 
@@ -1079,11 +1088,13 @@ useEffect(() => {
       minHeight: '100vh',
       background: draftTheme?.background
         ? `url(${draftTheme.background}) center/cover fixed`
-        : 'url("/background.png") center/cover fixed',
+        : 'var(--bg)',
+      backgroundSize: draftTheme?.background ? 'cover' : '200% 200%',
+      animation: draftTheme?.background ? 'none' : 'ambient-shift 28s ease-in-out infinite',
       color: '#e2e8f0',
       overflow: 'hidden',
       padding: '28px 18px',
-      fontFamily: draftTheme?.font ? `${draftTheme.font}, "Inter", sans-serif` : undefined
+      fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'
     }),
     [draftTheme?.background, draftTheme?.font]
   );

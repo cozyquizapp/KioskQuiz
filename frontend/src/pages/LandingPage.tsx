@@ -2,23 +2,11 @@ export default function LandingPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundImage: 'url(/background.png)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-      backgroundColor: '#0b0d14',
+      backgroundColor: 'var(--bg)',
       color: '#e2e8f0',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      fontFamily: 'var(--font)',
+      position: 'relative'
     }}>
-      {/* Overlay */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(11, 13, 20, 0.75)',
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
-
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         {/* Hero Section */}
@@ -33,7 +21,8 @@ export default function LandingPage() {
                 display: 'block',
                 marginLeft: 'auto',
                 marginRight: 'auto',
-                filter: 'drop-shadow(0 6px 20px rgba(34, 211, 238, 0.4))'
+                filter: 'drop-shadow(0 6px 20px rgba(34, 211, 238, 0.4))',
+                animation: 'float-parallax 6s ease-in-out infinite'
               }}
             />
             <h1 style={{ 
@@ -64,34 +53,37 @@ export default function LandingPage() {
             gap: 20,
             marginBottom: 60
           }}>
-            <div style={{
+            <div className="card-tilt" style={{
               background: 'rgba(15, 23, 42, 0.6)',
               borderRadius: 12,
               padding: 24,
               border: '1px solid rgba(148, 163, 184, 0.2)',
-              textAlign: 'center'
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)'
             }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🎯</div>
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#22d3ee' }}>Live & Interaktiv</h3>
               <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>Teams spielen auf Smartphones, Beamer zeigt live Ergebnisse</p>
             </div>
-            <div style={{
+            <div className="card-tilt" style={{
               background: 'rgba(15, 23, 42, 0.6)',
               borderRadius: 12,
               padding: 24,
               border: '1px solid rgba(148, 163, 184, 0.2)',
-              textAlign: 'center'
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)'
             }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🎤</div>
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#22d3ee' }}>Mit Moderator</h3>
               <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>Wir bringen die Stimmung und führen durchs Quiz</p>
             </div>
-            <div style={{
+            <div className="card-tilt" style={{
               background: 'rgba(15, 23, 42, 0.6)',
               borderRadius: 12,
               padding: 24,
               border: '1px solid rgba(148, 163, 184, 0.2)',
-              textAlign: 'center'
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)'
             }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#22d3ee' }}>Unvergesslich</h3>
@@ -100,12 +92,13 @@ export default function LandingPage() {
           </div>
 
           {/* Upcoming Events Section */}
-          <div style={{
+          <div className="card-tilt" style={{
             background: 'rgba(15, 23, 42, 0.6)',
             border: '1px solid rgba(74, 222, 128, 0.3)',
             borderRadius: 16,
             padding: 48,
-            marginBottom: 60
+            marginBottom: 60,
+            backdropFilter: 'blur(10px)'
           }}>
             <h2 style={{ 
               fontSize: 'clamp(1.5rem, 3vw, 2rem)', 

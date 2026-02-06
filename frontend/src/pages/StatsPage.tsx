@@ -4,20 +4,22 @@ import { fetchLeaderboard, fetchQuestionStat } from '../api';
 type RunEntry = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
 
 const card: React.CSSProperties = {
-  background: 'rgba(16,20,31,0.82)',
+  background: 'rgba(15,23,42,0.6)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 18,
   padding: 16,
-  boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+  backdropFilter: 'blur(16px)'
 };
 
 const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   borderRadius: 10,
   border: '1px solid rgba(255,255,255,0.15)',
-  background: '#0f141d',
+  background: 'rgba(15,23,42,0.6)',
   color: '#f8fafc',
-  width: '100%'
+  width: '100%',
+  backdropFilter: 'blur(10px)'
 };
 
 const StatsPage: React.FC = () => {
@@ -50,10 +52,10 @@ const StatsPage: React.FC = () => {
     <main
       style={{
         minHeight: '100vh',
-        background:
-          'radial-gradient(circle at 20% 20%, rgba(111,142,255,0.16), transparent 40%), radial-gradient(circle at 80% 10%, rgba(248,180,0,0.12), transparent 42%), #0c111a',
+        background: 'var(--bg)',
         color: '#f8fafc',
-        padding: 20
+        padding: 20,
+        fontFamily: 'var(--font)'
       }}
     >
       <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gap: 16 }}>
@@ -66,7 +68,7 @@ const StatsPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 12, alignItems: 'start' }}>
-          <div style={card}>
+          <div style={card} className="card-tilt">
             <div style={{ fontWeight: 800, marginBottom: 10 }}>Letzte Läufe</div>
             {loading && <div style={{ color: '#cbd5e1' }}>Lädt ...</div>}
             {!loading && runs.length === 0 && <div style={{ color: '#94a3b8' }}>Keine Einträge.</div>}
@@ -112,7 +114,7 @@ const StatsPage: React.FC = () => {
               ))}
           </div>
 
-          <div style={card}>
+          <div style={card} className="card-tilt">
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Frage-Statistik</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <input
@@ -126,8 +128,9 @@ const StatsPage: React.FC = () => {
                   padding: '10px 12px',
                   borderRadius: 12,
                   border: '1px solid rgba(255,255,255,0.16)',
-                  background: 'rgba(255,255,255,0.08)',
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.4), rgba(56,189,248,0.35))',
                   color: '#f8fafc',
+                  backdropFilter: 'blur(10px)',
                   cursor: 'pointer'
                 }}
                 onClick={loadQuestionStat}

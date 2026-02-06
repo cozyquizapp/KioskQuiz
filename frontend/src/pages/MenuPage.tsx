@@ -42,6 +42,7 @@ const LinkWrapper = ({ link, children }: { link: LinkItem; children: React.React
 
 const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string; links: LinkItem[] }) => (
   <div
+    className="tool-card card-tilt"
     style={{
       borderRadius: 16,
       border: '1px solid rgba(255,255,255,0.12)',
@@ -56,6 +57,7 @@ const CardList = ({ title, subtitle, links }: { title: string; subtitle?: string
       {links.map((link) => (
         <LinkWrapper key={link.path} link={link}>
           <div
+            className="tool-card card-tilt tap-squish"
             style={{
               padding: '14px 16px',
               borderRadius: 14,
@@ -83,11 +85,13 @@ const MenuPage = () => {
 
   return (
     <div
+      className="page-transition-enter-active"
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 40%), #0d0f14',
+        background: 'var(--bg)',
         color: '#e2e8f0',
-        padding: '40px 24px'
+        padding: '40px 24px',
+        fontFamily: 'var(--font)'
       }}
     >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>

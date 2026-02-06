@@ -32,9 +32,11 @@ export const pageStyleTeam: CSSProperties = {
   color: 'white',
   background: draftTheme?.background
     ? `url(${draftTheme.background}) center/cover`
-    : 'url("/background.png") center/cover',
+    : 'var(--bg)',
+  backgroundSize: draftTheme?.background ? 'cover' : '200% 200%',
+  animation: draftTheme?.background ? 'none' : 'ambient-shift 30s ease-in-out infinite',
   backgroundAttachment: 'fixed',
-  fontFamily: draftTheme?.font ? `${draftTheme.font}, ${theme.fontFamily}` : theme.fontFamily,
+  fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)',
   // iOS optimization
   WebkitFontSmoothing: 'antialiased',
   WebkitTouchCallout: 'none',

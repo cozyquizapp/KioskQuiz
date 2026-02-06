@@ -21,7 +21,7 @@ class TeamBoundary extends React.Component<{ children: React.ReactNode }, Bounda
     if (this.state.error) {
       const showStack = import.meta.env.DEV;
       return (
-        <div style={{ padding: 20, color: '#e2e8f0', background: '#0b0d14', minHeight: '100vh' }}>
+        <div style={{ padding: 20, color: '#e2e8f0', background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font)' }}>
           <h2>UI crashed</h2>
           <p>{this.state.error.message}</p>
           {showStack && (
@@ -195,14 +195,25 @@ const TeamPage = () => {
               position: 'fixed',
               inset: 0,
               zIndex: 50,
-              background: 'rgba(6,7,14,0.78)',
+              background: 'rgba(2,6,23,0.82)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 20
             }}
           >
-            <div style={{ width: '100%', maxWidth: 360, padding: 20, background: '#0b0d14', borderRadius: 16 }}>
+            <div
+              className="card-tilt"
+              style={{
+                width: '100%',
+                maxWidth: 360,
+                padding: 20,
+                background: 'rgba(15,23,42,0.6)',
+                borderRadius: 16,
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(16px)'
+              }}
+            >
               {/* TODO(DESIGN_LATER): Replace with branded join screen */}
               <h2 style={{ marginBottom: 12, color: '#e2e8f0' }}>Roomcode eingeben</h2>
               <input
@@ -245,14 +256,25 @@ const TeamPage = () => {
               position: 'fixed',
               inset: 0,
               zIndex: 60,
-              background: 'rgba(6,7,14,0.78)',
+              background: 'rgba(2,6,23,0.82)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 20
             }}
           >
-            <div style={{ width: '100%', maxWidth: 420, padding: 20, background: '#0b0d14', borderRadius: 16 }}>
+            <div
+              className="card-tilt"
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                padding: 20,
+                background: 'rgba(15,23,42,0.6)',
+                borderRadius: 16,
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(16px)'
+              }}
+            >
               <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>
                 {mountTimedOut ? 'Team UI konnte nicht starten' : 'Lade Cozy Quiz ...'}
               </h2>

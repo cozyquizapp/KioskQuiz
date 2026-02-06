@@ -1,11 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
 .cozy-builder {
-  font-family: 'Space Grotesk', ui-sans-serif, system-ui;
-  background:
-    radial-gradient(circle at 12% 18%, rgba(34, 211, 238, 0.12), transparent 38%),
-    radial-gradient(circle at 84% 12%, rgba(251, 191, 36, 0.12), transparent 40%),
-    linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  font-family: var(--font);
+  background: var(--bg);
   color: #e2e8f0;
 }
 

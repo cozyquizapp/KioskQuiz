@@ -328,9 +328,9 @@ export default function QuestionCatalogPage() {
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} className="tool-page page-transition-enter-active">
       {/* Header */}
-      <div style={headerStyle}>
+      <div style={headerStyle} className="tool-card">
         <div>
           <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>📚 Fragenkatalog</h1>
           <p style={{ margin: '4px 0 0 0', fontSize: 14, opacity: 0.6 }}>
@@ -338,13 +338,13 @@ export default function QuestionCatalogPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={handleCopyAIStructure} style={buttonSecondaryStyle}>
+          <button onClick={handleCopyAIStructure} style={buttonSecondaryStyle} className="tap-squish">
             🤖 KI-Struktur
           </button>
-          <button onClick={handleExportQuestions} style={buttonSecondaryStyle}>
+          <button onClick={handleExportQuestions} style={buttonSecondaryStyle} className="tap-squish">
             📥 Export JSON
           </button>
-          <button onClick={() => fileInputRef.current?.click()} style={buttonPrimaryStyle}>
+          <button onClick={() => fileInputRef.current?.click()} style={buttonPrimaryStyle} className="tap-squish">
             📤 Import JSON
           </button>
           <input
@@ -372,7 +372,7 @@ export default function QuestionCatalogPage() {
       )}
 
       {/* Filterleiste */}
-      <div style={filtersStyle}>
+      <div style={filtersStyle} className="tool-card">
         <input
           type="text"
           placeholder="🔍 Suche nach Frage, ID oder Tag..."
@@ -425,6 +425,7 @@ export default function QuestionCatalogPage() {
           return (
             <div
               key={q.id}
+              className="tool-card card-tilt"
               style={{
                 ...questionCardStyle,
                 borderColor: catColor
@@ -479,12 +480,14 @@ export default function QuestionCatalogPage() {
                   <button
                     onClick={() => setEditingQuestion(q)}
                     style={editButtonStyle}
+                    className="tap-squish"
                   >
                     ✏️ Edit
                   </button>
                   <button
                     onClick={() => handleDeleteQuestion(q.id)}
                     style={deleteButtonStyle}
+                    className="tap-squish"
                   >
                     🗑️ Del
                   </button>
@@ -524,10 +527,11 @@ export default function QuestionCatalogPage() {
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
-  background: '#0b0d14',
+  background: 'var(--bg)',
   color: '#e2e8f0',
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  fontFamily: 'var(--font)'
 };
 
 const headerStyle: React.CSSProperties = {
@@ -536,7 +540,8 @@ const headerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  background: 'rgba(15,23,42,0.8)'
+  background: 'rgba(15,23,42,0.6)',
+  backdropFilter: 'blur(16px)'
 };
 
 const filtersStyle: React.CSSProperties = {
@@ -544,7 +549,8 @@ const filtersStyle: React.CSSProperties = {
   display: 'flex',
   gap: 12,
   borderBottom: '1px solid rgba(148,163,184,0.2)',
-  background: 'rgba(15,23,42,0.5)'
+  background: 'rgba(15,23,42,0.5)',
+  backdropFilter: 'blur(12px)'
 };
 
 const searchInputStyle: React.CSSProperties = {

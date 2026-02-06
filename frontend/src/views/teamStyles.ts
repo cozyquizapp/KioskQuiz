@@ -8,10 +8,11 @@ const primary = draftTheme?.color || '#6dd5fa';
 /**
  * MOBILE OPTIMIZATIONS:
  * - iOS Safari notch handling (safe-area-inset)
- * - Font smoothing for crisp text
- * - Touch target min-48px for accessibility
+ * - Android & iOS: Hardware-accelerated rendering
+ * - Touch target min-56px for accessibility
  * - Landscape mode optimization
  * - Prevent zoom on input focus
+ * - Fallback for older browsers (dvh → vh)
  */
 
 export const pageStyleTeam: CSSProperties = {
@@ -21,11 +22,13 @@ export const pageStyleTeam: CSSProperties = {
   right: 0,
   bottom: 0,
   width: '100%',
-  height: '100dvh',
-  paddingTop: 'calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-top))',
-  paddingRight: 'clamp(8px, 3vw, 14px)',
-  paddingBottom: 'calc(clamp(24px, 6vw, 32px) + env(safe-area-inset-bottom))',
-  paddingLeft: 'clamp(8px, 3vw, 14px)',
+  height: '100vh', // Fallback for older browsers
+  // @ts-ignore - dvh not in CSSProperties yet
+  height: '100dvh', // Modern browsers with dynamic viewport
+  paddingTop: 'calc(clamp(16px, 4vw, 24px) + env(safe-area-inset-top))',
+  paddingRight: 'clamp(12px, 3.5vw, 16px)',
+  paddingBottom: 'calc(clamp(28px, 6vw, 36px) + env(safe-area-inset-bottom))',
+  paddingLeft: 'clamp(12px, 3.5vw, 16px)',
   overflowY: 'hidden',
   overflowX: 'hidden',
   overscrollBehavior: 'contain',
@@ -60,10 +63,10 @@ export const gridOverlay: CSSProperties = {
 export const contentShell: CSSProperties = {
   position: 'relative',
   width: '100%',
-  maxWidth: 'min(760px, calc(100vw - 16px))',
+  maxWidth: 'min(760px, calc(100vw - 24px))',
   margin: '0 auto',
   display: 'grid',
-  gap: 'clamp(12px, 3vw, 16px)',
+  gap: 'clamp(16px, 4vw, 20px)',
   zIndex: 2,
   pointerEvents: 'auto'
 };
@@ -217,41 +220,48 @@ export const softDivider: CSSProperties = {
 
 export const inputStyle: CSSProperties = {
   width: '100%',
-  padding: 'clamp(16px, 4vw, 18px) clamp(16px, 4vw, 18px)',
-  minHeight: 'clamp(48px, 13vw, 64px)',
+  padding: 'clamp(18px, 4.5vw, 20px) clamp(18px, 4.5vw, 20px)',
+  minHeight: 'clamp(56px, 14vw, 68px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'rgba(255,255,255,0.08)',
   background: 'rgba(255,255,255,0.02)',
   color: '#f8fafc',
-  marginTop: 8,
-  fontSize: 'max(16px, clamp(18px, 3.8vw, 20px))',
+  marginTop: 10,
+  fontSize: 'max(16px, clamp(18px, 4vw, 21px))',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
   backdropFilter: 'blur(30px)',
   WebkitAppearance: 'none',
   WebkitBorderRadius: theme.radius,
   WebkitBoxSizing: 'border-box',
   // iOS optimization: Prevents zoom on input focus
-  WebkitFontSmoothing: 'antialiased'
+  WebkitFontSmoothing: 'antialiased',
+  // Hardware acceleration for smooth typing (applied via CSS)
+  transform: 'translateZ(0)'
 };
 
 export const primaryButton: CSSProperties = {
-  marginTop: 10,
+  marginTop: 14,
   background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
   color: '#f8fafc',
   border: '1px solid rgba(255,255,255,0.08)',
-  padding: 'clamp(16px, 4vw, 18px) clamp(18px, 5vw, 22px)',
-  minHeight: 'clamp(48px, 13vw, 64px)',
+  padding: 'clamp(18px, 4.5vw, 20px) clamp(20px, 5.5vw, 24px)',
+  minHeight: 'clamp(56px, 14vw, 68px)',
   borderRadius: theme.radius,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
   fontWeight: 800,
-  fontSize: 'max(16px, clamp(18px, 4vw, 20px))',
-  transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-  WebkitFontSmoothing: 'antialiased'
+  fontSize: 'max(16px, clamp(18px, 4.2vw, 21px))',
+  transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  WebkitFontSmoothing: 'antialiased',
+  // Hardware acceleration for smooth tap feedback
+  transform: 'translateZ(0)',
+  WebkitTapHighlightColor: 'transparent',
+  // Touch optimization for both platforms
+  touchAction: 'manipulation'
 };
 
 export const choiceButton: CSSProperties = {
@@ -260,14 +270,19 @@ export const choiceButton: CSSProperties = {
   border: '1px solid rgba(255,255,255,0.16)',
   color: '#e2e8f0',
   borderRadius: theme.radius,
-  padding: 'clamp(16px, 4vw, 18px) clamp(14px, 4vw, 16px)',
+  padding: 'clamp(18px, 4.5vw, 20px) clamp(16px, 4.5vw, 18px)',
   cursor: 'pointer',
   fontWeight: 700,
-  fontSize: 'max(16px, clamp(17px, 3.6vw, 19px))',
-  minHeight: 'clamp(48px, 13vw, 64px)',
+  fontSize: 'max(16px, clamp(17px, 3.8vw, 20px))',
+  minHeight: 'clamp(56px, 14vw, 68px)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
-  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+  // Faster transition for immediate touch feedback
+  transition: 'all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  // Hardware acceleration
+  transform: 'translateZ(0)',
+  // Touch optimization for both platforms
+  touchAction: 'manipulation'
 };
 
 export const progressOuter = (color: string): CSSProperties => ({

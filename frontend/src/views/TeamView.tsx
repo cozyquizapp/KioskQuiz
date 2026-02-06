@@ -847,6 +847,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             if (!resp?.ok || !resp?.team) {
               reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
             } else {
+              // Haptic feedback on successful join
+              if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+              }
               resolve({ team: resp.team });
             }
           }
@@ -897,6 +901,12 @@ function TeamView({ roomCode }: TeamViewProps) {
       showError(language === 'de' ? 'Antworten aktuell gesperrt.' : 'Answers are locked right now.');
       return;
     }
+    
+    // Haptic feedback on submit
+    if ('vibrate' in navigator) {
+      navigator.vibrate(40);
+    }
+    
     try {
       const isBunteQuestion = question?.type === 'BUNTE_TUETE' && question?.bunteTuete;
       if (question?.mechanic === 'betting') {

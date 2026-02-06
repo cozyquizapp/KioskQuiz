@@ -2646,12 +2646,13 @@ body {
    ======================================== */
 button,
 .tap-squish {
-  transition: transform 0.12s ease;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
 }
 
-button:active,
+button:active:not(:disabled),
 .tap-squish:active {
-  transform: scale(0.98);
+  transform: scale(0.96) translateY(1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

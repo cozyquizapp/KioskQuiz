@@ -1784,11 +1784,40 @@ function TeamView({ roomCode }: TeamViewProps) {
         </div>
       )}
       {solution && (
-        <p style={{ margin: '12px 0 0', color: '#e2e8f0', fontWeight: 700, padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>{language === 'de' ? 'Richtige Antwort:' : 'Correct answer:'}</span>
-          <br />
-          {solution}
-        </p>
+        <div
+          style={{
+            margin: '14px 0 0',
+            padding: '14px 16px',
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(16,185,129,0.1))',
+            border: '1px solid rgba(34,197,94,0.4)',
+            boxShadow: '0 10px 26px rgba(34,197,94,0.18), inset 0 1px 1px rgba(255,255,255,0.1)'
+          }}
+        >
+          <div
+            style={{
+              color: '#bbf7d0',
+              fontSize: 12,
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em'
+            }}
+          >
+            {language === 'de' ? 'Richtige Antwort' : 'Correct answer'}
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              color: '#f0fdf4',
+              fontSize: 22,
+              fontWeight: 900,
+              textShadow: '0 2px 12px rgba(34,197,94,0.25)',
+              wordBreak: 'break-word'
+            }}
+          >
+            {solution}
+          </div>
+        </div>
       )}
       {renderTop5Solution()}
     </div>

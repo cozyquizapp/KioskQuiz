@@ -3847,7 +3847,7 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
         autoGraded: true,
         tieBreaker:
           deviation !== null && Number.isFinite(deviation)
-            ? { label: 'DIFF', primary: deviation, detail: 'Naeher dran gewinnt' }
+            ? { label: 'DIFF', primary: deviation, detail: 'Näher dran gewinnt' }
             : null
       };
     });

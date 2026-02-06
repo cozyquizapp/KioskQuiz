@@ -1111,8 +1111,9 @@
 }
 
 .cozyLobbySubtitle {
-  font-size: 16px;
-  color: rgba(226, 232, 240, 0.8);
+  font-size: 15px;
+  color: rgba(226, 232, 240, 0.5);
+  font-weight: 500;
 }
 
 .cozyLobbyMain {
@@ -1152,20 +1153,28 @@
 .cozyLobbyTeamsList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   overflow: auto;
   padding-right: 4px;
   flex: 1;
 }
 
 .cozyLobbyTeamsEmpty {
-  padding: 16px 18px;
+  padding: 20px 22px;
   border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.005);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.01);
   backdrop-filter: blur(30px);
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(226, 232, 240, 0.65);
   font-weight: 600;
+  font-size: 17px;
+  text-align: center;
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 0.9; }
 }
 
 .cozyLobbyTeamRow {
@@ -1173,7 +1182,7 @@
   grid-template-columns: auto auto 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.01);
@@ -1234,10 +1243,17 @@
 }
 
 .cozyLobbyQrTitle {
-  font-size: 13px;
-  letter-spacing: 0.18em;
+  font-size: 15px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-weight: 800;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+  animation: qr-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes qr-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.03); opacity: 1; }
 }
 
 .cozyLobbyQrLink {
@@ -1248,12 +1264,13 @@
 }
 
 .cozyLobbyQrPane img {
-  width: 240px;
-  height: 240px;
-  border-radius: 18px;
+  width: 280px;
+  height: 280px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .cozyQuestionGrid {

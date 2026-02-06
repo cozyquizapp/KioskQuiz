@@ -1388,10 +1388,10 @@ useEffect(() => {
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     const joinTitle =
       language === 'en'
-        ? 'Scan to join'
+        ? '📱 Scan to join'
         : language === 'both'
-        ? 'Scannen / Scan to join'
-        : 'Jetzt scannen & beitreten';
+        ? '📱 Scannen / Scan to join'
+        : '📱 Jetzt scannen & beitreten';
     const titleText =
       language === 'en'
         ? 'Welcome to Cozy Wolf Quiz'
@@ -1424,7 +1424,7 @@ useEffect(() => {
             </div>
             <div className="cozyLobbyTeamsList">
               {sortedTeams.length === 0 ? (
-                <div className="cozyLobbyTeamsEmpty">Noch keine Teams verbunden</div>
+                <div className="cozyLobbyTeamsEmpty">Warte auf Mitspieler… 🐺☕</div>
               ) : (
                 sortedTeams.map((team) => {
                   const isReady = Boolean(team.isReady);

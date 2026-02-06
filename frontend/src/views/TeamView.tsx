@@ -209,6 +209,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     (win as any).__TEAMVIEW_MARKER = teamMarker;
   }
   const [teamName, setTeamName] = useState('');
+  const [joinPending, setJoinPending] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<any | null>(null);
@@ -821,14 +822,18 @@ function TeamView({ roomCode }: TeamViewProps) {
   };
 
   const handleJoin = async (useSavedId = false) => {
+    if (joinPending) return;
+    setJoinPending(true);
     try {
       const cleanName = teamName.trim();
       if (!cleanName) {
         showError(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
+        setJoinPending(false);
         return;
       }
       if (!roomCode) {
         showError(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
+        setJoinPending(false);
         return;
       }
       const socket = socketRef.current;
@@ -874,10 +879,12 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       await loadQuestion();
       clearMessage();
-    } catch (err) {
+      } catch (error) {
       showError(
           language === 'de'
           ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung prüfen.`
+      } finally {
+        setJoinPending(false);
           : `Join failed (${SOCKET_URL}). Please check room code/connection.`
         );
     }
@@ -2790,7 +2797,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderNotJoined() {
-    const joinDisabled = !roomCode;
+    const joinDisabled = !roomCode || !teamName.trim() || joinPending;
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
         <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -2807,6 +2814,17 @@ function TeamView({ roomCode }: TeamViewProps) {
           ...inputStyle, 
           transition: 'all 0.25s ease',
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
+        }}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="words"
+        spellCheck={false}
+        enterKeyHint="done"
+        maxLength={24}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !joinDisabled) {
+            handleJoin(false);
+          }
         }}
         onFocus={(e) => {
           (e.currentTarget as HTMLInputElement).style.boxShadow = `inset 0 2px 4px rgba(0,0,0,0.3), 0 0 12px ${accentColor}77`;
@@ -2841,7 +2859,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         onClick={!joinDisabled ? () => handleJoin(false) : undefined}
         disabled={joinDisabled}
       >
-        {t('joinButton')}
+        {joinPending ? (language === 'de' ? 'Beitreten...' : 'Joining...') : t('joinButton')}
       </PrimaryButton>
       {!roomCode && (
         <div className="message-state message-error">

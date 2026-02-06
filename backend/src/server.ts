@@ -2250,8 +2250,8 @@ const resetBlitzCollections = (room: RoomState) => {
 };
 
 const startBlitzSet = (room: RoomState) => {
-  // Only allow starting a new set if we're in a valid transition state
-  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING' || room.blitzPhase === 'BANNING') {
+  // Only allow starting a new set if we're not already playing
+  if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING') {
     throw new Error('Blitz-Set laeuft bereits');
   }
   if (room.blitzSelectedThemes.length < 1) {

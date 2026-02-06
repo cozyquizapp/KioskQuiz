@@ -2884,7 +2884,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           alignItems: 'center',
           justifyContent: 'center',
           maxWidth: 620,
-          minHeight: 280,
+          minHeight: 240,
+          padding: '18px 16px 16px',
           background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06))',
           borderColor: 'rgba(99, 102, 241, 0.2)',
           animation: 'spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
@@ -2894,8 +2895,29 @@ function TeamView({ roomCode }: TeamViewProps) {
         }}
       >
         <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'WARTEN' : 'INFO'}</div>
-        <h3 style={{ ...heading, marginBottom: 8, marginTop: 16, fontSize: 'clamp(24px, 5vw, 36px)' }}>{title}</h3>
-        {subtitle && <p style={{ ...mutedText, marginBottom: 20 }}>{subtitle}</p>}
+        <h3
+          style={{
+            ...heading,
+            marginBottom: 8,
+            marginTop: 16,
+            fontSize: 'clamp(26px, 5.5vw, 36px)',
+            color: '#f8fafc'
+          }}
+        >
+          {title}
+        </h3>
+        {subtitle && (
+          <p
+            style={{
+              ...mutedText,
+              marginBottom: 18,
+              fontSize: 'clamp(14px, 3.6vw, 16px)',
+              color: 'rgba(226,232,240,0.6)'
+            }}
+          >
+            {subtitle}
+          </p>
+        )}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
         <PulseIndicator style={{ fontSize: 48, color: '#a5b4fc', margin: '28px 0 0' }} />
       </div>
@@ -3182,19 +3204,19 @@ function TeamView({ roomCode }: TeamViewProps) {
           <PrimaryButton
             style={{
               marginTop: 12,
-              background: isReady 
-                ? `linear-gradient(135deg, rgba(255,79,158,0.18), rgba(217,70,239,0.15))`
-                : 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-              color: isReady ? '#ffc9e3' : '#94a3b8',
-              border: `1px solid ${isReady ? 'rgba(255,79,158,0.4)' : 'rgba(255,255,255,0.04)'}`,
+              background: isReady
+                ? `linear-gradient(135deg, rgba(255,79,158,0.22), rgba(217,70,239,0.2))`
+                : 'linear-gradient(135deg, rgba(255,79,158,0.18), rgba(99,102,241,0.16))',
+              color: isReady ? '#ffe4f0' : '#f8fafc',
+              border: `1px solid ${isReady ? 'rgba(255,79,158,0.45)' : 'rgba(255,79,158,0.35)'}`,
               backdropFilter: 'blur(30px)',
-              boxShadow: isReady 
-                ? `0 4px 16px rgba(255,79,158,0.2), inset 0 1px 1px rgba(255,255,255,0.1)` 
-                : 'inset 0 1px 1px rgba(255,255,255,0.03)',
-              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              boxShadow: isReady
+                ? `0 6px 22px rgba(255,79,158,0.28), inset 0 1px 1px rgba(255,255,255,0.12)`
+                : `0 4px 18px rgba(255,79,158,0.2), inset 0 1px 1px rgba(255,255,255,0.08)`,
+              transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
               opacity: connectionStatus === 'connected' ? 1 : 0.5,
               cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
-              fontWeight: isReady ? 800 : 700,
+              fontWeight: 800,
               transform: isReady ? 'scale(1.01)' : 'scale(1)'
             }}
             onClick={connectionStatus === 'connected' ? toggleReady : undefined}

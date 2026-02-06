@@ -1648,7 +1648,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     const isIncorrect = resultCorrect === false;
     return (
       <div 
-        className={feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}
+        className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}
         style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
       >
       <div style={{
@@ -1887,7 +1887,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     const state = rundlaufState;
     if (!state) {
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
+        <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
           <div style={pillLabel}>K.O.-Rallye</div>
           <p style={mutedText}>
             {language === 'de'
@@ -2179,7 +2179,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   function renderBlitzStage() {
     if (!blitzState) {
       return (
-        <div style={{ ...glassCard, textAlign: 'center' }}>
+        <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
           <div style={pillLabel}>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</div>
           <p style={mutedText}>{language === 'de' ? 'Host bereitet gerade den Blitz vor.' : 'Host is preparing the blitz round.'}</p>
         </div>

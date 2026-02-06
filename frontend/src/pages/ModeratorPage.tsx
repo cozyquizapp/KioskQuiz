@@ -3108,7 +3108,7 @@ const renderCozyStagePanel = () => {
               gap: 8
             }}
           >
-            <div style={card}>
+            <div style={card} className="card-tilt">
               <div
                 style={{
                   marginBottom: 6,
@@ -3624,12 +3624,6 @@ const renderCozyStagePanel = () => {
 }
 
 export default ModeratorPage;
-
-
-
-
-
-
 
 
 

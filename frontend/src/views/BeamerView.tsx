@@ -1424,7 +1424,7 @@ useEffect(() => {
             </div>
             <div className="cozyLobbyTeamsList">
               {sortedTeams.length === 0 ? (
-                <div className="cozyLobbyTeamsEmpty">Warte auf Mitspieler… 🐺☕</div>
+                <div className="cozyLobbyTeamsEmpty">Schnapp dir dein Handy & tritt bei!</div>
               ) : (
                 sortedTeams.map((team) => {
                   const isReady = Boolean(team.isReady);

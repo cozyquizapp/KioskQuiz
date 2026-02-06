@@ -46,7 +46,7 @@ const BeamerFrame: React.FC<Props> = ({
       ? Math.min(1, Math.max(0, progressValue))
       : null;
   return (
-    <div className={`beamer-frame scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
+    <div className={`beamer-frame beamer-jackbox scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
       {normalizedProgress !== null && (
         <div className="beamer-frame-progress">
           <div className="beamer-frame-progress-inner" style={{ width: `${normalizedProgress * 100}%` }} />

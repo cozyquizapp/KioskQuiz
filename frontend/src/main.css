@@ -2735,6 +2735,34 @@ button:active,
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
 }
 
+/* ========================================
+   MODERATOR JACKBOX VIBE
+   ======================================== */
+.moderator-jackbox {
+  position: relative;
+}
+
+.moderator-jackbox::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.16) 0 6px, transparent 6px),
+    radial-gradient(circle at 86% 14%, rgba(56, 189, 248, 0.14) 0 6px, transparent 6px),
+    radial-gradient(circle at 30% 80%, rgba(236, 72, 153, 0.12) 0 6px, transparent 6px);
+  background-size: 110px 110px, 140px 140px, 160px 160px;
+  opacity: 0.6;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: jackbox-float 30s ease-in-out infinite;
+  z-index: 0;
+}
+
+.moderator-jackbox > * {
+  position: relative;
+  z-index: 1;
+}
+
 .snap-guide {
   position: absolute;
   background: linear-gradient(90deg, transparent, rgba(99, 229, 255, 0.6), transparent);

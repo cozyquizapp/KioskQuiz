@@ -46,12 +46,12 @@ type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?
 type NextActionHintDetails = { hotkey: string; label: string; detail: string; context?: string };
 
 const card: React.CSSProperties = {
-  background: 'var(--ui-card-bg)',
-  border: '1px solid var(--ui-card-border)',
+  background: 'linear-gradient(160deg, rgba(15,23,42,0.78), rgba(10,14,24,0.88))',
+  border: '1px solid rgba(255,255,255,0.12)',
   borderRadius: 'var(--radius)',
   padding: 16,
-  boxShadow: 'var(--ui-card-shadow)',
-  backdropFilter: 'blur(10px)',
+  boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
+  backdropFilter: 'blur(16px)',
   overflow: 'hidden'
 };
 
@@ -59,10 +59,10 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px 14px',
   borderRadius: 12,
-  border: '1px solid var(--ui-input-border)',
-  background: 'var(--ui-input-bg)',
+  border: '1px solid rgba(255,255,255,0.16)',
+  background: 'rgba(15,23,42,0.6)',
   color: 'var(--ui-input-text)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
   fontWeight: 600
 };
 
@@ -75,12 +75,12 @@ const timerButtonStyle: React.CSSProperties = {
 };
 
 const statChip: React.CSSProperties = {
-  background: 'var(--ui-chip-bg)',
-  border: '1px solid var(--ui-chip-border)',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.14)',
   borderRadius: 9999,
   padding: '6px 10px',
   fontSize: 12,
-  color: 'var(--ui-chip-text)',
+  color: '#cbd5e1',
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
@@ -88,12 +88,12 @@ const statChip: React.CSSProperties = {
 };
 
 const actionWrap: React.CSSProperties = {
-  background: 'var(--ui-panel-bg)',
-  border: '1px solid var(--ui-panel-border)',
+  background: 'rgba(12,16,26,0.7)',
+  border: '1px solid rgba(255,255,255,0.12)',
   borderRadius: 'var(--radius)',
   padding: 12,
-  boxShadow: 'var(--ui-panel-shadow)',
-  backdropFilter: 'blur(10px)',
+  boxShadow: '0 14px 30px rgba(0,0,0,0.32)',
+  backdropFilter: 'blur(14px)',
   overflow: 'hidden'
 };
 
@@ -3072,6 +3072,7 @@ const renderCozyStagePanel = () => {
 
   return (
     <main
+      className="page-transition-enter-active moderator-jackbox"
       style={{
         minHeight: '100vh',
         background: draftTheme?.background

@@ -2068,7 +2068,7 @@ const getTeamsByScore = (room: RoomState, direction: 'asc' | 'desc' = 'desc') =>
   Object.values(room.teams).sort((a, b) => compareTeamsWithTieBreak(room, a, b, direction));
 
 const initializeBlitzStage = (room: RoomState) => {
-  const definitions = PHOTO_SPRINT_CATEGORIES.length ? PHOTO_SPRINT_CATEGORIES : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
+  const definitions = defaultBlitzPool.length ? defaultBlitzPool : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
   const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
   room.blitzThemeLibrary = normalizedDefs.reduce<Record<string, QuizBlitzTheme>>((acc, theme) => {
     acc[theme.id] = theme;

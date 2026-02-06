@@ -2154,7 +2154,6 @@ const applyBlitzPick = (room: RoomState, teamId: string, themeKey: string) => {
       throw new Error('Erst bannen, dann waehlen');
     }
   }
-  if (room.blitzPinnedTheme) throw new Error('Thema bereits gewaehlt');
   const themeId = themeKey.trim();
   if (!themeId) throw new Error('Thema fehlt');
   const theme = room.blitzPool.find(

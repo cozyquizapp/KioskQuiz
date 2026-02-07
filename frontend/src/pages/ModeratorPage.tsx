@@ -285,6 +285,7 @@ function ModeratorPage(): React.ReactElement {
     BLITZ_READY: { label: 'Fotosprint bereit', hint: 'Teams machen sich bereit', tone: 'live' },
     BLITZ_BANNING: { label: 'Fotosprint Auswahl', hint: 'Teams bannen/waehlen', tone: 'eval' },
     BLITZ_SELECTION_COMPLETE: { label: 'Fotosprint Bereit', hint: 'Auswahl fertig - Starten?', tone: 'live' },
+    BLITZ_CATEGORY_SHOWCASE: { label: 'Fotosprint Animation', hint: 'Kategorie-Showcase läuft', tone: 'live' },
     BLITZ_SET_INTRO: { label: 'Fotosprint Intro', hint: 'Naechstes Set', tone: 'live' },
     BLITZ_PLAYING: { label: 'Fotosprint', hint: 'Set laeuft', tone: 'live' },
     BLITZ_SET_END: { label: 'Fotosprint Ende', hint: 'Set beendet', tone: 'eval' },
@@ -1233,6 +1234,8 @@ function ModeratorPage(): React.ReactElement {
       case 'BLITZ':
       case 'BLITZ_READY':
       case 'BLITZ_BANNING':
+      case 'BLITZ_SELECTION_COMPLETE':
+      case 'BLITZ_CATEGORY_SHOWCASE':
       case 'BLITZ_SET_INTRO':
       case 'BLITZ_PLAYING':
       case 'BLITZ_SET_END':
@@ -2323,7 +2326,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const renderSpecialStageHints = () => {
-    const blitzStates = new Set(['BLITZ_READY', 'BLITZ_BANNING', 'BLITZ_SET_INTRO', 'BLITZ_PLAYING', 'BLITZ_SET_END']);
+    const blitzStates = new Set(['BLITZ_READY', 'BLITZ_BANNING', 'BLITZ_SELECTION_COMPLETE', 'BLITZ_CATEGORY_SHOWCASE', 'BLITZ_SET_INTRO', 'BLITZ_PLAYING', 'BLITZ_SET_END']);
     const rundlaufStates = new Set([
       'RUNDLAUF_PAUSE',
       'RUNDLAUF_SCOREBOARD_PRE',

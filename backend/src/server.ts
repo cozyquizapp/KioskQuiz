@@ -5902,8 +5902,17 @@ io.on('connection', (socket: Socket) => {
       if (room.blitzPhase !== 'SELECTION_COMPLETE' && room.blitzPhase !== 'READY') {
         throw new Error('Set kann noch nicht gestartet werden');
       }
-      startBlitzSet(room);
+      // Transition to CATEGORY_SHOWCASE for the animation
+      room.blitzPhase = 'SELECTION_COMPLETE'; // Keep phase for now
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
       broadcastState(room);
+      // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+      clearBlitzRoundIntroTimer(room);
+      room.blitzRoundIntroTimeout = setTimeout(() => {
+        room.blitzRoundIntroTimeout = null;
+        if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+        startBlitzSet(room);
+      }, 3000);
     });
   });
 

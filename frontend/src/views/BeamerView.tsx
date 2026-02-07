@@ -1809,6 +1809,8 @@ useEffect(() => {
           return 'BANNING';
         case 'BLITZ_SELECTION_COMPLETE':
           return 'SELECTION_COMPLETE';
+        case 'BLITZ_CATEGORY_SHOWCASE':
+          return 'CATEGORY_SHOWCASE';
         case 'BLITZ_SET_INTRO':
           return 'ROUND_INTRO';
         case 'BLITZ_PLAYING':
@@ -1867,6 +1869,94 @@ useEffect(() => {
             )}
           </div>
           {statusLine && <div className="beamer-select-status">{statusLine}</div>}
+        </div>
+      );
+    }
+
+    if (phase === 'CATEGORY_SHOWCASE') {
+      const nextTheme = selectedThemes[0]; // The picked theme
+      const randomThemes = selectedThemes.slice(1, 3); // 2 random themes
+      
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          gap: '40px',
+          padding: '40px 20px',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)',
+          animation: 'fadeIn 0.8s ease-in'
+        }}>
+          {/* Main showcase card */}
+          <div style={{
+            animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transformOrigin: 'center'
+          }}>
+            <div style={{
+              fontSize: '60px',
+              fontWeight: '900',
+              textAlign: 'center',
+              color: '#fff',
+              marginBottom: '20px',
+              textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+            }}>
+              {nextTheme?.title || 'Thema'}
+            </div>
+            <div style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              textAlign: 'center',
+              color: 'rgba(226, 232, 240, 0.9)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em'
+            }}>
+              Das erste Thema beginnt gleich...
+            </div>
+          </div>
+
+          {/* Random theme previews */}
+          {randomThemes.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '20px',
+              marginTop: '40px',
+              maxWidth: '600px'
+            }}>
+              {randomThemes.map((theme, idx) => (
+                <div
+                  key={`showcase-${theme.id}`}
+                  style={{
+                    padding: '24px',
+                    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1))',
+                    border: '2px solid rgba(74, 222, 128, 0.4)',
+                    borderRadius: '16px',
+                    textAlign: 'center',
+                    animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
+                  }}
+                >
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'rgba(74, 222, 128, 0.9)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    marginBottom: '8px'
+                  }}>
+                    Weitere Themen:
+                  </div>
+                  <div style={{
+                    fontSize: '20px',
+                    fontWeight: '900',
+                    color: '#fff'
+                  }}>
+                    {theme.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }

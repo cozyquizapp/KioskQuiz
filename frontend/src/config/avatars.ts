@@ -28,165 +28,274 @@ const buildCozyAvatarSvg = (style: CozyAvatarStyle) => {
   
   const animalSvg: Record<CozyAvatarStyle['animal'], string> = {
     wolf: `
-      <path d="M30 24l8-10 8 12-2 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M66 24l-8-10-8 12 2 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M32 38c0-8 4-14 16-14s16 6 16 14c0 14-6 22-16 22s-16-8-16-22z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M38 42c0-3 2-5 4-5s4 2 4 5-2 4-4 4-4-1-4-4z" fill="${accent}"/>
-      <path d="M50 42c0-3 2-5 4-5s4 2 4 5-2 4-4 4-4-1-4-4z" fill="${accent}"/>
-      <ellipse cx="48" cy="52" rx="4" ry="6" fill="${style.nose}"/>
-      <path d="M44 56c2 3 6 3 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Ears -->
+      <path d="M32 24l-4-8 4 2 4-2z" fill="url(#${furId})"/>
+      <path d="M64 24l4-8-4 2-4-2z" fill="url(#${furId})"/>
+      <!-- Head -->
+      <ellipse cx="48" cy="38" rx="16" ry="18" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="36" r="3.5" fill="#fff"/>
+      <circle cx="42" cy="36" r="2" fill="${accent}"/>
+      <!-- Right eye (winking) -->
+      <path d="M54 36c1 2 2 3 3 3s2-1 3-3" stroke="${accent}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <!-- Snout -->
+      <ellipse cx="48" cy="44" rx="6" ry="5" fill="${style.nose}" opacity="0.9"/>
+      <!-- Smile -->
+      <path d="M46 46c2 2 4 2 4 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     fox: `
-      <path d="M28 22l10-12 8 14-4 10z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M68 22l-10-12-8 14 4 10z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M34 36c0-6 6-10 14-10s14 4 14 10v16c0 8-6 12-14 12s-14-4-14-12v-16z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M40 40c0-2 1.5-4 3-4s3 2 3 4-1.5 3-3 3-3-1-3-3z" fill="${accent}"/>
-      <path d="M50 40c0-2 1.5-4 3-4s3 2 3 4-1.5 3-3 3-3-1-3-3z" fill="${accent}"/>
-      <path d="M42 50c0-4 2-6 6-6s6 2 6 6v6c0 2-2 4-6 4s-6-2-6-4v-6z" fill="#fff" opacity="0.4"/>
-      <ellipse cx="48" cy="56" rx="3" ry="5" fill="${style.nose}"/>
-      <path d="M44 58c2 2 6 2 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Ears -->
+      <path d="M30 26l-6-10 4 4 3-2z" fill="url(#${furId})"/>
+      <path d="M66 26l6-10-4 4-3-2z" fill="url(#${furId})"/>
+      <!-- Head -->
+      <ellipse cx="48" cy="40" rx="15" ry="17" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="43" cy="38" r="3" fill="#fff"/>
+      <circle cx="43" cy="38" r="1.8" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="53" cy="38" r="3" fill="#fff"/>
+      <circle cx="53" cy="38" r="1.8" fill="${accent}"/>
+      <!-- Snout -->
+      <ellipse cx="48" cy="46" rx="8" ry="6" fill="#fff" opacity="0.8"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="44" rx="2.5" ry="3" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M45 48c3 1 6 1 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     cat: `
-      <path d="M30 22l6-10 8 14v8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M66 22l-6-10-8 14v8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="48" cy="46" r="18" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M40 42c0-2 1-4 2.5-4s2.5 2 2.5 4-1 3-2.5 3-2.5-1-2.5-3z" fill="${accent}"/>
-      <path d="M51 42c0-2 1-4 2.5-4s2.5 2 2.5 4-1 3-2.5 3-2.5-1-2.5-3z" fill="${accent}"/>
-      <path d="M42 50l6-2 6 2" stroke="${accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <ellipse cx="48" cy="54" rx="2.5" ry="4" fill="${style.nose}"/>
-      <path d="M46 54c0 3-2 5-4 6m10-6c0 3 2 5 4 6" stroke="${accent}" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Ears -->
+      <path d="M32 26l-2-10 3 6 2-2z" fill="url(#${furId})"/>
+      <path d="M64 26l2-10-3 6-2-2z" fill="url(#${furId})"/>
+      <!-- Head -->
+      <circle cx="48" cy="40" r="16" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <ellipse cx="42" cy="38" rx="3" ry="4.5" fill="#fff"/>
+      <ellipse cx="42" cy="38" rx="1.8" ry="3" fill="${accent}"/>
+      <!-- Right eye -->
+      <ellipse cx="54" cy="38" rx="3" ry="4.5" fill="#fff"/>
+      <ellipse cx="54" cy="38" rx="1.8" ry="3" fill="${accent}"/>
+      <!-- Nose -->
+      <path d="M48 44l-1.5 2 3 0 -1.5 -2z" fill="${style.nose}"/>
+      <!-- Mouth -->
+      <path d="M45 46c3 1.5 6 1.5 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M46 46l-1 1m8 -1l1 1" stroke="${accent}" stroke-width="1" stroke-linecap="round"/>
     `,
     bear: `
-      <circle cx="32" cy="28" r="11" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="64" cy="28" r="11" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="48" cy="46" r="20" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="5" ry="6" fill="${style.nose}"/>
-      <path d="M43 58c2 3 8 3 10 0" stroke="${accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Ears -->
+      <circle cx="32" cy="28" r="8" fill="url(#${furId})"/>
+      <circle cx="64" cy="28" r="8" fill="url(#${furId})"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="17" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="41" cy="39" r="3.5" fill="#fff"/>
+      <circle cx="41" cy="39" r="2" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="55" cy="39" r="3.5" fill="#fff"/>
+      <circle cx="55" cy="39" r="2" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="3" ry="4" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M44 50c4 2 8 2 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round" fill="none"/>
     `,
     bunny: `
-      <ellipse cx="34" cy="16" rx="6" ry="18" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="62" cy="16" rx="6" ry="18" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="34" cy="16" rx="3" ry="14" fill="#fff" opacity="0.3"/>
-      <ellipse cx="62" cy="16" rx="3" ry="14" fill="#fff" opacity="0.3"/>
-      <circle cx="48" cy="46" r="19" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="3" ry="5" fill="${style.nose}"/>
-      <path d="M44 56c2 3 6 3 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="38" cy="50" r="4" fill="#fff" opacity="0.4"/>
-      <circle cx="58" cy="50" r="4" fill="#fff" opacity="0.4"/>
+      <!-- Left Ear -->
+      <ellipse cx="32" cy="18" rx="5" ry="16" fill="url(#${furId})"/>
+      <ellipse cx="32" cy="18" rx="2.5" ry="12" fill="#fff" opacity="0.4"/>
+      <!-- Right Ear -->
+      <ellipse cx="64" cy="18" rx="5" ry="16" fill="url(#${furId})"/>
+      <ellipse cx="64" cy="18" rx="2.5" ry="12" fill="#fff" opacity="0.4"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="16" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="40" r="3" fill="#fff"/>
+      <circle cx="42" cy="40" r="1.8" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="54" cy="40" r="3" fill="#fff"/>
+      <circle cx="54" cy="40" r="1.8" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="2" ry="3" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M45 48c3 1.5 6 1.5 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- Cheeks -->
+      <circle cx="30" cy="44" r="3" fill="${style.nose}" opacity="0.3"/>
+      <circle cx="66" cy="44" r="3" fill="${style.nose}" opacity="0.3"/>
     `,
     owl: `
-      <path d="M28 24l8-8 8 12-2 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M68 24l-8-8-8 12 2 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M32 34c0-6 6-10 16-10s16 4 16 10v18c0 8-6 14-16 14s-16-6-16-14v-18z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="40" cy="42" r="7" fill="#fff" opacity="0.9"/>
-      <circle cx="56" cy="42" r="7" fill="#fff" opacity="0.9"/>
-      <circle cx="40" cy="42" r="4" fill="${accent}"/>
-      <circle cx="56" cy="42" r="4" fill="${accent}"/>
-      <path d="M44 52l4-4 4 4v6l-4 2-4-2v-6z" fill="${style.nose}"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="17" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="40" cy="38" r="6" fill="#fff"/>
+      <circle cx="40" cy="38" r="3.5" fill="${accent}"/>
+      <circle cx="40" cy="37" r="1.5" fill="#fff"/>
+      <!-- Right eye -->
+      <circle cx="56" cy="38" r="6" fill="#fff"/>
+      <circle cx="56" cy="38" r="3.5" fill="${accent}"/>
+      <circle cx="56" cy="37" r="1.5" fill="#fff"/>
+      <!-- Beak -->
+      <path d="M46 48l2 3 2 -3z" fill="${style.nose}"/>
+      <!-- Mouth -->
+      <path d="M44 50c2 1 4 1 4 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     raccoon: `
-      <circle cx="32" cy="28" r="10" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="64" cy="28" r="10" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M34 34c0-6 6-10 14-10s14 4 14 10v16c0 8-6 14-14 14s-14-6-14-14v-16z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="40" cy="42" rx="6" ry="7" fill="${accent}" opacity="0.7"/>
-      <ellipse cx="56" cy="42" rx="6" ry="7" fill="${accent}" opacity="0.7"/>
-      <circle cx="40" cy="42" r="3" fill="#fff" opacity="0.9"/>
-      <circle cx="56" cy="42" r="3" fill="#fff" opacity="0.9"/>
-      <circle cx="40" cy="42" r="2" fill="${accent}"/>
-      <circle cx="56" cy="42" r="2" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="4" ry="5" fill="${style.nose}"/>
-      <path d="M44 56c2 2 6 2 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="16" fill="url(#${furId})"/>
+      <!-- Left mask -->
+      <ellipse cx="41" cy="40" rx="6.5" ry="7" fill="${accent}" opacity="0.7"/>
+      <!-- Right mask -->
+      <ellipse cx="55" cy="40" rx="6.5" ry="7" fill="${accent}" opacity="0.7"/>
+      <!-- Left eye -->
+      <circle cx="41" cy="40" r="3" fill="#fff"/>
+      <circle cx="41" cy="40" r="1.8" fill="#000"/>
+      <!-- Right eye -->
+      <circle cx="55" cy="40" r="3" fill="#fff"/>
+      <circle cx="55" cy="40" r="1.8" fill="#000"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="2.5" ry="3" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M45 48c3 1.5 6 1.5 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     panda: `
-      <circle cx="32" cy="30" r="11" fill="${accent}"/>
-      <circle cx="64" cy="30" r="11" fill="${accent}"/>
-      <circle cx="48" cy="46" r="19" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="40" cy="44" rx="7" ry="9" fill="${accent}"/>
-      <ellipse cx="56" cy="44" rx="7" ry="9" fill="${accent}"/>
-      <circle cx="40" cy="44" r="3" fill="#fff" opacity="0.9"/>
-      <circle cx="56" cy="44" r="3" fill="#fff" opacity="0.9"/>
-      <circle cx="40" cy="44" r="2" fill="${accent}"/>
-      <circle cx="56" cy="44" r="2" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="4" ry="6" fill="${style.nose}"/>
-      <path d="M44 56c2 3 6 3 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Head (white) -->
+      <circle cx="48" cy="42" r="16" fill="#f8fafc"/>
+      <!-- Left ear -->
+      <circle cx="34" cy="28" r="8" fill="${accent}"/>
+      <!-- Right ear -->
+      <circle cx="62" cy="28" r="8" fill="${accent}"/>
+      <!-- Left eye patch -->
+      <ellipse cx="41" cy="40" rx="6" ry="7.5" fill="${accent}"/>
+      <!-- Right eye patch -->
+      <ellipse cx="55" cy="40" rx="6" ry="7.5" fill="${accent}"/>
+      <!-- Left eye -->
+      <circle cx="41" cy="40" r="3.5" fill="#fff"/>
+      <circle cx="41" cy="40" r="2" fill="#000"/>
+      <!-- Right eye -->
+      <circle cx="55" cy="40" r="3.5" fill="#fff"/>
+      <circle cx="55" cy="40" r="2" fill="#000"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="2" ry="2.5" fill="#000"/>
+      <!-- Smile -->
+      <path d="M44 48c4 1.5 8 1.5 8 0" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     tiger: `
-      <path d="M30 24l8-10 8 12-2 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M66 24l-8-10-8 12 2 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M34 36c0-6 6-10 14-10s14 4 14 10v16c0 8-6 12-14 12s-14-4-14-12v-16z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M36 34h6m14 0h6m-24 8h6m12 0h6m-20 8h6m8 0h6" stroke="${accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M40 42c0-2 1.5-4 3-4s3 2 3 4-1.5 3-3 3-3-1-3-3z" fill="${accent}"/>
-      <path d="M50 42c0-2 1.5-4 3-4s3 2 3 4-1.5 3-3 3-3-1-3-3z" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="4" ry="6" fill="${style.nose}"/>
-      <path d="M44 56c2 3 6 3 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Head -->
+      <ellipse cx="48" cy="40" rx="16" ry="17" fill="url(#${furId})"/>
+      <!-- Stripes -->
+      <path d="M32 35h6m8 -2h6m-16 6h5m8 0h5" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="37" r="3.5" fill="#fff"/>
+      <circle cx="42" cy="37" r="2" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="54" cy="37" r="3.5" fill="#fff"/>
+      <circle cx="54" cy="37" r="2" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="45" rx="2" ry="3" fill="${style.nose}"/>
+      <!-- Mouth -->
+      <path d="M45 48c3 1.5 6 1.5 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- Whiskers -->
+      <path d="M32 42l-4 1m32 0l4 1" stroke="${accent}" stroke-width="1.5" stroke-linecap="round"/>
     `,
     koala: `
-      <ellipse cx="30" cy="28" rx="12" ry="14" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="66" cy="28" rx="12" ry="14" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="30" cy="28" rx="6" ry="8" fill="${accent}" opacity="0.3"/>
-      <ellipse cx="66" cy="28" rx="6" ry="8" fill="${accent}" opacity="0.3"/>
-      <circle cx="48" cy="46" r="18" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="5" ry="7" fill="${style.nose}"/>
-      <path d="M43 56c2 3 8 3 10 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Left ear -->
+      <circle cx="32" cy="28" r="9" fill="url(#${furId})"/>
+      <!-- Right ear -->
+      <circle cx="64" cy="28" r="9" fill="url(#${furId})"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="17" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="41" cy="39" r="3" fill="#fff"/>
+      <circle cx="41" cy="39" r="1.8" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="55" cy="39" r="3" fill="#fff"/>
+      <circle cx="55" cy="39" r="1.8" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="3.5" ry="4" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M43 50c5 2 10 2 10 0" stroke="${accent}" stroke-width="2" stroke-linecap="round" fill="none"/>
     `,
     deer: `
-      <path d="M26 18c4-8 6-10 8-10s4 4 2 10l-6 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M70 18c-4-8-6-10-8-10s-4 4-2 10l6 8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M22 16l4-6 2 8m48-8l-4-6-2 8" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
-      <path d="M32 30l6-8 8 10-2 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M64 30l-6-8-8 10 2 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="48" cy="46" rx="16" ry="18" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="3" ry="5" fill="${style.nose}"/>
-      <path d="M44 56c2 3 6 3 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Left antler -->
+      <path d="M36 20l-2-6 1 4 1-2z" fill="${accent}"/>
+      <!-- Right antler -->
+      <path d="M60 20l2-6-1 4-1-2z" fill="${accent}"/>
+      <!-- Head -->
+      <ellipse cx="48" cy="40" rx="15" ry="17" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="38" r="3" fill="#fff"/>
+      <circle cx="42" cy="38" r="1.8" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="54" cy="38" r="3" fill="#fff"/>
+      <circle cx="54" cy="38" r="1.8" fill="${accent}"/>
+      <!-- Snout -->
+      <ellipse cx="48" cy="46" rx="5" ry="4" fill="#fff" opacity="0.7"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="44" rx="2" ry="2.5" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M45 47c3 1 6 1 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     dog: `
-      <path d="M26 28c0-8 4-12 10-10 4 2 4 8 2 14l-8 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M70 28c0-8-4-12-10-10-4 2-4 8-2 14l8 6z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="48" cy="46" rx="18" ry="20" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3.5" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3.5" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="4" ry="6" fill="${style.nose}"/>
-      <path d="M48 54v4" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
-      <path d="M44 58c2 2 6 2 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Left ear (floppy) -->
+      <ellipse cx="28" cy="36" rx="6" ry="12" fill="url(#${furId})"/>
+      <!-- Right ear (floppy) -->
+      <ellipse cx="68" cy="36" rx="6" ry="12" fill="url(#${furId})"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="16" fill="url(#${furId})"/>
+      <!-- Snout -->
+      <ellipse cx="48" cy="48" rx="8" ry="6" fill="#fff" opacity="0.6"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="39" r="3.5" fill="#fff"/>
+      <circle cx="42" cy="39" r="2" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="54" cy="39" r="3.5" fill="#fff"/>
+      <circle cx="54" cy="39" r="2" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="46" rx="2.5" ry="3" fill="${style.nose}"/>
+      <!-- Tongue -->
+      <ellipse cx="48" cy="51" rx="3" ry="2" fill="#ff6b9d" opacity="0.7"/>
+      <!-- Smile -->
+      <path d="M44 48c4 1 8 1 8 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `,
     lion: `
-      <circle cx="32" cy="28" r="8" fill="${accent}" opacity="0.5"/>
-      <circle cx="64" cy="28" r="8" fill="${accent}" opacity="0.5"/>
-      <circle cx="24" cy="38" r="7" fill="${accent}" opacity="0.5"/>
-      <circle cx="72" cy="38" r="7" fill="${accent}" opacity="0.5"/>
-      <circle cx="22" cy="50" r="6" fill="${accent}" opacity="0.5"/>
-      <circle cx="74" cy="50" r="6" fill="${accent}" opacity="0.5"/>
-      <circle cx="28" cy="56" r="6" fill="${accent}" opacity="0.5"/>
-      <circle cx="68" cy="56" r="6" fill="${accent}" opacity="0.5"/>
-      <circle cx="48" cy="46" r="20" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="42" cy="44" r="3" fill="${accent}"/>
-      <circle cx="54" cy="44" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="54" rx="4" ry="6" fill="${style.nose}"/>
-      <path d="M43 56c2 3 8 3 10 0" stroke="${accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Mane -->
+      <circle cx="48" cy="38" r="20" fill="${accent}" opacity="0.4"/>
+      <circle cx="28" cy="32" r="8" fill="${accent}" opacity="0.3"/>
+      <circle cx="68" cy="32" r="8" fill="${accent}" opacity="0.3"/>
+      <circle cx="26" cy="42" r="7" fill="${accent}" opacity="0.3"/>
+      <circle cx="70" cy="42" r="7" fill="${accent}" opacity="0.3"/>
+      <!-- Head -->
+      <circle cx="48" cy="42" r="16" fill="url(#${furId})"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="39" r="3" fill="#fff"/>
+      <circle cx="42" cy="39" r="1.8" fill="${accent}"/>
+      <!-- Right eye -->
+      <circle cx="54" cy="39" r="3" fill="#fff"/>
+      <circle cx="54" cy="39" r="1.8" fill="${accent}"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="45" rx="2.5" ry="3" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M44 48c4 2 8 2 8 0" stroke="${accent}" stroke-width="2" stroke-linecap="round" fill="none"/>
     `,
     giraffe: `
-      <path d="M32 20l4-10 6 12v8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <path d="M64 20l-4-10-6 12v8z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <circle cx="36" cy="14" r="3" fill="${accent}" opacity="0.6"/>
-      <circle cx="60" cy="14" r="3" fill="${accent}" opacity="0.6"/>
-      <path d="M36 36c0-8 4-12 12-12s12 4 12 12v16c0 10-4 14-12 14s-12-4-12-14v-16z" fill="url(#${furId})" filter="url(#shadow-${style.id})"/>
-      <ellipse cx="38" cy="38" rx="3" ry="4" fill="${accent}" opacity="0.5"/>
-      <ellipse cx="58" cy="38" rx="3" ry="4" fill="${accent}" opacity="0.5"/>
-      <ellipse cx="42" cy="48" rx="2.5" ry="3" fill="${accent}" opacity="0.5"/>
-      <ellipse cx="54" cy="48" rx="2.5" ry="3" fill="${accent}" opacity="0.5"/>
-      <ellipse cx="48" cy="56" rx="3" ry="4" fill="${accent}" opacity="0.5"/>
-      <circle cx="42" cy="42" r="3" fill="${accent}"/>
-      <circle cx="54" cy="42" r="3" fill="${accent}"/>
-      <ellipse cx="48" cy="52" rx="3" ry="5" fill="${style.nose}"/>
-      <path d="M45 54c1.5 2 4.5 2 6 0" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>
+      <!-- Horns -->
+      <circle cx="42" cy="18" r="3" fill="${accent}"/>
+      <circle cx="54" cy="18" r="3" fill="${accent}"/>
+      <!-- Head -->
+      <ellipse cx="48" cy="40" rx="14" ry="16" fill="url(#${furId})"/>
+      <!-- Spots -->
+      <ellipse cx="38" cy="36" rx="3" ry="4" fill="${accent}" opacity="0.5"/>
+      <ellipse cx="58" cy="36" rx="3" ry="4" fill="${accent}" opacity="0.5"/>
+      <ellipse cx="42" cy="46" rx="2.5" ry="3" fill="${accent}" opacity="0.5"/>
+      <ellipse cx="54" cy="46" rx="2.5" ry="3" fill="${accent}" opacity="0.5"/>
+      <!-- Left eye -->
+      <circle cx="42" cy="38" r="3" fill="#fff"/>
+      <circle cx="42" cy="38" r="1.8" fill="${accent}"/>
+      <!-- Right eye (winking smile) -->
+      <path d="M54 38c0 1 1 2 2 2" stroke="${accent}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <!-- Snout -->
+      <ellipse cx="48" cy="46" rx="5" ry="4" fill="#fff" opacity="0.7"/>
+      <!-- Nose -->
+      <ellipse cx="48" cy="44" rx="1.8" ry="2.5" fill="${style.nose}"/>
+      <!-- Smile -->
+      <path d="M45 47c3 1.5 6 1.5 6 0" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     `
   };
 
@@ -211,7 +320,11 @@ const buildCozyAvatarSvg = (style: CozyAvatarStyle) => {
   </defs>
   <rect width="96" height="96" rx="30" fill="#0b0f1a"/>
   <circle cx="48" cy="48" r="42" stroke="url(#${ringId})" stroke-width="6" fill="none"/>
-  <path d="M20 70c6-16 20-26 28-26s22 10 28 26v8H20v-8z" fill="url(#${hoodieId})" filter="url(#shadow-${style.id})"/>
+  <!-- Hoodie -->
+  <path d="M20 65c0-8 8-15 28-15s28 7 28 15v11H20v-11z" fill="url(#${hoodieId})" filter="url(#shadow-${style.id})"/>
+  <!-- Hoodie strings -->
+  <path d="M40 72l0 4m16 -4l0 4" stroke="url(#${hoodieId})" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <!-- Animal -->
   ${animalSvg[style.animal]}
 </svg>`;
 };

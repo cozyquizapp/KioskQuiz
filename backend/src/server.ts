@@ -4167,7 +4167,7 @@ const runNextQuestion = (room: RoomState) => {
     throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
   }
 
-  // After Q10 or Q20 reveal, transition to SCOREBOARD (only when coming from Q_REVEAL and not yet triggered)
+  // After Q10 reveal, transition to BLITZ
   const askedCountBefore = room.askedQuestionIds.length;
   if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10 && !room.halftimeTriggered) {
     room.halftimeTriggered = true;
@@ -4175,9 +4175,11 @@ const runNextQuestion = (room: RoomState) => {
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
-    const shouldStartRundlauf =
-      room.nextStage === 'RUNDLAUF' ||
-      (askedCount >= totalQuestions || room.remainingQuestionIds.length === 0);
+  }
+
+  // After Q20 reveal, transition to RUNDLAUF
+  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 20 && !room.finalsTriggered) {
+    room.finalsTriggered = true;
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);

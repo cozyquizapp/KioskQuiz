@@ -2034,12 +2034,14 @@ useEffect(() => {
                   className="blitz-current-image"
                 />
               )}
-              <div className="blitz-item-title">
-                {activeItem?.prompt ||
-                  `${language === 'de' ? 'Item' : 'Item'} ${activeIndex + 1}/${totalItems}`}
-              </div>
-              <div className="blitz-item-meta">
-                {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
+              <div className="blitz-text-overlay">
+                <div className="blitz-item-title">
+                  {activeItem?.prompt ||
+                    `${language === 'de' ? 'Item' : 'Item'} ${activeIndex + 1}/${totalItems}`}
+                </div>
+                <div className="blitz-item-meta">
+                  {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
+                </div>
               </div>
             </div>
             <div className="blitz-timeline">

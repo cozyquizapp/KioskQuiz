@@ -1686,46 +1686,83 @@
 }
 
 .blitz-current-card {
-  padding: 22px;
+  padding: 0;
   border-radius: 28px;
   background: rgba(59, 130, 246, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.28);
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(340px, 1.35fr) minmax(220px, 1fr);
-  align-items: center;
+  gap: 0;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  align-items: stretch;
+  position: relative;
+  min-height: 600px;
+  overflow: hidden;
 }
 
 .blitz-current-image {
   width: 100%;
-  height: clamp(280px, 42vh, 520px);
-  max-height: 520px;
-  border-radius: 20px;
-  object-fit: contain;
+  height: 100%;
+  min-height: 500px;
+  border-radius: 0;
+  object-fit: cover;
   background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: none;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  z-index: 1;
+}
+
+.blitz-text-overlay {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
 }
 
 .blitz-item-title {
-  font-size: clamp(20px, 3vw, 30px);
+  font-size: clamp(24px, 4vw, 44px);
   font-weight: 900;
   letter-spacing: 0.04em;
+  position: relative;
+  z-index: 2;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.7) 100%);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  margin: 0;
 }
 
 .blitz-item-meta {
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.8);
+  color: rgba(226, 232, 240, 0.9);
+  position: relative;
+  z-index: 2;
+  padding: 0 32px 24px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+  margin: 0;
+  font-weight: 600;
 }
 
 @media (max-width: 960px) {
   .blitz-current-card {
-    grid-template-columns: 1fr;
+    min-height: 500px;
   }
 
   .blitz-current-image {
-    height: clamp(220px, 38vh, 420px);
+    min-height: 400px;
+  }
+
+  .blitz-item-title {
+    font-size: clamp(20px, 3.5vw, 32px);
+    padding: 24px;
+  }
+
+  .blitz-item-meta {
+    padding: 0 24px 16px;
   }
 }
 

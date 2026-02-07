@@ -1751,6 +1751,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               .map((team, idx) => {
                 const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
                 const accentColor = colors[idx % colors.length];
+                const avatar = getAvatarById(team.avatarId);
                 return (
                   <div
                     key={team.id}
@@ -1766,7 +1767,13 @@ function TeamView({ roomCode }: TeamViewProps) {
                     }}
                   >
                     <div style={{ color: accentColor, fontWeight: 700, marginBottom: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.3px' }}>
-                      <span style={{ fontSize: 18 }}>●</span>
+                      {avatar && (
+                        <img
+                          src={avatar.dataUri}
+                          alt={avatar.name}
+                          style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
+                        />
+                      )}
                       {team.name}
                     </div>
                     <div style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 24, fontWeight: 500 }}>

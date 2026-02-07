@@ -167,6 +167,145 @@ const avatarSvgs = [
   <rect x="58" y="40" width="8" height="8" fill="#0F172A"/>
   <rect x="36" y="58" width="24" height="6" fill="#0F172A"/>
 </svg>`
+  },
+  {
+    id: 'plasma',
+    name: 'Plasma',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#0B1120"/>
+  <circle cx="48" cy="48" r="28" fill="#F43F5E"/>
+  <circle cx="38" cy="44" r="4" fill="#0F172A"/>
+  <circle cx="58" cy="44" r="4" fill="#0F172A"/>
+  <path d="M34 60c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="70" cy="26" r="6" fill="#FB7185"/>
+</svg>`
+  },
+  {
+    id: 'berry',
+    name: 'Berry',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="24" fill="#111827"/>
+  <rect x="16" y="20" width="64" height="56" rx="24" fill="#EC4899"/>
+  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
+  <path d="M36 60h24" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'lime',
+    name: 'Lime',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#0F172A"/>
+  <circle cx="48" cy="48" r="26" fill="#A3E635"/>
+  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
+  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M20 70h56" stroke="#A3E635" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'glitch',
+    name: 'Glitch',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="20" fill="#0B1120"/>
+  <rect x="18" y="18" width="60" height="60" rx="14" fill="#38BDF8"/>
+  <rect x="30" y="40" width="10" height="10" fill="#0F172A"/>
+  <rect x="56" y="40" width="10" height="10" fill="#0F172A"/>
+  <rect x="34" y="60" width="28" height="6" fill="#0F172A"/>
+  <rect x="18" y="28" width="12" height="6" fill="#0F172A"/>
+</svg>`
+  },
+  {
+    id: 'sprout',
+    name: 'Sprout',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#111827"/>
+  <path d="M28 34c0-8 6-14 14-14h12c8 0 14 6 14 14v26c0 10-8 18-18 18h-4c-10 0-18-8-18-18V34z" fill="#4ADE80"/>
+  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
+  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M44 16c4 6 12 6 16 0" stroke="#4ADE80" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'flare',
+    name: 'Flare',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#0F172A"/>
+  <circle cx="48" cy="50" r="26" fill="#F59E0B"/>
+  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
+  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M48 18l6 10-6 6-6-6 6-10z" fill="#FBBF24"/>
+</svg>`
+  },
+  {
+    id: 'bubble',
+    name: 'Bubble',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="30" fill="#0B1120"/>
+  <circle cx="48" cy="48" r="26" fill="#22D3EE"/>
+  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
+  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="68" cy="30" r="6" fill="#7DD3FC"/>
+</svg>`
+  },
+  {
+    id: 'ivory',
+    name: 'Ivory',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="24" fill="#111827"/>
+  <rect x="18" y="20" width="60" height="56" rx="20" fill="#E5E7EB"/>
+  <circle cx="40" cy="46" r="4" fill="#111827"/>
+  <circle cx="56" cy="46" r="4" fill="#111827"/>
+  <path d="M36 60c6 4 18 4 24 0" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'royal',
+    name: 'Royal',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="24" fill="#0F172A"/>
+  <circle cx="48" cy="50" r="26" fill="#6366F1"/>
+  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
+  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 26l8 6 8-10 8 10 8-6" stroke="#6366F1" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'jade',
+    name: 'Jade',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#0B1120"/>
+  <rect x="20" y="18" width="56" height="60" rx="24" fill="#10B981"/>
+  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
+  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+</svg>`
+  },
+  {
+    id: 'coral',
+    name: 'Coral',
+    svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" rx="26" fill="#0F172A"/>
+  <circle cx="48" cy="48" r="26" fill="#FB923C"/>
+  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
+  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
+  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+</svg>`
   }
 ];
 

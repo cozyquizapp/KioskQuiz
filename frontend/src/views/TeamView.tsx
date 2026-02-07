@@ -135,6 +135,7 @@ const COPY = {
     joinButton: 'Beitreten',
     avatarTitle: 'Avatar waehlen',
     avatarHint: 'Tippe eine Figur an',
+    avatarRandom: 'Zufall',
     waitingMsg: 'Bitte wartet auf die naechste Frage ...',
     tfTrue: 'Wahr',
     tfFalse: 'Falsch',
@@ -178,6 +179,7 @@ const COPY = {
     joinButton: 'Join',
     avatarTitle: 'Choose avatar',
     avatarHint: 'Tap a character',
+    avatarRandom: 'Random',
     waitingMsg: 'Please wait for the next question ...',
     tfTrue: 'True',
     tfFalse: 'False',
@@ -2879,7 +2881,28 @@ function TeamView({ roomCode }: TeamViewProps) {
         }}
       />
       <div style={{ marginTop: 12 }}>
-        <div style={{ ...pillLabel, marginBottom: 6 }}>{t('avatarTitle')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+          <div style={{ ...pillLabel }}>{t('avatarTitle')}</div>
+          <button
+            type="button"
+            style={{
+              ...pillSmall,
+              background: 'rgba(56,189,248,0.14)',
+              border: '1px solid rgba(56,189,248,0.35)',
+              color: '#7dd3fc',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              const random = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+              if (random) {
+                setAvatarId(random.id);
+                if (roomCode) localStorage.setItem(storageKey('avatar'), random.id);
+              }
+            }}
+          >
+            {t('avatarRandom')}
+          </button>
+        </div>
         <div style={{ ...mutedText, marginBottom: 8 }}>{t('avatarHint')}</div>
         <div
           style={{
@@ -2894,7 +2917,10 @@ function TeamView({ roomCode }: TeamViewProps) {
               <button
                 key={avatar.id}
                 type="button"
-                onClick={() => setAvatarId(avatar.id)}
+                onClick={() => {
+                  setAvatarId(avatar.id);
+                  if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
+                }}
                 style={{
                   padding: 6,
                   borderRadius: 12,

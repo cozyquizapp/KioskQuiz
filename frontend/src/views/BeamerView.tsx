@@ -695,7 +695,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
           payload.scores.map((entry) => ({
             id: entry.id,
             name: entry.name,
-            score: entry.score
+            score: entry.score,
+            avatarId: entry.avatarId
           }))
         );
       }
@@ -1435,9 +1436,17 @@ useEffect(() => {
               ) : (
                 sortedTeams.map((team) => {
                   const isReady = Boolean(team.isReady);
+                  const avatar = getAvatarById(team.avatarId);
                   return (
                     <div className="cozyLobbyTeamRow" key={team.id}>
                       <span className={`cozyLobbyStatusDot ${isReady ? 'ready' : 'online'}`} />
+                      {avatar && (
+                        <img
+                          src={avatar.dataUri}
+                          alt={avatar.name}
+                          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
+                        />
+                      )}
                       <span className="cozyLobbyTeamName">{team.name || 'Team'}</span>
                       <span className="cozyLobbyTeamStatus">{isReady ? statusReady : statusOnline}</span>
                     </div>

@@ -215,6 +215,8 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
   return false;
 };
 
+const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+
 function TeamView({ roomCode }: TeamViewProps) {
   const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
@@ -1959,12 +1961,13 @@ function TeamView({ roomCode }: TeamViewProps) {
           const medal = medals[idx] || '';
           const colors = ['#fbbf24', '#e5e7eb', '#f97316'];
           const medalColor = colors[idx] || '#94a3b8';
+          const avatar = getAvatarById(entry.avatarId);
           return (
             <div
               key={`rundlauf-score-${entry.id}`}
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'auto auto 1fr auto',
+                gridTemplateColumns: 'auto auto auto 1fr auto',
                 gap: 10,
                 padding: '10px 12px',
                 borderRadius: 12,
@@ -1995,6 +1998,13 @@ function TeamView({ roomCode }: TeamViewProps) {
               <span style={{ fontWeight: 800, color: medal ? medalColor : '#e2e8f0' }}>
                 {idx < 3 ? idx + 1 : idx + 1}
               </span>
+              {avatar && (
+                <img
+                  src={avatar.dataUri}
+                  alt={avatar.name}
+                  style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
+                />
+              )}
               <span style={{ color: '#e2e8f0' }}>{entry.name}</span>
               <span style={{ fontWeight: 800, color: medal ? medalColor : '#94a3b8' }}>{entry.score ?? 0}</span>
             </div>
@@ -2794,23 +2804,33 @@ function TeamView({ roomCode }: TeamViewProps) {
             </div>
             {Object.keys(results).length > 0 && (
               <div style={{ display: 'grid', gap: 6 }}>
-                {sortedScoreboard.map((entry) => (
+                {sortedScoreboard.map((entry) => {
+                  const avatar = getAvatarById(entry.avatarId);
+                  return (
                   <div
                     key={`blitz-score-${entry.id}`}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr auto auto',
+                      gridTemplateColumns: 'auto 1fr auto auto',
                       gap: 10,
                       padding: '8px 10px',
                       borderRadius: 12,
                       border: '1px solid rgba(255,255,255,0.12)'
                     }}
                   >
+                    {avatar && (
+                      <img
+                        src={avatar.dataUri}
+                        alt={avatar.name}
+                        style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
+                      />
+                    )}
                     <span>{entry.name}</span>
                     <span>{results[entry.id]?.correctCount ?? 0}/5</span>
                     <span style={{ fontWeight: 700 }}>+{results[entry.id]?.pointsAwarded ?? 0}</span>
                   </div>
-                ))}
+                );
+                })}
               </div>
             )}
           </>
@@ -3042,12 +3062,14 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
           <div style={{ display: 'grid', gap: 6 }}>
-            {sortedScoreboard.map((entry, idx) => (
+            {sortedScoreboard.map((entry, idx) => {
+              const avatar = getAvatarById(entry.avatarId);
+              return (
               <div
                 key={`scoreboard-pre-${entry.id}`}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
+                  gridTemplateColumns: 'auto auto 1fr auto',
                   gap: 10,
                   padding: '8px 10px',
                   borderRadius: 12,
@@ -3055,10 +3077,18 @@ function TeamView({ roomCode }: TeamViewProps) {
                 }}
               >
                 <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
+                {avatar && (
+                  <img
+                    src={avatar.dataUri}
+                    alt={avatar.name}
+                    style={{ width: 24, height: 24, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
+                  />
+                )}
                 <span>{entry.name}</span>
                 <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       );

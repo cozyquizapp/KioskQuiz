@@ -30,6 +30,7 @@ import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
 import { createConfetti } from '../utils/confetti';
+import { AVATARS } from '../config/avatars';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -59,6 +60,8 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
       return 'lobby';
   }
 };
+
+const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
 type BeamerProps = { roomCode: string };
 
@@ -1350,7 +1353,7 @@ useEffect(() => {
     </div>
   );
   const renderCozyScoreboardGrid = (
-    entries: Array<{ id: string; name: string; score?: number | null }>,
+    entries: Array<{ id: string; name: string; score?: number | null; avatarId?: string }>,
     options?: {
       highlightTop?: boolean;
       detailMap?: Record<string, string | null | undefined>;
@@ -1367,16 +1370,20 @@ useEffect(() => {
     }
     return (
       <div className={`beamer-scoreboard-grid${options?.className ? ` ${options.className}` : ''}`}>
-        {entries.map((entry, idx) => (
+        {entries.map((entry, idx) => {
+          const avatar = getAvatarById(entry.avatarId);
+          return (
           <BeamerScoreboardCard
             key={`cozy-score-${entry.id}-${idx}`}
             rank={idx + 1}
             name={entry.name}
+            avatarSrc={avatar?.dataUri}
             score={entry.score ?? 0}
             detail={options?.detailMap?.[entry.id] ?? null}
             highlight={Boolean(options?.highlightTop && idx < 3)}
           />
-        ))}
+        );
+        })}
       </div>
     );
   };
@@ -2209,6 +2216,7 @@ useEffect(() => {
             const neonClasses = ['neon-gold', 'neon-silver', 'neon-bronze'];
             const color = colors[idx];
             const neonClass = neonClasses[idx];
+            const avatar = getAvatarById(team.avatarId);
             return (
               <div
                 key={team.id}
@@ -2229,6 +2237,13 @@ useEffect(() => {
                 }}
               >
                 {/* Cyber scan effect for winner */}
+                {avatar && (
+                  <img
+                    src={avatar.dataUri}
+                    alt={avatar.name}
+                    style={{ width: 48, height: 48, borderRadius: 14, border: `2px solid ${color}99`, marginBottom: 10 }}
+                  />
+                )}
                 {idx === 0 && (
                   <div style={{
                     position: 'absolute',

@@ -2011,10 +2011,30 @@ const initializeBlitzStage = (room: RoomState) => {
   room.blitzPool = selectBlitzVisiblePool(normalizedDefs, visibleCount);
   room.blitzBans = {};
   const standings = getTeamStandings(room);
-  room.blitzTopTeamId = standings[0]?.id ?? null;
-  room.blitzLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
-  const BAN_LIMIT = 2; // always two bans for the top team
-  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: BAN_LIMIT } : {};
+  
+  // Check for tied top teams
+  const topScore = standings[0]?.score ?? 0;
+  const topTeams = standings.filter(s => s.score === topScore);
+  const lastScore = standings[standings.length - 1]?.score ?? 0;
+  const lastTeams = standings.filter(s => s.score === lastScore);
+  
+  // If multiple top teams, all get to ban 1 category each
+  // If multiple last teams, all get to pick 1 category each
+  const BAN_LIMIT = topTeams.length > 1 ? 1 : 2; // 1 ban each if tied, 2 if single winner
+  
+  room.blitzTopTeamId = topTeams.length === 1 ? topTeams[0].id : null;
+  room.blitzLastTeamId = lastTeams.length === 1 ? lastTeams[lastTeams.length - 1].id : null;
+  room.blitzBanLimits = {};
+  
+  // Set ban limits for all top teams
+  if (topTeams.length === 1) {
+    room.blitzBanLimits[topTeams[0].id] = BAN_LIMIT;
+  } else {
+    topTeams.forEach(team => {
+      room.blitzBanLimits[team.id] = BAN_LIMIT;
+    });
+  }
+  
   room.blitzPinnedTheme = null;
   room.blitzSelectedThemes = [];
   room.blitzSetIndex = -1;
@@ -2031,13 +2051,18 @@ const initializeBlitzStage = (room: RoomState) => {
 };
 
 const hasBlitzSelectionReady = (room: RoomState) => {
-  const topId = room.blitzTopTeamId;
-  const lastId = room.blitzLastTeamId;
-  const required = topId ? room.blitzBanLimits[topId] ?? 0 : 0;
-  const bans = topId ? room.blitzBans[topId]?.length ?? 0 : 0;
-  const banReady = topId ? bans >= required : true;
-  const pickReady = lastId ? Boolean(room.blitzPinnedTheme) : true;
-  return banReady && pickReady;
+  // Check if all teams with ban limits have finished banning
+  const teamsWithBanLimits = Object.keys(room.blitzBanLimits);
+  const allBansComplete = teamsWithBanLimits.every(teamId => {
+    const required = room.blitzBanLimits[teamId] ?? 0;
+    const bans = room.blitzBans[teamId]?.length ?? 0;
+    return bans >= required;
+  });
+  
+  // Check if pick is ready (at least one theme pinned, or no last team)
+  const pickReady = Boolean(room.blitzPinnedTheme) || !room.blitzLastTeamId;
+  
+  return allBansComplete && pickReady;
 };
 
 const finalizeBlitzSelection = (room: RoomState) => {
@@ -2045,7 +2070,14 @@ const finalizeBlitzSelection = (room: RoomState) => {
   const pinned = room.blitzPinnedTheme ?? null;
   const remaining = room.blitzPool.filter((entry) => !bannedIds.has(entry.id) && entry.id !== pinned?.id);
   const shuffled = [...remaining].sort(() => Math.random() - 0.5);
-  const needed = 2; // Always pick 2 random themes
+  
+  // Determine how many random themes to pick
+  // If multiple top teams (each banned 1) and last team picked 1: only 1 random theme
+  // Otherwise: 2 random themes
+  const topTeamsCount = Object.keys(room.blitzBanLimits).length;
+  const totalBans = Object.values(room.blitzBans).flat().length;
+  const needed = (topTeamsCount >= 2 && pinned) ? 1 : 2;
+  
   const randomPick = shuffled.slice(0, needed);
   room.blitzSelectedThemes = pinned ? [pinned, ...randomPick] : randomPick;
   room.blitzSetIndex = -1;
@@ -2055,14 +2087,13 @@ const finalizeBlitzSelection = (room: RoomState) => {
 };
 
 const applyBlitzBan = (room: RoomState, teamId: string, themeKey: string) => {
-  if (room.blitzTopTeamId && teamId !== room.blitzTopTeamId) {
-    throw new Error('Nur Platz 1 darf bannen');
-  }
+  // Check if this team is allowed to ban
+  const limit = room.blitzBanLimits[teamId] ?? 0;
+  if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
+  
   if (room.blitzPinnedTheme) {
     throw new Error('Thema bereits gewaehlt');
   }
-  const limit = room.blitzBanLimits[teamId] ?? 0;
-  if (limit <= 0) throw new Error('Dieses Team darf nicht bannen');
   const bans = room.blitzBans[teamId] ?? [];
   if (bans.length >= limit) throw new Error('Ban-Limit erreicht');
   const themeId = themeKey.trim();
@@ -2079,13 +2110,15 @@ const applyBlitzPick = (room: RoomState, teamId: string, themeKey: string) => {
   if (room.blitzLastTeamId && teamId !== room.blitzLastTeamId) {
     throw new Error('Nur letzter Platz darf waehlen');
   }
-  const topId = room.blitzTopTeamId;
-  if (topId) {
-    const required = room.blitzBanLimits[topId] ?? 0;
-    const bans = room.blitzBans[topId] ?? [];
-    if (required > 0 && bans.length < required) {
-      throw new Error('Erst bannen, dann waehlen');
-    }
+  // Check if all bans are complete
+  const teamsWithBanLimits = Object.keys(room.blitzBanLimits);
+  const allBansComplete = teamsWithBanLimits.every(tId => {
+    const required = room.blitzBanLimits[tId] ?? 0;
+    const bans = room.blitzBans[tId]?.length ?? 0;
+    return bans >= required;
+  });
+  if (!allBansComplete) {
+    throw new Error('Erst bannen, dann waehlen');
   }
   const themeId = themeKey.trim();
   if (!themeId) throw new Error('Thema fehlt');
@@ -3804,11 +3837,13 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       return { teamId, points };
     });
     const maxPoints = betPointsByTeam.reduce((max, entry) => Math.max(max, entry.points), 0);
+    // Find all teams with maxPoints (winners can tie)
+    const winnersWithMaxPoints = betPointsByTeam.filter(entry => entry.points === maxPoints && maxPoints > 0).map(entry => entry.teamId);
     Object.entries(room.answers).forEach(([teamId, ans]) => {
       const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
       const ptsRaw = Number(arr[correctIdx] ?? 0);
       const betPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
-      const awardedPoints = maxPoints > 0 && betPoints === maxPoints ? basePoints : 0;
+      const awardedPoints = winnersWithMaxPoints.includes(teamId) ? basePoints : 0;
       room.answers[teamId] = {
         ...ans,
         isCorrect: awardedPoints > 0,

@@ -2191,8 +2191,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     if (gameState === 'RUNDLAUF_SCOREBOARD_FINAL' || gameState === 'SIEGEREHRUNG') {
-      const topThree = scoreboard.slice(0, 3);
-      const rest = scoreboard.slice(3);
+      const topThree = sortedScoreboard.slice(0, 3);
+      const rest = sortedScoreboard.slice(3);
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
           <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15))', border: '1px solid rgba(16,185,129,0.5)', color: '#6ee7b7'}}>
@@ -2508,8 +2508,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       );
     }
     if (gameState === 'BLITZ_SCOREBOARD') {
-      const topThree = scoreboard.slice(0, 3);
-      const rest = scoreboard.slice(3);
+      const topThree = sortedScoreboard.slice(0, 3);
+      const rest = sortedScoreboard.slice(3);
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
           <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,146,60,0.15))', border: '1px solid rgba(251,191,36,0.5)', color: '#fcd34d'}}>
@@ -2769,7 +2769,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             </div>
             {Object.keys(results).length > 0 && (
               <div style={{ display: 'grid', gap: 6 }}>
-                {scoreboard.map((entry) => (
+                {sortedScoreboard.map((entry) => (
                   <div
                     key={`blitz-score-${entry.id}`}
                     style={{
@@ -2979,7 +2979,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
           <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
           <div style={{ display: 'grid', gap: 6 }}>
-            {scoreboard.map((entry, idx) => (
+            {sortedScoreboard.map((entry, idx) => (
               <div
                 key={`scoreboard-pre-${entry.id}`}
                 style={{
@@ -3084,6 +3084,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       ? 'Ergebnis'
       : 'Warten';
 
+  // Allow scrolling when in banning/selection phases with long lists
+  const needsScrolling = 
+    gameState === 'BLITZ_BANNING' || 
+    gameState === 'RUNDLAUF_CATEGORY_SELECT';
+
   const mainContent =
     viewState === 'error'
       ? renderErrorCard()
@@ -3094,7 +3099,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   return (
     <div
       id="team-root"
-      style={{...pageStyleTeam, position: 'relative', overflow: 'hidden'}}
+      style={{...pageStyleTeam, position: 'relative', overflow: needsScrolling ? 'auto' : 'hidden'}}
       data-timer={timerTick}
       data-team-ui="1"
       data-team-marker={teamMarker}

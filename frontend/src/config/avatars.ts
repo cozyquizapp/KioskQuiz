@@ -7,307 +7,70 @@ export type AvatarOption = {
 
 const svgToDataUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
-const avatarSvgs = [
-  {
-    id: 'nova',
-    name: 'Nova',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
+type CozyAvatarStyle = {
+  id: string;
+  name: string;
+  furFrom: string;
+  furTo: string;
+  hoodieFrom: string;
+  hoodieTo: string;
+  nose: string;
+  ring: string;
+};
+
+const buildCozyAvatarSvg = (style: CozyAvatarStyle) => {
+  const furId = `fur-${style.id}`;
+  const hoodieId = `hoodie-${style.id}`;
+  const ringId = `ring-${style.id}`;
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="28" fill="#1F2937"/>
-  <circle cx="48" cy="48" r="28" fill="#22D3EE"/>
-  <circle cx="38" cy="43" r="4" fill="#0F172A"/>
-  <circle cx="58" cy="43" r="4" fill="#0F172A"/>
-  <path d="M36 57c4 6 20 6 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'pico',
-    name: 'Pico',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="22" fill="#111827"/>
-  <path d="M20 28h56v40a20 20 0 0 1-20 20H40a20 20 0 0 1-20-20V28z" fill="#F472B6"/>
-  <circle cx="38" cy="46" r="4" fill="#1F2937"/>
-  <circle cx="58" cy="46" r="4" fill="#1F2937"/>
-  <path d="M38 60h20" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'orbit',
-    name: 'Orbit',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="30" fill="#0F172A"/>
-  <circle cx="48" cy="48" r="26" fill="#A3E635"/>
-  <circle cx="36" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="60" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 58c5 5 23 5 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <ellipse cx="48" cy="48" rx="36" ry="18" stroke="#A3E635" stroke-width="3"/>
-</svg>`
-  },
-  {
-    id: 'glow',
-    name: 'Glow',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#111827"/>
-  <rect x="16" y="16" width="64" height="64" rx="20" fill="#F59E0B"/>
-  <circle cx="40" cy="44" r="4" fill="#1F2937"/>
-  <circle cx="56" cy="44" r="4" fill="#1F2937"/>
-  <path d="M38 58h20" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'mint',
-    name: 'Mint',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#0B1120"/>
-  <path d="M20 40c0-12 10-22 22-22h12c12 0 22 10 22 22v16c0 12-10 22-22 22H42c-12 0-22-10-22-22V40z" fill="#34D399"/>
-  <circle cx="38" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="58" cy="46" r="4" fill="#0F172A"/>
-  <path d="M34 60c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'ember',
-    name: 'Ember',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="28" fill="#111827"/>
-  <circle cx="48" cy="50" r="26" fill="#FB7185"/>
-  <path d="M32 34l16-10 16 10" stroke="#FB7185" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="40" cy="50" r="4" fill="#1F2937"/>
-  <circle cx="56" cy="50" r="4" fill="#1F2937"/>
-  <path d="M36 62c5 4 19 4 24 0" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'sky',
-    name: 'Sky',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="22" fill="#0F172A"/>
-  <circle cx="48" cy="48" r="26" fill="#60A5FA"/>
-  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 56h28" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <path d="M22 72h52" stroke="#60A5FA" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'cactus',
-    name: 'Cactus',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#111827"/>
-  <path d="M34 28c0-6 5-10 10-10h8c6 0 10 4 10 10v40c0 8-6 14-14 14h-4c-8 0-14-6-14-14V28z" fill="#22C55E"/>
-  <circle cx="40" cy="48" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="48" r="4" fill="#0F172A"/>
-  <path d="M38 62c6 4 14 4 20 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'plum',
-    name: 'Plum',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#0F172A"/>
-  <rect x="18" y="20" width="60" height="60" rx="26" fill="#A855F7"/>
-  <circle cx="40" cy="48" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="48" r="4" fill="#0F172A"/>
-  <path d="M36 62c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'sand',
-    name: 'Sand',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="28" fill="#0F172A"/>
-  <circle cx="48" cy="52" r="26" fill="#FCD34D"/>
-  <circle cx="40" cy="48" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="48" r="4" fill="#0F172A"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'aurora',
-    name: 'Aurora',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#111827"/>
-  <path d="M24 30h48a12 12 0 0 1 12 12v12a22 22 0 0 1-22 22H34A22 22 0 0 1 12 54V42a12 12 0 0 1 12-12z" fill="#38BDF8"/>
-  <circle cx="38" cy="48" r="4" fill="#0F172A"/>
-  <circle cx="58" cy="48" r="4" fill="#0F172A"/>
-  <path d="M34 62c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'lava',
-    name: 'Lava',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#0B1120"/>
-  <circle cx="48" cy="48" r="28" fill="#F97316"/>
-  <circle cx="38" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="58" cy="44" r="4" fill="#0F172A"/>
-  <path d="M36 58c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="72" cy="26" r="6" fill="#F97316"/>
-</svg>`
-  },
-  {
-    id: 'pixel',
-    name: 'Pixel',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="18" fill="#111827"/>
-  <rect x="18" y="18" width="60" height="60" fill="#34D399"/>
-  <rect x="30" y="40" width="8" height="8" fill="#0F172A"/>
-  <rect x="58" y="40" width="8" height="8" fill="#0F172A"/>
-  <rect x="36" y="58" width="24" height="6" fill="#0F172A"/>
-</svg>`
-  },
-  {
-    id: 'plasma',
-    name: 'Plasma',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#0B1120"/>
-  <circle cx="48" cy="48" r="28" fill="#F43F5E"/>
-  <circle cx="38" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="58" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 60c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="70" cy="26" r="6" fill="#FB7185"/>
-</svg>`
-  },
-  {
-    id: 'berry',
-    name: 'Berry',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#111827"/>
-  <rect x="16" y="20" width="64" height="56" rx="24" fill="#EC4899"/>
-  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
-  <path d="M36 60h24" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'lime',
-    name: 'Lime',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#0F172A"/>
-  <circle cx="48" cy="48" r="26" fill="#A3E635"/>
-  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <path d="M20 70h56" stroke="#A3E635" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'glitch',
-    name: 'Glitch',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="20" fill="#0B1120"/>
-  <rect x="18" y="18" width="60" height="60" rx="14" fill="#38BDF8"/>
-  <rect x="30" y="40" width="10" height="10" fill="#0F172A"/>
-  <rect x="56" y="40" width="10" height="10" fill="#0F172A"/>
-  <rect x="34" y="60" width="28" height="6" fill="#0F172A"/>
-  <rect x="18" y="28" width="12" height="6" fill="#0F172A"/>
-</svg>`
-  },
-  {
-    id: 'sprout',
-    name: 'Sprout',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#111827"/>
-  <path d="M28 34c0-8 6-14 14-14h12c8 0 14 6 14 14v26c0 10-8 18-18 18h-4c-10 0-18-8-18-18V34z" fill="#4ADE80"/>
-  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <path d="M44 16c4 6 12 6 16 0" stroke="#4ADE80" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'flare',
-    name: 'Flare',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#0F172A"/>
-  <circle cx="48" cy="50" r="26" fill="#F59E0B"/>
-  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <path d="M48 18l6 10-6 6-6-6 6-10z" fill="#FBBF24"/>
-</svg>`
-  },
-  {
-    id: 'bubble',
-    name: 'Bubble',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="30" fill="#0B1120"/>
-  <circle cx="48" cy="48" r="26" fill="#22D3EE"/>
-  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="68" cy="30" r="6" fill="#7DD3FC"/>
-</svg>`
-  },
-  {
-    id: 'ivory',
-    name: 'Ivory',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#111827"/>
-  <rect x="18" y="20" width="60" height="56" rx="20" fill="#E5E7EB"/>
-  <circle cx="40" cy="46" r="4" fill="#111827"/>
-  <circle cx="56" cy="46" r="4" fill="#111827"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'royal',
-    name: 'Royal',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="24" fill="#0F172A"/>
-  <circle cx="48" cy="50" r="26" fill="#6366F1"/>
-  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-  <path d="M32 26l8 6 8-10 8 10 8-6" stroke="#6366F1" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'jade',
-    name: 'Jade',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#0B1120"/>
-  <rect x="20" y="18" width="56" height="60" rx="24" fill="#10B981"/>
-  <circle cx="40" cy="46" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="46" r="4" fill="#0F172A"/>
-  <path d="M36 60c6 4 18 4 24 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  },
-  {
-    id: 'coral',
-    name: 'Coral',
-    svg: `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-  <rect width="96" height="96" rx="26" fill="#0F172A"/>
-  <circle cx="48" cy="48" r="26" fill="#FB923C"/>
-  <circle cx="40" cy="44" r="4" fill="#0F172A"/>
-  <circle cx="56" cy="44" r="4" fill="#0F172A"/>
-  <path d="M34 58c6 4 22 4 28 0" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-</svg>`
-  }
+  <defs>
+    <linearGradient id="${furId}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${style.furFrom}"/>
+      <stop offset="100%" stop-color="${style.furTo}"/>
+    </linearGradient>
+    <linearGradient id="${hoodieId}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${style.hoodieFrom}"/>
+      <stop offset="100%" stop-color="${style.hoodieTo}"/>
+    </linearGradient>
+    <linearGradient id="${ringId}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff3c9f"/>
+      <stop offset="100%" stop-color="${style.ring}"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="30" fill="#0b0f1a"/>
+  <circle cx="48" cy="48" r="42" stroke="url(#${ringId})" stroke-width="6" fill="none"/>
+  <path d="M20 70c6-16 20-26 28-26s22 10 28 26v8H20v-8z" fill="url(#${hoodieId})"/>
+  <path d="M30 34l10-14 8 16" fill="url(#${furId})"/>
+  <path d="M66 34l-10-14-8 16" fill="url(#${furId})"/>
+  <circle cx="48" cy="42" r="22" fill="url(#${furId})"/>
+  <path d="M36 42c2 3 6 3 8 0" stroke="#163e6a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M52 42c2 3 6 3 8 0" stroke="#163e6a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M34 52c8 8 20 8 28 0" stroke="#1b4f88" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="62" cy="48" r="4" fill="${style.nose}"/>
+</svg>`;
+};
+
+const avatarStyles: CozyAvatarStyle[] = [
+  { id: 'cozy-wolf', name: 'Cozy Wolf', furFrom: '#ff6fb3', furTo: '#ff3c9f', hoodieFrom: '#0d3b78', hoodieTo: '#0b2452', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-fox', name: 'Cozy Fox', furFrom: '#ff8a5b', furTo: '#ff5f3a', hoodieFrom: '#0b3a78', hoodieTo: '#09264f', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-cat', name: 'Cozy Cat', furFrom: '#a07cff', furTo: '#7a5cff', hoodieFrom: '#0c2f5f', hoodieTo: '#091d3b', nose: '#1a4a7d', ring: '#b60b60' },
+  { id: 'cozy-bear', name: 'Cozy Bear', furFrom: '#f6b07d', furTo: '#e38a4a', hoodieFrom: '#0e3a6a', hoodieTo: '#0a2349', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-bunny', name: 'Cozy Bunny', furFrom: '#9ef4d4', furTo: '#5bd4b0', hoodieFrom: '#0d2d55', hoodieTo: '#091e3a', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-owl', name: 'Cozy Owl', furFrom: '#ffe77a', furTo: '#ffcc4a', hoodieFrom: '#2d175e', hoodieTo: '#1b0f3b', nose: '#1b4f88', ring: '#b60b60' },
+  { id: 'cozy-raccoon', name: 'Cozy Raccoon', furFrom: '#cbd5e1', furTo: '#94a3b8', hoodieFrom: '#0c2f5f', hoodieTo: '#081a36', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-panda', name: 'Cozy Panda', furFrom: '#f8fafc', furTo: '#e2e8f0', hoodieFrom: '#b91c1c', hoodieTo: '#7f1d1d', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-tiger', name: 'Cozy Tiger', furFrom: '#ffb454', furTo: '#ff7a18', hoodieFrom: '#0d2d55', hoodieTo: '#081a36', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-koala', name: 'Cozy Koala', furFrom: '#d1d5db', furTo: '#9ca3af', hoodieFrom: '#7c3aed', hoodieTo: '#4c1d95', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-deer', name: 'Cozy Deer', furFrom: '#f1c48a', furTo: '#d99c5f', hoodieFrom: '#0e3b4e', hoodieTo: '#0b2430', nose: '#0b3a78', ring: '#b60b60' },
+  { id: 'cozy-dog', name: 'Cozy Dog', furFrom: '#f7b48b', furTo: '#d9825e', hoodieFrom: '#0b3a78', hoodieTo: '#071c3a', nose: '#0b3a78', ring: '#b60b60' }
 ];
+
+const avatarSvgs = avatarStyles.map((style) => ({
+  id: style.id,
+  name: style.name,
+  svg: buildCozyAvatarSvg(style)
+}));
 
 export const AVATARS: AvatarOption[] = avatarSvgs.map((avatar) => ({
   ...avatar,

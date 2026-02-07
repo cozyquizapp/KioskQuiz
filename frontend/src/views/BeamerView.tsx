@@ -330,7 +330,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const prevGameStateRef = useRef<CozyGameState | null>(null);
 
   const categories = useMemo(() => Object.keys(categoryLabels) as QuizCategory[], []);
-  const t = language === 'both' ? translationsBoth : translations[language === 'both' ? 'de' : language];
+  const effectiveLang = language === 'both' ? 'de' : language;
+  const t = language === 'both' ? translationsBoth : translations[effectiveLang];
 
   const clearReconnectTimeouts = () => {
     reconnectTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -1082,7 +1083,7 @@ useEffect(() => {
       ? Math.max(0, Math.min(1, remainingMs / timerDurationMs))
       : 0;
 
-  const pageStyle = useMemo(
+  const pageStyle = useMemo<React.CSSProperties>(
     () => ({
       position: 'relative',
       minHeight: '100vh',
@@ -1304,20 +1305,17 @@ useEffect(() => {
     return (
       <>
         <BeamerLobbyView
-        t={t}
-        language={language}
-        roomCode={roomCode}
-        readyCount={readyCount}
-        teamsCount={teams.length || 0}
-        categories={featureFlags.showLegacyCategories ? categories : []}
-        highlightedCategoryIndex={highlightedCategoryIndex}
-        categoryColors={categoryColors}
-        categoryIcons={categoryIcons}
-        categoryProgress={categoryProgress}
-        categoryTotals={categoryTotals}
-        getCategoryLabel={getCategoryLabel}
-        getCategoryDescription={getCategoryDescription}
-      />
+          t={t}
+          language={language}
+          categories={featureFlags.showLegacyCategories ? categories : []}
+          highlightedCategoryIndex={highlightedCategoryIndex}
+          categoryColors={categoryColors}
+          categoryIcons={categoryIcons}
+          categoryProgress={categoryProgress}
+          categoryTotals={categoryTotals}
+          getCategoryLabel={getCategoryLabel}
+          getCategoryDescription={getCategoryDescription}
+        />
       <LobbyStatsDisplay roomCode={roomCode} language={language} />
       </>
     );
@@ -1539,7 +1537,7 @@ useEffect(() => {
         ? q.bunteTuete.items.map((item: any) => [item.id, item.label])
         : []
     );
-    const resolveLabel = (value: string) => itemMap.get(value) || value;
+    const resolveLabel = (value: string) => String(itemMap.get(value) ?? value);
     
     return (
       <div className="beamer-stack">
@@ -2184,7 +2182,6 @@ useEffect(() => {
         {/* Liquid blob backgrounds */}
         <div className="liquid-bg" style={{ top: -100, left: -100 }} />
         <div className="liquid-bg" style={{ bottom: -100, right: -100, animationDelay: '5s' }} />
-        <Confetti active={showConfetti} duration={5000} />
         <div className="beamer-intro-card gradient-mesh" style={{ 
           background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1), rgba(20, 184, 166, 0.1))',
           backgroundSize: '200% 200%',
@@ -2474,7 +2471,7 @@ useEffect(() => {
                 </div>
               )}
               <div className="cozyQuestionBody">{renderHeroBody()}</div>
-              {phase !== 'reveal' && teamStatus?.length > 0 && (
+              {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (
                 <div className="cozyTeamStatusBar">
                   {teamStatus.map((team, idx) => {
                     const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
@@ -3109,7 +3106,7 @@ useEffect(() => {
 
   return (
     <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
-      {showTechnicalHud && offlineBar(connectionStatus, language)}
+      {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}
       {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (
         <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 40 }}>
@@ -3228,7 +3225,7 @@ useEffect(() => {
           <div style={{ fontWeight: 800, marginTop: 4 }}>{lastQuestion.text}</div>
           {lastQuestion.category && (
             <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 2 }}>
-              Kategorie: {getCategoryLabel(lastQuestion.category as QuizCategory)}
+              Kategorie: {getCategoryLabel(lastQuestion.category as QuizCategory, effectiveLang)}
             </div>
           )}
           <button
@@ -3291,7 +3288,11 @@ const beamerShell: React.CSSProperties = {
   alignItems: 'center',
   gap: 12
 };
-const offlineBar = (status: typeof connectionStatus, lang: Lang) =>
+const offlineBar = (
+  status: 'connecting' | 'connected' | 'disconnected',
+  lang: Lang,
+  onReconnect: () => void
+) =>
     status === 'connected'
       ? null
       : (
@@ -3331,7 +3332,7 @@ const offlineBar = (status: typeof connectionStatus, lang: Lang) =>
                   fontWeight: 700,
                   cursor: 'pointer'
                 }}
-                onClick={handleReconnect}
+                onClick={onReconnect}
               >
                 {lang === 'de' ? 'Neu laden' : 'Reload'}
               </button>

@@ -18,7 +18,7 @@ export const useLiveAnswers = (roomCode: string | null, questionId?: string | nu
     teams: {},
     solution: undefined
   });
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const roomCodeRef = useRef(roomCode);
 
   // Update roomCode ref

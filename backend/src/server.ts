@@ -311,15 +311,25 @@ const persistQuizLayouts = () => {
 const statsPath = path.join(__dirname, 'data', 'quizStats.json');
 type RunEntry = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
 type QuestionStat = { questionId: string; total: number; correct?: number; breakdown?: Record<string, number> };
-type StatsState = { runs: RunEntry[]; questions: Record<string, QuestionStat> };
-let statsState: StatsState = { runs: [], questions: {} };
+type AllTimeFunnyEntry = {
+  teamName: string;
+  answer: string;
+  questionText: string;
+  questionId: string;
+  quizId?: string;
+  date: string;
+  markedAt: number;
+};
+type StatsState = { runs: RunEntry[]; questions: Record<string, QuestionStat>; funnyAnswers: AllTimeFunnyEntry[] };
+let statsState: StatsState = { runs: [], questions: {}, funnyAnswers: [] };
 try {
   if (fs.existsSync(statsPath)) {
     statsState = JSON.parse(fs.readFileSync(statsPath, 'utf-8'));
   }
 } catch {
-  statsState = { runs: [], questions: {} };
+  statsState = { runs: [], questions: {}, funnyAnswers: [] };
 }
+if (!Array.isArray(statsState.funnyAnswers)) statsState.funnyAnswers = [];
 const persistStats = () => {
   try {
     fs.writeFileSync(statsPath, JSON.stringify(statsState, null, 2), 'utf-8');
@@ -1491,9 +1501,65 @@ const getCozyDraftOrFail = (draftId: string) => {
 };
 
 // --- Stats Endpoints (minimal) ----------------------------------------------
+type AllTimeTeamStat = { teamName: string; wins: number; games: number; totalScore: number; avgScore: number | null };
+const buildAllTimeLeaderboard = (state: StatsState) => {
+  const teamStats = new Map<string, { wins: number; games: number; totalScore: number; scoredGames: number }>();
+
+  state.runs.forEach((run) => {
+    const winners = Array.isArray(run.winners) ? run.winners : [];
+    winners.forEach((name) => {
+      const entry = teamStats.get(name) || { wins: 0, games: 0, totalScore: 0, scoredGames: 0 };
+      entry.wins += 1;
+      teamStats.set(name, entry);
+    });
+
+    if (run.scores) {
+      Object.entries(run.scores).forEach(([name, score]) => {
+        const entry = teamStats.get(name) || { wins: 0, games: 0, totalScore: 0, scoredGames: 0 };
+        entry.games += 1;
+        entry.totalScore += score ?? 0;
+        entry.scoredGames += 1;
+        teamStats.set(name, entry);
+      });
+    } else {
+      winners.forEach((name) => {
+        const entry = teamStats.get(name) || { wins: 0, games: 0, totalScore: 0, scoredGames: 0 };
+        entry.games += 1;
+        teamStats.set(name, entry);
+      });
+    }
+  });
+
+  const topTeams: AllTimeTeamStat[] = Array.from(teamStats.entries())
+    .map(([teamName, entry]) => ({
+      teamName,
+      wins: entry.wins,
+      games: entry.games,
+      totalScore: entry.totalScore,
+      avgScore: entry.scoredGames > 0 ? Math.round(entry.totalScore / entry.scoredGames) : null
+    }))
+    .sort((a, b) => {
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if ((b.avgScore ?? 0) !== (a.avgScore ?? 0)) return (b.avgScore ?? 0) - (a.avgScore ?? 0);
+      return b.games - a.games;
+    })
+    .slice(0, 10);
+
+  const funnyAnswers = [...(state.funnyAnswers || [])]
+    .sort((a, b) => b.markedAt - a.markedAt)
+    .slice(0, 10);
+
+  return {
+    topTeams,
+    funnyAnswers,
+    lastUpdated: Date.now()
+  };
+};
+
 app.get('/api/stats/leaderboard', (_req, res) => {
   const runs = statsState.runs.slice(-10).reverse();
-  res.json({ runs });
+  const allTime = buildAllTimeLeaderboard(statsState);
+  res.json({ runs, allTime });
 });
 
 app.post('/api/stats/run', (req, res) => {
@@ -5130,12 +5196,26 @@ app.post('/api/rooms/:roomCode/mark-funny', (req, res) => {
   const name = teamName || 'Unknown';
   const existing = funnies.find(f => f.teamName === name);
   if (!existing) {
+    const markedAt = Date.now();
     funnies.push({
       teamName: name,
       answer: String(answer),
       questionId,
-      markedAt: Date.now()
+      markedAt
     });
+
+    const questionText = questionById.get(questionId)?.question || 'Unknown';
+    statsState.funnyAnswers.push({
+      teamName: name,
+      answer: String(answer),
+      questionText,
+      questionId,
+      quizId: room.quizId || undefined,
+      date: new Date(markedAt).toISOString(),
+      markedAt
+    });
+    if (statsState.funnyAnswers.length > 200) statsState.funnyAnswers = statsState.funnyAnswers.slice(-200);
+    persistStats();
   }
 
   return res.json({ ok: true, stats: buildLobbyStats(room) });

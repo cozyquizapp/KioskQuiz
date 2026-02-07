@@ -3,6 +3,30 @@ import { LobbyStats, FastestAnswer, FunnyAnswer, CommonWrongAnswer } from '@shar
 
 type Lang = 'de' | 'en';
 
+type AllTimeTeamStat = {
+  teamName: string;
+  wins: number;
+  games: number;
+  totalScore: number;
+  avgScore: number | null;
+};
+
+type AllTimeFunnyAnswer = {
+  teamName: string;
+  answer: string;
+  questionText: string;
+  questionId: string;
+  quizId?: string;
+  date: string;
+  markedAt: number;
+};
+
+type AllTimeLeaderboard = {
+  topTeams: AllTimeTeamStat[];
+  funnyAnswers: AllTimeFunnyAnswer[];
+  lastUpdated: number;
+};
+
 interface LobbyStatsDisplayProps {
   roomCode: string;
   language: Lang;
@@ -10,6 +34,7 @@ interface LobbyStatsDisplayProps {
 
 export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, language }) => {
   const [stats, setStats] = useState<LobbyStats | null>(null);
+  const [allTime, setAllTime] = useState<AllTimeLeaderboard | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -34,20 +59,44 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
     return () => clearInterval(interval);
   }, [roomCode]);
 
+  // Fetch all-time leaderboard every 30 seconds
+  useEffect(() => {
+    const fetchAllTime = async () => {
+      try {
+        const res = await fetch('/api/stats/leaderboard');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.allTime) setAllTime(data.allTime);
+        }
+      } catch (err) {
+        console.error('Failed to fetch all-time leaderboard:', err);
+      }
+    };
+
+    fetchAllTime();
+    const interval = setInterval(fetchAllTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Rotate through stats every 4 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % 3);
+      setCurrentIndex(prev => prev + 1);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
 
-  if (!stats || (stats.fastestAnswers.length === 0 && stats.funnyAnswers.length === 0 && stats.commonWrongAnswers.length === 0)) {
+  const hasLobbyStats = Boolean(
+    stats && (stats.fastestAnswers.length > 0 || stats.funnyAnswers.length > 0 || stats.commonWrongAnswers.length > 0)
+  );
+  const hasAllTime = Boolean(allTime && (allTime.topTeams.length > 0 || allTime.funnyAnswers.length > 0));
+
+  if (!hasLobbyStats && !hasAllTime) {
     return null;
   }
 
   const renderFastest = () => {
-    if (stats.fastestAnswers.length === 0) return null;
+    if (!stats || stats.fastestAnswers.length === 0) return null;
     const fastest = stats.fastestAnswers[0];
     return (
       <div style={containerStyle}>
@@ -66,7 +115,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
   };
 
   const renderFunny = () => {
-    if (stats.funnyAnswers.length === 0) return null;
+    if (!stats || stats.funnyAnswers.length === 0) return null;
     const funny = stats.funnyAnswers[0];
     return (
       <div style={containerStyle}>
@@ -77,7 +126,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
         <div style={contentStyle}>
           <div style={questionStyle}>{funny.questionText}</div>
           <div style={arrowStyle}>→</div>
-          <div style={answerLargeStyle}>„{funny.answer}"</div>
+          <div style={answerLargeStyle}>„{funny.answer}“</div>
           <div style={teamStyle}>{funny.teamName}</div>
         </div>
       </div>
@@ -85,7 +134,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
   };
 
   const renderWrongAnswers = () => {
-    if (stats.commonWrongAnswers.length === 0) return null;
+    if (!stats || stats.commonWrongAnswers.length === 0) return null;
     const wrong = stats.commonWrongAnswers[0];
     return (
       <div style={containerStyle}>
@@ -105,10 +154,53 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
     );
   };
 
+  const renderAllTimeTopTeams = () => {
+    if (!allTime || allTime.topTeams.length === 0) return null;
+    const topThree = allTime.topTeams.slice(0, 3);
+    return (
+      <div style={containerStyle}>
+        <div style={headerStyle}>
+          <span style={iconStyle}>🏆</span>
+          <span>{language === 'de' ? 'EWIGE BESTENLISTE' : 'ALL-TIME TOP TEAMS'}</span>
+        </div>
+        <div style={{ ...contentStyle, gap: 8 }}>
+          {topThree.map((team, idx) => (
+            <div key={`${team.teamName}-${idx}`} style={listItemStyle}>
+              <span style={metricStyle}>{idx + 1}.</span>
+              <span style={teamStyle}>{team.teamName}</span>
+              <span style={countStyle}>{team.wins} {language === 'de' ? 'Siege' : 'wins'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAllTimeFunny = () => {
+    if (!allTime || allTime.funnyAnswers.length === 0) return null;
+    const funny = allTime.funnyAnswers[0];
+    return (
+      <div style={containerStyle}>
+        <div style={headerStyle}>
+          <span style={iconStyle}>😄</span>
+          <span>{language === 'de' ? 'EWIG LUSTIGSTE ANTWORT' : 'ALL-TIME FUNNIEST'}</span>
+        </div>
+        <div style={contentStyle}>
+          <div style={questionStyle}>{funny.questionText}</div>
+          <div style={arrowStyle}>→</div>
+          <div style={answerLargeStyle}>„{funny.answer}"</div>
+          <div style={teamStyle}>{funny.teamName}</div>
+        </div>
+      </div>
+    );
+  };
+
   const sections = [
-    { render: renderFastest, available: stats.fastestAnswers.length > 0 },
-    { render: renderFunny, available: stats.funnyAnswers.length > 0 },
-    { render: renderWrongAnswers, available: stats.commonWrongAnswers.length > 0 }
+    { render: renderFastest, available: Boolean(stats && stats.fastestAnswers.length > 0) },
+    { render: renderFunny, available: Boolean(stats && stats.funnyAnswers.length > 0) },
+    { render: renderWrongAnswers, available: Boolean(stats && stats.commonWrongAnswers.length > 0) },
+    { render: renderAllTimeTopTeams, available: Boolean(allTime && allTime.topTeams.length > 0) },
+    { render: renderAllTimeFunny, available: Boolean(allTime && allTime.funnyAnswers.length > 0) }
   ];
 
   const availableSections = sections.filter(s => s.available);
@@ -178,6 +270,17 @@ const contentStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: 10
+};
+
+const listItemStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr auto',
+  alignItems: 'center',
+  gap: 8,
+  padding: '6px 8px',
+  borderRadius: 10,
+  background: 'rgba(15,23,42,0.5)',
+  border: '1px solid rgba(148,163,184,0.2)'
 };
 
 const metricStyle: React.CSSProperties = {

@@ -340,7 +340,7 @@ export const saveQuizLayout = async (quizId: string, layout: any) => {
 };
 
 // Stats & Leaderboard
-export const fetchLeaderboard = async (): Promise<{ runs: any[] }> => {
+export const fetchLeaderboard = async (): Promise<{ runs: any[]; allTime?: { topTeams: any[]; funnyAnswers: any[]; lastUpdated?: number } }> => {
   const res = await fetch(`${API_BASE}/stats/leaderboard`);
   if (!res.ok) throw new Error('Leaderboard konnte nicht geladen werden');
   return res.json();

@@ -1000,6 +1000,27 @@ useEffect(() => {
     return buckets;
   }, [question?.id, question?.type, question?.mechanic, teamStatus, language, showChoiceAvatars]);
 
+  const bunteChoiceAvatars = useMemo(() => {
+    if (!question || !showChoiceAvatars) return {} as Record<string, string[]>;
+    const q: any = question;
+    const payload = q.bunteTuete as { kind?: string; statements?: Array<{ id: string }> } | undefined;
+    if (!payload || payload.kind !== 'oneOfEight' || !Array.isArray(payload.statements)) {
+      return {} as Record<string, string[]>;
+    }
+    const buckets: Record<string, string[]> = {};
+    payload.statements.forEach((statement) => {
+      buckets[String(statement.id)] = [];
+    });
+    (teamStatus || [])
+      .filter((team) => team.answer && typeof team.answer === 'object' && team.answer.kind === 'oneOfEight')
+      .forEach((team) => {
+        const choiceId = String(team.answer.choiceId ?? '').trim();
+        if (!choiceId || !buckets[choiceId]) return;
+        buckets[choiceId].push(team.avatarId || '');
+      });
+    return buckets;
+  }, [question?.id, teamStatus, showChoiceAvatars]);
+
   useEffect(() => {
     if (!question || question.type !== 'MU_CHO') {
       setMuChoHopIndex(null);
@@ -1610,8 +1631,23 @@ useEffect(() => {
       return (
         <div className="beamer-grid">
           {bunte.statements.map((statement: any) => (
-            <div className="beamer-card" key={statement.id}>
+            <div className="beamer-card" key={statement.id} style={{ position: 'relative', paddingBottom: 34 }}>
               <strong>{statement.id}.</strong> {statement.text}
+              {showChoiceAvatars && bunteChoiceAvatars[String(statement.id)]?.length ? (
+                <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {bunteChoiceAvatars[String(statement.id)].map((avatarId, avatarIdx) => {
+                    const avatar = getAvatarById(avatarId);
+                    return avatar ? (
+                      <img
+                        key={`${avatarId}-${avatarIdx}`}
+                        src={avatar.dataUri}
+                        alt=""
+                        style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
+                      />
+                    ) : null;
+                  })}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

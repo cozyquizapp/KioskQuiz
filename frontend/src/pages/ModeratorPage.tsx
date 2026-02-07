@@ -296,6 +296,8 @@ function ModeratorPage(): React.ReactElement {
     RUNDLAUF_PAUSE: { label: 'K.O.-Rallye Pause', hint: 'K.O.-Rallye startet gleich', tone: 'eval' },
     RUNDLAUF_SCOREBOARD_PRE: { label: 'K.O.-Rallye Scoreboard', hint: 'Standings vor K.O.-Rallye', tone: 'eval' },
     RUNDLAUF_CATEGORY_SELECT: { label: 'K.O.-Rallye Auswahl', hint: 'Kategorien waehlen', tone: 'eval' },
+    RUNDLAUF_SELECTION_COMPLETE: { label: 'K.O.-Rallye Bereit', hint: 'Auswahl fertig - Starten?', tone: 'live' },
+    RUNDLAUF_CATEGORY_SHOWCASE: { label: 'K.O.-Rallye Animation', hint: 'Kategorie-Showcase läuft', tone: 'live' },
     RUNDLAUF_ROUND_INTRO: { label: 'K.O.-Rallye Intro', hint: 'Runde wird gestartet', tone: 'live' },
     RUNDLAUF_PLAY: { label: 'K.O.-Rallye', hint: 'Teams antworten reihum', tone: 'live' },
     RUNDLAUF_ROUND_END: { label: 'K.O.-Rallye Ende', hint: 'Runde beendet', tone: 'eval' },
@@ -2331,6 +2333,8 @@ function ModeratorPage(): React.ReactElement {
       'RUNDLAUF_PAUSE',
       'RUNDLAUF_SCOREBOARD_PRE',
       'RUNDLAUF_CATEGORY_SELECT',
+      'RUNDLAUF_SELECTION_COMPLETE',
+      'RUNDLAUF_CATEGORY_SHOWCASE',
       'RUNDLAUF_ROUND_INTRO',
       'RUNDLAUF_PLAY',
       'RUNDLAUF_ROUND_END'

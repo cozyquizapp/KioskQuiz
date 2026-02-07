@@ -2396,6 +2396,13 @@ const clearRundlaufTurnTimer = (roomCode: string) => {
   }
 };
 
+const clearRundlaufRoundIntroTimer = (room: RoomState) => {
+  if (room.rundlaufRoundIntroTimeout) {
+    clearTimeout(room.rundlaufRoundIntroTimeout);
+    room.rundlaufRoundIntroTimeout = null;
+  }
+};
+
 const aliveRundlaufTeams = (room: RoomState) => {
   const connected = new Set(getConnectedTeamIds(room));
   const eliminated = new Set(room.rundlaufEliminatedTeamIds);
@@ -5648,7 +5655,8 @@ io.on('connection', (socket: Socket) => {
         throw new Error('Auswahl nicht abgeschlossen');
       }
       finalizeRundlaufSelection(room);
-      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+      // Move to SELECTION_COMPLETE so moderator can start
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SELECTION_COMPLETE' });
       broadcastState(room);
       return { selected: room.rundlaufSelectedCategories };
     });
@@ -5677,6 +5685,11 @@ io.on('connection', (socket: Socket) => {
         }
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
         applyRundlaufPick(room, payload.teamId, payload.categoryId || '');
+        // Auto-transition if selection is complete
+        if (hasRundlaufSelectionReady(room)) {
+          finalizeRundlaufSelection(room);
+          applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SELECTION_COMPLETE' });
+        }
         broadcastState(room);
         return { pinned: room.rundlaufPinnedCategory };
       });
@@ -5685,6 +5698,21 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:rundlaufStartRound', (payload: { roomCode?: string }, ack?: AckFn) => {
     withRoom(payload?.roomCode, ack, (room) => {
+      // Allow starting from SELECTION_COMPLETE (first round) or ROUND_INTRO (subsequent rounds)
+      if (room.gameState === 'RUNDLAUF_SELECTION_COMPLETE') {
+        // First round: show category showcase animation
+        applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
+        broadcastState(room);
+        // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
+        clearRundlaufRoundIntroTimer(room);
+        room.rundlaufRoundIntroTimeout = setTimeout(() => {
+          room.rundlaufRoundIntroTimeout = null;
+          if (room.gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE') return;
+          applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+          broadcastState(room);
+        }, 3000);
+        return;
+      }
       if (room.gameState !== 'RUNDLAUF_ROUND_INTRO') throw new Error('Rundlauf-Intro nicht aktiv');
       startRundlaufRound(room);
       broadcastState(room);

@@ -2714,6 +2714,165 @@ useEffect(() => {
         );
       }
 
+      if (gameState === 'RUNDLAUF_SELECTION_COMPLETE') {
+        const pickedCategory = selected[0];
+        const randomCategories = selected.slice(1);
+        return (
+          <BeamerFrame
+            key={`${sceneKey}-rundlauf-selection-complete`}
+            {...baseFrameProps}
+            title="K.O.-RALLYE"
+            subtitle={language === 'de' ? 'Die 3 Kategorien sind ausgelost!' : '3 Categories selected!'}
+            badgeLabel="BEREIT"
+            badgeTone="accent"
+            footerMessage={language === 'de' ? 'Gleich geht es los...' : 'Starting soon...'}
+            status="info"
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '20px' }}>
+              {pickedCategory && (
+                <div
+                  className="rundlauf-theme-pop"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2))',
+                    border: '2px solid rgba(59, 130, 246, 0.6)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    minHeight: '140px',
+                    animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  } as any}
+                >
+                  <div style={{ fontSize: '14px', color: 'rgba(59, 130, 246, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                    Letzter wählt
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                    {pickedCategory.title}
+                  </div>
+                </div>
+              )}
+              {randomCategories.map((cat, idx) => (
+                <div
+                  key={`random-${idx}-${cat.id}`}
+                  className="rundlauf-theme-pop"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.15))',
+                    border: '2px solid rgba(74, 222, 128, 0.5)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    minHeight: '140px',
+                    animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
+                  }}
+                >
+                  <div style={{ fontSize: '14px', color: 'rgba(74, 222, 128, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                    Zufällig
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                    {cat.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </BeamerFrame>
+        );
+      }
+
+      if (gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+        const nextCategory = selected[0]; // The picked category
+        const randomCategories = selected.slice(1, 3); // 2 random categories
+        
+        return (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            gap: '40px',
+            padding: '40px 20px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)',
+            animation: 'fadeIn 0.8s ease-in'
+          }}>
+            {/* Main showcase card */}
+            <div style={{
+              animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transformOrigin: 'center'
+            }}>
+              <div style={{
+                fontSize: '60px',
+                fontWeight: '900',
+                textAlign: 'center',
+                color: '#fff',
+                marginBottom: '20px',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+              }}>
+                {nextCategory?.title || 'Kategorie'}
+              </div>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                textAlign: 'center',
+                color: 'rgba(226, 232, 240, 0.9)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em'
+              }}>
+                Die erste Kategorie beginnt gleich...
+              </div>
+            </div>
+
+            {/* Random category previews */}
+            {randomCategories.length > 0 && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '20px',
+                marginTop: '40px',
+                maxWidth: '600px'
+              }}>
+                {randomCategories.map((cat, idx) => (
+                  <div
+                    key={`showcase-${cat.id}`}
+                    style={{
+                      padding: '24px',
+                      background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1))',
+                      border: '2px solid rgba(74, 222, 128, 0.4)',
+                      borderRadius: '16px',
+                      textAlign: 'center',
+                      animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '14px',
+                      color: 'rgba(74, 222, 128, 0.9)',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      marginBottom: '8px'
+                    }}>
+                      Weitere Kategorien:
+                    </div>
+                    <div style={{
+                      fontSize: '20px',
+                      fontWeight: '900',
+                      color: '#fff'
+                    }}>
+                      {cat.title}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       if (gameState === 'RUNDLAUF_ROUND_INTRO') {
         return (
           <BeamerFrame
@@ -2911,6 +3070,8 @@ useEffect(() => {
       case 'RUNDLAUF_PAUSE':
       case 'RUNDLAUF_SCOREBOARD_PRE':
       case 'RUNDLAUF_CATEGORY_SELECT':
+      case 'RUNDLAUF_SELECTION_COMPLETE':
+      case 'RUNDLAUF_CATEGORY_SHOWCASE':
       case 'RUNDLAUF_ROUND_INTRO':
       case 'RUNDLAUF_PLAY':
       case 'RUNDLAUF_ROUND_END':

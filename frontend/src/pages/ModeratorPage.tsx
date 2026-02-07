@@ -2578,7 +2578,10 @@ const renderCozyStagePanel = () => {
     const beamerDisplay = beamerLink ? beamerLink.replace(/^https?:\/\//i, '') : '';
     const teamQr = teamLink ? buildQrUrl(teamLink) : '';
     const beamerQr = beamerLink ? buildQrUrl(beamerLink) : '';
-    const connected = socketTeamsConnected ?? joinScreenTeams.length;
+    const connected =
+      socketTeamsConnected === null || socketTeamsConnected === undefined
+        ? joinScreenTeams.length
+        : Math.max(socketTeamsConnected, joinScreenTeams.length);
     return (
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>
@@ -3075,11 +3078,15 @@ const renderCozyStagePanel = () => {
       className="page-transition-enter-active moderator-jackbox"
       style={{
         minHeight: '100vh',
+        height: '100dvh',
         background: draftTheme?.background
           ? `url(${draftTheme.background}) center/cover fixed`
           : 'var(--bg)',
         color: '#e2e8f0',
         padding: 12,
+        boxSizing: 'border-box',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
         maxWidth: 1100,
         margin: '0 auto',
         fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'

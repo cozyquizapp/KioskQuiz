@@ -2151,6 +2151,10 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
   }
   const itemCount = room.blitzItems.length || BLITZ_ITEMS_PER_SET;
   const maxIndex = Math.max(0, itemCount - 1);
+  const displayTotalMs = Number.isFinite(room.blitzDisplayTimeMs) && room.blitzDisplayTimeMs
+    ? room.blitzDisplayTimeMs
+    : BLITZ_DISPLAY_TIME_MS;
+  const itemIntervalMs = Math.max(1000, Math.floor(displayTotalMs / itemCount));
   const now = Date.now();
   if (room.blitzItemIndex >= maxIndex) {
     room.blitzItemDeadlineAt = room.blitzDeadlineAt;
@@ -2158,15 +2162,15 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
     if (broadcast) broadcastState(room);
     return;
   }
-  room.blitzItemDeadlineAt = now + BLITZ_ITEM_INTERVAL_MS;
-  room.blitzItemDurationMs = BLITZ_ITEM_INTERVAL_MS;
+  room.blitzItemDeadlineAt = now + itemIntervalMs;
+  room.blitzItemDurationMs = itemIntervalMs;
   if (broadcast) broadcastState(room);
   const timer = setTimeout(() => {
     blitzItemTimers.delete(room.roomCode);
     if (room.blitzPhase !== 'PLAYING') return;
     room.blitzItemIndex = Math.min(maxIndex, room.blitzItemIndex < 0 ? 0 : room.blitzItemIndex + 1);
     scheduleBlitzItemTicker(room, true);
-  }, BLITZ_ITEM_INTERVAL_MS);
+  }, itemIntervalMs);
   blitzItemTimers.set(room.roomCode, timer);
 };
 
@@ -3797,14 +3801,14 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
       const ptsRaw = Number(arr[correctIdx] ?? 0);
       const betPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
-      const awardedPoints = maxPoints > 0 && betPoints === maxPoints ? 1 : 0;
+      const awardedPoints = maxPoints > 0 && betPoints === maxPoints ? basePoints : 0;
       room.answers[teamId] = {
         ...ans,
         isCorrect: awardedPoints > 0,
         betPoints,
         betPool: pool,
         awardedPoints,
-        awardedDetail: awardedPoints > 0 ? '1 Punkt' : '0 Punkte',
+        awardedDetail: awardedPoints > 0 ? `${basePoints} Punkte` : '0 Punkte',
         autoGraded: true,
         tieBreaker: null
       };
@@ -4171,9 +4175,9 @@ const runNextQuestion = (room: RoomState) => {
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
     broadcastState(room);
     return { stage: room.gameState, halftimeTrigger: true };
-  }
-  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 20 && !room.finalsTriggered) {
-    room.finalsTriggered = true;
+    const shouldStartRundlauf =
+      room.nextStage === 'RUNDLAUF' ||
+      (askedCount >= totalQuestions || room.remainingQuestionIds.length === 0);
     room.nextStage = 'RUNDLAUF';
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
@@ -4489,7 +4493,8 @@ const handleHostNextAdvance = (room: RoomState) => {
     }
     const shouldStartRundlauf =
       room.nextStage === 'RUNDLAUF' ||
-      (askedCount >= totalQuestions && room.rundlaufPool.length === 0);
+      askedCount >= totalQuestions ||
+      room.remainingQuestionIds.length === 0;
     if (shouldStartRundlauf) {
       initializeRundlaufStage(room);
       broadcastState(room);
@@ -5880,7 +5885,8 @@ io.on('connection', (socket: Socket) => {
         // Auto-transition if selection is complete
         if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
           finalizeBlitzSelection(room);
-          startBlitzSet(room);
+          room.blitzPhase = 'SELECTION_COMPLETE';
+          applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SELECTION_COMPLETE' });
         }
         broadcastState(room);
         return { pinned: room.blitzPinnedTheme };

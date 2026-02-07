@@ -145,8 +145,14 @@ const COPY = {
       correct === null ? 'Ergebnis' : correct ? 'Richtig!' : 'Leider falsch',
     loginError: 'Bitte zuerst beitreten.',
     kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
-    estimateBest: 'Ihr wart am nächsten dran!',
-    estimateWorse: 'Leider weiter weg als das beste Team.',
+    estimateBest: 'Richtig! Ihr wart näher dran.',
+    estimateWorse: 'Ein anderes Team war leider näher dran.',
+    answerCorrect: 'Richtig beantwortet!',
+    answerWrong: 'Leider falsch.',
+    betWin: 'Richtig! Ihr hattet die meisten Punkte auf der richtigen Antwort.',
+    betLose: 'Ein anderes Team hatte mehr Punkte auf der richtigen Antwort.',
+    top5Win: 'Richtig! Ihr hattet die meisten Top-5 Treffer.',
+    top5Lose: 'Ein anderes Team wusste mehr Top-5 Treffer.',
     betHint: (pool: number) => `Verteile genau ${pool} Punkte auf A/B/C.`,
     betRemaining: (remaining: number) =>
       remaining === 0 ? 'Alle Punkte verteilt.' : `${remaining} Punkt(e) übrig.`,
@@ -178,8 +184,14 @@ const COPY = {
     timeLeft: (s: number) => `${s}s remaining`,
     resultTitle: (correct: boolean | null) =>
       correct === null ? 'Result' : correct ? 'Correct!' : 'Incorrect',
-    estimateBest: 'You were the closest!',
-    estimateWorse: 'Further off than the best team.',
+    estimateBest: 'Correct! You were closer.',
+    estimateWorse: 'Another team was closer.',
+    answerCorrect: 'Correct answer!',
+    answerWrong: 'Incorrect.',
+    betWin: 'Correct! You placed the most points on the right answer.',
+    betLose: 'Another team placed more points on the right answer.',
+    top5Win: 'Correct! You had the most Top-5 hits.',
+    top5Lose: 'Another team had more Top-5 hits.',
     betHint: (pool: number) => `Spread exactly ${pool} points across A/B/C.`,
     betRemaining: (remaining: number) =>
       remaining === 0 ? 'All points allocated.' : `${remaining} point(s) left.`,
@@ -402,6 +414,29 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (language === 'both') return `${de} / ${en}`;
     return de;
   }
+  const getResultMessage = (entry: any, q: AnyQuestion | null) => {
+    if (!entry || !q) return null;
+    const isCorrect = entry.isCorrect === true;
+    const dev = entry?.deviation;
+    const bestDev = entry?.bestDeviation;
+    if (
+      isClosenessQuestion(q) &&
+      typeof dev === 'number' &&
+      typeof bestDev === 'number' &&
+      Number.isFinite(dev) &&
+      Number.isFinite(bestDev)
+    ) {
+      return dev === bestDev ? t('estimateBest') : t('estimateWorse');
+    }
+    const qAny = q as any;
+    if (qAny?.mechanic === 'betting') {
+      return isCorrect ? t('betWin') : t('betLose');
+    }
+    if (qAny?.bunteTuete?.kind === 'top5') {
+      return isCorrect ? t('top5Win') : t('top5Lose');
+    }
+    return isCorrect ? t('answerCorrect') : t('answerWrong');
+  };
   const scoreboardLookup = useMemo(() => {
     const map: Record<string, { name: string; score: number }> = {};
     scoreboard.forEach((entry) => {
@@ -633,19 +668,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             setResultPoints(null);
           }
           setResultDetail(entry.awardedDetail ?? null);
-          {
-            const dev = (entry as any)?.deviation;
-            const bestDev = (entry as any)?.bestDeviation;
-            if (
-              isClosenessQuestion(question) &&
-              typeof dev === 'number' &&
-              typeof bestDev === 'number' &&
-              Number.isFinite(dev) &&
-              Number.isFinite(bestDev)
-            ) {
-              setResultMessage(dev === bestDev ? t('estimateBest') : t('estimateWorse'));
-            }
-          }
+          setResultMessage(getResultMessage(entry, question));
         }
       }
     };
@@ -662,19 +685,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        {
-          const dev = (entry as any)?.deviation;
-          const bestDev = (entry as any)?.bestDeviation;
-          if (
-            isClosenessQuestion(question) &&
-            typeof dev === 'number' &&
-            typeof bestDev === 'number' &&
-            Number.isFinite(dev) &&
-            Number.isFinite(bestDev)
-          ) {
-            setResultMessage(dev === bestDev ? t('estimateBest') : t('estimateWorse'));
-          }
-        }
+        setResultMessage(getResultMessage(entry, question));
         if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
         const detail = (entry as any)?.awardedDetail;
         if (detail) setResultDetail(detail);
@@ -694,15 +705,7 @@ function TeamView({ roomCode }: TeamViewProps) {
       }) => {
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
-        if (
-          isClosenessQuestion(question) &&
-          typeof deviation === 'number' &&
-          typeof bestDeviation === 'number' &&
-          Number.isFinite(deviation) &&
-          Number.isFinite(bestDeviation)
-        ) {
-          setResultMessage(deviation === bestDeviation ? t('estimateBest') : t('estimateWorse'));
-        }
+        setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, question));
         setPhase('showResult');
         if (typeof awardedPoints === 'number') setResultPoints(awardedPoints);
         if (awardedDetail) setResultDetail(awardedDetail);
@@ -1061,36 +1064,6 @@ function TeamView({ roomCode }: TeamViewProps) {
         >
           {question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}
         </h2>
-      {(() => {
-        const q: any = question;
-        const mediaUrl = q?.imageUrl || q?.media?.url;
-        if (!q || !mediaUrl) return null;
-        return (
-          <div
-            style={{
-              margin: '10px 0 6px',
-              display: 'flex',
-              justifyContent: 'center',
-              animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-              animationDelay: '60ms'
-            }}
-          >
-            <img
-              src={mediaUrl}
-              alt="Fragebild"
-              style={{
-                maxWidth: '90%',
-                maxHeight: 220,
-                objectFit: 'contain',
-                borderRadius: 16,
-                border: `1px solid ${accentColor}55`,
-                boxShadow: `0 16px 32px ${accentColor}33`,
-                transform: `translate(${layout.imageOffsetX ?? 0}px, ${layout.imageOffsetY ?? 0}px)`
-              }}
-            />
-          </div>
-        );
-      })()}
       {hasTimer && (
         <div style={{ marginTop: 10 }} />
       )}
@@ -2651,13 +2624,6 @@ function TeamView({ roomCode }: TeamViewProps) {
                 gap: 8
               }}
             >
-              {currentItem?.mediaUrl && (
-                <img
-                  src={currentItem.mediaUrl}
-                  alt={currentItem.prompt || `Blitz Item ${activeBlitzItemIndex + 1}`}
-                  style={{ width: '100%', borderRadius: 14, maxHeight: 220, objectFit: 'cover' }}
-                />
-              )}
               <div style={{ fontSize: 18, fontWeight: 800 }}>{currentItem?.prompt || `Item ${activeBlitzItemIndex + 1}`}</div>
               {blitzItemCountdown !== null && (
                 <div

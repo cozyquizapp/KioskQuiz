@@ -36,8 +36,96 @@ const shuffle = <T>(arr: T[]): T[] => {
 
 export const defaultBlitzPool: QuizBlitzTheme[] = [
   {
+    id: 'blitz-demo-buildings',
+    title: '🏗️ Berühmte Bauwerke',
+    items: [
+      { id: 'blitz-demo-1', prompt: 'Eiserner Turm in Paris', mediaUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=300&fit=crop', answer: 'Eiffelturm', aliases: ['Eiffel Tower', 'La Tour Eiffel'] },
+      { id: 'blitz-demo-2', prompt: 'Weißes Mausoleum in Indien', mediaUrl: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400&h=300&fit=crop', answer: 'Taj Mahal', aliases: ['Agra', 'Taj'] },
+      { id: 'blitz-demo-3', prompt: 'Kupferstatue mit Fackel in New York', mediaUrl: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400&h=300&fit=crop', answer: 'Statue of Liberty', aliases: ['Liberty Statue', 'Freedom'] },
+      { id: 'blitz-demo-4', prompt: 'Steinerne Skulpturen auf einer Insel', mediaUrl: 'https://images.unsplash.com/photo-1568393691622-3ee206a5caea?w=400&h=300&fit=crop', answer: 'Osterinsel Moai', aliases: ['Easter Island', 'Moai'] },
+      { id: 'blitz-demo-5', prompt: 'Große Pyramide mit Sphinx in Ägypten', mediaUrl: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=400&h=300&fit=crop', answer: 'Pyramiden von Giza', aliases: ['Great Pyramid', 'Giza'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-films',
+    title: '🎬 Blockbuster Poster',
+    items: [
+      { id: 'blitz-demo-films-1', prompt: 'Avatar mit blauen Aliens', mediaUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop', answer: 'Avatar', aliases: ['Pandora', 'James Cameron'] },
+      { id: 'blitz-demo-films-2', prompt: 'Titanic sinkt im Eis', mediaUrl: 'https://images.unsplash.com/photo-1533020487191-3f96f06ce94b?w=400&h=300&fit=crop', answer: 'Titanic', aliases: ['Jack Rose', 'Schiff'] },
+      { id: 'blitz-demo-films-3', prompt: 'Inception - Traum in Traum', mediaUrl: 'https://images.unsplash.com/photo-1536440936694-f32de2c6d1d5?w=400&h=300&fit=crop', answer: 'Inception', aliases: ['Nolan', 'Traum'] },
+      { id: 'blitz-demo-films-4', prompt: 'Matrix - digitale grüne Welt', mediaUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop', answer: 'The Matrix', aliases: ['Neo', 'digitale Welt'] },
+      { id: 'blitz-demo-films-5', prompt: 'Jurassic Park - Dinosaurier', mediaUrl: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&h=300&fit=crop', answer: 'Jurassic Park', aliases: ['Dinosaurier', 'Dino'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-gaming',
+    title: '🎮 Gaming Icons',
+    items: [
+      { id: 'blitz-demo-gaming-1', prompt: 'Super Mario springt über Hindernisse', mediaUrl: 'https://images.unsplash.com/photo-1579546059361-9ac0f3c4e0f3?w=400&h=300&fit=crop', answer: 'Mario', aliases: ['Super Mario', 'Nintendo', 'Klempner'] },
+      { id: 'blitz-demo-gaming-2', prompt: 'Pikachu gelbes Elektro-Pokémon', mediaUrl: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=400&h=300&fit=crop', answer: 'Pikachu', aliases: ['Pokemon', 'Elektro', 'gelb'] },
+      { id: 'blitz-demo-gaming-3', prompt: 'Sonic der blaue schnelle Igel', mediaUrl: 'https://images.unsplash.com/photo-1579546059361-9ac0f3c4e0f3?w=400&h=300&fit=crop', answer: 'Sonic', aliases: ['Sonic the Hedgehog', 'Igel', 'blau'] },
+      { id: 'blitz-demo-gaming-4', prompt: 'Link mit Schwert und Schild', mediaUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop', answer: 'Link', aliases: ['Zelda', 'Hylian', 'Held'] },
+      { id: 'blitz-demo-gaming-5', prompt: 'Donkey Kong springt über Fässer', mediaUrl: 'https://images.unsplash.com/photo-1577720643272-265f434b4d24?w=400&h=300&fit=crop', answer: 'Donkey Kong', aliases: ['Kong', 'Affe', 'Fässer'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-sports',
+    title: '🏀 Sportler Silhouetten',
+    items: [
+      { id: 'blitz-demo-sports-1', prompt: 'Cristiano Ronaldo Fußball-Superstar', mediaUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop', answer: 'Cristiano Ronaldo', aliases: ['Ronaldo', 'CR7', 'Portugal'] },
+      { id: 'blitz-demo-sports-2', prompt: 'Messi mit Nummer 10', mediaUrl: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400&h=300&fit=crop', answer: 'Lionel Messi', aliases: ['Messi', 'Argentinien', 'Fußball'] },
+      { id: 'blitz-demo-sports-3', prompt: 'Michael Jordan Basketball Nr. 23', mediaUrl: 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=400&h=300&fit=crop', answer: 'Michael Jordan', aliases: ['Jordan', 'MJ', 'Basketball', '23'] },
+      { id: 'blitz-demo-sports-4', prompt: 'Usain Bolt schnellster Sprinter', mediaUrl: 'https://images.unsplash.com/photo-1552168325-eb5ddfb8ff46?w=400&h=300&fit=crop', answer: 'Usain Bolt', aliases: ['Bolt', 'Jamaika', 'Sprint'] },
+      { id: 'blitz-demo-sports-5', prompt: 'Serena Williams Tennis-Legende', mediaUrl: 'https://images.unsplash.com/photo-1554838811-e91d68c6f851?w=400&h=300&fit=crop', answer: 'Serena Williams', aliases: ['Williams', 'Tennis', 'USA'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-stadiums',
+    title: '🏟️ Stadion Silhouetten',
+    items: [
+      { id: 'blitz-demo-stadiums-1', prompt: 'Wembley Stadium in London', mediaUrl: 'https://images.unsplash.com/photo-1536502083949-ba4b1b5ff504?w=400&h=300&fit=crop', answer: 'Wembley Stadium', aliases: ['Wembley', 'England', 'Fußball'] },
+      { id: 'blitz-demo-stadiums-2', prompt: 'Camp Nou Barcelona Stadion', mediaUrl: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=400&h=300&fit=crop', answer: 'Camp Nou', aliases: ['Barcelona', 'FC Barcelona', 'Spanien'] },
+      { id: 'blitz-demo-stadiums-3', prompt: 'Old Trafford Manchester United', mediaUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop', answer: 'Old Trafford', aliases: ['Manchester', 'United', 'England'] },
+      { id: 'blitz-demo-stadiums-4', prompt: 'Allianz Arena Bayern München rot', mediaUrl: 'https://images.unsplash.com/photo-1536502083949-ba4b1b5ff504?w=400&h=300&fit=crop', answer: 'Allianz Arena', aliases: ['Bayern', 'München', 'Deutschland'] },
+      { id: 'blitz-demo-stadiums-5', prompt: 'Maracanã Rio de Janeiro Stadion', mediaUrl: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=400&h=300&fit=crop', answer: 'Maracanã', aliases: ['Rio', 'Brasilien', 'Fußball'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-cars',
+    title: '🏎️ Legendäre Autos',
+    items: [
+      { id: 'blitz-demo-cars-1', prompt: 'Ferrari Sportwagen rot', mediaUrl: 'https://images.unsplash.com/photo-1531566877142-48fcc718e61d?w=400&h=300&fit=crop', answer: 'Ferrari', aliases: ['Sportwagen', 'italienisch', 'rot'] },
+      { id: 'blitz-demo-cars-2', prompt: 'Porsche 911 klassisches Design', mediaUrl: 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=400&h=300&fit=crop', answer: 'Porsche 911', aliases: ['Porsche', 'Sportwagen', 'Deutschland'] },
+      { id: 'blitz-demo-cars-3', prompt: 'Lamborghini Supersportwagen gelb', mediaUrl: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=400&h=300&fit=crop', answer: 'Lamborghini', aliases: ['Sportwagen', 'italienisch', 'Supersportwagen'] },
+      { id: 'blitz-demo-cars-4', prompt: 'Tesla Model S elektrisch futuristisch', mediaUrl: 'https://images.unsplash.com/photo-1560958089-b8a46dd52d60?w=400&h=300&fit=crop', answer: 'Tesla Model S', aliases: ['Tesla', 'Elektroauto', 'modern'] },
+      { id: 'blitz-demo-cars-5', prompt: 'Bugatti Veyron schnellster Wagen', mediaUrl: 'https://images.unsplash.com/photo-1556821552-7f41c5d440db?w=400&h=300&fit=crop', answer: 'Bugatti Veyron', aliases: ['Bugatti', 'Supersportwagen', 'schnell'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-mountains',
+    title: '⛰️ Berge der Welt',
+    items: [
+      { id: 'blitz-demo-mountains-1', prompt: 'Mount Everest höchster Berg', mediaUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop', answer: 'Mount Everest', aliases: ['Everest', 'Himalaya', 'Nepal'] },
+      { id: 'blitz-demo-mountains-2', prompt: 'Matterhorn spitzer Berg Schweiz', mediaUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop', answer: 'Matterhorn', aliases: ['Schweiz', 'Alpen', 'Berg'] },
+      { id: 'blitz-demo-mountains-3', prompt: 'Kilimanjaro Afrika höchster Berg', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop', answer: 'Kilimanjaro', aliases: ['Kili', 'Tansania', 'Afrika'] },
+      { id: 'blitz-demo-mountains-4', prompt: 'Mont Blanc höchster Alpenb Berg', mediaUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop', answer: 'Mont Blanc', aliases: ['Frankreich', 'Alpen', 'Europa'] },
+      { id: 'blitz-demo-mountains-5', prompt: 'K2 zweithöchster Berg der Welt', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop', answer: 'K2', aliases: ['Karakorum', 'Pakistan', 'Berg'] }
+    ]
+  },
+  {
+    id: 'blitz-demo-theater',
+    title: '🎭 Theater & Opernhäuser',
+    items: [
+      { id: 'blitz-demo-theater-1', prompt: 'Sydney Opera House weiße Muscheln', mediaUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop', answer: 'Sydney Opera House', aliases: ['Sydney', 'Australien', 'Opern'] },
+      { id: 'blitz-demo-theater-2', prompt: 'Palais Garnier Paris Oper golden', mediaUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop', answer: 'Palais Garnier', aliases: ['Paris', 'Oper', 'Frankreich'] },
+      { id: 'blitz-demo-theater-3', prompt: 'Teatro alla Scala Mailand Oper', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop', answer: 'Teatro alla Scala', aliases: ['Scala', 'Mailand', 'Italien'] },
+      { id: 'blitz-demo-theater-4', prompt: 'Bolschoi Ballett Moskau Oper', mediaUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop', answer: 'Bolschoi Theater', aliases: ['Bolschoi', 'Moskau', 'Russland'] },
+      { id: 'blitz-demo-theater-5', prompt: 'Apollo Theater New York Blues Jazz', mediaUrl: 'https://images.unsplash.com/photo-1503185912284-5271ff81b9a8?w=400&h=300&fit=crop', answer: 'Apollo Theater', aliases: ['Apollo', 'New York', 'USA'] }
+    ]
+  },
+  {
     id: 'blitz-buildings',
-    title: '🏢 Berühmte Gebäude',
+    title: '🏢 Berühmte Gebäude (lokal)',
     items: [
       { id: 'blitz-buildings-1', prompt: 'Gotisches Meisterwerk in London', mediaUrl: '/blitz/buildings/1.jpg', answer: 'Big Ben', aliases: ['Elizabeth Tower', 'Palace of Westminster'] },
       { id: 'blitz-buildings-2', prompt: 'Weißes Mausoleum in Indien', mediaUrl: '/blitz/buildings/2.jpg', answer: 'Taj Mahal', aliases: ['Agra'] },
@@ -48,7 +136,7 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
   },
   {
     id: 'blitz-films',
-    title: '🎬 Blockbuster Poster',
+    title: '🎬 Blockbuster Poster (lokal)',
     items: [
       { id: 'blitz-films-1', prompt: 'Science-Fiction mit blauem humanoidem Alien', mediaUrl: '/blitz/films/1.jpg', answer: 'Avatar', aliases: ['Pandora'] },
       { id: 'blitz-films-2', prompt: 'Schiff sinkt im Eiswasser', mediaUrl: '/blitz/films/2.jpg', answer: 'Titanic', aliases: ['Jack Rose'] },
@@ -59,7 +147,7 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
   },
   {
     id: 'blitz-gaming',
-    title: '🎮 Gaming Icons',
+    title: '🎮 Gaming Icons (lokal)',
     items: [
       { id: 'blitz-gaming-1', prompt: 'Springender Klempner mit Schnurrbart', mediaUrl: '/blitz/gaming/1.jpg', answer: 'Mario', aliases: ['Super Mario', 'Nintendo'] },
       { id: 'blitz-gaming-2', prompt: 'Gelbes rundes Elektro-Pokémon', mediaUrl: '/blitz/gaming/2.jpg', answer: 'Pikachu', aliases: ['Pokemon'] },
@@ -70,7 +158,7 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
   },
   {
     id: 'blitz-sports',
-    title: '🏀 Sportler Silhouetten',
+    title: '🏀 Sportler Silhouetten (lokal)',
     items: [
       { id: 'blitz-sports-1', prompt: 'Portugiesischer Fußball-Megastar', mediaUrl: '/blitz/sports/1.jpg', answer: 'Cristiano Ronaldo', aliases: ['Ronaldo', 'CR7'] },
       { id: 'blitz-sports-2', prompt: 'Argentinischer Fußballer mit Nummer 10', mediaUrl: '/blitz/sports/2.jpg', answer: 'Messi', aliases: ['Lionel Messi'] },
@@ -81,7 +169,7 @@ export const defaultBlitzPool: QuizBlitzTheme[] = [
   },
   {
     id: 'blitz-stadiums',
-    title: '🏟️ Stadion Silhouetten',
+    title: '🏟️ Stadion Silhouetten (lokal)',
     items: [
       { id: 'blitz-stadiums-1', prompt: 'Englisches Fußball-Tempel in London', mediaUrl: '/blitz/stadiums/1.jpg', answer: 'Wembley Stadium', aliases: ['Wembley'] },
       { id: 'blitz-stadiums-2', prompt: 'Größtes Stadion von FC Barcelona', mediaUrl: '/blitz/stadiums/2.jpg', answer: 'Camp Nou', aliases: ['Barcelona Stadium'] },

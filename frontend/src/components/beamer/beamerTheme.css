@@ -1691,14 +1691,19 @@
   background: rgba(59, 130, 246, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.28);
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  grid-template-columns: minmax(340px, 1.35fr) minmax(220px, 1fr);
+  align-items: center;
 }
 
 .blitz-current-image {
   width: 100%;
-  max-height: 260px;
+  height: clamp(280px, 42vh, 520px);
+  max-height: 520px;
   border-radius: 20px;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .blitz-item-title {
@@ -1712,6 +1717,16 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(226, 232, 240, 0.8);
+}
+
+@media (max-width: 960px) {
+  .blitz-current-card {
+    grid-template-columns: 1fr;
+  }
+
+  .blitz-current-image {
+    height: clamp(220px, 38vh, 420px);
+  }
 }
 
 .blitz-timeline {

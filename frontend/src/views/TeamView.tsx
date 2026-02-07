@@ -20,13 +20,11 @@ import {
   fetchLanguage,
   setLanguage as setLanguageApi
 } from '../api';
-import { theme } from '../theme';
-import { getDraftTheme } from '../utils/draft';
 import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
 import { categoryIcons } from '../categoryAssets';
-import { PrimaryButton, Pill } from '../components/uiPrimitives';
+import { PrimaryButton } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
@@ -213,7 +211,6 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 };
 
 function TeamView({ roomCode }: TeamViewProps) {
-  const draftTheme = getDraftTheme();
   const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
@@ -845,7 +842,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       const socket = socketRef.current;
       const payload = await new Promise<{ team: Team }>((resolve, reject) => {
         if (!socket) {
-          // TODO(LEGACY): remove REST fallback once socket join stabilisiert
           joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined)
             .then((res) => resolve(res))
             .catch(reject);

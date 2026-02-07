@@ -960,6 +960,46 @@ useEffect(() => {
     return Array.isArray(opts) ? opts : null;
   }, [question?.id, language]);
 
+  const showChoiceAvatars = gameState === 'Q_REVEAL';
+  const choiceAvatars = useMemo(() => {
+    if (!question || !showChoiceAvatars) return [] as Array<string[]>;
+    const q: any = question;
+    const isMultipleChoice = question.mechanic === 'multipleChoice' || question.type === 'MU_CHO';
+    const isTrueFalse = question.mechanic === 'trueFalse' || (question as any).type === 'TRUE_FALSE';
+    const opts = isMultipleChoice
+      ? (language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options)
+      : isTrueFalse
+      ? ['true', 'false']
+      : null;
+    if (!Array.isArray(opts) || opts.length === 0) return [] as Array<string[]>;
+    const buckets: Array<string[]> = Array.from({ length: opts.length }, () => []);
+    const normalizeChoiceIndex = (answer: any): number | null => {
+      if (answer === null || answer === undefined) return null;
+      if (typeof answer === 'number' && Number.isFinite(answer)) return answer;
+      if (typeof answer === 'boolean') return answer ? 0 : 1;
+      if (typeof answer === 'string') {
+        const trimmed = answer.trim();
+        if (/^[A-Z]$/.test(trimmed)) {
+          return trimmed.charCodeAt(0) - 65;
+        }
+        if (trimmed === 'true') return 0;
+        if (trimmed === 'false') return 1;
+        const idx = opts.findIndex((opt: string) => String(opt).trim() === trimmed);
+        return idx >= 0 ? idx : null;
+      }
+      return null;
+    };
+    (teamStatus || [])
+      .filter((team) => team.answer !== undefined)
+      .forEach((team) => {
+        const idx = normalizeChoiceIndex(team.answer);
+        if (idx !== null && idx >= 0 && idx < buckets.length) {
+          buckets[idx].push(team.avatarId || '');
+        }
+      });
+    return buckets;
+  }, [question?.id, question?.type, question?.mechanic, teamStatus, language, showChoiceAvatars]);
+
   useEffect(() => {
     if (!question || question.type !== 'MU_CHO') {
       setMuChoHopIndex(null);
@@ -1498,11 +1538,59 @@ useEffect(() => {
     if (Array.isArray(mcOptions) && mcOptions.length) {
       return (
         <div className="beamer-grid">
-          {mcOptions.map((opt: string, idx: number) => (
-            <div className="beamer-card" key={`opt-${idx}`}>
-              <strong>{String.fromCharCode(65 + idx)}.</strong> {opt}
-            </div>
-          ))}
+          {mcOptions.map((opt: string, idx: number) => {
+            const avatars = choiceAvatars?.[idx] || [];
+            return (
+              <div className="beamer-card" key={`opt-${idx}`} style={{ position: 'relative', paddingBottom: 34 }}>
+                <strong>{String.fromCharCode(65 + idx)}.</strong> {opt}
+                {showChoiceAvatars && avatars.length > 0 && (
+                  <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {avatars.map((avatarId, avatarIdx) => {
+                      const avatar = getAvatarById(avatarId);
+                      return avatar ? (
+                        <img
+                          key={`${avatarId}-${avatarIdx}`}
+                          src={avatar.dataUri}
+                          alt=""
+                          style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    if (q?.mechanic === 'trueFalse' || q?.type === 'TRUE_FALSE') {
+      const labels = [language === 'de' ? 'Wahr' : 'True', language === 'de' ? 'Falsch' : 'False'];
+      return (
+        <div className="beamer-grid">
+          {labels.map((label, idx) => {
+            const avatars = choiceAvatars?.[idx] || [];
+            return (
+              <div className="beamer-card" key={`tf-${idx}`} style={{ position: 'relative', paddingBottom: 34 }}>
+                <strong>{idx === 0 ? 'A' : 'B'}.</strong> {label}
+                {showChoiceAvatars && avatars.length > 0 && (
+                  <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {avatars.map((avatarId, avatarIdx) => {
+                      const avatar = getAvatarById(avatarId);
+                      return avatar ? (
+                        <img
+                          key={`${avatarId}-${avatarIdx}`}
+                          src={avatar.dataUri}
+                          alt=""
+                          style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       );
     }

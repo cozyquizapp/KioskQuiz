@@ -24,7 +24,7 @@ import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
 import { categoryIcons } from '../categoryAssets';
-import { PrimaryButton } from '../components/uiPrimitives';
+import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';

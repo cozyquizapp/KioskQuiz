@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LobbyStats, FastestAnswer, FunnyAnswer, CommonWrongAnswer } from '@shared/quizTypes';
+import { LobbyStats, FastestAnswer, FunnyAnswer, CommonWrongAnswer, Language } from '@shared/quizTypes';
 
 type Lang = 'de' | 'en';
 
@@ -29,10 +29,11 @@ type AllTimeLeaderboard = {
 
 interface LobbyStatsDisplayProps {
   roomCode: string;
-  language: Lang;
+  language: Language;
 }
 
 export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, language }) => {
+  const effectiveLang: Lang = language === 'both' ? 'de' : language;
   const [stats, setStats] = useState<LobbyStats | null>(null);
   const [allTime, setAllTime] = useState<AllTimeLeaderboard | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -102,7 +103,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
       <div style={containerStyle}>
         <div style={headerStyle}>
           <span style={iconStyle}>⚡</span>
-          <span>{language === 'de' ? 'BLITZSCHNELL' : 'LIGHTNING FAST'}</span>
+          <span>{effectiveLang === 'de' ? 'BLITZSCHNELL' : 'LIGHTNING FAST'}</span>
         </div>
         <div style={contentStyle}>
           <div style={metricStyle}>{Math.round(fastest.timeMs)}ms</div>
@@ -121,7 +122,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
       <div style={containerStyle}>
         <div style={headerStyle}>
           <span style={iconStyle}>😂</span>
-          <span>{language === 'de' ? 'LUSTIGSTE ANTWORT' : 'FUNNIEST ANSWER'}</span>
+          <span>{effectiveLang === 'de' ? 'LUSTIGSTE ANTWORT' : 'FUNNIEST ANSWER'}</span>
         </div>
         <div style={contentStyle}>
           <div style={questionStyle}>{funny.questionText}</div>
@@ -140,14 +141,14 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
       <div style={containerStyle}>
         <div style={headerStyle}>
           <span style={iconStyle}>❌</span>
-          <span>{language === 'de' ? 'HÄUFIGER FEHLER' : 'COMMON MISTAKE'}</span>
+          <span>{effectiveLang === 'de' ? 'HÄUFIGER FEHLER' : 'COMMON MISTAKE'}</span>
         </div>
         <div style={contentStyle}>
           <div style={questionStyle}>{wrong.questionText}</div>
           <div style={arrowStyle}>→</div>
           <div style={answerLargeStyle}>„{wrong.answer}"</div>
           <div style={countStyle}>
-            {wrong.count}x {language === 'de' ? 'gewählt' : 'chosen'}
+            {wrong.count}x {effectiveLang === 'de' ? 'gewählt' : 'chosen'}
           </div>
         </div>
       </div>
@@ -161,14 +162,14 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
       <div style={containerStyle}>
         <div style={headerStyle}>
           <span style={iconStyle}>🏆</span>
-          <span>{language === 'de' ? 'EWIGE BESTENLISTE' : 'ALL-TIME TOP TEAMS'}</span>
+          <span>{effectiveLang === 'de' ? 'EWIGE BESTENLISTE' : 'ALL-TIME TOP TEAMS'}</span>
         </div>
         <div style={{ ...contentStyle, gap: 8 }}>
           {topThree.map((team, idx) => (
             <div key={`${team.teamName}-${idx}`} style={listItemStyle}>
               <span style={metricStyle}>{idx + 1}.</span>
               <span style={teamStyle}>{team.teamName}</span>
-              <span style={countStyle}>{team.wins} {language === 'de' ? 'Siege' : 'wins'}</span>
+              <span style={countStyle}>{team.wins} {effectiveLang === 'de' ? 'Siege' : 'wins'}</span>
             </div>
           ))}
         </div>
@@ -183,7 +184,7 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
       <div style={containerStyle}>
         <div style={headerStyle}>
           <span style={iconStyle}>😄</span>
-          <span>{language === 'de' ? 'EWIG LUSTIGSTE ANTWORT' : 'ALL-TIME FUNNIEST'}</span>
+          <span>{effectiveLang === 'de' ? 'EWIG LUSTIGSTE ANTWORT' : 'ALL-TIME FUNNIEST'}</span>
         </div>
         <div style={contentStyle}>
           <div style={questionStyle}>{funny.questionText}</div>

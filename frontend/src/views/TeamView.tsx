@@ -28,6 +28,7 @@ import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
+import { AVATARS } from '../config/avatars';
 import {
   pageStyleTeam,
   contentShell,
@@ -132,6 +133,8 @@ const COPY = {
     joinTitle: 'Team beitreten',
     joinPlaceholder: 'Teamname',
     joinButton: 'Beitreten',
+    avatarTitle: 'Avatar waehlen',
+    avatarHint: 'Tippe eine Figur an',
     waitingMsg: 'Bitte wartet auf die naechste Frage ...',
     tfTrue: 'Wahr',
     tfFalse: 'Falsch',
@@ -173,6 +176,8 @@ const COPY = {
     joinTitle: 'Join team',
     joinPlaceholder: 'Team name',
     joinButton: 'Join',
+    avatarTitle: 'Choose avatar',
+    avatarHint: 'Tap a character',
     waitingMsg: 'Please wait for the next question ...',
     tfTrue: 'True',
     tfFalse: 'False',
@@ -219,6 +224,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     (win as any).__TEAMVIEW_MARKER = teamMarker;
   }
   const [teamName, setTeamName] = useState('');
+  const [avatarId, setAvatarId] = useState(() => AVATARS[0]?.id || '');
   const [joinPending, setJoinPending] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -377,11 +383,19 @@ function TeamView({ roomCode }: TeamViewProps) {
   useEffect(() => {
     const savedName = localStorage.getItem(storageKey('name'));
     const savedId = localStorage.getItem(storageKey('id'));
+    const savedAvatar = localStorage.getItem(storageKey('avatar'));
     if (savedName) setTeamName(savedName);
     if (savedId) {
       savedIdRef.current = savedId;
     }
+    if (savedAvatar) setAvatarId(savedAvatar);
   }, [roomCode]);
+
+  useEffect(() => {
+    if (!AVATARS.some((avatar) => avatar.id === avatarId)) {
+      setAvatarId(AVATARS[0]?.id || '');
+    }
+  }, [avatarId]);
 
   useEffect(
     () => () => {
@@ -842,14 +856,24 @@ function TeamView({ roomCode }: TeamViewProps) {
       const socket = socketRef.current;
       const payload = await new Promise<{ team: Team }>((resolve, reject) => {
         if (!socket) {
-          joinRoom(roomCode, cleanName, useSavedId ? savedIdRef.current ?? undefined : undefined)
+          joinRoom(
+            roomCode,
+            cleanName,
+            useSavedId ? savedIdRef.current ?? undefined : undefined,
+            avatarId
+          )
             .then((res) => resolve(res))
             .catch(reject);
           return;
         }
         socket.emit(
           'team:join',
-          { roomCode, teamName: cleanName, teamId: useSavedId ? savedIdRef.current ?? undefined : undefined },
+          {
+            roomCode,
+            teamName: cleanName,
+            teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
+            avatarId
+          },
           (resp?: { ok: boolean; error?: string; team?: Team }) => {
             if (!resp?.ok || !resp?.team) {
               reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
@@ -867,6 +891,11 @@ function TeamView({ roomCode }: TeamViewProps) {
       setTeamId(data.team.id);
       localStorage.setItem(storageKey('name'), cleanName);
       localStorage.setItem(storageKey('id'), data.team.id);
+      if (data.team.avatarId || avatarId) {
+        const chosen = data.team.avatarId || avatarId;
+        setAvatarId(chosen);
+        localStorage.setItem(storageKey('avatar'), chosen);
+      }
       savedIdRef.current = data.team.id;
       try {
         const langRes = await fetchLanguage(roomCode);
@@ -2791,7 +2820,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
 
   function renderNotJoined() {
-    const joinDisabled = !roomCode || !teamName.trim() || joinPending;
+    const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
         <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -2829,6 +2858,44 @@ function TeamView({ roomCode }: TeamViewProps) {
           (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
         }}
       />
+      <div style={{ marginTop: 12 }}>
+        <div style={{ ...pillLabel, marginBottom: 6 }}>{t('avatarTitle')}</div>
+        <div style={{ ...mutedText, marginBottom: 8 }}>{t('avatarHint')}</div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+            gap: 8
+          }}
+        >
+          {AVATARS.map((avatar) => {
+            const selected = avatarId === avatar.id;
+            return (
+              <button
+                key={avatar.id}
+                type="button"
+                onClick={() => setAvatarId(avatar.id)}
+                style={{
+                  padding: 6,
+                  borderRadius: 12,
+                  border: selected ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.12)',
+                  background: selected ? 'rgba(56,189,248,0.15)' : 'rgba(15,23,42,0.55)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                aria-label={avatar.name}
+                title={avatar.name}
+              >
+                <img
+                  src={avatar.dataUri}
+                  alt={avatar.name}
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <PrimaryButton
         style={{
           marginTop: 12,

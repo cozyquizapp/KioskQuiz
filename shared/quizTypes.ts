@@ -270,6 +270,7 @@ export interface Team {
   name: string;
   score: number;
   isReady?: boolean;
+  avatarId?: string;
 }
 
 export interface SlotTransitionMeta {
@@ -576,6 +577,7 @@ export type NextStageHint = 'BLITZ' | 'BLITZ_PAUSE' | 'Q11' | 'RUNDLAUF';
 export type TeamStatusSnapshot = {
   id: string;
   name: string;
+  avatarId?: string;
   connected: boolean;
   submitted: boolean;
   isReady?: boolean;
@@ -588,7 +590,7 @@ export type StateUpdatePayload = {
   phase: QuestionPhase;
   currentQuestion?: AnyQuestion | null;
   timer: { endsAt: number | null; running: boolean; durationMs?: number | null };
-  scores: Array<{ id: string; name: string; score: number }>;
+  scores: Array<{ id: string; name: string; score: number; avatarId?: string }>;
   teamsConnected: number;
   teamStatus?: TeamStatusSnapshot[];
   questionProgress?: { asked: number; total: number };

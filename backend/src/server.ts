@@ -3201,12 +3201,13 @@ const restartRoomSession = (room: RoomState) => {
   return { quizId: room.quizId };
 };
 
-const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string) => {
+const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string, avatarId?: string) => {
   const cleanName = teamName.trim();
   if (!cleanName) throw new Error('teamName missing');
 
   if (teamId && room.teams[teamId]) {
     room.teams[teamId].name = cleanName;
+    if (avatarId) room.teams[teamId].avatarId = avatarId;
     if (!room.teamBoards[teamId]) room.teamBoards[teamId] = generateBingoBoard();
     broadcastTeamsReady(room);
     broadcastState(room);
@@ -3215,13 +3216,14 @@ const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string) => {
 
   const existingByName = Object.values(room.teams).find((t) => t.name === cleanName);
   if (existingByName) {
+    if (avatarId) existingByName.avatarId = avatarId;
     if (!room.teamBoards[existingByName.id]) room.teamBoards[existingByName.id] = generateBingoBoard();
     broadcastTeamsReady(room);
     broadcastState(room);
     return { team: existingByName, board: room.teamBoards[existingByName.id], created: false };
   }
 
-  const newTeam: Team = { id: uuid(), name: cleanName, score: 0, isReady: false };
+  const newTeam: Team = { id: uuid(), name: cleanName, score: 0, isReady: false, avatarId: avatarId || undefined };
   room.teams[newTeam.id] = newTeam;
   room.teamBoards[newTeam.id] = generateBingoBoard();
   if (room.segmentTwoBaselineScores) {
@@ -3763,6 +3765,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
   const teamStatus: TeamStatusSnapshot[] = Object.values(room.teams).map((team) => ({
     id: team.id,
     name: team.name,
+    avatarId: team.avatarId,
     connected: connectedTeamIds.includes(team.id),
     submitted: Boolean(room.answers[team.id]),
     isReady: team.isReady,
@@ -3806,7 +3809,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     scores: Object.values(room.teams).map((team) => ({
       id: team.id,
       name: team.name,
-      score: team.score ?? 0
+      score: team.score ?? 0,
+      avatarId: team.avatarId
     })),
     teamsConnected: connectedTeamIds.length,
     teamStatus,
@@ -4823,7 +4827,7 @@ app.get('/api/rooms/:roomCode/current-question', (req, res) => {
 // Team join (mit Bingo-Board)
 app.post('/api/rooms/:roomCode/join', (req, res) => {
   const { roomCode } = req.params;
-  const { teamName, teamId } = req.body as { teamName?: string; teamId?: string };
+  const { teamName, teamId, avatarId } = req.body as { teamName?: string; teamId?: string; avatarId?: string };
   
   // Validate and sanitize input
   const roomValidation = validateRoomCode(roomCode);
@@ -4836,7 +4840,7 @@ app.post('/api/rooms/:roomCode/join', (req, res) => {
   touchRoom(room);
 
   try {
-    const result = joinTeamToRoom(room, teamNameValidation.value, teamId);
+    const result = joinTeamToRoom(room, teamNameValidation.value, teamId, avatarId);
     const payload = { team: result.team, roomCode, board: result.board };
     return result.created ? res.status(201).json(payload) : res.json(payload);
   } catch (err) {
@@ -5674,16 +5678,16 @@ io.on('connection', (socket: Socket) => {
   socket.on(
     'team:join',
     (
-      payload: { roomCode?: string; teamName?: string; teamId?: string },
+      payload: { roomCode?: string; teamName?: string; teamId?: string; avatarId?: string },
       ack?: (resp: { ok: boolean; error?: string; team?: Team; board?: BingoBoard }) => void
     ) => {
       try {
-        const { roomCode, teamName, teamId } = payload || {};
+        const { roomCode, teamName, teamId, avatarId } = payload || {};
         const resolved = requireRoomCode(roomCode);
         if (!teamName) throw new Error('teamName fehlt');
         const room = ensureRoom(resolved);
         touchRoom(room);
-        const result = joinTeamToRoom(room, teamName, teamId);
+        const result = joinTeamToRoom(room, teamName, teamId, avatarId);
         const previousTeamId = socket.data.teamId as string | undefined;
         const previousRoom = socket.data.roomCode as string | undefined;
         if (previousTeamId && previousRoom && (previousTeamId !== result.team.id || previousRoom !== room.roomCode)) {

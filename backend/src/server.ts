@@ -4383,11 +4383,33 @@ const handleHostNextAdvance = (room: RoomState) => {
     // Only transition if not already transitioning (blitzPhase check)
     if (room.blitzPhase === 'BANNING') {
       finalizeBlitzSelection(room);
-      startBlitzSet(room); // This sets state to BLITZ_SET_INTRO
+      room.blitzPhase = 'SELECTION_COMPLETE';
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SELECTION_COMPLETE' });
     }
-    // State already changed by startBlitzSet, no need to re-transition
     broadcastState(room);
     return { stage: room.gameState };
+  }
+  if (room.gameState === 'BLITZ_SELECTION_COMPLETE' || room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
+    // Moderator clicks "Weiter" from SELECTION_COMPLETE
+    // Transition to CATEGORY_SHOWCASE for the animation
+    if (room.gameState === 'BLITZ_SELECTION_COMPLETE') {
+      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
+      broadcastState(room);
+      // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+      clearBlitzRoundIntroTimer(room);
+      room.blitzRoundIntroTimeout = setTimeout(() => {
+        room.blitzRoundIntroTimeout = null;
+        if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+        startBlitzSet(room);
+      }, 3000);
+      return { stage: room.gameState };
+    }
+    // If already in CATEGORY_SHOWCASE, just start the set
+    if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
+      startBlitzSet(room);
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
   }
   if (room.gameState === 'BLITZ_SET_INTRO') {
     if (room.blitzPhase === 'ROUND_INTRO') {
@@ -5926,21 +5948,24 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:blitzStartSet', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => {
-      // Allow starting from SELECTION_COMPLETE or READY
+      // This is now handled by handleHostNextAdvance when in SELECTION_COMPLETE or CATEGORY_SHOWCASE
+      // But keep for direct API calls if needed
+      if (room.gameState === 'BLITZ_SELECTION_COMPLETE') {
+        applyRoomState(room, { type: 'HOST_NEXT' });
+        broadcastState(room);
+        return;
+      }
+      if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
+        startBlitzSet(room);
+        broadcastState(room);
+        return;
+      }
+      // Legacy support for direct start
       if (room.blitzPhase !== 'SELECTION_COMPLETE' && room.blitzPhase !== 'READY') {
         throw new Error('Set kann noch nicht gestartet werden');
       }
-      // Transition to CATEGORY_SHOWCASE for the animation
-      room.blitzPhase = 'SELECTION_COMPLETE'; // Keep phase for now
-      applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
+      startBlitzSet(room);
       broadcastState(room);
-      // Auto-transition to SET_INTRO after showcase animation (3 seconds)
-      clearBlitzRoundIntroTimer(room);
-      room.blitzRoundIntroTimeout = setTimeout(() => {
-        room.blitzRoundIntroTimeout = null;
-        if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
-        startBlitzSet(room);
-      }, 3000);
     });
   });
 

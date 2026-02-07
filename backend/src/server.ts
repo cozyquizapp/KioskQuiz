@@ -468,74 +468,7 @@ const RUNDLAUF_TURN_TIME_MS = (() => {
 const RUNDLAUF_ROUND_POINTS = 3; // TODO(RUNDLAUF): confirm points per round win
 const RUNDLAUF_SIMILARITY_THRESHOLD = 0.85;
 
-const PHOTO_SPRINT_CATEGORIES: QuizBlitzTheme[] = [
-  {
-    id: 'PROMIS_AUGEN',
-    title: 'PROMIS - AUGEN',
-    items: [
-      { id: 'promis_augen_01', prompt: 'promis_augen_01', answer: 'promis_augen_01', aliases: [] },
-      { id: 'promis_augen_02', prompt: 'promis_augen_02', answer: 'promis_augen_02', aliases: [] },
-      { id: 'promis_augen_03', prompt: 'promis_augen_03', answer: 'promis_augen_03', aliases: [] },
-      { id: 'promis_augen_04', prompt: 'promis_augen_04', answer: 'promis_augen_04', aliases: [] },
-      { id: 'promis_augen_05', prompt: 'promis_augen_05', answer: 'promis_augen_05', aliases: [] }
-    ]
-  },
-  {
-    id: 'TIERBABYS',
-    title: 'TIERBABYS',
-    items: [
-      { id: 'tierbaby_01', prompt: 'tierbaby_01', answer: 'tierbaby_01', aliases: [] },
-      { id: 'tierbaby_02', prompt: 'tierbaby_02', answer: 'tierbaby_02', aliases: [] },
-      { id: 'tierbaby_03', prompt: 'tierbaby_03', answer: 'tierbaby_03', aliases: [] },
-      { id: 'tierbaby_04', prompt: 'tierbaby_04', answer: 'tierbaby_04', aliases: [] },
-      { id: 'tierbaby_05', prompt: 'tierbaby_05', answer: 'tierbaby_05', aliases: [] }
-    ]
-  },
-  {
-    id: 'LANDMARKS',
-    title: 'LANDMARKS',
-    items: [
-      { id: 'lm_01', prompt: 'lm_01', answer: 'lm_01', aliases: [] },
-      { id: 'lm_02', prompt: 'lm_02', answer: 'lm_02', aliases: [] },
-      { id: 'lm_03', prompt: 'lm_03', answer: 'lm_03', aliases: [] },
-      { id: 'lm_04', prompt: 'lm_04', answer: 'lm_04', aliases: [] },
-      { id: 'lm_05', prompt: 'lm_05', answer: 'lm_05', aliases: [] }
-    ]
-  },
-  {
-    id: 'LOGOS',
-    title: 'LOGOS',
-    items: [
-      { id: 'logo_01', prompt: 'logo_01', answer: 'logo_01', aliases: [] },
-      { id: 'logo_02', prompt: 'logo_02', answer: 'logo_02', aliases: [] },
-      { id: 'logo_03', prompt: 'logo_03', answer: 'logo_03', aliases: [] },
-      { id: 'logo_04', prompt: 'logo_04', answer: 'logo_04', aliases: [] },
-      { id: 'logo_05', prompt: 'logo_05', answer: 'logo_05', aliases: [] }
-    ]
-  },
-  {
-    id: 'ESSEN_CLOSEUP',
-    title: 'ESSEN CLOSE-UP',
-    items: [
-      { id: 'food_01', prompt: 'food_01', answer: 'food_01', aliases: [] },
-      { id: 'food_02', prompt: 'food_02', answer: 'food_02', aliases: [] },
-      { id: 'food_03', prompt: 'food_03', answer: 'food_03', aliases: [] },
-      { id: 'food_04', prompt: 'food_04', answer: 'food_04', aliases: [] },
-      { id: 'food_05', prompt: 'food_05', answer: 'food_05', aliases: [] }
-    ]
-  },
-  {
-    id: 'FILMSTILLS',
-    title: 'FILMSTILLS',
-    items: [
-      { id: 'film_01', prompt: 'film_01', answer: 'film_01', aliases: [] },
-      { id: 'film_02', prompt: 'film_02', answer: 'film_02', aliases: [] },
-      { id: 'film_03', prompt: 'film_03', answer: 'film_03', aliases: [] },
-      { id: 'film_04', prompt: 'film_04', answer: 'film_04', aliases: [] },
-      { id: 'film_05', prompt: 'film_05', answer: 'film_05', aliases: [] }
-    ]
-  }
-];
+const BLITZ_POOL_CORE: QuizBlitzTheme[] = defaultBlitzPool;
 
 const RUN_LOOP_CATEGORIES: RundlaufCategoryOption[] = [
   { id: 'HAUPTSTAEDTE_AFRIKA', title: 'HAUPTSTAEDTE AFRIKA' },
@@ -2068,7 +2001,7 @@ const getTeamsByScore = (room: RoomState, direction: 'asc' | 'desc' = 'desc') =>
   Object.values(room.teams).sort((a, b) => compareTeamsWithTieBreak(room, a, b, direction));
 
 const initializeBlitzStage = (room: RoomState) => {
-  const definitions = defaultBlitzPool.length ? defaultBlitzPool : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
+  const definitions = BLITZ_POOL_CORE.length ? BLITZ_POOL_CORE : DEFAULT_BLITZ_THEMES.map(buildLegacyBlitzTheme);
   const normalizedDefs = definitions.map((theme, idx) => normalizeBlitzTheme(theme, idx));
   room.blitzThemeLibrary = normalizedDefs.reduce<Record<string, QuizBlitzTheme>>((acc, theme) => {
     acc[theme.id] = theme;

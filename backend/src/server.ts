@@ -4470,9 +4470,31 @@ const handleHostNextAdvance = (room: RoomState) => {
       throw new Error('Rundlauf-Auswahl noch nicht abgeschlossen');
     }
     finalizeRundlaufSelection(room);
-    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+    applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SELECTION_COMPLETE' });
     broadcastState(room);
     return { stage: room.gameState };
+  }
+  if (room.gameState === 'RUNDLAUF_SELECTION_COMPLETE' || room.gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+    // Moderator clicks "Weiter" from SELECTION_COMPLETE
+    if (room.gameState === 'RUNDLAUF_SELECTION_COMPLETE') {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
+      broadcastState(room);
+      // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
+      clearRundlaufRoundIntroTimer(room);
+      room.rundlaufRoundIntroTimeout = setTimeout(() => {
+        room.rundlaufRoundIntroTimeout = null;
+        if (room.gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE') return;
+        applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+        broadcastState(room);
+      }, 3000);
+      return { stage: room.gameState };
+    }
+    // If already in CATEGORY_SHOWCASE, skip to ROUND_INTRO
+    if (room.gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+      applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+      broadcastState(room);
+      return { stage: room.gameState };
+    }
   }
   if (room.gameState === 'RUNDLAUF_ROUND_INTRO') {
     startRundlaufRound(room);
@@ -5720,19 +5742,16 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:rundlaufStartRound', (payload: { roomCode?: string }, ack?: AckFn) => {
     withRoom(payload?.roomCode, ack, (room) => {
-      // Allow starting from SELECTION_COMPLETE (first round) or ROUND_INTRO (subsequent rounds)
+      // This is now handled by handleHostNextAdvance when in SELECTION_COMPLETE or CATEGORY_SHOWCASE
+      // But keep for direct API calls if needed
       if (room.gameState === 'RUNDLAUF_SELECTION_COMPLETE') {
-        // First round: show category showcase animation
-        applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
+        applyRoomState(room, { type: 'HOST_NEXT' });
         broadcastState(room);
-        // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
-        clearRundlaufRoundIntroTimer(room);
-        room.rundlaufRoundIntroTimeout = setTimeout(() => {
-          room.rundlaufRoundIntroTimeout = null;
-          if (room.gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE') return;
-          applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
-          broadcastState(room);
-        }, 3000);
+        return;
+      }
+      if (room.gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+        applyRoomState(room, { type: 'HOST_NEXT' });
+        broadcastState(room);
         return;
       }
       if (room.gameState !== 'RUNDLAUF_ROUND_INTRO') throw new Error('Rundlauf-Intro nicht aktiv');

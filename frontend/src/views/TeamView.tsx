@@ -3093,108 +3093,118 @@ function TeamView({ roomCode }: TeamViewProps) {
           }}
         >
           {/* Left Preview - Hidden on Mobile */}
-          <div
-            style={{
-              position: 'absolute',
-              left: '8%',
-              bottom: 0,
-              width: 100,
-              height: 140,
-              opacity: 0.4,
-              filter: 'blur(3px)',
-              transition: 'all 0.3s ease',
-              display: window.innerWidth < 768 ? 'none' : 'block'
-            }}
-          >
-            <AvatarMedia
-              avatar={availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length]}
-              style={{ 
-                width: '100%', 
-                height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length].id) * 100}%`,
-                objectFit: 'contain'
-              }}
-            />
-          </div>
-
-          {/* Center Main Avatar */}
-          <div
-            style={{
-              position: 'absolute',
-              left: '50%',
-              bottom: 0,
-              transform: 'translateX(-50%)',
-              width: 140,
-              height: 180,
-              zIndex: 10,
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                const selectedAvatar = availableAvatars[avatarCarouselIndex];
-                if (selectedAvatar) {
-                  setAvatarId(selectedAvatar.id);
-                  if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
-                  // Trigger happy animation on manual selection
-                  setAvatarMood('happy');
-                }
-                // Trigger tap animation
-                setAvatarTapped(true);
-                setTimeout(() => setAvatarTapped(false), 400);
-              }}
+          {availableAvatars.length > 0 && (
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                padding: 12,
-                borderRadius: 20,
-                border: `4px solid ${accentColor}`,
-                background: 'rgba(56,189,248,0.2)',
-                cursor: 'pointer',
+                position: 'absolute',
+                left: '8%',
+                bottom: 0,
+                width: 100,
+                height: 140,
+                opacity: 0.4,
+                filter: 'blur(3px)',
                 transition: 'all 0.3s ease',
-                boxShadow: `0 0 40px ${accentColor}88, 0 10px 30px rgba(0,0,0,0.4)`,
-                display: 'flex',
+                display: window.innerWidth < 768 ? 'none' : 'flex',
                 alignItems: 'flex-end',
-                justifyContent: 'center',
-                position: 'relative'
+                justifyContent: 'center'
               }}
             >
               <AvatarMedia
-                avatar={availableAvatars[avatarCarouselIndex]}
-                mood={avatarMood}
-                onTap={avatarTapped}
-                style={{
-                  width: '80%',
-                  height: `${getAvatarSize(availableAvatars[avatarCarouselIndex].id) * 85}%`,
+                avatar={availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length]}
+                style={{ 
+                  width: '85%', 
+                  height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length]?.id) * 90}%`,
                   objectFit: 'contain'
                 }}
               />
-            </button>
-          </div>
+            </div>
+          )}
+
+          {/* Center Main Avatar */}
+          {availableAvatars.length > 0 && availableAvatars[avatarCarouselIndex] && (
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                bottom: 0,
+                transform: 'translateX(-50%)',
+                width: 160,
+                height: 200,
+                zIndex: 10,
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  const selectedAvatar = availableAvatars[avatarCarouselIndex];
+                  if (selectedAvatar) {
+                    setAvatarId(selectedAvatar.id);
+                    if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
+                    // Trigger happy animation on manual selection
+                    setAvatarMood('happy');
+                  }
+                  // Trigger tap animation
+                  setAvatarTapped(true);
+                  setTimeout(() => setAvatarTapped(false), 400);
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  padding: 16,
+                  borderRadius: 20,
+                  border: `4px solid ${accentColor}`,
+                  background: 'rgba(56,189,248,0.2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: `0 0 40px ${accentColor}88, 0 10px 30px rgba(0,0,0,0.4)`,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  position: 'relative'
+                }}
+              >
+                <AvatarMedia
+                  avatar={availableAvatars[avatarCarouselIndex]}
+                  mood={avatarMood}
+                  onTap={avatarTapped}
+                  style={{
+                    width: '85%',
+                    height: `${getAvatarSize(availableAvatars[avatarCarouselIndex]?.id) * 95}%`,
+                    objectFit: 'contain'
+                  }}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Right Preview - Hidden on Mobile */}
-          <div
-            style={{
-              position: 'absolute',
-              right: '8%',
-              bottom: 0,
-              width: 100,
-              height: 140,
-              opacity: 0.4,
-              filter: 'blur(3px)',
-              transition: 'all 0.3s ease',
-              display: window.innerWidth < 768 ? 'none' : 'block'
-            }}
-          >
-            <AvatarMedia
-              avatar={availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length]}
-              style={{ 
-                width: '100%', 
-                height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length].id) * 100}%`,
-                objectFit: 'contain'
+          {availableAvatars.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                right: '8%',
+                bottom: 0,
+                width: 100,
+                height: 140,
+                opacity: 0.4,
+                filter: 'blur(3px)',
+                transition: 'all 0.3s ease',
+                display: window.innerWidth < 768 ? 'none' : 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'center'
               }}
-            />
-          </div>
+            >
+              <AvatarMedia
+                avatar={availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length]}
+                style={{ 
+                  width: '85%', 
+                  height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length]?.id) * 90}%`,
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
       <PrimaryButton

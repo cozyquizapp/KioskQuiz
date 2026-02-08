@@ -2995,7 +2995,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             background: 'rgba(15,23,42,0.55)',
             padding: '20px 0',
             overflow: 'hidden',
-            marginBottom: 12
+            marginBottom: 12,
+            height: 200,
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           <div
@@ -3010,7 +3013,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               padding: '0 calc(50% - 80px)',
-              width: '100%'
+              width: '100%',
+              flex: 1
             }}
             className="avatar-carousel"
           >

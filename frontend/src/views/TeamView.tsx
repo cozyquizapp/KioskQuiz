@@ -287,7 +287,15 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
   const [teamName, setTeamName] = useState('');
   const [avatarId, setAvatarId] = useState(() => AVATARS[0]?.id || '');
-  const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(0);
+  const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(() => 0);
+  
+  // Sync carousel index when avatar changes
+  useEffect(() => {
+    const index = AVATARS.findIndex(a => a.id === avatarId);
+    if (index >= 0) {
+      setAvatarCarouselIndex(index);
+    }
+  }, [avatarId]);
   const [joinPending, setJoinPending] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -2926,9 +2934,6 @@ function TeamView({ roomCode }: TeamViewProps) {
     const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
-        <Pill tone="muted" style={{ marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        Join
-      </Pill>
       <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
       <p style={mutedText}>{t('joinHint')}</p>
       <input
@@ -2962,16 +2967,25 @@ function TeamView({ roomCode }: TeamViewProps) {
         }}
       />
       <div style={{ marginTop: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 0 }}>
           <div style={{ ...pillLabel }}>{t('avatarTitle')}</div>
           <button
             type="button"
+            title={t('avatarRandom')}
             style={{
-              ...pillSmall,
+              width: 32,
+              height: 32,
+              padding: 0,
+              borderRadius: '50%',
               background: 'rgba(56,189,248,0.14)',
               border: '1px solid rgba(56,189,248,0.35)',
               color: '#7dd3fc',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 16,
+              transition: '0.3s ease'
             }}
             onClick={() => {
               const availableAvatars = AVATARS.filter(a => !usedAvatarIds.has(a.id));
@@ -2982,14 +2996,20 @@ function TeamView({ roomCode }: TeamViewProps) {
               const random = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
               if (random) {
                 setAvatarId(random.id);
+                setAvatarCarouselIndex(AVATARS.findIndex(a => a.id === random.id));
                 if (roomCode) localStorage.setItem(storageKey('avatar'), random.id);
               }
             }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(56,189,248,0.25)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(56,189,248,0.14)';
+            }}
           >
-            {t('avatarRandom')}
+            🎲
           </button>
         </div>
-        <div style={{ ...mutedText, marginBottom: 16 }}>{t('avatarHint')}</div>
         
         {/* 3D Avatar Carousel */}
         <div
@@ -2997,10 +3017,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             position: 'relative',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: '40px 0',
+            padding: '30px 0',
             overflow: 'hidden',
             marginBottom: 20,
-            height: 280,
+            height: 240,
             touchAction: 'pan-y',
             userSelect: 'none'
           }}
@@ -3025,7 +3045,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             }
           }}
         >
-          {/* Left Preview */}
+          {/* Left Preview - Hidden on Mobile */}
           <div
             style={{
               position: 'absolute',
@@ -3035,7 +3055,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               height: 140,
               opacity: 0.4,
               filter: 'blur(3px)',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              display: window.innerWidth < 768 ? 'none' : 'block'
             }}
           >
             <AvatarMedia
@@ -3115,7 +3136,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             </button>
           </div>
 
-          {/* Right Preview */}
+          {/* Right Preview - Hidden on Mobile */}
           <div
             style={{
               position: 'absolute',
@@ -3125,7 +3146,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               height: 140,
               opacity: 0.4,
               filter: 'blur(3px)',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              display: window.innerWidth < 768 ? 'none' : 'block'
             }}
           >
             <AvatarMedia
@@ -3433,7 +3455,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           animation: 'border-gradient 6s ease infinite',
           backgroundSize: '100% 100%, 300% 300%',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          display: teamId ? 'flex' : 'none'
         }}>
           {/* Walking Animal */}
           {teamId && avatarId && (

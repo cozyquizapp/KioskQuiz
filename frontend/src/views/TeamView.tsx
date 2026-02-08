@@ -3050,12 +3050,20 @@ function TeamView({ roomCode }: TeamViewProps) {
             
             const diff = touchStart - touchEnd;
             if (Math.abs(diff) > 50) {
+              let newIndex;
               if (diff > 0) {
                 // Swiped left - next avatar
-                setAvatarCarouselIndex((i) => (i + 1) % AVATARS.length);
+                newIndex = (avatarCarouselIndex + 1) % AVATARS.length;
               } else {
                 // Swiped right - prev avatar
-                setAvatarCarouselIndex((i) => (i - 1 + AVATARS.length) % AVATARS.length);
+                newIndex = (avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length;
+              }
+              setAvatarCarouselIndex(newIndex);
+              // Auto-select the swiped avatar
+              const selectedAvatar = AVATARS[newIndex];
+              if (selectedAvatar) {
+                setAvatarId(selectedAvatar.id);
+                if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
               }
             }
           }}
@@ -3089,10 +3097,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               position: 'absolute',
               left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 160,
-              height: 220,
+              bottom: 0,
+              transform: 'translateX(-50%)',
+              width: 140,
+              height: 180,
               zIndex: 10,
               transition: 'all 0.3s ease'
             }}
@@ -3117,7 +3125,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 transition: 'all 0.3s ease',
                 boxShadow: `0 0 40px ${accentColor}88, 0 10px 30px rgba(0,0,0,0.4)`,
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 justifyContent: 'center',
                 position: 'relative'
               }}
@@ -3125,8 +3133,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               <AvatarMedia
                 avatar={AVATARS[avatarCarouselIndex]}
                 style={{
-                  width: '90%',
-                  height: `${getAvatarSize(AVATARS[avatarCarouselIndex].id) * 100}%`,
+                  width: '80%',
+                  height: `${getAvatarSize(AVATARS[avatarCarouselIndex].id) * 85}%`,
                   objectFit: 'contain'
                 }}
               />

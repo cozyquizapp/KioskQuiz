@@ -3412,30 +3412,39 @@ function TeamView({ roomCode }: TeamViewProps) {
           backgroundOrigin: 'border-box',
           backgroundClip: 'padding-box, border-box',
           animation: 'border-gradient 6s ease infinite',
-          backgroundSize: '100% 100%, 300% 300%'
+          backgroundSize: '100% 100%, 300% 300%',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Walking Animal */}
+          {teamId && avatarId && (
             <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '6px 12px',
-                borderRadius: 999,
-                background: 'rgba(0,0,0,0.35)',
-                border: 'none'
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 1
               }}
             >
-              {teamId && avatarId ? (
-                <AvatarMedia
-                  avatar={getAvatarById(avatarId)}
-                  mood={avatarMood}
-                  style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }}
-                />
-              ) : (
-                <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
-              )}
+              <AvatarMedia
+                avatar={getAvatarById(avatarId)}
+                mood={avatarMood}
+                style={{ 
+                  width: 60, 
+                  height: 60, 
+                  objectFit: 'contain',
+                  position: 'absolute',
+                  top: '50%',
+                  transform: 'translateY(-50%)'
+                }}
+              />
             </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
             {teamId && (
               <Pill
                 tone="neutral"

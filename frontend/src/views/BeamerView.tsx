@@ -3357,7 +3357,7 @@ useEffect(() => {
               left: 0,
               width: 100,
               height: 100,
-              animation: `beamer-walk-${index % 3} ${duration}s linear infinite`,
+              animation: currentState === 'walking' ? `beamer-walk-${index % 3} ${duration}s linear infinite` : 'none',
               pointerEvents: 'none',
               zIndex: 50
             }}

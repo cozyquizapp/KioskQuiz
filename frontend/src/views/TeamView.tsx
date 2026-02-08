@@ -978,6 +978,8 @@ function TeamView({ roomCode }: TeamViewProps) {
       });
       const data = payload;
       setTeamId(data.team.id);
+      // Celebrate joining!
+      setAvatarMood('happy');
       localStorage.setItem(storageKey('name'), cleanName);
       localStorage.setItem(storageKey('id'), data.team.id);
       if (data.team.avatarId || avatarId) {
@@ -2935,7 +2937,7 @@ function TeamView({ roomCode }: TeamViewProps) {
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
       <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
-      <p style={mutedText}>{t('joinHint')}</p>
+      <p style={mutedText}>Gib deinen Teamnamen ein, wähle einen Begleiter für euer Team, bestätige und dann gehts los!</p>
       <input
         value={teamName}
         onChange={(e) => setTeamName(e.target.value)}
@@ -3011,6 +3013,19 @@ function TeamView({ roomCode }: TeamViewProps) {
           </button>
         </div>
         
+        {/* Swipe Instruction */}
+        <div
+          style={{
+            textAlign: 'center',
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: 8,
+            fontStyle: 'italic'
+          }}
+        >
+          ← Wische nach links oder rechts →
+        </div>
+        
         {/* 3D Avatar Carousel */}
         <div
           style={{
@@ -3061,7 +3076,11 @@ function TeamView({ roomCode }: TeamViewProps) {
           >
             <AvatarMedia
               avatar={AVATARS[(avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length]}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              style={{ 
+                width: '100%', 
+                height: `${getAvatarSize(AVATARS[(avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length].id) * 100}%`,
+                objectFit: 'contain'
+              }}
             />
           </div>
 
@@ -3152,7 +3171,11 @@ function TeamView({ roomCode }: TeamViewProps) {
           >
             <AvatarMedia
               avatar={AVATARS[(avatarCarouselIndex + 1) % AVATARS.length]}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              style={{ 
+                width: '100%', 
+                height: `${getAvatarSize(AVATARS[(avatarCarouselIndex + 1) % AVATARS.length].id) * 100}%`,
+                objectFit: 'contain'
+              }}
             />
           </div>
         </div>
@@ -3373,6 +3396,10 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (!teamId || !socketRef.current) return;
     const next = !isReady;
     setIsReady(next);
+    // Celebrate when marking as ready
+    if (next) {
+      setAvatarMood('happy');
+    }
     socketRef.current.emit('teamReady', { roomCode, teamId, isReady: next });
   }
 

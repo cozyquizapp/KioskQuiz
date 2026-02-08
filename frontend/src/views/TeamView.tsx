@@ -221,9 +221,9 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
 const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string }> = ({ avatar, style, alt }) => {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
-  React.useEffect(() => {
+  useEffect(() => {
     const video = videoRef.current;
     if (!video || !avatar.isVideo) return;
     

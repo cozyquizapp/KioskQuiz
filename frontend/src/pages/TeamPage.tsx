@@ -80,7 +80,14 @@ const TeamPage = () => {
     hasRoot: false,
     rootHasKids: false
   });
-  const [hideFallback, setHideFallback] = useState(false);
+  const [hideFallback, setHideFallback] = useState(() => {
+    // Hide fallback immediately if team already joined (prevents flash on reload)
+    if (typeof window !== 'undefined' && roomCode) {
+      const savedId = localStorage.getItem(`team:${roomCode}:id`);
+      return Boolean(savedId);
+    }
+    return false;
+  });
   const [fallbackName, setFallbackName] = useState('');
   const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
   const [fallbackJoined, setFallbackJoined] = useState(false);

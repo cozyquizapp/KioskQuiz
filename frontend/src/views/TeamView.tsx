@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   AnyQuestion,
   MultipleChoiceQuestion,
@@ -3416,33 +3415,27 @@ function TeamView({ roomCode }: TeamViewProps) {
           backgroundSize: '100% 100%, 300% 300%'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link
-              to="/menu"
-              style={{ textDecoration: 'none', color: 'inherit' }}
-              title={language === 'de' ? 'Menue oeffnen' : 'Open menu'}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'rgba(0,0,0,0.35)',
+                border: 'none'
+              }}
             >
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  background: 'rgba(0,0,0,0.35)',
-                  border: 'none'
-                }}
-              >
-                {teamId && avatarId ? (
-                  <AvatarMedia
-                    avatar={getAvatarById(avatarId)}
-                    mood={avatarMood}
-                    style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }}
-                  />
-                ) : (
-                  <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
-                )}
-              </div>
-            </Link>
+              {teamId && avatarId ? (
+                <AvatarMedia
+                  avatar={getAvatarById(avatarId)}
+                  mood={avatarMood}
+                  style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }}
+                />
+              ) : (
+                <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+              )}
+            </div>
             {teamId && (
               <Pill
                 tone="neutral"

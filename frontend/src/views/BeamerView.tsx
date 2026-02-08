@@ -741,6 +741,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
           }))
         );
       }
+      // Don't clear teams in LOBBY state, they come from teamsReady event
+      // Only update from scores when there are actual scores
+      
       if (payload.currentQuestion !== undefined) {
         setQuestion(payload.currentQuestion);
         if (payload.currentQuestion) {

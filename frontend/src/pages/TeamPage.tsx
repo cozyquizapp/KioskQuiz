@@ -281,7 +281,7 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        {!hideFallback && (
+        {!teamMounted && !hideFallback && (
           <div
             style={{
               position: 'fixed',

@@ -3365,12 +3365,20 @@ useEffect(() => {
             <img
               src={imageSrc}
               alt={team.name}
+              loading="eager"
               style={{
-                width: '100%',
-                height: '100%',
+                width: '100px',
+                height: '100px',
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
               }}
+              onError={(e) => {
+                console.error(`Failed to load avatar image: ${imageSrc}`, e);
+                if (e.currentTarget.src !== avatar.dataUri) {
+                  e.currentTarget.src = avatar.dataUri;
+                }
+              }}
+              onLoad={() => console.log(`Avatar loaded: ${imageSrc}`)}
             />
           </div>
         );

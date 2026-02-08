@@ -323,6 +323,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
+  const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
@@ -668,6 +669,14 @@ function TeamView({ roomCode }: TeamViewProps) {
       }
       if (payload.teamStatus) {
         setTeamStatus(payload.teamStatus);
+        // Update used avatars list
+        const usedIds = new Set<string>();
+        payload.teamStatus.forEach((team) => {
+          if (team.avatarId && team.id !== teamId) {
+            usedIds.add(team.avatarId);
+          }
+        });
+        setUsedAvatarIds(usedIds);
       }
       if (payload.blitz !== undefined) {
         setBlitzState(payload.blitz ?? null);
@@ -2937,7 +2946,12 @@ function TeamView({ roomCode }: TeamViewProps) {
               cursor: 'pointer'
             }}
             onClick={() => {
-              const random = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+              const availableAvatars = AVATARS.filter(a => !usedAvatarIds.has(a.id));
+              if (availableAvatars.length === 0) {
+                showError(language === 'de' ? 'Alle Avatare sind bereits vergeben.' : 'All avatars are taken.');
+                return;
+              }
+              const random = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
               if (random) {
                 setAvatarId(random.id);
                 if (roomCode) localStorage.setItem(storageKey('avatar'), random.id);
@@ -2972,11 +2986,14 @@ function TeamView({ roomCode }: TeamViewProps) {
           >
             {AVATARS.map((avatar) => {
               const selected = avatarId === avatar.id;
+              const isUsed = usedAvatarIds.has(avatar.id);
+              const isDisabled = isUsed && !selected;
               return (
                 <button
                   key={avatar.id}
                   type="button"
                   onClick={() => {
+                    if (isDisabled) return;
                     setAvatarId(avatar.id);
                     if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
                   }}
@@ -2985,16 +3002,35 @@ function TeamView({ roomCode }: TeamViewProps) {
                     maxWidth: '100%',
                     padding: 16,
                     borderRadius: 12,
-                    border: selected ? `3px solid ${accentColor}` : '2px solid rgba(255,255,255,0.12)',
-                    background: selected ? 'rgba(56,189,248,0.15)' : 'rgba(15,23,42,0.7)',
-                    cursor: 'pointer',
+                    border: selected ? `3px solid ${accentColor}` : isDisabled ? '2px solid rgba(255,100,100,0.3)' : '2px solid rgba(255,255,255,0.12)',
+                    background: selected ? 'rgba(56,189,248,0.15)' : isDisabled ? 'rgba(30,30,30,0.7)' : 'rgba(15,23,42,0.7)',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                     transition: 'all 0.3s ease',
                     scrollSnapAlign: 'center',
-                    boxShadow: selected ? `0 0 20px ${accentColor}55` : 'none'
+                    boxShadow: selected ? `0 0 20px ${accentColor}55` : 'none',
+                    opacity: isDisabled ? 0.4 : 1,
+                    position: 'relative'
                   }}
+                  disabled={isDisabled}
                   aria-label={avatar.name}
-                  title={avatar.name}
+                  title={isDisabled ? (language === 'de' ? 'Bereits vergeben' : 'Already taken') : avatar.name}
                 >
+                  {isDisabled && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      fontSize: 48,
+                      fontWeight: 900,
+                      color: '#ef4444',
+                      textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                      zIndex: 10,
+                      pointerEvents: 'none'
+                    }}>
+                      ✕
+                    </div>
+                  )}
                   <AvatarMedia
                     avatar={avatar}
                     style={{ 
@@ -3002,7 +3038,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                       height: 'auto', 
                       display: 'block', 
                       borderRadius: 12,
-                      aspectRatio: '1/1'
+                      aspectRatio: '1/1',
+                      filter: isDisabled ? 'grayscale(1) brightness(0.5)' : 'none'
                     }}
                   />
                   <div style={{ 
@@ -3359,7 +3396,14 @@ function TeamView({ roomCode }: TeamViewProps) {
                   border: 'none'
                 }}
               >
-                <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+                {teamId && avatarId ? (
+                  <AvatarMedia
+                    avatar={getAvatarById(avatarId)}
+                    style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }}
+                  />
+                ) : (
+                  <img src="/logo.png?v=3" alt="Logo" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'contain' }} />
+                )}
               </div>
             </Link>
             {teamId && (

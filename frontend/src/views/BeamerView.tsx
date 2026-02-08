@@ -308,10 +308,12 @@ const BeamerWalkingAvatar: React.FC<{
       style={{
         position: 'fixed',
         bottom: 0,
-        left: frozenLeft || 0,
+        left: frozenLeft ?? undefined,
         width: 100,
         height: 100,
-        animation: currentState === 'walking' ? `beamer-walk-${walkIndex} ${duration}s linear infinite` : 'none',
+        animation: `beamer-walk-${walkIndex} ${duration}s linear infinite`,
+        animationPlayState: currentState === 'walking' ? 'running' : 'paused',
+        animationFillMode: 'both',
         pointerEvents: 'none',
         zIndex: 50
       }}

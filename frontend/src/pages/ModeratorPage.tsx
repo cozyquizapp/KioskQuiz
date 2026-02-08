@@ -2408,6 +2408,11 @@ function ModeratorPage(): React.ReactElement {
               await hookOverrideAnswer(teamId, isCorrect);
             }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
           }
+          onKickTeam={(teamId) =>
+            doAction(async () => {
+              await kickTeam(roomCode, teamId);
+            }, 'Team entfernt')
+          }
         />
       </div>
     ) : null;

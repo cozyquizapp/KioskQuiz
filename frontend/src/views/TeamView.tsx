@@ -565,7 +565,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
 
   const handleJoin = useCallback(async (useSavedId = false) => {
     if (joinPending) return;
-    console.log('🔗 handleJoin called:', { useSavedId, avatarId, roomCode });
+    const selectedAvatarId = availableAvatars[avatarCarouselIndex]?.id || avatarId;
+    console.log('🔗 handleJoin called:', { useSavedId, avatarId: selectedAvatarId, roomCode });
     setJoinPending(true);
     try {
       const cleanName = teamName.trim();
@@ -579,6 +580,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setJoinPending(false);
         return;
       }
+      if (selectedAvatarId && selectedAvatarId !== avatarId) {
+        setAvatarId(selectedAvatarId);
+        if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatarId);
+      }
       const socket = socketRef.current;
       const payload = await new Promise<{ team: Team }>((resolve, reject) => {
         if (!socket) {
@@ -586,7 +591,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             roomCode,
             cleanName,
             useSavedId ? savedIdRef.current ?? undefined : undefined,
-            avatarId
+            selectedAvatarId
           )
             .then((res) => resolve(res))
             .catch(reject);
@@ -598,7 +603,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             roomCode,
             teamName: cleanName,
             teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
-            avatarId
+            avatarId: selectedAvatarId
           },
           (resp?: { ok: boolean; error?: string; team?: Team }) => {
             if (!resp?.ok || !resp?.team) {
@@ -619,8 +624,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       setAvatarMood('happy');
       localStorage.setItem(storageKey('name'), cleanName);
       localStorage.setItem(storageKey('id'), data.team.id);
-      if (data.team.avatarId || avatarId) {
-        const chosen = data.team.avatarId || avatarId;
+      if (data.team.avatarId || selectedAvatarId) {
+        const chosen = data.team.avatarId || selectedAvatarId;
         setAvatarId(chosen);
         localStorage.setItem(storageKey('avatar'), chosen);
       }
@@ -647,7 +652,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     } finally {
       setJoinPending(false);
     }
-  }, [joinPending, teamName, roomCode, avatarId, language, showError, clearMessage, setJoinPending, setTeamId, setAvatarMood, setAvatarId, storageKey, socketRef, setLanguageState]);
+  }, [joinPending, teamName, roomCode, avatarId, avatarCarouselIndex, availableAvatars, language, showError, clearMessage, setJoinPending, setTeamId, setAvatarMood, setAvatarId, storageKey, socketRef, setLanguageState]);
 
   // Load persisted team (for reconnects)
   useEffect(() => {

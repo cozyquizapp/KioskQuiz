@@ -220,42 +220,60 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string }> = ({ avatar, style, alt }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad' }> = ({ avatar, style, alt, mood = 'idle' }) => {
+  const [currentMood, setCurrentMood] = useState(mood);
+
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !avatar.isVideo) return;
+    setCurrentMood(mood);
     
-    let direction = 1; // 1 = forward, -1 = backward
-    
-    const handleTimeUpdate = () => {
-      if (direction === 1 && video.currentTime >= video.duration - 0.05) {
-        direction = -1;
-        video.playbackRate = -1;
-      } else if (direction === -1 && video.currentTime <= 0.05) {
-        direction = 1;
-        video.playbackRate = 1;
-      }
-    };
-    
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [avatar.isVideo]);
-  
-  if (avatar.isVideo && avatar.videoSrc) {
+    // Reset to idle after celebration or sadness
+    if (mood !== 'idle') {
+      const timer = setTimeout(() => {
+        setCurrentMood('idle');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [mood]);
+
+  const getAnimationClass = () => {
+    switch (currentMood) {
+      case 'happy':
+        return 'animal-celebrate';
+      case 'sad':
+        return 'animal-sad';
+      default:
+        return 'animal-bounce';
+    }
+  };
+
+  // For SVG animals
+  if (!avatar.isVideo) {
     return (
-      <video
-        ref={videoRef}
-        src={avatar.videoSrc}
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{ ...style, objectFit: 'cover', overflow: 'hidden' }}
-      />
+      <div 
+        className={`animated-animal ${getAnimationClass()}`}
+        style={{
+          width: style?.width || '100%',
+          height: style?.height || '100%',
+          display: 'inline-block',
+          position: 'relative'
+        }}
+      >
+        <img 
+          src={avatar.svg || avatar.dataUri} 
+          alt={alt || avatar.name} 
+          style={{
+            ...style,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none'
+          }}
+        />
+      </div>
     );
   }
+
+  // Legacy video support (if needed)
   return <img src={avatar.dataUri} alt={alt || avatar.name} style={style} />;
 };
 
@@ -324,6 +342,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
   const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
+  const [avatarMood, setAvatarMood] = useState<'idle' | 'happy' | 'sad'>('idle');
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
@@ -720,12 +739,14 @@ function TeamView({ roomCode }: TeamViewProps) {
         if (entry) {
           if (typeof entry.awardedPoints === 'number') {
             setResultPoints(entry.awardedPoints);
-            // Trigger feedback animation
+            // Trigger feedback animation and mood
             if (entry.awardedPoints > 0) {
               setFeedbackAnimation('success');
+              setAvatarMood('happy');
               setTimeout(() => setFeedbackAnimation(null), 1000);
             } else {
               setFeedbackAnimation('error');
+              setAvatarMood('sad');
               setTimeout(() => setFeedbackAnimation(null), 500);
             }
           } else {
@@ -750,7 +771,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
         setResultMessage(getResultMessage(entry, question));
-        if (typeof entry.awardedPoints === 'number') setResultPoints(entry.awardedPoints);
+        if (typeof entry.awardedPoints === 'number') {
+          setResultPoints(entry.awardedPoints);
+          setAvatarMood(entry.awardedPoints > 0 ? 'happy' : 'sad');
+        }
         const detail = (entry as any)?.awardedDetail;
         if (detail) setResultDetail(detail);
         setPhase('waitingForResult');
@@ -771,7 +795,10 @@ function TeamView({ roomCode }: TeamViewProps) {
         setResultCorrect(Boolean(isCorrect));
         setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, question));
         setPhase('showResult');
-        if (typeof awardedPoints === 'number') setResultPoints(awardedPoints);
+        if (typeof awardedPoints === 'number') {
+          setResultPoints(awardedPoints);
+          setAvatarMood(awardedPoints > 0 ? 'happy' : 'sad');
+        }
         if (awardedDetail) setResultDetail(awardedDetail);
         if (sol) setSolution(sol);
         setIsFinal(true);
@@ -3416,6 +3443,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 {teamId && avatarId ? (
                   <AvatarMedia
                     avatar={getAvatarById(avatarId)}
+                    mood={avatarMood}
                     style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }}
                   />
                 ) : (

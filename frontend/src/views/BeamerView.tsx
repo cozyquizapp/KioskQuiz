@@ -33,6 +33,7 @@ import { createConfetti } from '../utils/confetti';
 import { AVATARS } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
+import { hasStateBasedRendering, getAvatarStatePath } from '../config/avatarStates';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -339,6 +340,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
+  
+  // Track avatar states for each team (for live emotion display)
+  const [teamAvatarStates, setTeamAvatarStates] = useState<Record<string, 'walking' | 'looking' | 'happy' | 'sad'>>({});
+  
   const debugMode = useMemo(
     () =>
       featureFlags.showLegacyPanels ||
@@ -784,6 +789,28 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
     socket.on('server:stateUpdate', onStateUpdate);
 
+    // Listen for avatar state changes from teams
+    const onAvatarStateChanged = (payload: { teamId: string; state: 'walking' | 'looking' | 'happy' | 'sad'; timestamp: number }) => {
+      const { teamId, state } = payload;
+      setTeamAvatarStates(prev => ({ ...prev, [teamId]: state }));
+      
+      // Auto-reset to walking after animation sequence completes
+      if (state === 'looking') {
+        console.log('🎨 Beamer: Avatar state changed', { teamId, state });
+        // After happy state completes, return to walking
+        setTimeout(() => {
+          setTeamAvatarStates(prev => {
+            if (prev[teamId] === 'happy' || prev[teamId] === 'looking') {
+              console.log('🎨 Beamer: Resetting to walking', { teamId });
+              return { ...prev, [teamId]: 'walking' };
+            }
+            return prev;
+          });
+        }, 2000); // 600ms looking + 1200ms happy + 200ms buffer
+      }
+    };
+    socket.on('team:avatarStateChanged', onAvatarStateChanged);
+
     socket.on('languageChanged', ({ language: lang }: { language: Lang }) => {
       setLanguage(lang);
     });
@@ -824,6 +851,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
     return () => {
       socket.off('server:stateUpdate', onStateUpdate);
+      socket.off('team:avatarStateChanged', onAvatarStateChanged);
       socket.disconnect();
     };
   }, [roomCode, language, reconnectNonce]);
@@ -3305,9 +3333,14 @@ useEffect(() => {
         const avatar = AVATARS.find(a => a.id === team.avatarId);
         if (!avatar) return null;
         
-        // Get Igel image based on state (always walking on beamer)
-        const isIgel = avatar.id === 'avatar1';
-        const imageSrc = isIgel ? '/avatars/igel/gehen.svg' : (avatar.svg || avatar.dataUri);
+        // Get current state for this team (default to walking)
+        const currentState = teamAvatarStates[team.id] || 'walking';
+        
+        // Get state-based image path
+        const statePath = hasStateBasedRendering(avatar.id) 
+          ? getAvatarStatePath(avatar.id, currentState)
+          : null;
+        const imageSrc = statePath || avatar.svg || avatar.dataUri;
         
         // Calculate speed based on animal size - larger = slower, smaller = faster
         const sizeRatio = getAvatarSize(team.avatarId);

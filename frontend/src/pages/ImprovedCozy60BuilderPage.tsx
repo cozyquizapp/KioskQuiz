@@ -13,6 +13,7 @@ import KanbanBoard from '../components/KanbanBoard';
 import { BlitzEditor } from '../components/BlitzEditor';
 import { RundlaufEditor } from '../components/RundlaufEditor';
 import { QuestionCatalog } from '../components/QuestionCatalog';
+import { ThemeCustomizer } from '../components/ThemeCustomizer';
 import { MECHANIC_RULES } from '../config/mechanicRules';
 
 const LOCAL_BACKUP_KEY = 'cozy-builder-draft';
@@ -40,7 +41,7 @@ const ImprovedCozy60BuilderPage = () => {
   const [error, setError] = useState('');
   const [isOffline, setIsOffline] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [tab, setTab] = useState<'board' | 'meta' | 'blitz' | 'rundlauf' | 'catalog' | 'help'>('board');
+  const [tab, setTab] = useState<'board' | 'meta' | 'blitz' | 'rundlauf' | 'catalog' | 'help' | 'theme'>('board');
   const [showCatalog, setShowCatalog] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [restoredFromLocal, setRestoredFromLocal] = useState(false);
@@ -577,6 +578,16 @@ const ImprovedCozy60BuilderPage = () => {
                 >
                   ❓ Mechaniken
                 </button>
+                <button
+                  onClick={() => setTab('theme')}
+                  style={{
+                    ...tabButtonStyle,
+                    borderBottomColor: tab === 'theme' ? '#22d3ee' : 'transparent',
+                    color: tab === 'theme' ? '#22d3ee' : '#94a3b8'
+                  }}
+                >
+                  🎨 Themes
+                </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                   <button
                     onClick={() => setShowCatalog(!showCatalog)}
@@ -748,6 +759,12 @@ const ImprovedCozy60BuilderPage = () => {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {tab === 'theme' && (
+                    <div style={{ padding: 0, maxWidth: 600, margin: 0 }}>
+                      <ThemeCustomizer />
                     </div>
                   )}
                 </div>

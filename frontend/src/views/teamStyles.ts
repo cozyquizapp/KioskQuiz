@@ -25,10 +25,10 @@ export const pageStyleTeam: CSSProperties = {
   height: '100vh', // Fallback for older browsers
   // @ts-ignore - dvh not in CSSProperties yet
   minHeight: '100dvh', // Modern browsers with dynamic viewport
-  paddingTop: 'calc(clamp(16px, 4vw, 24px) + env(safe-area-inset-top))',
-  paddingRight: 'clamp(12px, 3.5vw, 16px)',
-  paddingBottom: 'calc(clamp(28px, 6vw, 36px) + env(safe-area-inset-bottom))',
-  paddingLeft: 'clamp(12px, 3.5vw, 16px)',
+  paddingTop: 'calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-top))',
+  paddingRight: 'clamp(10px, 3vw, 16px)',
+  paddingBottom: 'calc(clamp(12px, 2vw, 16px) + env(safe-area-inset-bottom))',
+  paddingLeft: 'clamp(10px, 3vw, 16px)',
   overflowY: 'hidden',
   overflowX: 'hidden',
   overscrollBehavior: 'contain',

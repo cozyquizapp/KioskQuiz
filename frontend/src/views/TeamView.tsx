@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   AnyQuestion,
   MultipleChoiceQuestion,
@@ -30,6 +30,8 @@ import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
 import { AVATARS } from '../config/avatars';
 import type { AvatarOption } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
+import { useWindowWidth } from '../hooks/useWindowWidth';
+import { hasStateBasedRendering, getAvatarStatePath, preloadAvatarStates } from '../config/avatarStates';
 import {
   pageStyleTeam,
   contentShell,
@@ -114,6 +116,7 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
 
 interface TeamViewProps {
   roomCode: string;
+  rejoinTrigger?: number;
 }
 
 const COPY = {
@@ -220,7 +223,7 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: 'walking' | 'looking' | 'happy' | 'sad' }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: 'walking' | 'looking' | 'happy' | 'sad' }> = React.memo(({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
   const [currentMood, setCurrentMood] = useState(mood);
   const [currentIgelState, setCurrentIgelState] = useState(igelState);
 
@@ -252,27 +255,19 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   };
 
-  // Igel special handling: use state-based image
-  const isIgel = avatar.id === 'avatar1';
-  const getIgelImagePath = () => {
-    const baseUrl = '/avatars/igel';
-    switch (currentIgelState) {
-      case 'looking':
-        return `${baseUrl}/schauen.svg`;
-      case 'happy':
-        return `${baseUrl}/freuen.svg`;
-      case 'sad':
-        return `${baseUrl}/weinen.svg`;
-      case 'walking':
-      default:
-        return `${baseUrl}/gehen.svg`;
-    }
-  };
+  // Check if avatar supports state-based rendering
+  const hasStates = hasStateBasedRendering(avatar.id);
+  const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState) : null;
 
   // For SVG animals
   if (!avatar.isVideo) {
-    const imgSrc = isIgel ? getIgelImagePath() : (avatar.svg || avatar.dataUri);
-    const shouldApplyAnimation = isIgel ? (currentIgelState === 'walking') : enableWalking;
+    const imgSrc = currentStatePath || avatar.svg || avatar.dataUri;
+    const shouldApplyAnimation = hasStates ? (currentIgelState === 'walking') : enableWalking;
+    
+    // Build meaningful alt text for screen readers based on avatar state
+    const moodLabel = currentMood === 'happy' ? ' (happy)' : currentMood === 'sad' ? ' (sad)' : '';
+    const stateLabel = hasStates && currentIgelState !== 'walking' ? ` (${currentIgelState})` : '';
+    const altText = `${avatar.name}${stateLabel}${moodLabel}`;
     
     return (
       <div 
@@ -283,19 +278,21 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
           display: 'inline-block',
           position: 'relative',
           transformOrigin: 'bottom center',
-          transition: isIgel ? 'opacity 0.3s ease' : 'none' // Smooth transition for Igel
+          transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth transition for state-based avatars
         }}
       >
         <img 
           src={imgSrc} 
-          alt={alt || avatar.name} 
+          alt={altText}
+          title={altText}
+          role="presentation"
           style={{
             ...style,
             width: '100%',
             height: '100%',
             objectFit: 'contain',
             filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none',
-            transition: isIgel ? 'opacity 0.3s ease' : 'none' // Smooth fade between Igel states
+            transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth fade between states
           }}
         />
       </div>
@@ -304,9 +301,18 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
 
   // Legacy video support (if needed)
   return <img src={avatar.dataUri} alt={alt || avatar.name} style={style} />;
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if avatar ID or key props changed
+  return (
+    prevProps.avatar.id === nextProps.avatar.id &&
+    prevProps.mood === nextProps.mood &&
+    prevProps.igelState === nextProps.igelState &&
+    prevProps.onTap === nextProps.onTap &&
+    prevProps.enableWalking === nextProps.enableWalking
+  );
+});
 
-function TeamView({ roomCode }: TeamViewProps) {
+function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
   const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
@@ -314,6 +320,12 @@ function TeamView({ roomCode }: TeamViewProps) {
     win.__TEAMVIEW_RENDER_COUNT = (win.__TEAMVIEW_RENDER_COUNT ?? 0) + 1;
     (win as any).__TEAMVIEW_MARKER = teamMarker;
   }
+  
+  // Get window width with caching (debounced)
+  const windowWidth = useWindowWidth();
+  const isMobileSize = windowWidth < 480;
+  const isTabletSize = windowWidth < 768;
+  
   const [teamName, setTeamName] = useState('');
   const [avatarId, setAvatarId] = useState(() => AVATARS[0]?.id || '');
   const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(() => 0);
@@ -385,6 +397,13 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   
+  // Preload state-based avatar images when avatar is selected
+  useEffect(() => {
+    if (avatarId && hasStateBasedRendering(avatarId)) {
+      preloadAvatarStates(avatarId);
+    }
+  }, [avatarId]);
+  
   // Filter out avatars already chosen by other teams
   const availableAvatars = useMemo(() => {
     if (!teamStatus || teamStatus.length === 0) return AVATARS;
@@ -395,16 +414,15 @@ function TeamView({ roomCode }: TeamViewProps) {
     return AVATARS.filter(a => !usedIds.includes(a.id));
   }, [teamStatus, teamId]);
   
-  // Sync carousel index when avatar changes
+  // Sync carousel index when avatar changes (only if avatar was taken, not on manual selection)
   useEffect(() => {
-    const index = availableAvatars.findIndex(a => a.id === avatarId);
-    if (index >= 0) {
-      setAvatarCarouselIndex(index);
-    } else if (availableAvatars.length > 0 && !availableAvatars.find(a => a.id === avatarId)) {
-      // Current avatar was taken by another team, pick first available
+    // Only force back to position 0 if current avatar was taken by another team
+    if (avatarId && !availableAvatars.find(a => a.id === avatarId) && availableAvatars.length > 0) {
+      // Current avatar was taken, need to pick a new one and reset carousel
       setAvatarId(availableAvatars[0].id);
       setAvatarCarouselIndex(0);
     }
+    // Don't auto-sync carousel index on avatarId changes - user should stay in carousel position
   }, [avatarId, availableAvatars]);
   
   const savedIdRef = useRef<string | null>(null);
@@ -415,6 +433,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const intervalRef = useRef<number | null>(null);
   const recoveringRef = useRef(false);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const avatarStateTimersRef = useRef<number[]>([]);
   const [reconnectKey, setReconnectKey] = useState(0);
   function storageKey(suffix: string) {
     return `team:${roomCode}:${suffix}`;
@@ -507,6 +526,92 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, []);
 
+  const handleJoin = useCallback(async (useSavedId = false) => {
+    if (joinPending) return;
+    console.log('🔗 handleJoin called:', { useSavedId, avatarId, roomCode });
+    setJoinPending(true);
+    try {
+      const cleanName = teamName.trim();
+      if (!cleanName) {
+        showError(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
+        setJoinPending(false);
+        return;
+      }
+      if (!roomCode) {
+        showError(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
+        setJoinPending(false);
+        return;
+      }
+      const socket = socketRef.current;
+      const payload = await new Promise<{ team: Team }>((resolve, reject) => {
+        if (!socket) {
+          joinRoom(
+            roomCode,
+            cleanName,
+            useSavedId ? savedIdRef.current ?? undefined : undefined,
+            avatarId
+          )
+            .then((res) => resolve(res))
+            .catch(reject);
+          return;
+        }
+        socket.emit(
+          'team:join',
+          {
+            roomCode,
+            teamName: cleanName,
+            teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
+            avatarId
+          },
+          (resp?: { ok: boolean; error?: string; team?: Team }) => {
+            if (!resp?.ok || !resp?.team) {
+              reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
+            } else {
+              // Haptic feedback on successful join
+              if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+              }
+              resolve({ team: resp.team });
+            }
+          }
+        );
+      });
+      const data = payload;
+      setTeamId(data.team.id);
+      // Celebrate joining!
+      setAvatarMood('happy');
+      localStorage.setItem(storageKey('name'), cleanName);
+      localStorage.setItem(storageKey('id'), data.team.id);
+      if (data.team.avatarId || avatarId) {
+        const chosen = data.team.avatarId || avatarId;
+        setAvatarId(chosen);
+        localStorage.setItem(storageKey('avatar'), chosen);
+      }
+      savedIdRef.current = data.team.id;
+      try {
+        const langRes = await fetchLanguage(roomCode);
+        if (langRes?.language) {
+          // Team-View soll nur einsprachig sein, nicht 'both'
+          const singleLang = langRes.language === 'both' ? 'de' : langRes.language;
+          setLanguageState(singleLang);
+          localStorage.setItem('teamLanguage', singleLang);
+        }
+      } catch {
+        // ignore
+      }
+      await loadQuestion();
+      clearMessage();
+    } catch (error) {
+      showError(
+        language === 'de'
+          ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung prüfen.`
+          : `Join failed (${SOCKET_URL}). Please check room code/connection.`
+      );
+    } finally {
+      setJoinPending(false);
+    }
+  }, [joinPending, teamName, roomCode, avatarId, language, showError, clearMessage, setJoinPending, setTeamId, setAvatarMood, setAvatarId, storageKey, socketRef, setLanguageState]);
+
   // Load persisted team (for reconnects)
   useEffect(() => {
     const savedName = localStorage.getItem(storageKey('name'));
@@ -515,9 +620,25 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (savedName) setTeamName(savedName);
     if (savedId) {
       savedIdRef.current = savedId;
+      // Auto-rejoin if we have saved ID but no active teamId
+      if (!teamId && savedName && roomCode) {
+        handleJoin(true);
+      }
     }
     if (savedAvatar) setAvatarId(savedAvatar);
-  }, [roomCode]);
+  }, [roomCode, teamId, handleJoin, storageKey, setTeamName, setAvatarId]);
+
+  // Explicit rejoin trigger from parent (e.g., when user clicks "Zurück zu Team")
+  useEffect(() => {
+    if (rejoinTrigger && rejoinTrigger > 0) {
+      const savedName = localStorage.getItem(storageKey('name'));
+      const savedId = localStorage.getItem(storageKey('id'));
+      if (savedId && savedName && roomCode && !teamId) {
+        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName });
+        handleJoin(true);
+      }
+    }
+  }, [rejoinTrigger, roomCode, teamId, handleJoin, storageKey]);
 
   useEffect(() => {
     if (!AVATARS.some((avatar) => avatar.id === avatarId)) {
@@ -525,9 +646,11 @@ function TeamView({ roomCode }: TeamViewProps) {
     }
   }, [avatarId]);
 
+  // Cleanup avatar state timers on unmount
   useEffect(
     () => () => {
-      // Cleanup effects
+      avatarStateTimersRef.current.forEach(clearTimeout);
+      avatarStateTimersRef.current = [];
     },
     []
   );
@@ -645,6 +768,20 @@ function TeamView({ roomCode }: TeamViewProps) {
   function handleReconnect() {
     setConnectionStatus('connecting');
     setReconnectKey((v) => v + 1);
+  }
+
+  // Broadcast avatar state change to beamer
+  function broadcastAvatarState(state: 'walking' | 'looking' | 'happy' | 'sad') {
+    if (!teamId || !socketRef.current) {
+      console.log('⚠️ Cannot broadcast avatar state:', { hasTeamId: !!teamId, hasSocket: !!socketRef.current });
+      return;
+    }
+    console.log('📡 Broadcasting avatar state:', { roomCode, teamId, state });
+    socketRef.current.emit('team:avatarState', {
+      roomCode,
+      teamId,
+      state
+    });
   }
 
   function updateLanguage(lang: Language) {
@@ -896,6 +1033,31 @@ function TeamView({ roomCode }: TeamViewProps) {
     };
   }, [timerEndsAt]);
 
+  // Keyboard shortcuts for accessibility
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // ESC key: Leave team / Exit to join screen
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (teamId && phase === 'notJoined') {
+          handleLeaveTeam();
+        }
+      }
+      
+      // Enter key on join screen - trigger join if possible
+      if (phase === 'notJoined' && e.key === 'Enter') {
+        const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
+        if (!joinDisabled) {
+          e.preventDefault();
+          handleJoin(false);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [teamId, phase, roomCode, teamName, joinPending, avatarId, handleLeaveTeam, handleJoin]);
+
   function connectionStatusPill() {
     return (
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -979,92 +1141,6 @@ function TeamView({ roomCode }: TeamViewProps) {
       setPhase('waitingForQuestion');
       setResultMessage(null);
       setAllowReadyToggle(true);
-    }
-  };
-
-  const handleJoin = async (useSavedId = false) => {
-    if (joinPending) return;
-    console.log('🔗 handleJoin called:', { useSavedId, avatarId, roomCode });
-    setJoinPending(true);
-    try {
-      const cleanName = teamName.trim();
-      if (!cleanName) {
-        showError(language === 'de' ? 'Teamname fehlt.' : 'Team name required.');
-        setJoinPending(false);
-        return;
-      }
-      if (!roomCode) {
-        showError(language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.');
-        setJoinPending(false);
-        return;
-      }
-      const socket = socketRef.current;
-      const payload = await new Promise<{ team: Team }>((resolve, reject) => {
-        if (!socket) {
-          joinRoom(
-            roomCode,
-            cleanName,
-            useSavedId ? savedIdRef.current ?? undefined : undefined,
-            avatarId
-          )
-            .then((res) => resolve(res))
-            .catch(reject);
-          return;
-        }
-        socket.emit(
-          'team:join',
-          {
-            roomCode,
-            teamName: cleanName,
-            teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
-            avatarId
-          },
-          (resp?: { ok: boolean; error?: string; team?: Team }) => {
-            if (!resp?.ok || !resp?.team) {
-              reject(new Error(resp?.error || 'Beitritt fehlgeschlagen'));
-            } else {
-              // Haptic feedback on successful join
-              if ('vibrate' in navigator) {
-                navigator.vibrate(50);
-              }
-              resolve({ team: resp.team });
-            }
-          }
-        );
-      });
-      const data = payload;
-      setTeamId(data.team.id);
-      // Celebrate joining!
-      setAvatarMood('happy');
-      localStorage.setItem(storageKey('name'), cleanName);
-      localStorage.setItem(storageKey('id'), data.team.id);
-      if (data.team.avatarId || avatarId) {
-        const chosen = data.team.avatarId || avatarId;
-        setAvatarId(chosen);
-        localStorage.setItem(storageKey('avatar'), chosen);
-      }
-      savedIdRef.current = data.team.id;
-      try {
-        const langRes = await fetchLanguage(roomCode);
-        if (langRes?.language) {
-          // Team-View soll nur einsprachig sein, nicht 'both'
-          const singleLang = langRes.language === 'both' ? 'de' : langRes.language;
-          setLanguageState(singleLang);
-          localStorage.setItem('teamLanguage', singleLang);
-        }
-      } catch {
-        // ignore
-      }
-      await loadQuestion();
-      clearMessage();
-    } catch (error) {
-      showError(
-        language === 'de'
-          ? `Beitritt fehlgeschlagen (${SOCKET_URL}). Bitte Raumcode/Verbindung prüfen.`
-          : `Join failed (${SOCKET_URL}). Please check room code/connection.`
-      );
-    } finally {
-      setJoinPending(false);
     }
   };
 
@@ -1276,6 +1352,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           justifyContent: 'center',
           gap: 4
         }}
+        aria-label={canAnswer ? 'Submit your answer' : 'Submit button disabled - waiting for answer to be ready'}
+        aria-disabled={!canAnswer}
         onClick={handleSubmit}
         disabled={!canAnswer}
       >
@@ -2197,7 +2275,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           )}
           {isLastTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              {language === 'de' ? 'Du bist letzter Platz: waehle 1 Kategorie' : 'You are last: pick 1 category'}
+              {language === 'de' ? 'Du bist letzter Platz: wähle 1 Kategorie' : 'You are last: pick 1 category'}
             </div>
           )}
           {!isTopTeam && !isLastTeam && (
@@ -2286,7 +2364,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(248,113,113,0.2), rgba(239,68,68,0.15))', border: '1px solid rgba(248,113,113,0.5)', color: '#fecaca'}}>❌ {language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de'
-                ? 'Du bist fuer diese Runde raus.'
+                ? 'Du bist für diese Runde raus.'
                 : language === 'both'
                 ? 'Du bist raus / You are out for this round.'
                 : 'You are out for this round.'}
@@ -2560,7 +2638,7 @@ function TeamView({ roomCode }: TeamViewProps) {
           {canShowBan && (
             <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
               {language === 'de'
-                ? `✓ Du bist Platz 1: bannen Sie ${bansRemaining} Kategorien (${banCount}/${banLimit} erledigt)`
+                ? `✓ Du bist Platz 1: banne ${bansRemaining} Kategorien (${banCount}/${banLimit} erledigt)`
                 : `✓ You are top: ban ${bansRemaining} categories (${banCount}/${banLimit} done)`}
             </div>
           )}
@@ -2784,6 +2862,29 @@ function TeamView({ roomCode }: TeamViewProps) {
     if (gameState === 'BLITZ_PAUSE') {
       return renderWaiting(language === 'de' ? 'Pause - gleich geht es weiter.' : 'Pause - back soon.', '');
     }
+    if (phase === 'SET_END') {
+      return (
+        <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
+          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>
+            {language === 'de' ? 'Runde beendet!' : 'Round complete!'}
+          </div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            {language === 'de' ? 'Ergebnisse werden ausgewertet...' : 'Evaluating results...'}
+          </div>
+        </div>
+      );
+    }
+    if (phase === 'DONE' || !phase || phase === 'IDLE') {
+      return renderWaiting(
+        language === 'de' ? 'Warten auf nächste Runde...' : 'Waiting for next round...', 
+        ''
+      );
+    }
+    if (phase !== 'PLAYING' && phase !== 'DISPLAYING') {
+      // Fallback für unbekannte Phasen
+      return renderWaiting(language === 'de' ? 'Blitz Battle...' : 'Blitz battle...', '');
+    }
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
@@ -2919,7 +3020,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             >
               {blitzSubmitted
                 ? language === 'de'
-                  ? 'Eingeloggt'
+                  ? 'Eingereicht'
                   : 'Submitted'
                 : language === 'de'
                 ? 'Antworten senden'
@@ -3007,10 +3108,21 @@ function TeamView({ roomCode }: TeamViewProps) {
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
       <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
       <p style={mutedText}>Gib deinen Teamnamen ein, wähle einen Begleiter für euer Team, bestätige und dann gehts los!</p>
+      
+      {/* Hidden hints for screen readers */}
+      <div id="team-name-hint" style={{ display: 'none' }}>
+        Enter your team name (up to 24 characters). Press Enter to proceed or use the Join button below.
+      </div>
+      <div id="avatar-carousel-hint" style={{ display: 'none' }}>
+        Swipe left or right to change avatars. Click on an avatar to select it as your team companion.
+      </div>
+      
       <input
         value={teamName}
         onChange={(e) => setTeamName(e.target.value)}
         placeholder={t('joinPlaceholder')}
+        aria-label="Team name input"
+        aria-describedby="team-name-hint"
         className="team-answer-input team-join-input"
         style={{ 
           ...inputStyle, 
@@ -3086,9 +3198,9 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div
           style={{
             textAlign: 'center',
-            fontSize: 12,
+            fontSize: isMobileSize ? 11 : 12,
             color: 'rgba(255,255,255,0.5)',
-            marginBottom: 8,
+            marginBottom: isMobileSize ? 6 : 8,
             fontStyle: 'italic'
           }}
         >
@@ -3101,10 +3213,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             position: 'relative',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: '30px 0',
+            padding: isMobileSize ? '20px 0' : '30px 0',
             overflow: 'hidden',
-            marginBottom: 20,
-            height: 240,
+            marginBottom: isMobileSize ? 12 : 20,
+            height: isMobileSize ? 280 : 240,
             touchAction: 'pan-y',
             userSelect: 'none'
           }}
@@ -3124,12 +3236,12 @@ function TeamView({ roomCode }: TeamViewProps) {
                 newIndex = (avatarCarouselIndex + 1) % availableAvatars.length;
               } else {
                 // Swiped right - prev avatar
-                newIndex = (avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length;
+                newIndex = (avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length;
               }
               setAvatarCarouselIndex(newIndex);
-              // Auto-select the swiped avatar
-              const selectedAvatar = AVATARS[newIndex];
-              if (selectedAvatar) {
+              // Auto-select the swiped avatar (only if different)
+              const selectedAvatar = availableAvatars[newIndex];
+              if (selectedAvatar && selectedAvatar.id !== avatarId) {
                 setAvatarId(selectedAvatar.id);
                 if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
               }
@@ -3148,7 +3260,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 opacity: 0.4,
                 filter: 'blur(3px)',
                 transition: 'all 0.3s ease',
-                display: window.innerWidth < 768 ? 'none' : 'flex',
+                display: isTabletSize ? 'none' : 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'center'
               }}
@@ -3172,25 +3284,47 @@ function TeamView({ roomCode }: TeamViewProps) {
                 left: '50%',
                 bottom: 0,
                 transform: 'translateX(-50%)',
-                width: 160,
-                height: 200,
+                width: isMobileSize ? 180 : 160,
+                height: isMobileSize ? 240 : 200,
                 zIndex: 10,
                 transition: 'all 0.3s ease'
               }}
             >
               <button
                 type="button"
+                aria-label={`Select ${availableAvatars[avatarCarouselIndex]?.name || 'avatar'} as team companion`}
+                aria-describedby="avatar-carousel-hint"
                 onClick={() => {
                   const selectedAvatar = availableAvatars[avatarCarouselIndex];
                   if (selectedAvatar) {
-                    setAvatarId(selectedAvatar.id);
-                    if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
-                    // Trigger happy animation on manual selection
-                    setAvatarMood('happy');
-                    // Igel state: looking on tap
-                    if (selectedAvatar.id === 'avatar1') {
+                    // Only update avatar ID if it's different (prevents carousel jump on tap)
+                    if (selectedAvatar.id !== avatarId) {
+                      setAvatarId(selectedAvatar.id);
+                      if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
+                      // Trigger happy animation on manual selection
+                      setAvatarMood('happy');
+                    }
+                    
+                    // State-based avatar: looking on tap (always trigger, even if same avatar)
+                    if (hasStateBasedRendering(selectedAvatar.id)) {
                       setIgelState('looking');
-                      setTimeout(() => setIgelState('happy'), 600);
+                      broadcastAvatarState('looking');
+                      
+                      // Clear existing timers
+                      avatarStateTimersRef.current.forEach(clearTimeout);
+                      avatarStateTimersRef.current = [];
+                      
+                      const timer1 = window.setTimeout(() => {
+                        setIgelState('happy');
+                        broadcastAvatarState('happy');
+                      }, 600);
+                      const timer2 = window.setTimeout(() => {
+                        setIgelState('walking');
+                        broadcastAvatarState('walking');
+                      }, 1800);
+                      
+                      // Store for cleanup
+                      avatarStateTimersRef.current.push(timer1, timer2);
                     }
                   }
                   // Trigger tap animation
@@ -3240,7 +3374,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                 opacity: 0.4,
                 filter: 'blur(3px)',
                 transition: 'all 0.3s ease',
-                display: window.innerWidth < 768 ? 'none' : 'flex',
+                display: isTabletSize ? 'none' : 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'center'
               }}
@@ -3257,8 +3391,9 @@ function TeamView({ roomCode }: TeamViewProps) {
           )}
         </div>
       </div>
-      <PrimaryButton
+      <button
         style={{
+          ...primaryButton,
           marginTop: 12,
           opacity: joinDisabled ? 0.5 : 1,
           cursor: joinDisabled ? 'not-allowed' : 'pointer',
@@ -3266,6 +3401,8 @@ function TeamView({ roomCode }: TeamViewProps) {
           transform: 'scale(1)',
           boxShadow: joinDisabled ? 'none' : '0 8px 20px rgba(99,229,255,0.3)'
         }}
+        aria-label={joinPending ? 'Joining team...' : 'Join quiz with team name and avatar'}
+        aria-disabled={joinDisabled}
         onMouseEnter={(e) => {
           if (!joinDisabled) {
             (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)';
@@ -3282,7 +3419,7 @@ function TeamView({ roomCode }: TeamViewProps) {
         disabled={joinDisabled}
       >
         {joinPending ? (language === 'de' ? 'Beitreten...' : 'Joining...') : t('joinButton')}
-      </PrimaryButton>
+      </button>
       {!roomCode && (
         <div className="message-state message-error">
           {language === 'de' ? 'Roomcode fehlt.' : 'Room code missing.'}
@@ -3300,6 +3437,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               backdropFilter: 'blur(30px)',
               minHeight: 44
             }}
+            aria-label={`Resume team ${teamName || ''}. Continue with previously saved credentials`}
             onClick={() => handleJoin(true)}
           >
             {language === 'de'
@@ -3317,6 +3455,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               minHeight: 38,
               fontSize: 14
             }}
+            aria-label="Leave current team and start a new team"
             onClick={handleLeaveTeam}
           >
             {language === 'de' ? 'Neues Team starten' : 'Start new team'}
@@ -3593,12 +3732,27 @@ function TeamView({ roomCode }: TeamViewProps) {
                 cursor: 'pointer'
               }}
               onClick={() => {
-                // Igel special behavior on click
-                if (avatarId === 'avatar1') {
+                // State-based avatar special behavior on click
+                if (hasStateBasedRendering(avatarId)) {
                   if (igelState === 'walking') {
                     setIgelState('looking');
-                    setTimeout(() => setIgelState('happy'), 600);
-                    setTimeout(() => setIgelState('walking'), 1200);
+                    broadcastAvatarState('looking');
+                    
+                    // Clear existing timers
+                    avatarStateTimersRef.current.forEach(clearTimeout);
+                    avatarStateTimersRef.current = [];
+                    
+                    const timer1 = window.setTimeout(() => {
+                      setIgelState('happy');
+                      broadcastAvatarState('happy');
+                    }, 600);
+                    const timer2 = window.setTimeout(() => {
+                      setIgelState('walking');
+                      broadcastAvatarState('walking');
+                    }, 1200);
+                    
+                    // Store for cleanup
+                    avatarStateTimersRef.current.push(timer1, timer2);
                   }
                 }
               }}

@@ -13,7 +13,7 @@ class TeamBoundary extends React.Component<{ children: React.ReactNode }, Bounda
   state: BoundaryState = { error: null, componentStack: null };
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    this.setState({ error, componentStack: info.componentStack });
+    this.setState({ error, componentStack: info.componentStack || null });
     console.error('Team UI crashed', error, info.componentStack);
   }
 
@@ -82,6 +82,7 @@ const TeamPage = () => {
   });
   const [hideFallback, setHideFallback] = useState(false);
   const [lobbyModalOpen, setLobbyModalOpen] = useState(false);
+  const [rejoinTrigger, setRejoinTrigger] = useState(0);
   const [fallbackName, setFallbackName] = useState('');
   const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
   const [fallbackJoined, setFallbackJoined] = useState(false);
@@ -122,7 +123,7 @@ const TeamPage = () => {
     const queryRoom = new URLSearchParams(location.search).get('roomCode');
     if (!queryRoom) return;
     const normalized = queryRoom.toUpperCase();
-    setRoomCode((prev) => (prev === normalized ? prev : normalized));
+    setRoomCode((prev: string) => (prev === normalized ? prev : normalized));
     if (typeof window !== 'undefined') {
       localStorage.setItem('teamRoomCode', normalized);
     }
@@ -206,7 +207,10 @@ const TeamPage = () => {
   
   const handleRejoinTeam = () => {
     // Team already exists in localStorage, just hide modal to show TeamView
+    // TeamView will auto-reconnect with saved ID via its useEffect
     setLobbyModalOpen(false);
+    // Trigger rejoin in TeamView by incrementing counter
+    setRejoinTrigger(prev => prev + 1);
   };
   
   const handleNewTeam = () => {
@@ -486,7 +490,7 @@ const TeamPage = () => {
             </div>
           </div>
         )}
-        <TeamView roomCode={roomCode || ''} />
+        <TeamView roomCode={roomCode || ''} rejoinTrigger={rejoinTrigger} />
       </>
     </TeamBoundary>
   );

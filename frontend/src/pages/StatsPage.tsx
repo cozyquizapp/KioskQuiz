@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchLeaderboard, fetchQuestionStat } from '../api';
 
 type RunEntry = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
+type AllTimeTeamStat = { teamName: string; wins: number; games: number; totalScore: number; avgScore: number | null };
 
 const card: React.CSSProperties = {
   background: 'rgba(15,23,42,0.6)',
@@ -24,6 +25,7 @@ const inputStyle: React.CSSProperties = {
 
 const StatsPage: React.FC = () => {
   const [runs, setRuns] = useState<RunEntry[]>([]);
+  const [allTime, setAllTime] = useState<{ topTeams: AllTimeTeamStat[]; funnyAnswers: any[] } | null>(null);
   const [loading, setLoading] = useState(false);
   const [questionId, setQuestionId] = useState('');
   const [questionStat, setQuestionStat] = useState<any | null>(null);
@@ -32,7 +34,10 @@ const StatsPage: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     fetchLeaderboard()
-      .then((res) => setRuns(res.runs || []))
+      .then((res) => {
+        setRuns(res.runs || []);
+        setAllTime(res.allTime || null);
+      })
       .catch(() => setError('Leaderboard konnte nicht geladen werden'))
       .finally(() => setLoading(false));
   }, []);
@@ -65,6 +70,61 @@ const StatsPage: React.FC = () => {
           </div>
           <h1 style={{ margin: '6px 0 4px' }}>Quiz Auswertung</h1>
           <p style={{ margin: 0, color: '#94a3b8' }}>Letzte Läufe und Antwortverteilungen pro Frage.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 12, alignItems: 'start' }}>
+          <div style={card} className="card-tilt">
+            <div style={{ fontWeight: 800, marginBottom: 10 }}>🏆 AllTime Top Teams</div>
+            {loading && <div style={{ color: '#cbd5e1' }}>Lädt ...</div>}
+            {!loading && !allTime?.topTeams?.length && <div style={{ color: '#94a3b8' }}>Keine AllTime-Daten.</div>}
+            {!loading && allTime?.topTeams && allTime.topTeams.map((team, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.04)',
+                  marginBottom: 8,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>#{idx + 1} {team.teamName}</div>
+                  <div style={{ color: '#94a3b8', fontSize: 12 }}>
+                    {team.wins} Siege · {team.games} Spiele {team.avgScore !== null ? `· Ø ${team.avgScore} Pkt` : ''}
+                  </div>
+                </div>
+                <div style={{ fontWeight: 800, color: '#c7f9cc', fontSize: 18 }}>
+                  {team.wins}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={card} className="card-tilt">
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>😂 AllTime Funny Answers</div>
+            {loading && <div style={{ color: '#cbd5e1', fontSize: 13 }}>Lädt ...</div>}
+            {!loading && !allTime?.funnyAnswers?.length && <div style={{ color: '#94a3b8', fontSize: 13 }}>Keine Einträge.</div>}
+            {!loading && allTime?.funnyAnswers && allTime.funnyAnswers.slice(0, 5).map((entry, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: 8,
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                  marginBottom: 6,
+                  fontSize: 12
+                }}
+              >
+                <div style={{ fontWeight: 700, color: '#fbbf24' }}>{entry.teamName}</div>
+                <div style={{ color: '#cbd5e1', marginTop: 2 }}>"{entry.answer}"</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 12, alignItems: 'start' }}>

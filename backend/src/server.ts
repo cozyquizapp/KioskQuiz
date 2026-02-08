@@ -5711,6 +5711,33 @@ io.on('connection', (socket: Socket) => {
     }
   );
 
+  // Avatar state synchronization for beamer display
+  socket.on(
+    'team:avatarState',
+    (payload: { roomCode?: string; teamId?: string; state?: 'walking' | 'looking' | 'happy' | 'sad' }) => {
+      try {
+        const { roomCode, teamId, state } = payload || {};
+        const resolved = normalizeRoomCode(roomCode);
+        if (!resolved || !teamId || !state) {
+          console.log('⚠️ Avatar state sync - missing data:', { resolved, teamId, state });
+          return;
+        }
+        
+        console.log('🎨 Backend: Broadcasting avatar state', { roomCode: resolved, teamId, state });
+        
+        // Broadcast avatar state to all clients in the room (especially beamer)
+        io.to(resolved).emit('team:avatarStateChanged', {
+          teamId,
+          state,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        // Silent fail - not critical
+        if (DEBUG) console.error('Avatar state sync error:', err);
+      }
+    }
+  );
+
   const withRoom = (
     roomCode: string | undefined,
     ack: unknown,
@@ -6150,13 +6177,44 @@ io.on('connection', (socket: Socket) => {
       if (!code) throw new Error('roomCode fehlt');
       const room = rooms.get(code);
       if (!room) throw new Error('Room nicht gefunden');
+      
+      // Save final scores to AllTime stats
+      const scores: Record<string, number> = {};
+      const winners: string[] = [];
+      let maxScore = -1;
+      
+      Object.values(room.teams).forEach((team) => {
+        const score = team.score ?? 0;
+        scores[team.name] = score;
+        if (score > maxScore) {
+          maxScore = score;
+          winners.length = 0;
+          winners.push(team.name);
+        } else if (score === maxScore && maxScore > -1) {
+          winners.push(team.name);
+        }
+      });
+      
+      // Only save if teams were involved
+      if (Object.keys(room.teams).length > 0) {
+        const runEntry: RunEntry = {
+          quizId: room.quizId || 'unknown',
+          date: new Date().toISOString(),
+          winners: winners.length > 0 ? winners : Object.keys(room.teams).map(id => room.teams[id].name),
+          scores
+        };
+        statsState.runs.push(runEntry);
+        if (statsState.runs.length > 100) statsState.runs = statsState.runs.slice(-100);
+        persistStats();
+      }
+      
       // Broadcast to all connected clients in this room that quiz has ended
       io.to(code).emit('quizEnded', { reason: 'moderator-ended' });
       // Disconnect all clients from this room
       io.to(code).disconnectSockets(true);
       // Delete the room from server
       rooms.delete(code);
-      log(code, 'Quiz beendet - Room gelöscht');
+      log(code, 'Quiz beendet - Room gelöscht. Final scores gespeichert.');
       respond(ack, { ok: true });
     } catch (err) {
       respond(ack, { ok: false, error: (err as Error).message });

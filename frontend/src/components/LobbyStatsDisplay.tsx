@@ -92,6 +92,19 @@ export const LobbyStatsDisplay: React.FC<LobbyStatsDisplayProps> = ({ roomCode, 
   );
   const hasAllTime = Boolean(allTime && (allTime.topTeams.length > 0 || allTime.funnyAnswers.length > 0));
 
+  // Debug: Log when data changes
+  useEffect(() => {
+    console.log('📊 LobbyStatsDisplay:', { 
+      hasLobbyStats, 
+      hasAllTime,
+      fastestCount: stats?.fastestAnswers?.length ?? 0,
+      funnyCount: stats?.funnyAnswers?.length ?? 0,
+      wrongCount: stats?.commonWrongAnswers?.length ?? 0,
+      topTeamsCount: allTime?.topTeams?.length ?? 0,
+      allTimeFunnyCount: allTime?.funnyAnswers?.length ?? 0
+    });
+  }, [stats, allTime, hasLobbyStats, hasAllTime]);
+
   if (!hasLobbyStats && !hasAllTime) {
     return null;
   }

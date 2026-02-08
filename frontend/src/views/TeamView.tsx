@@ -287,6 +287,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   }
   const [teamName, setTeamName] = useState('');
   const [avatarId, setAvatarId] = useState(() => AVATARS[0]?.id || '');
+  const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(0);
   const [joinPending, setJoinPending] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -2988,142 +2989,153 @@ function TeamView({ roomCode }: TeamViewProps) {
             {t('avatarRandom')}
           </button>
         </div>
-        <div style={{ ...mutedText, marginBottom: 8 }}>{t('avatarHint')}</div>
+        <div style={{ ...mutedText, marginBottom: 16 }}>{t('avatarHint')}</div>
+        
+        {/* 3D Avatar Carousel */}
         <div
           style={{
             position: 'relative',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: '20px 12px',
+            padding: '40px 0',
             overflow: 'hidden',
-            marginBottom: 12,
-            minHeight: 200,
-            display: 'flex',
-            flexDirection: 'column'
+            marginBottom: 20,
+            height: 280,
+            touchAction: 'pan-y',
+            userSelect: 'none'
+          }}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            (e.currentTarget as any).__touchStart = touch.clientX;
+          }}
+          onTouchEnd={(e) => {
+            const touchStart = (e.currentTarget as any).__touchStart;
+            const touchEnd = e.changedTouches[0]?.clientX;
+            if (!touchStart || !touchEnd) return;
+            
+            const diff = touchStart - touchEnd;
+            if (Math.abs(diff) > 50) {
+              if (diff > 0) {
+                // Swiped left - next avatar
+                setAvatarCarouselIndex((i) => (i + 1) % AVATARS.length);
+              } else {
+                // Swiped right - prev avatar
+                setAvatarCarouselIndex((i) => (i - 1 + AVATARS.length) % AVATARS.length);
+              }
+            }
           }}
         >
+          {/* Left Preview */}
           <div
             style={{
-              display: 'flex',
-              gap: 16,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              scrollSnapType: 'x mandatory',
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              width: '100%',
-              flex: 1,
-              minHeight: 160,
-              WebkitOverflowScrollingTouchProperty: true
+              position: 'absolute',
+              left: '8%',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 100,
+              height: 140,
+              opacity: 0.4,
+              filter: 'blur(3px)',
+              transition: 'all 0.3s ease'
             }}
-            className="avatar-carousel"
           >
-            {AVATARS.map((avatar) => {
-              const selected = avatarId === avatar.id;
-              const isUsed = usedAvatarIds.has(avatar.id);
-              const isDisabled = isUsed && !selected;
-              return (
-                <button
-                  key={avatar.id}
-                  type="button"
-                  onClick={() => {
-                    if (isDisabled) return;
-                    setAvatarId(avatar.id);
-                    if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
-                  }}
+            <AvatarMedia
+              avatar={AVATARS[(avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length]}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+
+          {/* Center Main Avatar */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 160,
+              height: 220,
+              zIndex: 10,
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                const selectedAvatar = AVATARS[avatarCarouselIndex];
+                if (selectedAvatar) {
+                  setAvatarId(selectedAvatar.id);
+                  if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
+                }
+              }}
+              style={{
+                width: '100%',
+                height: '100%',
+                padding: 12,
+                borderRadius: 20,
+                border: `4px solid ${accentColor}`,
+                background: 'rgba(56,189,248,0.2)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: `0 0 40px ${accentColor}88, 0 10px 30px rgba(0,0,0,0.4)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative'
+              }}
+            >
+              <AvatarMedia
+                avatar={AVATARS[avatarCarouselIndex]}
+                style={{
+                  width: '90%',
+                  height: `${getAvatarSize(AVATARS[avatarCarouselIndex].id) * 100}%`,
+                  objectFit: 'contain'
+                }}
+              />
+              {avatarId === AVATARS[avatarCarouselIndex].id && (
+                <div
                   style={{
-                    minWidth: 140,
-                    width: 140,
-                    maxWidth: 140,
-                    height: 140,
-                    padding: 8,
-                    borderRadius: 16,
-                    border: selected ? `4px solid ${accentColor}` : isDisabled ? '3px solid rgba(255,100,100,0.4)' : '3px solid rgba(255,255,255,0.15)',
-                    background: selected ? 'rgba(56,189,248,0.2)' : isDisabled ? 'rgba(30,30,30,0.7)' : 'rgba(15,23,42,0.8)',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    scrollSnapAlign: 'center',
-                    scrollSnapStop: 'always',
-                    boxShadow: selected ? `0 0 30px ${accentColor}77, 0 10px 25px rgba(0,0,0,0.3)` : isDisabled ? 'none' : '0 8px 20px rgba(0,0,0,0.25)',
-                    opacity: isDisabled ? 0.5 : 1,
-                    position: 'relative',
-                    flexShrink: 0,
-                    flex: '0 0 auto',
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    border: '2px solid white',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transform: selected ? 'scale(1.05)' : 'scale(0.95)',
-                    filter: isDisabled ? 'grayscale(1)' : 'none'
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    color: 'white'
                   }}
-                  disabled={isDisabled}
-                  aria-label={`Avatar ${avatar.id}`}
-                  title={isDisabled ? (language === 'de' ? 'Bereits vergeben' : 'Already taken') : ''}
                 >
-                  {isDisabled && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      fontSize: 50,
-                      fontWeight: 900,
-                      color: '#ef4444',
-                      textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                      zIndex: 10,
-                      pointerEvents: 'none'
-                    }}>
-                      ✕
-                    </div>
-                  )}
-                  <AvatarMedia
-                    avatar={avatar}
-                    style={{ 
-                      width: '90%', 
-                      height: `${getAvatarSize(avatar.id) * 100}%`, 
-                      display: 'block',
-                      objectFit: 'contain'
-                    }}
-                  />
-                </button>
-              );
-            })}
+                  ✓
+                </div>
+              )}
+            </button>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: 6, 
-            marginTop: 12,
-            padding: '0 16px'
-          }}>
-            {AVATARS.map((avatar) => (
-              <div
-                key={avatar.id}
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: avatarId === avatar.id ? accentColor : 'rgba(255,255,255,0.2)',
-                  transition: 'all 0.3s ease'
-                }}
-              />
-            ))}
+
+          {/* Right Preview */}
+          <div
+            style={{
+              position: 'absolute',
+              right: '8%',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 100,
+              height: 140,
+              opacity: 0.4,
+              filter: 'blur(3px)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <AvatarMedia
+              avatar={AVATARS[(avatarCarouselIndex + 1) % AVATARS.length]}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
         </div>
-        <style>{`
-          .avatar-carousel {
-            scroll-behavior: smooth;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-          .avatar-carousel::-webkit-scrollbar {
-            display: none;
-          }
-          .avatar-carousel::-webkit-scrollbar-track {
-            display: none;
-          }
-        `}</style>
       </div>
       <PrimaryButton
         style={{

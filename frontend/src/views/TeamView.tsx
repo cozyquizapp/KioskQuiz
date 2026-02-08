@@ -956,6 +956,7 @@ function TeamView({ roomCode }: TeamViewProps) {
 
   const handleJoin = async (useSavedId = false) => {
     if (joinPending) return;
+    console.log('🔗 handleJoin called:', { useSavedId, avatarId, roomCode });
     setJoinPending(true);
     try {
       const cleanName = teamName.trim();

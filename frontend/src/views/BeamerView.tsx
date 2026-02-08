@@ -729,9 +729,11 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setTimerDurationMs(null);
     });
     const onStateUpdate = (payload: StateUpdatePayload) => {
+      console.log('📊 stateUpdate:', { state: payload.state, hasScores: !!payload.scores?.length, scoreCnt: payload.scores?.length });
       setGameState(payload.state);
       setScreen(mapStateToScreenState(payload.state));
       if (payload.scores?.length) {
+        console.log('📊 Updating teams from scores:', payload.scores);
         setTeams(
           payload.scores.map((entry) => ({
             id: entry.id,
@@ -816,6 +818,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     socket.on('teamsReady', ({ teams: tTeams }: { teams: Team[] }) => {
+      console.log('📍 teamsReady event received:', tTeams);
       setTeams(tTeams ?? []);
     });
 

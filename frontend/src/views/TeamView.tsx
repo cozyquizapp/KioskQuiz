@@ -29,6 +29,7 @@ import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
 import { AVATARS } from '../config/avatars';
 import type { AvatarOption } from '../config/avatars';
+import { getAvatarSize } from '../config/avatarSizes';
 import {
   pageStyleTeam,
   contentShell,
@@ -3015,8 +3016,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               padding: '0 calc(50% - 80px)',
               width: '100%',
               flex: 1,
-              minHeight: '160px',
-              border: '2px solid rgba(255,200,100,0.5)'
+              minHeight: '160px'
             }}
             className="avatar-carousel"
           >
@@ -3078,8 +3078,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                   <AvatarMedia
                     avatar={avatar}
                     style={{ 
-                      width: '85%', 
-                      height: '85%', 
+                      width: '90%', 
+                      height: `${getAvatarSize(avatar.id) * 100}%`, 
                       display: 'block',
                       objectFit: 'contain'
                     }}

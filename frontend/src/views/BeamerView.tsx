@@ -271,6 +271,73 @@ const pillRule: React.CSSProperties = {
   gap: 6
 };
 
+// Separate component for walking avatars with position tracking
+const BeamerWalkingAvatar: React.FC<{
+  teamId: string;
+  teamName: string;
+  avatar: AvatarOption;
+  currentState: 'walking' | 'looking' | 'happy' | 'sad';
+  imageSrc: string;
+  duration: number;
+  walkIndex: number;
+}> = ({ teamId, teamName, avatar, currentState, imageSrc, duration, walkIndex }) => {
+  const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prevState = useRef<string>(currentState);
+
+  useEffect(() => {
+    // When switching away from walking, capture current position
+    if (currentState !== 'walking' && prevState.current === 'walking') {
+      const el = containerRef.current;
+      if (el) {
+        const computed = window.getComputedStyle(el);
+        const currentLeft = computed.left;
+        setFrozenLeft(currentLeft);
+      }
+    }
+    // When switching back to walking, clear frozen position    
+    if (currentState === 'walking' && prevState.current !== 'walking') {
+      setFrozenLeft(null);
+    }
+    prevState.current = currentState;
+  }, [currentState]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: frozenLeft || 0,
+        width: 100,
+        height: 100,
+        animation: currentState === 'walking' ? `beamer-walk-${walkIndex} ${duration}s linear infinite` : 'none',
+        pointerEvents: 'none',
+        zIndex: 50
+      }}
+    >
+      <img
+        src={imageSrc}
+        alt={teamName}
+        loading="eager"
+        style={{
+          width: '100px',
+          height: '100px',
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+        }}
+        onError={(e) => {
+          console.error(`Failed to load avatar image: ${imageSrc}`, e);
+          if (e.currentTarget.src !== avatar.dataUri) {
+            e.currentTarget.src = avatar.dataUri;
+          }
+        }}
+        onLoad={() => console.log(`Avatar loaded: ${imageSrc}`)}
+      />
+    </div>
+  );
+};
+
 const BeamerView = ({ roomCode }: BeamerProps) => {
   const draftTheme = loadPlayDraft()?.theme;
   const slotSpinMs = (draftTheme as any)?.slotSpinMs ?? 2400;
@@ -3349,38 +3416,16 @@ useEffect(() => {
         const duration = Math.round(baseSpeed + speedVariation + (index * 12)); // 120-182s range
         
         return (
-          <div
+          <BeamerWalkingAvatar
             key={`walking-${team.id}`}
-            style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              width: 100,
-              height: 100,
-              animation: currentState === 'walking' ? `beamer-walk-${index % 3} ${duration}s linear infinite` : 'none',
-              pointerEvents: 'none',
-              zIndex: 50
-            }}
-          >
-            <img
-              src={imageSrc}
-              alt={team.name}
-              loading="eager"
-              style={{
-                width: '100px',
-                height: '100px',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
-              }}
-              onError={(e) => {
-                console.error(`Failed to load avatar image: ${imageSrc}`, e);
-                if (e.currentTarget.src !== avatar.dataUri) {
-                  e.currentTarget.src = avatar.dataUri;
-                }
-              }}
-              onLoad={() => console.log(`Avatar loaded: ${imageSrc}`)}
-            />
-          </div>
+            teamId={team.id}
+            teamName={team.name}
+            avatar={avatar}
+            currentState={currentState}
+            imageSrc={imageSrc}
+            duration={duration}
+            walkIndex={index % 3}
+          />
         );
       })}
       

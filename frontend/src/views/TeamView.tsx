@@ -226,6 +226,8 @@ const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatar
 const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: 'walking' | 'looking' | 'happy' | 'sad' }> = React.memo(({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
   const [currentMood, setCurrentMood] = useState(mood);
   const [currentIgelState, setCurrentIgelState] = useState(igelState);
+  const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setCurrentMood(mood);
@@ -240,8 +242,21 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   }, [mood]);
 
   useEffect(() => {
+    // When switching away from walking, capture current position
+    if (igelState !== 'walking' && currentIgelState === 'walking') {
+      const el = containerRef.current;
+      if (el) {
+        const computed = window.getComputedStyle(el);
+        const currentLeft = computed.left;
+        setFrozenLeft(currentLeft);
+      }
+    }
+    // When switching back to walking, clear frozen position
+    if (igelState === 'walking' && currentIgelState !== 'walking') {
+      setFrozenLeft(null);
+    }
     setCurrentIgelState(igelState);
-  }, [igelState]);
+  }, [igelState, currentIgelState]);
 
   const getAnimationClass = () => {
     if (onTap) return 'animal-tap';
@@ -271,12 +286,14 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     
     return (
       <div 
+        ref={containerRef}
         className={`animated-animal ${shouldApplyAnimation ? getAnimationClass() : ''}`}
         style={{
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
-          position: 'relative',
+          position: 'absolute',
+          left: frozenLeft || undefined,
           transformOrigin: 'bottom center',
           transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth transition for state-based avatars
         }}

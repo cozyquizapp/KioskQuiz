@@ -20,5 +20,8 @@ export const AVATARS: AvatarOption[] = [
   { id: 'avatar9', name: '', svg: '/avatars/animals/avatar9.svg', dataUri: '/avatars/animals/avatar9.svg', isVideo: false },
   { id: 'avatar10', name: '', svg: '/avatars/animals/avatar10.svg', dataUri: '/avatars/animals/avatar10.svg', isVideo: false },
   { id: 'avatar11', name: '', svg: '/avatars/animals/avatar11.svg', dataUri: '/avatars/animals/avatar11.svg', isVideo: false },
-  { id: 'avatar12', name: '', svg: '/avatars/animals/avatar12.svg', dataUri: '/avatars/animals/avatar12.svg', isVideo: false }
+  { id: 'avatar12', name: '', svg: '/avatars/animals/avatar12.svg', dataUri: '/avatars/animals/avatar12.svg', isVideo: false },
+  { id: 'avatar13', name: '', svg: '/avatars/animals/avatar13.svg', dataUri: '/avatars/animals/avatar13.svg', isVideo: false },
+  { id: 'avatar14', name: '', svg: '/avatars/animals/avatar14.svg', dataUri: '/avatars/animals/avatar14.svg', isVideo: false },
+  { id: 'avatar15', name: '', svg: '/avatars/animals/avatar15.svg', dataUri: '/avatars/animals/avatar15.svg', isVideo: false }
 ];

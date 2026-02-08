@@ -1556,7 +1556,40 @@ useEffect(() => {
             </div>
           </div>
           {showQr && teamJoinQr && (
-            <div className="cozyLobbyQrPane">
+            <div className="cozyLobbyQrPane" style={{ position: 'relative' }}>
+              {/* Walking Animals on Top Border */}
+              {teams.filter(t => t.joined).map((team, index) => {
+                const avatar = AVATARS.find(a => a.id === team.avatarId);
+                if (!avatar) return null;
+                
+                return (
+                  <div
+                    key={team.id}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: 50,
+                      height: 50,
+                      animation: `beamer-walk-${index % 3} ${30 + index * 5}s linear infinite`,
+                      pointerEvents: 'none',
+                      zIndex: 10
+                    }}
+                  >
+                    <img
+                      src={avatar.svg || avatar.dataUri}
+                      alt={team.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                      }}
+                    />
+                  </div>
+                );
+              })}
+              
               <div className="cozyLobbyQrTitle">{joinTitle}</div>
               {joinDisplay && <div className="cozyLobbyQrLink">{joinDisplay}</div>}
               <img src={teamJoinQr} alt="Team QR" />

@@ -671,6 +671,94 @@ main[class*="cozy-beamer-shell"] {
   animation: animal-sad 0.8s ease-in-out;
 }
 
+/* Beamer View - Animals walking on QR Panel */
+@keyframes beamer-walk-0 {
+  0% {
+    left: -60px;
+    transform: scaleX(1) rotate(0deg);
+  }
+  24% {
+    transform: scaleX(1) rotate(2deg);
+  }
+  48% {
+    left: calc(100% - 50px);
+    transform: scaleX(1) rotate(0deg);
+  }
+  50% {
+    left: calc(100% - 50px);
+    transform: scaleX(-1) rotate(0deg);
+  }
+  74% {
+    transform: scaleX(-1) rotate(-2deg);
+  }
+  98% {
+    left: -60px;
+    transform: scaleX(-1) rotate(0deg);
+  }
+  100% {
+    left: -60px;
+    transform: scaleX(1) rotate(0deg);
+  }
+}
+
+@keyframes beamer-walk-1 {
+  0% {
+    left: calc(33% - 25px);
+    transform: scaleX(1) rotate(0deg);
+  }
+  24% {
+    transform: scaleX(1) rotate(2deg);
+  }
+  48% {
+    left: calc(100% + 10px);
+    transform: scaleX(1) rotate(0deg);
+  }
+  50% {
+    left: calc(100% + 10px);
+    transform: scaleX(-1) rotate(0deg);
+  }
+  74% {
+    transform: scaleX(-1) rotate(-2deg);
+  }
+  98% {
+    left: calc(33% - 25px);
+    transform: scaleX(-1) rotate(0deg);
+  }
+  100% {
+    left: calc(33% - 25px);
+    transform: scaleX(1) rotate(0deg);
+  }
+}
+
+@keyframes beamer-walk-2 {
+  0% {
+    left: calc(66% - 25px);
+    transform: scaleX(-1) rotate(0deg);
+  }
+  24% {
+    transform: scaleX(-1) rotate(-2deg);
+  }
+  48% {
+    left: -60px;
+    transform: scaleX(-1) rotate(0deg);
+  }
+  50% {
+    left: -60px;
+    transform: scaleX(1) rotate(0deg);
+  }
+  74% {
+    transform: scaleX(1) rotate(2deg);
+  }
+  98% {
+    left: calc(66% - 25px);
+    transform: scaleX(1) rotate(0deg);
+  }
+  100% {
+    left: calc(66% - 25px);
+    transform: scaleX(-1) rotate(0deg);
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;

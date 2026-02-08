@@ -221,9 +221,32 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
 const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string }> = ({ avatar, style, alt }) => {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !avatar.isVideo) return;
+    
+    let direction = 1; // 1 = forward, -1 = backward
+    
+    const handleTimeUpdate = () => {
+      if (direction === 1 && video.currentTime >= video.duration - 0.05) {
+        direction = -1;
+        video.playbackRate = -1;
+      } else if (direction === -1 && video.currentTime <= 0.05) {
+        direction = 1;
+        video.playbackRate = 1;
+      }
+    };
+    
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [avatar.isVideo]);
+  
   if (avatar.isVideo && avatar.videoSrc) {
     return (
       <video
+        ref={videoRef}
         src={avatar.videoSrc}
         autoPlay
         loop

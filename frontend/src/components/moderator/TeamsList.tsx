@@ -17,8 +17,30 @@ const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, o
   const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
   
   const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties }> = ({ avatar, style }) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    
+    React.useEffect(() => {
+      const video = videoRef.current;
+      if (!video || !avatar.isVideo) return;
+      
+      let direction = 1;
+      
+      const handleTimeUpdate = () => {
+        if (direction === 1 && video.currentTime >= video.duration - 0.05) {
+          direction = -1;
+          video.playbackRate = -1;
+        } else if (direction === -1 && video.currentTime <= 0.05) {
+          direction = 1;
+          video.playbackRate = 1;
+        }
+      };
+      
+      video.addEventListener('timeupdate', handleTimeUpdate);
+      return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+    }, [avatar.isVideo]);
+    
     if (avatar.isVideo && avatar.videoSrc) {
-      return <video src={avatar.videoSrc} autoPlay loop muted playsInline style={{ ...style, objectFit: 'cover', overflow: 'hidden' }} />;
+      return <video ref={videoRef} src={avatar.videoSrc} autoPlay loop muted playsInline style={{ ...style, objectFit: 'cover', overflow: 'hidden' }} />;
     }
     return <img src={avatar.dataUri} alt={avatar.name} style={style} />;
   };

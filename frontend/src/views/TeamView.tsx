@@ -229,7 +229,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
         loop
         muted
         playsInline
-        style={style}
+        style={{ ...style, objectFit: 'cover', overflow: 'hidden' }}
       />
     );
   }

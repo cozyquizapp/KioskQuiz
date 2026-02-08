@@ -18,7 +18,7 @@ const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, o
   
   const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties }> = ({ avatar, style }) => {
     if (avatar.isVideo && avatar.videoSrc) {
-      return <video src={avatar.videoSrc} autoPlay loop muted playsInline style={style} />;
+      return <video src={avatar.videoSrc} autoPlay loop muted playsInline style={{ ...style, objectFit: 'cover', overflow: 'hidden' }} />;
     }
     return <img src={avatar.dataUri} alt={avatar.name} style={style} />;
   };

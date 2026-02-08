@@ -592,65 +592,65 @@ main[class*="cozy-beamer-shell"] {
 @keyframes animal-bounce {
   0% {
     left: 0%;
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(0deg);
+    transform: translateX(0) scaleX(1) rotate(0deg);
   }
   12.5% {
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(1deg);
+    transform: translateX(0) scaleX(1) rotate(1deg);
   }
   25% {
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(-1deg);
+    transform: translateX(0) scaleX(1) rotate(-1deg);
   }
   37.5% {
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(1deg);
+    transform: translateX(0) scaleX(1) rotate(1deg);
   }
   48% {
     left: calc(100% - 70px);
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(0deg);
+    transform: translateX(0) scaleX(1) rotate(0deg);
   }
   50% {
     left: calc(100% - 70px);
-    transform: translateY(-50%) translateX(0) scaleX(-1) rotate(0deg);
+    transform: translateX(0) scaleX(-1) rotate(0deg);
   }
   62.5% {
-    transform: translateY(-50%) translateX(0) scaleX(-1) rotate(1deg);
+    transform: translateX(0) scaleX(-1) rotate(1deg);
   }
   75% {
-    transform: translateY(-50%) translateX(0) scaleX(-1) rotate(-1deg);
+    transform: translateX(0) scaleX(-1) rotate(-1deg);
   }
   87.5% {
-    transform: translateY(-50%) translateX(0) scaleX(-1) rotate(1deg);
+    transform: translateX(0) scaleX(-1) rotate(1deg);
   }
   98% {
     left: 0%;
-    transform: translateY(-50%) translateX(0) scaleX(-1) rotate(0deg);
+    transform: translateX(0) scaleX(-1) rotate(0deg);
   }
   100% {
     left: 0%;
-    transform: translateY(-50%) translateX(0) scaleX(1) rotate(0deg);
+    transform: translateX(0) scaleX(1) rotate(0deg);
   }
 }
 
 @keyframes animal-celebrate {
   0%, 100% {
-    transform: translateY(-50%) scale(1) rotate(0deg);
+    transform: scale(1) rotate(0deg);
   }
   25% {
-    transform: translateY(-50%) scale(1.3) rotate(-10deg);
+    transform: scale(1.3) rotate(-10deg);
   }
   50% {
-    transform: translateY(-50%) scale(1.4) rotate(10deg);
+    transform: scale(1.4) rotate(10deg);
   }
   75% {
-    transform: translateY(-50%) scale(1.3) rotate(-10deg);
+    transform: scale(1.3) rotate(-10deg);
   }
 }
 
 @keyframes animal-sad {
   0%, 100% {
-    transform: translateY(-50%) scale(1);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-40%) scale(0.85);
+    transform: translateY(10px) scale(0.85);
   }
 }
 
@@ -660,7 +660,7 @@ main[class*="cozy-beamer-shell"] {
 }
 
 .animal-bounce {
-  animation: animal-bounce 20s linear infinite;
+  animation: animal-bounce 50s linear infinite;
 }
 
 .animal-celebrate {

@@ -3071,8 +3071,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                   <AvatarMedia
                     avatar={avatar}
                     style={{ 
-                      width: '100%', 
-                      height: '100%', 
+                      width: '80%', 
+                      height: '80%', 
                       display: 'block',
                       objectFit: 'contain'
                     }}
@@ -3422,10 +3422,9 @@ function TeamView({ roomCode }: TeamViewProps) {
               style={{
                 position: 'absolute',
                 left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
+                bottom: 0,
                 width: '100%',
-                height: '100%',
+                height: 60,
                 pointerEvents: 'none',
                 zIndex: 1
               }}
@@ -3438,8 +3437,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   height: 60, 
                   objectFit: 'contain',
                   position: 'absolute',
-                  top: '50%',
-                  transform: 'translateY(-50%)'
+                  bottom: 0
                 }}
               />
             </div>

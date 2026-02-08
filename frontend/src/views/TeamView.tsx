@@ -2950,52 +2950,99 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div style={{ ...mutedText, marginBottom: 8 }}>{t('avatarHint')}</div>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-            gap: 8
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 16,
+            background: 'rgba(15,23,42,0.55)',
+            padding: 16
           }}
         >
-          {AVATARS.map((avatar) => {
-            const selected = avatarId === avatar.id;
-            return (
-              <button
+          <div
+            style={{
+              display: 'flex',
+              gap: 16,
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+            className="avatar-carousel"
+          >
+            {AVATARS.map((avatar) => {
+              const selected = avatarId === avatar.id;
+              return (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  onClick={() => {
+                    setAvatarId(avatar.id);
+                    if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
+                  }}
+                  style={{
+                    minWidth: '100%',
+                    maxWidth: '100%',
+                    padding: 16,
+                    borderRadius: 12,
+                    border: selected ? `3px solid ${accentColor}` : '2px solid rgba(255,255,255,0.12)',
+                    background: selected ? 'rgba(56,189,248,0.15)' : 'rgba(15,23,42,0.7)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    scrollSnapAlign: 'center',
+                    boxShadow: selected ? `0 0 20px ${accentColor}55` : 'none'
+                  }}
+                  aria-label={avatar.name}
+                  title={avatar.name}
+                >
+                  <AvatarMedia
+                    avatar={avatar}
+                    style={{ 
+                      width: '100%', 
+                      height: 'auto', 
+                      display: 'block', 
+                      borderRadius: 12,
+                      aspectRatio: '1/1'
+                    }}
+                  />
+                  <div style={{ 
+                    marginTop: 12, 
+                    fontSize: 18, 
+                    fontWeight: 700, 
+                    color: selected ? accentColor : '#e2e8f0',
+                    textAlign: 'center'
+                  }}>
+                    {avatar.name}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: 6, 
+            marginTop: 12 
+          }}>
+            {AVATARS.map((avatar, idx) => (
+              <div
                 key={avatar.id}
-                type="button"
-                onClick={() => {
-                  setAvatarId(avatar.id);
-                  if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
-                }}
                 style={{
-                  padding: 6,
-                  borderRadius: 12,
-                  border: selected ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.12)',
-                  background: selected ? 'rgba(56,189,248,0.15)' : 'rgba(15,23,42,0.55)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: avatarId === avatar.id ? accentColor : 'rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease'
                 }}
-                aria-label={avatar.name}
-                title={avatar.name}
-              >
-                {avatar.isVideo ? (
-                  <video
-                    src={avatar.videoSrc}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 8 }}
-                  />
-                ) : (
-                  <img
-                    src={avatar.dataUri}
-                    alt={avatar.name}
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
-                  />
-                )}
-              </button>
-            );
-          })}
+              />
+            ))}
+          </div>
         </div>
+        <style>{`
+          .avatar-carousel::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
       <PrimaryButton
         style={{

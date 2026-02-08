@@ -591,13 +591,21 @@ main[class*="cozy-beamer-shell"] {
 /* Animal Avatar Animations */
 @keyframes animal-bounce {
   0% {
-    transform: translateX(-15px);
+    left: -50px;
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(1deg);
   }
   50% {
-    transform: translateX(15px);
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(-1deg);
   }
   100% {
-    transform: translateX(-15px);
+    left: calc(100% + 50px);
+    transform: translateY(0) rotate(0deg);
   }
 }
 
@@ -627,10 +635,11 @@ main[class*="cozy-beamer-shell"] {
 
 .animated-animal {
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .animal-bounce {
-  animation: animal-bounce 3s ease-in-out infinite;
+  animation: animal-bounce 12s linear infinite;
 }
 
 .animal-celebrate {

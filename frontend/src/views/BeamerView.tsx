@@ -3301,9 +3301,9 @@ useEffect(() => {
         
         // Calculate speed based on animal size - larger = slower, smaller = faster
         const sizeRatio = getAvatarSize(team.avatarId);
-        const baseSpeed = 60; // Base duration in seconds
-        const speedVariation = (1.0 - sizeRatio) * 30; // 0-30s variation
-        const duration = Math.round(baseSpeed + speedVariation + (index * 8)); // 60-98s range
+        const baseSpeed = 120; // Base duration in seconds (slower = calmer)
+        const speedVariation = (1.0 - sizeRatio) * 50; // 0-50s variation for more difference
+        const duration = Math.round(baseSpeed + speedVariation + (index * 12)); // 120-182s range
         
         return (
           <div

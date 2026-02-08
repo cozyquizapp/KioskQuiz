@@ -31,6 +31,7 @@ import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
 import { createConfetti } from '../utils/confetti';
 import { AVATARS } from '../config/avatars';
+import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
 
 const usePrefersReducedMotion = () => {
@@ -3298,6 +3299,12 @@ useEffect(() => {
         const avatar = AVATARS.find(a => a.id === team.avatarId);
         if (!avatar || !avatar.svg) return null;
         
+        // Calculate speed based on animal size - larger = slower, smaller = faster
+        const sizeRatio = getAvatarSize(team.avatarId);
+        const baseSpeed = 60; // Base duration in seconds
+        const speedVariation = (1.0 - sizeRatio) * 30; // 0-30s variation
+        const duration = Math.round(baseSpeed + speedVariation + (index * 8)); // 60-98s range
+        
         return (
           <div
             key={`walking-${team.id}`}
@@ -3307,7 +3314,7 @@ useEffect(() => {
               left: 0,
               width: 100,
               height: 100,
-              animation: `beamer-walk-${index % 3} ${30 + index * 5}s linear infinite`,
+              animation: `beamer-walk-${index % 3} ${duration}s linear infinite`,
               pointerEvents: 'none',
               zIndex: 50
             }}

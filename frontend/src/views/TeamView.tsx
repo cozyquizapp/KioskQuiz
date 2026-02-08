@@ -2994,10 +2994,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             position: 'relative',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: '20px 0',
+            padding: '20px 12px',
             overflow: 'hidden',
             marginBottom: 12,
-            minHeight: 220,
+            minHeight: 200,
             display: 'flex',
             flexDirection: 'column'
           }}
@@ -3013,10 +3013,10 @@ function TeamView({ roomCode }: TeamViewProps) {
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              padding: '0 calc(50% - 80px)',
               width: '100%',
               flex: 1,
-              minHeight: '160px'
+              minHeight: 160,
+              WebkitOverflowScrollingTouchProperty: true
             }}
             className="avatar-carousel"
           >
@@ -3034,11 +3034,12 @@ function TeamView({ roomCode }: TeamViewProps) {
                     if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
                   }}
                   style={{
-                    minWidth: '160px',
-                    maxWidth: '160px',
-                    height: '160px',
-                    padding: 12,
-                    borderRadius: 20,
+                    minWidth: 140,
+                    width: 140,
+                    maxWidth: 140,
+                    height: 140,
+                    padding: 8,
+                    borderRadius: 16,
                     border: selected ? `4px solid ${accentColor}` : isDisabled ? '3px solid rgba(255,100,100,0.4)' : '3px solid rgba(255,255,255,0.15)',
                     background: selected ? 'rgba(56,189,248,0.2)' : isDisabled ? 'rgba(30,30,30,0.7)' : 'rgba(15,23,42,0.8)',
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -3049,6 +3050,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                     opacity: isDisabled ? 0.5 : 1,
                     position: 'relative',
                     flexShrink: 0,
+                    flex: '0 0 auto',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

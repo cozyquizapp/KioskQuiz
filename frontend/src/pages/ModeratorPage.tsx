@@ -2183,7 +2183,7 @@ function ModeratorPage(): React.ReactElement {
                 key={`compact-score-${entry.id}`}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
+                  gridTemplateColumns: 'auto 1fr auto auto',
                   gap: 8,
                   padding: '6px 8px',
                   borderRadius: 10,
@@ -2194,6 +2194,25 @@ function ModeratorPage(): React.ReactElement {
                 <span style={{ fontWeight: 700 }}>{idx + 1}.</span>
                 <span>{entry.name}</span>
                 <span style={{ fontWeight: 700 }}>{entry.score ?? 0}</span>
+                <button
+                  style={{
+                    ...inputStyle,
+                    background: 'rgba(239,68,68,0.14)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    width: 'auto',
+                    padding: '4px 8px',
+                    fontSize: 11
+                  }}
+                  onClick={() =>
+                    doAction(async () => {
+                      await kickTeam(roomCode, entry.id);
+                    }, 'Team entfernt')
+                  }
+                  title="Team entfernen"
+                >
+                  Kick
+                </button>
               </div>
             ))}
           </div>

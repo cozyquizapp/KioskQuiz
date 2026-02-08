@@ -220,8 +220,9 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false }) => {
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: 'walking' | 'looking' | 'happy' | 'sad' }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
   const [currentMood, setCurrentMood] = useState(mood);
+  const [currentIgelState, setCurrentIgelState] = useState(igelState);
 
   useEffect(() => {
     setCurrentMood(mood);
@@ -235,6 +236,10 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   }, [mood]);
 
+  useEffect(() => {
+    setCurrentIgelState(igelState);
+  }, [igelState]);
+
   const getAnimationClass = () => {
     if (onTap) return 'animal-tap';
     switch (currentMood) {
@@ -247,28 +252,50 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   };
 
+  // Igel special handling: use state-based image
+  const isIgel = avatar.id === 'avatar1';
+  const getIgelImagePath = () => {
+    const baseUrl = '/avatars/igel';
+    switch (currentIgelState) {
+      case 'looking':
+        return `${baseUrl}/schauen.svg`;
+      case 'happy':
+        return `${baseUrl}/freuen.svg`;
+      case 'sad':
+        return `${baseUrl}/weinen.svg`;
+      case 'walking':
+      default:
+        return `${baseUrl}/gehen.svg`;
+    }
+  };
+
   // For SVG animals
   if (!avatar.isVideo) {
+    const imgSrc = isIgel ? getIgelImagePath() : (avatar.svg || avatar.dataUri);
+    const shouldApplyAnimation = isIgel ? (currentIgelState === 'walking') : enableWalking;
+    
     return (
       <div 
-        className={`animated-animal ${getAnimationClass()}`}
+        className={`animated-animal ${shouldApplyAnimation ? getAnimationClass() : ''}`}
         style={{
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
           position: 'relative',
-          transformOrigin: 'bottom center'
+          transformOrigin: 'bottom center',
+          transition: isIgel ? 'opacity 0.3s ease' : 'none' // Smooth transition for Igel
         }}
       >
         <img 
-          src={avatar.svg || avatar.dataUri} 
+          src={imgSrc} 
           alt={alt || avatar.name} 
           style={{
             ...style,
             width: '100%',
             height: '100%',
             objectFit: 'contain',
-            filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none'
+            filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none',
+            transition: isIgel ? 'opacity 0.3s ease' : 'none' // Smooth fade between Igel states
           }}
         />
       </div>
@@ -354,6 +381,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
   const [avatarMood, setAvatarMood] = useState<'idle' | 'happy' | 'sad'>('idle');
   const [avatarTapped, setAvatarTapped] = useState(false);
+  const [igelState, setIgelState] = useState<'walking' | 'looking' | 'happy' | 'sad'>('walking');
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   
@@ -3159,6 +3187,11 @@ function TeamView({ roomCode }: TeamViewProps) {
                     if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
                     // Trigger happy animation on manual selection
                     setAvatarMood('happy');
+                    // Igel state: looking on tap
+                    if (selectedAvatar.id === 'avatar1') {
+                      setIgelState('looking');
+                      setTimeout(() => setIgelState('happy'), 600);
+                    }
                   }
                   // Trigger tap animation
                   setAvatarTapped(true);
@@ -3184,6 +3217,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                   avatar={availableAvatars[avatarCarouselIndex]}
                   mood={avatarMood}
                   onTap={avatarTapped}
+                  igelState={igelState}
                   style={{
                     width: '85%',
                     height: `${getAvatarSize(availableAvatars[avatarCarouselIndex]?.id) * 95}%`,

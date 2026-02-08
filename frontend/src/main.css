@@ -654,6 +654,21 @@ main[class*="cozy-beamer-shell"] {
   }
 }
 
+@keyframes animal-tap {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-15px) scale(1.05);
+  }
+  60% {
+    transform: translateY(-5px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animated-animal {
   transition: all 0.3s ease;
   position: absolute;
@@ -669,6 +684,10 @@ main[class*="cozy-beamer-shell"] {
 
 .animal-sad {
   animation: animal-sad 0.8s ease-in-out;
+}
+
+.animal-tap {
+  animation: animal-tap 0.4s ease-out;
 }
 
 /* Beamer View - Animals walking on QR Panel */

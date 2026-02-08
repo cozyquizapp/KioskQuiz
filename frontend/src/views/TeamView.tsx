@@ -220,7 +220,7 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false }) => {
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false }) => {
   const [currentMood, setCurrentMood] = useState(mood);
 
   useEffect(() => {
@@ -236,6 +236,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   }, [mood]);
 
   const getAnimationClass = () => {
+    if (onTap) return 'animal-tap';
     switch (currentMood) {
       case 'happy':
         return 'animal-celebrate';
@@ -289,13 +290,6 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [avatarId, setAvatarId] = useState(() => AVATARS[0]?.id || '');
   const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(() => 0);
   
-  // Sync carousel index when avatar changes
-  useEffect(() => {
-    const index = AVATARS.findIndex(a => a.id === avatarId);
-    if (index >= 0) {
-      setAvatarCarouselIndex(index);
-    }
-  }, [avatarId]);
   const [joinPending, setJoinPending] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
@@ -352,6 +346,30 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
   const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
   const [avatarMood, setAvatarMood] = useState<'idle' | 'happy' | 'sad'>('idle');
+  const [avatarTapped, setAvatarTapped] = useState(false);
+  
+  // Filter out avatars already chosen by other teams
+  const availableAvatars = useMemo(() => {
+    if (!teamStatus || teamStatus.length === 0) return AVATARS;
+    const usedIds = teamStatus
+      .filter(t => t.id !== teamId) // Exclude own team
+      .map(t => t.avatarId)
+      .filter(Boolean);
+    return AVATARS.filter(a => !usedIds.includes(a.id));
+  }, [teamStatus, teamId]);
+  
+  // Sync carousel index when avatar changes
+  useEffect(() => {
+    const index = availableAvatars.findIndex(a => a.id === avatarId);
+    if (index >= 0) {
+      setAvatarCarouselIndex(index);
+    } else if (availableAvatars.length > 0 && !availableAvatars.find(a => a.id === avatarId)) {
+      // Current avatar was taken by another team, pick first available
+      setAvatarId(availableAvatars[0].id);
+      setAvatarCarouselIndex(0);
+    }
+  }, [avatarId, availableAvatars]);
+  
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
@@ -3083,10 +3101,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             }}
           >
             <AvatarMedia
-              avatar={AVATARS[(avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length]}
+              avatar={availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length]}
               style={{ 
                 width: '100%', 
-                height: `${getAvatarSize(AVATARS[(avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length].id) * 100}%`,
+                height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex - 1 + availableAvatars.length) % availableAvatars.length].id) * 100}%`,
                 objectFit: 'contain'
               }}
             />
@@ -3108,11 +3126,16 @@ function TeamView({ roomCode }: TeamViewProps) {
             <button
               type="button"
               onClick={() => {
-                const selectedAvatar = AVATARS[avatarCarouselIndex];
+                const selectedAvatar = availableAvatars[avatarCarouselIndex];
                 if (selectedAvatar) {
                   setAvatarId(selectedAvatar.id);
                   if (roomCode) localStorage.setItem(storageKey('avatar'), selectedAvatar.id);
+                  // Trigger happy animation on manual selection
+                  setAvatarMood('happy');
                 }
+                // Trigger tap animation
+                setAvatarTapped(true);
+                setTimeout(() => setAvatarTapped(false), 400);
               }}
               style={{
                 width: '100%',
@@ -3131,35 +3154,15 @@ function TeamView({ roomCode }: TeamViewProps) {
               }}
             >
               <AvatarMedia
-                avatar={AVATARS[avatarCarouselIndex]}
+                avatar={availableAvatars[avatarCarouselIndex]}
+                mood={avatarMood}
+                onTap={avatarTapped}
                 style={{
                   width: '80%',
-                  height: `${getAvatarSize(AVATARS[avatarCarouselIndex].id) * 85}%`,
+                  height: `${getAvatarSize(availableAvatars[avatarCarouselIndex].id) * 85}%`,
                   objectFit: 'contain'
                 }}
               />
-              {avatarId === AVATARS[avatarCarouselIndex].id && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: 8,
-                    right: 8,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: '#22c55e',
-                    border: '2px solid white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    color: 'white'
-                  }}
-                >
-                  ✓
-                </div>
-              )}
             </button>
           </div>
 
@@ -3178,10 +3181,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             }}
           >
             <AvatarMedia
-              avatar={AVATARS[(avatarCarouselIndex + 1) % AVATARS.length]}
+              avatar={availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length]}
               style={{ 
                 width: '100%', 
-                height: `${getAvatarSize(AVATARS[(avatarCarouselIndex + 1) % AVATARS.length].id) * 100}%`,
+                height: `${getAvatarSize(availableAvatars[(avatarCarouselIndex + 1) % availableAvatars.length].id) * 100}%`,
                 objectFit: 'contain'
               }}
             />

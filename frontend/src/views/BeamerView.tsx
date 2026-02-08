@@ -281,34 +281,11 @@ const BeamerWalkingAvatar: React.FC<{
   duration: number;
   walkIndex: number;
 }> = ({ teamId, teamName, avatar, currentState, imageSrc, duration, walkIndex }) => {
-  const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const prevState = useRef<string>(currentState);
-
-  useEffect(() => {
-    // When switching away from walking, capture current position
-    if (currentState !== 'walking' && prevState.current === 'walking') {
-      const el = containerRef.current;
-      if (el) {
-        const computed = window.getComputedStyle(el);
-        const currentLeft = computed.left;
-        setFrozenLeft(currentLeft);
-      }
-    }
-    // When switching back to walking, clear frozen position    
-    if (currentState === 'walking' && prevState.current !== 'walking') {
-      setFrozenLeft(null);
-    }
-    prevState.current = currentState;
-  }, [currentState]);
-
   return (
     <div
-      ref={containerRef}
       style={{
         position: 'fixed',
         bottom: 0,
-        left: frozenLeft ?? undefined,
         width: 100,
         height: 100,
         animation: `beamer-walk-${walkIndex} ${duration}s linear infinite`,

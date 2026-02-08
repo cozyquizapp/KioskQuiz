@@ -465,6 +465,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
+  const lastRejoinTriggerRef = useRef<number | null>(null);
 
   const socketRef = useRef<ReturnType<typeof connectToRoom> | null>(null);
   const intervalRef = useRef<number | null>(null);
@@ -674,6 +675,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   // Explicit rejoin trigger from parent (e.g., when user clicks "Zurück zu Team")
   useEffect(() => {
     if (rejoinTrigger && rejoinTrigger > 0) {
+      if (lastRejoinTriggerRef.current === rejoinTrigger) return;
+      lastRejoinTriggerRef.current = rejoinTrigger;
       const savedName = localStorage.getItem(storageKey('name'));
       const savedId = localStorage.getItem(storageKey('id'));
       if (savedId && savedName && roomCode) {

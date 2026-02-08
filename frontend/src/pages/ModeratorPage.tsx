@@ -2379,7 +2379,7 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 720;
     const actionHintCard = renderNextActionHint();
-    const answersPanel = Object.keys(answers?.answers || {}).length > 0 ? (
+    const answersPanel = Object.keys(answers?.answers || {}).length > 0 || Object.keys(answers?.teams || {}).length > 0 ? (
       <div
         style={{
           display: 'grid',

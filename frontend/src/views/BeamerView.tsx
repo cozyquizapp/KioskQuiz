@@ -1558,39 +1558,6 @@ useEffect(() => {
           </div>
           {showQr && teamJoinQr && (
             <div className="cozyLobbyQrPane" style={{ position: 'relative', overflow: 'visible' }}>
-              {/* Walking Animals on Top Border */}
-              {teams.filter(t => t.id && t.avatarId).length > 0 && teams.filter(t => t.id && t.avatarId).map((team, index) => {
-                const avatar = AVATARS.find(a => a.id === team.avatarId);
-                if (!avatar || !avatar.svg) return null;
-                
-                return (
-                  <div
-                    key={team.id}
-                    style={{
-                      position: 'absolute',
-                      top: -10,
-                      left: 0,
-                      width: 60,
-                      height: 60,
-                      animation: `beamer-walk-${index % 3} ${30 + index * 5}s linear infinite`,
-                      pointerEvents: 'none',
-                      zIndex: 100
-                    }}
-                  >
-                    <img
-                      src={avatar.svg}
-                      alt={team.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                      }}
-                    />
-                  </div>
-                );
-              })}
-              
               <div className="cozyLobbyQrTitle">{joinTitle}</div>
               {joinDisplay && <div className="cozyLobbyQrLink">{joinDisplay}</div>}
               <img src={teamJoinQr} alt="Team QR" />
@@ -3325,6 +3292,40 @@ useEffect(() => {
     <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
       {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}
+      
+      {/* Walking Animals at Bottom of Screen */}
+      {teams.filter(t => t.id && t.avatarId).map((team, index) => {
+        const avatar = AVATARS.find(a => a.id === team.avatarId);
+        if (!avatar || !avatar.svg) return null;
+        
+        return (
+          <div
+            key={`walking-${team.id}`}
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              width: 100,
+              height: 100,
+              animation: `beamer-walk-${index % 3} ${30 + index * 5}s linear infinite`,
+              pointerEvents: 'none',
+              zIndex: 50
+            }}
+          >
+            <img
+              src={avatar.svg}
+              alt={team.name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+              }}
+            />
+          </div>
+        );
+      })}
+      
       {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (
         <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 40 }}>
           <img src={draftTheme.logoUrl} alt="Logo" style={{ maxHeight: 70, objectFit: 'contain' }} />

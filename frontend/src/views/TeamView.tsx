@@ -2994,23 +2994,22 @@ function TeamView({ roomCode }: TeamViewProps) {
             position: 'relative',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center'
+            padding: '24px 0',
+            overflow: 'hidden'
           }}
         >
           <div
             style={{
               display: 'flex',
-              gap: 12,
+              gap: 20,
               overflowX: 'auto',
               overflowY: 'hidden',
-              scrollSnapType: 'x proximity',
+              scrollSnapType: 'x mandatory',
               scrollBehavior: 'smooth',
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              paddingBottom: 4,
+              padding: '0 calc(50% - 100px)',
               width: '100%'
             }}
             className="avatar-carousel"
@@ -3029,23 +3028,30 @@ function TeamView({ roomCode }: TeamViewProps) {
                     if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
                   }}
                   style={{
-                    minWidth: '45%',
-                    maxWidth: '45%',
-                    padding: 12,
-                    borderRadius: 12,
-                    border: selected ? `3px solid ${accentColor}` : isDisabled ? '2px solid rgba(255,100,100,0.3)' : '2px solid rgba(255,255,255,0.12)',
-                    background: selected ? 'rgba(56,189,248,0.15)' : isDisabled ? 'rgba(30,30,30,0.7)' : 'rgba(15,23,42,0.7)',
+                    minWidth: '200px',
+                    maxWidth: '200px',
+                    height: '200px',
+                    padding: 16,
+                    borderRadius: 20,
+                    border: selected ? `4px solid ${accentColor}` : isDisabled ? '3px solid rgba(255,100,100,0.4)' : '3px solid rgba(255,255,255,0.15)',
+                    background: selected ? 'rgba(56,189,248,0.2)' : isDisabled ? 'rgba(30,30,30,0.7)' : 'rgba(15,23,42,0.8)',
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease',
-                    scrollSnapAlign: 'start',
-                    boxShadow: selected ? `0 0 20px ${accentColor}55` : 'none',
-                    opacity: isDisabled ? 0.4 : 1,
+                    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    scrollSnapAlign: 'center',
+                    scrollSnapStop: 'always',
+                    boxShadow: selected ? `0 0 30px ${accentColor}77, 0 10px 25px rgba(0,0,0,0.3)` : isDisabled ? 'none' : '0 8px 20px rgba(0,0,0,0.25)',
+                    opacity: isDisabled ? 0.5 : 1,
                     position: 'relative',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: selected ? 'scale(1.05)' : 'scale(0.9)',
+                    filter: isDisabled ? 'grayscale(1)' : 'none'
                   }}
                   disabled={isDisabled}
-                  aria-label={avatar.name}
-                  title={isDisabled ? (language === 'de' ? 'Bereits vergeben' : 'Already taken') : avatar.name}
+                  aria-label={`Avatar ${avatar.id}`}
+                  title={isDisabled ? (language === 'de' ? 'Bereits vergeben' : 'Already taken') : ''}
                 >
                   {isDisabled && (
                     <div style={{
@@ -3053,7 +3059,7 @@ function TeamView({ roomCode }: TeamViewProps) {
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
-                      fontSize: 40,
+                      fontSize: 60,
                       fontWeight: 900,
                       color: '#ef4444',
                       textShadow: '0 2px 8px rgba(0,0,0,0.8)',
@@ -3067,26 +3073,11 @@ function TeamView({ roomCode }: TeamViewProps) {
                     avatar={avatar}
                     style={{ 
                       width: '100%', 
-                      height: 'auto', 
-                      display: 'block', 
-                      borderRadius: 10,
-                      aspectRatio: '1/1',
-                      objectFit: 'cover',
-                      filter: isDisabled ? 'grayscale(1) brightness(0.5)' : 'none'
+                      height: '100%', 
+                      display: 'block',
+                      objectFit: 'contain'
                     }}
                   />
-                  <div style={{ 
-                    marginTop: 8, 
-                    fontSize: 14, 
-                    fontWeight: 700, 
-                    color: selected ? accentColor : '#e2e8f0',
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {avatar.name}
-                  </div>
                 </button>
               );
             })}
@@ -3095,9 +3086,10 @@ function TeamView({ roomCode }: TeamViewProps) {
             display: 'flex', 
             justifyContent: 'center', 
             gap: 6, 
-            marginTop: 12 
+            marginTop: 16,
+            padding: '0 16px'
           }}>
-            {AVATARS.map((avatar, idx) => (
+            {AVATARS.map((avatar) => (
               <div
                 key={avatar.id}
                 style={{

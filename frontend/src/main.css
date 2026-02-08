@@ -590,11 +590,14 @@ main[class*="cozy-beamer-shell"] {
 
 /* Animal Avatar Animations */
 @keyframes animal-bounce {
-  0%, 100% {
-    transform: translateY(0);
+  0% {
+    transform: translateX(-15px);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateX(15px);
+  }
+  100% {
+    transform: translateX(-15px);
   }
 }
 
@@ -627,7 +630,7 @@ main[class*="cozy-beamer-shell"] {
 }
 
 .animal-bounce {
-  animation: animal-bounce 2s ease-in-out infinite;
+  animation: animal-bounce 3s ease-in-out infinite;
 }
 
 .animal-celebrate {

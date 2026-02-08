@@ -11,7 +11,7 @@ export const AVATAR_SIZE_RATIOS: Record<string, number> = {
   avatar8: 0.55,  // Small animal
   avatar9: 0.50,  // Small animal
   avatar10: 0.45, // Small bird
-  avatar11: 0.40, // Tiny animal (hedgehog/igel) - small!
+  avatar11: 0.32, // Tiny animal (hedgehog/igel) - very small!
   avatar12: 0.38, // Tiny animal
   avatar13: 0.42, // Small animal
   avatar14: 0.48, // Small-medium

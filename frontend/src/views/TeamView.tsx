@@ -256,7 +256,8 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
-          position: 'relative'
+          position: 'relative',
+          transformOrigin: 'bottom center'
         }}
       >
         <img 
@@ -353,6 +354,8 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
   const [avatarMood, setAvatarMood] = useState<'idle' | 'happy' | 'sad'>('idle');
   const [avatarTapped, setAvatarTapped] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   
   // Filter out avatars already chosen by other teams
   const availableAvatars = useMemo(() => {
@@ -2956,6 +2959,19 @@ function TeamView({ roomCode }: TeamViewProps) {
     );
   }
 
+  function handleLeaveTeam() {
+    if (roomCode) {
+      localStorage.removeItem(storageKey('id'));
+      localStorage.removeItem(storageKey('name'));
+      localStorage.removeItem(storageKey('avatar'));
+    }
+    savedIdRef.current = null;
+    setTeamId(null);
+    setTeamName('');
+    setPhase('notJoined');
+    setIsReady(false);
+  }
+
   function renderNotJoined() {
     const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
     return (
@@ -3064,20 +3080,19 @@ function TeamView({ roomCode }: TeamViewProps) {
             userSelect: 'none'
           }}
           onTouchStart={(e) => {
-            const touch = e.touches[0];
-            (e.currentTarget as any).__touchStart = touch.clientX;
+            setTouchStart(e.touches[0].clientX);
+            // Trigger tap animation
+            setAvatarTapped(true);
+            setTimeout(() => setAvatarTapped(false), 400);
           }}
           onTouchEnd={(e) => {
-            const touchStart = (e.currentTarget as any).__touchStart;
-            const touchEnd = e.changedTouches[0]?.clientX;
-            if (!touchStart || !touchEnd) return;
-            
+            setTouchEnd(e.changedTouches[0].clientX);
             const diff = touchStart - touchEnd;
-            if (Math.abs(diff) > 50) {
+            if (Math.abs(diff) > 50 && availableAvatars.length > 0) {
               let newIndex;
               if (diff > 0) {
                 // Swiped left - next avatar
-                newIndex = (avatarCarouselIndex + 1) % AVATARS.length;
+                newIndex = (avatarCarouselIndex + 1) % availableAvatars.length;
               } else {
                 // Swiped right - prev avatar
                 newIndex = (avatarCarouselIndex - 1 + AVATARS.length) % AVATARS.length;
@@ -3239,22 +3254,39 @@ function TeamView({ roomCode }: TeamViewProps) {
         </div>
       )}
       {savedIdRef.current && (
-        <button
-          style={{
-            ...primaryButton,
-            marginTop: 8,
-            background: 'rgba(255,255,255,0.02)',
-            color: '#e2e8f0',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(30px)',
-            minHeight: 44
-          }}
-          onClick={() => handleJoin(true)}
-        >
-          {language === 'de'
-            ? `Team fortsetzen${teamName ? ` (${teamName})` : ''}`
-            : `Resume team${teamName ? ` (${teamName})` : ''}`}
-        </button>
+        <>
+          <button
+            style={{
+              ...primaryButton,
+              marginTop: 8,
+              background: 'rgba(255,255,255,0.02)',
+              color: '#e2e8f0',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(30px)',
+              minHeight: 44
+            }}
+            onClick={() => handleJoin(true)}
+          >
+            {language === 'de'
+              ? `Team fortsetzen${teamName ? ` (${teamName})` : ''}`
+              : `Resume team${teamName ? ` (${teamName})` : ''}`}
+          </button>
+          <button
+            style={{
+              ...primaryButton,
+              marginTop: 8,
+              background: 'rgba(239,68,68,0.08)',
+              color: '#fca5a5',
+              border: '1px solid rgba(239,68,68,0.3)',
+              backdropFilter: 'blur(30px)',
+              minHeight: 38,
+              fontSize: 14
+            }}
+            onClick={handleLeaveTeam}
+          >
+            {language === 'de' ? 'Neues Team starten' : 'Start new team'}
+          </button>
+        </>
       )}
         {message && <div className={`message-state message-${message.type}`}>{message.text}</div>}
       </div>
@@ -3486,7 +3518,7 @@ function TeamView({ roomCode }: TeamViewProps) {
   return (
     <div
       id="team-root"
-      style={{...pageStyleTeam, position: 'relative', overflow: needsScrolling ? 'auto' : 'hidden'}}
+      style={{...pageStyleTeam, position: 'relative', overflow: needsScrolling ? 'auto' : 'hidden', overflowX: 'hidden'}}
       data-timer={timerTick}
       data-team-ui="1"
       data-team-marker={teamMarker}

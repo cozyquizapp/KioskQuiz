@@ -3030,8 +3030,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               position: 'absolute',
               left: '8%',
-              top: '50%',
-              transform: 'translateY(-50%)',
+              bottom: 0,
               width: 100,
               height: 140,
               opacity: 0.4,
@@ -3121,8 +3120,7 @@ function TeamView({ roomCode }: TeamViewProps) {
             style={{
               position: 'absolute',
               right: '8%',
-              top: '50%',
-              transform: 'translateY(-50%)',
+              bottom: 0,
               width: 100,
               height: 140,
               opacity: 0.4,

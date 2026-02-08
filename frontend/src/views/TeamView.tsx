@@ -435,9 +435,9 @@ function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const avatarStateTimersRef = useRef<number[]>([]);
   const [reconnectKey, setReconnectKey] = useState(0);
-  function storageKey(suffix: string) {
+  const storageKey = useCallback((suffix: string) => {
     return `team:${roomCode}:${suffix}`;
-  }
+  }, [roomCode]);
   useEffect(() => {
     answerSubmittedRef.current = answerSubmitted;
   }, [answerSubmitted]);
@@ -626,7 +626,7 @@ function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
       }
     }
     if (savedAvatar) setAvatarId(savedAvatar);
-  }, [roomCode, teamId, handleJoin, storageKey, setTeamName, setAvatarId]);
+  }, [roomCode, teamId, handleJoin, storageKey]);
 
   // Explicit rejoin trigger from parent (e.g., when user clicks "Zurück zu Team")
   useEffect(() => {
@@ -634,8 +634,10 @@ function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
       const savedName = localStorage.getItem(storageKey('name'));
       const savedId = localStorage.getItem(storageKey('id'));
       if (savedId && savedName && roomCode && !teamId) {
-        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName });
+        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName, hasPhase: phase });
         handleJoin(true);
+      } else {
+        console.log('⚠️ Rejoin conditions not met:', { savedId: !!savedId, savedName: !!savedName, roomCode: !!roomCode, hasTeamId: !!teamId });
       }
     }
   }, [rejoinTrigger, roomCode, teamId, handleJoin, storageKey]);

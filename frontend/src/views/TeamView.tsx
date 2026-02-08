@@ -219,7 +219,7 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad' }> = ({ avatar, style, alt, mood = 'idle' }) => {
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean }> = ({ avatar, style, alt, mood = 'idle', enableWalking = false }) => {
   const [currentMood, setCurrentMood] = useState(mood);
 
   useEffect(() => {
@@ -241,7 +241,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
       case 'sad':
         return 'animal-sad';
       default:
-        return 'animal-bounce';
+        return enableWalking ? 'animal-bounce' : '';
     }
   };
 
@@ -3432,6 +3432,7 @@ function TeamView({ roomCode }: TeamViewProps) {
               <AvatarMedia
                 avatar={getAvatarById(avatarId)}
                 mood={avatarMood}
+                enableWalking={true}
                 style={{ 
                   width: 60, 
                   height: 60, 

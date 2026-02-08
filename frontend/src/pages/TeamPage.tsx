@@ -80,18 +80,26 @@ const TeamPage = () => {
     hasRoot: false,
     rootHasKids: false
   });
-  const [hideFallback, setHideFallback] = useState(() => {
-    // Hide fallback immediately if team already joined (prevents flash on reload)
-    if (typeof window !== 'undefined' && roomCode) {
-      const savedId = localStorage.getItem(`team:${roomCode}:id`);
-      return Boolean(savedId);
-    }
-    return false;
-  });
+  const [hideFallback, setHideFallback] = useState(false);
   const [fallbackName, setFallbackName] = useState('');
   const [fallbackJoinError, setFallbackJoinError] = useState<string | null>(null);
   const [fallbackJoined, setFallbackJoined] = useState(false);
   const [fallbackJoining, setFallbackJoining] = useState(false);
+  
+  // Check for existing team in localStorage
+  const savedTeamId = useMemo(() => {
+    if (typeof window !== 'undefined' && roomCode) {
+      return localStorage.getItem(`team:${roomCode}:id`);
+    }
+    return null;
+  }, [roomCode]);
+  
+  const savedTeamName = useMemo(() => {
+    if (typeof window !== 'undefined' && roomCode) {
+      return localStorage.getItem(`team:${roomCode}:name`);
+    }
+    return null;
+  }, [roomCode]);
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -186,6 +194,22 @@ const TeamPage = () => {
     } finally {
       setFallbackJoining(false);
     }
+  };
+  
+  const handleRejoinTeam = () => {
+    // Team already exists in localStorage, just hide fallback to show TeamView
+    setHideFallback(true);
+  };
+  
+  const handleNewTeam = () => {
+    // Clear localStorage and let user join with new name
+    if (typeof window !== 'undefined' && roomCode) {
+      localStorage.removeItem(`team:${roomCode}:id`);
+      localStorage.removeItem(`team:${roomCode}:name`);
+      localStorage.removeItem(`team:${roomCode}:avatarId`);
+    }
+    // Reload page to reset state
+    window.location.reload();
   };
 
   const showRoomCodeForm = !featureFlags.singleSessionMode && !roomCode;
@@ -282,90 +306,152 @@ const TeamPage = () => {
                 backdropFilter: 'blur(16px)'
               }}
             >
-              <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>
-                {mountTimedOut ? 'Team UI konnte nicht starten' : 'Lade Cozy Quiz ...'}
-              </h2>
-              <p style={{ color: '#cbd5e1', marginTop: 0 }}>
-                {mountTimedOut
-                  ? 'Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.'
-                  : 'Falls es haengt, kannst du unten schon beitreten.'}
-              </p>
-              <p style={{ color: '#94a3b8', fontSize: 12 }}>
-                room={roomCode || '??'} | single={String(featureFlags.singleSessionMode)}
-              </p>
-              <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-                <label style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 700 }}>Teamname</label>
-                <input
-                  value={fallbackName}
-                  onChange={(e) => setFallbackName(e.target.value)}
-                  placeholder="Teamname"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(255,255,255,0.05)',
-                    color: '#f8fafc'
-                  }}
-                />
-                <button
-                  onClick={fallbackJoining ? undefined : handleFallbackJoin}
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    borderRadius: 12,
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-                    color: '#0b1020',
-                    fontWeight: 800,
-                    cursor: fallbackJoining ? 'not-allowed' : 'pointer',
-                    opacity: fallbackJoining ? 0.7 : 1
-                  }}
-                >
-                  {fallbackJoining ? 'Verbinde...' : 'Beitreten (Fallback)'}
-                </button>
-                {fallbackJoinError && (
-                  <div style={{ color: '#fca5a5', fontWeight: 700 }}>{fallbackJoinError}</div>
-                )}
-                {fallbackJoined && (
-                  <div style={{ color: '#86efac', fontWeight: 700 }}>
-                    Verbunden. Bitte Seite neu laden.
+              {savedTeamId ? (
+                // LOBBY: Show rejoin options if team exists
+                <>
+                  <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>Willkommen zurück!</h2>
+                  <p style={{ color: '#cbd5e1', marginTop: 0, marginBottom: 16 }}>
+                    {savedTeamName ? `Du warst im Team "${savedTeamName}".` : 'Du hast bereits ein Team.'}
+                  </p>
+                  <button
+                    onClick={handleRejoinTeam}
+                    style={{
+                      width: '100%',
+                      padding: 14,
+                      borderRadius: 12,
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                      color: '#0b1020',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      boxShadow: '0 8px 20px rgba(99,229,255,0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 12px 28px rgba(99,229,255,0.5)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(99,229,255,0.3)';
+                    }}
+                  >
+                    {savedTeamName ? `Zurück zu "${savedTeamName}"` : 'Team fortsetzen'}
+                  </button>
+                  <button
+                    onClick={handleNewTeam}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 12,
+                      border: '1px solid rgba(239,68,68,0.3)',
+                      background: 'rgba(239,68,68,0.08)',
+                      color: '#fca5a5',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      marginTop: 10,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+                    }}
+                  >
+                    Neues Team starten
+                  </button>
+                </>
+              ) : (
+                // LOADING/JOIN: Show fallback join form if no team exists
+                <>
+                  <h2 style={{ marginBottom: 8, color: '#e2e8f0' }}>
+                    {mountTimedOut ? 'Team UI konnte nicht starten' : 'Lade Cozy Quiz ...'}
+                  </h2>
+                  <p style={{ color: '#cbd5e1', marginTop: 0 }}>
+                    {mountTimedOut
+                      ? 'Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.'
+                      : 'Falls es haengt, kannst du unten schon beitreten.'}
+                  </p>
+                  <p style={{ color: '#94a3b8', fontSize: 12 }}>
+                    room={roomCode || '??'} | single={String(featureFlags.singleSessionMode)}
+                  </p>
+                  <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+                    <label style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 700 }}>Teamname</label>
+                    <input
+                      value={fallbackName}
+                      onChange={(e) => setFallbackName(e.target.value)}
+                      placeholder="Teamname"
+                      style={{
+                        width: '100%',
+                        padding: 12,
+                        borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#f8fafc'
+                      }}
+                    />
+                    <button
+                      onClick={fallbackJoining ? undefined : handleFallbackJoin}
+                      style={{
+                        width: '100%',
+                        padding: 12,
+                        borderRadius: 12,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                        color: '#0b1020',
+                        fontWeight: 800,
+                        cursor: fallbackJoining ? 'not-allowed' : 'pointer',
+                        opacity: fallbackJoining ? 0.7 : 1
+                      }}
+                    >
+                      {fallbackJoining ? 'Verbinde...' : 'Beitreten (Fallback)'}
+                    </button>
+                    {fallbackJoinError && (
+                      <div style={{ color: '#fca5a5', fontWeight: 700 }}>{fallbackJoinError}</div>
+                    )}
+                    {fallbackJoined && (
+                      <div style={{ color: '#86efac', fontWeight: 700 }}>
+                        Verbunden. Bitte Seite neu laden.
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <button
-                onClick={() => setHideFallback(true)}
-                style={{
-                  marginTop: 8,
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  background: 'rgba(255,255,255,0.08)',
-                  color: '#e2e8f0',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                UI anzeigen (Debug)
-              </button>
-              {mountTimedOut && (
-                <button
-                  onClick={() => window.location.reload()}
-                  style={{
-                    marginTop: 10,
-                    width: '100%',
-                    padding: 12,
-                    borderRadius: 12,
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
-                    color: '#0b1020',
-                    fontWeight: 800,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Neu laden
-                </button>
+                  <button
+                    onClick={() => setHideFallback(true)}
+                    style={{
+                      marginTop: 8,
+                      width: '100%',
+                      padding: 10,
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: 'rgba(255,255,255,0.08)',
+                      color: '#e2e8f0',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    UI anzeigen (Debug)
+                  </button>
+                  {mountTimedOut && (
+                    <button
+                      onClick={() => window.location.reload()}
+                      style={{
+                        marginTop: 10,
+                        width: '100%',
+                        padding: 12,
+                        borderRadius: 12,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #63e5ff, #60a5fa)',
+                        color: '#0b1020',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Neu laden
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

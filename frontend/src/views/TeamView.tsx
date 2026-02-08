@@ -2965,10 +2965,11 @@ function TeamView({ roomCode }: TeamViewProps) {
         <div
           style={{
             position: 'relative',
-            overflow: 'hidden',
             borderRadius: 16,
             background: 'rgba(15,23,42,0.55)',
-            padding: 16
+            padding: 16,
+            display: 'flex',
+            alignItems: 'center'
           }}
         >
           <div
@@ -2982,11 +2983,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              paddingBottom: 8,
-              paddingRight: 16,
-              paddingLeft: 8,
-              marginRight: -8,
-              marginLeft: -8
+              paddingBottom: 4,
+              width: '100%'
             }}
             className="avatar-carousel"
           >
@@ -3004,8 +3002,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                     if (roomCode) localStorage.setItem(storageKey('avatar'), avatar.id);
                   }}
                   style={{
-                    minWidth: 'calc(50% - 6px)',
-                    maxWidth: 'calc(50% - 6px)',
+                    minWidth: '45%',
+                    maxWidth: '45%',
                     padding: 12,
                     borderRadius: 12,
                     border: selected ? `3px solid ${accentColor}` : isDisabled ? '2px solid rgba(255,100,100,0.3)' : '2px solid rgba(255,255,255,0.12)',
@@ -3089,6 +3087,8 @@ function TeamView({ roomCode }: TeamViewProps) {
         <style>{`
           .avatar-carousel {
             scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
           }
           .avatar-carousel::-webkit-scrollbar {
             display: none;

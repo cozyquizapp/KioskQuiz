@@ -10,13 +10,14 @@
  */
 
 export const AVATAR_STATE_CONFIG: Record<string, string> = {
-  'avatar11': 'igel',      // Hedgehog
-  'avatar1': 'pferd',      // Horse
   'avatar2': 'blauwal',    // Blue Whale
   'avatar3': 'wolf',       // Wolf
-  'avatar4': 'giraffe',    // Giraffe
-  'avatar5': 'pandabaer',  // Panda Bear
-  'avatar6': 'katze',      // Cat
+  'avatar11': 'igel',      // Hedgehog
+  // TODO: Add back when complete:
+  // 'avatar1': 'pferd',      // Horse
+  // 'avatar4': 'giraffe',    // Giraffe
+  // 'avatar5': 'pandabaer',  // Panda Bear
+  // 'avatar6': 'katze',      // Cat
 };
 
 /**

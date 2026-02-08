@@ -291,7 +291,13 @@ function TeamView({ roomCode }: TeamViewProps) {
   const [avatarCarouselIndex, setAvatarCarouselIndex] = useState(() => 0);
   
   const [joinPending, setJoinPending] = useState(false);
-  const [teamId, setTeamId] = useState<string | null>(null);
+  const [teamId, setTeamId] = useState<string | null>(() => {
+    // Initialize from localStorage to prevent flash of join screen
+    if (typeof window !== 'undefined' && roomCode) {
+      return localStorage.getItem(`team:${roomCode}:id`) || null;
+    }
+    return null;
+  });
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<any | null>(null);
   const [answer, setAnswer] = useState<any>('');

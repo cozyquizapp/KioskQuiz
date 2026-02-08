@@ -1191,7 +1191,8 @@ useEffect(() => {
   const pageStyle = useMemo<React.CSSProperties>(
     () => ({
       position: 'relative',
-      minHeight: '100vh',
+      height: '100vh',
+      boxSizing: 'border-box',
       background: draftTheme?.background
         ? `url(${draftTheme.background}) center/cover fixed`
         : 'var(--bg)',
@@ -1199,7 +1200,7 @@ useEffect(() => {
       animation: draftTheme?.background ? 'none' : 'ambient-shift 28s ease-in-out infinite',
       color: '#e2e8f0',
       overflow: 'hidden',
-      padding: '28px 18px',
+      padding: '20px 18px',
       fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'
     }),
     [draftTheme?.background, draftTheme?.font]
@@ -1558,7 +1559,7 @@ useEffect(() => {
           {showQr && teamJoinQr && (
             <div className="cozyLobbyQrPane" style={{ position: 'relative' }}>
               {/* Walking Animals on Top Border */}
-              {teams.filter(t => t.joined).map((team, index) => {
+              {teams.filter(t => t.id && t.avatarId).map((team, index) => {
                 const avatar = AVATARS.find(a => a.id === team.avatarId);
                 if (!avatar) return null;
                 

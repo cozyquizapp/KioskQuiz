@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { joinRoom } from '../api';
 import { featureFlags } from '../config/features';
@@ -103,16 +103,17 @@ const TeamPage = () => {
     return null;
   }, [roomCode]);
   
-  // Show lobby modal when we have a saved team (after first mount)
-  // Set it immediately on mount, don't wait for useEffect
+  // Show lobby modal only once per page load when a saved team exists.
   const [shouldSuppressAutoRejoin, setShouldSuppressAutoRejoin] = useState(Boolean(savedTeamId));
-  
+  const lobbyPromptedRef = useRef(false);
+
   useEffect(() => {
-    if (savedTeamId && !lobbyModalOpen) {
+    if (savedTeamId && !lobbyPromptedRef.current) {
       setLobbyModalOpen(true);
       setShouldSuppressAutoRejoin(true);
+      lobbyPromptedRef.current = true;
     }
-  }, [savedTeamId, lobbyModalOpen]);
+  }, [savedTeamId]);
 
   useEffect(() => {
     if (featureFlags.singleSessionMode) {
@@ -495,8 +496,12 @@ const TeamPage = () => {
               )}
             </div>
           </div>
-        )}suppressAutoRejoin={shouldSuppressAutoRejoin} 
-        <TeamView roomCode={roomCode || ''} rejoinTrigger={rejoinTrigger} />
+        )}
+        <TeamView
+          roomCode={roomCode || ''}
+          rejoinTrigger={rejoinTrigger}
+          suppressAutoRejoin={shouldSuppressAutoRejoin}
+        />
       </>
     </TeamBoundary>
   );

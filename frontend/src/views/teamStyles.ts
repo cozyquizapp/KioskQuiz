@@ -22,9 +22,9 @@ export const pageStyleTeam: CSSProperties = {
   right: 0,
   bottom: 0,
   width: '100%',
-  height: '100vh', // Fallback for older browsers
   // @ts-ignore - dvh not in CSSProperties yet
-  minHeight: '100dvh', // Modern browsers with dynamic viewport
+  height: '100dvh', // Modern browsers with dynamic viewport
+  minHeight: '100vh', // Fallback for older browsers
   paddingTop: 'calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-top))',
   paddingRight: 'clamp(10px, 3vw, 16px)',
   paddingBottom: 'calc(clamp(12px, 2vw, 16px) + env(safe-area-inset-bottom))',
@@ -32,6 +32,7 @@ export const pageStyleTeam: CSSProperties = {
   overflowY: 'hidden',
   overflowX: 'hidden',
   overscrollBehavior: 'contain',
+  boxSizing: 'border-box',
   color: 'white',
   background: draftTheme?.background
     ? `url(${draftTheme.background}) center/cover`

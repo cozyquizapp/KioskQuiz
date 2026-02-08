@@ -259,7 +259,11 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     setCurrentIgelState(igelState);
   }, [igelState, currentIgelState]);
 
+  // Check if avatar supports state-based rendering
+  const hasStates = hasStateBasedRendering(avatar.id);
+
   const getAnimationClass = () => {
+    if (hasStates) return enableWalking ? 'animal-bounce' : '';
     if (onTap) return 'animal-tap';
     switch (currentMood) {
       case 'happy':
@@ -271,14 +275,19 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   };
 
-  // Check if avatar supports state-based rendering
-  const hasStates = hasStateBasedRendering(avatar.id);
   const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState) : null;
 
   // For SVG animals
   if (!avatar.isVideo) {
     const imgSrc = currentStatePath || avatar.svg || avatar.dataUri;
-    const shouldApplyAnimation = hasStates ? (currentIgelState === 'walking') : enableWalking;
+    const animationClass = getAnimationClass();
+    const shouldApplyAnimation = Boolean(animationClass);
+    const animationPlayState =
+      hasStates && enableWalking
+        ? currentIgelState === 'walking'
+          ? 'running'
+          : 'paused'
+        : 'running';
     
     // Build meaningful alt text for screen readers based on avatar state
     const moodLabel = currentMood === 'happy' ? ' (happy)' : currentMood === 'sad' ? ' (sad)' : '';
@@ -288,7 +297,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     return (
       <div 
         ref={containerRef}
-        className={`animated-animal ${shouldApplyAnimation ? getAnimationClass() : ''}`}
+        className={`animated-animal ${shouldApplyAnimation ? animationClass : ''}`}
         style={{
           width: style?.width || '100%',
           height: style?.height || '100%',
@@ -296,6 +305,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
           position: 'absolute',
           left: frozenLeft || undefined,
           transformOrigin: 'bottom center',
+          animationPlayState,
           transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth transition for state-based avatars
         }}
       >
@@ -431,6 +441,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       .filter(Boolean);
     return AVATARS.filter(a => !usedIds.includes(a.id));
   }, [teamStatus, teamId]);
+
+  // Keep carousel index aligned with the selected avatar when availability changes.
+  useEffect(() => {
+    if (!avatarId || availableAvatars.length === 0) return;
+    const nextIndex = availableAvatars.findIndex(a => a.id === avatarId);
+    if (nextIndex >= 0 && nextIndex !== avatarCarouselIndex) {
+      setAvatarCarouselIndex(nextIndex);
+    }
+  }, [availableAvatars, avatarId, avatarCarouselIndex]);
   
   // Sync carousel index when avatar changes (only if avatar was taken, not on manual selection)
   useEffect(() => {

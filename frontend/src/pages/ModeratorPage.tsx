@@ -3546,41 +3546,42 @@ const renderCozyStagePanel = () => {
 
       {/* Intro view: Regeln + Teams */}
       {viewPhase === 'intro' && (
-        <section style={{ ...card, marginTop: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 8 }}>Regeln kurz</div>
-          <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
-            <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
-            <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
-            <li>Schaetzfragen: am nächsten dran gewinnt.</li>
-            <li>Bilder & Cheese: genau hinsehen.</li>
-          </ul>
-          <div style={{ marginTop: 12, fontWeight: 800 }}>Teams</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-            {Object.values(answers?.teams || {}).map((team) => (
-              <span
-                key={team.name}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  fontSize: 12,
-                  letterSpacing: '0.06em',
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  color: '#e2e8f0',
-                  textTransform: 'uppercase',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6
-                }}
-              >
-                <StatusDot filled={Boolean(team?.isReady)} tooltip={team?.isReady ? 'Angemeldet' : 'Nicht angemeldet'} />
-                {team.name}
-              </span>
-            ))}
-            {Object.keys(answers?.teams || {}).length === 0 && <span style={{ color: 'var(--muted)' }}>Noch keine Teams</span>}
-          </div>
-        </section>
+        <>
+          <section style={{ ...card, marginTop: 12 }}>
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>Regeln kurz</div>
+            <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
+              <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
+              <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
+              <li>Schaetzfragen: am nächsten dran gewinnt.</li>
+              <li>Bilder & Cheese: genau hinsehen.</li>
+            </ul>
+          </section>
+          <TeamsList
+            answers={answers}
+            inputStyle={inputStyle}
+            onRefresh={() =>
+              doAction(async () => {
+                const res = await fetchAnswers(roomCode);
+                setAnswers({
+                  answers: res.answers ?? {},
+                  teams: res.teams ?? {},
+                  solution: res.solution
+                });
+              }, 'Teams aktualisiert')
+            }
+            onKickAll={() =>
+              doAction(async () => {
+                const ids = Object.keys(answers.teams || {});
+                await Promise.all(ids.map((id) => kickTeam(roomCode, id).catch(() => undefined)));
+              }, 'Teams entfernt')
+            }
+            onKickTeam={(teamId) =>
+              doAction(async () => {
+                await kickTeam(roomCode, teamId);
+              }, 'Team entfernt')
+            }
+          />
+        </>
       )}
       {/* Quick Exit */}
       <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>

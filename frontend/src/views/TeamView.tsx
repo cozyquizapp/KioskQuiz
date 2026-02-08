@@ -29,6 +29,7 @@ import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { SkeletonCard, PulseIndicator } from '../components/AnimatedComponents';
 import { AVATARS } from '../config/avatars';
+import type { AvatarOption } from '../config/avatars';
 import {
   pageStyleTeam,
   contentShell,
@@ -218,6 +219,22 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 };
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string }> = ({ avatar, style, alt }) => {
+  if (avatar.isVideo && avatar.videoSrc) {
+    return (
+      <video
+        src={avatar.videoSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={style}
+      />
+    );
+  }
+  return <img src={avatar.dataUri} alt={alt || avatar.name} style={style} />;
+};
 
 function TeamView({ roomCode }: TeamViewProps) {
   const teamMarker = 'teamview-marker-2026-01-02b';
@@ -1768,9 +1785,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                   >
                     <div style={{ color: accentColor, fontWeight: 700, marginBottom: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.3px' }}>
                       {avatar && (
-                        <img
-                          src={avatar.dataUri}
-                          alt={avatar.name}
+                        <AvatarMedia
+                          avatar={avatar}
                           style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
                         />
                       )}
@@ -2008,9 +2024,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                 {idx < 3 ? idx + 1 : idx + 1}
               </span>
               {avatar && (
-                <img
-                  src={avatar.dataUri}
-                  alt={avatar.name}
+                <AvatarMedia
+                  avatar={avatar}
                   style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
                 />
               )}
@@ -2828,9 +2843,8 @@ function TeamView({ roomCode }: TeamViewProps) {
                     }}
                   >
                     {avatar && (
-                      <img
-                        src={avatar.dataUri}
-                        alt={avatar.name}
+                      <AvatarMedia
+                        avatar={avatar}
                         style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
                       />
                     )}
@@ -2939,11 +2953,22 @@ function TeamView({ roomCode }: TeamViewProps) {
                 aria-label={avatar.name}
                 title={avatar.name}
               >
-                <img
-                  src={avatar.dataUri}
-                  alt={avatar.name}
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                />
+                {avatar.isVideo ? (
+                  <video
+                    src={avatar.videoSrc}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 8 }}
+                  />
+                ) : (
+                  <img
+                    src={avatar.dataUri}
+                    alt={avatar.name}
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                )}
               </button>
             );
           })}
@@ -3111,9 +3136,8 @@ function TeamView({ roomCode }: TeamViewProps) {
               >
                 <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
                 {avatar && (
-                  <img
-                    src={avatar.dataUri}
-                    alt={avatar.name}
+                  <AvatarMedia
+                    avatar={avatar}
                     style={{ width: 24, height: 24, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
                   />
                 )}

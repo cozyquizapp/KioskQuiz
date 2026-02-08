@@ -16,12 +16,24 @@ const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, d
     <div className={`beamer-score-card${highlight ? ' highlight' : ''}`}>
       <div className="beamer-score-rank">{rank}.</div>
       {avatarSrc && (
-        <img
-          src={avatarSrc}
-          alt=""
-          className="beamer-score-avatar"
-          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
-        />
+        avatarSrc.endsWith('.mp4') ? (
+          <video
+            src={avatarSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="beamer-score-avatar"
+            style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
+          />
+        ) : (
+          <img
+            src={avatarSrc}
+            alt=""
+            className="beamer-score-avatar"
+            style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
+          />
+        )
       )}
       <div className="beamer-score-content">
         <div className="beamer-score-name">{name}</div>

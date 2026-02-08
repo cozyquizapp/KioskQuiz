@@ -31,6 +31,7 @@ import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';
 import { createConfetti } from '../utils/confetti';
 import { AVATARS } from '../config/avatars';
+import type { AvatarOption } from '../config/avatars';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -62,6 +63,22 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
 };
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string }> = ({ avatar, style, alt }) => {
+  if (avatar.isVideo && avatar.videoSrc) {
+    return (
+      <video
+        src={avatar.videoSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={style}
+      />
+    );
+  }
+  return <img src={avatar.dataUri} alt={alt || avatar.name} style={style} />;
+};
 
 type BeamerProps = { roomCode: string };
 
@@ -1502,9 +1519,8 @@ useEffect(() => {
                     <div className="cozyLobbyTeamRow" key={team.id}>
                       <span className={`cozyLobbyStatusDot ${isReady ? 'ready' : 'online'}`} />
                       {avatar && (
-                        <img
-                          src={avatar.dataUri}
-                          alt={avatar.name}
+                        <AvatarMedia
+                          avatar={avatar}
                           style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
                         />
                       )}
@@ -1569,10 +1585,9 @@ useEffect(() => {
                     {avatars.map((avatarId, avatarIdx) => {
                       const avatar = getAvatarById(avatarId);
                       return avatar ? (
-                        <img
+                        <AvatarMedia
                           key={`${avatarId}-${avatarIdx}`}
-                          src={avatar.dataUri}
-                          alt=""
+                          avatar={avatar}
                           style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
                         />
                       ) : null;
@@ -1599,10 +1614,9 @@ useEffect(() => {
                     {avatars.map((avatarId, avatarIdx) => {
                       const avatar = getAvatarById(avatarId);
                       return avatar ? (
-                        <img
+                        <AvatarMedia
                           key={`${avatarId}-${avatarIdx}`}
-                          src={avatar.dataUri}
-                          alt=""
+                          avatar={avatar}
                           style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
                         />
                       ) : null;
@@ -1638,10 +1652,9 @@ useEffect(() => {
                   {bunteChoiceAvatars[String(statement.id)].map((avatarId, avatarIdx) => {
                     const avatar = getAvatarById(avatarId);
                     return avatar ? (
-                      <img
+                      <AvatarMedia
                         key={`${avatarId}-${avatarIdx}`}
-                        src={avatar.dataUri}
-                        alt=""
+                        avatar={avatar}
                         style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
                       />
                     ) : null;
@@ -2371,9 +2384,8 @@ useEffect(() => {
               >
                 {/* Cyber scan effect for winner */}
                 {avatar && (
-                  <img
-                    src={avatar.dataUri}
-                    alt={avatar.name}
+                  <AvatarMedia
+                    avatar={avatar}
                     style={{ width: 48, height: 48, borderRadius: 14, border: `2px solid ${color}99`, marginBottom: 10 }}
                   />
                 )}

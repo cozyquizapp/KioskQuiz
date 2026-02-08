@@ -2,6 +2,7 @@ import React from 'react';
 import { AnswersState } from './types';
 import StatusDot from './StatusDot';
 import { AVATARS } from '../../config/avatars';
+import type { AvatarOption } from '../../config/avatars';
 
 type TeamsListProps = {
   answers: AnswersState | null;
@@ -14,6 +15,14 @@ type TeamsListProps = {
 const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, onKickAll, onKickTeam }) => {
   const hasTeams = Object.keys(answers?.teams || {}).length > 0;
   const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+  
+  const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties }> = ({ avatar, style }) => {
+    if (avatar.isVideo && avatar.videoSrc) {
+      return <video src={avatar.videoSrc} autoPlay loop muted playsInline style={style} />;
+    }
+    return <img src={avatar.dataUri} alt={avatar.name} style={style} />;
+  };
+  
   return (
     <section style={{ marginTop: 12, background: 'rgba(10,14,24,0.92)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 16, boxShadow: '0 14px 32px rgba(0,0,0,0.32)', backdropFilter: 'blur(10px)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8 }}>
@@ -67,9 +76,8 @@ const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, o
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <StatusDot filled={Boolean(team?.isReady)} tooltip={team?.isReady ? 'Angemeldet' : 'Nicht angemeldet'} />
               {team?.avatarId && (
-                <img
-                  src={getAvatarById(team.avatarId)?.dataUri}
-                  alt=""
+                <AvatarMedia
+                  avatar={getAvatarById(team.avatarId)}
                   style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.16)' }}
                 />
               )}

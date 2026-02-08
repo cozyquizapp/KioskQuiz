@@ -117,6 +117,7 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
 interface TeamViewProps {
   roomCode: string;
   rejoinTrigger?: number;
+  suppressAutoRejoin?: boolean;
 }
 
 const COPY = {
@@ -329,7 +330,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   );
 });
 
-function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
+function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps) {
   const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
@@ -638,26 +639,28 @@ function TeamView({ roomCode, rejoinTrigger }: TeamViewProps) {
     if (savedId) {
       savedIdRef.current = savedId;
       // Auto-rejoin if we have saved ID but no active teamId
-      if (!teamId && savedName && roomCode) {
+      // BUT: don't auto-rejoin if suppressAutoRejoin is true (modal is controlling it)
+      if (!teamId && savedName && roomCode && !suppressAutoRejoin) {
         handleJoin(true);
       }
     }
     if (savedAvatar) setAvatarId(savedAvatar);
-  }, [roomCode, teamId, handleJoin, storageKey]);
+  }, [roomCode, teamId, handleJoin, storageKey, suppressAutoRejoin]);
 
   // Explicit rejoin trigger from parent (e.g., when user clicks "Zurück zu Team")
   useEffect(() => {
     if (rejoinTrigger && rejoinTrigger > 0) {
       const savedName = localStorage.getItem(storageKey('name'));
       const savedId = localStorage.getItem(storageKey('id'));
-      if (savedId && savedName && roomCode && !teamId) {
-        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName, hasPhase: phase });
+      if (savedId && savedName && roomCode) {
+        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName, phase, teamId });
+        // Force rejoin even if teamId exists (user explicitly clicked rejoin button)
         handleJoin(true);
       } else {
-        console.log('⚠️ Rejoin conditions not met:', { savedId: !!savedId, savedName: !!savedName, roomCode: !!roomCode, hasTeamId: !!teamId });
+        console.log('⚠️ Rejoin conditions not met:', { savedId: !!savedId, savedName: !!savedName, roomCode: !!roomCode });
       }
     }
-  }, [rejoinTrigger, roomCode, teamId, handleJoin, storageKey]);
+  }, [rejoinTrigger, roomCode, handleJoin, storageKey, phase, teamId]);
 
   useEffect(() => {
     if (!AVATARS.some((avatar) => avatar.id === avatarId)) {

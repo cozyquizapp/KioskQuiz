@@ -104,9 +104,13 @@ const TeamPage = () => {
   }, [roomCode]);
   
   // Show lobby modal when we have a saved team (after first mount)
+  // Set it immediately on mount, don't wait for useEffect
+  const [shouldSuppressAutoRejoin, setShouldSuppressAutoRejoin] = useState(Boolean(savedTeamId));
+  
   useEffect(() => {
     if (savedTeamId && !lobbyModalOpen) {
       setLobbyModalOpen(true);
+      setShouldSuppressAutoRejoin(true);
     }
   }, [savedTeamId, lobbyModalOpen]);
 
@@ -209,6 +213,7 @@ const TeamPage = () => {
     // Team already exists in localStorage, just hide modal to show TeamView
     // TeamView will auto-reconnect with saved ID via its useEffect
     setLobbyModalOpen(false);
+    setShouldSuppressAutoRejoin(false);
     // Trigger rejoin in TeamView by incrementing counter
     setRejoinTrigger(prev => prev + 1);
   };
@@ -220,6 +225,7 @@ const TeamPage = () => {
       localStorage.removeItem(`team:${roomCode}:name`);
       localStorage.removeItem(`team:${roomCode}:avatarId`);
     }
+    setShouldSuppressAutoRejoin(false);
     setLobbyModalOpen(false);
     // Reload page to reset state
     window.location.reload();
@@ -489,7 +495,7 @@ const TeamPage = () => {
               )}
             </div>
           </div>
-        )}
+        )}suppressAutoRejoin={shouldSuppressAutoRejoin} 
         <TeamView roomCode={roomCode || ''} rejoinTrigger={rejoinTrigger} />
       </>
     </TeamBoundary>

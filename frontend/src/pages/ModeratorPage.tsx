@@ -3442,6 +3442,11 @@ const renderCozyStagePanel = () => {
                 await hookOverrideAnswer(teamId, isCorrect);
               }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
             }
+            onKickTeam={(teamId) =>
+              doAction(async () => {
+                await kickTeam(roomCode, teamId);
+              }, 'Team entfernt')
+            }
           />
 
           <section style={{ ...card, marginTop: 12 }}>

@@ -12,6 +12,7 @@ type AnswerListProps = {
   statChip: React.CSSProperties;
   inputStyle: React.CSSProperties;
   onOverride: (teamId: string, isCorrect: boolean) => void;
+  onKickTeam?: (teamId: string) => void;
 };
 
 const formatAnswerValue = (ans: any, question?: AnyQuestion | null) => {
@@ -49,7 +50,7 @@ const renderTieBreaker = (ans: any) => {
 
 
 
-const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCount, unreviewedCount, question, statChip, inputStyle, onOverride }) => (
+const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCount, unreviewedCount, question, statChip, inputStyle, onOverride, onKickTeam }) => (
   <section
     style={{
       marginTop: 12,
@@ -102,6 +103,24 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
                 tooltip={answers?.teams?.[teamId]?.isReady ? 'Angemeldet' : 'Nicht angemeldet'}
               />
               <span>{answers?.teams?.[teamId]?.name ?? 'Team'}</span>
+              {onKickTeam && (
+                <button
+                  style={{
+                    ...inputStyle,
+                    background: 'rgba(239,68,68,0.14)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    width: 'auto',
+                    padding: '4px 8px',
+                    fontSize: 11,
+                    marginLeft: 4
+                  }}
+                  onClick={() => onKickTeam(teamId)}
+                  title="Team entfernen"
+                >
+                  Kick
+                </button>
+              )}
             </div>
             <div style={{ color: 'var(--muted)', fontSize: 12 }}>{formatAnswerValue(ans, question)}</div>
             {(ans as any).awardedPoints !== undefined && (
@@ -164,11 +183,36 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
               padding: 10,
               borderRadius: 12,
               border: '1px dashed rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.02)'
+              background: 'rgba(255,255,255,0.02)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}
           >
-            <div style={{ fontWeight: 800 }}>{answers?.teams?.[id]?.name ?? 'Team'}</div>
-            <div style={{ color: 'var(--muted)', fontSize: 12 }}>Noch keine Antwort</div>
+            <div>
+              <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{answers?.teams?.[id]?.name ?? 'Team'}</span>
+                {onKickTeam && (
+                  <button
+                    style={{
+                      ...inputStyle,
+                      background: 'rgba(239,68,68,0.14)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239,68,68,0.4)',
+                      width: 'auto',
+                      padding: '4px 8px',
+                      fontSize: 11,
+                      marginLeft: 4
+                    }}
+                    onClick={() => onKickTeam(id)}
+                    title="Team entfernen"
+                  >
+                    Kick
+                  </button>
+                )}
+              </div>
+              <div style={{ color: 'var(--muted)', fontSize: 12 }}>Noch keine Antwort</div>
+            </div>
           </div>
         ))}
     </div>

@@ -3588,14 +3588,27 @@ function TeamView({ roomCode }: TeamViewProps) {
                 bottom: 0,
                 width: '100%',
                 height: 60,
-                pointerEvents: 'none',
-                zIndex: 1
+                pointerEvents: 'auto',
+                zIndex: 1,
+                cursor: 'pointer'
               }}
+              onClick={() => {
+                // Igel special behavior on click
+                if (avatarId === 'avatar1') {
+                  if (igelState === 'walking') {
+                    setIgelState('looking');
+                    setTimeout(() => setIgelState('happy'), 600);
+                    setTimeout(() => setIgelState('walking'), 1200);
+                  }
+                }
+              }}
+              title="Klick mich an!"
             >
               <AvatarMedia
                 avatar={getAvatarById(avatarId)}
                 mood={avatarMood}
                 enableWalking={true}
+                igelState={igelState}
                 style={{ 
                   width: 60, 
                   height: 60, 

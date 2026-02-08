@@ -3303,7 +3303,11 @@ useEffect(() => {
       {/* Walking Animals at Bottom of Screen */}
       {teams.filter(t => t.id && t.avatarId).map((team, index) => {
         const avatar = AVATARS.find(a => a.id === team.avatarId);
-        if (!avatar || !avatar.svg) return null;
+        if (!avatar) return null;
+        
+        // Get Igel image based on state (always walking on beamer)
+        const isIgel = avatar.id === 'avatar1';
+        const imageSrc = isIgel ? '/avatars/igel/gehen.svg' : (avatar.svg || avatar.dataUri);
         
         // Calculate speed based on animal size - larger = slower, smaller = faster
         const sizeRatio = getAvatarSize(team.avatarId);
@@ -3326,7 +3330,7 @@ useEffect(() => {
             }}
           >
             <img
-              src={avatar.svg}
+              src={imageSrc}
               alt={team.name}
               style={{
                 width: '100%',

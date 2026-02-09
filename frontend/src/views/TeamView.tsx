@@ -275,6 +275,18 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
 
   const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState, walkFrame) : null;
 
+  // Debug: log state changes
+  useEffect(() => {
+    if (hasStates && currentIgelState !== 'walking') {
+      console.log(`🎭 Avatar state changed:`, { 
+        avatar: avatar.id, 
+        state: currentIgelState, 
+        path: currentStatePath,
+        walkFrame 
+      });
+    }
+  }, [currentIgelState, currentStatePath, hasStates, avatar.id, walkFrame]);
+
   // For SVG animals
   if (!avatar.isVideo) {
     const imgSrc = currentStatePath || avatar.svg || avatar.dataUri;
@@ -294,10 +306,11 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
-          position: 'relative', // Allow natural flow instead of absolute positioning
+          position: 'relative',
           transformOrigin: 'bottom center',
           opacity: 1,
-          transition: hasStates ? 'none' : 'none'
+          // Smooth transitions between avatar states
+          transition: hasStates ? 'all 0.15s ease-in-out' : 'none'
         }}
       >
         <img 
@@ -311,7 +324,9 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
             height: '100%',
             objectFit: 'contain',
             filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none',
-            display: 'block'
+            display: 'block',
+            // Smooth state transitions
+            transition: hasStates ? 'opacity 0.15s ease-in-out' : 'none'
           }}
         />
       </div>
@@ -848,8 +863,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
     
     console.log('⏸️ scheduling idle cycle, current state:', avatarStateRef.current);
-    const idleDelay = 4000 + Math.random() * 4000; // 4-8s
-    const idleDuration = 1200 + Math.random() * 800; // 1.2-2s
+    // Randomize walking duration: 2-6 seconds before idle pause
+    const idleDelay = 2000 + Math.random() * 4000; // 2-6s walk, then idle
+    const idleDuration = 800 + Math.random() * 600; // 0.8-1.4s idle duration (shorter for more active feel)
     
     const idleTimer = window.setTimeout(() => {
       // If a sequence is active, reschedule instead
@@ -861,7 +877,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       
       // Only transition to idle if currently walking
       if (avatarStateRef.current === 'walking') {
-        console.log('⏸️ showing idle for ', idleDuration, 'ms');
+        console.log('⏸️ showing idle for', Math.round(idleDuration), 'ms');
         setIgelState('idle');
         broadcastAvatarState('idle');
         

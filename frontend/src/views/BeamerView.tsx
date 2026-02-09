@@ -288,10 +288,16 @@ const BeamerWalkingAvatar: React.FC<{
       setWalkFrame(1);
       return;
     }
-    const interval = window.setInterval(() => {
-      setWalkFrame((prev) => (prev === 1 ? 2 : 1));
-    }, 380);
-    return () => window.clearInterval(interval);
+    const frame1Ms = 340;
+    const frame2Ms = 240;
+    let timer = 0;
+    const tick = (nextFrame: 1 | 2) => {
+      setWalkFrame(nextFrame);
+      const delay = nextFrame === 1 ? frame1Ms : frame2Ms;
+      timer = window.setTimeout(() => tick(nextFrame === 1 ? 2 : 1), delay);
+    };
+    tick(1);
+    return () => window.clearTimeout(timer);
   }, [isStateBased, currentState]);
 
   const imageSrc = isStateBased

@@ -250,10 +250,16 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
       setWalkFrame(1);
       return;
     }
-    const interval = window.setInterval(() => {
-      setWalkFrame((prev) => (prev === 1 ? 2 : 1));
-    }, 380);
-    return () => window.clearInterval(interval);
+    const frame1Ms = 340;
+    const frame2Ms = 240;
+    let timer = 0;
+    const tick = (nextFrame: 1 | 2) => {
+      setWalkFrame(nextFrame);
+      const delay = nextFrame === 1 ? frame1Ms : frame2Ms;
+      timer = window.setTimeout(() => tick(nextFrame === 1 ? 2 : 1), delay);
+    };
+    tick(1);
+    return () => window.clearTimeout(timer);
   }, [hasStates, currentIgelState]);
 
   useEffect(() => {
@@ -1108,8 +1114,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               setFeedbackAnimation('success');
               if (avatarId && hasStateBasedRendering(avatarId)) {
                 runAvatarSequence([
-                  { state: 'happy', duration: 900 },
-                  { state: 'idle', duration: 900 },
+                  { state: 'happy', duration: 1200 },
                   { state: 'walking', duration: 0 }
                 ]);
               } else {
@@ -1120,8 +1125,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               setFeedbackAnimation('error');
               if (avatarId && hasStateBasedRendering(avatarId)) {
                 runAvatarSequence([
-                  { state: 'sad', duration: 900 },
-                  { state: 'idle', duration: 900 },
+                  { state: 'sad', duration: 1200 },
                   { state: 'walking', duration: 0 }
                 ]);
               } else {
@@ -1155,8 +1159,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           setResultPoints(entry.awardedPoints);
           if (avatarId && hasStateBasedRendering(avatarId)) {
             runAvatarSequence([
-              { state: entry.awardedPoints > 0 ? 'happy' : 'sad', duration: 900 },
-              { state: 'idle', duration: 900 },
+              { state: entry.awardedPoints > 0 ? 'happy' : 'sad', duration: 1200 },
               { state: 'walking', duration: 0 }
             ]);
           } else {
@@ -1187,8 +1190,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           setResultPoints(awardedPoints);
           if (avatarId && hasStateBasedRendering(avatarId)) {
             runAvatarSequence([
-              { state: awardedPoints > 0 ? 'happy' : 'sad', duration: 900 },
-              { state: 'idle', duration: 900 },
+              { state: awardedPoints > 0 ? 'happy' : 'sad', duration: 1200 },
               { state: 'walking', duration: 0 }
             ]);
           } else {
@@ -3503,9 +3505,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     // State-based avatar: looking on tap (always trigger, even if same avatar)
                     if (hasStateBasedRendering(selectedAvatar.id)) {
                       runAvatarSequence([
-                        { state: 'gesture', duration: 400 },
-                        { state: 'happy', duration: 900 },
-                        { state: 'idle', duration: 900 },
+                        { state: 'gesture', duration: 600 },
+                        { state: 'happy', duration: 1200 },
                         { state: 'walking', duration: 0 }
                       ]);
                     }
@@ -3919,9 +3920,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 if (hasStateBasedRendering(avatarId)) {
                   if (igelState === 'walking' || igelState === 'idle') {
                     runAvatarSequence([
-                      { state: 'gesture', duration: 400 },
-                      { state: 'happy', duration: 900 },
-                      { state: 'idle', duration: 900 },
+                      { state: 'gesture', duration: 600 },
+                      { state: 'happy', duration: 1200 },
                       { state: 'walking', duration: 0 }
                     ]);
                   }

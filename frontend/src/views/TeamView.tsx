@@ -480,6 +480,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const avatarStateTimersRef = useRef<number[]>([]);
   const avatarIdleTimersRef = useRef<number[]>([]);
   const avatarStateRef = useRef<AvatarState>('walking');
+  const avatarSequenceActiveRef = useRef(false);
   const [reconnectKey, setReconnectKey] = useState(0);
   const storageKey = useCallback((suffix: string) => {
     return `team:${roomCode}:${suffix}`;
@@ -845,43 +846,79 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     });
   }
 
+  const clearAvatarTimers = useCallback(() => {
+    avatarStateTimersRef.current.forEach(clearTimeout);
+    avatarStateTimersRef.current = [];
+  }, []);
+
+  const clearIdleTimers = useCallback(() => {
+    avatarIdleTimersRef.current.forEach(clearTimeout);
+    avatarIdleTimersRef.current = [];
+  }, []);
+
+  const scheduleIdleCycle = useCallback(() => {
+    if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
+    const idleDelay = 8000 + Math.random() * 4000;
+    const idleDuration = 1200 + Math.random() * 800;
+    const idleTimer = window.setTimeout(() => {
+      if (avatarSequenceActiveRef.current) {
+        scheduleIdleCycle();
+        return;
+      }
+      if (avatarStateRef.current === 'walking') {
+        setIgelState('idle');
+        broadcastAvatarState('idle');
+        const resumeTimer = window.setTimeout(() => {
+          if (avatarStateRef.current === 'idle') {
+            setIgelState('walking');
+            broadcastAvatarState('walking');
+          }
+          scheduleIdleCycle();
+        }, idleDuration);
+        avatarIdleTimersRef.current.push(resumeTimer);
+        return;
+      }
+      scheduleIdleCycle();
+    }, idleDelay);
+    avatarIdleTimersRef.current.push(idleTimer);
+  }, [avatarId, teamId, broadcastAvatarState]);
+
+  const runAvatarSequence = useCallback(
+    (steps: Array<{ state: AvatarState; duration: number }>) => {
+      if (!avatarId || !hasStateBasedRendering(avatarId)) return false;
+      clearAvatarTimers();
+      clearIdleTimers();
+      avatarSequenceActiveRef.current = true;
+
+      let delay = 0;
+      steps.forEach((step) => {
+        const timer = window.setTimeout(() => {
+          setIgelState(step.state);
+          broadcastAvatarState(step.state);
+        }, delay);
+        avatarStateTimersRef.current.push(timer);
+        delay += step.duration;
+      });
+
+      const endTimer = window.setTimeout(() => {
+        avatarSequenceActiveRef.current = false;
+        scheduleIdleCycle();
+      }, delay);
+      avatarStateTimersRef.current.push(endTimer);
+
+      return true;
+    },
+    [avatarId, broadcastAvatarState, clearAvatarTimers, clearIdleTimers, scheduleIdleCycle]
+  );
+
   useEffect(() => {
     if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
     setIgelState('walking');
     broadcastAvatarState('walking');
-
-    const clearIdleTimers = () => {
-      avatarIdleTimersRef.current.forEach(clearTimeout);
-      avatarIdleTimersRef.current = [];
-    };
-
-    const scheduleIdleCycle = () => {
-      const idleDelay = 6000 + Math.random() * 6000;
-      const idleDuration = 1200 + Math.random() * 1200;
-      const idleTimer = window.setTimeout(() => {
-        if (avatarStateRef.current === 'walking') {
-          setIgelState('idle');
-          broadcastAvatarState('idle');
-          const resumeTimer = window.setTimeout(() => {
-            if (avatarStateRef.current === 'idle') {
-              setIgelState('walking');
-              broadcastAvatarState('walking');
-            }
-            scheduleIdleCycle();
-          }, idleDuration);
-          avatarIdleTimersRef.current.push(resumeTimer);
-          return;
-        }
-        scheduleIdleCycle();
-      }, idleDelay);
-      avatarIdleTimersRef.current.push(idleTimer);
-    };
-
     clearIdleTimers();
     scheduleIdleCycle();
-
     return clearIdleTimers;
-  }, [teamId, avatarId]);
+  }, [teamId, avatarId, broadcastAvatarState, clearIdleTimers, scheduleIdleCycle]);
 
   function updateLanguage(lang: Language) {
     // Team-View soll nur einsprachig sein, nicht 'both'
@@ -1042,11 +1079,27 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             // Trigger feedback animation and mood
             if (entry.awardedPoints > 0) {
               setFeedbackAnimation('success');
-              setAvatarMood('happy');
+              if (avatarId && hasStateBasedRendering(avatarId)) {
+                runAvatarSequence([
+                  { state: 'happy', duration: 900 },
+                  { state: 'idle', duration: 900 },
+                  { state: 'walking', duration: 0 }
+                ]);
+              } else {
+                setAvatarMood('happy');
+              }
               setTimeout(() => setFeedbackAnimation(null), 1000);
             } else {
               setFeedbackAnimation('error');
-              setAvatarMood('sad');
+              if (avatarId && hasStateBasedRendering(avatarId)) {
+                runAvatarSequence([
+                  { state: 'sad', duration: 900 },
+                  { state: 'idle', duration: 900 },
+                  { state: 'walking', duration: 0 }
+                ]);
+              } else {
+                setAvatarMood('sad');
+              }
               setTimeout(() => setFeedbackAnimation(null), 500);
             }
           } else {
@@ -1073,7 +1126,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setResultMessage(getResultMessage(entry, question));
         if (typeof entry.awardedPoints === 'number') {
           setResultPoints(entry.awardedPoints);
-          setAvatarMood(entry.awardedPoints > 0 ? 'happy' : 'sad');
+          if (avatarId && hasStateBasedRendering(avatarId)) {
+            runAvatarSequence([
+              { state: entry.awardedPoints > 0 ? 'happy' : 'sad', duration: 900 },
+              { state: 'idle', duration: 900 },
+              { state: 'walking', duration: 0 }
+            ]);
+          } else {
+            setAvatarMood(entry.awardedPoints > 0 ? 'happy' : 'sad');
+          }
         }
         const detail = (entry as any)?.awardedDetail;
         if (detail) setResultDetail(detail);
@@ -1097,7 +1158,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setPhase('showResult');
         if (typeof awardedPoints === 'number') {
           setResultPoints(awardedPoints);
-          setAvatarMood(awardedPoints > 0 ? 'happy' : 'sad');
+          if (avatarId && hasStateBasedRendering(avatarId)) {
+            runAvatarSequence([
+              { state: awardedPoints > 0 ? 'happy' : 'sad', duration: 900 },
+              { state: 'idle', duration: 900 },
+              { state: 'walking', duration: 0 }
+            ]);
+          } else {
+            setAvatarMood(awardedPoints > 0 ? 'happy' : 'sad');
+          }
         }
         if (awardedDetail) setResultDetail(awardedDetail);
         if (sol) setSolution(sol);
@@ -3406,24 +3475,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     
                     // State-based avatar: looking on tap (always trigger, even if same avatar)
                     if (hasStateBasedRendering(selectedAvatar.id)) {
-                      setIgelState('gesture');
-                      broadcastAvatarState('gesture');
-                      
-                      // Clear existing timers
-                      avatarStateTimersRef.current.forEach(clearTimeout);
-                      avatarStateTimersRef.current = [];
-                      
-                      const timer1 = window.setTimeout(() => {
-                        setIgelState('happy');
-                        broadcastAvatarState('happy');
-                      }, 600);
-                      const timer2 = window.setTimeout(() => {
-                        setIgelState('walking');
-                        broadcastAvatarState('walking');
-                      }, 1800);
-                      
-                      // Store for cleanup
-                      avatarStateTimersRef.current.push(timer1, timer2);
+                      runAvatarSequence([
+                        { state: 'gesture', duration: 400 },
+                        { state: 'happy', duration: 900 },
+                        { state: 'idle', duration: 900 },
+                        { state: 'walking', duration: 0 }
+                      ]);
                     }
                   }
                   // Trigger tap animation
@@ -3834,24 +3891,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 // State-based avatar special behavior on click
                 if (hasStateBasedRendering(avatarId)) {
                   if (igelState === 'walking' || igelState === 'idle') {
-                    setIgelState('gesture');
-                    broadcastAvatarState('gesture');
-                    
-                    // Clear existing timers
-                    avatarStateTimersRef.current.forEach(clearTimeout);
-                    avatarStateTimersRef.current = [];
-                    
-                    const timer1 = window.setTimeout(() => {
-                      setIgelState('happy');
-                      broadcastAvatarState('happy');
-                    }, 600);
-                    const timer2 = window.setTimeout(() => {
-                      setIgelState('walking');
-                      broadcastAvatarState('walking');
-                    }, 1200);
-                    
-                    // Store for cleanup
-                    avatarStateTimersRef.current.push(timer1, timer2);
+                    runAvatarSequence([
+                      { state: 'gesture', duration: 400 },
+                      { state: 'happy', duration: 900 },
+                      { state: 'idle', duration: 900 },
+                      { state: 'walking', duration: 0 }
+                    ]);
                   }
                 }
               }}

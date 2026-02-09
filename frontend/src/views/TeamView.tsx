@@ -474,6 +474,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const recoveringRef = useRef(false);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const avatarStateRef = useRef<AvatarState>('walking');
+  const avatarSequenceRef = useRef<ReturnType<typeof useAvatarSequenceRunner> | null>(null);
+  const idleSchedulerRef = useRef<ReturnType<typeof useAvatarIdleScheduler> | null>(null);
   const [reconnectKey, setReconnectKey] = useState(0);
   
   const storageKey = useCallback((suffix: string) => {
@@ -850,6 +852,23 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
   }, [avatarPreloadError]);
 
+  // Avatar sequence runner (for tap gestures, results, etc.)
+  const avatarSequence = useAvatarSequenceRunner({
+    onStateChange: (state) => {
+      setIgelState(state);
+      broadcastAvatarState(state);
+    },
+    onSequenceComplete: () => {
+      // Use ref to avoid circular dependency
+      idleSchedulerRef.current?.scheduleIdleCycle();
+    }
+  });
+  
+  // Store in ref for cross-reference
+  useEffect(() => {
+    avatarSequenceRef.current = avatarSequence;
+  }, [avatarSequence]);
+
   // Avatar idle scheduler (periodic pauses)
   const idleScheduler = useAvatarIdleScheduler(
     Boolean(teamId && avatarId && hasStateBasedRendering(avatarId)),
@@ -866,30 +885,32 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         broadcastAvatarState(state);
       },
       getCurrentState: () => avatarStateRef.current,
-      isSequenceActive: () => avatarSequence?.isSequenceActive?.() ?? false
+      isSequenceActive: () => avatarSequenceRef.current?.isSequenceActive?.() ?? false
     }
   );
-
-  // Avatar sequence runner (for tap gestures, results, etc.)
-  const avatarSequence = useAvatarSequenceRunner({
-    onStateChange: (state) => {
-      setIgelState(state);
-      broadcastAvatarState(state);
-    },
-    onSequenceComplete: () => {
-      idleScheduler.scheduleIdleCycle();
-    }
-  });
+  
+  // Store in ref for cross-reference
+  useEffect(() => {
+    idleSchedulerRef.current = idleScheduler;
+  }, [idleScheduler]);
 
   // Wrapper function for backward compatibility
   const runAvatarSequence = useCallback(
     (steps: Array<{ state: AvatarState; duration: number }>, avatarOverrideId?: string) => {
       const activeAvatarId = avatarOverrideId || avatarId;
-      if (!activeAvatarId || !hasStateBasedRendering(activeAvatarId)) return false;
+      if (!activeAvatarId || !hasStateBasedRendering(activeAvatarId)) {
+        console.log('⚠️ runAvatarSequence: Avatar not supported', { activeAvatarId, avatarId });
+        return false;
+      }
 
+      console.log('▶️ runAvatarSequence: Starting sequence', { steps, activeAvatarId });
+      
       // Clear idle timers and run sequence
       idleScheduler.clearTimers();
-      return avatarSequence.runSequence(steps);
+      const result = avatarSequence.runSequence(steps);
+      
+      console.log('▶️ runAvatarSequence: Result', { result });
+      return result;
     },
     [avatarId, idleScheduler, avatarSequence]
   );

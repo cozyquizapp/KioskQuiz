@@ -672,10 +672,15 @@ main[class*="cozy-beamer-shell"] {
 .animated-animal {
   transition: all 0.3s ease;
   position: absolute;
+  /* Always apply animation but control via will-change for performance */
+  animation: animal-bounce 70s linear infinite;
+  /* Pause animation by default, play only when walking */
+  animation-play-state: paused;
 }
 
 .animal-bounce {
-  animation: animal-bounce 70s linear infinite;
+  /* Animation is already defined on parent, just play it */
+  animation-play-state: running !important;
 }
 
 .animal-celebrate {

@@ -315,11 +315,13 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
-          position: 'relative',
+          position: hasStates && enableWalking ? 'absolute' : 'relative',
+          bottom: hasStates && enableWalking ? 0 : 'auto',
           transformOrigin: 'bottom center',
           opacity: 1,
           // Smooth transitions between avatar states
-          transition: hasStates ? 'all 0.15s ease-in-out' : 'none'
+          transition: hasStates ? 'all 0.15s ease-in-out' : 'none',
+          ...style
         }}
       >
         <img 
@@ -3937,9 +3939,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           {teamId && avatarId && (
             <div
               style={{
-                position: 'absolute',
-                left: 0,
-                bottom: 0,
+                position: 'relative',
                 width: '100%',
                 height: 60,
                 pointerEvents: 'auto',
@@ -3975,9 +3975,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 style={{ 
                   width: 60, 
                   height: 60, 
-                  objectFit: 'contain',
-                  position: 'absolute',
-                  bottom: 0
+                  objectFit: 'contain'
                 }}
               />
             </div>

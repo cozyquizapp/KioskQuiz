@@ -119,10 +119,8 @@ const pillStyle = (tone: 'setup' | 'live' | 'eval' | 'final'): React.CSSProperti
 };
 
 const pill = (text: string, tone: 'setup' | 'live' | 'eval' | 'final') => <span style={pillStyle(tone)}>{text}</span>;
-
 const buildQrUrl = (url: string, size = 180) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
-
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 const COZY_BLITZ_MIN = 3;
 

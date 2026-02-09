@@ -246,6 +246,11 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   }, [mood]);
 
+  // 🎯 CRITICAL: Sync igelState prop to local state
+  useEffect(() => {
+    setCurrentIgelState(igelState);
+  }, [igelState]);
+
   useEffect(() => {
     if (!hasStates || currentIgelState !== 'walking') {
       setWalkFrame(1);
@@ -278,17 +283,18 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
 
   const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState, walkFrame) : null;
 
-  // Debug: log state changes
+  // Debug: log ALL state changes
   useEffect(() => {
-    if (hasStates && currentIgelState !== 'walking') {
-      console.log(`🎭 Avatar state changed:`, { 
+    if (hasStates) {
+      console.log(`🎭 AvatarMedia state:`, { 
         avatar: avatar.id, 
-        state: currentIgelState, 
+        igelStateProp: igelState,
+        currentIgelState, 
         path: currentStatePath,
         walkFrame 
       });
     }
-  }, [currentIgelState, currentStatePath, hasStates, avatar.id, walkFrame]);
+  }, [hasStates, igelState, currentIgelState, currentStatePath, avatar.id, walkFrame]);
 
   // For SVG animals
   if (!avatar.isVideo) {
@@ -864,10 +870,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
   });
   
-  // Store in ref for cross-reference
-  useEffect(() => {
-    avatarSequenceRef.current = avatarSequence;
-  }, [avatarSequence]);
+  // Store in ref immediately (not in useEffect)
+  avatarSequenceRef.current = avatarSequence;
 
   // Avatar idle scheduler (periodic pauses)
   const idleScheduler = useAvatarIdleScheduler(
@@ -889,10 +893,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
   );
   
-  // Store in ref for cross-reference
-  useEffect(() => {
-    idleSchedulerRef.current = idleScheduler;
-  }, [idleScheduler]);
+  // Store in ref immediately (not in useEffect)
+  idleSchedulerRef.current = idleScheduler;
 
   // Wrapper function for backward compatibility
   const runAvatarSequence = useCallback(
@@ -903,16 +905,22 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         return false;
       }
 
-      console.log('▶️ runAvatarSequence: Starting sequence', { steps, activeAvatarId });
+      console.log('▶️ runAvatarSequence: Starting sequence', { 
+        steps, 
+        activeAvatarId,
+        hasIdleSchedulerRef: !!idleSchedulerRef.current,
+        hasAvatarSequenceRef: !!avatarSequenceRef.current,
+        refHasRunSequence: !!avatarSequenceRef.current?.runSequence
+      });
       
-      // Clear idle timers and run sequence
-      idleScheduler.clearTimers();
-      const result = avatarSequence.runSequence(steps);
+      // Clear idle timers and run sequence via refs
+      idleSchedulerRef.current?.clearTimers();
+      const result = avatarSequenceRef.current?.runSequence(steps);
       
-      console.log('▶️ runAvatarSequence: Result', { result });
+      console.log('▶️ runAvatarSequence: Result', { result, igelState });
       return result;
     },
-    [avatarId, idleScheduler, avatarSequence]
+    [avatarId]
   );
 
   // Initialize avatar: start walking and schedule idle cycles
@@ -921,14 +929,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     
     setIgelState('walking');
     broadcastAvatarState('walking');
-    idleScheduler.clearTimers();
-    idleScheduler.scheduleIdleCycle();
+    idleSchedulerRef.current?.clearTimers();
+    idleSchedulerRef.current?.scheduleIdleCycle();
     
     return () => {
-      idleScheduler.clearTimers();
-      avatarSequence.cancel();
+      idleSchedulerRef.current?.clearTimers();
+      avatarSequenceRef.current?.cancel();
     };
-  }, [teamId, avatarId, broadcastAvatarState, idleScheduler, avatarSequence]);
+  }, [teamId, avatarId, broadcastAvatarState]);
 
   function updateLanguage(lang: Language) {
     // Team-View soll nur einsprachig sein, nicht 'both'
@@ -3939,15 +3947,22 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 cursor: 'pointer'
               }}
               onClick={() => {
+                console.log('🖱️ Avatar clicked!', { avatarId, igelState, hasStates: hasStateBasedRendering(avatarId) });
                 // State-based avatar special behavior on click
                 if (hasStateBasedRendering(avatarId)) {
+                  console.log('✅ Has state rendering');
                   if (igelState === 'walking' || igelState === 'idle') {
+                    console.log('✅ State is walking/idle, running sequence');
                     runAvatarSequence([
                       { state: 'gesture', duration: 600 },
                       { state: 'happy', duration: 1200 },
                       { state: 'walking', duration: 0 }
                     ], avatarId);
+                  } else {
+                    console.log('❌ Wrong state:', igelState);
                   }
+                } else {
+                  console.log('❌ No state rendering for this avatar');
                 }
               }}
               title="Klick mich an!"

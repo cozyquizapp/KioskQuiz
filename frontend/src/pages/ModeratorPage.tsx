@@ -2427,11 +2427,6 @@ function ModeratorPage(): React.ReactElement {
               await hookOverrideAnswer(teamId, isCorrect);
             }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
           }
-          onKickTeam={(teamId) =>
-            doAction(async () => {
-              await kickTeam(roomCode, teamId);
-            }, 'Team entfernt')
-          }
         />
       </div>
     ) : null;
@@ -3466,11 +3461,6 @@ const renderCozyStagePanel = () => {
                 await hookOverrideAnswer(teamId, isCorrect);
               }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
             }
-            onKickTeam={(teamId) =>
-              doAction(async () => {
-                await kickTeam(roomCode, teamId);
-              }, 'Team entfernt')
-            }
           />
 
           <section style={{ ...card, marginTop: 12 }}>
@@ -3552,19 +3542,6 @@ const renderCozyStagePanel = () => {
               });
             }, 'Teams aktualisiert')
           }
-          onKickAll={() =>
-            doAction(async () => {
-              const ids = Object.keys(answers.teams || {});
-              await Promise.all(ids.map((id) => kickTeam(roomCode, id).catch(() => undefined)));
-              // answers will be updated by useLiveAnswers polling
-            }, 'Teams entfernt')
-          }
-          onKickTeam={(teamId) =>
-            doAction(async () => {
-              await kickTeam(roomCode, teamId);
-              // answers will be updated by useLiveAnswers polling
-            }, 'Team entfernt')
-          }
         />
       )}
 
@@ -3592,17 +3569,6 @@ const renderCozyStagePanel = () => {
                   solution: res.solution
                 });
               }, 'Teams aktualisiert')
-            }
-            onKickAll={() =>
-              doAction(async () => {
-                const ids = Object.keys(answers.teams || {});
-                await Promise.all(ids.map((id) => kickTeam(roomCode, id).catch(() => undefined)));
-              }, 'Teams entfernt')
-            }
-            onKickTeam={(teamId) =>
-              doAction(async () => {
-                await kickTeam(roomCode, teamId);
-              }, 'Team entfernt')
             }
           />
         </>

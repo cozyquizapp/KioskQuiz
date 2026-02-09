@@ -8,8 +8,8 @@ type TeamsListProps = {
   answers: AnswersState | null;
   inputStyle: React.CSSProperties;
   onRefresh: () => void;
-  onKickAll: () => void;
-  onKickTeam: (teamId: string) => void;
+  onKickAll?: () => void;
+  onKickTeam?: (teamId: string) => void;
 };
 
 const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, onKickAll, onKickTeam }) => {
@@ -63,7 +63,7 @@ const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, o
           >
             Teams aktualisieren
           </button>
-          {hasTeams && (
+          {hasTeams && onKickAll && (
             <button
               style={{
                 ...inputStyle,
@@ -105,19 +105,21 @@ const TeamsList: React.FC<TeamsListProps> = ({ answers, inputStyle, onRefresh, o
               )}
               {team?.name ?? 'Team'}
             </span>
-            <button
-              style={{
-                ...inputStyle,
-                background: 'rgba(239,68,68,0.14)',
-                color: '#ef4444',
-                border: '1px solid rgba(239,68,68,0.4)',
-                width: 'auto',
-                padding: '6px 10px'
-              }}
-              onClick={() => onKickTeam(teamId)}
-            >
-              Entfernen
-            </button>
+            {onKickTeam && (
+              <button
+                style={{
+                  ...inputStyle,
+                  background: 'rgba(239,68,68,0.14)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  width: 'auto',
+                  padding: '6px 10px'
+                }}
+                onClick={() => onKickTeam(teamId)}
+              >
+                Entfernen
+              </button>
+            )}
           </div>
         ))}
         {!hasTeams && <div style={{ color: 'var(--muted)' }}>Noch keine Teams</div>}

@@ -31,7 +31,10 @@ import { AVATARS } from '../config/avatars';
 import type { AvatarOption } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
 import { useWindowWidth } from '../hooks/useWindowWidth';
-import { hasStateBasedRendering, getAvatarStatePath, preloadAvatarStates, type AvatarState } from '../config/avatarStates';
+import { hasStateBasedRendering, getAvatarStatePath, type AvatarState } from '../config/avatarStates';
+import { useAvatarIdleScheduler } from '../hooks/useAvatarIdleScheduler';
+import { useAvatarSequenceRunner } from '../hooks/useAvatarSequenceRunner';
+import { useAvatarPreload } from '../hooks/useAvatarPreload';
 import {
   pageStyleTeam,
   contentShell,
@@ -431,13 +434,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   
-  // Preload state-based avatar images when avatar is selected
-  useEffect(() => {
-    if (avatarId && hasStateBasedRendering(avatarId)) {
-      preloadAvatarStates(avatarId);
-    }
-  }, [avatarId]);
-  
   // Filter out avatars already chosen by other teams
   const availableAvatars = useMemo(() => {
     if (!teamStatus || teamStatus.length === 0) return AVATARS;
@@ -477,11 +473,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const intervalRef = useRef<number | null>(null);
   const recoveringRef = useRef(false);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
-  const avatarStateTimersRef = useRef<number[]>([]);
-  const avatarIdleTimersRef = useRef<number[]>([]);
   const avatarStateRef = useRef<AvatarState>('walking');
-  const avatarSequenceActiveRef = useRef(false);
   const [reconnectKey, setReconnectKey] = useState(0);
+  
   const storageKey = useCallback((suffix: string) => {
     return `team:${roomCode}:${suffix}`;
   }, [roomCode]);
@@ -833,7 +827,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   }
 
   // Broadcast avatar state change to beamer
-  function broadcastAvatarState(state: AvatarState) {
+  const broadcastAvatarState = useCallback((state: AvatarState) => {
     if (!teamId || !socketRef.current) {
       console.log('⚠️ Cannot broadcast avatar state:', { hasTeamId: !!teamId, hasSocket: !!socketRef.current });
       return;
@@ -844,102 +838,76 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       teamId,
       state
     });
-  }
+  }, [teamId, roomCode]);
 
-  const clearAvatarTimers = useCallback(() => {
-    avatarStateTimersRef.current.forEach(clearTimeout);
-    avatarStateTimersRef.current = [];
-  }, []);
-
-  const clearIdleTimers = useCallback(() => {
-    avatarIdleTimersRef.current.forEach(clearTimeout);
-    avatarIdleTimersRef.current = [];
-  }, []);
-
-  const scheduleIdleCycle = useCallback(() => {
-    if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) {
-      console.log('⏸️ scheduleIdleCycle: guardians failed', { teamId, avatarId, hasStates: hasStateBasedRendering(avatarId) });
-      return;
+  // Auto-preload avatar states
+  const { isPreloaded: avatarPreloaded, preloadError: avatarPreloadError } = useAvatarPreload(avatarId);
+  
+  // Log preload errors
+  useEffect(() => {
+    if (avatarPreloadError) {
+      console.error('❌ Avatar preload error:', avatarPreloadError);
     }
-    
-    console.log('⏸️ scheduling idle cycle, current state:', avatarStateRef.current);
-    // Randomize walking duration: 2-6 seconds before idle pause
-    const idleDelay = 2000 + Math.random() * 4000; // 2-6s walk, then idle
-    const idleDuration = 800 + Math.random() * 600; // 0.8-1.4s idle duration (shorter for more active feel)
-    
-    const idleTimer = window.setTimeout(() => {
-      // If a sequence is active, reschedule instead
-      if (avatarSequenceActiveRef.current) {
-        console.log('⏸️ sequence active, rescheduling idle');
-        scheduleIdleCycle();
-        return;
-      }
-      
-      // Only transition to idle if currently walking
-      if (avatarStateRef.current === 'walking') {
-        console.log('⏸️ showing idle for', Math.round(idleDuration), 'ms');
-        setIgelState('idle');
-        broadcastAvatarState('idle');
-        
-        const resumeTimer = window.setTimeout(() => {
-          if (avatarStateRef.current === 'idle') {
-            console.log('⏸️ resuming walk');
-            setIgelState('walking');
-            broadcastAvatarState('walking');
-          }
-          // Reschedule next idle cycle
-          scheduleIdleCycle();
-        }, idleDuration);
-        
-        avatarIdleTimersRef.current.push(resumeTimer);
-        return;
-      }
-      
-      // If not walking (e.g., in a sequence), just reschedule
-      console.log('⏸️ not walking, rescheduling');
-      scheduleIdleCycle();
-    }, idleDelay);
-    
-    avatarIdleTimersRef.current.push(idleTimer);
-  }, [avatarId, teamId, broadcastAvatarState]);
+  }, [avatarPreloadError]);
 
+  // Avatar idle scheduler (periodic pauses)
+  const idleScheduler = useAvatarIdleScheduler(
+    Boolean(teamId && avatarId && hasStateBasedRendering(avatarId)),
+    {
+      minDelay: 2,
+      maxDelay: 6,
+      minDuration: 0.8,
+      maxDuration: 1.4,
+      debug: true
+    },
+    {
+      onStateChange: (state) => {
+        setIgelState(state);
+        broadcastAvatarState(state);
+      },
+      getCurrentState: () => avatarStateRef.current,
+      isSequenceActive: () => avatarSequence?.isSequenceActive?.() ?? false
+    }
+  );
+
+  // Avatar sequence runner (for tap gestures, results, etc.)
+  const avatarSequence = useAvatarSequenceRunner({
+    onStateChange: (state) => {
+      setIgelState(state);
+      broadcastAvatarState(state);
+    },
+    onSequenceComplete: () => {
+      idleScheduler.scheduleIdleCycle();
+    }
+  });
+
+  // Wrapper function for backward compatibility
   const runAvatarSequence = useCallback(
     (steps: Array<{ state: AvatarState; duration: number }>, avatarOverrideId?: string) => {
       const activeAvatarId = avatarOverrideId || avatarId;
       if (!activeAvatarId || !hasStateBasedRendering(activeAvatarId)) return false;
-      clearAvatarTimers();
-      clearIdleTimers();
-      avatarSequenceActiveRef.current = true;
 
-      let delay = 0;
-      steps.forEach((step) => {
-        const timer = window.setTimeout(() => {
-          setIgelState(step.state);
-          broadcastAvatarState(step.state);
-        }, delay);
-        avatarStateTimersRef.current.push(timer);
-        delay += step.duration;
-      });
-
-      const endTimer = window.setTimeout(() => {
-        avatarSequenceActiveRef.current = false;
-        scheduleIdleCycle();
-      }, delay);
-      avatarStateTimersRef.current.push(endTimer);
-
-      return true;
+      // Clear idle timers and run sequence
+      idleScheduler.clearTimers();
+      return avatarSequence.runSequence(steps);
     },
-    [avatarId, broadcastAvatarState, clearAvatarTimers, clearIdleTimers, scheduleIdleCycle]
+    [avatarId, idleScheduler, avatarSequence]
   );
 
+  // Initialize avatar: start walking and schedule idle cycles
   useEffect(() => {
     if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
+    
     setIgelState('walking');
     broadcastAvatarState('walking');
-    clearIdleTimers();
-    scheduleIdleCycle();
-    return clearIdleTimers;
-  }, [teamId, avatarId, broadcastAvatarState, clearIdleTimers, scheduleIdleCycle]);
+    idleScheduler.clearTimers();
+    idleScheduler.scheduleIdleCycle();
+    
+    return () => {
+      idleScheduler.clearTimers();
+      avatarSequence.cancel();
+    };
+  }, [teamId, avatarId, broadcastAvatarState, idleScheduler, avatarSequence]);
 
   function updateLanguage(lang: Language) {
     // Team-View soll nur einsprachig sein, nicht 'both'

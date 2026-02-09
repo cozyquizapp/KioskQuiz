@@ -95,13 +95,13 @@ export const headerBarTeam: CSSProperties = {
   alignItems: 'center',
   flexWrap: 'wrap',
   gap: 'clamp(8px, 2vw, 12px)',
-  padding: 'clamp(12px, 3vw, 16px) clamp(14px, 4vw, 20px)',
   borderRadius: 16,
   background: 'rgba(255,255,255,0.001)',
   backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)'
+  // padding removed to rely on .team-header CSS for responsive header height
 };
 
 export const pillSmall: CSSProperties = {

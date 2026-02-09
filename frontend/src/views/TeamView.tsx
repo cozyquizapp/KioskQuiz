@@ -228,22 +228,8 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   const [currentMood, setCurrentMood] = useState(mood);
   const [currentIgelState, setCurrentIgelState] = useState(igelState);
   const [walkFrame, setWalkFrame] = useState<1 | 2>(1);
-  const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
-  const lastWalkingLeftRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasStates = hasStateBasedRendering(avatar.id);
-
-  const getFrozenLeft = () => {
-    const el = containerRef.current;
-    if (!el) return null;
-    const parent = el.offsetParent as HTMLElement | null;
-    const rect = el.getBoundingClientRect();
-    if (parent) {
-      const parentRect = parent.getBoundingClientRect();
-      return `${rect.left - parentRect.left}px`;
-    }
-    return `${rect.left}px`;
-  };
 
   useEffect(() => {
     setCurrentMood(mood);
@@ -274,48 +260,6 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     return () => window.clearTimeout(timer);
   }, [hasStates, currentIgelState]);
 
-  useEffect(() => {
-    if (!hasStates || currentIgelState !== 'walking') return;
-    let raf = 0;
-    const tick = () => {
-      const el = containerRef.current;
-      if (el) {
-        const leftValue = window.getComputedStyle(el).left;
-        if (leftValue && leftValue !== 'auto') {
-          lastWalkingLeftRef.current = leftValue;
-        }
-      }
-      raf = window.requestAnimationFrame(tick);
-    };
-    raf = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(raf);
-  }, [hasStates, currentIgelState]);
-
-  useEffect(() => {
-    // When switching away from walking, capture current position
-    if (igelState !== 'walking' && currentIgelState === 'walking') {
-      const liveLeft = getFrozenLeft();
-      if (liveLeft) {
-        setFrozenLeft(liveLeft);
-      } else if (lastWalkingLeftRef.current) {
-        setFrozenLeft(lastWalkingLeftRef.current);
-      }
-    }
-    if (igelState !== 'walking' && currentIgelState !== 'walking' && !frozenLeft) {
-      const liveLeft = getFrozenLeft();
-      if (liveLeft) {
-        setFrozenLeft(liveLeft);
-      } else if (lastWalkingLeftRef.current) {
-        setFrozenLeft(lastWalkingLeftRef.current);
-      }
-    }
-    // When switching back to walking, clear frozen position
-    if (igelState === 'walking' && currentIgelState !== 'walking') {
-      setFrozenLeft(null);
-    }
-    setCurrentIgelState(igelState);
-  }, [igelState, currentIgelState]);
-
   const getAnimationClass = () => {
     if (hasStates) return enableWalking && currentIgelState === 'walking' ? 'animal-bounce' : '';
     if (onTap) return 'animal-tap';
@@ -334,10 +278,8 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   // For SVG animals
   if (!avatar.isVideo) {
     const imgSrc = currentStatePath || avatar.svg || avatar.dataUri;
-    const animationClass = getAnimationClass();
-    const shouldApplyAnimation = Boolean(animationClass);
-    const animationPlayState =
-      hasStates && enableWalking ? (currentIgelState === 'walking' ? 'running' : 'paused') : 'running';
+    const shouldShowWalking = hasStates && enableWalking && currentIgelState === 'walking';
+    const animationClass = shouldShowWalking ? 'animal-bounce' : '';
     
     // Build meaningful alt text for screen readers based on avatar state
     const moodLabel = currentMood === 'happy' ? ' (happy)' : currentMood === 'sad' ? ' (sad)' : '';
@@ -347,16 +289,15 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     return (
       <div 
         ref={containerRef}
-        className={`animated-animal ${shouldApplyAnimation ? animationClass : ''}`}
+        className={`animated-animal ${animationClass}`}
         style={{
           width: style?.width || '100%',
           height: style?.height || '100%',
           display: 'inline-block',
-          position: 'absolute',
-          left: frozenLeft || undefined,
+          position: 'relative', // Allow natural flow instead of absolute positioning
           transformOrigin: 'bottom center',
-          animationPlayState,
-          transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth transition for state-based avatars
+          opacity: 1,
+          transition: hasStates ? 'none' : 'none'
         }}
       >
         <img 
@@ -370,7 +311,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
             height: '100%',
             objectFit: 'contain',
             filter: currentMood === 'sad' ? 'grayscale(0.3) brightness(0.8)' : 'none',
-            transition: hasStates ? 'opacity 0.3s ease' : 'none' // Smooth fade between states
+            display: 'block'
           }}
         />
       </div>
@@ -901,29 +842,48 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   }, []);
 
   const scheduleIdleCycle = useCallback(() => {
-    if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
-    const idleDelay = 4000 + Math.random() * 4000;
-    const idleDuration = 1200 + Math.random() * 800;
+    if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) {
+      console.log('⏸️ scheduleIdleCycle: guardians failed', { teamId, avatarId, hasStates: hasStateBasedRendering(avatarId) });
+      return;
+    }
+    
+    console.log('⏸️ scheduling idle cycle, current state:', avatarStateRef.current);
+    const idleDelay = 4000 + Math.random() * 4000; // 4-8s
+    const idleDuration = 1200 + Math.random() * 800; // 1.2-2s
+    
     const idleTimer = window.setTimeout(() => {
+      // If a sequence is active, reschedule instead
       if (avatarSequenceActiveRef.current) {
+        console.log('⏸️ sequence active, rescheduling idle');
         scheduleIdleCycle();
         return;
       }
+      
+      // Only transition to idle if currently walking
       if (avatarStateRef.current === 'walking') {
+        console.log('⏸️ showing idle for ', idleDuration, 'ms');
         setIgelState('idle');
         broadcastAvatarState('idle');
+        
         const resumeTimer = window.setTimeout(() => {
           if (avatarStateRef.current === 'idle') {
+            console.log('⏸️ resuming walk');
             setIgelState('walking');
             broadcastAvatarState('walking');
           }
+          // Reschedule next idle cycle
           scheduleIdleCycle();
         }, idleDuration);
+        
         avatarIdleTimersRef.current.push(resumeTimer);
         return;
       }
+      
+      // If not walking (e.g., in a sequence), just reschedule
+      console.log('⏸️ not walking, rescheduling');
       scheduleIdleCycle();
     }, idleDelay);
+    
     avatarIdleTimersRef.current.push(idleTimer);
   }, [avatarId, teamId, broadcastAvatarState]);
 

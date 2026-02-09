@@ -229,6 +229,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   const [currentIgelState, setCurrentIgelState] = useState(igelState);
   const [walkFrame, setWalkFrame] = useState<1 | 2>(1);
   const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
+  const lastWalkingLeftRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasStates = hasStateBasedRendering(avatar.id);
 
@@ -256,13 +257,39 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   }, [hasStates, currentIgelState]);
 
   useEffect(() => {
-    // When switching away from walking, capture current position
-    if (igelState !== 'walking' && currentIgelState === 'walking') {
+    if (!hasStates || currentIgelState !== 'walking') return;
+    let raf = 0;
+    const tick = () => {
       const el = containerRef.current;
       if (el) {
-        const computed = window.getComputedStyle(el);
-        const currentLeft = computed.left;
-        setFrozenLeft(currentLeft);
+        const leftValue = window.getComputedStyle(el).left;
+        if (leftValue && leftValue !== 'auto') {
+          lastWalkingLeftRef.current = leftValue;
+        }
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [hasStates, currentIgelState]);
+
+  useEffect(() => {
+    // When switching away from walking, capture current position
+    if (igelState !== 'walking' && currentIgelState === 'walking') {
+      const fallbackLeft = lastWalkingLeftRef.current;
+      if (fallbackLeft) {
+        setFrozenLeft(fallbackLeft);
+      } else if (containerRef.current) {
+        const computed = window.getComputedStyle(containerRef.current).left;
+        if (computed && computed !== 'auto') {
+          setFrozenLeft(computed);
+        }
+      }
+    }
+    if (igelState !== 'walking' && currentIgelState !== 'walking' && !frozenLeft) {
+      const fallbackLeft = lastWalkingLeftRef.current;
+      if (fallbackLeft) {
+        setFrozenLeft(fallbackLeft);
       }
     }
     // When switching back to walking, clear frozen position

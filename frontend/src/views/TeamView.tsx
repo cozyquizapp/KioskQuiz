@@ -917,8 +917,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   }, [avatarId, teamId, broadcastAvatarState]);
 
   const runAvatarSequence = useCallback(
-    (steps: Array<{ state: AvatarState; duration: number }>) => {
-      if (!avatarId || !hasStateBasedRendering(avatarId)) return false;
+    (steps: Array<{ state: AvatarState; duration: number }>, avatarOverrideId?: string) => {
+      const activeAvatarId = avatarOverrideId || avatarId;
+      if (!activeAvatarId || !hasStateBasedRendering(activeAvatarId)) return false;
       clearAvatarTimers();
       clearIdleTimers();
       avatarSequenceActiveRef.current = true;
@@ -3508,7 +3509,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                         { state: 'gesture', duration: 600 },
                         { state: 'happy', duration: 1200 },
                         { state: 'walking', duration: 0 }
-                      ]);
+                      ], selectedAvatar.id);
                     }
                   }
                   // Trigger tap animation
@@ -3923,7 +3924,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                       { state: 'gesture', duration: 600 },
                       { state: 'happy', duration: 1200 },
                       { state: 'walking', duration: 0 }
-                    ]);
+                    ], avatarId);
                   }
                 }
               }}

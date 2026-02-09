@@ -277,9 +277,10 @@ const BeamerWalkingAvatar: React.FC<{
   teamName: string;
   avatar: AvatarOption;
   currentState: AvatarState;
+  size: number;
   duration: number;
   walkIndex: number;
-}> = ({ teamId, teamName, avatar, currentState, duration, walkIndex }) => {
+}> = ({ teamId, teamName, avatar, currentState, size, duration, walkIndex }) => {
   const [walkFrame, setWalkFrame] = useState<1 | 2>(1);
   const isStateBased = hasStateBasedRendering(avatar.id);
 
@@ -308,8 +309,8 @@ const BeamerWalkingAvatar: React.FC<{
       style={{
         position: 'fixed',
         bottom: 0,
-        width: 100,
-        height: 100,
+        width: size,
+        height: size,
         animation: `beamer-walk-${walkIndex} ${duration}s linear infinite`,
         animationPlayState: currentState === 'walking' ? 'running' : 'paused',
         animationFillMode: 'both',
@@ -322,8 +323,8 @@ const BeamerWalkingAvatar: React.FC<{
         alt={teamName}
         loading="eager"
         style={{
-          width: '100px',
-          height: '100px',
+          width: size,
+          height: size,
           objectFit: 'contain',
           filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
         }}
@@ -3406,6 +3407,7 @@ useEffect(() => {
         
         // Calculate speed based on animal size - larger = slower, smaller = faster
         const sizeRatio = getAvatarSize(team.avatarId);
+        const avatarSize = Math.round(55 + sizeRatio * 35);
         const baseSpeed = 120; // Base duration in seconds (slower = calmer)
         const speedVariation = (1.0 - sizeRatio) * 50; // 0-50s variation for more difference
         const duration = Math.round(baseSpeed + speedVariation + (index * 12)); // 120-182s range
@@ -3417,6 +3419,7 @@ useEffect(() => {
             teamName={team.name}
             avatar={avatar}
             currentState={currentState}
+            size={avatarSize}
             duration={duration}
             walkIndex={index % 3}
           />

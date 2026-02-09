@@ -233,6 +233,18 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   const containerRef = useRef<HTMLDivElement>(null);
   const hasStates = hasStateBasedRendering(avatar.id);
 
+  const getFrozenLeft = () => {
+    const el = containerRef.current;
+    if (!el) return null;
+    const parent = el.offsetParent as HTMLElement | null;
+    const rect = el.getBoundingClientRect();
+    if (parent) {
+      const parentRect = parent.getBoundingClientRect();
+      return `${rect.left - parentRect.left}px`;
+    }
+    return `${rect.left}px`;
+  };
+
   useEffect(() => {
     setCurrentMood(mood);
     
@@ -282,20 +294,19 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   useEffect(() => {
     // When switching away from walking, capture current position
     if (igelState !== 'walking' && currentIgelState === 'walking') {
-      const fallbackLeft = lastWalkingLeftRef.current;
-      if (fallbackLeft) {
-        setFrozenLeft(fallbackLeft);
-      } else if (containerRef.current) {
-        const computed = window.getComputedStyle(containerRef.current).left;
-        if (computed && computed !== 'auto') {
-          setFrozenLeft(computed);
-        }
+      const liveLeft = getFrozenLeft();
+      if (liveLeft) {
+        setFrozenLeft(liveLeft);
+      } else if (lastWalkingLeftRef.current) {
+        setFrozenLeft(lastWalkingLeftRef.current);
       }
     }
     if (igelState !== 'walking' && currentIgelState !== 'walking' && !frozenLeft) {
-      const fallbackLeft = lastWalkingLeftRef.current;
-      if (fallbackLeft) {
-        setFrozenLeft(fallbackLeft);
+      const liveLeft = getFrozenLeft();
+      if (liveLeft) {
+        setFrozenLeft(liveLeft);
+      } else if (lastWalkingLeftRef.current) {
+        setFrozenLeft(lastWalkingLeftRef.current);
       }
     }
     // When switching back to walking, clear frozen position
@@ -891,7 +902,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
 
   const scheduleIdleCycle = useCallback(() => {
     if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
-    const idleDelay = 8000 + Math.random() * 4000;
+    const idleDelay = 4000 + Math.random() * 4000;
     const idleDuration = 1200 + Math.random() * 800;
     const idleTimer = window.setTimeout(() => {
       if (avatarSequenceActiveRef.current) {

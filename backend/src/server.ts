@@ -5714,7 +5714,7 @@ io.on('connection', (socket: Socket) => {
   // Avatar state synchronization for beamer display
   socket.on(
     'team:avatarState',
-    (payload: { roomCode?: string; teamId?: string; state?: 'walking' | 'looking' | 'happy' | 'sad' }) => {
+    (payload: { roomCode?: string; teamId?: string; state?: 'walking' | 'idle' | 'gesture' | 'happy' | 'sad' }) => {
       try {
         const { roomCode, teamId, state } = payload || {};
         const resolved = normalizeRoomCode(roomCode);

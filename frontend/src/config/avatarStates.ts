@@ -1,23 +1,28 @@
 /**
  * Avatar State System Configuration
- * 
+ *
  * Maps avatar IDs to their state-based folder names.
- * Each avatar in this map should have 4 SVG files in /public/avatars/{folderName}/:
- * - gehen.svg (walking/default)
- * - schauen.svg (looking/thinking)
+ * Each avatar in this map should have SVG files in /public/avatars/{folderName}/:
+ * - laufen1.svg (walking frame 1)
+ * - laufen2.svg (walking frame 2)
+ * - normal.svg (idle)
+ * - geste.svg (gesture/tap)
  * - freuen.svg (happy/celebrating)
  * - weinen.svg (sad/crying)
  */
 
+export type AvatarState = 'walking' | 'idle' | 'gesture' | 'happy' | 'sad';
+export type AvatarWalkFrame = 1 | 2;
+
 export const AVATAR_STATE_CONFIG: Record<string, string> = {
-  'avatar2': 'blauwal',    // Blue Whale
-  'avatar3': 'wolf',       // Wolf
-  'avatar11': 'igel',      // Hedgehog
-  // TODO: Add back when complete:
-  // 'avatar1': 'pferd',      // Horse
-  // 'avatar4': 'giraffe',    // Giraffe
-  // 'avatar5': 'pandabaer',  // Panda Bear
-  // 'avatar6': 'katze',      // Cat
+  avatar1: 'pferd',
+  avatar2: 'blauwal',
+  avatar3: 'wolf',
+  avatar4: 'giraffe',
+  avatar5: 'pandabaer',
+  avatar6: 'katze',
+  avatar11: 'igel',
+  avatar12: 'eichhoernchen'
 };
 
 /**
@@ -37,15 +42,20 @@ export function getAvatarFolder(avatarId: string): string | null {
 /**
  * Get the image path for a specific avatar state
  */
-export function getAvatarStatePath(avatarId: string, state: 'walking' | 'looking' | 'happy' | 'sad'): string | null {
+export function getAvatarStatePath(
+  avatarId: string,
+  state: AvatarState,
+  walkFrame: AvatarWalkFrame = 1
+): string | null {
   const folder = getAvatarFolder(avatarId);
   if (!folder) return null;
 
-  const stateFileMap = {
-    'walking': 'gehen.svg',
-    'looking': 'schauen.svg',
-    'happy': 'freuen.svg',
-    'sad': 'weinen.svg',
+  const stateFileMap: Record<AvatarState, string> = {
+    walking: walkFrame === 2 ? 'laufen2.svg' : 'laufen1.svg',
+    idle: 'normal.svg',
+    gesture: 'geste.svg',
+    happy: 'freuen.svg',
+    sad: 'weinen.svg'
   };
 
   return `/avatars/${folder}/${stateFileMap[state]}`;
@@ -58,9 +68,19 @@ export function preloadAvatarStates(avatarId: string): void {
   const folder = getAvatarFolder(avatarId);
   if (!folder) return;
 
-  const states: Array<'walking' | 'looking' | 'happy' | 'sad'> = ['walking', 'looking', 'happy', 'sad'];
-  
-  states.forEach(state => {
+  const states: AvatarState[] = ['walking', 'idle', 'gesture', 'happy', 'sad'];
+  states.forEach((state) => {
+    if (state === 'walking') {
+      const frame1 = getAvatarStatePath(avatarId, state, 1);
+      const frame2 = getAvatarStatePath(avatarId, state, 2);
+      [frame1, frame2].forEach((path) => {
+        if (path) {
+          const img = new Image();
+          img.src = path;
+        }
+      });
+      return;
+    }
     const path = getAvatarStatePath(avatarId, state);
     if (path) {
       const img = new Image();

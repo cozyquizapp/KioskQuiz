@@ -33,7 +33,7 @@ import { createConfetti } from '../utils/confetti';
 import { AVATARS } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
-import { hasStateBasedRendering, getAvatarStatePath } from '../config/avatarStates';
+import { hasStateBasedRendering, getAvatarStatePath, type AvatarState } from '../config/avatarStates';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -276,11 +276,27 @@ const BeamerWalkingAvatar: React.FC<{
   teamId: string;
   teamName: string;
   avatar: AvatarOption;
-  currentState: 'walking' | 'looking' | 'happy' | 'sad';
-  imageSrc: string;
+  currentState: AvatarState;
   duration: number;
   walkIndex: number;
-}> = ({ teamId, teamName, avatar, currentState, imageSrc, duration, walkIndex }) => {
+}> = ({ teamId, teamName, avatar, currentState, duration, walkIndex }) => {
+  const [walkFrame, setWalkFrame] = useState<1 | 2>(1);
+  const isStateBased = hasStateBasedRendering(avatar.id);
+
+  useEffect(() => {
+    if (!isStateBased || currentState !== 'walking') {
+      setWalkFrame(1);
+      return;
+    }
+    const interval = window.setInterval(() => {
+      setWalkFrame((prev) => (prev === 1 ? 2 : 1));
+    }, 380);
+    return () => window.clearInterval(interval);
+  }, [isStateBased, currentState]);
+
+  const imageSrc = isStateBased
+    ? getAvatarStatePath(avatar.id, currentState, walkFrame) || avatar.svg || avatar.dataUri
+    : avatar.svg || avatar.dataUri;
   return (
     <div
       style={{
@@ -388,7 +404,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   
   // Track avatar states for each team (for live emotion display)
-  const [teamAvatarStates, setTeamAvatarStates] = useState<Record<string, 'walking' | 'looking' | 'happy' | 'sad'>>({});
+  const [teamAvatarStates, setTeamAvatarStates] = useState<Record<string, AvatarState>>({});
   
   const debugMode = useMemo(
     () =>
@@ -836,23 +852,23 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     socket.on('server:stateUpdate', onStateUpdate);
 
     // Listen for avatar state changes from teams
-    const onAvatarStateChanged = (payload: { teamId: string; state: 'walking' | 'looking' | 'happy' | 'sad'; timestamp: number }) => {
+    const onAvatarStateChanged = (payload: { teamId: string; state: AvatarState; timestamp: number }) => {
       const { teamId, state } = payload;
       setTeamAvatarStates(prev => ({ ...prev, [teamId]: state }));
       
       // Auto-reset to walking after animation sequence completes
-      if (state === 'looking') {
+      if (state === 'gesture') {
         console.log('🎨 Beamer: Avatar state changed', { teamId, state });
         // After happy state completes, return to walking
         setTimeout(() => {
           setTeamAvatarStates(prev => {
-            if (prev[teamId] === 'happy' || prev[teamId] === 'looking') {
+            if (prev[teamId] === 'happy' || prev[teamId] === 'gesture') {
               console.log('🎨 Beamer: Resetting to walking', { teamId });
               return { ...prev, [teamId]: 'walking' };
             }
             return prev;
           });
-        }, 2000); // 600ms looking + 1200ms happy + 200ms buffer
+        }, 2200); // gesture + happy sequence buffer
       }
     };
     socket.on('team:avatarStateChanged', onAvatarStateChanged);
@@ -3382,12 +3398,6 @@ useEffect(() => {
         // Get current state for this team (default to walking)
         const currentState = teamAvatarStates[team.id] || 'walking';
         
-        // Get state-based image path
-        const statePath = hasStateBasedRendering(avatar.id) 
-          ? getAvatarStatePath(avatar.id, currentState)
-          : null;
-        const imageSrc = statePath || avatar.svg || avatar.dataUri;
-        
         // Calculate speed based on animal size - larger = slower, smaller = faster
         const sizeRatio = getAvatarSize(team.avatarId);
         const baseSpeed = 120; // Base duration in seconds (slower = calmer)
@@ -3401,7 +3411,6 @@ useEffect(() => {
             teamName={team.name}
             avatar={avatar}
             currentState={currentState}
-            imageSrc={imageSrc}
             duration={duration}
             walkIndex={index % 3}
           />

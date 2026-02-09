@@ -31,7 +31,7 @@ import { AVATARS } from '../config/avatars';
 import type { AvatarOption } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
 import { useWindowWidth } from '../hooks/useWindowWidth';
-import { hasStateBasedRendering, getAvatarStatePath, preloadAvatarStates } from '../config/avatarStates';
+import { hasStateBasedRendering, getAvatarStatePath, preloadAvatarStates, type AvatarState } from '../config/avatarStates';
 import {
   pageStyleTeam,
   contentShell,
@@ -224,11 +224,13 @@ const isClosenessQuestion = (q: AnyQuestion | null) => {
 
 const getAvatarById = (avatarId?: string) => AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
 
-const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: 'walking' | 'looking' | 'happy' | 'sad' }> = React.memo(({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
+const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties; alt?: string; mood?: 'idle' | 'happy' | 'sad'; enableWalking?: boolean; onTap?: boolean; igelState?: AvatarState }> = React.memo(({ avatar, style, alt, mood = 'idle', enableWalking = false, onTap = false, igelState = 'walking' }) => {
   const [currentMood, setCurrentMood] = useState(mood);
   const [currentIgelState, setCurrentIgelState] = useState(igelState);
+  const [walkFrame, setWalkFrame] = useState<1 | 2>(1);
   const [frozenLeft, setFrozenLeft] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasStates = hasStateBasedRendering(avatar.id);
 
   useEffect(() => {
     setCurrentMood(mood);
@@ -241,6 +243,17 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
       return () => clearTimeout(timer);
     }
   }, [mood]);
+
+  useEffect(() => {
+    if (!hasStates || currentIgelState !== 'walking') {
+      setWalkFrame(1);
+      return;
+    }
+    const interval = window.setInterval(() => {
+      setWalkFrame((prev) => (prev === 1 ? 2 : 1));
+    }, 380);
+    return () => window.clearInterval(interval);
+  }, [hasStates, currentIgelState]);
 
   useEffect(() => {
     // When switching away from walking, capture current position
@@ -259,11 +272,8 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     setCurrentIgelState(igelState);
   }, [igelState, currentIgelState]);
 
-  // Check if avatar supports state-based rendering
-  const hasStates = hasStateBasedRendering(avatar.id);
-
   const getAnimationClass = () => {
-    if (hasStates) return enableWalking ? 'animal-bounce' : '';
+    if (hasStates) return enableWalking && currentIgelState === 'walking' ? 'animal-bounce' : '';
     if (onTap) return 'animal-tap';
     switch (currentMood) {
       case 'happy':
@@ -275,7 +285,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     }
   };
 
-  const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState) : null;
+  const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState, walkFrame) : null;
 
   // For SVG animals
   if (!avatar.isVideo) {
@@ -283,11 +293,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     const animationClass = getAnimationClass();
     const shouldApplyAnimation = Boolean(animationClass);
     const animationPlayState =
-      hasStates && enableWalking
-        ? currentIgelState === 'walking'
-          ? 'running'
-          : 'paused'
-        : 'running';
+      hasStates && enableWalking ? (currentIgelState === 'walking' ? 'running' : 'paused') : 'running';
     
     // Build meaningful alt text for screen readers based on avatar state
     const moodLabel = currentMood === 'happy' ? ' (happy)' : currentMood === 'sad' ? ' (sad)' : '';
@@ -421,7 +427,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [usedAvatarIds, setUsedAvatarIds] = useState<Set<string>>(new Set());
   const [avatarMood, setAvatarMood] = useState<'idle' | 'happy' | 'sad'>('idle');
   const [avatarTapped, setAvatarTapped] = useState(false);
-  const [igelState, setIgelState] = useState<'walking' | 'looking' | 'happy' | 'sad'>('walking');
+  const [igelState, setIgelState] = useState<AvatarState>('walking');
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   
@@ -472,6 +478,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const recoveringRef = useRef(false);
   const blitzInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const avatarStateTimersRef = useRef<number[]>([]);
+  const avatarIdleTimersRef = useRef<number[]>([]);
+  const avatarStateRef = useRef<AvatarState>('walking');
   const [reconnectKey, setReconnectKey] = useState(0);
   const storageKey = useCallback((suffix: string) => {
     return `team:${roomCode}:${suffix}`;
@@ -479,6 +487,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   useEffect(() => {
     answerSubmittedRef.current = answerSubmitted;
   }, [answerSubmitted]);
+
+  useEffect(() => {
+    avatarStateRef.current = igelState;
+  }, [igelState]);
 
   useEffect(() => {
     if (gameState === 'Q_ACTIVE') {
@@ -820,7 +832,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   }
 
   // Broadcast avatar state change to beamer
-  function broadcastAvatarState(state: 'walking' | 'looking' | 'happy' | 'sad') {
+  function broadcastAvatarState(state: AvatarState) {
     if (!teamId || !socketRef.current) {
       console.log('⚠️ Cannot broadcast avatar state:', { hasTeamId: !!teamId, hasSocket: !!socketRef.current });
       return;
@@ -832,6 +844,44 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       state
     });
   }
+
+  useEffect(() => {
+    if (!teamId || !avatarId || !hasStateBasedRendering(avatarId)) return;
+    setIgelState('walking');
+    broadcastAvatarState('walking');
+
+    const clearIdleTimers = () => {
+      avatarIdleTimersRef.current.forEach(clearTimeout);
+      avatarIdleTimersRef.current = [];
+    };
+
+    const scheduleIdleCycle = () => {
+      const idleDelay = 6000 + Math.random() * 6000;
+      const idleDuration = 1200 + Math.random() * 1200;
+      const idleTimer = window.setTimeout(() => {
+        if (avatarStateRef.current === 'walking') {
+          setIgelState('idle');
+          broadcastAvatarState('idle');
+          const resumeTimer = window.setTimeout(() => {
+            if (avatarStateRef.current === 'idle') {
+              setIgelState('walking');
+              broadcastAvatarState('walking');
+            }
+            scheduleIdleCycle();
+          }, idleDuration);
+          avatarIdleTimersRef.current.push(resumeTimer);
+          return;
+        }
+        scheduleIdleCycle();
+      }, idleDelay);
+      avatarIdleTimersRef.current.push(idleTimer);
+    };
+
+    clearIdleTimers();
+    scheduleIdleCycle();
+
+    return clearIdleTimers;
+  }, [teamId, avatarId]);
 
   function updateLanguage(lang: Language) {
     // Team-View soll nur einsprachig sein, nicht 'both'
@@ -3356,8 +3406,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     
                     // State-based avatar: looking on tap (always trigger, even if same avatar)
                     if (hasStateBasedRendering(selectedAvatar.id)) {
-                      setIgelState('looking');
-                      broadcastAvatarState('looking');
+                      setIgelState('gesture');
+                      broadcastAvatarState('gesture');
                       
                       // Clear existing timers
                       avatarStateTimersRef.current.forEach(clearTimeout);
@@ -3783,9 +3833,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               onClick={() => {
                 // State-based avatar special behavior on click
                 if (hasStateBasedRendering(avatarId)) {
-                  if (igelState === 'walking') {
-                    setIgelState('looking');
-                    broadcastAvatarState('looking');
+                  if (igelState === 'walking' || igelState === 'idle') {
+                    setIgelState('gesture');
+                    broadcastAvatarState('gesture');
                     
                     // Clear existing timers
                     avatarStateTimersRef.current.forEach(clearTimeout);

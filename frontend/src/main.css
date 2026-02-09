@@ -1536,7 +1536,7 @@ img {
   }
   
   /* Header bar adjustments */
-  header {
+  .team-header {
     padding: 10px 12px !important;
     gap: 6px !important;
   }
@@ -1706,7 +1706,7 @@ img {
     padding: 12px 10px !important;
   }
   
-  header {
+  .team-header {
     padding: 8px 10px !important;
     gap: 6px !important;
   }

@@ -3923,18 +3923,21 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       </span>
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
       <div style={contentShell}>
-        <header style={{
-          ...headerBarTeam,
-          border: '1px solid transparent',
-          backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.9), rgba(13, 15, 20, 0.9)), linear-gradient(135deg, rgba(255,79,158,0.5), rgba(217,70,239,0.5), rgba(168,85,247,0.5), rgba(255,79,158,0.5))',
-          backgroundOrigin: 'border-box',
-          backgroundClip: 'padding-box, border-box',
-          animation: 'border-gradient 6s ease infinite',
-          backgroundSize: '100% 100%, 300% 300%',
-          position: 'relative',
-          overflow: 'hidden',
-          display: teamId ? 'flex' : 'none'
-        }}>
+        <header
+          className="team-header"
+          style={{
+            ...headerBarTeam,
+            border: '1px solid transparent',
+            backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.9), rgba(13, 15, 20, 0.9)), linear-gradient(135deg, rgba(255,79,158,0.5), rgba(217,70,239,0.5), rgba(168,85,247,0.5), rgba(255,79,158,0.5))',
+            backgroundOrigin: 'border-box',
+            backgroundClip: 'padding-box, border-box',
+            animation: 'border-gradient 6s ease infinite',
+            backgroundSize: '100% 100%, 300% 300%',
+            position: 'relative',
+            overflow: 'hidden',
+            display: teamId ? 'flex' : 'none'
+          }}
+        >
           {/* Walking Animal */}
           {teamId && avatarId && (
             <div

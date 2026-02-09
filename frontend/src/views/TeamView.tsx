@@ -1132,17 +1132,40 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
         setResultMessage(getResultMessage(entry, question));
+        
+        // Determine if result is happy or sad
+        let isHappy = false;
         if (typeof entry.awardedPoints === 'number') {
           setResultPoints(entry.awardedPoints);
-          if (avatarId && hasStateBasedRendering(avatarId)) {
-            runAvatarSequence([
-              { state: entry.awardedPoints > 0 ? 'happy' : 'sad', duration: 1200 },
-              { state: 'walking', duration: 0 }
-            ]);
-          } else {
-            setAvatarMood(entry.awardedPoints > 0 ? 'happy' : 'sad');
-          }
+          isHappy = entry.awardedPoints > 0;
+        } else if (typeof entry.isCorrect === 'boolean') {
+          // Fallback: use isCorrect if no points
+          isHappy = entry.isCorrect;
+        } else {
+          console.log('⚠️ No awardedPoints or isCorrect in result:', entry);
         }
+        
+        console.log('🎯 Result received:', { 
+          teamId, 
+          awardedPoints: entry.awardedPoints,
+          isCorrect: entry.isCorrect,
+          isHappy,
+          avatarId, 
+          hasStates: hasStateBasedRendering(avatarId || '')
+        });
+        
+        // Trigger avatar animation
+        if (avatarId && hasStateBasedRendering(avatarId)) {
+          const success = runAvatarSequence([
+            { state: isHappy ? 'happy' : 'sad', duration: 1200 },
+            { state: 'walking', duration: 0 }
+          ]);
+          console.log('🎯 Avatar result animation:', success ? 'started' : 'failed');
+        } else {
+          console.log('🎯 Fallback to mood animation');
+          setAvatarMood(isHappy ? 'happy' : 'sad');
+        }
+        
         const detail = (entry as any)?.awardedDetail;
         if (detail) setResultDetail(detail);
         setPhase('waitingForResult');
@@ -1163,17 +1186,40 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setResultCorrect(Boolean(isCorrect));
         setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, question));
         setPhase('showResult');
+        
+        // Determine if result is happy or sad
+        let isHappy = false;
         if (typeof awardedPoints === 'number') {
           setResultPoints(awardedPoints);
-          if (avatarId && hasStateBasedRendering(avatarId)) {
-            runAvatarSequence([
-              { state: awardedPoints > 0 ? 'happy' : 'sad', duration: 1200 },
-              { state: 'walking', duration: 0 }
-            ]);
-          } else {
-            setAvatarMood(awardedPoints > 0 ? 'happy' : 'sad');
-          }
+          isHappy = awardedPoints > 0;
+        } else if (typeof isCorrect === 'boolean') {
+          // Fallback: use isCorrect if no points
+          isHappy = isCorrect;
+        } else {
+          console.log('⚠️ No awardedPoints or isCorrect in final result');
         }
+        
+        console.log('🎯 Final result received:', { 
+          teamId, 
+          awardedPoints, 
+          isCorrect,
+          isHappy,
+          avatarId, 
+          hasStates: hasStateBasedRendering(avatarId || '')
+        });
+        
+        // Trigger avatar animation
+        if (avatarId && hasStateBasedRendering(avatarId)) {
+          const success = runAvatarSequence([
+            { state: isHappy ? 'happy' : 'sad', duration: 1200 },
+            { state: 'walking', duration: 0 }
+          ]);
+          console.log('🎯 Avatar final result animation:', success ? 'started' : 'failed');
+        } else {
+          console.log('🎯 Fallback to mood animation');
+          setAvatarMood(isHappy ? 'happy' : 'sad');
+        }
+        
         if (awardedDetail) setResultDetail(awardedDetail);
         if (sol) setSolution(sol);
         setIsFinal(true);

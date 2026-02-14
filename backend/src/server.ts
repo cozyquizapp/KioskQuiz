@@ -4030,16 +4030,16 @@ if (DEBUG) {
 
 app.get('/api/questions', async (_req, res) => {
   const cacheKey = 'questions';
-  const cached = await redisClient.get(cacheKey);
+  const cached = cache.get(cacheKey);
   if (cached) {
-    return res.json({ questions: JSON.parse(cached) });
+    return res.json({ questions: cached });
   }
   const mapped = questions.map((q) => {
     const usage = questionUsageMap[q.id] ?? {};
     const isCustom = customQuestions.some((c) => c.id === q.id);
     return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom };
   });
-  await redisClient.set(cacheKey, JSON.stringify(mapped), { EX: 600 });
+  cache.set(cacheKey, mapped);
   res.json({ questions: mapped });
 });
 

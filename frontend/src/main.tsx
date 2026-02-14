@@ -4,6 +4,12 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import './main.css';
 
+import * as Sentry from '@sentry/react';
+Sentry.init({
+  dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0', // TODO: Replace with your real DSN
+  tracesSampleRate: 1.0,
+});
+
 const ensureGlobalErrorOverlay = () => {
   if (typeof window === 'undefined') return;
   const id = 'cozy-global-error';

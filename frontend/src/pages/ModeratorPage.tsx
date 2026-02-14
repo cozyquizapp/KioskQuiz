@@ -33,7 +33,7 @@ import TeamsList from '../components/moderator/TeamsList';
 import ActionButtons from '../components/moderator/ActionButtons';
 import StatusDot from '../components/moderator/StatusDot';
 import LeaderboardPanel from '../components/moderator/LeaderboardPanel';
-import { loadPlayDraft } from '../utils/draft';
+// ...existing code...
 import { connectControlSocket } from '../socket';
 import { featureFlags } from '../config/features';
 

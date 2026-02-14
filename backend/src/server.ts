@@ -6,7 +6,25 @@ import { v4 as uuid } from 'uuid';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import studioRoutes from './routes/studio';
+
+
+import * as Sentry from '@sentry/node';
+import { createClient } from 'redis';
+import NodeCache from 'node-cache';
+
+Sentry.init({
+  dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0', // TODO: Replace with your real DSN
+  tracesSampleRate: 1.0,
+});
+
+// Redis client setup
+const redisClient = createClient();
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+redisClient.connect();
+
+// Initialize cache (default TTL: 10 minutes)
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
+// Studio/Bingo/Builder-Reste entfernt
 import {
   validateTeamName,
   validateAnswer,
@@ -341,7 +359,13 @@ const persistStats = () => {
 // --- Quiz Layout Endpoints --------------------------------------------------
 app.get('/api/quizzes/:quizId/layout', (req, res) => {
   const { quizId } = req.params;
+  const cacheKey = `quizLayout_${quizId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return res.json({ layout: cached });
+  }
   const layout = quizLayoutMap[quizId] || null;
+  cache.set(cacheKey, layout);
   res.json({ layout });
 });
 
@@ -355,6 +379,7 @@ app.post('/api/quizzes/:quizId/layout', (req, res) => {
     overrides: payload.overrides
   };
   persistQuizLayouts();
+  cache.del(`quizLayout_${quizId}`);
   res.json({ ok: true, layout: quizLayoutMap[quizId] });
 });
 
@@ -449,6 +474,12 @@ const upsertPublishedQuiz = (payload: PublishedQuiz) => {
 };
 
 app.get('/api/quizzes/published', (_req, res) => {
+  const cacheKey = 'publishedQuizzes';
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return res.json({ quizzes: cached });
+  }
+  cache.set(cacheKey, publishedQuizzes);
   res.json({ quizzes: publishedQuizzes });
 });
 
@@ -458,6 +489,7 @@ app.post('/api/quizzes/publish', (req, res) => {
     return res.status(400).json({ error: 'id, name, questionIds erforderlich' });
   }
   const stored = upsertPublishedQuiz(payload);
+  cache.del('publishedQuizzes');
   res.json({ ok: true, quiz: stored });
 });
 
@@ -3997,12 +4029,18 @@ if (DEBUG) {
   });
 }
 
-app.get('/api/questions', (_req, res) => {
+app.get('/api/questions', async (_req, res) => {
+  const cacheKey = 'questions';
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return res.json({ questions: JSON.parse(cached) });
+  }
   const mapped = questions.map((q) => {
     const usage = questionUsageMap[q.id] ?? {};
     const isCustom = customQuestions.some((c) => c.id === q.id);
     return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom };
   });
+  await redisClient.set(cacheKey, JSON.stringify(mapped), { EX: 600 });
   res.json({ questions: mapped });
 });
 

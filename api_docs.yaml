@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: KioskQuiz API
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example: { "ok": true }
+  /api/rooms/{roomCode}:
+    get:
+      summary: Raum-Info
+      parameters:
+        - name: roomCode
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Raumdaten
+          content:
+            application/json:
+              example: { "ok": true, "room": "ABCD", "teams": 2, "hasQuestion": true }
+        '404':
+          description: Raum nicht gefunden
+  /api/quizzes/{quizId}/layout:
+    get:
+      summary: Quiz-Layout abrufen
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Layoutdaten
+          content:
+            application/json:
+              example: { "layout": { ... } }
+    post:
+      summary: Quiz-Layout speichern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuizLayout' }
+      responses:
+        '200':
+          description: Layout gespeichert
+          content:
+            application/json:
+              example: { "ok": true, "layout": { ... } }
+        '400':
+          description: Ungültige Daten
+  /api/questions:
+    get:
+      summary: Alle Fragen abrufen
+      responses:
+        '200':
+          description: Fragenliste
+          content:
+            application/json:
+              example: { "questions": [ ... ] }
+  /api/upload/question-image:
+    post:
+      summary: Fragebild hochladen
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                questionId:
+                  type: string
+      responses:
+        '200':
+          description: Bild-URL
+          content:
+            application/json:
+              example: { "imageUrl": "/uploads/questions/xyz.png" }
+        '400':
+          description: Kein Bild erhalten
+components:
+  schemas:
+    QuizLayout:
+      type: object
+      properties:
+        backgrounds:
+          type: array
+          items:
+            type: string
+        includeIntroOutro:
+          type: boolean
+        includeRuleSlides:
+          type: boolean
+        overrides:
+          type: object

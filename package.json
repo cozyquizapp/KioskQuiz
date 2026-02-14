@@ -9,11 +9,16 @@
     "start": "npm-run-all -p start:backend start:frontend:lan",
     "prebuild:all": "npm run install:all",
     "build:all": "npm --prefix backend run build && npm --prefix frontend run build",
-    "smoke": "npm run build:all"
+      "smoke": "npm run build:all",
+      "optimize:images": "node optimize-images.js"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",
     "typescript": "^5.3.3"
+      ,
+      "imagemin": "^8.0.0",
+      "imagemin-webp": "^7.0.0",
+      "svgo": "^3.0.0"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0"

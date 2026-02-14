@@ -1,9 +1,7 @@
 import { CSSProperties } from 'react';
 import { theme } from '../theme';
-import { getDraftTheme } from '../utils/draft';
-
-const draftTheme = getDraftTheme();
-const primary = draftTheme?.color || '#6dd5fa';
+// Removed getDraftTheme (missing file)
+const primary = '#6dd5fa';
 
 /**
  * MOBILE OPTIMIZATIONS:
@@ -34,10 +32,8 @@ export const pageStyleTeam: CSSProperties = {
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
   color: 'white',
-  background: draftTheme?.background
-    ? `url(${draftTheme.background}) center/cover`
-    : 'var(--bg)',
-  backgroundSize: draftTheme?.background ? 'cover' : '200% 200%',
+  background: 'var(--bg)',
+  backgroundSize: '200% 200%',
   animation: draftTheme?.background ? 'none' : 'ambient-shift 30s ease-in-out infinite',
   backgroundAttachment: 'fixed',
   fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)',

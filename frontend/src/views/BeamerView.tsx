@@ -25,7 +25,7 @@ import BeamerLobbyView from './BeamerLobbyView';
 import BeamerSlotView from './BeamerSlotView';
 import BeamerQuestionView from './BeamerQuestionView';
 import { introSlides as INTRO_SLIDE_MAP, IntroSlide } from '../introSlides';
-import { loadPlayDraft } from '../utils/draft';
+// ...existing code...
 import { featureFlags } from '../config/features';
 import { BeamerFrame, BeamerScoreboardCard } from '../components/beamer';
 import { LobbyStatsDisplay } from '../components/LobbyStatsDisplay';

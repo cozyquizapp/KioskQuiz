@@ -9,11 +9,14 @@
     "start": "node dist/backend/src/server.js"
   },
   "dependencies": {
+    "@sentry/node": "^7.57.0",
     "@types/multer": "^2.0.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "multer": "^2.0.2",
+    "node-cache": "^5.1.2",
     "quiz-monorepo": "file:..",
+    "redis": "^4.6.0",
     "socket.io": "^4.7.5",
     "uuid": "^9.0.1"
   },

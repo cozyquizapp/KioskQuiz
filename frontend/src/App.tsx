@@ -13,9 +13,9 @@ const QuestionEditorPage = React.lazy(() => import('./pages/QuestionEditorPage')
 const ModeratorPage = React.lazy(() => import('./pages/ModeratorPage'));
 const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
-const DraftImportPage = React.lazy(() => import('./pages/DraftImportPage'));
-const BaukastenNeuPage = React.lazy(() => import('./pages/BaukastenNeuPage'));
-const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
+// ...existing code...
+// ...existing code...
+// ...existing code...
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -126,16 +126,16 @@ function App() {
           <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/baukasten_neu" element={<BaukastenNeuPage />} />
+// ...existing code...
           <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/question-editor" element={<QuestionEditorPage />} />
           <Route path="/moderator" element={<ModeratorPage />} />
           <Route path="/intro" element={<IntroSlidesPage />} />
           <Route path="/question-catalog" element={<QuestionCatalogPage />} />
-          <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
+// ...existing code...
           <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/stats" element={<StatsPage />} />
-          <Route path="/draft-import" element={<DraftImportPage />} />
+// ...existing code...
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>
       </Suspense>

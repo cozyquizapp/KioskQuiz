@@ -96,8 +96,14 @@ export const headerBarTeam: CSSProperties = {
   backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)'
-  // padding removed to rely on .team-header CSS for responsive header height
+  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
+  height: 'clamp(64px, 12vw, 88px)', // Höhe exakt für Avatare
+  minHeight: '64px',
+  maxHeight: '88px',
+  paddingTop: 0,
+  paddingBottom: 0,
+  paddingLeft: 'clamp(8px, 2vw, 16px)',
+  paddingRight: 'clamp(8px, 2vw, 16px)'
 };
 
 export const pillSmall: CSSProperties = {

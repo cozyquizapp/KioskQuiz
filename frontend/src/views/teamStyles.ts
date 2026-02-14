@@ -97,9 +97,9 @@ export const headerBarTeam: CSSProperties = {
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
-  height: 'clamp(64px, 12vw, 88px)', // Höhe exakt für Avatare
-  minHeight: '64px',
-  maxHeight: '88px',
+  height: 'clamp(48px, 8vw, 64px)', // Reduziert für Avatare
+  minHeight: '48px',
+  maxHeight: '64px',
   paddingTop: 0,
   paddingBottom: 0,
   paddingLeft: 'clamp(8px, 2vw, 16px)',

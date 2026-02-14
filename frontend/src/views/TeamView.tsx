@@ -3938,91 +3938,60 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             display: teamId ? 'flex' : 'none'
           }}
         >
-          {/* Walking Animal */}
+          {/* Kompakter Header: Avatar, Teamname, Online-Punkt in einer Zeile */}
           {teamId && avatarId && (
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: 60,
-                pointerEvents: 'auto',
-                zIndex: 1,
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                console.log('🖱️ Avatar clicked!', { avatarId, igelState, hasStates: hasStateBasedRendering(avatarId) });
-                // State-based avatar special behavior on click
-                if (hasStateBasedRendering(avatarId)) {
-                  console.log('✅ Has state rendering');
-                  if (igelState === 'walking' || igelState === 'idle') {
-                    console.log('✅ State is walking/idle, running sequence');
-                    runAvatarSequence([
-                      { state: 'gesture', duration: 600 },
-                      { state: 'happy', duration: 1200 },
-                      { state: 'walking', duration: 0 }
-                    ], avatarId);
-                  } else {
-                    console.log('❌ Wrong state:', igelState);
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', minHeight: 48 }}>
+              <div
+                style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
+                onClick={() => {
+                  if (hasStateBasedRendering(avatarId)) {
+                    if (igelState === 'walking' || igelState === 'idle') {
+                      runAvatarSequence([
+                        { state: 'gesture', duration: 600 },
+                        { state: 'happy', duration: 1200 },
+                        { state: 'walking', duration: 0 }
+                      ], avatarId);
+                    }
                   }
-                } else {
-                  console.log('❌ No state rendering for this avatar');
-                }
-              }}
-              title="Klick mich an!"
-            >
-              <AvatarMedia
-                avatar={getAvatarById(avatarId)}
-                mood={avatarMood}
-                enableWalking={true}
-                igelState={igelState}
-                style={{ 
-                  width: 60, 
-                  height: 60, 
-                  objectFit: 'contain'
                 }}
-              />
+                title="Klick mich an!"
+              >
+                <AvatarMedia
+                  avatar={getAvatarById(avatarId)}
+                  mood={avatarMood}
+                  enableWalking={true}
+                  igelState={igelState}
+                  style={{ width: 48, height: 48, objectFit: 'contain' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 18, color: '#f8fafc', letterSpacing: '0.02em' }}>{teamName || 'Team'}</span>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    marginLeft: 2,
+                    background:
+                      connectionStatus === 'connected'
+                        ? '#4ade80'
+                        : connectionStatus === 'connecting'
+                        ? '#facc15'
+                        : '#f87171'
+                  }}
+                  title={connectionStatus === 'connected' ? 'Online' : connectionStatus === 'connecting' ? 'Verbinde...' : 'Offline'}
+                />
+              </div>
+              {isLocked ? (
+                <Pill
+                  tone="muted"
+                  style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18, marginLeft: 12 }}
+                >
+                  🔒
+                </Pill>
+              ) : null}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
-            {teamId && (
-              <Pill
-                tone="neutral"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderColor: accentPink,
-                  color: '#f8fafc'
-                }}
-              >
-                {teamName || 'Team'}
-              </Pill>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background:
-                    connectionStatus === 'connected'
-                      ? '#4ade80'
-                      : connectionStatus === 'connecting'
-                      ? '#facc15'
-                      : '#f87171'
-                }}
-              />
-            </div>
-            {isLocked ? (
-              <Pill
-                tone="muted"
-                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18 }}
-              >
-                🔒
-              </Pill>
-            ) : null}
-            {/* Timer Pill removed - using progress bar below instead */}
-          </div>
         </header>
 
         {/* Timer progress bar removed - now integrated in Submit button with enhanced styling */}

@@ -17,6 +17,7 @@ const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 // ...existing code...
 // ...existing code...
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
+// Removed broken import/lazy import of DraftImportPage and BaukastenNeuPage
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -121,22 +122,7 @@ function App() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/beamer" element={<BeamerPage />} />
           <Route path="/beamer/:roomCode" element={<BeamerPage />} />
-          <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
-// ...existing code...
-          <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/question-editor" element={<QuestionEditorPage />} />
-          <Route path="/moderator" element={<ModeratorPage />} />
-          <Route path="/intro" element={<IntroSlidesPage />} />
           <Route path="/question-catalog" element={<QuestionCatalogPage />} />
-// ...existing code...
-          <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/stats" element={<StatsPage />} />
-// ...existing code...
-          <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>
       </Suspense>
     </AppErrorBoundary>

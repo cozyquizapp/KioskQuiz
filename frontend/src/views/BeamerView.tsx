@@ -1296,17 +1296,15 @@ useEffect(() => {
       position: 'relative',
       height: '100vh',
       boxSizing: 'border-box',
-      background: draftTheme?.background
-        ? `url(${draftTheme.background}) center/cover fixed`
-        : 'var(--bg)',
-      backgroundSize: draftTheme?.background ? 'cover' : '200% 200%',
-      animation: draftTheme?.background ? 'none' : 'ambient-shift 28s ease-in-out infinite',
+      background: 'var(--bg)',
+      backgroundSize: '200% 200%',
+      animation: 'ambient-shift 28s ease-in-out infinite',
       color: '#e2e8f0',
       overflow: 'hidden',
       padding: '20px 18px',
-      fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'
+      fontFamily: 'var(--font)'
     }),
-    [draftTheme?.background, draftTheme?.font]
+    []
   );
 
   const footerMeta =
@@ -1324,7 +1322,6 @@ useEffect(() => {
 
   const cardColor = currentCategory ? categoryColors[currentCategory] ?? '#e1b75d' : '#e1b75d';
   const lobbyActiveColor =
-    draftTheme?.color ||
     (viewMode === 'lobby' && categories.length > 0
       ? categoryColors[categories[highlightedCategoryIndex] as QuizCategory] ?? '#6dd5fa'
       : '#6dd5fa');
@@ -3425,11 +3422,7 @@ useEffect(() => {
         );
       })}
       
-      {(featureFlags.showLegacyPanels || !featureFlags.isCozyMode) && draftTheme?.logoUrl && (
-        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 40 }}>
-          <img src={draftTheme.logoUrl} alt="Logo" style={{ maxHeight: 70, objectFit: 'contain' }} />
-        </div>
-      )}
+      {/* Legacy logo display removed: draftTheme?.logoUrl */}
       <div style={beamerAurora(lobbyActiveColor)} />
       <div style={beamerShell}>
         {showTechnicalHud && (

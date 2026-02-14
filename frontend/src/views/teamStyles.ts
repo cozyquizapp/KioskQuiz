@@ -1,6 +1,5 @@
 import { CSSProperties } from 'react';
 import { theme } from '../theme';
-// Removed getDraftTheme (missing file)
 const primary = '#6dd5fa';
 
 /**

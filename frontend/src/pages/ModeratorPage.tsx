@@ -163,7 +163,6 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
 };
 
 function ModeratorPage(): React.ReactElement {
-  const draftTheme = loadPlayDraft()?.theme;
   const getStoredRoom = () => {
     if (SINGLE_SESSION_MODE) return DEFAULT_ROOM_CODE;
     if (typeof window === 'undefined') return '';

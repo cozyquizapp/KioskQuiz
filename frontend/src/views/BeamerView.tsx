@@ -341,11 +341,10 @@ const BeamerWalkingAvatar: React.FC<{
 };
 
 const BeamerView = ({ roomCode }: BeamerProps) => {
-  const draftTheme = loadPlayDraft()?.theme;
-  const slotSpinMs = (draftTheme as any)?.slotSpinMs ?? 2400;
-  const slotHoldMs = (draftTheme as any)?.slotHoldMs ?? 1200;
-  const slotIntervalMs = (draftTheme as any)?.slotIntervalMs ?? 260;
-  const slotScale = (draftTheme as any)?.slotScale ?? 1;
+  const slotSpinMs = 2400;
+  const slotHoldMs = 1200;
+  const slotIntervalMs = 260;
+  const slotScale = 1;
   const [screen, setScreen] = useState<BaseScreen>('lobby');
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [slotMeta, setSlotMeta] = useState<SlotTransitionMeta | null>(null);

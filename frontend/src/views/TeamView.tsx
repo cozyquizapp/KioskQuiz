@@ -3938,59 +3938,94 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             display: teamId ? 'flex' : 'none'
           }}
         >
-          {/* Kompakter Header: Avatar, Teamname, Online-Punkt in einer Zeile */}
+          {/* Avatar als Hintergrund, Teamname im Vordergrund, Online-Status oben rechts */}
           {teamId && avatarId && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', minHeight: 48 }}>
+            <>
+              {/* Avatar als Hintergrund, läuft über volle Breite */}
               <div
-                style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
-                onClick={() => {
-                  if (hasStateBasedRendering(avatarId)) {
-                    if (igelState === 'walking' || igelState === 'idle') {
-                      runAvatarSequence([
-                        { state: 'gesture', duration: 600 },
-                        { state: 'happy', duration: 1200 },
-                        { state: 'walking', duration: 0 }
-                      ], avatarId);
-                    }
-                  }
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: '100%',
+                  height: '100%',
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'visible',
+                  opacity: 0.92
                 }}
-                title="Klick mich an!"
               >
-                <AvatarMedia
-                  avatar={getAvatarById(avatarId)}
-                  mood={avatarMood}
-                  enableWalking={true}
-                  igelState={igelState}
-                  style={{ width: 48, height: 48, objectFit: 'contain' }}
-                />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 18, color: '#f8fafc', letterSpacing: '0.02em' }}>{teamName || 'Team'}</span>
-                <span
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    marginLeft: 2,
-                    background:
-                      connectionStatus === 'connected'
-                        ? '#4ade80'
-                        : connectionStatus === 'connecting'
-                        ? '#facc15'
-                        : '#f87171'
+                <div
+                  style={{ width: 64, height: 64, minWidth: 48, minHeight: 48, maxWidth: 80, maxHeight: 80 }}
+                  title="Klick mich an!"
+                  onClick={() => {
+                    if (hasStateBasedRendering(avatarId)) {
+                      if (igelState === 'walking' || igelState === 'idle') {
+                        runAvatarSequence([
+                          { state: 'gesture', duration: 600 },
+                          { state: 'happy', duration: 1200 },
+                          { state: 'walking', duration: 0 }
+                        ], avatarId);
+                      }
+                    }
                   }}
-                  title={connectionStatus === 'connected' ? 'Online' : connectionStatus === 'connecting' ? 'Verbinde...' : 'Offline'}
-                />
-              </div>
-              {isLocked ? (
-                <Pill
-                  tone="muted"
-                  style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18, marginLeft: 12 }}
                 >
-                  🔒
-                </Pill>
-              ) : null}
-            </div>
+                  <AvatarMedia
+                    avatar={getAvatarById(avatarId)}
+                    mood={avatarMood}
+                    enableWalking={true}
+                    igelState={igelState}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                </div>
+              </div>
+              {/* Teamname im Vordergrund */}
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 2,
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 48
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: 18, color: '#f8fafc', letterSpacing: '0.02em', textShadow: '0 2px 8px #0008' }}>{teamName || 'Team'}</span>
+                {isLocked ? (
+                  <Pill
+                    tone="muted"
+                    style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18, marginLeft: 12 }}
+                  >
+                    🔒
+                  </Pill>
+                ) : null}
+              </div>
+              {/* Online-Status-Punkt oben rechts, klein und halbtransparent */}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 14,
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background:
+                    connectionStatus === 'connected'
+                      ? '#4ade80cc'
+                      : connectionStatus === 'connecting'
+                      ? '#facc15cc'
+                      : '#f87171cc',
+                  boxShadow: '0 0 6px 2px #0006',
+                  opacity: 0.7,
+                  zIndex: 3
+                }}
+                title={connectionStatus === 'connected' ? 'Online' : connectionStatus === 'connecting' ? 'Verbinde...' : 'Offline'}
+              />
+            </>
           )}
         </header>
 

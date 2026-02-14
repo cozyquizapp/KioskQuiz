@@ -1,3 +1,20 @@
+// Avatar visibility toggle (global for all teams)
+const AVATAR_TOGGLE_KEY = 'moderatorAvatarsEnabled';
+  // Avatar toggle state
+  const [avatarsEnabled, setAvatarsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(AVATAR_TOGGLE_KEY);
+      return stored === null ? true : stored === 'true';
+    }
+    return true;
+  });
+
+  const handleToggleAvatars = () => {
+    setAvatarsEnabled((prev) => {
+      localStorage.setItem(AVATAR_TOGGLE_KEY, String(!prev));
+      return !prev;
+    });
+  };
 import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -2809,6 +2826,21 @@ const renderCozyStagePanel = () => {
       </button>
     </div>
         {showSettingsPanel && (
+              {/* Avatar toggle option */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <label style={{ fontWeight: 700, color: '#f8fafc', fontSize: 15 }}>
+                  <input
+                    type="checkbox"
+                    checked={avatarsEnabled}
+                    onChange={handleToggleAvatars}
+                    style={{ marginRight: 8 }}
+                  />
+                  Avatare anzeigen
+                </label>
+                <span style={{ color: '#94a3b8', fontSize: 13 }}>
+                  (Avatare für alle Teams {avatarsEnabled ? 'sichtbar' : 'ausgeblendet'})
+                </span>
+              </div>
       <div style={{ ...actionWrap, marginTop: 10, display: 'grid', gap: 12 }}>
         {/* Session & Quiz Sektion */}
         <div style={{ display: 'grid', gap: 8 }}>

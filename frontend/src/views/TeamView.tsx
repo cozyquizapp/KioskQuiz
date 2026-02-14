@@ -117,10 +117,10 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
   );
 }
 
-interface TeamViewProps {
   roomCode: string;
   rejoinTrigger?: number;
   suppressAutoRejoin?: boolean;
+  avatarsEnabled?: boolean;
 }
 
 const COPY = {
@@ -357,7 +357,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   );
 });
 
-function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps) {
+function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin, avatarsEnabled = true }: TeamViewProps) {
   const teamMarker = 'teamview-marker-2026-01-02b';
   if (typeof window !== 'undefined') {
     const win = window as unknown as { __TEAMVIEW_RENDERED?: boolean; __TEAMVIEW_RENDER_COUNT?: number };
@@ -3939,7 +3939,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           }}
         >
           {/* Avatar als Hintergrund, Teamname im Vordergrund, Online-Status oben rechts */}
-          {teamId && avatarId && (
+          {teamId && avatarId && avatarsEnabled && (
             <>
               {/* Avatar als Hintergrund, läuft über volle Breite */}
               <div

@@ -1742,7 +1742,6 @@ app.post('/api/studio/cozy60/:id/duplicate', (req, res) => {
 });
 
 // Register studio routes AFTER cozy60 routes so specific routes match first
-app.use('/api/studio', studioRoutes);
 
 // Custom Questions (erstellte/aktualisierte Fragen)
 const customQuestionsPath = path.join(__dirname, 'data', 'customQuestions.json');

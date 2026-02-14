@@ -34,9 +34,9 @@ export const pageStyleTeam: CSSProperties = {
   color: 'white',
   background: 'var(--bg)',
   backgroundSize: '200% 200%',
-  animation: draftTheme?.background ? 'none' : 'ambient-shift 30s ease-in-out infinite',
+  animation: 'ambient-shift 30s ease-in-out infinite',
   backgroundAttachment: 'fixed',
-  fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)',
+  fontFamily: 'var(--font)',
   // iOS optimization
   WebkitFontSmoothing: 'antialiased',
   WebkitTouchCallout: 'none',

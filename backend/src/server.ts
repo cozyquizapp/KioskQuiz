@@ -9,7 +9,7 @@ import fs from 'fs';
 
 
 import * as Sentry from '@sentry/node';
-import { createClient } from 'redis';
+// import { createClient } from 'redis';
 import NodeCache from 'node-cache';
 
 Sentry.init({
@@ -17,10 +17,10 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-// Redis client setup
-const redisClient = createClient();
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
-redisClient.connect();
+// Redis client setup (deaktiviert für Render)
+// const redisClient = createClient();
+// redisClient.on('error', (err) => console.error('Redis Client Error', err));
+// redisClient.connect();
 
 // Initialize cache (default TTL: 10 minutes)
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });

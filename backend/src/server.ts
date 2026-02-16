@@ -4531,15 +4531,8 @@ const shouldShowSegmentScoreboard = (room: RoomState) => {
 };
 
 const handleHostNextAdvance = (room: RoomState) => {
-  if (room.gameState === 'LOBBY') {
-    const connectedTeamIds = getConnectedTeamIds(room);
-    if (connectedTeamIds.length > 0) {
-      const allReady = connectedTeamIds.every((teamId) => room.teams[teamId]?.isReady);
-      if (!allReady) {
-        throw new Error('Nicht alle Teams bereit');
-      }
-    }
-  }
+  // LOBBY: No ready check - moderator decides when to start
+  // Teams don't need to confirm ready status anymore
   if (room.gameState === 'QUESTION_INTRO' && room.currentQuestionId) {
     clearQuestionTimers(room);
     enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
@@ -6434,14 +6427,7 @@ io.on('connection', (socket: Socket) => {
     io.to(roomCode).emit('beamer:show-rules');
   });
 
-  socket.on('teamReady', ({ roomCode, teamId, isReady }: { roomCode: string; teamId: string; isReady: boolean }) => {
-    const room = ensureRoom(roomCode);
-    const team = room.teams[teamId];
-    if (!team) return;
-    team.isReady = isReady;
-    broadcastTeamsReady(room);
-    broadcastState(room);
-  });
+  // Removed: teamReady event - teams don't need to signal ready status anymore
 
   socket.on('disconnect', () => {
     const role = socket.data.role as string | undefined;

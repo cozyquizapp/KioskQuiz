@@ -3947,16 +3947,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         return evaluating ? renderWaiting(t('evaluating')) : renderWaiting(waitForQuestionHeadline);
     }
   };
-  function toggleReady() {
-    if (!teamId || !socketRef.current) return;
-    const next = !isReady;
-    setIsReady(next);
-    // Celebrate when marking as ready
-    if (next) {
-      setAvatarMood('happy');
-    }
-    socketRef.current.emit('teamReady', { roomCode, teamId, isReady: next });
-  }
+  // Removed: toggleReady function - teams don't need to signal ready anymore
 
   const remainingSeconds = useMemo(() => 
     timerEndsAt ? Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)) : 0,
@@ -4163,37 +4154,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
 
         {mainContent}
 
-        {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && (
-          <PrimaryButton
-            style={{
-              marginTop: 12,
-              background: isReady
-                ? `linear-gradient(135deg, rgba(255,79,158,0.22), rgba(217,70,239,0.2))`
-                : 'linear-gradient(135deg, rgba(255,79,158,0.18), rgba(99,102,241,0.16))',
-              color: isReady ? '#ffe4f0' : '#f8fafc',
-              border: `1px solid ${isReady ? 'rgba(255,79,158,0.45)' : 'rgba(255,79,158,0.35)'}`,
-              backdropFilter: 'blur(30px)',
-              boxShadow: isReady
-                ? `0 6px 22px rgba(255,79,158,0.28), inset 0 1px 1px rgba(255,255,255,0.12)`
-                : `0 4px 18px rgba(255,79,158,0.2), inset 0 1px 1px rgba(255,255,255,0.08)`,
-              transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              opacity: connectionStatus === 'connected' ? 1 : 0.5,
-              cursor: connectionStatus === 'connected' ? 'pointer' : 'not-allowed',
-              fontWeight: 800,
-              transform: isReady ? 'scale(1.01)' : 'scale(1)'
-            }}
-            onClick={connectionStatus === 'connected' ? toggleReady : undefined}
-            disabled={connectionStatus !== 'connected'}
-          >
-            {isReady
-              ? t('readyOn')
-              : language === 'en'
-              ? 'We are ready'
-              : language === 'both'
-              ? 'Wir sind bereit / We are ready'
-              : 'Wir sind bereit'}
-          </PrimaryButton>
-        )}
+        {/* Removed: Ready button - teams don't need to confirm ready status */}
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && connectionStatus !== 'connected' && (
           <div className="message-state message-error">
             {language === 'both'

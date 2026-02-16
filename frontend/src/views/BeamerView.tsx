@@ -1702,11 +1702,10 @@ useEffect(() => {
                 </div>
               ) : (
                 sortedTeams.map((team) => {
-                  const isReady = Boolean(team.isReady);
                   const avatar = getAvatarById(team.avatarId);
                   return (
                     <div className="cozyLobbyTeamRow" key={team.id}>
-                      <span className={`cozyLobbyStatusDot ${isReady ? 'ready' : 'online'}`} />
+                      <span className="cozyLobbyStatusDot online" />
                       {avatar && (
                         <AvatarMedia
                           avatar={avatar}
@@ -1714,7 +1713,7 @@ useEffect(() => {
                         />
                       )}
                       <span className="cozyLobbyTeamName">{team.name || 'Team'}</span>
-                      <span className="cozyLobbyTeamStatus">{isReady ? statusReady : statusOnline}</span>
+                      <span className="cozyLobbyTeamStatus">{statusOnline}</span>
                     </div>
                   );
                 })

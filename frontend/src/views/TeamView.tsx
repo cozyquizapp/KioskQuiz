@@ -432,6 +432,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
+  const [expandedBlitzItem, setExpandedBlitzItem] = useState<number | null>(0); // Start with first item expanded
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
@@ -3153,82 +3154,137 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   : `What do you see in the images?`}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {/* Item Buttons - Click to expand */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               {Array.from({ length: totalItems }).map((_, idx) => {
-                const status =
-                  idx === activeBlitzItemIndex ? 'current' : idx < activeBlitzItemIndex ? 'done' : 'upcoming';
-                const palette =
-                  status === 'current'
-                    ? { bg: 'rgba(96,165,250,0.2)', border: 'rgba(96,165,250,0.5)', color: '#dbeafe' }
-                    : status === 'done'
-                    ? { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }
-                    : { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.12)', color: '#cbd5e1' };
+                const hasAnswer = blitzAnswers[idx] && blitzAnswers[idx].trim().length > 0;
+                const isExpanded = expandedBlitzItem === idx;
+                const palette = hasAnswer
+                  ? { bg: 'rgba(34,197,94,0.25)', border: 'rgba(34,197,94,0.6)', color: '#bbf7d0' }
+                  : isExpanded
+                  ? { bg: 'rgba(96,165,250,0.25)', border: 'rgba(96,165,250,0.7)', color: '#dbeafe' }
+                  : { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.2)', color: '#cbd5e1' };
                 return (
-                  <span
-                    key={`blitz-stage-chip-${idx}`}
+                  <button
+                    key={`blitz-item-btn-${idx}`}
+                    onClick={() => {
+                      setExpandedBlitzItem(isExpanded ? null : idx);
+                      if (!isExpanded) {
+                        setTimeout(() => blitzInputsRef.current[idx]?.focus(), 100);
+                      }
+                    }}
                     style={{
-                      ...pillLabel,
+                      flex: '1 1 auto',
+                      minWidth: '80px',
+                      padding: '12px 16px',
                       background: palette.bg,
-                      borderColor: palette.border,
+                      border: `2px solid ${palette.border}`,
+                      borderRadius: '12px',
                       color: palette.color,
-                      fontSize: 12
+                      fontSize: '14px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      position: 'relative'
                     }}
                   >
-                    {language === 'de' ? `Item ${idx + 1}` : `Item ${idx + 1}`}
-                  </span>
+                    ITEM {idx + 1}
+                    {hasAnswer && (
+                      <span style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        background: 'rgba(34,197,94,0.9)',
+                        color: '#0f172a',
+                        fontSize: '11px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        ✓
+                      </span>
+                    )}
+                  </button>
                 );
               })}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
               {language === 'de'
                 ? `Antworten: ${submissionCount}/${totalTeamsLabel}`
                 : `Submissions: ${submissionCount}/${totalTeamsLabel}`}
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {blitzAnswers.map((value, idx) => {
-                const item = blitzItems[idx];
-                const inputId = `blitz-input-${idx}`;
-                const isActive = idx === activeBlitzItemIndex;
-                return (
-                  <div
-                    key={inputId}
+            {/* Expanded Input Field */}
+            {expandedBlitzItem !== null && expandedBlitzItem < blitzAnswers.length && (
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 12,
+                  padding: '16px',
+                  borderRadius: '16px',
+                  border: '2px solid rgba(96,165,250,0.6)',
+                  background: 'rgba(96,165,250,0.1)',
+                  marginBottom: 12,
+                  animation: 'fadeIn 0.3s ease-in'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: 14, fontWeight: '700', color: '#dbeafe' }}>
+                    ITEM {expandedBlitzItem + 1}
+                  </label>
+                  <button
+                    onClick={() => setExpandedBlitzItem(null)}
                     style={{
-                      display: 'grid',
-                      gap: 4,
-                      padding: 6,
-                      borderRadius: 12,
-                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.12)'}`,
-                      background: isActive ? 'rgba(96,165,250,0.08)' : 'rgba(15,23,42,0.65)'
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      padding: '4px 12px',
+                      color: '#cbd5e1',
+                      fontSize: '12px',
+                      cursor: 'pointer'
                     }}
                   >
-                    <label htmlFor={inputId} style={{ fontSize: 12, color: isActive ? '#dbeafe' : '#cbd5e1' }}>
-                      {language === 'de' ? 'Item' : 'Item'} {idx + 1}
-                      {item?.prompt ? ` - ${item.prompt}` : ''}
-                    </label>
-                    <input
-                      id={inputId}
-                      ref={(el) => (blitzInputsRef.current[idx] = el)}
-                      className={`team-answer-input${isActive ? ' is-active' : ''}`}
-                      style={{
-                        ...inputStyle,
-                        border: isActive ? '1px solid rgba(96,165,250,0.8)' : inputStyle.border,
-                        background: isActive ? 'rgba(15,78,134,0.45)' : inputStyle.background
-                      }}
-                      value={value}
-                      disabled={!canAnswer}
-                      placeholder={`${language === 'de' ? 'Antwort' : 'Answer'} ${idx + 1}`}
-                      onChange={(e) =>
-                        setBlitzAnswers((prev) => {
-                          const next = [...prev];
-                          next[idx] = e.target.value;
-                          return next;
-                        })
-                      }
-                    />
+                    {language === 'de' ? 'Schließen' : 'Close'}
+                  </button>
+                </div>
+                {blitzItems[expandedBlitzItem]?.prompt && (
+                  <div style={{
+                    fontSize: 13,
+                    color: '#94a3b8',
+                    fontStyle: 'italic',
+                    padding: '8px 12px',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '8px'
+                  }}>
+                    {blitzItems[expandedBlitzItem].prompt}
                   </div>
-                );
-              })}
-            </div>
+                )}
+                <input
+                  ref={(el) => (blitzInputsRef.current[expandedBlitzItem] = el)}
+                  className="team-answer-input is-active"
+                  style={{
+                    ...inputStyle,
+                    fontSize: '16px',
+                    padding: '14px',
+                    border: '2px solid rgba(96,165,250,0.8)',
+                    background: 'rgba(15,78,134,0.45)',
+                    minHeight: '50px'
+                  }}
+                  value={blitzAnswers[expandedBlitzItem] || ''}
+                  disabled={!canAnswer}
+                  placeholder={`${language === 'de' ? 'Deine Antwort hier...' : 'Your answer here...'}`}
+                  onChange={(e) =>
+                    setBlitzAnswers((prev) => {
+                      const next = [...prev];
+                      next[expandedBlitzItem!] = e.target.value;
+                      return next;
+                    })
+                  }
+                />
+              </div>
+            )}
             <button
               style={{
                 ...primaryButton,

@@ -9,18 +9,13 @@ import fs from 'fs';
 
 
 import * as Sentry from '@sentry/node';
-import { createClient } from 'redis';
+// import { createClient } from 'redis'; // Removed: using NodeCache instead
 import NodeCache from 'node-cache';
 
 Sentry.init({
   dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0', // TODO: Replace with your real DSN
   tracesSampleRate: 1.0,
 });
-
-// Redis client setup
-const redisClient = createClient();
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
-redisClient.connect();
 
 // Initialize cache (default TTL: 10 minutes)
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -4028,18 +4023,18 @@ if (DEBUG) {
   });
 }
 
-app.get('/api/questions', async (_req, res) => {
+app.get('/api/questions', (_req, res) => {
   const cacheKey = 'questions';
-  const cached = await redisClient.get(cacheKey);
+  const cached = cache.get<any>(cacheKey);
   if (cached) {
-    return res.json({ questions: JSON.parse(cached) });
+    return res.json({ questions: cached });
   }
   const mapped = questions.map((q) => {
     const usage = questionUsageMap[q.id] ?? {};
     const isCustom = customQuestions.some((c) => c.id === q.id);
     return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom };
   });
-  await redisClient.set(cacheKey, JSON.stringify(mapped), { EX: 600 });
+  cache.set(cacheKey, mapped);
   res.json({ questions: mapped });
 });
 

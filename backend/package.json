@@ -16,7 +16,6 @@
     "multer": "^2.0.2",
     "node-cache": "^5.1.2",
     "quiz-monorepo": "file:..",
-    "redis": "^4.6.0",
     "socket.io": "^4.7.5",
     "uuid": "^9.0.1"
   },

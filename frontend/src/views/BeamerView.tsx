@@ -2366,16 +2366,17 @@ useEffect(() => {
     const items = blitz.items ?? [];
     const totalItems = Math.max(1, items.length || 5);
     const maxIndex = totalItems - 1;
-    const rawIndex =
-      blitz.phase === 'PLAYING'
-        ? typeof blitz.itemIndex === 'number' && blitz.itemIndex >= 0
-          ? blitz.itemIndex
-          : 0
-        : maxIndex;
+    // Use itemIndex for both DISPLAYING and PLAYING phases
+    const isActivePhase = blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING';
+    const rawIndex = isActivePhase
+      ? typeof blitz.itemIndex === 'number' && blitz.itemIndex >= 0
+        ? blitz.itemIndex
+        : 0
+      : maxIndex;
     const activeIndex = Math.min(maxIndex, Math.max(0, rawIndex));
     const activeItem = items[activeIndex];
     const timeline = Array.from({ length: totalItems }, (_, idx) => {
-      if (blitz.phase !== 'PLAYING') return idx <= activeIndex ? 'done' : 'pending';
+      if (!isActivePhase) return idx <= activeIndex ? 'done' : 'pending';
       if (idx < activeIndex) return 'done';
       if (idx === activeIndex) return 'current';
       return 'pending';

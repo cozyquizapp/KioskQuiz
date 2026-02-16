@@ -2168,10 +2168,10 @@ useEffect(() => {
       const allAvailable = pool.filter(t => !bannedIds.has(t.id) && t.id !== pickedTheme?.id);
 
       // Animation state for slot machine effect
-      const [showcasePhase, setShowcasePhase] = React.useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
-      const [slotPositions, setSlotPositions] = React.useState<string[]>([]);
+      const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
+      const [slotPositions, setSlotPositions] = useState<string[]>([]);
 
-      React.useEffect(() => {
+      useEffect(() => {
         // Initialize with random positions
         if (allAvailable.length >= 2) {
           const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);

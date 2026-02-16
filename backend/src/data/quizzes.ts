@@ -447,8 +447,9 @@ export const defaultQuizzes: QuizTemplate[] = [
     name: '🎯 Demo Quiz (Probe)',
     meta: { description: 'Test-Quiz für schnelle Sessions – im Builder anpassen!' },
     questionIds: cozyLineupClassic.slice(0, 5), // Nur 5 Fragen für schnelles Testen
-    // Fülle Pools ausreichend für neue Modi (>=9 Blitz)
-    blitzPool: [...defaultBlitzPool, ...blitzHamburgMoments].slice(0, 10)
+    // Use only themes with working Unsplash images (defaultBlitzPool)
+    // Hamburg themes and local /blitz/ paths don't have images yet
+    blitzPool: defaultBlitzPool
   })
 ];
 

@@ -2421,19 +2421,18 @@ useEffect(() => {
               {activeItem?.mediaUrl && (
                 <img
                   src={activeItem.mediaUrl}
-                  alt={activeItem.prompt || `Blitz ${activeIndex + 1}`}
+                  alt={`Item ${activeIndex + 1}`}
                   className="blitz-current-image"
                 />
               )}
-              <div className="blitz-text-overlay">
-                <div className="blitz-item-title">
-                  {activeItem?.prompt ||
-                    `${language === 'de' ? 'Item' : 'Item'} ${activeIndex + 1}/${totalItems}`}
+              {/* Only show item number during DISPLAYING, no solution text */}
+              {blitz.phase === 'DISPLAYING' && (
+                <div className="blitz-text-overlay">
+                  <div className="blitz-item-meta">
+                    {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
+                  </div>
                 </div>
-                <div className="blitz-item-meta">
-                  {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
-                </div>
-              </div>
+              )}
             </div>
             <div className="blitz-timeline">
               {timeline.map((status, idx) => (

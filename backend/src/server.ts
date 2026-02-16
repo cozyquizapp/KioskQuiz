@@ -2287,6 +2287,14 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
     if (broadcast) broadcastState(room);
     return;
   }
+
+  // ROBUST: Ensure we have items before starting ticker
+  if (!room.blitzItems || room.blitzItems.length === 0) {
+    console.error('[BLITZ TICKER] ERROR: No items to display!');
+    if (broadcast) broadcastState(room);
+    return;
+  }
+
   const itemCount = room.blitzItems.length || BLITZ_ITEMS_PER_SET;
   const maxIndex = Math.max(0, itemCount - 1);
   const displayTotalMs = Number.isFinite(room.blitzDisplayTimeMs) && room.blitzDisplayTimeMs
@@ -2381,15 +2389,30 @@ const startBlitzSet = (room: RoomState) => {
   clearBlitzRoundIntroTimer(room);
   room.blitzRoundIntroTimeout = setTimeout(() => {
     room.blitzRoundIntroTimeout = null;
-    console.log('[BLITZ] ROUND_INTRO timeout fired | Current phase:', room.blitzPhase);
-    if (room.blitzPhase !== 'ROUND_INTRO') return;
+    console.log('[BLITZ] ROUND_INTRO timeout fired | Current phase:', room.blitzPhase, '| State:', room.gameState);
+
+    // ROBUST FIX: Don't fail silently - always try to start DISPLAYING
+    if (room.blitzPhase !== 'ROUND_INTRO') {
+      console.log('[BLITZ] WARNING: Phase changed to', room.blitzPhase, '- forcing back to ROUND_INTRO');
+      room.blitzPhase = 'ROUND_INTRO';
+    }
+
     applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
     room.blitzPhase = 'DISPLAYING';
     room.blitzDeadlineAt = Date.now() + room.blitzDisplayTimeMs;
     room.blitzItemIndex = 0;
-    console.log('[BLITZ] Starting DISPLAYING phase | Display time:', room.blitzDisplayTimeMs, 'ms | Items:', room.blitzItems.length);
-    scheduleBlitzItemTicker(room, true);
-    scheduleBlitzSetTimer(room);
+    console.log('[BLITZ] ✓ Starting DISPLAYING phase | Display time:', room.blitzDisplayTimeMs, 'ms | Items:', room.blitzItems.length);
+
+    // CRITICAL: Always start item ticker
+    try {
+      scheduleBlitzItemTicker(room, true);
+      scheduleBlitzSetTimer(room);
+      console.log('[BLITZ] ✓ Timers started successfully');
+    } catch (error) {
+      console.error('[BLITZ] ✗ ERROR starting timers:', error);
+    }
+
+    broadcastState(room);
   }, BLITZ_ROUND_INTRO_MS);
 };
 
@@ -4570,10 +4593,13 @@ const handleHostNextAdvance = (room: RoomState) => {
       }, 5000);
       return { stage: room.gameState };
     }
-    // IMPORTANT: Don't skip CATEGORY_SHOWCASE - let the auto-timeout handle it
+    // ROBUST FIX: Allow manual skip of CATEGORY_SHOWCASE (fallback if timeout fails)
     if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
-      console.log('[BLITZ] Ignoring next during CATEGORY_SHOWCASE - animation in progress');
-      return { stage: room.gameState }; // Don't start set, let the timeout finish
+      console.log('[BLITZ] Manual skip of CATEGORY_SHOWCASE via host:next - starting set');
+      clearBlitzRoundIntroTimer(room);
+      startBlitzSet(room);
+      broadcastState(room);
+      return { stage: room.gameState };
     }
   }
   if (room.gameState === 'BLITZ_SET_INTRO') {
@@ -6209,14 +6235,27 @@ io.on('connection', (socket: Socket) => {
           clearBlitzRoundIntroTimer(room);
           console.log('[BLITZ] Setting 5s timeout for showcase');
           room.blitzRoundIntroTimeout = setTimeout(() => {
-            console.log('[BLITZ] Showcase timeout fired');
+            console.log('[BLITZ] Showcase timeout fired | Current state:', room.gameState);
             room.blitzRoundIntroTimeout = null;
-            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') {
-              console.log('[BLITZ] WARNING: State changed to', room.gameState);
-              return;
+
+            // ROBUST FIX: Don't fail silently - always try to progress
+            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE' &&
+                room.gameState !== 'BLITZ_SELECTION_COMPLETE') {
+              console.log('[BLITZ] WARNING: Unexpected state', room.gameState, '- forcing recovery');
+              applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
             }
-            startBlitzSet(room);
-            broadcastState(room);
+
+            try {
+              startBlitzSet(room);
+              broadcastState(room);
+              console.log('[BLITZ] ✓ Set started successfully');
+            } catch (error) {
+              console.error('[BLITZ] ✗ ERROR starting set:', error);
+              // Fallback: Reset to READY so moderator can restart
+              room.blitzPhase = 'READY';
+              applyRoomState(room, { type: 'FORCE', next: 'BLITZ_READY' });
+              broadcastState(room);
+            }
           }, 5000);
         }
 
@@ -6235,10 +6274,13 @@ io.on('connection', (socket: Socket) => {
         broadcastState(room);
         return;
       }
-      // IMPORTANT: Don't skip CATEGORY_SHOWCASE - let the auto-timeout handle it
+      // ROBUST FIX: Allow manual skip of CATEGORY_SHOWCASE (fallback if timeout fails)
       if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
-        console.log('[BLITZ] Ignoring blitzStartSet during CATEGORY_SHOWCASE - animation in progress');
-        return; // Don't start set, let the timeout finish the showcase
+        console.log('[BLITZ] Manual skip of CATEGORY_SHOWCASE - clearing timeout and starting set');
+        clearBlitzRoundIntroTimer(room);
+        startBlitzSet(room);
+        broadcastState(room);
+        return;
       }
       // Legacy support for direct start
       if (room.blitzPhase !== 'SELECTION_COMPLETE' && room.blitzPhase !== 'READY') {

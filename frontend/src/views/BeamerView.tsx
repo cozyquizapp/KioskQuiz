@@ -1227,6 +1227,10 @@ useEffect(() => {
     if (!blitz?.itemDeadline) return null;
     return Math.max(0, Math.ceil((blitz.itemDeadline - Date.now()) / 1000));
   }, [blitz?.itemDeadline, blitzItemTick]);
+  const rundlaufCountdown = useMemo(() => {
+    if (!rundlauf?.deadline) return null;
+    return Math.max(0, Math.ceil((rundlauf.deadline - Date.now()) / 1000));
+  }, [rundlauf?.deadline, tick]);
   const totalQuestions = derivedQuestionProgress?.total ?? questionMeta?.globalTotal ?? 20;
   const rawRoundIndex = questionMeta?.globalIndex ?? derivedQuestionProgress?.asked ?? 0;
   const currentRoundNumber =
@@ -3167,6 +3171,7 @@ useEffect(() => {
       }
 
       if (gameState === 'RUNDLAUF_ROUND_INTRO') {
+        const countdownNumber = rundlaufCountdown !== null && rundlaufCountdown > 0 ? rundlaufCountdown : null;
         return (
           <BeamerFrame
             key={`${sceneKey}-rundlauf-intro`}
@@ -3185,6 +3190,17 @@ useEffect(() => {
                   ? 'Reihum antworten - wer nichts weiss, fliegt raus.'
                   : 'Take turns answering - pass means eliminated.'}
               </p>
+              {countdownNumber !== null && (
+                <div style={{
+                  fontSize: '80px',
+                  fontWeight: '900',
+                  color: '#4ade80',
+                  marginTop: '30px',
+                  animation: 'pulse 0.5s ease-in-out infinite'
+                }}>
+                  {countdownNumber}
+                </div>
+              )}
             </div>
           </BeamerFrame>
         );

@@ -5907,11 +5907,31 @@ io.on('connection', (socket: Socket) => {
         }
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
         applyRundlaufPick(room, payload.teamId, payload.categoryId || '');
+
         // Auto-transition if selection is complete
         if (hasRundlaufSelectionReady(room)) {
           finalizeRundlaufSelection(room);
-          applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_SELECTION_COMPLETE' });
+          applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
+
+          // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
+          clearRundlaufRoundIntroTimer(room);
+          room.rundlaufRoundIntroTimeout = setTimeout(() => {
+            room.rundlaufRoundIntroTimeout = null;
+            if (room.gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE') return;
+            applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
+            room.rundlaufDeadlineAt = Date.now() + BLITZ_ROUND_INTRO_MS; // Reuse same constant (2s)
+            broadcastState(room);
+
+            // Auto-start round after intro countdown
+            room.rundlaufRoundIntroTimeout = setTimeout(() => {
+              room.rundlaufRoundIntroTimeout = null;
+              if (room.gameState !== 'RUNDLAUF_ROUND_INTRO') return;
+              startRundlaufRound(room);
+              broadcastState(room);
+            }, BLITZ_ROUND_INTRO_MS);
+          }, 3000);
         }
+
         broadcastState(room);
         return { pinned: room.rundlaufPinnedCategory };
       });

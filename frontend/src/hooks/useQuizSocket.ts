@@ -9,7 +9,7 @@ import {
   Team,
   StateUpdatePayload,
   CozyGameState,
-  PotatoState,
+  // PotatoState, // TODO: removed
   BlitzState,
   NextStageHint,
   RundlaufState

@@ -30,7 +30,7 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
       return (
         <div style={{ minHeight: '100vh', background: '#0b0d14', color: '#e2e8f0', padding: 24 }}>
           <h2>Unerwarteter Fehler</h2>
-          <p>{this.state.error.message}</p>
+          <p>{String(this.state.error)}</p>
           <button
             style={{
               marginTop: 12,

@@ -163,7 +163,7 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
 };
 
 function ModeratorPage(): React.ReactElement {
-  const draftTheme = loadPlayDraft()?.theme;
+  const draftTheme = null; // loadPlayDraft()?.theme; // TODO: removed
   const getStoredRoom = () => {
     if (SINGLE_SESSION_MODE) return DEFAULT_ROOM_CODE;
     if (typeof window === 'undefined') return '';
@@ -1364,7 +1364,7 @@ function ModeratorPage(): React.ReactElement {
       setActionState={setActionState}
       doAction={doAction}
       setToast={setToast}
-      primaryColor={draftTheme?.color}
+      primaryColor={undefined}
       onNext={handleNextQuestion}
       onLock={handleLockQuestion}
       onReveal={handleReveal}
@@ -3103,9 +3103,7 @@ const renderCozyStagePanel = () => {
       style={{
         minHeight: '100vh',
         height: '100dvh',
-        background: draftTheme?.background
-          ? `url(${draftTheme.background}) center/cover fixed`
-          : 'var(--bg)',
+        background: 'var(--bg)',
         color: '#e2e8f0',
         padding: 12,
         boxSizing: 'border-box',
@@ -3113,7 +3111,7 @@ const renderCozyStagePanel = () => {
         overscrollBehavior: 'contain',
         maxWidth: 1100,
         margin: '0 auto',
-        fontFamily: draftTheme?.font ? `${draftTheme.font}, var(--font)` : 'var(--font)'
+        fontFamily: 'var(--font)'
       }}
     >
       {renderReconnectModal()}

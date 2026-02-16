@@ -3949,11 +3949,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           {teamId && avatarId && (
             <div
               style={{
-                position: 'relative',
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
                 width: '100%',
-                height: 60,
+                height: '100%',
                 pointerEvents: 'auto',
-                zIndex: 1,
+                zIndex: 3,
                 cursor: 'pointer'
               }}
               onClick={() => {
@@ -3990,7 +3993,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               />
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center', position: 'relative', zIndex: 1 }}>
             {teamId && (
               <Pill
                 tone="neutral"
@@ -4004,7 +4007,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               </Pill>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{

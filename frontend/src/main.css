@@ -863,6 +863,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+.team-header {
+  padding: 8px 16px;
+  min-height: 60px;
+}
+
 img {
   display: block;
   max-width: 100%;

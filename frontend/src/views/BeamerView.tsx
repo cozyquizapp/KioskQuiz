@@ -2456,10 +2456,60 @@ useEffect(() => {
             )}
             {scoreboardReady && (
               <>
-                <div className="beamer-question-category">
-                  {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+                <div className="beamer-question-category" style={{ marginBottom: '20px' }}>
+                  {language === 'de' ? 'Lösungen' : language === 'both' ? 'Lösungen / Solutions' : 'Solutions'}
                 </div>
-                {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+                {/* Show all 5 images with solution words */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '20px',
+                  width: '100%',
+                  padding: '20px 0'
+                }}>
+                  {items.map((item, idx) => (
+                    <div key={`solution-${item.id}-${idx}`} style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '12px',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      border: '2px solid rgba(148, 163, 184, 0.2)'
+                    }}>
+                      {item.mediaUrl && (
+                        <img
+                          src={item.mediaUrl}
+                          alt={item.prompt || `Item ${idx + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '150px',
+                            objectFit: 'cover',
+                            borderRadius: '8px'
+                          }}
+                        />
+                      )}
+                      <div style={{
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: '#4ade80',
+                        textAlign: 'center',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {item.prompt || `Item ${idx + 1}`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Show scoreboard below the images */}
+                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px solid rgba(148, 163, 184, 0.2)' }}>
+                  <div className="beamer-question-category" style={{ marginBottom: '15px' }}>
+                    {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
+                  </div>
+                  {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
+                </div>
               </>
             )}
           </div>

@@ -3147,7 +3147,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 gap: 8
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{currentItem?.prompt || `Item ${activeBlitzItemIndex + 1}`}</div>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>
+                {language === 'de'
+                  ? `Was siehst du auf den Bildern?`
+                  : `What do you see in the images?`}
+              </div>
               {blitzItemCountdown !== null && (
                 <div
                   style={{

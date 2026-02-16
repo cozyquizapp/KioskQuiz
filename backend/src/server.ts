@@ -6147,12 +6147,22 @@ io.on('connection', (socket: Socket) => {
         if (room.gameState !== 'BLITZ_BANNING') throw new Error('Blitz-Auswahl nicht aktiv');
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
         applyBlitzPick(room, payload.teamId, payload.themeId || '');
+
         // Auto-transition if selection is complete
         if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
           finalizeBlitzSelection(room);
           room.blitzPhase = 'SELECTION_COMPLETE';
-          applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SELECTION_COMPLETE' });
+          applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
+
+          // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+          clearBlitzRoundIntroTimer(room);
+          room.blitzRoundIntroTimeout = setTimeout(() => {
+            room.blitzRoundIntroTimeout = null;
+            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+            startBlitzSet(room);
+          }, 3000);
         }
+
         broadcastState(room);
         return { pinned: room.blitzPinnedTheme };
       });

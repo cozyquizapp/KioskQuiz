@@ -3427,6 +3427,8 @@ useEffect(() => {
       case 'BLITZ':
       case 'BLITZ_READY':
       case 'BLITZ_BANNING':
+      case 'BLITZ_SELECTION_COMPLETE':
+      case 'BLITZ_CATEGORY_SHOWCASE':
       case 'BLITZ_SET_INTRO':
       case 'BLITZ_PLAYING':
       case 'BLITZ_SET_END':

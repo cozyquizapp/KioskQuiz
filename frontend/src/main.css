@@ -2434,6 +2434,79 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
+/* Slot Machine Animation for CATEGORY_SHOWCASE */
+@keyframes slotMachineStop {
+  0% {
+    transform: translateY(-100%) scale(0.8);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  20% {
+    transform: translateY(-50%) scale(0.9);
+    opacity: 0.5;
+    filter: blur(5px);
+  }
+  40% {
+    transform: translateY(20%) scale(1.05);
+    opacity: 0.8;
+    filter: blur(2px);
+  }
+  60% {
+    transform: translateY(-10%) scale(1.02);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  80% {
+    transform: translateY(5%) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes spin {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(-10deg) scale(1.15);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.1);
+  }
+}
+
+@keyframes scaleInCenter {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* Interactive hover scale with spring */
 .hover-spring {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);

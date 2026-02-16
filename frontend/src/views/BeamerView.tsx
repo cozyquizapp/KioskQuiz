@@ -2163,9 +2163,10 @@ useEffect(() => {
     }
 
     if (phase === 'CATEGORY_SHOWCASE') {
-      const nextTheme = selectedThemes[0]; // The picked theme
-      const randomThemes = selectedThemes.slice(1, 3); // 2 random themes
-      
+      const pickedTheme = selectedThemes[0]; // Team picked this
+      const randomThemes = selectedThemes.slice(1, 3); // 2 random picks
+      const allAvailable = pool.filter(t => !bannedIds.has(t.id));
+
       return (
         <div style={{
           display: 'flex',
@@ -2173,79 +2174,144 @@ useEffect(() => {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
-          gap: '40px',
+          gap: '30px',
           padding: '40px 20px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)',
-          animation: 'fadeIn 0.8s ease-in'
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
+          animation: 'fadeIn 0.5s ease-in'
         }}>
-          {/* Main showcase card */}
+          {/* Header */}
           <div style={{
-            animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            transformOrigin: 'center'
+            fontSize: '32px',
+            fontWeight: '900',
+            color: '#4ade80',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            animation: 'slideInDown 0.5s ease-out'
           }}>
-            <div style={{
-              fontSize: '60px',
-              fontWeight: '900',
-              textAlign: 'center',
-              color: '#fff',
-              marginBottom: '20px',
-              textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
-            }}>
-              {nextTheme?.title || 'Thema'}
-            </div>
-            <div style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              textAlign: 'center',
-              color: 'rgba(226, 232, 240, 0.9)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em'
-            }}>
-              Das erste Thema beginnt gleich...
-            </div>
+            🎯 Die 3 Themen für diese Runde
           </div>
 
-          {/* Random theme previews */}
-          {randomThemes.length > 0 && (
+          {/* Main Grid: 3 Columns */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '24px',
+            maxWidth: '1400px',
+            width: '100%',
+            marginTop: '20px'
+          }}>
+            {/* Column 1: Picked Theme (by last place team) */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '20px',
-              marginTop: '40px',
-              maxWidth: '600px'
+              padding: '32px',
+              background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(59, 130, 246, 0.15))',
+              border: '3px solid rgba(96, 165, 250, 0.6)',
+              borderRadius: '20px',
+              textAlign: 'center',
+              animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
+              position: 'relative',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
             }}>
-              {randomThemes.map((theme, idx) => (
-                <div
-                  key={`showcase-${theme.id}`}
-                  style={{
-                    padding: '24px',
-                    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1))',
-                    border: '2px solid rgba(74, 222, 128, 0.4)',
-                    borderRadius: '16px',
-                    textAlign: 'center',
-                    animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
-                  }}
-                >
-                  <div style={{
-                    fontSize: '14px',
-                    color: 'rgba(74, 222, 128, 0.9)',
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    marginBottom: '8px'
-                  }}>
-                    Weitere Themen:
-                  </div>
-                  <div style={{
-                    fontSize: '20px',
-                    fontWeight: '900',
-                    color: '#fff'
-                  }}>
-                    {theme.title}
-                  </div>
-                </div>
-              ))}
+              <div style={{
+                position: 'absolute',
+                top: '-12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(96, 165, 250, 0.9)',
+                color: '#0f172a',
+                padding: '6px 20px',
+                borderRadius: '20px',
+                fontSize: '14px',
+                fontWeight: '800',
+                textTransform: 'uppercase'
+              }}>
+                GEWÄHLT
+              </div>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '8px'
+              }}>
+                {pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}
+              </div>
+              <div style={{
+                fontSize: '28px',
+                fontWeight: '900',
+                color: '#fff',
+                lineHeight: '1.2'
+              }}>
+                {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
+              </div>
             </div>
-          )}
+
+            {/* Column 2 & 3: Random Picks with "Slot Machine" effect */}
+            {randomThemes.map((theme, idx) => (
+              <div
+                key={`random-${theme.id}-${idx}`}
+                style={{
+                  padding: '32px',
+                  background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.1))',
+                  border: '3px solid rgba(74, 222, 128, 0.5)',
+                  borderRadius: '20px',
+                  textAlign: 'center',
+                  animation: `slotMachineStop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.5 + idx * 0.3}s both`,
+                  position: 'relative',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: '-12px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(74, 222, 128, 0.9)',
+                  color: '#0f172a',
+                  padding: '6px 20px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '800',
+                  textTransform: 'uppercase'
+                }}>
+                  RANDOM {idx + 1}
+                </div>
+                <div style={{
+                  fontSize: '48px',
+                  marginBottom: '8px',
+                  animation: `spin 0.4s ease-in-out ${0.5 + idx * 0.3}s`
+                }}>
+                  {theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}
+                </div>
+                <div style={{
+                  fontSize: '28px',
+                  fontWeight: '900',
+                  color: '#fff',
+                  lineHeight: '1.2'
+                }}>
+                  {theme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || `Thema ${idx + 2}`}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer message */}
+          <div style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: 'rgba(226, 232, 240, 0.9)',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '0.15em',
+            marginTop: '20px',
+            animation: 'fadeIn 1s ease-in 1.5s both'
+          }}>
+            ⏱️ Start in wenigen Sekunden...
+          </div>
         </div>
       );
     }

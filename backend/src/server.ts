@@ -5913,7 +5913,7 @@ io.on('connection', (socket: Socket) => {
           finalizeRundlaufSelection(room);
           applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
 
-          // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
+          // Auto-transition to ROUND_INTRO after showcase animation (5 seconds for visibility)
           clearRundlaufRoundIntroTimer(room);
           room.rundlaufRoundIntroTimeout = setTimeout(() => {
             room.rundlaufRoundIntroTimeout = null;
@@ -6116,13 +6116,14 @@ io.on('connection', (socket: Socket) => {
           room.blitzPhase = 'SELECTION_COMPLETE';
           applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
 
-          // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+          // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
           clearBlitzRoundIntroTimer(room);
           room.blitzRoundIntroTimeout = setTimeout(() => {
             room.blitzRoundIntroTimeout = null;
             if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
             startBlitzSet(room);
-          }, 3000);
+            broadcastState(room);
+          }, 5000);
         }
 
         broadcastState(room);
@@ -6174,13 +6175,14 @@ io.on('connection', (socket: Socket) => {
           room.blitzPhase = 'SELECTION_COMPLETE';
           applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
 
-          // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+          // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
           clearBlitzRoundIntroTimer(room);
           room.blitzRoundIntroTimeout = setTimeout(() => {
             room.blitzRoundIntroTimeout = null;
             if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
             startBlitzSet(room);
-          }, 3000);
+            broadcastState(room);
+          }, 5000);
         }
 
         broadcastState(room);

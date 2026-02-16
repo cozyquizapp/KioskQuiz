@@ -2388,6 +2388,52 @@ body {
   animation: blitz-theme-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Blitz Image Display - CRITICAL for showing rotating images */
+.blitz-current-card {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.blitz-current-image {
+  width: 100%;
+  height: auto;
+  min-height: 400px;
+  max-height: 600px;
+  object-fit: cover;
+  display: block;
+  animation: fadeIn 0.4s ease-in;
+}
+
+.blitz-text-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  color: white;
+}
+
+.blitz-item-title {
+  font-size: 32px;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  margin-bottom: 8px;
+}
+
+.blitz-item-meta {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
 /* Interactive hover scale with spring */
 .hover-spring {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);

@@ -4560,20 +4560,20 @@ const handleHostNextAdvance = (room: RoomState) => {
     if (room.gameState === 'BLITZ_SELECTION_COMPLETE') {
       applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
       broadcastState(room);
-      // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+      // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
       clearBlitzRoundIntroTimer(room);
       room.blitzRoundIntroTimeout = setTimeout(() => {
         room.blitzRoundIntroTimeout = null;
         if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
         startBlitzSet(room);
-      }, 3000);
+        broadcastState(room);
+      }, 5000);
       return { stage: room.gameState };
     }
-    // If already in CATEGORY_SHOWCASE, just start the set
+    // IMPORTANT: Don't skip CATEGORY_SHOWCASE - let the auto-timeout handle it
     if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
-      startBlitzSet(room);
-      broadcastState(room);
-      return { stage: room.gameState };
+      console.log('[BLITZ] Ignoring next during CATEGORY_SHOWCASE - animation in progress');
+      return { stage: room.gameState }; // Don't start set, let the timeout finish
     }
   }
   if (room.gameState === 'BLITZ_SET_INTRO') {
@@ -6235,10 +6235,10 @@ io.on('connection', (socket: Socket) => {
         broadcastState(room);
         return;
       }
+      // IMPORTANT: Don't skip CATEGORY_SHOWCASE - let the auto-timeout handle it
       if (room.gameState === 'BLITZ_CATEGORY_SHOWCASE') {
-        startBlitzSet(room);
-        broadcastState(room);
-        return;
+        console.log('[BLITZ] Ignoring blitzStartSet during CATEGORY_SHOWCASE - animation in progress');
+        return; // Don't start set, let the timeout finish the showcase
       }
       // Legacy support for direct start
       if (room.blitzPhase !== 'SELECTION_COMPLETE' && room.blitzPhase !== 'READY') {

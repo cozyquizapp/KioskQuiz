@@ -6166,19 +6166,27 @@ io.on('connection', (socket: Socket) => {
         applyBlitzPick(room, payload.teamId, themeKey);
 
         // Auto-finalize and transition to CATEGORY_SHOWCASE if selection is complete
-        if (hasBlitzSelectionReady(room)) {
+        if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
           finalizeBlitzSelection(room);
+
+          // CRITICAL: Change phase IMMEDIATELY to prevent race conditions
           room.blitzPhase = 'SELECTION_COMPLETE';
           applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
 
-          // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
+          // Auto-transition to SET_INTRO after showcase animation
           clearBlitzRoundIntroTimer(room);
-          room.blitzRoundIntroTimeout = setTimeout(() => {
-            room.blitzRoundIntroTimeout = null;
-            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
-            startBlitzSet(room);
-            broadcastState(room);
-          }, BLITZ_CATEGORY_SHOWCASE_MS);
+
+          // RACE CONDITION FIX: Only set timeout if none is running
+          if (!room.blitzRoundIntroTimeout) {
+            const timeoutMs = BLITZ_CATEGORY_SHOWCASE_MS;
+            console.log(`[BLITZ] Setting ${timeoutMs}ms timeout for showcase`);
+            room.blitzRoundIntroTimeout = setTimeout(() => {
+              room.blitzRoundIntroTimeout = null;
+              if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+              startBlitzSet(room);
+              broadcastState(room);
+            }, timeoutMs);
+          }
         }
 
         broadcastState(room);
@@ -6228,14 +6236,20 @@ io.on('connection', (socket: Socket) => {
         if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
           console.log('[BLITZ] Pick complete, transitioning to CATEGORY_SHOWCASE');
           finalizeBlitzSelection(room);
+
+          // CRITICAL: Change phase IMMEDIATELY to prevent race conditions
           room.blitzPhase = 'SELECTION_COMPLETE';
           applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
           console.log('[BLITZ] State:', room.gameState, '| Selected:', room.blitzSelectedThemes.map(t => t.title).join(', '));
 
-          // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
+          // Auto-transition to SET_INTRO after showcase animation
           clearBlitzRoundIntroTimer(room);
-          console.log('[BLITZ] Setting 5s timeout for showcase');
-          room.blitzRoundIntroTimeout = setTimeout(() => {
+
+          // RACE CONDITION FIX: Only set timeout if none is running
+          if (!room.blitzRoundIntroTimeout) {
+            const timeoutMs = BLITZ_CATEGORY_SHOWCASE_MS;
+            console.log(`[BLITZ] Setting ${timeoutMs}ms timeout for showcase`);
+            room.blitzRoundIntroTimeout = setTimeout(() => {
             console.log('[BLITZ] Showcase timeout fired | Current state:', room.gameState);
             room.blitzRoundIntroTimeout = null;
 
@@ -6257,7 +6271,8 @@ io.on('connection', (socket: Socket) => {
               applyRoomState(room, { type: 'FORCE', next: 'BLITZ_READY' });
               broadcastState(room);
             }
-          }, BLITZ_CATEGORY_SHOWCASE_MS);
+            }, timeoutMs);
+          }
         }
 
         broadcastState(room);

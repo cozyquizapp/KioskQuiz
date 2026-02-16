@@ -433,6 +433,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
   const [expandedBlitzItem, setExpandedBlitzItem] = useState<number | null>(0); // Start with first item expanded
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
   const [rundlaufError, setRundlaufError] = useState<string | null>(null);
@@ -721,6 +722,16 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     },
     []
   );
+
+  // Detect mobile vs desktop for responsive Blitz input
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const t = <K extends keyof (typeof COPY)['de']>(key: K) => {
     const deVal = COPY.de[key];
@@ -3154,7 +3165,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   : `What do you see in the images?`}
               </div>
             </div>
-            {/* Item Buttons - Click to expand */}
+            {/* Item Buttons - Click to expand (Mobile only) */}
+            {isMobile && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               {Array.from({ length: totalItems }).map((_, idx) => {
                 const hasAnswer = blitzAnswers[idx] && blitzAnswers[idx].trim().length > 0;
@@ -3211,13 +3223,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 );
               })}
             </div>
+            )}
             <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
               {language === 'de'
                 ? `Antworten: ${submissionCount}/${totalTeamsLabel}`
                 : `Submissions: ${submissionCount}/${totalTeamsLabel}`}
             </div>
-            {/* Expanded Input Field */}
-            {expandedBlitzItem !== null && expandedBlitzItem < blitzAnswers.length && (
+            {/* Expanded Input Field - Mobile: Single expanded item, Desktop: All items */}
+            {isMobile && expandedBlitzItem !== null && expandedBlitzItem < blitzAnswers.length && (
               <div
                 style={{
                   display: 'grid',
@@ -3283,6 +3296,63 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     })
                   }
                 />
+              </div>
+            )}
+            {/* Desktop: Show all items in compact grid */}
+            {!isMobile && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 12 }}>
+                {blitzAnswers.map((value, idx) => {
+                  const item = blitzItems[idx];
+                  const hasAnswer = value && value.trim().length > 0;
+                  return (
+                    <div
+                      key={`blitz-desktop-${idx}`}
+                      style={{
+                        display: 'grid',
+                        gap: 8,
+                        padding: '12px',
+                        borderRadius: '12px',
+                        border: `2px solid ${hasAnswer ? 'rgba(34,197,94,0.6)' : 'rgba(96,165,250,0.5)'}`,
+                        background: hasAnswer ? 'rgba(34,197,94,0.1)' : 'rgba(96,165,250,0.08)'
+                      }}
+                    >
+                      <label style={{ fontSize: 13, fontWeight: '700', color: hasAnswer ? '#bbf7d0' : '#dbeafe' }}>
+                        ITEM {idx + 1}
+                        {hasAnswer && <span style={{ marginLeft: 6 }}>✓</span>}
+                      </label>
+                      {item?.prompt && (
+                        <div style={{
+                          fontSize: 12,
+                          color: '#94a3b8',
+                          fontStyle: 'italic'
+                        }}>
+                          {item.prompt}
+                        </div>
+                      )}
+                      <input
+                        ref={(el) => (blitzInputsRef.current[idx] = el)}
+                        className="team-answer-input"
+                        style={{
+                          ...inputStyle,
+                          fontSize: '14px',
+                          padding: '10px',
+                          border: `1px solid ${hasAnswer ? 'rgba(34,197,94,0.6)' : 'rgba(96,165,250,0.6)'}`,
+                          background: 'rgba(15,23,42,0.7)'
+                        }}
+                        value={value}
+                        disabled={!canAnswer}
+                        placeholder={`${language === 'de' ? 'Antwort' : 'Answer'} ${idx + 1}`}
+                        onChange={(e) =>
+                          setBlitzAnswers((prev) => {
+                            const next = [...prev];
+                            next[idx] = e.target.value;
+                            return next;
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
             <button

@@ -2237,11 +2237,23 @@ useEffect(() => {
     }
 
     if (phase === 'ROUND_INTRO') {
+      const countdownNumber = blitzCountdown !== null && blitzCountdown > 0 ? blitzCountdown : null;
       return (
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
             <h2>FOTOSPRINT</h2>
             <p>{blitz.theme?.title || '-'}</p>
+            {countdownNumber !== null && (
+              <div style={{
+                fontSize: '80px',
+                fontWeight: '900',
+                color: '#4ade80',
+                marginTop: '30px',
+                animation: 'pulse 0.5s ease-in-out infinite'
+              }}>
+                {countdownNumber}
+              </div>
+            )}
           </div>
         </div>
       );

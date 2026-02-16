@@ -2348,7 +2348,7 @@ const startBlitzSet = (room: RoomState) => {
   }
   resetBlitzCollections(room);
   room.blitzPhase = 'ROUND_INTRO';
-  room.blitzDeadlineAt = null;
+  room.blitzDeadlineAt = Date.now() + BLITZ_ROUND_INTRO_MS;
   room.blitzItemIndex = 0;
   applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_INTRO' });
   broadcastState(room);

@@ -2268,7 +2268,7 @@ const scheduleBlitzSetTimer = (room: RoomState) => {
 
 const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
   clearBlitzItemTimer(room.roomCode);
-  if (room.blitzPhase !== 'PLAYING') {
+  if (room.blitzPhase !== 'PLAYING' && room.blitzPhase !== 'DISPLAYING') {
     room.blitzItemDeadlineAt = null;
     room.blitzItemDurationMs = null;
     if (broadcast) broadcastState(room);
@@ -2292,7 +2292,7 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
   if (broadcast) broadcastState(room);
   const timer = setTimeout(() => {
     blitzItemTimers.delete(room.roomCode);
-    if (room.blitzPhase !== 'PLAYING') return;
+    if (room.blitzPhase !== 'PLAYING' && room.blitzPhase !== 'DISPLAYING') return;
     room.blitzItemIndex = Math.min(maxIndex, room.blitzItemIndex < 0 ? 0 : room.blitzItemIndex + 1);
     scheduleBlitzItemTicker(room, true);
   }, itemIntervalMs);

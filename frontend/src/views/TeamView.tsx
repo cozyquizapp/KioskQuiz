@@ -2803,7 +2803,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           return blitzState.phase ?? 'IDLE';
       }
     })();
-    const canAnswer = (phase === 'PLAYING' || phase === 'DISPLAYING') && !blitzSubmitted;
+    const canAnswer = phase === 'PLAYING' && !blitzSubmitted;
     const results = blitzState.results || {};
     const themeLabel = blitzState.theme?.title || '?';
     const submissionCount = blitzState.submissions?.length ?? 0;
@@ -3111,7 +3111,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         ''
       );
     }
-    if (phase !== 'PLAYING' && phase !== 'DISPLAYING') {
+    if (phase === 'DISPLAYING') {
+      // During DISPLAYING phase, images are shown on beamer only
+      return renderWaiting(
+        language === 'de' ? 'Bilder werden angezeigt...' : 'Images displaying...',
+        language === 'de' ? 'Gleich kannst du antworten' : 'Answer phase coming up'
+      );
+    }
+    if (phase !== 'PLAYING') {
       // Fallback für unbekannte Phasen
       return renderWaiting(language === 'de' ? 'Blitz Battle...' : 'Blitz battle...', '');
     }

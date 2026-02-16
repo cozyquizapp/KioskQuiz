@@ -6089,6 +6089,22 @@ io.on('connection', (socket: Socket) => {
         if (!payload?.teamId || !room.teams[payload.teamId]) throw new Error('Team unbekannt');
         const themeKey = (payload?.themeId || payload?.theme || '').trim();
         applyBlitzPick(room, payload.teamId, themeKey);
+
+        // Auto-finalize and transition to CATEGORY_SHOWCASE if selection is complete
+        if (hasBlitzSelectionReady(room)) {
+          finalizeBlitzSelection(room);
+          room.blitzPhase = 'SELECTION_COMPLETE';
+          applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
+
+          // Auto-transition to SET_INTRO after showcase animation (3 seconds)
+          clearBlitzRoundIntroTimer(room);
+          room.blitzRoundIntroTimeout = setTimeout(() => {
+            room.blitzRoundIntroTimeout = null;
+            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+            startBlitzSet(room);
+          }, 3000);
+        }
+
         broadcastState(room);
         return { pinned: room.blitzPinnedTheme };
       });

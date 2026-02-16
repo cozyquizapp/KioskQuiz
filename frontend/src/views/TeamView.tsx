@@ -2846,27 +2846,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
             {language === 'de'
-              ? 'Bitte bereit machen.'
-              : 'Please get ready.'}
+              ? 'Gleich geht es los!'
+              : 'Starting soon!'}
           </div>
-          {teamId && (
-            <PrimaryButton
-              style={{
-                background: isReady
-                  ? `linear-gradient(135deg, ${accentPink}, rgba(217, 70, 239, 0.85))`
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
-                border: isReady ? `1px solid ${accentPink}` : '1px solid rgba(255,255,255,0.12)',
-                boxShadow: isReady ? `0 0 24px ${accentPink}35, 0 6px 22px ${accentPink}35` : 'none',
-                color: '#f8fafc',
-                minHeight: 48,
-                width: '100%'
-              }}
-              onClick={connectionStatus === 'connected' ? toggleReady : undefined}
-              disabled={connectionStatus !== 'connected'}
-            >
-              {isReady ? t('readyOn') : language === 'de' ? 'Bereit' : 'Ready'}
-            </PrimaryButton>
-          )}
+          {/* Removed: Ready button - moderator decides when to start */}
         </div>
       );
     }

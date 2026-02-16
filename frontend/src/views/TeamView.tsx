@@ -3152,19 +3152,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   ? `Was siehst du auf den Bildern?`
                   : `What do you see in the images?`}
               </div>
-              {blitzItemCountdown !== null && (
-                <div
-                  style={{
-                    ...pillLabel,
-                    width: 'fit-content',
-                    background: 'rgba(96,165,250,0.15)',
-                    borderColor: 'rgba(96,165,250,0.4)',
-                    color: '#bfdbfe'
-                  }}
-                >
-                  {language === 'de' ? 'Item Restzeit' : 'Item time'}: {blitzItemCountdown}s
-                </div>
-              )}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {Array.from({ length: totalItems }).map((_, idx) => {
@@ -3218,13 +3205,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                       {language === 'de' ? 'Item' : 'Item'} {idx + 1}
                       {item?.prompt ? ` - ${item.prompt}` : ''}
                     </label>
-                    {item?.mediaUrl && (
-                      <img
-                        src={item.mediaUrl}
-                        alt={item.prompt || `Blitz Item ${idx + 1}`}
-                        style={{ width: '100%', borderRadius: 12, maxHeight: 140, objectFit: 'cover' }}
-                      />
-                    )}
                     <input
                       id={inputId}
                       ref={(el) => (blitzInputsRef.current[idx] = el)}
@@ -3271,18 +3251,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               {blitzCountdown !== null && (
                 <div style={{ ...pillLabel }}>
                   {language === 'de' ? 'Set Restzeit' : 'Set time'}: {blitzCountdown}s
-                </div>
-              )}
-              {blitzItemCountdown !== null && (
-                <div
-                  style={{
-                    ...pillLabel,
-                    background: 'rgba(96,165,250,0.15)',
-                    borderColor: 'rgba(96,165,250,0.4)',
-                    color: '#bfdbfe'
-                  }}
-                >
-                  {language === 'de' ? 'Aktuelles Item' : 'Current item'}: {blitzItemCountdown}s
                 </div>
               )}
             </div>

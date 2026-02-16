@@ -85,6 +85,7 @@ import { QuizMeta, Language } from '../../shared/quizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
+  BLITZ_CATEGORY_SHOWCASE_MS,
   BLITZ_ROUND_INTRO_MS,
   DEBUG,
   DEFAULT_QUESTION_TIME,
@@ -4590,7 +4591,7 @@ const handleHostNextAdvance = (room: RoomState) => {
         if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
         startBlitzSet(room);
         broadcastState(room);
-      }, 5000);
+      }, BLITZ_CATEGORY_SHOWCASE_MS);
       return { stage: room.gameState };
     }
     // ROBUST FIX: Allow manual skip of CATEGORY_SHOWCASE (fallback if timeout fails)
@@ -6177,7 +6178,7 @@ io.on('connection', (socket: Socket) => {
             if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
             startBlitzSet(room);
             broadcastState(room);
-          }, 5000);
+          }, BLITZ_CATEGORY_SHOWCASE_MS);
         }
 
         broadcastState(room);
@@ -6256,7 +6257,7 @@ io.on('connection', (socket: Socket) => {
               applyRoomState(room, { type: 'FORCE', next: 'BLITZ_READY' });
               broadcastState(room);
             }
-          }, 5000);
+          }, BLITZ_CATEGORY_SHOWCASE_MS);
         }
 
         broadcastState(room);

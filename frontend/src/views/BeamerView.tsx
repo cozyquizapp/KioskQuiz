@@ -372,6 +372,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlauf, setRundlauf] = useState<RundlaufState | null>(null);
   const [blitzItemTick, setBlitzItemTick] = useState(0);
   const [blitzTick, setBlitzTick] = useState(0);
+  const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
 
 
@@ -559,6 +560,15 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const id = window.setInterval(() => setBlitzTick((tick) => tick + 1), 400);
     return () => window.clearInterval(id);
   }, [blitz?.deadline]);
+
+  useEffect(() => {
+    if (!rundlauf?.deadline) {
+      setRundlaufTick(0);
+      return () => undefined;
+    }
+    const id = window.setInterval(() => setRundlaufTick((tick) => tick + 1), 400);
+    return () => window.clearInterval(id);
+  }, [rundlauf?.deadline]);
 
   // warn if disconnected > 5s
   useEffect(() => {
@@ -1230,7 +1240,7 @@ useEffect(() => {
   const rundlaufCountdown = useMemo(() => {
     if (!rundlauf?.deadline) return null;
     return Math.max(0, Math.ceil((rundlauf.deadline - Date.now()) / 1000));
-  }, [rundlauf?.deadline, tick]);
+  }, [rundlauf?.deadline, rundlaufTick]);
   const totalQuestions = derivedQuestionProgress?.total ?? questionMeta?.globalTotal ?? 20;
   const rawRoundIndex = questionMeta?.globalIndex ?? derivedQuestionProgress?.asked ?? 0;
   const currentRoundNumber =

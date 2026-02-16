@@ -6,7 +6,9 @@
       "Bash(git commit:*)",
       "Bash(npm run dev:*)",
       "Bash(git push:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(die eine gewählte kategorie zu zeigen und dann für die zwei randoms in der)",
+      "Bash(gesamten kategoriepool wahl dort eine randomisierte animation anzuzeigen\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

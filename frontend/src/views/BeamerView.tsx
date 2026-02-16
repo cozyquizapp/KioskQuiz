@@ -2165,8 +2165,145 @@ useEffect(() => {
     if (phase === 'CATEGORY_SHOWCASE') {
       const pickedTheme = selectedThemes[0]; // Team picked this
       const randomThemes = selectedThemes.slice(1, 3); // 2 random picks
-      const allAvailable = pool.filter(t => !bannedIds.has(t.id));
+      const allAvailable = pool.filter(t => !bannedIds.has(t.id) && t.id !== pickedTheme?.id);
 
+      // Animation state for slot machine effect
+      const [showcasePhase, setShowcasePhase] = React.useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
+      const [slotPositions, setSlotPositions] = React.useState<string[]>([]);
+
+      React.useEffect(() => {
+        // Initialize with random positions
+        if (allAvailable.length >= 2) {
+          const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+          setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
+        }
+
+        // Animate slot positions for 5 seconds
+        const slotInterval = setInterval(() => {
+          if (allAvailable.length >= 2) {
+            const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+            setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
+          }
+        }, 180); // Change every 180ms
+
+        // After 5s, stop animation and show final picks
+        const finalizeTimeout = setTimeout(() => {
+          clearInterval(slotInterval);
+          setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
+        }, 5000);
+
+        // After 6.5s, transition to final cards view
+        const transitionTimeout = setTimeout(() => {
+          setShowcasePhase('FINAL_CARDS');
+        }, 6500);
+
+        return () => {
+          clearInterval(slotInterval);
+          clearTimeout(finalizeTimeout);
+          clearTimeout(transitionTimeout);
+        };
+      }, []);
+
+      // Phase 1: Show full pool with animated slot overlays
+      if (showcasePhase === 'POOL_ANIMATION') {
+        const slot1Id = slotPositions[0];
+        const slot2Id = slotPositions[1];
+
+        return (
+          <div className="blitz-stack" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%)' }}>
+            <div className="beamer-intro-card">
+              <h2 style={{ color: '#4ade80', fontSize: '36px' }}>🎰 KATEGORIE-AUSWAHL</h2>
+              <p>Die 3 Themen werden ausgewählt...</p>
+            </div>
+            <div className="beamer-select-grid" style={{ position: 'relative' }}>
+              {pool.map((theme) => {
+                const isPicked = theme.id === pickedTheme?.id;
+                const isBanned = bannedIds.has(theme.id);
+                const isSlot1 = theme.id === slot1Id;
+                const isSlot2 = theme.id === slot2Id;
+
+                const cardClasses = [
+                  'beamer-select-card',
+                  isBanned ? 'banned' : '',
+                  isPicked ? 'picked' : ''
+                ].filter(Boolean).join(' ');
+
+                return (
+                  <div
+                    key={theme.id}
+                    className={cardClasses}
+                    style={{
+                      position: 'relative',
+                      border: isPicked
+                        ? '3px solid rgba(96, 165, 250, 0.9)'
+                        : (isSlot1 || isSlot2)
+                        ? '4px solid rgba(74, 222, 128, 0.9)'
+                        : undefined,
+                      boxShadow: isPicked
+                        ? '0 0 30px rgba(96, 165, 250, 0.6)'
+                        : (isSlot1 || isSlot2)
+                        ? '0 0 40px rgba(74, 222, 128, 0.7), inset 0 0 20px rgba(74, 222, 128, 0.3)'
+                        : undefined,
+                      transform: (isSlot1 || isSlot2) ? 'scale(1.05)' : undefined,
+                      transition: 'all 0.15s ease-out',
+                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.18s ease-in-out infinite' : undefined
+                    }}
+                  >
+                    <div className="beamer-select-title">{theme.title}</div>
+                    {isPicked && (
+                      <span className="beamer-select-badge picked" style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        right: '-10px',
+                        background: 'rgba(96, 165, 250, 0.95)',
+                        color: '#0f172a',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: '900'
+                      }}>
+                        GEWÄHLT
+                      </span>
+                    )}
+                    {isSlot1 && (
+                      <span className="beamer-select-badge" style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        left: '-10px',
+                        background: 'rgba(74, 222, 128, 0.95)',
+                        color: '#0f172a',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: '900'
+                      }}>
+                        🎲 SLOT 1
+                      </span>
+                    )}
+                    {isSlot2 && (
+                      <span className="beamer-select-badge" style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        left: '-10px',
+                        background: 'rgba(74, 222, 128, 0.95)',
+                        color: '#0f172a',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: '900'
+                      }}>
+                        🎲 SLOT 2
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      // Phase 2: Final cards (zoom effect)
       return (
         <div style={{
           display: 'flex',
@@ -2177,7 +2314,7 @@ useEffect(() => {
           gap: '30px',
           padding: '40px 20px',
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
-          animation: 'fadeIn 0.5s ease-in'
+          animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
           {/* Header */}
           <div style={{
@@ -2246,7 +2383,7 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Column 2 & 3: Random Picks with "Slot Machine" effect */}
+            {/* Column 2 & 3: Random Picks */}
             {randomThemes.map((theme, idx) => (
               <div
                 key={`random-${theme.id}-${idx}`}
@@ -2256,7 +2393,7 @@ useEffect(() => {
                   border: '3px solid rgba(74, 222, 128, 0.5)',
                   borderRadius: '20px',
                   textAlign: 'center',
-                  animation: `slotMachineStop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.5 + idx * 0.3}s both`,
+                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.4 + idx * 0.2}s both`,
                   position: 'relative',
                   minHeight: '200px',
                   display: 'flex',
@@ -2282,8 +2419,7 @@ useEffect(() => {
                 </div>
                 <div style={{
                   fontSize: '48px',
-                  marginBottom: '8px',
-                  animation: `spin 0.4s ease-in-out ${0.5 + idx * 0.3}s`
+                  marginBottom: '8px'
                 }}>
                   {theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}
                 </div>
@@ -2308,7 +2444,7 @@ useEffect(() => {
             textTransform: 'uppercase',
             letterSpacing: '0.15em',
             marginTop: '20px',
-            animation: 'fadeIn 1s ease-in 1.5s both'
+            animation: 'fadeIn 1s ease-in 0.8s both'
           }}>
             ⏱️ Start in wenigen Sekunden...
           </div>

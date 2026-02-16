@@ -2793,7 +2793,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         case 'BLITZ_SET_INTRO':
           return 'ROUND_INTRO';
         case 'BLITZ_PLAYING':
-          return 'PLAYING';
+          return blitzState.phase ?? 'PLAYING';
         case 'BLITZ_SET_END':
           return 'SET_END';
         case 'BLITZ_SCOREBOARD':

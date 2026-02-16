@@ -636,22 +636,22 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
     setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
 
-    // Animate slot positions for 5 seconds
+    // Animate slot positions - slower and more visible
     const slotInterval = setInterval(() => {
       const newShuffled = [...allAvailable].sort(() => Math.random() - 0.5);
       setSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
-    }, 180);
+    }, 350); // Slower: 350ms per jump (was 180ms)
 
-    // After 5s, stop animation and show final picks
+    // After 7s, stop animation and show final picks
     const finalizeTimeout = setTimeout(() => {
       clearInterval(slotInterval);
       setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
-    }, 5000);
+    }, 7000); // Longer animation duration
 
-    // After 6.5s, transition to final cards view
+    // After 9s, transition to final cards view (2s pause after stop)
     const transitionTimeout = setTimeout(() => {
       setShowcasePhase('FINAL_CARDS');
-    }, 6500);
+    }, 9000); // More time to see final selection
 
     return () => {
       clearInterval(slotInterval);
@@ -2252,18 +2252,18 @@ useEffect(() => {
                     style={{
                       position: 'relative',
                       border: isPicked
-                        ? '3px solid rgba(96, 165, 250, 0.9)'
+                        ? '4px solid rgba(96, 165, 250, 0.95)'
                         : (isSlot1 || isSlot2)
-                        ? '4px solid rgba(74, 222, 128, 0.9)'
+                        ? '6px solid rgba(74, 222, 128, 0.95)' // Thicker border for better visibility
                         : undefined,
                       boxShadow: isPicked
-                        ? '0 0 30px rgba(96, 165, 250, 0.6)'
+                        ? '0 0 35px rgba(96, 165, 250, 0.7)'
                         : (isSlot1 || isSlot2)
-                        ? '0 0 40px rgba(74, 222, 128, 0.7), inset 0 0 20px rgba(74, 222, 128, 0.3)'
+                        ? '0 0 60px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.4)' // Stronger glow
                         : undefined,
-                      transform: (isSlot1 || isSlot2) ? 'scale(1.05)' : undefined,
-                      transition: 'all 0.15s ease-out',
-                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.18s ease-in-out infinite' : undefined
+                      transform: (isSlot1 || isSlot2) ? 'scale(1.08)' : undefined, // More pronounced scale
+                      transition: 'all 0.25s ease-out', // Slower transition for smoother effect
+                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.35s ease-in-out infinite' : undefined // Match jump speed
                     }}
                   >
                     <div className="beamer-select-title">{theme.title}</div>

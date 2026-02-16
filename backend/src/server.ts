@@ -2248,20 +2248,33 @@ const clearBlitzRoundIntroTimer = (room: RoomState) => {
 
 const scheduleBlitzSetTimer = (room: RoomState) => {
   clearBlitzSetTimer(room.roomCode);
-  if (room.blitzPhase !== 'PLAYING' || !room.blitzDeadlineAt) return;
+  // Support both DISPLAYING and PLAYING phases
+  if ((room.blitzPhase !== 'PLAYING' && room.blitzPhase !== 'DISPLAYING') || !room.blitzDeadlineAt) return;
   const remaining = Math.max(0, room.blitzDeadlineAt - Date.now());
+
+  console.log('[BLITZ TIMER] Scheduling for phase:', room.blitzPhase, '| Remaining:', remaining, 'ms');
+
   if (remaining <= 0) {
-    lockBlitzSet(room);
-    computeBlitzResults(room);
+    if (room.blitzPhase === 'DISPLAYING') {
+      lockBlitzSet(room); // Transition to PLAYING
+    } else {
+      lockBlitzSet(room);
+      computeBlitzResults(room);
+    }
     broadcastState(room);
     return;
   }
   const timer = setTimeout(() => {
     blitzSetTimers.delete(room.roomCode);
-    if (room.blitzPhase !== 'PLAYING') return;
-    lockBlitzSet(room);
-    computeBlitzResults(room);
-    broadcastState(room);
+    console.log('[BLITZ TIMER] Timer fired for phase:', room.blitzPhase);
+    if (room.blitzPhase === 'DISPLAYING') {
+      lockBlitzSet(room); // Transition to PLAYING
+      broadcastState(room);
+    } else if (room.blitzPhase === 'PLAYING') {
+      lockBlitzSet(room);
+      computeBlitzResults(room);
+      broadcastState(room);
+    }
   }, remaining);
   blitzSetTimers.set(room.roomCode, timer);
 };
@@ -2281,9 +2294,13 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
     : BLITZ_DISPLAY_TIME_MS;
   const itemIntervalMs = Math.max(1000, Math.floor(displayTotalMs / itemCount));
   const now = Date.now();
+
+  console.log('[BLITZ TICKER] Phase:', room.blitzPhase, '| Current index:', room.blitzItemIndex, '/', maxIndex, '| Interval:', itemIntervalMs, 'ms');
+
   if (room.blitzItemIndex >= maxIndex) {
     room.blitzItemDeadlineAt = room.blitzDeadlineAt;
     room.blitzItemDurationMs = room.blitzDeadlineAt ? Math.max(0, room.blitzDeadlineAt - now) : null;
+    console.log('[BLITZ TICKER] Reached last item, no more rotation');
     if (broadcast) broadcastState(room);
     return;
   }
@@ -2293,7 +2310,9 @@ const scheduleBlitzItemTicker = (room: RoomState, broadcast = false) => {
   const timer = setTimeout(() => {
     blitzItemTimers.delete(room.roomCode);
     if (room.blitzPhase !== 'PLAYING' && room.blitzPhase !== 'DISPLAYING') return;
-    room.blitzItemIndex = Math.min(maxIndex, room.blitzItemIndex < 0 ? 0 : room.blitzItemIndex + 1);
+    const newIndex = Math.min(maxIndex, room.blitzItemIndex < 0 ? 0 : room.blitzItemIndex + 1);
+    console.log('[BLITZ TICKER] Rotating to item', newIndex, '/', maxIndex);
+    room.blitzItemIndex = newIndex;
     scheduleBlitzItemTicker(room, true);
   }, itemIntervalMs);
   blitzItemTimers.set(room.roomCode, timer);
@@ -2312,6 +2331,8 @@ const resetBlitzCollections = (room: RoomState) => {
 };
 
 const startBlitzSet = (room: RoomState) => {
+  console.log('[BLITZ] startBlitzSet called | Current phase:', room.blitzPhase, '| GameState:', room.gameState);
+
   // Only allow starting a new set if we're not already playing
   if (room.blitzPhase === 'PLAYING' || room.blitzPhase === 'ROUND_INTRO' || room.blitzPhase === 'DISPLAYING') {
     throw new Error('Blitz-Set laeuft bereits');
@@ -2328,6 +2349,8 @@ const startBlitzSet = (room: RoomState) => {
   const nextIndex = room.blitzSetIndex + 1;
   room.blitzSetIndex = nextIndex;
   room.blitzTheme = room.blitzSelectedThemes[nextIndex] ?? null;
+  console.log('[BLITZ] Selected theme:', room.blitzTheme?.title, '| Index:', nextIndex);
+
   const themeDef = room.blitzTheme ? room.blitzThemeLibrary[room.blitzTheme.id] : null;
   if (!themeDef) {
     const fallback = buildLegacyBlitzTheme(room.blitzTheme?.title || `Set ${nextIndex + 1}`);
@@ -2338,6 +2361,7 @@ const startBlitzSet = (room: RoomState) => {
     const { views, solutions } = selectBlitzItems(resolvedTheme);
     room.blitzItems = views;
     room.blitzItemSolutions = solutions;
+    console.log('[BLITZ] Loaded', views.length, 'items from theme');
   } else {
     const placeholder = buildLegacyBlitzTheme(room.blitzTheme?.title || `Set ${nextIndex + 1}`);
     const { views, solutions } = selectBlitzItems(placeholder);
@@ -2345,21 +2369,25 @@ const startBlitzSet = (room: RoomState) => {
     room.blitzItemSolutions = solutions;
     room.blitzThemeLibrary[placeholder.id] = placeholder;
     room.blitzTheme = toBlitzOption(placeholder);
+    console.log('[BLITZ] Created placeholder with', views.length, 'items');
   }
   resetBlitzCollections(room);
   room.blitzPhase = 'ROUND_INTRO';
   room.blitzDeadlineAt = Date.now() + BLITZ_ROUND_INTRO_MS;
   room.blitzItemIndex = 0;
   applyRoomState(room, { type: 'FORCE', next: 'BLITZ_SET_INTRO' });
+  console.log('[BLITZ] Entering ROUND_INTRO phase with', BLITZ_ROUND_INTRO_MS, 'ms countdown');
   broadcastState(room);
   clearBlitzRoundIntroTimer(room);
   room.blitzRoundIntroTimeout = setTimeout(() => {
     room.blitzRoundIntroTimeout = null;
+    console.log('[BLITZ] ROUND_INTRO timeout fired | Current phase:', room.blitzPhase);
     if (room.blitzPhase !== 'ROUND_INTRO') return;
     applyRoomState(room, { type: 'FORCE', next: 'BLITZ_PLAYING' });
     room.blitzPhase = 'DISPLAYING';
     room.blitzDeadlineAt = Date.now() + room.blitzDisplayTimeMs;
     room.blitzItemIndex = 0;
+    console.log('[BLITZ] Starting DISPLAYING phase | Display time:', room.blitzDisplayTimeMs, 'ms | Items:', room.blitzItems.length);
     scheduleBlitzItemTicker(room, true);
     scheduleBlitzSetTimer(room);
   }, BLITZ_ROUND_INTRO_MS);
@@ -6171,15 +6199,22 @@ io.on('connection', (socket: Socket) => {
 
         // Auto-transition if selection is complete
         if (hasBlitzSelectionReady(room) && room.blitzPhase === 'BANNING') {
+          console.log('[BLITZ] Pick complete, transitioning to CATEGORY_SHOWCASE');
           finalizeBlitzSelection(room);
           room.blitzPhase = 'SELECTION_COMPLETE';
           applyRoomState(room, { type: 'FORCE', next: 'BLITZ_CATEGORY_SHOWCASE' });
+          console.log('[BLITZ] State:', room.gameState, '| Selected:', room.blitzSelectedThemes.map(t => t.title).join(', '));
 
           // Auto-transition to SET_INTRO after showcase animation (5 seconds for visibility)
           clearBlitzRoundIntroTimer(room);
+          console.log('[BLITZ] Setting 5s timeout for showcase');
           room.blitzRoundIntroTimeout = setTimeout(() => {
+            console.log('[BLITZ] Showcase timeout fired');
             room.blitzRoundIntroTimeout = null;
-            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') return;
+            if (room.gameState !== 'BLITZ_CATEGORY_SHOWCASE') {
+              console.log('[BLITZ] WARNING: State changed to', room.gameState);
+              return;
+            }
             startBlitzSet(room);
             broadcastState(room);
           }, 5000);

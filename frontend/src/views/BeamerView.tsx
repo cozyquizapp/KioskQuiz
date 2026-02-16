@@ -375,6 +375,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
 
+  // Blitz CATEGORY_SHOWCASE animation state
+  const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
+  const [slotPositions, setSlotPositions] = useState<string[]>([]);
 
   const [revealStamp, setRevealStamp] = useState(0);
   const [estimateDisplay, setEstimateDisplay] = useState<string | null>(null);
@@ -608,6 +611,54 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const id = window.setInterval(() => setLobbyHighlightIndex((idx) => idx + 1), 5000);
     return () => window.clearInterval(id);
   }, [gameState, featureFlags.isCozyMode]);
+
+  // Blitz CATEGORY_SHOWCASE animation effect
+  useEffect(() => {
+    if (gameState !== 'BLITZ_CATEGORY_SHOWCASE' || !blitz) {
+      // Reset when leaving CATEGORY_SHOWCASE
+      setShowcasePhase('POOL_ANIMATION');
+      setSlotPositions([]);
+      return undefined;
+    }
+
+    const pool = blitz.pool ?? [];
+    const selectedThemes = blitz.selectedThemes ?? [];
+    const bannedIds = new Set(Object.values(blitz.bans ?? {}).flat());
+    const pickedTheme = selectedThemes[0];
+    const randomThemes = selectedThemes.slice(1, 3);
+    const allAvailable = pool.filter(t => !bannedIds.has(t.id) && t.id !== pickedTheme?.id);
+
+    if (allAvailable.length < 2) {
+      return undefined;
+    }
+
+    // Initialize with random positions
+    const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+    setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
+
+    // Animate slot positions for 5 seconds
+    const slotInterval = setInterval(() => {
+      const newShuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+      setSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
+    }, 180);
+
+    // After 5s, stop animation and show final picks
+    const finalizeTimeout = setTimeout(() => {
+      clearInterval(slotInterval);
+      setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
+    }, 5000);
+
+    // After 6.5s, transition to final cards view
+    const transitionTimeout = setTimeout(() => {
+      setShowcasePhase('FINAL_CARDS');
+    }, 6500);
+
+    return () => {
+      clearInterval(slotInterval);
+      clearTimeout(finalizeTimeout);
+      clearTimeout(transitionTimeout);
+    };
+  }, [gameState, blitz]);
 
 
 
@@ -2167,42 +2218,8 @@ useEffect(() => {
       const randomThemes = selectedThemes.slice(1, 3); // 2 random picks
       const allAvailable = pool.filter(t => !bannedIds.has(t.id) && t.id !== pickedTheme?.id);
 
-      // Animation state for slot machine effect
-      const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
-      const [slotPositions, setSlotPositions] = useState<string[]>([]);
-
-      useEffect(() => {
-        // Initialize with random positions
-        if (allAvailable.length >= 2) {
-          const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
-          setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
-        }
-
-        // Animate slot positions for 5 seconds
-        const slotInterval = setInterval(() => {
-          if (allAvailable.length >= 2) {
-            const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
-            setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
-          }
-        }, 180); // Change every 180ms
-
-        // After 5s, stop animation and show final picks
-        const finalizeTimeout = setTimeout(() => {
-          clearInterval(slotInterval);
-          setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
-        }, 5000);
-
-        // After 6.5s, transition to final cards view
-        const transitionTimeout = setTimeout(() => {
-          setShowcasePhase('FINAL_CARDS');
-        }, 6500);
-
-        return () => {
-          clearInterval(slotInterval);
-          clearTimeout(finalizeTimeout);
-          clearTimeout(transitionTimeout);
-        };
-      }, []);
+      // Note: showcasePhase and slotPositions are now component-level state
+      // Animation logic is in useEffect outside this render function
 
       // Phase 1: Show full pool with animated slot overlays
       if (showcasePhase === 'POOL_ANIMATION') {

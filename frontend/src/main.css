@@ -73,6 +73,18 @@ body {
   position: relative;
 }
 
+/* Global heading gradient — team + beamer */
+#team-root h1,
+#team-root h2,
+.cozy-beamer-shell h1,
+.cozy-beamer-shell h2 {
+  background: linear-gradient(155deg, #ffffff 0%, #dde4ff 55%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.025em;
+}
+
 /* Film grain noise overlay — shared by team and beamer */
 #team-root::after,
 .cozy-beamer-shell::before {

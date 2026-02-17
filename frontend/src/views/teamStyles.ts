@@ -170,7 +170,7 @@ export const glassCard: CSSProperties = {
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 16px 40px rgba(0,0,0,0.35)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(99,102,241,0.07)',
   backdropFilter: 'blur(50px)',
   position: 'relative',
   overflow: 'hidden'
@@ -185,7 +185,7 @@ export const pillLabel: CSSProperties = {
   background: 'rgba(255,255,255,0.01)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.06)',
+  borderColor: 'rgba(99, 102, 241, 0.22)',
   fontSize: 'clamp(14px, 3vw, 15px)',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -197,7 +197,12 @@ export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
   fontSize: 'clamp(22px, 6vw, 28px)',
-  lineHeight: 1.4
+  lineHeight: 1.4,
+  letterSpacing: '-0.02em',
+  background: 'linear-gradient(155deg, #ffffff 0%, #dde4ff 55%, #c4b5fd 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
 };
 
 export const mutedText: CSSProperties = {

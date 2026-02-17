@@ -497,7 +497,7 @@ const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_DISPLAY_TIME_MS / BLITZ_ITEMS_PE
 const BLITZ_CATEGORY_COUNT = 10; // 2 bans + 1 pick + 2 random (min 5 total) → 10 gives good buffer
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
-const RUNDLAUF_CATEGORY_COUNT = 3;
+const RUNDLAUF_CATEGORY_COUNT = 6; // 2 bans + 1 pick + 3 remaining (2 random) = 6
 const RUNDLAUF_TURN_TIME_MS = (() => {
   const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 7000);
   if (!Number.isFinite(raw)) return 7000;
@@ -2633,9 +2633,10 @@ const scheduleRundlaufTurnTimer = (room: RoomState) => {
       applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_END' });
     } else {
       const alive = aliveRundlaufTeams(room);
-      const currentIdx = alive.indexOf(room.rundlaufActiveTeamId);
-      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
-      room.rundlaufActiveTeamId = alive[nextIdx] ?? null;
+      const turnList = alive.length > 0 ? alive : nonEliminatedRundlaufTeams(room);
+      const currentIdx = turnList.indexOf(room.rundlaufActiveTeamId);
+      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % turnList.length : 0;
+      room.rundlaufActiveTeamId = turnList[nextIdx] ?? null;
       scheduleRundlaufTurnTimer(room);
     }
     broadcastState(room);
@@ -2671,9 +2672,10 @@ const advanceRundlaufTurn = (room: RoomState) => {
     return;
   }
   const alive = aliveRundlaufTeams(room);
-  const currentIdx = alive.indexOf(room.rundlaufActiveTeamId ?? '');
-  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
-  setRundlaufActiveTeam(room, alive[nextIdx] ?? null);
+  const turnList = alive.length > 0 ? alive : nonEliminatedRundlaufTeams(room);
+  const currentIdx = turnList.indexOf(room.rundlaufActiveTeamId ?? '');
+  const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % turnList.length : 0;
+  setRundlaufActiveTeam(room, turnList[nextIdx] ?? null);
 };
 
 const eliminateRundlaufTeam = (room: RoomState, teamId: string, reason?: string) => {
@@ -2804,7 +2806,8 @@ const startRundlaufRound = (room: RoomState) => {
   assignRundlaufTurnOrder(room);
   applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_PLAY' });
   const alive = aliveRundlaufTeams(room);
-  setRundlaufActiveTeam(room, alive[0] ?? null);
+  const firstTeam = alive.length > 0 ? alive[0] : nonEliminatedRundlaufTeams(room)[0] ?? null;
+  setRundlaufActiveTeam(room, firstTeam);
 };
 
 const evaluateRundlaufAttempt = (room: RoomState, teamId: string, rawInput: string): RundlaufAttempt => {

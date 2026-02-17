@@ -655,10 +655,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
     }, 6000);
 
-    // After 10s, transition to final cards (4s pause to see final picks in pool)
+    // After 8s, transition to final cards (2s pause to see final picks in pool)
     const transitionTimeout = setTimeout(() => {
       setShowcasePhase('FINAL_CARDS');
-    }, 10000);
+    }, 8000);
 
     return () => {
       clearInterval(slotInterval);
@@ -2262,9 +2262,8 @@ useEffect(() => {
                       // Slot overlays: prominent border + glow
                       border: (isSlot1 || isSlot2) ? '6px solid rgba(74, 222, 128, 0.95)' : undefined,
                       boxShadow: (isSlot1 || isSlot2) ? '0 0 60px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.4)' : undefined,
-                      transform: (isSlot1 || isSlot2) ? 'scale(1.08)' : undefined,
-                      transition: 'all 0.25s ease-out',
-                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.35s ease-in-out infinite' : undefined
+                      transition: 'border 0.25s ease-out, box-shadow 0.25s ease-out',
+                      animation: (isSlot1 || isSlot2) ? 'slotGlow 0.5s ease-in-out infinite' : undefined
                     }}
                   >
                     <div className="beamer-select-title">{theme.title}</div>
@@ -2371,7 +2370,7 @@ useEffect(() => {
                   border: '3px solid rgba(74, 222, 128, 0.5)',
                   borderRadius: '20px',
                   textAlign: 'center',
-                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${3.2 + idx * 0.8}s both`,
+                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${5.0 + idx * 0.8}s both`,
                   position: 'relative',
                   minHeight: '200px',
                   display: 'flex',

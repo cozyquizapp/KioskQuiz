@@ -486,6 +486,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const avatarStateRef = useRef<AvatarState>('walking');
   const avatarSequenceRef = useRef<ReturnType<typeof useAvatarSequenceRunner> | null>(null);
   const idleSchedulerRef = useRef<ReturnType<typeof useAvatarIdleScheduler> | null>(null);
+  const pageRootRef = useRef<HTMLDivElement>(null);
   const [reconnectKey, setReconnectKey] = useState(0);
   
   const storageKey = useCallback((suffix: string) => {
@@ -513,8 +514,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     } else {
       setPhase('notJoined');
     }
-    // Scroll to top on every game state change
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    // Scroll to top on every game state change (scroll the root div, not window)
+    if (pageRootRef.current) { pageRootRef.current.scrollTop = 0; }
   }, [gameState, teamId]);
 
   useEffect(() => {
@@ -3954,11 +3955,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       ? 'Ergebnis'
       : 'Warten';
 
-  // Allow scrolling when in banning/selection phases with long lists
-  const needsScrolling = 
-    gameState === 'BLITZ_BANNING' || 
-    gameState === 'RUNDLAUF_CATEGORY_SELECT';
-
   const mainContent =
     viewState === 'error'
       ? renderErrorCard()
@@ -3969,7 +3965,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   return (
     <div
       id="team-root"
-      style={{...pageStyleTeam, position: 'relative', overflow: needsScrolling ? 'auto' : 'hidden', overflowX: 'hidden'}}
+      ref={pageRootRef}
+      style={{...pageStyleTeam, position: 'relative', overflowY: 'auto', overflowX: 'hidden'}}
       data-timer={timerTick}
       data-team-ui="1"
       data-team-marker={teamMarker}

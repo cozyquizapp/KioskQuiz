@@ -2995,8 +2995,8 @@ useEffect(() => {
                     const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
                     const accentColor = colors[idx % colors.length];
                     return (
-                      <div 
-                        key={team.id} 
+                      <div
+                        key={team.id}
                         className="cozyTeamStatusChip"
                         style={{
                           animation: team.submitted ? `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none',
@@ -3004,7 +3004,14 @@ useEffect(() => {
                           transition: 'all 0.3s ease'
                         }}
                       >
-                        <span 
+                        {team.avatarId && (
+                          <img
+                            src={getAvatarById(team.avatarId).dataUri}
+                            alt=""
+                            style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }}
+                          />
+                        )}
+                        <span
                           className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
                           style={{ backgroundColor: accentColor }}
                         />

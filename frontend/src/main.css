@@ -33,9 +33,9 @@
   --ui-panel-bg: rgba(12, 16, 26, 0.82);
   --ui-panel-border: rgba(255, 255, 255, 0.12);
   --ui-panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
-  --ui-card-bg: rgba(10, 14, 24, 0.92);
-  --ui-card-border: rgba(255, 255, 255, 0.12);
-  --ui-card-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+  --ui-card-bg: rgba(9, 12, 22, 0.88);
+  --ui-card-border: rgba(99, 102, 241, 0.15);
+  --ui-card-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
   --ui-input-bg: rgba(15, 23, 42, 0.85);
   --ui-input-border: rgba(255, 255, 255, 0.14);
   --ui-input-text: #e5e7eb;
@@ -66,10 +66,25 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.5) rgba(255, 255, 255, 0.05);
   position: relative;
+}
+
+/* Film grain noise overlay — shared by team and beamer */
+#team-root::after,
+.cozy-beamer-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 220px 220px;
 }
 
 /* Animated Gradient Mesh Background */
@@ -195,7 +210,7 @@ select:hover:not(:focus) {
   background: var(--ui-card-bg);
   border: 1px solid var(--ui-card-border);
   border-radius: var(--radius);
-  box-shadow: var(--ui-card-shadow);
+  box-shadow: var(--ui-card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

@@ -2104,32 +2104,21 @@ const initializeBlitzStage = (room: RoomState) => {
   room.blitzPool = selectBlitzVisiblePool(normalizedDefs, visibleCount);
   room.blitzBans = {};
   const standings = getTeamStandings(room);
-  
-  // Check for tied top teams
-  const topScore = standings[0]?.score ?? 0;
-  const topTeams = standings.filter(s => s.score === topScore);
-  const lastScore = standings[standings.length - 1]?.score ?? 0;
 
-  // If multiple top teams, all get to ban 1 category each
-  const BAN_LIMIT = topTeams.length > 1 ? 1 : 2; // 1 ban each if tied, 2 if single winner
+  // Always assign exactly one top team (first in sorted standings) and one last team.
+  // Using the same simple logic as host:blitzOpenSelection for consistency.
+  const topStanding = standings[0];
+  const lastStanding = standings[standings.length - 1];
+  const topScore = topStanding?.score ?? 0;
+  const lastScore = lastStanding?.score ?? 0;
 
-  room.blitzTopTeamId = topTeams.length === 1 ? topTeams[0].id : null;
-  // Assign last team as long as scores are not all equal (i.e., there is a clear last place).
-  // When tied for last, pick the last team by alphabetical order - they still get the pick privilege.
-  // Only skip the pick entirely when ALL teams have the same score (no meaningful "last place").
-  room.blitzLastTeamId = (topScore !== lastScore && standings.length > 0)
-    ? standings[standings.length - 1].id
+  room.blitzTopTeamId = topStanding?.id ?? null;
+  // Only skip the pick (null) when all teams are truly equal – no meaningful "last place"
+  room.blitzLastTeamId = (topScore !== lastScore && lastStanding)
+    ? lastStanding.id
     : null;
-  room.blitzBanLimits = {};
-  
-  // Set ban limits for all top teams
-  if (topTeams.length === 1) {
-    room.blitzBanLimits[topTeams[0].id] = BAN_LIMIT;
-  } else {
-    topTeams.forEach(team => {
-      room.blitzBanLimits[team.id] = BAN_LIMIT;
-    });
-  }
+  // Top team always bans exactly 2 categories
+  room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: 2 } : {};
   
   room.blitzPinnedTheme = null;
   room.blitzSelectedThemes = [];

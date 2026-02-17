@@ -1722,6 +1722,57 @@
   flex-direction: column;
 }
 
+.blitz-info-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, transparent 100%);
+}
+
+.blitz-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.blitz-info-set {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.9);
+  font-weight: 600;
+}
+
+.blitz-info-theme {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 900;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blitz-info-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.blitz-info-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.8);
+}
+
 .blitz-item-title {
   font-size: clamp(24px, 4vw, 44px);
   font-weight: 900;

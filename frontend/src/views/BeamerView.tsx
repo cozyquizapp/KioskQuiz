@@ -389,6 +389,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [showLastQuestion, setShowLastQuestion] = useState(true);
   const previousQuestionRef = useRef<AnyQuestion | null>(null);
   const previousGameStateRef = useRef<CozyGameState>('LOBBY');
+  const showcaseAnimStarted = useRef(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [toast, setToast] = useState<string | null>(null);
   const [connectionStuck, setConnectionStuck] = useState(false);
@@ -618,8 +619,14 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       // Reset when leaving CATEGORY_SHOWCASE
       setShowcasePhase('POOL_ANIMATION');
       setSlotPositions([]);
+      showcaseAnimStarted.current = false;
       return undefined;
     }
+
+    // Guard: only start animation once per CATEGORY_SHOWCASE entry
+    // (blitz object reference changes on every broadcastState, causing resets)
+    if (showcaseAnimStarted.current) return undefined;
+    showcaseAnimStarted.current = true;
 
     const pool = blitz.pool ?? [];
     const selectedThemes = blitz.selectedThemes ?? [];
@@ -636,22 +643,22 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
     setSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
 
-    // Animate slot positions - slower and more visible
+    // Animate slot positions - 450ms per jump (slower steps, shorter total)
     const slotInterval = setInterval(() => {
       const newShuffled = [...allAvailable].sort(() => Math.random() - 0.5);
       setSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
-    }, 350); // Slower: 350ms per jump (was 180ms)
+    }, 450);
 
-    // After 9s, stop slots and show final picks
+    // After 6s, stop slots and show final picks
     const finalizeTimeout = setTimeout(() => {
       clearInterval(slotInterval);
       setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
-    }, 9000);
+    }, 6000);
 
-    // After 13s, transition to final cards (4s pause to see final picks in pool)
+    // After 10s, transition to final cards (4s pause to see final picks in pool)
     const transitionTimeout = setTimeout(() => {
       setShowcasePhase('FINAL_CARDS');
-    }, 13000);
+    }, 10000);
 
     return () => {
       clearInterval(slotInterval);
@@ -2562,27 +2569,6 @@ useEffect(() => {
 
     return (
       <div className="beamer-stack blitz-stack">
-        <div className="beamer-question-main">
-          <div className="beamer-question-category">
-            {language === 'de'
-              ? 'Blitz Battle'
-              : language === 'both'
-              ? 'Blitz Battle / Blitz'
-              : 'Blitz Battle'}{' '}
-            ? Set {setLabel}
-          </div>
-          <div className="beamer-question-text">{blitz.theme?.title || '-'}</div>
-          <div className="beamer-list">
-            <span>
-              {language === 'de'
-                ? `Antworten ${submissions}/${teams.length}`
-                : language === 'both'
-                ? `Antworten ${submissions}/${teams.length} / Submissions`
-                : `Submissions ${submissions}/${teams.length}`}
-            </span>
-            {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
-          </div>
-        </div>
 
         {(blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING') ? (
           <>
@@ -2594,7 +2580,18 @@ useEffect(() => {
                   className="blitz-current-image"
                 />
               )}
-              {/* Only show item number during DISPLAYING, no solution text */}
+              {/* Compact info overlay at the top of the image */}
+              <div className="blitz-info-overlay">
+                <div className="blitz-info-left">
+                  <span className="blitz-info-set">Set {setLabel}</span>
+                  <span className="blitz-info-theme">{blitz.theme?.title || '-'}</span>
+                </div>
+                <div className="blitz-info-right">
+                  {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
+                  <span className="blitz-info-count">{submissions}/{teams.length}</span>
+                </div>
+              </div>
+              {/* Only show item number during DISPLAYING */}
               {blitz.phase === 'DISPLAYING' && (
                 <div className="blitz-text-overlay">
                   <div className="blitz-item-meta">

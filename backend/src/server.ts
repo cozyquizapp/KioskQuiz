@@ -4351,12 +4351,15 @@ const startQuestionWithSlot = (
 };
 
 const runNextQuestion = (room: RoomState) => {
-  if (!room.quizId || room.remainingQuestionIds.length === 0) {
-    throw new Error('Keine Fragen mehr oder kein Quiz gesetzt');
+  if (!room.quizId) {
+    throw new Error('Kein Quiz gesetzt');
   }
 
-  // After Q10 reveal, transition to BLITZ
+  // Special end-of-segment transitions must be checked BEFORE the "no questions left" guard,
+  // because after Q20 remainingQuestionIds is already empty.
   const askedCountBefore = room.askedQuestionIds.length;
+
+  // After Q10 reveal, transition to BLITZ
   if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10 && !room.halftimeTriggered) {
     room.halftimeTriggered = true;
     room.nextStage = 'BLITZ';
@@ -4372,6 +4375,11 @@ const runNextQuestion = (room: RoomState) => {
     applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
     broadcastState(room);
     return { stage: room.gameState, finalsTrigger: true };
+  }
+
+  // Guard: no more questions left (and no special transition applied above)
+  if (room.remainingQuestionIds.length === 0) {
+    throw new Error('Keine Fragen mehr');
   }
 
   // Otherwise start the next question normally

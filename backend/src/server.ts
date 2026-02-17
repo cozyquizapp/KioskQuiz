@@ -2109,14 +2109,17 @@ const initializeBlitzStage = (room: RoomState) => {
   const topScore = standings[0]?.score ?? 0;
   const topTeams = standings.filter(s => s.score === topScore);
   const lastScore = standings[standings.length - 1]?.score ?? 0;
-  const lastTeams = standings.filter(s => s.score === lastScore);
-  
+
   // If multiple top teams, all get to ban 1 category each
-  // If multiple last teams, all get to pick 1 category each
   const BAN_LIMIT = topTeams.length > 1 ? 1 : 2; // 1 ban each if tied, 2 if single winner
-  
+
   room.blitzTopTeamId = topTeams.length === 1 ? topTeams[0].id : null;
-  room.blitzLastTeamId = lastTeams.length === 1 ? lastTeams[lastTeams.length - 1].id : null;
+  // Assign last team as long as scores are not all equal (i.e., there is a clear last place).
+  // When tied for last, pick the last team by alphabetical order - they still get the pick privilege.
+  // Only skip the pick entirely when ALL teams have the same score (no meaningful "last place").
+  room.blitzLastTeamId = (topScore !== lastScore && standings.length > 0)
+    ? standings[standings.length - 1].id
+    : null;
   room.blitzBanLimits = {};
   
   // Set ban limits for all top teams
@@ -6122,8 +6125,13 @@ io.on('connection', (socket: Socket) => {
       // Reset selection state to allow new picks/bans
       room.blitzBans = {};
       const standings = getTeamStandings(room);
-      room.blitzTopTeamId = standings[0]?.id ?? null;
-      room.blitzLastTeamId = standings.length ? standings[standings.length - 1]?.id ?? null : null;
+      const topStanding = standings[0];
+      const lastStanding = standings[standings.length - 1];
+      const topScoreOs = topStanding?.score ?? 0;
+      const lastScoreOs = lastStanding?.score ?? 0;
+      room.blitzTopTeamId = topStanding?.id ?? null;
+      // Only assign last team when there is a meaningful difference between top and last scores
+      room.blitzLastTeamId = (topScoreOs !== lastScoreOs && lastStanding) ? lastStanding.id : null;
       const BAN_LIMIT = 2; // always two bans for the top team
       room.blitzBanLimits = room.blitzTopTeamId ? { [room.blitzTopTeamId]: BAN_LIMIT } : {};
       room.blitzPinnedTheme = null;

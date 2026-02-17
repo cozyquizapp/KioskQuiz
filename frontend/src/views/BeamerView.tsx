@@ -2581,11 +2581,6 @@ useEffect(() => {
                 : `Submissions ${submissions}/${teams.length}`}
             </span>
             {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
-            {blitzItemSeconds !== null && (blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING') && (
-              <span className="beamer-countdown beamer-countdown-secondary">
-                {language === 'de' ? 'Item' : 'Item'} {Math.max(0, blitzItemSeconds)}s
-              </span>
-            )}
           </div>
         </div>
 

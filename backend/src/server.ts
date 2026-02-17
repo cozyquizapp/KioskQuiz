@@ -2577,10 +2577,17 @@ const clearRundlaufRoundIntroTimer = (room: RoomState) => {
   }
 };
 
+// Teams that can still take a turn: connected AND not eliminated (used for turn navigation)
 const aliveRundlaufTeams = (room: RoomState) => {
   const connected = new Set(getConnectedTeamIds(room));
   const eliminated = new Set(room.rundlaufEliminatedTeamIds);
   return room.rundlaufTurnOrder.filter((teamId) => connected.has(teamId) && !eliminated.has(teamId));
+};
+
+// Teams still in the round: not eliminated regardless of connection (used for round-over checks)
+const nonEliminatedRundlaufTeams = (room: RoomState) => {
+  const eliminated = new Set(room.rundlaufEliminatedTeamIds);
+  return room.rundlaufTurnOrder.filter((teamId) => !eliminated.has(teamId));
 };
 
 const scheduleRundlaufTurnTimer = (room: RoomState) => {
@@ -2611,8 +2618,8 @@ const scheduleRundlaufTurnTimer = (room: RoomState) => {
     const eliminated = new Set(room.rundlaufEliminatedTeamIds);
     eliminated.add(room.rundlaufActiveTeamId);
     room.rundlaufEliminatedTeamIds = Array.from(eliminated);
-    if (aliveRundlaufTeams(room).length <= 1) {
-      const winners = aliveRundlaufTeams(room);
+    if (nonEliminatedRundlaufTeams(room).length <= 1) {
+      const winners = nonEliminatedRundlaufTeams(room);
       const uniqueWinners = Array.from(new Set(winners));
       uniqueWinners.forEach((teamId) => {
         if (room.teams[teamId]) {
@@ -2647,9 +2654,8 @@ const assignRundlaufTurnOrder = (room: RoomState) => {
 };
 
 const advanceRundlaufTurn = (room: RoomState) => {
-  const alive = aliveRundlaufTeams(room);
-  if (alive.length <= 1) {
-    const winners = alive;
+  if (nonEliminatedRundlaufTeams(room).length <= 1) {
+    const winners = nonEliminatedRundlaufTeams(room);
     const uniqueWinners = Array.from(new Set(winners));
     uniqueWinners.forEach((teamId) => {
       if (room.teams[teamId]) {
@@ -2664,6 +2670,7 @@ const advanceRundlaufTurn = (room: RoomState) => {
     clearRundlaufTurnTimer(room.roomCode);
     return;
   }
+  const alive = aliveRundlaufTeams(room);
   const currentIdx = alive.indexOf(room.rundlaufActiveTeamId ?? '');
   const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % alive.length : 0;
   setRundlaufActiveTeam(room, alive[nextIdx] ?? null);
@@ -2686,7 +2693,7 @@ const eliminateRundlaufTeam = (room: RoomState, teamId: string, reason?: string)
   }
   if (room.rundlaufActiveTeamId === teamId) {
     advanceRundlaufTurn(room);
-  } else if (aliveRundlaufTeams(room).length <= 1) {
+  } else if (nonEliminatedRundlaufTeams(room).length <= 1) {
     advanceRundlaufTurn(room);
   }
 };

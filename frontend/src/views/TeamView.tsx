@@ -2817,7 +2817,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           return blitzState.phase ?? 'IDLE';
       }
     })();
-    const canAnswer = phase === 'PLAYING' && !blitzSubmitted;
+    const canAnswer = phase === 'PLAYING'; // allow re-submission to update partial answers
     const results = blitzState.results || {};
     const themeLabel = blitzState.theme?.title || '?';
     const submissionCount = blitzState.submissions?.length ?? 0;
@@ -3331,8 +3331,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             >
               {blitzSubmitted
                 ? language === 'de'
-                  ? 'Eingereicht'
-                  : 'Submitted'
+                  ? '✓ Aktualisieren'
+                  : '✓ Update'
                 : language === 'de'
                 ? 'Antworten senden'
                 : 'Submit answers'}

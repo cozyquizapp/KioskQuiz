@@ -16,7 +16,7 @@
   --glass-shadow: 0 26px 60px rgba(0, 0, 0, 0.45);
   --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.35);
   --shadow-strong: 0 24px 48px rgba(0, 0, 0, 0.45);
-  --radius: 18px;
+  --radius: 20px;
   --radius-pill: 999px;
   --space-1: 6px;
   --space-2: 10px;
@@ -78,11 +78,12 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15), transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.15), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.08), transparent 50%);
-  animation: gradient-shift 20s ease infinite;
+  background:
+    radial-gradient(ellipse at 18% 28%, rgba(99, 102, 241, 0.22), transparent 42%),
+    radial-gradient(ellipse at 82% 72%, rgba(168, 85, 247, 0.18), transparent 42%),
+    radial-gradient(ellipse at 55% 52%, rgba(236, 72, 153, 0.10), transparent 50%),
+    radial-gradient(ellipse at 70% 15%, rgba(56, 189, 248, 0.10), transparent 35%);
+  animation: gradient-shift 22s ease infinite;
 }
 
 body::after {
@@ -90,11 +91,12 @@ body::after {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: 
-    radial-gradient(circle at 60% 40%, rgba(59, 130, 246, 0.1), transparent 35%),
-    radial-gradient(circle at 30% 80%, rgba(139, 92, 246, 0.1), transparent 35%);
-  animation: gradient-shift 25s ease-in-out infinite reverse;
-  opacity: 0.6;
+  background:
+    radial-gradient(ellipse at 62% 38%, rgba(59, 130, 246, 0.13), transparent 38%),
+    radial-gradient(ellipse at 28% 82%, rgba(139, 92, 246, 0.13), transparent 38%),
+    radial-gradient(ellipse at 85% 55%, rgba(20, 184, 166, 0.08), transparent 30%);
+  animation: gradient-shift 28s ease-in-out infinite reverse;
+  opacity: 0.7;
 }
 
 @keyframes gradient-shift {
@@ -200,8 +202,8 @@ select:hover:not(:focus) {
 
 .ui-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(99, 102, 241, 0.12);
+  border-color: rgba(255, 255, 255, 0.20);
 }
 
 .ui-input {

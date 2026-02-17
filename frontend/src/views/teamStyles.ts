@@ -32,9 +32,9 @@ export const pageStyleTeam: CSSProperties = {
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
   color: 'white',
-  background: 'var(--bg)',
-  backgroundSize: '200% 200%',
-  animation: 'ambient-shift 30s ease-in-out infinite',
+  background: 'linear-gradient(145deg, #07090f 0%, #0c0f1d 30%, #080b14 55%, #0d1020 80%, #07090f 100%)',
+  backgroundSize: '220% 220%',
+  animation: 'ambient-shift 32s ease-in-out infinite',
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
   // iOS optimization

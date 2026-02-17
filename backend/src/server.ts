@@ -1911,6 +1911,11 @@ const startQuestionTimer = (room: RoomState, durationMs: number) => {
     if (!room.timerEndsAt) return;
     clearQuestionTimers(room);
     evaluateCurrentQuestion(room);
+    // Auto-reveal for estimate questions with ≤1 answer (skip Q_LOCKED)
+    const q = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+    if (q?.mechanic === 'estimate' && Object.keys(room.answers).length <= 1) {
+      revealAnswersForRoom(room);
+    }
   }, durationMs + 20);
   io.to(room.roomCode).emit('timerStarted', { endsAt });
 };

@@ -27,7 +27,7 @@ export const pageStyleTeam: CSSProperties = {
   paddingRight: 'clamp(10px, 3vw, 16px)',
   paddingBottom: 'calc(clamp(12px, 2vw, 16px) + env(safe-area-inset-bottom))',
   paddingLeft: 'clamp(10px, 3vw, 16px)',
-  overflowY: 'hidden',
+  overflowY: 'auto',
   overflowX: 'hidden',
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',

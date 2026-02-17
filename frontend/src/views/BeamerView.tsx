@@ -2238,8 +2238,8 @@ useEffect(() => {
               <h2 style={{ color: '#4ade80', fontSize: '36px' }}>🎰 KATEGORIE-AUSWAHL</h2>
               <p>Die 3 Themen werden ausgewählt...</p>
             </div>
-            <div className="beamer-select-grid" style={{ position: 'relative' }}>
-              {pool.map((theme) => {
+            <div className="blitz-pool-grid" style={{ position: 'relative' }}>
+              {(pool.length >= 12 ? pool.slice(0, 12) : pool.length >= 9 ? pool.slice(0, 9) : pool).map((theme) => {
                 const isPicked = theme.id === pickedTheme?.id;
                 const isBanned = bannedIds.has(theme.id);
                 const isSlot1 = theme.id === slot1Id;
@@ -2371,7 +2371,7 @@ useEffect(() => {
                   border: '3px solid rgba(74, 222, 128, 0.5)',
                   borderRadius: '20px',
                   textAlign: 'center',
-                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.4 + idx * 0.2}s both`,
+                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${3.2 + idx * 0.8}s both`,
                   position: 'relative',
                   minHeight: '200px',
                   display: 'flex',
@@ -2621,27 +2621,26 @@ useEffect(() => {
             )}
             {scoreboardReady && (
               <>
-                <div className="beamer-question-category" style={{ marginBottom: '20px' }}>
-                  {language === 'de' ? 'Lösungen' : language === 'both' ? 'Lösungen / Solutions' : 'Solutions'}
+                <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(148,163,184,0.8)', marginBottom: '8px' }}>
+                  {language === 'de' ? 'Lösungen' : 'Solutions'}
                 </div>
-                {/* Show all 5 images with solution words */}
+                {/* All 5 images in one row */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '20px',
-                  width: '100%',
-                  padding: '20px 0'
+                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gap: '10px',
+                  width: '100%'
                 }}>
                   {items.map((item, idx) => (
                     <div key={`solution-${item.id}-${idx}`} style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '12px',
+                      gap: '6px',
                       background: 'rgba(15, 23, 42, 0.6)',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      border: '2px solid rgba(148, 163, 184, 0.2)'
+                      borderRadius: '10px',
+                      padding: '8px',
+                      border: '1px solid rgba(148, 163, 184, 0.15)'
                     }}>
                       {item.mediaUrl && (
                         <img
@@ -2649,30 +2648,25 @@ useEffect(() => {
                           alt={item.prompt || `Item ${idx + 1}`}
                           style={{
                             width: '100%',
-                            height: '150px',
+                            aspectRatio: '1',
                             objectFit: 'cover',
-                            borderRadius: '8px'
+                            borderRadius: '6px'
                           }}
                         />
                       )}
                       <div style={{
-                        fontSize: '18px',
+                        fontSize: '13px',
                         fontWeight: '700',
                         color: '#4ade80',
-                        textAlign: 'center',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                        textAlign: 'center'
                       }}>
                         {item.prompt || `Item ${idx + 1}`}
                       </div>
                     </div>
                   ))}
                 </div>
-                {/* Show scoreboard below the images */}
-                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px solid rgba(148, 163, 184, 0.2)' }}>
-                  <div className="beamer-question-category" style={{ marginBottom: '15px' }}>
-                    {language === 'de' ? 'Set-Ergebnis' : language === 'both' ? 'Set-Ergebnis / Result' : 'Set result'}
-                  </div>
+                {/* Scoreboard below */}
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(148, 163, 184, 0.15)' }}>
                   {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
                 </div>
               </>

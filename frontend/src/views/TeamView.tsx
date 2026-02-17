@@ -513,6 +513,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     } else {
       setPhase('notJoined');
     }
+    // Scroll to top on every game state change
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [gameState, teamId]);
 
   useEffect(() => {
@@ -3245,18 +3247,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     {language === 'de' ? 'Schließen' : 'Close'}
                   </button>
                 </div>
-                {blitzItems[expandedBlitzItem]?.prompt && (
-                  <div style={{
-                    fontSize: 13,
-                    color: '#94a3b8',
-                    fontStyle: 'italic',
-                    padding: '8px 12px',
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '8px'
-                  }}>
-                    {blitzItems[expandedBlitzItem].prompt}
-                  </div>
-                )}
                 <input
                   ref={(el) => (blitzInputsRef.current[expandedBlitzItem] = el)}
                   className="team-answer-input is-active"
@@ -3303,15 +3293,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                         ITEM {idx + 1}
                         {hasAnswer && <span style={{ marginLeft: 6 }}>✓</span>}
                       </label>
-                      {item?.prompt && (
-                        <div style={{
-                          fontSize: 12,
-                          color: '#94a3b8',
-                          fontStyle: 'italic'
-                        }}>
-                          {item.prompt}
-                        </div>
-                      )}
                       <input
                         ref={(el) => (blitzInputsRef.current[idx] = el)}
                         className="team-answer-input"

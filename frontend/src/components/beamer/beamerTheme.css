@@ -431,12 +431,14 @@
 .beamer-question-layout {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
+  gap: 32px;
   align-items: stretch;
+  min-height: 0;
+  flex: 1;
 }
 
 .beamer-question-main {
-  padding: 28px;
+  padding: 36px;
   border-radius: 32px;
   background: rgba(255, 255, 255, 0.001);
   backdrop-filter: blur(40px) saturate(200%) brightness(1.15);
@@ -444,24 +446,24 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .beamer-question-category {
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--beamer-muted);
 }
 
 .beamer-question-text {
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: clamp(34px, 4.5vw, 56px);
   font-weight: 900;
   line-height: 1.2;
 }
 
 .beamer-question-solution {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   color: #fcd34d;
 }
@@ -470,7 +472,7 @@
   border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
-  min-height: 280px;
+  min-height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -789,6 +791,15 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
+  padding: 0 20px;
+  max-width: 100%;
+}
+
+/* Pool animation: always 3 columns for clean 3x3 or 3x4 grid */
+.blitz-pool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
   padding: 0 20px;
   max-width: 100%;
 }
@@ -1682,7 +1693,11 @@
 }
 
 .blitz-stack {
-  gap: 18px;
+  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .blitz-current-card {
@@ -1696,7 +1711,8 @@
   grid-template-rows: 1fr auto;
   align-items: stretch;
   position: relative;
-  min-height: 600px;
+  flex: 1;
+  min-height: 400px;
   overflow: hidden;
 }
 
@@ -1731,20 +1747,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 24px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, transparent 100%);
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, transparent 100%);
 }
 
 .blitz-info-left {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
 .blitz-info-set {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.9);
@@ -1752,7 +1768,7 @@
 }
 
 .blitz-info-theme {
-  font-size: clamp(16px, 2vw, 22px);
+  font-size: clamp(13px, 1.5vw, 17px);
   font-weight: 900;
   color: #fff;
   white-space: nowrap;
@@ -1763,12 +1779,12 @@
 .blitz-info-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .blitz-info-count {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: rgba(226, 232, 240, 0.8);
 }
@@ -1820,18 +1836,20 @@
 .blitz-timeline {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 4px 0;
 }
 
 .blitz-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
   font-weight: 900;
-  font-size: 16px;
+  font-size: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.01);
   backdrop-filter: blur(20px);
@@ -1852,14 +1870,17 @@
 }
 
 .blitz-results-card {
-  padding: 22px;
+  padding: 18px;
   border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.01);
   backdrop-filter: blur(30px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .blitz-results-pending {

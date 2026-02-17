@@ -642,16 +642,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
     }, 350); // Slower: 350ms per jump (was 180ms)
 
-    // After 7s, stop animation and show final picks
+    // After 9s, stop slots and show final picks
     const finalizeTimeout = setTimeout(() => {
       clearInterval(slotInterval);
       setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
-    }, 7000); // Longer animation duration
+    }, 9000);
 
-    // After 9s, transition to final cards view (2s pause after stop)
+    // After 13s, transition to final cards (4s pause to see final picks in pool)
     const transitionTimeout = setTimeout(() => {
       setShowcasePhase('FINAL_CARDS');
-    }, 9000); // More time to see final selection
+    }, 13000);
 
     return () => {
       clearInterval(slotInterval);
@@ -2244,73 +2244,28 @@ useEffect(() => {
                   isPicked ? 'picked' : ''
                 ].filter(Boolean).join(' ');
 
+                // Badge: picked uses same style as BANNING phase
+                const badge = isPicked ? 'PICK' : '';
                 return (
                   <div
                     key={theme.id}
                     className={cardClasses}
                     style={{
                       position: 'relative',
-                      border: isPicked
-                        ? '4px solid rgba(96, 165, 250, 0.95)'
-                        : (isSlot1 || isSlot2)
-                        ? '6px solid rgba(74, 222, 128, 0.95)' // Thicker border for better visibility
-                        : undefined,
-                      boxShadow: isPicked
-                        ? '0 0 35px rgba(96, 165, 250, 0.7)'
-                        : (isSlot1 || isSlot2)
-                        ? '0 0 60px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.4)' // Stronger glow
-                        : undefined,
-                      transform: (isSlot1 || isSlot2) ? 'scale(1.08)' : undefined, // More pronounced scale
-                      transition: 'all 0.25s ease-out', // Slower transition for smoother effect
-                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.35s ease-in-out infinite' : undefined // Match jump speed
+                      // Slot overlays: prominent border + glow
+                      border: (isSlot1 || isSlot2) ? '6px solid rgba(74, 222, 128, 0.95)' : undefined,
+                      boxShadow: (isSlot1 || isSlot2) ? '0 0 60px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.4)' : undefined,
+                      transform: (isSlot1 || isSlot2) ? 'scale(1.08)' : undefined,
+                      transition: 'all 0.25s ease-out',
+                      animation: (isSlot1 || isSlot2) ? 'slotPulse 0.35s ease-in-out infinite' : undefined
                     }}
                   >
                     <div className="beamer-select-title">{theme.title}</div>
-                    {isPicked && (
-                      <span className="beamer-select-badge picked" style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        right: '-10px',
-                        background: 'rgba(96, 165, 250, 0.95)',
-                        color: '#0f172a',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '11px',
-                        fontWeight: '900'
-                      }}>
-                        GEWÄHLT
-                      </span>
-                    )}
-                    {isSlot1 && (
-                      <span className="beamer-select-badge" style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        left: '-10px',
-                        background: 'rgba(74, 222, 128, 0.95)',
-                        color: '#0f172a',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '11px',
-                        fontWeight: '900'
-                      }}>
-                        🎲 SLOT 1
-                      </span>
-                    )}
-                    {isSlot2 && (
-                      <span className="beamer-select-badge" style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        left: '-10px',
-                        background: 'rgba(74, 222, 128, 0.95)',
-                        color: '#0f172a',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '11px',
-                        fontWeight: '900'
-                      }}>
-                        🎲 SLOT 2
-                      </span>
-                    )}
+                    {/* PICK badge - same as BANNING phase */}
+                    {badge && <span className={`beamer-select-badge ${badge.toLowerCase()}`}>{badge}</span>}
+                    {/* Slot overlays */}
+                    {isSlot1 && <span className="beamer-select-badge random" style={{ left: '-10px', right: 'auto' }}>🎲 R1</span>}
+                    {isSlot2 && <span className="beamer-select-badge random" style={{ left: '-10px', right: 'auto' }}>🎲 R2</span>}
                   </div>
                 );
               })}

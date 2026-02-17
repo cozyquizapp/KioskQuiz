@@ -3715,7 +3715,30 @@ const formatSolution = (question: AnyQuestion, language: Language): string | und
   return combineText(deAnswer, enAnswer, language);
 };
 
-const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => question;
+const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => {
+  const q = { ...(question as any) };
+  // Remove correct answer fields so teams cannot see them via team:show-question
+  delete q.answer;
+  delete q.answerEn;
+  delete q.targetValue;    // estimate: correct number
+  delete q.correctIndex;   // MC / betting: which option is correct
+  delete q.isTrue;         // trueFalse: correct value
+  delete q.correctOrder;   // sortItems: correct ordering
+  delete q.correctOrderEn;
+  delete q.funFact;        // moderation notes
+  // Sanitize bunteTuete fotosprint items
+  if (q.bunteTuete?.blitzItems) {
+    q.bunteTuete = {
+      ...q.bunteTuete,
+      correctOrder: undefined,
+      blitzItems: q.bunteTuete.blitzItems.map((item: any) => {
+        const { answer: _a, ...rest } = item;
+        return rest;
+      })
+    };
+  }
+  return q as AnyQuestion;
+};
 
 const applyRoomState = (room: RoomState, action: GameStateAction) => {
   const prev = room.gameState;
@@ -3874,8 +3897,9 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     roomCode: room.roomCode,
     state: room.gameState,
     phase: room.questionPhase,
-    // Only include currentQuestion if it's not null (don't send null to clear it)
-    ...(sanitized !== null ? { currentQuestion: sanitized } : {}),
+    // stateUpdate goes to all clients (beamer + teams); beamer needs full data for reveals.
+    // Teams receive sanitized question separately via team:show-question event.
+    ...(localized !== null ? { currentQuestion: localized } : {}),
     timer: {
       endsAt: timerSnapshot.endsAt,
       running: timerSnapshot.running,
@@ -5651,6 +5675,23 @@ const buildLobbyStats = (room: RoomState): LobbyStats => {
 const ROOM_IDLE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
 const CLEANUP_INTERVAL = 60 * 60 * 1000; // Check every hour
 
+// Clear all timers associated with a room before deleting it to prevent orphaned callbacks
+const deleteRoom = (code: string) => {
+  const room = rooms.get(code);
+  if (room) {
+    clearQuestionTimers(room);
+    clearBlitzRoundIntroTimer(room);
+    if (room.rundlaufRoundIntroTimeout) {
+      clearTimeout(room.rundlaufRoundIntroTimeout);
+      room.rundlaufRoundIntroTimeout = null;
+    }
+  }
+  clearBlitzItemTimer(code);
+  clearBlitzSetTimer(code);
+  clearRundlaufTurnTimer(code);
+  rooms.delete(code);
+};
+
 const cleanupInactiveRooms = () => {
   const now = Date.now();
   const roomsToDelete: string[] = [];
@@ -5663,7 +5704,7 @@ const cleanupInactiveRooms = () => {
   }
 
   if (roomsToDelete.length > 0) {
-    roomsToDelete.forEach(code => rooms.delete(code));
+    roomsToDelete.forEach(code => deleteRoom(code));
     console.log(`[Cleanup] Gelöschte ${roomsToDelete.length} inaktive Rooms (>${(ROOM_IDLE_TIMEOUT / 1000 / 3600).toFixed(0)}h idle)`);
   }
 };
@@ -6462,12 +6503,12 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-// Periodic cleanup
+// Periodic cleanup (30-min idle rooms)
 setInterval(() => {
   const now = Date.now();
   for (const [code, room] of rooms.entries()) {
     if (now - room.lastActivityAt > ROOM_IDLE_CLEANUP_MS) {
-      rooms.delete(code);
+      deleteRoom(code);
       log(code, 'Room removed due to inactivity');
     }
   }

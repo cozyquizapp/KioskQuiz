@@ -245,10 +245,10 @@ export const inputStyle: CSSProperties = {
 
 export const primaryButton: CSSProperties = {
   marginTop: 14,
-  background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+  background: 'linear-gradient(160deg, rgba(99,102,241,0.25), rgba(139,92,246,0.18), rgba(99,102,241,0.12))',
   backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
-  color: '#f8fafc',
-  border: '1px solid rgba(255,255,255,0.08)',
+  color: '#f0f0ff',
+  border: '1px solid rgba(99,102,241,0.30)',
   padding: 'clamp(18px, 4.5vw, 20px) clamp(20px, 5.5vw, 24px)',
   minHeight: 'clamp(56px, 14vw, 68px)',
   borderRadius: theme.radius,
@@ -257,6 +257,7 @@ export const primaryButton: CSSProperties = {
   width: '100%',
   fontWeight: 800,
   fontSize: 'max(16px, clamp(18px, 4.2vw, 21px))',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 24px rgba(99,102,241,0.15)',
   transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
   WebkitFontSmoothing: 'antialiased',
   // Hardware acceleration for smooth tap feedback

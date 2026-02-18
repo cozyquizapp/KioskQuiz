@@ -2488,7 +2488,10 @@ const computeBlitzResults = (room: RoomState) => {
   if (teamCount <= 2) {
     const [first, second] = activeTeams;
     if (!first) return;
-    if (!second || first.correct === second.correct) {
+    const bestCorrect = Math.max(first.correct, second?.correct ?? 0);
+    if (bestCorrect === 0) {
+      // No one got any answers right — no points awarded
+    } else if (!second || first.correct === second.correct) {
       provisional[first.teamId].pointsAwarded = 1;
       if (second) provisional[second.teamId].pointsAwarded = 1;
       if (room.teams[first.teamId]) room.teams[first.teamId].score = (room.teams[first.teamId].score ?? 0) + 1;
@@ -2511,10 +2514,11 @@ const computeBlitzResults = (room: RoomState) => {
     return;
   }
 
+  const bestCorrect = activeTeams[0]?.correct ?? 0;
   let currentPlace = 1;
   for (let i = 0; i < activeTeams.length; ) {
     const same = activeTeams.filter((entry) => entry.correct === activeTeams[i].correct);
-    const points = currentPlace === 1 ? 2 : currentPlace === 2 ? 1 : 0;
+    const points = bestCorrect === 0 ? 0 : currentPlace === 1 ? 2 : currentPlace === 2 ? 1 : 0;
     same.forEach((entry) => {
       provisional[entry.teamId].pointsAwarded = points;
       if (points > 0 && room.teams[entry.teamId]) {

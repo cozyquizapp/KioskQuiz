@@ -273,6 +273,7 @@ type RoomState = {
   validationWarnings: string[];
   nextStage: NextStageHint | null;
   scoreboardOverlayForced: boolean;
+  avatarsEnabled: boolean;
   halftimeTriggered?: boolean;
   finalsTriggered?: boolean;
   // Lobby Stats Tracking
@@ -499,8 +500,8 @@ const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
 const RUNDLAUF_CATEGORY_COUNT = 6; // 2 bans + 1 pick + 3 remaining (2 random) = 6
 const RUNDLAUF_TURN_TIME_MS = (() => {
-  const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 7000);
-  if (!Number.isFinite(raw)) return 7000;
+  const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 25000);
+  if (!Number.isFinite(raw)) return 25000;
   return Math.max(3000, Math.floor(raw));
 })();
 const RUNDLAUF_ROUND_POINTS = 3; // TODO(RUNDLAUF): confirm points per round win
@@ -1857,6 +1858,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       validationWarnings: [],
       nextStage: null,
       scoreboardOverlayForced: false,
+      avatarsEnabled: true,
       halftimeTriggered: false,
       finalsTriggered: false,
       statsAnswerTimings: new Map(),
@@ -3933,6 +3935,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     oneOfEight,
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
+    avatarsEnabled: room.avatarsEnabled,
     results,
     liveAnswers,
     warnings: warnings.length ? warnings : undefined,
@@ -4707,14 +4710,14 @@ const handleHostNextAdvance = (room: RoomState) => {
     if (room.gameState === 'RUNDLAUF_SELECTION_COMPLETE') {
       applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
       broadcastState(room);
-      // Auto-transition to ROUND_INTRO after showcase animation (3 seconds)
+      // Auto-transition to ROUND_INTRO after showcase animation (10s for pool slot + final cards)
       clearRundlaufRoundIntroTimer(room);
       room.rundlaufRoundIntroTimeout = setTimeout(() => {
         room.rundlaufRoundIntroTimeout = null;
         if (room.gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE') return;
         applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_ROUND_INTRO' });
         broadcastState(room);
-      }, 3000);
+      }, 10000);
       return { stage: room.gameState };
     }
     // If already in CATEGORY_SHOWCASE, skip to ROUND_INTRO
@@ -5925,6 +5928,14 @@ io.on('connection', (socket: Socket) => {
     });
   });
 
+  socket.on('host:toggleAvatars', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      room.avatarsEnabled = !room.avatarsEnabled;
+      broadcastState(room);
+      return { avatarsEnabled: room.avatarsEnabled };
+    });
+  });
+
   socket.on('host:showAwards', (payload: { roomCode?: string }, ack?: AckFn) => {
     withRoom(payload?.roomCode, ack, (room) => {
       applyRoomState(room, { type: 'FORCE', next: 'AWARDS' });
@@ -6021,7 +6032,7 @@ io.on('connection', (socket: Socket) => {
           finalizeRundlaufSelection(room);
           applyRoomState(room, { type: 'FORCE', next: 'RUNDLAUF_CATEGORY_SHOWCASE' });
 
-          // Auto-transition to ROUND_INTRO after showcase animation (5 seconds for visibility)
+          // Auto-transition to ROUND_INTRO after showcase animation (10s for slot + final cards)
           clearRundlaufRoundIntroTimer(room);
           room.rundlaufRoundIntroTimeout = setTimeout(() => {
             room.rundlaufRoundIntroTimeout = null;
@@ -6037,7 +6048,7 @@ io.on('connection', (socket: Socket) => {
               startRundlaufRound(room);
               broadcastState(room);
             }, BLITZ_ROUND_INTRO_MS);
-          }, 3000);
+          }, 10000);
         }
 
         broadcastState(room);

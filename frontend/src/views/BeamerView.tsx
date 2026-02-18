@@ -379,6 +379,11 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
   const [slotPositions, setSlotPositions] = useState<string[]>([]);
 
+  // Rundlauf CATEGORY_SHOWCASE animation state
+  const [rundlaufShowcasePhase, setRundlaufShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
+  const [rundlaufSlotPositions, setRundlaufSlotPositions] = useState<string[]>([]);
+  const rundlaufShowcaseAnimStarted = useRef(false);
+
   const [revealStamp, setRevealStamp] = useState(0);
   const [estimateDisplay, setEstimateDisplay] = useState<string | null>(null);
   const [muChoHopIndex, setMuChoHopIndex] = useState<number | null>(null);
@@ -411,6 +416,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
+  const [avatarsEnabled, setAvatarsEnabled] = useState(true);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   
@@ -667,8 +673,57 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     };
   }, [gameState, blitz]);
 
+  // Rundlauf CATEGORY_SHOWCASE animation effect
+  useEffect(() => {
+    if (gameState !== 'RUNDLAUF_CATEGORY_SHOWCASE' || !rundlauf) {
+      setRundlaufShowcasePhase('POOL_ANIMATION');
+      setRundlaufSlotPositions([]);
+      rundlaufShowcaseAnimStarted.current = false;
+      return undefined;
+    }
 
+    if (rundlaufShowcaseAnimStarted.current) return undefined;
+    rundlaufShowcaseAnimStarted.current = true;
 
+    const pool = rundlauf.pool ?? [];
+    const selected = rundlauf.selected ?? [];
+    const bannedIds = new Set(rundlauf.bans ?? []);
+    const pinnedId = rundlauf.pinned?.id ?? null;
+    const randomCategories = selected.filter(s => s.id !== pinnedId);
+    const allAvailable = pool.filter(t => !bannedIds.has(t.id) && t.id !== pinnedId);
+
+    if (allAvailable.length < 2) {
+      setRundlaufShowcasePhase('FINAL_CARDS');
+      return undefined;
+    }
+
+    // Initialize with random positions
+    const shuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+    setRundlaufSlotPositions([shuffled[0]?.id || '', shuffled[1]?.id || '']);
+
+    // Animate slot positions
+    const slotInterval = setInterval(() => {
+      const newShuffled = [...allAvailable].sort(() => Math.random() - 0.5);
+      setRundlaufSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
+    }, 450);
+
+    // After 6s, stop slots and show final picks
+    const finalizeTimeout = setTimeout(() => {
+      clearInterval(slotInterval);
+      setRundlaufSlotPositions([randomCategories[0]?.id || '', randomCategories[1]?.id || '']);
+    }, 6000);
+
+    // After 8s, transition to final cards
+    const transitionTimeout = setTimeout(() => {
+      setRundlaufShowcasePhase('FINAL_CARDS');
+    }, 8000);
+
+    return () => {
+      clearInterval(slotInterval);
+      clearTimeout(finalizeTimeout);
+      clearTimeout(transitionTimeout);
+    };
+  }, [gameState, rundlauf]);
 
 
 
@@ -918,6 +973,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.scoreboardOverlayForced !== undefined) {
         setScoreboardOverlayForced(Boolean(payload.scoreboardOverlayForced));
+      }
+      if (payload.avatarsEnabled !== undefined) {
+        setAvatarsEnabled(payload.avatarsEnabled !== false);
       }
       if (payload.teamStatus !== undefined) {
         setTeamStatus(payload.teamStatus ?? []);
@@ -1652,7 +1710,7 @@ useEffect(() => {
             key={`cozy-score-${entry.id}-${idx}`}
             rank={idx + 1}
             name={entry.name}
-            avatarSrc={avatar?.dataUri}
+            avatarSrc={avatarsEnabled ? avatar?.dataUri : null}
             score={entry.score ?? 0}
             detail={options?.detailMap?.[entry.id] ?? null}
             highlight={Boolean(options?.highlightTop && idx < 3)}
@@ -1713,7 +1771,7 @@ useEffect(() => {
                   return (
                     <div className="cozyLobbyTeamRow" key={team.id}>
                       <span className="cozyLobbyStatusDot online" />
-                      {avatar && (
+                      {avatarsEnabled && avatar && (
                         <AvatarMedia
                           avatar={avatar}
                           style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
@@ -3004,7 +3062,7 @@ useEffect(() => {
                           transition: 'all 0.3s ease'
                         }}
                       >
-                        {team.avatarId && (
+                        {avatarsEnabled && team.avatarId && (
                           <img
                             src={getAvatarById(team.avatarId).dataUri}
                             alt=""
@@ -3308,9 +3366,61 @@ useEffect(() => {
       }
 
       if (gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
-        const nextCategory = selected[0]; // The picked category
-        const randomCategories = selected.slice(1, 3); // 2 random categories
-        
+        const pickedCategory = selected.find(s => s.id === pinnedId) || selected[0];
+        const randomCategories = selected.filter(s => s.id !== pinnedId);
+        const allAvailable = pool.filter(t => !bans.has(t.id) && t.id !== pinnedId);
+
+        // Phase 1: Pool animation with slot machine for random picks
+        if (rundlaufShowcasePhase === 'POOL_ANIMATION') {
+          const slot1Id = rundlaufSlotPositions[0];
+          const slot2Id = rundlaufSlotPositions[1];
+          const displayPool = pool.length >= 12 ? pool.slice(0, 12) : pool.length >= 9 ? pool.slice(0, 9) : pool;
+
+          return (
+            <div className="blitz-stack" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%)' }}>
+              <div className="beamer-intro-card">
+                <h2 style={{ color: '#60a5fa', fontSize: '36px' }}>🎰 KATEGORIE-AUSWAHL</h2>
+                <p>Die 3 Kategorien werden ausgewählt...</p>
+              </div>
+              <div className="blitz-pool-grid" style={{ position: 'relative' }}>
+                {displayPool.map((entry) => {
+                  const isBanned = bans.has(entry.id);
+                  const isPicked = entry.id === pinnedId;
+                  const isSlot1 = entry.id === slot1Id;
+                  const isSlot2 = entry.id === slot2Id;
+
+                  const cardClasses = [
+                    'beamer-select-card',
+                    isBanned ? 'banned' : '',
+                    isPicked ? 'picked' : ''
+                  ].filter(Boolean).join(' ');
+
+                  const badge = isPicked ? 'PICK' : isBanned ? 'BANNED' : '';
+                  return (
+                    <div
+                      key={entry.id}
+                      className={cardClasses}
+                      style={{
+                        position: 'relative',
+                        border: (isSlot1 || isSlot2) ? '6px solid rgba(74, 222, 128, 0.95)' : undefined,
+                        boxShadow: (isSlot1 || isSlot2) ? '0 0 60px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.4)' : undefined,
+                        transition: 'border 0.25s ease-out, box-shadow 0.25s ease-out',
+                        animation: (isSlot1 || isSlot2) ? 'slotGlow 0.5s ease-in-out infinite' : undefined
+                      }}
+                    >
+                      <div className="beamer-select-title">{entry.title}</div>
+                      {badge && <span className={`beamer-select-badge ${badge.toLowerCase()}`}>{badge}</span>}
+                      {isSlot1 && <span className="beamer-select-badge random" style={{ left: '-10px', right: 'auto' }}>🎲 R2</span>}
+                      {isSlot2 && <span className="beamer-select-badge random" style={{ left: '-10px', right: 'auto' }}>🎲 R3</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
+
+        // Phase 2: Final cards (zoom on 3 selected categories)
         return (
           <div style={{
             display: 'flex',
@@ -3318,79 +3428,102 @@ useEffect(() => {
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: '100vh',
-            gap: '40px',
+            gap: '30px',
             padding: '40px 20px',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)',
-            animation: 'fadeIn 0.8s ease-in'
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
+            animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
-            {/* Main showcase card */}
             <div style={{
-              animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              transformOrigin: 'center'
+              fontSize: '32px',
+              fontWeight: '900',
+              color: '#60a5fa',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              animation: 'slideInDown 0.5s ease-out'
             }}>
-              <div style={{
-                fontSize: '60px',
-                fontWeight: '900',
-                textAlign: 'center',
-                color: '#fff',
-                marginBottom: '20px',
-                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
-              }}>
-                {nextCategory?.title || 'Kategorie'}
-              </div>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                textAlign: 'center',
-                color: 'rgba(226, 232, 240, 0.9)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em'
-              }}>
-                Die erste Kategorie beginnt gleich...
-              </div>
+              🎯 Die 3 Kategorien
             </div>
-
-            {/* Random category previews */}
-            {randomCategories.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '24px',
+              maxWidth: '1400px',
+              width: '100%',
+              marginTop: '20px'
+            }}>
+              {/* Picked category */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '20px',
-                marginTop: '40px',
-                maxWidth: '600px'
+                padding: '32px',
+                background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(59, 130, 246, 0.15))',
+                border: '3px solid rgba(96, 165, 250, 0.6)',
+                borderRadius: '20px',
+                textAlign: 'center',
+                animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
+                position: 'relative',
+                minHeight: '200px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}>
-                {randomCategories.map((cat, idx) => (
-                  <div
-                    key={`showcase-${cat.id}`}
-                    style={{
-                      padding: '24px',
-                      background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1))',
-                      border: '2px solid rgba(74, 222, 128, 0.4)',
-                      borderRadius: '16px',
-                      textAlign: 'center',
-                      animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
-                    }}
-                  >
-                    <div style={{
-                      fontSize: '14px',
-                      color: 'rgba(74, 222, 128, 0.9)',
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      marginBottom: '8px'
-                    }}>
-                      Weitere Kategorien:
-                    </div>
-                    <div style={{
-                      fontSize: '20px',
-                      fontWeight: '900',
-                      color: '#fff'
-                    }}>
-                      {cat.title}
-                    </div>
-                  </div>
-                ))}
+                <div style={{
+                  position: 'absolute',
+                  top: '-12px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(96, 165, 250, 0.9)',
+                  color: '#0f172a',
+                  padding: '6px 20px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '800',
+                  textTransform: 'uppercase'
+                }}>
+                  GEWÄHLT
+                </div>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', lineHeight: '1.2' }}>
+                  {pickedCategory?.title || 'Kategorie 1'}
+                </div>
               </div>
-            )}
+              {/* Random categories */}
+              {randomCategories.map((cat, idx) => (
+                <div
+                  key={`random-${cat.id}-${idx}`}
+                  style={{
+                    padding: '32px',
+                    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.1))',
+                    border: '3px solid rgba(74, 222, 128, 0.5)',
+                    borderRadius: '20px',
+                    textAlign: 'center',
+                    animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${5.0 + idx * 0.8}s both`,
+                    position: 'relative',
+                    minHeight: '200px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(74, 222, 128, 0.9)',
+                    color: '#0f172a',
+                    padding: '6px 20px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    textTransform: 'uppercase'
+                  }}>
+                    ZUFÄLLIG
+                  </div>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', lineHeight: '1.2' }}>
+                    {cat.title}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         );
       }

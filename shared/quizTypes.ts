@@ -599,6 +599,7 @@ export type StateUpdatePayload = {
   oneOfEight?: OneOfEightState | null;
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
+  avatarsEnabled?: boolean;
   results?: AnswerAwardSnapshot[];
   liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;
   warnings?: string[];

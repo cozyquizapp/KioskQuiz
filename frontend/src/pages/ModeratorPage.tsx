@@ -263,7 +263,8 @@ function ModeratorPage(): React.ReactElement {
     emit: socketEmit,
     config: socketConfig,
     nextStage: socketNextStage,
-    scoreboardOverlayForced: socketScoreboardOverlayForced
+    scoreboardOverlayForced: socketScoreboardOverlayForced,
+    avatarsEnabled: socketAvatarsEnabled
   } = useQuizSocket(roomCode);
   const potato: PotatoState | null = showPotatoUI ? socketPotato ?? null : null;
   const rundlauf: RundlaufState | null = socketRundlauf ?? null;
@@ -377,6 +378,7 @@ function ModeratorPage(): React.ReactElement {
     [socketScores]
   );
   const scoreboardOverlayForced = socketScoreboardOverlayForced ?? false;
+  const avatarsEnabled = socketAvatarsEnabled ?? true;
   const questionProgressSnapshot =
     socketQuestionProgress ??
     (meta
@@ -437,6 +439,16 @@ function ModeratorPage(): React.ReactElement {
       return;
     }
     socketEmit('host:toggleScoreboardOverlay', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Aktion fehlgeschlagen');
+        setTimeout(() => setToast(null), 2200);
+      }
+    });
+  }
+
+  function handleToggleAvatars() {
+    if (!roomCode || !socketConnected) return;
+    socketEmit('host:toggleAvatars', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
         setTimeout(() => setToast(null), 2200);
@@ -1533,6 +1545,44 @@ function ModeratorPage(): React.ReactElement {
               onClick={handleRundlaufConfirm}
             >
               Auswahl bestaetigen
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_SELECTION_COMPLETE') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Auswahl abgeschlossen</div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            {selectedTitles.length > 0
+              ? selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' | ')
+              : 'Kategorien bereit'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
+              onClick={handleNextQuestion}
+            >
+              SHOWCASE STARTEN
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    if (normalizedGameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+      return (
+        <section style={{ ...card, marginTop: 12 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Kategorie-Showcase</div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>Animation laeuft auf dem Beamer...</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(148,163,184,0.16)' }}
+              onClick={handleNextQuestion}
+            >
+              UEBERSPRINGEN
             </button>
           </div>
         </section>
@@ -2969,6 +3019,27 @@ const renderCozyStagePanel = () => {
               Setzen
             </button>
           </div>
+        </div>
+
+        {/* Anzeige Sektion */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Anzeige
+          </div>
+          <button
+            style={{
+              ...inputStyle,
+              background: avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+              border: `1px solid ${avatarsEnabled ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`,
+              color: avatarsEnabled ? '#86efac' : '#fca5a5',
+              fontWeight: 700,
+              cursor: 'pointer',
+              width: '100%'
+            }}
+            onClick={handleToggleAvatars}
+          >
+            {avatarsEnabled ? 'Avatare ausblenden' : 'Avatare einblenden'}
+          </button>
         </div>
       </div>
     )}

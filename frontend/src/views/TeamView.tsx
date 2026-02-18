@@ -429,6 +429,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
+  const [avatarsEnabled, setAvatarsEnabled] = useState(true);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
@@ -814,6 +815,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const isBlitzPlaying =
     gameState === 'BLITZ_PLAYING' || (gameState === 'BLITZ' && blitzState?.phase === 'PLAYING');
   const isRundlaufActiveTurn = gameState === 'RUNDLAUF_PLAY' && rundlaufState?.activeTeamId === teamId;
+  const rundlaufCountdown = useMemo(() => {
+    if (!rundlaufState?.deadline) return null;
+    return Math.max(0, Math.ceil((rundlaufState.deadline - Date.now()) / 1000));
+  }, [rundlaufState?.deadline, timerTick]);
 
   useEffect(() => {
     if (!teamId) return;
@@ -1074,6 +1079,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       }
       if (payload.rundlauf !== undefined) {
         setRundlaufState(payload.rundlauf ?? null);
+      }
+      if (payload.avatarsEnabled !== undefined) {
+        setAvatarsEnabled(payload.avatarsEnabled !== false);
       }
       // Only update question if explicitly provided and not null
       if (payload.currentQuestion !== undefined && payload.currentQuestion !== null) {
@@ -2233,7 +2241,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     }}
                   >
                     <div style={{ color: accentColor, fontWeight: 700, marginBottom: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.3px' }}>
-                      {avatar && (
+                      {avatarsEnabled && avatar && (
                         <AvatarMedia
                           avatar={avatar}
                           style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(255,255,255,0.2)' }}
@@ -2472,7 +2480,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               <span style={{ fontWeight: 800, color: medal ? medalColor : '#e2e8f0' }}>
                 {idx < 3 ? idx + 1 : idx + 1}
               </span>
-              {avatar && (
+              {avatarsEnabled && avatar && (
                 <AvatarMedia
                   avatar={avatar}
                   style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)' }}
@@ -2645,7 +2653,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <PrimaryButton onClick={() => submitRundlaufAnswer(false)} disabled={rundlaufSubmitting}>
-              {language === 'de' ? 'Senden' : 'Submit'}
+              {rundlaufCountdown !== null && rundlaufCountdown > 0
+                ? `${language === 'de' ? 'Senden' : 'Submit'} (${rundlaufCountdown}s)`
+                : language === 'de' ? 'Senden' : 'Submit'}
             </PrimaryButton>
             <button
               style={{
@@ -3369,7 +3379,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                       border: '1px solid rgba(255,255,255,0.12)'
                     }}
                   >
-                    {avatar && (
+                    {avatarsEnabled && avatar && (
                       <AvatarMedia
                         avatar={avatar}
                         style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
@@ -3861,7 +3871,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 }}
               >
                 <span style={{ fontWeight: 800 }}>{idx + 1}.</span>
-                {avatar && (
+                {avatarsEnabled && avatar && (
                   <AvatarMedia
                     avatar={avatar}
                     style={{ width: 24, height: 24, borderRadius: 8, border: '1px solid rgba(255,255,255,0.16)' }}
@@ -3996,7 +4006,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           }}
         >
           {/* Walking Animal */}
-          {teamId && avatarId && (
+          {avatarsEnabled && teamId && avatarId && (
             <div
               style={{
                 position: 'absolute',

@@ -38,6 +38,7 @@ type SocketEvents = {
   config?: StateUpdatePayload['config'];
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
+  avatarsEnabled?: boolean;
 };
 
 export const useQuizSocket = (roomCode: string) => {
@@ -215,7 +216,8 @@ export const useQuizSocket = (roomCode: string) => {
           warnings: payload.warnings ?? prev.warnings,
           config: payload.config ?? prev.config,
           nextStage: payload.nextStage ?? prev.nextStage,
-          scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced
+          scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced,
+          avatarsEnabled: payload.avatarsEnabled ?? prev.avatarsEnabled
         };
       });
     };

@@ -501,6 +501,7 @@
 }
 
 .beamer-question-text {
+  font-family: 'Nunito', sans-serif;
   font-size: clamp(34px, 4.5vw, 56px);
   font-weight: 900;
   line-height: 1.2;
@@ -1168,7 +1169,8 @@
 .cozyLobbyHeader {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 20px;
   padding: 16px 6px;
 }
 
@@ -1182,15 +1184,17 @@
 }
 
 .cozyLobbyTitle {
+  font-family: 'Nunito', sans-serif;
   font-size: clamp(34px, 5vw, 64px);
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .cozyLobbySubtitle {
-  font-size: 13px;
-  color: rgba(226, 232, 240, 0.35);
-  font-weight: 400;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  color: rgba(226, 232, 240, 0.45);
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 

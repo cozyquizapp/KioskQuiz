@@ -1701,6 +1701,7 @@ useEffect(() => {
         </div>
       );
     }
+    const maxScore = entries.reduce((max, e) => Math.max(max, e.score ?? 0), 0);
     return (
       <div className={`beamer-scoreboard-grid${options?.className ? ` ${options.className}` : ''}`}>
         {entries.map((entry, idx) => {
@@ -1714,6 +1715,7 @@ useEffect(() => {
             score={entry.score ?? 0}
             detail={options?.detailMap?.[entry.id] ?? null}
             highlight={Boolean(options?.highlightTop && idx < 3)}
+            maxScore={maxScore}
           />
         );
         })}

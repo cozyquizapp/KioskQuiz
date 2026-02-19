@@ -1585,17 +1585,24 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         </p>
       )}
       <button
+        className={answerSubmitted ? 'team-submitted-glow' : ''}
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
+          background: answerSubmitted
+            ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.10))'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
           backdropFilter: 'blur(30px) saturate(200%) brightness(1.1)',
-          color: '#f8fafc',
-          boxShadow: canAnswer ? '0 4px 20px rgba(255,79,158,0.25), inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
-          border: canAnswer ? '1px solid rgba(255,79,158,0.5)' : '1px solid rgba(255,255,255,0.06)',
+          color: answerSubmitted ? '#86efac' : '#f8fafc',
+          boxShadow: answerSubmitted
+            ? '0 4px 20px rgba(34,197,94,0.25), inset 0 1px 1px rgba(255,255,255,0.1)'
+            : canAnswer ? '0 4px 20px rgba(255,79,158,0.25), inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
+          border: answerSubmitted
+            ? '1px solid rgba(34,197,94,0.5)'
+            : canAnswer ? '1px solid rgba(255,79,158,0.5)' : '1px solid rgba(255,255,255,0.06)',
           animation: canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
-          opacity: canAnswer ? 1 : 0.6,
+          opacity: canAnswer || answerSubmitted ? 1 : 0.6,
           transform: canAnswer ? undefined : 'scale(0.99)',
           position: 'relative',
           overflow: 'hidden',
@@ -1631,10 +1638,18 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           style={{
             position: 'relative',
             zIndex: 1,
-            fontWeight: 900
+            fontWeight: 900,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
           }}
         >
-          {t('send')}
+          {answerSubmitted ? (
+            <>
+              <span className="team-submitted-check" style={{ fontSize: 22 }}>&#10003;</span>
+              {language === 'de' ? 'Gesendet' : 'Sent'}
+            </>
+          ) : t('send')}
         </span>
         {hasTimer && remainingSeconds > 0 && (
           <span

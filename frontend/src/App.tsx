@@ -128,6 +128,7 @@ function App() {
           <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten_neu" element={<CreatorCanvasPage />} />
+          <Route path="/kanban-builder" element={<Navigate to="/baukasten_neu" replace />} />
 // ...existing code...
           <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/question-editor" element={<QuestionEditorPage />} />

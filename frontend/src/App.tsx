@@ -18,6 +18,7 @@ const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 // ...existing code...
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 const CreatorCanvasPage = React.lazy(() => import('./pages/CreatorCanvasPage'));
+const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -128,7 +129,7 @@ function App() {
           <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten_neu" element={<CreatorCanvasPage />} />
-          <Route path="/kanban-builder" element={<Navigate to="/baukasten_neu" replace />} />
+          <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
 // ...existing code...
           <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/question-editor" element={<QuestionEditorPage />} />

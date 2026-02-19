@@ -1368,6 +1368,7 @@
   height: 360px;
   border-radius: 24px;
   border: 2px solid rgba(99, 102, 241, 0.25);
+  animation: qr-pulse 2.5s ease-in-out infinite;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
   backdrop-filter: blur(20px);
   box-shadow:

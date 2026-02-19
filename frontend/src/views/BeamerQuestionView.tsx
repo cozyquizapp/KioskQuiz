@@ -157,7 +157,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
           <div style={isTimeUp ? { ...pill, background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#fecdd3' } : pill}>{statusLabel}</div>
         </div>
 
-        <h1 style={titleStyle}>{questionText ?? t.waitingForQuestion}</h1>
+        <h1 style={titleStyle} className="beamer-question-text">{questionText ?? t.waitingForQuestion}</h1>
 
         {hasTimer && (
           <div style={barOuter}>

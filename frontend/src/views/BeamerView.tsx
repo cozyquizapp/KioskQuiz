@@ -1432,7 +1432,9 @@ useEffect(() => {
       color: '#e2e8f0',
       overflow: 'hidden',
       padding: '20px 18px',
-      fontFamily: 'var(--font)'
+      fontFamily: 'var(--font)',
+      display: 'flex',
+      flexDirection: 'column',
     }),
     []
   );
@@ -3980,12 +3982,16 @@ const beamerAurora = (color: string): React.CSSProperties => ({
 const beamerShell: React.CSSProperties = {
   position: 'relative',
   maxWidth: 1380,
+  width: '100%',
   margin: '0 auto',
   padding: '0 16px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: 12
+  gap: 12,
+  flex: 1,
+  minHeight: 0,
+  overflow: 'hidden',
 };
 const offlineBar = (
   status: 'connecting' | 'connected' | 'disconnected',

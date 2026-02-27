@@ -2098,7 +2098,7 @@ useEffect(() => {
         <div className="beamer-label">
           {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }} className="stagger-container">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }} className="stagger-container">
           {teamsWithAnswers.map((team, idx) => {
             const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
             const accentColor = colors[idx % colors.length];
@@ -2106,59 +2106,24 @@ useEffect(() => {
             return (
               <div
                 key={`team-answer-${team.id}-${idx}`}
-                className="card-3d glass-reflective shimmer-card hover-spring"
                 style={{
-                  padding: '16px 18px',
-                  borderRadius: 14,
-                  border: `2px solid ${accentColor}33`,
-                  borderLeft: `5px solid ${accentColor}`,
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: `1px solid ${accentColor}44`,
+                  borderLeft: `4px solid ${accentColor}`,
                   color: '#e2e8f0',
+                  background: `${accentColor}0d`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
                   willChange: 'transform, opacity',
-                  cursor: 'default',
-                  boxShadow: `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 40px ${accentColor}55, 0 12px 40px rgba(0,0,0,0.4)`;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${accentColor}22, 0 4px 12px rgba(0,0,0,0.3)`;
+                  animation: `beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                  animationDelay: `${idx * 60}ms`,
+                  animationFillMode: 'backwards'
                 }}
               >
-                {/* Accent glow bar */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
-                  opacity: 0.6
-                }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <span style={{ 
-                    fontSize: 16, 
-                    fontWeight: 700, 
-                    color: accentColor, 
-                    textShadow: `0 0 10px ${accentColor}88` 
-                  }}>●</span>
-                  <strong style={{ 
-                    color: accentColor, 
-                    fontSize: 16, 
-                    fontWeight: 800,
-                    letterSpacing: '0.3px'
-                  }}>{team.name || team.id}</strong>
-                </div>
-                <div style={{ 
-                  fontSize: 14, 
-                  color: '#e2e8f0', 
-                  lineHeight: 1.6, 
-                  wordBreak: 'break-word', 
-                  paddingLeft: 26,
-                  fontWeight: 500
-                }}>
+                <strong style={{ color: accentColor, fontSize: 13, fontWeight: 800 }}>{team.name || team.id}</strong>
+                <div style={{ fontSize: 13, color: '#e2e8f0', wordBreak: 'break-word', lineHeight: 1.4 }}>
                   {answerText}
                 </div>
               </div>
@@ -3015,6 +2980,8 @@ useEffect(() => {
         return null;
       };
 
+      const hasSubmissions = teamStatus?.some(t => t.submitted) ?? false;
+      const compactQuestion = hasSubmissions || phase === 'reveal';
       return (
         <BeamerFrame
           {...baseFrameProps}
@@ -3026,7 +2993,7 @@ useEffect(() => {
           footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          <div className="cozyQuestionGrid cozyQuestionGridSolo">
+          <div className={`cozyQuestionGrid cozyQuestionGridSolo${compactQuestion ? ' has-submissions' : ''}`}>
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase !== 'reveal' && (
@@ -3097,7 +3064,6 @@ useEffect(() => {
             </div>
           </div>
           {phase === 'reveal' && renderTeamAnswersSection()}
-          {phase === 'reveal' && renderRevealResultsSection()}
           {phase === 'reveal' && renderTop5Solution()}
         </BeamerFrame>
       );

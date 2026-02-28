@@ -1240,7 +1240,7 @@
 .cozyLobbyTeams {
   border-radius: 20px;
   border: 2px solid #d1d5db;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;

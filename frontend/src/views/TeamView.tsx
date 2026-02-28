@@ -3373,7 +3373,29 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     const joinDisabled = !roomCode || !teamName.trim() || joinPending || (avatarsEnabled && !avatarId);
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
-      <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+        <h3 style={{ ...heading, marginBottom: 0 }}>{t('joinWelcome')}</h3>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {(['de', 'en'] as const).map((lang) => (
+            <button
+              key={lang}
+              onClick={() => updateLanguage(lang)}
+              title={lang === 'de' ? 'Deutsch' : 'English'}
+              style={{
+                width: 36, height: 36, borderRadius: 10, border: '2px solid',
+                borderColor: language === lang ? accentColor : '#e5e7eb',
+                background: language === lang ? `${accentColor}18` : '#f9fafb',
+                cursor: 'pointer', fontSize: 20, lineHeight: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 0, transition: 'all 0.18s ease',
+                boxShadow: language === lang ? `0 2px 0 ${accentColor}66` : '0 2px 0 #e5e7eb'
+              }}
+            >
+              {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+            </button>
+          ))}
+        </div>
+      </div>
       <p style={mutedText}>{avatarsEnabled ? 'Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe, dann geht\'s los!' : 'Gib deinen Teamnamen ein, wähle eine Teamfarbe und dann geht\'s los!'}</p>
       
       {/* Hidden hints for screen readers */}
@@ -4057,7 +4079,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             )}
           </div>
 
-          {/* Status — right side */}
+          {/* Status + language — right side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <span style={{
               width: 10,
@@ -4080,6 +4102,23 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 fontSize: 13
               }}>🔒</span>
             )}
+            <button
+              onClick={() => updateLanguage(language === 'de' ? 'en' : 'de')}
+              title={language === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
+              style={{
+                background: 'rgba(255,255,255,0.22)',
+                border: '1px solid rgba(255,255,255,0.35)',
+                borderRadius: 8,
+                padding: '2px 6px',
+                cursor: 'pointer',
+                fontSize: 18,
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              {language === 'de' ? '🇩🇪' : '🇬🇧'}
+            </button>
           </div>
         </header>
 

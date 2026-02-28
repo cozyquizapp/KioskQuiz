@@ -1752,7 +1752,6 @@ useEffect(() => {
     return (
       <div className="cozyLobbyShell">
         <div className="cozyLobbyHeader">
-          <img src="/logo.png?v=3" alt="Cozy Wolf" />
           <div>
             <div className="cozyLobbyTitle">{titleText}</div>
             <div className="cozyLobbySubtitle">{subtitleText}</div>

@@ -33,11 +33,11 @@ export const pageStyleTeam: CSSProperties = {
   boxSizing: 'border-box',
   color: 'white',
   background: `
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(251,191,36,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(139,92,246,0.45) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 80% at 15% 80%, rgba(109,40,217,0.3) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 85% 80%, rgba(109,40,217,0.3) 0%, transparent 50%),
-    #09061a
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(251,191,36,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(139,92,246,0.38) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 15% 80%, rgba(109,40,217,0.25) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 80%, rgba(109,40,217,0.25) 0%, transparent 50%),
+    #0f0d22
   `,
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
@@ -183,16 +183,17 @@ export const pillLabel: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 'clamp(5px, 1.5vw, 8px)',
-  padding: 'clamp(9px, 2vw, 10px) clamp(12px, 3vw, 14px)',
+  padding: 'clamp(8px, 2vw, 10px) clamp(12px, 3vw, 14px)',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.01)',
+  background: 'rgba(255,255,255,0.05)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(99, 102, 241, 0.22)',
-  fontSize: 'clamp(14px, 3vw, 15px)',
-  letterSpacing: '0.14em',
+  borderColor: 'rgba(139, 92, 246, 0.35)',
+  fontSize: 'clamp(16px, 3.5vw, 18px)',
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  fontWeight: 800,
+  fontWeight: 700,
+  color: 'rgba(255,255,255,0.9)',
   marginBottom: 8
 };
 
@@ -213,10 +214,10 @@ export const heading: CSSProperties = {
 };
 
 export const mutedText: CSSProperties = {
-  color: 'var(--muted)',
+  color: 'rgba(203,213,225,0.9)',
   marginTop: 0,
   marginBottom: 12,
-  fontSize: 'clamp(16px, 3.5vw, 18px)',
+  fontSize: 'clamp(17px, 4vw, 20px)',
   lineHeight: 1.5
 };
 

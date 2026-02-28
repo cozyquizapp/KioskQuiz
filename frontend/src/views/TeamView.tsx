@@ -3723,29 +3723,38 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       </div>}
       {/* Team Color Picker */}
       <div style={{ marginTop: 16, marginBottom: 4 }}>
-        <div style={{ ...pillLabel, marginBottom: 10 }}>Teamfarbe wählen</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ ...pillLabel, marginBottom: 12 }}>
+          {language === 'de' ? 'Teamfarbe wählen' : 'Choose team color'}
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
           {TEAM_COLORS.map((c) => (
             <button
               key={c.value}
               title={c.label}
+              aria-label={`Teamfarbe ${c.label}`}
+              aria-pressed={selectedColor === c.value}
               onClick={() => {
                 setSelectedColor(c.value);
                 localStorage.setItem('teamSelectedColor', c.value);
               }}
               style={{
-                width: 38,
-                height: 38,
+                width: 52,
+                height: 52,
                 borderRadius: '50%',
                 background: c.value,
-                border: selectedColor === c.value ? '3px solid white' : '3px solid transparent',
+                border: selectedColor === c.value ? '4px solid white' : '4px solid transparent',
                 outline: selectedColor === c.value ? `3px solid ${c.value}` : 'none',
-                outlineOffset: 2,
+                outlineOffset: 3,
                 cursor: 'pointer',
-                boxShadow: selectedColor === c.value ? `0 0 16px ${c.value}` : '0 2px 8px rgba(0,0,0,0.4)',
+                boxShadow: selectedColor === c.value
+                  ? `0 0 0 3px white, 0 0 20px ${c.value}99, 0 4px 12px rgba(0,0,0,0.4)`
+                  : '0 3px 8px rgba(0,0,0,0.45)',
                 transition: 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transform: selectedColor === c.value ? 'scale(1.2)' : 'scale(1)',
-                padding: 0
+                transform: selectedColor === c.value ? 'scale(1.18)' : 'scale(1)',
+                padding: 0,
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                flexShrink: 0,
               }}
             />
           ))}

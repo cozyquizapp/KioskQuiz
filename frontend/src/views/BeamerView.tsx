@@ -416,7 +416,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
-  const [avatarsEnabled, setAvatarsEnabled] = useState(true);
+  const [avatarsEnabled, setAvatarsEnabled] = useState(false);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   

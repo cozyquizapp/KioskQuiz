@@ -432,7 +432,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
-  const [avatarsEnabled, setAvatarsEnabled] = useState(true);
+  const [avatarsEnabled, setAvatarsEnabled] = useState(false);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
@@ -3443,11 +3443,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   ];
 
   function renderNotJoined() {
-    const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
+    const joinDisabled = !roomCode || !teamName.trim() || joinPending || (avatarsEnabled && !avatarId);
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
       <h3 style={{ ...heading, marginBottom: 8 }}>{t('joinWelcome')}</h3>
-      <p style={mutedText}>Gib deinen Teamnamen ein, wähle einen Begleiter für euer Team, bestätige und dann gehts los!</p>
+      <p style={mutedText}>{avatarsEnabled ? 'Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe, dann geht\'s los!' : 'Gib deinen Teamnamen ein, wähle eine Teamfarbe und dann geht\'s los!'}</p>
       
       {/* Hidden hints for screen readers */}
       <div id="team-name-hint" style={{ display: 'none' }}>
@@ -3489,7 +3489,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
         }}
       />
-      <div style={{ marginTop: 12 }}>
+      {avatarsEnabled && <div style={{ marginTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 0 }}>
           <div style={{ ...pillLabel }}>{t('avatarTitle')}</div>
           <button
@@ -3717,7 +3717,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             </div>
           )}
         </div>
-      </div>
+      </div>}
       {/* Team Color Picker */}
       <div style={{ marginTop: 16, marginBottom: 4 }}>
         <div style={{ ...pillLabel, marginBottom: 10 }}>Teamfarbe wählen</div>

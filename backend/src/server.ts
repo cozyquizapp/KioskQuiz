@@ -1858,7 +1858,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       validationWarnings: [],
       nextStage: null,
       scoreboardOverlayForced: false,
-      avatarsEnabled: true,
+      avatarsEnabled: false,
       halftimeTriggered: false,
       finalsTriggered: false,
       statsAnswerTimings: new Map(),

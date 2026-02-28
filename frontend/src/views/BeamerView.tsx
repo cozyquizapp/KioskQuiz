@@ -2906,6 +2906,64 @@ useEffect(() => {
         ? englishText || germanText || ''
         : germanText || englishText || '';
 
+    const renderRevealAnswersList = (): JSX.Element => {
+      const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
+      const label = language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Answers' : 'Team answers';
+      const formatAnswer = (answer: any): string => {
+        if (answer === null || answer === undefined) return '–';
+        if (typeof answer === 'string') return answer;
+        if (typeof answer === 'number') return String(answer);
+        if (Array.isArray(answer)) return answer.join(', ');
+        if (typeof answer === 'object' && 'order' in answer && Array.isArray(answer.order)) return answer.order.join(' → ');
+        return JSON.stringify(answer);
+      };
+      if (answerResults?.length) {
+        return (
+          <>
+            <div className="cozyRevealAnswersLabel">{label}</div>
+            {answerResults.map((entry, idx) => {
+              const isCorrect = entry.isCorrect === true;
+              const accentColor = isCorrect ? '#22c55e' : entry.isCorrect === false ? '#ef4444' : colors[idx % colors.length];
+              return (
+                <div
+                  key={`reveal-ans-${entry.teamId}-${idx}`}
+                  className="cozyRevealAnswerRow"
+                  style={{ borderLeftColor: accentColor, animationDelay: `${idx * 70}ms` }}
+                >
+                  <div className="cozyRevealAnswerTop">
+                    <span className="cozyRevealAnswerTeam" style={{ color: accentColor }}>{entry.teamName || entry.teamId}</span>
+                    <span className="cozyRevealAnswerResult" style={{ color: accentColor }}>{isCorrect ? '✓' : entry.isCorrect === false ? '✗' : '–'}</span>
+                  </div>
+                  <div className="cozyRevealAnswerText">{formatAnswer(entry.answer)}</div>
+                </div>
+              );
+            })}
+          </>
+        );
+      }
+      const teamsWithAnswers = (teamStatus ?? []).filter(t => t.answer !== undefined);
+      return (
+        <>
+          <div className="cozyRevealAnswersLabel">{label}</div>
+          {teamsWithAnswers.map((team, idx) => {
+            const accentColor = colors[idx % colors.length];
+            return (
+              <div
+                key={`reveal-ans-${team.id}-${idx}`}
+                className="cozyRevealAnswerRow"
+                style={{ borderLeftColor: accentColor, animationDelay: `${idx * 70}ms` }}
+              >
+                <div className="cozyRevealAnswerTop">
+                  <span className="cozyRevealAnswerTeam" style={{ color: accentColor }}>{team.name || team.id}</span>
+                </div>
+                <div className="cozyRevealAnswerText">{formatTeamAnswer(team.answer)}</div>
+              </div>
+            );
+          })}
+        </>
+      );
+    };
+
     const renderQuestionFrameCozy = (phase: 'active' | 'locked' | 'reveal') => {
       const promptText = getQuestionPromptText();
       const mediaUrl =
@@ -2980,8 +3038,7 @@ useEffect(() => {
         return null;
       };
 
-      const hasSubmissions = teamStatus?.some(t => t.submitted) ?? false;
-      const compactQuestion = hasSubmissions || phase === 'reveal';
+      const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
       return (
         <BeamerFrame
           {...baseFrameProps}
@@ -2993,7 +3050,7 @@ useEffect(() => {
           footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          <div className={`cozyQuestionGrid cozyQuestionGridSolo${compactQuestion ? ' has-submissions' : ''}`}>
+          <div className={`cozyQuestionGrid ${phase === 'reveal' ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase !== 'reveal' && (
@@ -3062,8 +3119,12 @@ useEffect(() => {
                 </div>
               )}
             </div>
+            {phase === 'reveal' && (
+              <div className="cozyRevealAnswersPanel">
+                {renderRevealAnswersList()}
+              </div>
+            )}
           </div>
-          {phase === 'reveal' && renderTeamAnswersSection()}
           {phase === 'reveal' && renderTop5Solution()}
         </BeamerFrame>
       );

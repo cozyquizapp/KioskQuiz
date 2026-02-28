@@ -1427,6 +1427,101 @@
   grid-template-columns: 1fr;
 }
 
+/* Reveal: vertical split — question left, answers right */
+.cozyQuestionGrid.phase-reveal {
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cozyQuestionGrid.phase-reveal .cozyQuestionHero {
+  padding: 20px 24px;
+  gap: 14px;
+  animation: revealSlideLeft 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.cozyQuestionGrid.phase-reveal .cozyQuestionText {
+  font-size: clamp(18px, 2.6vw, 34px);
+  text-align: left;
+}
+
+/* Right panel: team answers */
+.cozyRevealAnswersPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+  animation: revealSlideRight 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.cozyRevealAnswersLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(226, 232, 240, 0.45);
+  font-weight: 800;
+  flex-shrink: 0;
+  padding: 0 2px 4px;
+}
+
+.cozyRevealAnswerRow {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 4px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  animation: revealAnswerRow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.cozyRevealAnswerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cozyRevealAnswerTeam {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cozyRevealAnswerResult {
+  font-size: 16px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.cozyRevealAnswerText {
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.7);
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+@keyframes revealSlideLeft {
+  from { transform: translateX(18%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+
+@keyframes revealSlideRight {
+  from { transform: translateX(-18%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes revealAnswerRow {
+  from { transform: translateX(12px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
 .cozyCategoryRail {
   display: flex;
   flex-direction: column;

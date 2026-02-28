@@ -386,33 +386,63 @@ select:hover:not(:focus) {
 }
 
 /* ========================================
-   BEAMER CONTAINER OPTIMIZATION
+   BEAMER — LIGHT, PROJECTOR-OPTIMIZED
    ======================================== */
-main[class*="cozy-beamer-shell"] {
-  /* Ensure beamer content is sharp and readable */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  backface-visibility: hidden;
-  perspective: 1000px;
+
+/* Override dark body background for beamer */
+.cozy-beamer-shell {
+  background: #f0f2f5 !important;
+  min-height: 100vh;
+  position: relative;
+  z-index: 0;
 }
 
-/* Beamer text should be ultra-crisp */
+/* Kill the dark body::before/after purple gradients behind beamer */
+.cozy-beamer-shell ~ body::before,
+.cozy-beamer-shell ~ body::after {
+  display: none;
+}
+
+/* Also suppress them via body when beamer shell is present */
+body:has(.cozy-beamer-shell)::before,
+body:has(.cozy-beamer-shell)::after {
+  display: none;
+}
+
+/* Kill the film grain on beamer (dark noise on white = pointless) */
+.cozy-beamer-shell::before {
+  display: none !important;
+}
+
+/* Fix heading gradient — on light bg the white gradient is invisible */
+.cozy-beamer-shell h1,
+.cozy-beamer-shell h2 {
+  background: none !important;
+  -webkit-text-fill-color: #111827 !important;
+  color: #111827 !important;
+  letter-spacing: 0.02em;
+}
+
+main[class*="cozy-beamer-shell"] {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Beamer text crisp and large */
 .beamer-intro-card,
 .beamer-card,
 .beamer-question-text,
 .beamer-label {
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
-  letter-spacing: 0.02em;
 }
 
-/* Maximum contrast for projectors */
+/* Max contrast for projectors */
 .beamer-intro-card h2,
 .beamer-intro-card p,
 .beamer-question-text {
-  font-weight: 900;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: #111827;
 }
 
 @keyframes cozy-breathe {

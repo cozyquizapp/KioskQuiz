@@ -32,7 +32,13 @@ export const pageStyleTeam: CSSProperties = {
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
   color: 'white',
-  background: 'radial-gradient(ellipse 140% 90% at 50% -5%, #3b1569 0%, #1c0b45 30%, #0e0a2a 55%, #080617 100%)',
+  background: `
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(251,191,36,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(139,92,246,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 15% 80%, rgba(109,40,217,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 85% 80%, rgba(109,40,217,0.3) 0%, transparent 50%),
+    #09061a
+  `,
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
   WebkitFontSmoothing: 'antialiased',
@@ -157,18 +163,18 @@ export const metaChip: CSSProperties = {
 };
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(20, 10, 50, 0.75)',
-  padding: 'clamp(18px, 5vw, 24px) clamp(18px, 5vw, 22px)',
-  borderRadius: theme.radius,
-  borderWidth: 0,
-  borderStyle: 'solid',
-  borderColor: 'transparent',
-  borderTop: '2px solid rgba(167, 139, 250, 0.55)',
+  background: 'rgba(10, 5, 30, 0.55)',
+  padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
+  borderRadius: 16,
+  borderTop: '1px solid rgba(251,191,36,0.25)',
+  borderLeft: '1px solid rgba(139,92,246,0.15)',
+  borderRight: '1px solid rgba(139,92,246,0.15)',
+  borderBottom: '1px solid rgba(0,0,0,0.5)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: '0 0 0 1px rgba(139,92,246,0.22), 0 32px 64px rgba(0,0,0,0.6), 0 0 60px rgba(139,92,246,0.18)',
-  backdropFilter: 'blur(40px)',
+  boxShadow: '0 40px 80px rgba(0,0,0,0.7), 0 0 80px rgba(139,92,246,0.12), inset 0 1px 0 rgba(251,191,36,0.15)',
+  backdropFilter: 'blur(30px)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -194,15 +200,16 @@ export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
   fontFamily: "'Rajdhani', var(--font)",
-  fontSize: 'clamp(28px, 8vw, 40px)',
-  lineHeight: 1.1,
-  letterSpacing: '0.02em',
+  fontSize: 'clamp(32px, 9vw, 48px)',
+  lineHeight: 1.0,
+  letterSpacing: '0.03em',
   fontWeight: 700,
-  background: 'linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #a78bfa 70%, #7c3aed 100%)',
+  textTransform: 'uppercase',
+  background: 'linear-gradient(160deg, #ffffff 0%, #fde68a 35%, #c4b5fd 70%, #a78bfa 100%)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
   backgroundClip: 'text',
-  filter: 'drop-shadow(0 0 20px rgba(139,92,246,0.5))',
+  filter: 'drop-shadow(0 2px 24px rgba(251,191,36,0.4))',
 };
 
 export const mutedText: CSSProperties = {
@@ -267,21 +274,26 @@ export const primaryButton: CSSProperties = {
 
 export const choiceButton: CSSProperties = {
   flex: 1,
-  background: 'rgba(109,66,193,0.18)',
-  border: '2px solid rgba(167,139,250,0.35)',
-  color: '#ede9fe',
-  borderRadius: theme.radius,
-  padding: 'clamp(18px, 4.5vw, 20px) clamp(16px, 4.5vw, 18px)',
+  background: 'rgba(30, 15, 70, 0.7)',
+  border: '1px solid rgba(139,92,246,0.25)',
+  borderBottom: '3px solid rgba(80,30,180,0.6)',
+  color: '#f0e8ff',
+  borderRadius: 12,
+  padding: 'clamp(20px, 5vw, 24px) clamp(14px, 4vw, 18px)',
   cursor: 'pointer',
-  fontWeight: 800,
-  fontSize: 'max(16px, clamp(17px, 3.8vw, 20px))',
-  minHeight: 'clamp(60px, 15vw, 72px)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 24px rgba(0,0,0,0.4), 0 0 0 0 rgba(139,92,246,0)',
+  fontFamily: "'Rajdhani', var(--font)",
+  fontWeight: 700,
+  fontSize: 'max(17px, clamp(18px, 4.2vw, 22px))',
+  letterSpacing: '0.04em',
+  minHeight: 'clamp(64px, 16vw, 80px)',
+  boxShadow: '0 6px 0 rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.45)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
-  transition: 'all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  transition: 'all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1)',
   transform: 'translateZ(0)',
-  touchAction: 'manipulation'
+  touchAction: 'manipulation',
+  textAlign: 'left',
+  backdropFilter: 'blur(10px)',
 };
 
 export const progressOuter = (color: string): CSSProperties => ({
@@ -318,19 +330,15 @@ export const progressKnob = (color: string): CSSProperties => ({
 
 export const questionShell: CSSProperties = {
   position: 'relative',
-  padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 20px) clamp(16px, 4vw, 22px)',
+  padding: 'clamp(8px, 3vw, 14px) 0 clamp(12px, 3vw, 16px)',
   margin: '0 auto',
-  borderRadius: 22,
-  borderWidth: 0,
-  borderStyle: 'solid',
-  borderTop: '2px solid rgba(167,139,250,0.5)',
-  background: 'rgba(20, 10, 48, 0.88)',
-  overflow: 'hidden',
-  boxShadow: '0 0 0 1px rgba(139,92,246,0.20), 0 24px 56px rgba(0,0,0,0.6), 0 0 48px rgba(109,40,217,0.2)',
-  backdropFilter: 'blur(20px)',
+  borderRadius: 0,
+  borderBottom: '1px solid rgba(251,191,36,0.2)',
+  background: 'transparent',
+  overflow: 'visible',
   width: '100%',
   maxWidth: 720,
-  transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+  transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 
 export const gradientHalo: CSSProperties = {

@@ -1799,6 +1799,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               <button
                 key={statement.id}
                 type="button"
+                data-choice-letter={statement.id}
                 className={`team-choice shimmer-card hover-spring btn-ripple${selected ? ' is-selected' : ''}`}
                 onClick={() => setBunteOneChoice(statement.id)}
                 disabled={!canAnswer}
@@ -1810,11 +1811,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   color: '#e2e8f0',
                   cursor: canAnswer ? 'pointer' : 'not-allowed',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  paddingLeft: 'calc(44px + 14px)'
                 }}
               >
-                <span style={{ fontWeight: 800, marginRight: 6 }}>{statement.id}</span>
-                <span>{statement.text}</span>
+                {statement.text}
               </button>
             );
           })}
@@ -1964,6 +1965,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             {q.options.map((opt, idx) => (
               <button
                 key={idx}
+                data-choice-letter={['A','B','C','D','E'][idx]}
                 className={`team-choice shimmer-card hover-spring btn-ripple${answer === String(idx) ? ' is-selected' : ''}`}
                 style={{
                   ...choiceButton,
@@ -1972,7 +1974,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   color: '#e2e8f0',
                   boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  paddingLeft: 'calc(44px + 14px)'
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}

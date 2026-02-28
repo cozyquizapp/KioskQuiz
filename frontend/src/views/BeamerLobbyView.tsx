@@ -31,52 +31,32 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
   const activeCategory = categories[highlightedCategoryIndex] ?? categories[0];
   const activeLabel = activeCategory ? getCategoryLabel(activeCategory, language) : '';
   const activeDesc = activeCategory ? getCategoryDescription(activeCategory, language) : '';
-  const activeColor = activeCategory ? categoryColors[activeCategory] ?? '#f3c367' : '#f3c367';
+  const activeColor = activeCategory ? categoryColors[activeCategory] ?? '#1565C0' : '#1565C0';
   const activeIcon = activeCategory ? categoryIcons[activeCategory] : undefined;
 
   return (
     <div style={shellSingle}>
-      <div
-        style={{
-          ...heroPanel,
-          background: 'rgba(255,255,255,0.002)',
-          color: '#e2e8f0',
-          border: `1px solid rgba(255,255,255,0.08)`,
-          boxShadow: `inset 0 1px 1px rgba(255,255,255,0.05)`,
-          backdropFilter: 'blur(50px)'
-        }}
-      >
-        <p style={{ ...eyebrow }}>{language === 'de' ? 'Eure Kategorien' : 'Your categories'}</p>
-        <h1 style={{ ...heroTitle }}>{t.lobbySubtitle}</h1>
+      <div style={heroPanel}>
+        <p style={eyebrow}>{language === 'de' ? 'Eure Kategorien' : 'Your categories'}</p>
+        <h1 style={heroTitle}>{t.lobbySubtitle}</h1>
 
-        <div
-          style={{
-            ...activeCard,
-            borderColor: `rgba(255,255,255,0.08)`,
-            boxShadow: `inset 0 1px 1px rgba(255,255,255,0.05)`,
-            background: 'rgba(255,255,255,0.001)',
-            color: '#e2e8f0',
-            backdropFilter: 'blur(40px)'
-          }}
-        >
+        <div style={activeCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {activeIcon && <img src={activeIcon} alt={activeLabel} style={activeIconStyle} />}
             <div>
-              <div style={{ ...pill, background: `${activeColor}33`, borderColor: `${activeColor}55`, color: '#ffffff' }}>
+              <div style={{ ...pill, background: `${activeColor}22`, borderColor: `${activeColor}66`, color: activeColor }}>
                 {language === 'de' ? 'Kategorie' : 'Category'}
               </div>
-              <div style={{ ...activeLabelStyle, color: '#ffffff', textShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
-                {activeLabel}
-              </div>
+              <div style={activeLabelStyle}>{activeLabel}</div>
             </div>
           </div>
-          <div style={{ ...activeDescStyle, fontSize: 20, lineHeight: 1.5, color: '#e2e8f0' }}>{activeDesc}</div>
+          <div style={activeDescStyle}>{activeDesc}</div>
         </div>
 
         <div style={categoryList}>
           {categories.map((cat, index) => {
             const isActive = index === highlightedCategoryIndex;
-            const color = categoryColors[cat] ?? '#1e293b';
+            const color = categoryColors[cat] ?? '#1565C0';
             const used = categoryProgress[cat] ?? 0;
             const total = categoryTotals[cat] ?? 5;
             const icon = categoryIcons[cat];
@@ -86,32 +66,37 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
                 key={cat}
                 style={{
                   ...categoryRow,
-                  borderColor: isActive ? `rgba(255,255,255,0.15)` : `rgba(255,255,255,0.05)`,
-                  background: isActive ? `rgba(255,255,255,0.05)` : `rgba(255,255,255,0.01)`,
-                  boxShadow: isActive ? `inset 0 1px 1px rgba(255,255,255,0.1)` : 'inset 0 1px 1px rgba(255,255,255,0.03)',
+                  borderColor: isActive ? color : '#e5e7eb',
+                  borderLeftColor: color,
+                  background: isActive ? `${color}10` : '#f9fafb',
+                  boxShadow: isActive ? `0 3px 0 ${color}` : '0 2px 0 #e5e7eb',
                   transform: isActive ? 'scale(1.02)' : 'scale(1)',
                   transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
-                  backdropFilter: 'blur(40px)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ ...categorySwatch, background: color }} />
-                  <div style={{ ...iconCircle, boxShadow: `0 10px 20px ${color}30` }}>
+                  <div style={{ ...iconCircle, boxShadow: `0 3px 0 ${color}44` }}>
                     {icon ? <img src={icon} alt={cat} style={iconImg} /> : <span>?</span>}
                   </div>
                   <div>
-                    <div style={{ ...categoryTitle, color: '#ffffff' }}>{getCategoryLabel(cat, language)}</div>
+                    <div style={{ ...categoryTitle, color: isActive ? color : '#111827' }}>
+                      {getCategoryLabel(cat, language)}
+                    </div>
                   </div>
                 </div>
                 <div style={progressWrap}>
-                  <div
-                    style={{
-                      ...progressBar,
-                      width: `${(Math.min(used, total) / total) * 100}%`,
-                      background: isActive ? '#0d0f14' : color,
-                      boxShadow: `0 0 12px ${color}40`
-                    }}
-                  />
+                  <div style={{ ...progressTrack }}>
+                    <div
+                      style={{
+                        ...progressBar,
+                        width: `${(Math.min(used, total) / total) * 100}%`,
+                        background: color,
+                      }}
+                    />
+                  </div>
+                  <span style={{ ...progressLabel, color: isActive ? color : '#6b7280' }}>
+                    {used}/{total}
+                  </span>
                 </div>
               </div>
             );
@@ -126,111 +111,91 @@ const shellSingle: React.CSSProperties = {
   width: '100%',
   display: 'flex',
   justifyContent: 'center',
-  alignItems: 'center'
+  alignItems: 'flex-start',
 };
 
 const heroPanel: React.CSSProperties = {
-  padding: 18,
+  width: '100%',
+  padding: '16px 20px',
   borderRadius: 20,
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow: '0 22px 52px rgba(0,0,0,0.45)',
-  backdropFilter: 'blur(14px)'
+  background: '#ffffff',
+  border: '2px solid #d1d5db',
+  boxShadow: '0 4px 0 #d1d5db',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
 };
 
 const heroTitle: React.CSSProperties = {
-  margin: '6px 0 12px',
-  fontSize: 28,
-  lineHeight: 1.3
+  margin: '0 0 4px',
+  fontFamily: 'var(--font-game)',
+  fontSize: 'clamp(28px, 3.5vw, 48px)',
+  fontWeight: 700,
+  letterSpacing: '0.02em',
+  color: '#111827',
 };
 
 const eyebrow: React.CSSProperties = {
   margin: 0,
+  fontFamily: 'var(--font-game)',
   textTransform: 'uppercase',
-  letterSpacing: '0.2em',
-  fontSize: 12,
-  color: 'rgba(255,255,255,0.7)'
-};
-
-const chipsRow: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 8,
-  marginTop: 8
-};
-
-const statusChip: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '8px 10px',
-  borderRadius: 999,
-  background: 'rgba(0,0,0,0.4)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  fontSize: 12,
-  fontWeight: 700
+  letterSpacing: '0.18em',
+  fontSize: 13,
+  fontWeight: 700,
+  color: '#6b7280',
 };
 
 const activeCard: React.CSSProperties = {
-  marginTop: 12,
-  padding: 14,
+  padding: 16,
   borderRadius: 14,
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)'
+  background: '#f9fafb',
+  border: '2px solid #e5e7eb',
+  boxShadow: '0 3px 0 #e5e7eb',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
 };
 
 const pill: React.CSSProperties = {
-  padding: '6px 10px',
+  padding: '4px 10px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  border: '1px solid',
   fontSize: 11,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
-  fontWeight: 800,
+  fontWeight: 700,
+  fontFamily: 'var(--font-game)',
   display: 'inline-flex',
-  marginBottom: 6
+  marginBottom: 6,
 };
 
 const activeLabelStyle: React.CSSProperties = {
-  fontSize: 28,
-  fontWeight: 900,
-  margin: '0 0 4px'
+  fontFamily: 'var(--font-game)',
+  fontSize: 'clamp(22px, 2.8vw, 36px)',
+  fontWeight: 700,
+  color: '#111827',
+  margin: '0 0 2px',
 };
 
 const activeDescStyle: React.CSSProperties = {
   margin: 0,
-  color: 'rgba(255,255,255,0.74)',
-  fontSize: 20,
-  lineHeight: 1.6
+  fontFamily: 'var(--font-game)',
+  color: '#374151',
+  fontSize: 18,
+  lineHeight: 1.5,
 };
 
 const activeIconStyle: React.CSSProperties = {
-  width: 72,
-  height: 72,
+  width: 64,
+  height: 64,
   objectFit: 'contain',
-  filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.35))'
-};
-
-const categoryPanel: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 20,
-  background: 'transparent',
-  border: 'none',
-  boxShadow: 'none',
-  backdropFilter: 'none'
-};
-
-const eyebrowSmall: React.CSSProperties = {
-  ...eyebrow,
-  fontSize: 11,
-  marginBottom: 8
+  flexShrink: 0,
 };
 
 const categoryList: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 10
+  gap: 8,
 };
 
 const categoryRow: React.CSSProperties = {
@@ -238,65 +203,64 @@ const categoryRow: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   gap: 10,
-  padding: '8px 10px',
-  borderRadius: 10,
-  border: '1px solid rgba(255,255,255,0.06)'
-};
-
-const categorySwatch: React.CSSProperties = {
-  width: 8,
-  height: 38,
-  borderRadius: 8
+  padding: '10px 14px',
+  borderRadius: 12,
+  border: '2px solid #e5e7eb',
+  borderLeft: '5px solid #1565C0',
 };
 
 const iconCircle: React.CSSProperties = {
-  width: 46,
-  height: 46,
-  borderRadius: '50%',
-  background: '#fff',
+  width: 40,
+  height: 40,
+  borderRadius: 10,
+  background: '#f3f4f6',
+  border: '2px solid #e5e7eb',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 10px 20px rgba(0,0,0,0.25)',
-  overflow: 'hidden'
+  overflow: 'hidden',
+  flexShrink: 0,
 };
 
 const iconImg: React.CSSProperties = {
-  width: 32,
-  height: 32,
-  objectFit: 'contain'
+  width: 28,
+  height: 28,
+  objectFit: 'contain',
 };
 
 const categoryTitle: React.CSSProperties = {
-  fontWeight: 800,
-  fontSize: 14,
-  marginBottom: 2
-};
-
-const categoryDesc: React.CSSProperties = {
-  fontSize: 11,
-  color: 'rgba(255,255,255,0.7)'
+  fontFamily: 'var(--font-game)',
+  fontWeight: 700,
+  fontSize: 18,
 };
 
 const progressWrap: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  minWidth: 120
+  minWidth: 100,
+};
+
+const progressTrack: React.CSSProperties = {
+  flex: 1,
+  height: 8,
+  borderRadius: 999,
+  background: '#e5e7eb',
+  overflow: 'hidden',
 };
 
 const progressBar: React.CSSProperties = {
-  height: 6,
+  height: '100%',
   borderRadius: 999,
-  background: '#22c55e',
-  flex: 1,
-  transition: 'width 0.2s ease',
-  boxShadow: '0 0 12px rgba(255,255,255,0.3)'
+  transition: 'width 0.3s ease',
 };
 
-const progressText: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 800
+const progressLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-game)',
+  fontSize: 14,
+  fontWeight: 700,
+  minWidth: 36,
+  textAlign: 'right',
 };
 
 export default BeamerLobbyView;

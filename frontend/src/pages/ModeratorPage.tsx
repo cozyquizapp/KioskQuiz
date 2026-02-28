@@ -2313,46 +2313,56 @@ function ModeratorPage(): React.ReactElement {
 
   const renderNextActionHint = () => {
     if (!nextActionHint) return null;
+    const actionMap: Record<string, { handler: () => void; busy: boolean; bg: string; shadow: string; hotkeyLabel: string }> = {
+      'WEITER':    { handler: handleNextQuestion,  busy: actionState.next,   bg: '#16a34a', shadow: '#15803d', hotkeyLabel: '[SPACE]' },
+      'START':     { handler: handleNextQuestion,  busy: actionState.next,   bg: '#16a34a', shadow: '#15803d', hotkeyLabel: '[SPACE]' },
+      'SPERREN':   { handler: handleLockQuestion,  busy: actionState.lock,   bg: '#d97706', shadow: '#b45309', hotkeyLabel: '[2]' },
+      'AUFDECKEN': { handler: handleReveal,        busy: actionState.reveal, bg: '#b45309', shadow: '#92400e', hotkeyLabel: '[3]' },
+    };
+    const action = actionMap[nextActionHint.label];
+    const bg = action?.bg ?? '#1e3a5f';
+    const shadow = action?.shadow ?? '#0f2040';
+    const hotkeyLabel = action?.hotkeyLabel ?? `[${nextActionHint.hotkey}]`;
+    const busy = action?.busy ?? false;
     return (
-      <div
+      <button
+        onClick={busy ? undefined : (action?.handler ?? undefined)}
+        disabled={busy}
         style={{
-          display: 'grid',
-          gap: 8,
-          padding: 18,
-          borderRadius: 18,
-          border: '1px solid rgba(96,165,250,0.55)',
-          background: 'linear-gradient(135deg, rgba(37,99,235,0.22), rgba(15,23,42,0.92))',
-          boxShadow: '0 18px 40px rgba(15,23,42,0.45)',
           width: '100%',
-          maxWidth: 540,
-          minWidth: 0,
-          flex: '1 1 320px'
+          padding: '20px 22px',
+          borderRadius: 18,
+          border: 'none',
+          background: busy ? 'rgba(255,255,255,0.08)' : bg,
+          color: '#ffffff',
+          cursor: busy ? 'not-allowed' : 'pointer',
+          textAlign: 'left',
+          display: 'grid',
+          gap: 6,
+          boxShadow: busy ? 'none' : `0 6px 0 ${shadow}, 0 16px 32px rgba(0,0,0,0.35)`,
+          transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+          opacity: busy ? 0.65 : 1,
+          minHeight: 90
         }}
+        onMouseDown={(e) => { if (!busy) e.currentTarget.style.transform = 'translateY(3px)'; e.currentTarget.style.boxShadow = `0 3px 0 ${shadow}`; }}
+        onMouseUp={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 6px 0 ${shadow}, 0 16px 32px rgba(0,0,0,0.35)`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 6px 0 ${shadow}, 0 16px 32px rgba(0,0,0,0.35)`; }}
       >
-        <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>NÄCHSTER SCHRITT</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span
-            style={{
-              padding: '6px 10px',
-              borderRadius: 999,
-              background: 'rgba(99,229,255,0.12)',
-              border: '1px solid rgba(99,229,255,0.45)',
-              color: '#e0f2fe',
-              fontWeight: 800,
-              letterSpacing: '0.06em'
-            }}
-          >
-            Taste {nextActionHint.hotkey}
+        <div style={{ fontSize: 10, opacity: 0.7, letterSpacing: '0.18em', textTransform: 'uppercase' }}>NÄCHSTER SCHRITT</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ padding: '4px 10px', borderRadius: 8, background: 'rgba(0,0,0,0.25)', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', fontFamily: 'monospace', flexShrink: 0 }}>
+            {hotkeyLabel}
           </span>
-          <span style={{ fontWeight: 900, fontSize: 22 }}>{nextActionHint.label}</span>
+          <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: '0.02em' }}>
+            {busy ? `${nextActionHint.label} …` : nextActionHint.label}
+          </span>
         </div>
         {nextActionHint.context && (
-          <div style={{ fontSize: 12, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 12, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {nextActionHint.context}
           </div>
         )}
-        <div style={{ fontSize: 15, color: '#e2e8f0', lineHeight: 1.4 }}>{nextActionHint.detail}</div>
-      </div>
+      </button>
     );
   };
 
@@ -2492,17 +2502,19 @@ function ModeratorPage(): React.ReactElement {
     };
     const buttonConfigs: Array<{
       label: string;
+      hotkey: string;
       onClick: () => void;
       busy: boolean;
       tone: 'primary' | 'warning' | 'accent';
       disabled?: boolean;
     }> = singleActionMode
-      ? [{ label: 'Weiter', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' }]
+      ? [{ label: 'Weiter', hotkey: 'SPACE', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' }]
       : [
-          { label: 'Weiter', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
-          { label: 'Sperren', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
+          { label: 'Weiter', hotkey: 'SPACE', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
+          { label: 'Sperren', hotkey: '2', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
           {
             label: 'Aufdecken',
+            hotkey: '3',
             onClick: handleReveal,
             busy: actionState.reveal,
             tone: 'accent',
@@ -2510,12 +2522,19 @@ function ModeratorPage(): React.ReactElement {
           }
         ];
     const toneStyle = (tone: 'primary' | 'warning' | 'accent') => {
-      if (tone === 'primary') return { background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' };
+      if (tone === 'primary') return { background: 'var(--ui-button-success)', color: '#0b1020' };
       if (tone === 'warning') return { background: 'var(--ui-button-warning)', color: '#1f1305' };
       return { background: 'var(--ui-button-accent)', color: '#130924' };
     };
+    const adjustTimer = (delta: number) => {
+      const val = Math.max(5, Math.min(300, timerSeconds + delta));
+      setTimerSeconds(val);
+      localStorage.setItem('moderatorTimerSeconds', String(val));
+    };
+    const noAnswers = answersCount === 0 && normalizedGameState === 'Q_ACTIVE';
+    const connectedCount = connectedTeams || teamsCount || 0;
     return (
-      <section style={{ ...card, marginTop: 12 }}>
+      <section style={{ ...card, marginTop: 12, position: 'sticky', top: 0, zIndex: 10 }}>
         {(actionHintCard || answersPanel) && (
           <div
             style={{
@@ -2533,42 +2552,72 @@ function ModeratorPage(): React.ReactElement {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: 12
+            gridTemplateColumns: isMobile ? '1fr' : `repeat(${buttonConfigs.length}, 1fr)`,
+            gap: 10
           }}
         >
-          {buttonConfigs.map(({ label, onClick, busy, tone, disabled }) => (
+          {buttonConfigs.map(({ label, hotkey, onClick, busy, tone, disabled }) => (
             <button
               key={label}
               style={{
                 ...baseButtonStyle,
                 ...(toneStyle(tone) as React.CSSProperties),
-                opacity: busy || disabled ? 0.65 : 1,
-                cursor: busy || disabled ? 'not-allowed' : 'pointer'
+                opacity: busy || disabled ? 0.55 : 1,
+                cursor: busy || disabled ? 'not-allowed' : 'pointer',
+                padding: '18px 16px',
+                fontSize: 18,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                minHeight: 64
               }}
               onClick={busy || disabled ? undefined : onClick}
               disabled={busy || disabled}
             >
-              {busy ? `${label} ...` : label}
+              <span style={{ fontWeight: 900 }}>{busy ? `${label} …` : label}</span>
+              <span style={{ fontSize: 11, opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.06em' }}>[{hotkey}]</span>
             </button>
           ))}
         </div>
         <div
           style={{
-            marginTop: 12,
-            display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(150px, 1fr))' : 'repeat(auto-fit, minmax(180px, auto))',
+            marginTop: 10,
+            display: 'flex',
+            flexWrap: 'wrap',
             gap: 8,
             alignItems: 'center'
           }}
         >
-          <span style={statChip}>Antworten {answersCount}/{teamsCount || '0'}</span>
-          <span style={statChip}>Teams online {connectedTeams || teamsCount || 0}</span>
+          <span style={{
+            ...statChip,
+            ...(noAnswers ? { borderColor: 'rgba(239,68,68,0.6)', color: '#fca5a5', background: 'rgba(239,68,68,0.12)' } : {})
+          }}>
+            Antworten {answersCount}/{teamsCount || '0'}
+          </span>
+          <span style={statChip}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: connectedCount > 0 ? '#4ade80' : '#6b7280', display: 'inline-block', flexShrink: 0 }} />
+            {connectedCount} {connectedCount === 1 ? 'Team' : 'Teams'}
+          </span>
           {readyCount.total > 0 && (
             <span style={statChip}>Bereit {readyCount.ready}/{readyCount.total}</span>
           )}
-          <span style={statChip}>
-            Timer (s)
+          {questionTimerSecondsLeft !== null && (
+            <span style={{
+              ...statChip,
+              color: questionTimerSecondsLeft <= 5 ? '#fca5a5' : questionTimerSecondsLeft <= 15 ? '#fcd34d' : '#86efac',
+              borderColor: questionTimerSecondsLeft <= 5 ? 'rgba(239,68,68,0.5)' : questionTimerSecondsLeft <= 15 ? 'rgba(252,211,77,0.5)' : 'rgba(74,222,128,0.5)',
+              fontWeight: 700
+            }}>
+              ⏱ {questionTimerSecondsLeft}s
+            </span>
+          )}
+          <span style={{ ...statChip, gap: 4 }}>
+            <button
+              onClick={() => adjustTimer(-5)}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#cbd5e1', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
+              title="Timer −5s"
+            >−</button>
             <input
               type="number"
               min={5}
@@ -2581,19 +2630,22 @@ function ModeratorPage(): React.ReactElement {
                 localStorage.setItem('moderatorTimerSeconds', String(val));
               }}
               style={{
-                marginLeft: 6,
-                width: 72,
+                width: 52,
                 background: 'rgba(15,23,42,0.7)',
                 border: '1px solid rgba(148,163,184,0.4)',
-                borderRadius: 8,
+                borderRadius: 6,
                 color: '#e2e8f0',
-                padding: '4px 6px'
+                padding: '2px 4px',
+                textAlign: 'center'
               }}
             />
+            <span style={{ color: '#64748b', fontSize: 11 }}>s</span>
+            <button
+              onClick={() => adjustTimer(5)}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#cbd5e1', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
+              title="Timer +5s"
+            >+</button>
           </span>
-          {questionTimerSecondsLeft !== null && (
-            <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>
-          )}
         </div>
       </section>
     );

@@ -122,8 +122,8 @@ export const heroCard: CSSProperties = {
   padding: 'clamp(12px, 4vw, 18px)',
   borderRadius: 16,
   background: '#ffffff',
-  border: '2px solid #e5e7eb',
-  boxShadow: '0 3px 0 #e5e7eb'
+  border: '2px solid var(--team-color, #e5e7eb)',
+  boxShadow: '0 3px 0 var(--team-color, #e5e7eb)'
 };
 
 export const heroIcon: CSSProperties = {
@@ -159,11 +159,11 @@ export const glassCard: CSSProperties = {
   background: '#ffffff',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 16,
-  border: '2px solid #d1d5db',
+  border: '2px solid var(--team-color, #d1d5db)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: '0 4px 0 #d1d5db, 0 8px 24px rgba(0,0,0,0.08)',
+  boxShadow: '0 4px 0 var(--team-color, #d1d5db)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -177,7 +177,7 @@ export const pillLabel: CSSProperties = {
   background: '#f3f4f6',
   borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: '#d1d5db',
+  borderColor: 'var(--team-color, #d1d5db)',
   fontSize: 'clamp(15px, 3.5vw, 17px)',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -222,12 +222,12 @@ export const inputStyle: CSSProperties = {
   borderRadius: 10,
   borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: '#d1d5db',
+  borderColor: 'var(--team-color, #d1d5db)',
   background: '#ffffff',
   color: '#111827',
   marginTop: 10,
   fontSize: 'max(16px, clamp(18px, 4vw, 20px))',
-  boxShadow: '0 2px 0 #d1d5db',
+  boxShadow: '0 2px 0 var(--team-color, #d1d5db)',
   WebkitAppearance: 'none',
   WebkitBorderRadius: 10,
   WebkitBoxSizing: 'border-box',
@@ -262,8 +262,8 @@ export const primaryButton: CSSProperties = {
 export const choiceButton: CSSProperties = {
   flex: 1,
   background: '#ffffff',
-  border: '2px solid #d1d5db',
-  borderBottom: '4px solid #9ca3af',
+  border: '2px solid var(--team-color, #d1d5db)',
+  borderBottom: '4px solid var(--team-color, #9ca3af)',
   color: '#111827',
   borderRadius: 12,
   padding: 'clamp(18px, 4.5vw, 22px) clamp(14px, 4vw, 18px)',
@@ -319,11 +319,12 @@ export const questionShell: CSSProperties = {
   padding: 'clamp(8px, 3vw, 14px) clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px)',
   margin: '0 auto',
   borderRadius: 16,
-  border: '2px solid #d1d5db',
+  border: '2px solid var(--team-color, #d1d5db)',
   background: '#ffffff',
   overflow: 'visible',
   width: '100%',
   maxWidth: 720,
+  boxShadow: '0 4px 0 var(--team-color, #d1d5db)',
   transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
 };
 

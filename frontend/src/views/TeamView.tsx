@@ -3459,8 +3459,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           (e.currentTarget as HTMLInputElement).style.borderColor = accentColor;
         }}
         onBlur={(e) => {
-          (e.currentTarget as HTMLInputElement).style.boxShadow = '0 2px 0 #d1d5db';
-          (e.currentTarget as HTMLInputElement).style.borderColor = '#d1d5db';
+          (e.currentTarget as HTMLInputElement).style.boxShadow = `0 2px 0 ${accentColor}`;
+          (e.currentTarget as HTMLInputElement).style.borderColor = accentColor;
         }}
       />
       {avatarsEnabled && <div style={{ marginTop: 12 }}>
@@ -4052,11 +4052,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             gap: 10,
             padding: '8px 16px',
             minHeight: 56,
-            background: '#ffffff',
-            border: '2px solid #e5e7eb',
-            borderTop: `3px solid ${selectedColor}`,
+            background: selectedColor,
             borderRadius: '0 0 16px 16px',
-            boxShadow: '0 3px 0 #e5e7eb',
+            boxShadow: `0 4px 0 ${selectedColor}99`,
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -4097,9 +4095,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 fontFamily: "var(--font-game, 'Rajdhani', sans-serif)",
                 fontWeight: 700,
                 fontSize: 'clamp(16px, 4vw, 20px)',
-                color: selectedColor,
-                letterSpacing: '0.04em',
+                color: '#ffffff',
+                letterSpacing: '0.05em',
                 textTransform: 'uppercase',
+                textShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }}>
                 {teamName || 'Team'}
               </div>
@@ -4112,19 +4111,19 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               width: 10,
               height: 10,
               borderRadius: '50%',
-              background: connectionStatus === 'connected' ? '#16a34a'
-                : connectionStatus === 'connecting' ? '#d97706'
-                : '#dc2626',
+              background: connectionStatus === 'connected' ? '#4ade80'
+                : connectionStatus === 'connecting' ? '#fbbf24'
+                : '#f87171',
+              border: '2px solid rgba(255,255,255,0.5)',
               flexShrink: 0
             }} />
             {isLocked && (
               <span style={{
-                fontSize: 16,
-                background: '#fef9c3',
-                border: '2px solid #fbbf24',
+                background: 'rgba(255,255,255,0.25)',
+                border: '1px solid rgba(255,255,255,0.4)',
                 borderRadius: 8,
                 padding: '2px 8px',
-                color: '#92400e',
+                color: '#ffffff',
                 fontWeight: 700,
                 fontSize: 13
               }}>🔒</span>

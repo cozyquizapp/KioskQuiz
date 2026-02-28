@@ -1547,9 +1547,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             marginTop: 8,
             padding: '8px 12px',
             borderRadius: 10,
-            border: '1px solid rgba(250,204,21,0.4)',
-            background: 'rgba(250,204,21,0.12)',
-            color: '#facc15',
+            border: '2px solid #fcd34d',
+            background: '#fffbeb',
+            color: '#92400e',
             fontWeight: 700
           }}
         >
@@ -1559,7 +1559,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <h2
           style={{
             ...questionStyleTeam,
-            color: '#f8fafc',
+            color: '#111827',
             animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both'
           }}
         >
@@ -1571,15 +1571,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       <div style={{ marginTop: 10 }}>{renderInput(accentColor)}</div>
       {renderBunteDetails()}
       {timeUp && (
-        <p style={{ 
-          color: '#fb923c', 
-          fontWeight: 700, 
+        <p style={{
+          color: '#9a3412',
+          fontWeight: 700,
           marginTop: 8,
           padding: '8px 12px',
           borderRadius: 10,
-          background: 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(249,115,22,0.08))',
-          border: '1px solid rgba(251,146,60,0.3)',
-          backdropFilter: 'blur(20px)'
+          background: '#fff7ed',
+          border: '2px solid #fed7aa',
+          margin: '8px 0 0'
         }}>
           {language === 'de' ? 'Leider ist die Zeit schon vorbei.' : 'Time is up.'}
         </p>
@@ -1589,28 +1589,22 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: answerSubmitted
-            ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.10))'
-            : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
-          backdropFilter: 'blur(30px) saturate(200%) brightness(1.1)',
-          color: answerSubmitted ? '#86efac' : '#f8fafc',
+          background: answerSubmitted ? '#16a34a' : canAnswer ? accentColor : '#d1d5db',
+          color: '#ffffff',
+          border: '2px solid rgba(255,255,255,0.25)',
           boxShadow: answerSubmitted
-            ? '0 4px 20px rgba(34,197,94,0.25), inset 0 1px 1px rgba(255,255,255,0.1)'
-            : canAnswer ? '0 4px 20px rgba(255,79,158,0.25), inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1px rgba(255,255,255,0.05)',
-          border: answerSubmitted
-            ? '1px solid rgba(34,197,94,0.5)'
-            : canAnswer ? '1px solid rgba(255,79,158,0.5)' : '1px solid rgba(255,255,255,0.06)',
+            ? '0 4px 0 #15803d'
+            : canAnswer ? `0 4px 0 ${accentColor}99` : '0 4px 0 #b0b8c1',
+          backdropFilter: 'none',
           animation: canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
-          opacity: canAnswer || answerSubmitted ? 1 : 0.6,
-          transform: canAnswer ? undefined : 'scale(0.99)',
+          opacity: canAnswer || answerSubmitted ? 1 : 0.7,
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: 4
+          justifyContent: 'space-between',
+          padding: '14px 20px'
         }}
         aria-label={canAnswer ? 'Submit your answer' : 'Submit button disabled - waiting for answer to be ready'}
         aria-disabled={!canAnswer}
@@ -1625,28 +1619,18 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               top: 0,
               bottom: 0,
               right: `${Math.max(0, Math.min(100, 100 - progress))}%`,
-              background: `linear-gradient(90deg, rgba(255,79,158,0.08) 0%, rgba(217,70,239,0.12) 50%, rgba(255,79,158,0.06) 100%)`,
-              boxShadow: 'inset 0 0 12px rgba(255,79,158,0.15)',
-              borderRadius: 12,
+              background: 'rgba(255,255,255,0.12)',
+              borderRadius: 10,
               zIndex: 0,
               pointerEvents: 'none',
               transition: 'right 100ms ease-out'
             }}
           />
         )}
-        <span
-          style={{
-            position: 'relative',
-            zIndex: 1,
-            fontWeight: 900,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}
-        >
+        <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {answerSubmitted ? (
             <>
-              <span className="team-submitted-check" style={{ fontSize: 22 }}>&#10003;</span>
+              <span className="team-submitted-check" style={{ fontSize: 20, marginRight: 6 }}>&#10003;</span>
               {language === 'de' ? 'Gesendet' : 'Sent'}
             </>
           ) : t('send')}
@@ -1654,34 +1638,17 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         {hasTimer && remainingSeconds > 0 && (
           <span
             style={{
-              position: 'absolute',
-              right: 16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
+              position: 'relative',
+              zIndex: 1,
               fontSize: remainingSeconds <= 10 ? 20 : 16,
               fontWeight: 900,
-              color: remainingSeconds <= 10
-                ? `hsl(0, 100%, ${Math.max(35, 60 - remainingSeconds * 2)}%)`
-                : '#cbd5e1',
-              opacity: 1,
-              animation: remainingSeconds <= 10 ? 'pulse-timer 0.8s ease-in-out infinite' : 'none',
-              textShadow: remainingSeconds <= 5 ? '0 0 10px rgba(255, 79, 158, 0.6)' : 'none'
+              color: remainingSeconds <= 10 ? '#fef08a' : 'rgba(255,255,255,0.75)',
+              animation: remainingSeconds <= 10 ? 'pulse-timer 0.8s ease-in-out infinite' : 'none'
             }}
           >
             {Math.max(0, remainingSeconds)}s
           </span>
         )}
-        <span
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'repeating-linear-gradient(135deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 6px, transparent 6px, transparent 12px)',
-            opacity: 0.3,
-            pointerEvents: 'none'
-          }}
-        />
       </button>
       {message && <div className={`message-state message-${message.type}`}>{message.text}</div>}
     </div>
@@ -2083,7 +2050,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         return (
           <input
             className="team-answer-input"
-            style={inputStyle}
+            style={{ ...inputStyle, background: accentColor, color: '#ffffff', border: '2px solid rgba(255,255,255,0.35)', boxShadow: `0 3px 0 ${accentColor}99`, fontWeight: 700 }}
             placeholder={t('inputAnswer')}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
@@ -2097,7 +2064,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         return (
           <input
             className="team-answer-input"
-            style={inputStyle}
+            style={{ ...inputStyle, background: accentColor, color: '#ffffff', border: '2px solid rgba(255,255,255,0.35)', boxShadow: `0 3px 0 ${accentColor}99`, fontWeight: 700 }}
             placeholder={t('inputNumber')(unit)}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
@@ -2153,13 +2120,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}
         style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
       >
-      <div style={{
-        ...pillLabel,
-        background: 'linear-gradient(135deg, rgba(255,79,158,0.15), rgba(217,70,239,0.12))',
-        border: '1px solid rgba(255,79,158,0.4)',
-        color: '#ffc9e3',
-        textShadow: '0 0 12px rgba(255,79,158,0.3)'
-      }}>
+      <div style={{ ...pillLabel }}>
         {isFinal
           ? language === 'de'
             ? 'Final'
@@ -2177,17 +2138,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           margin: '12px 0 0',
           padding: '12px 16px',
           borderRadius: 14,
-          background: isCorrect
-            ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.08))'
-            : isIncorrect
-              ? 'linear-gradient(135deg, rgba(239,68,68,0.14), rgba(220,38,38,0.08))'
-              : 'linear-gradient(135deg, rgba(148,163,184,0.12), rgba(100,116,139,0.08))',
-          border: isCorrect
-            ? '1px solid rgba(34,197,94,0.3)'
-            : isIncorrect
-              ? '1px solid rgba(239,68,68,0.35)'
-              : '1px solid rgba(148,163,184,0.35)',
-          backdropFilter: 'blur(20px)'
+          background: isCorrect ? '#f0fdf4' : isIncorrect ? '#fef2f2' : '#f9fafb',
+          border: `2px solid ${isCorrect ? '#86efac' : isIncorrect ? '#fca5a5' : '#e5e7eb'}`,
         }}>
           <p style={{
             margin: 0,

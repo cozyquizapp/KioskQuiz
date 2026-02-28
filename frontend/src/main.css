@@ -883,20 +883,21 @@ button:focus-visible {
 
 .team-answer-input:focus,
 .team-answer-input:focus-visible {
-  border-color: rgba(251, 191, 36, 0.9) !important;
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3), 0 0 24px rgba(251, 191, 36, 0.2), 0 12px 28px rgba(0, 0, 0, 0.45) !important;
-  background: rgba(20, 16, 4, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+  outline: none !important;
 }
 
 .team-answer-input.is-active {
-  border-color: rgba(251, 191, 36, 0.6);
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .team-answer-input:disabled {
   opacity: 0.55;
-  border-color: rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.55);
+}
+
+.team-answer-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
 }
 
 

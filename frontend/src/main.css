@@ -3337,21 +3337,8 @@ button:active:not(:disabled),
    GAMING UPGRADES
    ===================================================== */
 
-/* 1. Scanline overlay — beamer only (team is light bg, no scanlines needed) */
-.cozy-beamer-shell::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.07) 3px,
-    rgba(0, 0, 0, 0.07) 4px
-  );
-}
+/* 1. Scanline overlay removed — dark-mode relic, invisible on light bg.
+      Logo watermark is now applied via .cozy-beamer-shell::after in beamerTheme.css */
 
 /* 2. 3D press-effect for primary/choice buttons */
 #team-root button:not([disabled]):active {

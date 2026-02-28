@@ -4046,49 +4046,36 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <header
           className="team-header"
           style={{
-            ...headerBarTeam,
-            border: '1px solid transparent',
-            backgroundImage: 'linear-gradient(rgba(13, 15, 20, 0.9), rgba(13, 15, 20, 0.9)), linear-gradient(135deg, rgba(255,79,158,0.5), rgba(217,70,239,0.5), rgba(168,85,247,0.5), rgba(255,79,158,0.5))',
-            backgroundOrigin: 'border-box',
-            backgroundClip: 'padding-box, border-box',
-            animation: 'border-gradient 6s ease infinite',
-            backgroundSize: '100% 100%, 300% 300%',
+            display: teamId ? 'flex' : 'none',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '8px 16px',
+            minHeight: 56,
+            background: '#ffffff',
+            border: '2px solid #e5e7eb',
+            borderTop: `3px solid ${selectedColor}`,
+            borderRadius: '0 0 16px 16px',
+            boxShadow: '0 3px 0 #e5e7eb',
             position: 'relative',
             overflow: 'hidden',
-            display: teamId ? 'flex' : 'none'
           }}
         >
-          {/* Walking Animal */}
+          {/* Team-color accent strip at top is handled by borderTop */}
+
+          {/* Avatar — left side */}
           {avatarsEnabled && teamId && avatarId && (
             <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'auto',
-                zIndex: 3,
-                cursor: 'pointer'
-              }}
+              style={{ flexShrink: 0, cursor: 'pointer', lineHeight: 0 }}
               onClick={() => {
-                console.log('🖱️ Avatar clicked!', { avatarId, igelState, hasStates: hasStateBasedRendering(avatarId) });
-                // State-based avatar special behavior on click
                 if (hasStateBasedRendering(avatarId)) {
-                  console.log('✅ Has state rendering');
                   if (igelState === 'walking' || igelState === 'idle') {
-                    console.log('✅ State is walking/idle, running sequence');
                     runAvatarSequence([
                       { state: 'gesture', duration: 600 },
                       { state: 'happy', duration: 1200 },
                       { state: 'walking', duration: 0 }
                     ], avatarId);
-                  } else {
-                    console.log('❌ Wrong state:', igelState);
                   }
-                } else {
-                  console.log('❌ No state rendering for this avatar');
                 }
               }}
               title="Klick mich an!"
@@ -4098,53 +4085,50 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 mood={avatarMood}
                 enableWalking={true}
                 igelState={igelState}
-                style={{ 
-                  width: 60, 
-                  height: 60, 
-                  objectFit: 'contain'
-                }}
+                style={{ width: 44, height: 44, objectFit: 'contain' }}
               />
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+
+          {/* Team name — center */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             {teamId && (
-              <Pill
-                tone="neutral"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderColor: accentPink,
-                  color: '#f8fafc'
-                }}
-              >
+              <div style={{
+                fontFamily: "var(--font-game, 'Rajdhani', sans-serif)",
+                fontWeight: 700,
+                fontSize: 'clamp(16px, 4vw, 20px)',
+                color: selectedColor,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}>
                 {teamName || 'Team'}
-              </Pill>
+              </div>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background:
-                    connectionStatus === 'connected'
-                      ? '#4ade80'
-                      : connectionStatus === 'connecting'
-                      ? '#facc15'
-                      : '#f87171'
-                }}
-              />
-            </div>
-            {isLocked ? (
-              <Pill
-                tone="muted"
-                style={{ background: 'rgba(250,204,21,0.2)', borderColor: 'transparent', color: '#fcd34d', fontSize: 18 }}
-              >
-                🔒
-              </Pill>
-            ) : null}
-            {/* Timer Pill removed - using progress bar below instead */}
+
+          {/* Status — right side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <span style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: connectionStatus === 'connected' ? '#16a34a'
+                : connectionStatus === 'connecting' ? '#d97706'
+                : '#dc2626',
+              flexShrink: 0
+            }} />
+            {isLocked && (
+              <span style={{
+                fontSize: 16,
+                background: '#fef9c3',
+                border: '2px solid #fbbf24',
+                borderRadius: 8,
+                padding: '2px 8px',
+                color: '#92400e',
+                fontWeight: 700,
+                fontSize: 13
+              }}>🔒</span>
+            )}
           </div>
         </header>
 
@@ -4161,14 +4145,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               zIndex: 1000,
               padding: '12px 16px',
               borderRadius: 12,
-              border: '1px solid rgba(239,68,68,0.4)',
-              background: 'rgba(239,68,68,0.15)',
-              color: '#fca5a5',
-              fontWeight: 600,
+              border: '2px solid #fca5a5',
+              background: '#fee2e2',
+              color: '#dc2626',
+              fontWeight: 700,
               fontSize: 14,
               maxWidth: '90%',
               textAlign: 'center',
-              boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+              boxShadow: '0 4px 0 #fca5a5',
               animation: 'slideDown 0.3s ease-out'
             }}
           >

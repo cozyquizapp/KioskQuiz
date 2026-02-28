@@ -2907,7 +2907,8 @@ useEffect(() => {
         : germanText || englishText || '';
 
     const renderRevealAnswersList = (): JSX.Element => {
-      const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
+      const fallbackColors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
+      const teamColorMap = Object.fromEntries((teamStatus ?? []).map(t => [t.id, t.color]));
       const label = language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Answers' : 'Team answers';
       const formatAnswer = (answer: any): string => {
         if (answer === null || answer === undefined) return '–';
@@ -2923,15 +2924,16 @@ useEffect(() => {
             <div className="cozyRevealAnswersLabel">{label}</div>
             {answerResults.map((entry, idx) => {
               const isCorrect = entry.isCorrect === true;
-              const accentColor = isCorrect ? '#22c55e' : entry.isCorrect === false ? '#ef4444' : colors[idx % colors.length];
+              const teamColor = teamColorMap[entry.teamId] || fallbackColors[idx % fallbackColors.length];
+              const accentColor = isCorrect ? '#22c55e' : entry.isCorrect === false ? '#ef4444' : teamColor;
               return (
                 <div
                   key={`reveal-ans-${entry.teamId}-${idx}`}
                   className="cozyRevealAnswerRow"
-                  style={{ borderLeftColor: accentColor, animationDelay: `${idx * 70}ms` }}
+                  style={{ borderLeftColor: teamColor, background: `${teamColor}18`, animationDelay: `${idx * 70}ms` }}
                 >
                   <div className="cozyRevealAnswerTop">
-                    <span className="cozyRevealAnswerTeam" style={{ color: accentColor }}>{entry.teamName || entry.teamId}</span>
+                    <span className="cozyRevealAnswerTeam" style={{ color: teamColor }}>{entry.teamName || entry.teamId}</span>
                     <span className="cozyRevealAnswerResult" style={{ color: accentColor }}>{isCorrect ? '✓' : entry.isCorrect === false ? '✗' : '–'}</span>
                   </div>
                   <div className="cozyRevealAnswerText">{formatAnswer(entry.answer)}</div>
@@ -2946,15 +2948,15 @@ useEffect(() => {
         <>
           <div className="cozyRevealAnswersLabel">{label}</div>
           {teamsWithAnswers.map((team, idx) => {
-            const accentColor = colors[idx % colors.length];
+            const teamColor = team.color || fallbackColors[idx % fallbackColors.length];
             return (
               <div
                 key={`reveal-ans-${team.id}-${idx}`}
                 className="cozyRevealAnswerRow"
-                style={{ borderLeftColor: accentColor, animationDelay: `${idx * 70}ms` }}
+                style={{ borderLeftColor: teamColor, background: `${teamColor}18`, animationDelay: `${idx * 70}ms` }}
               >
                 <div className="cozyRevealAnswerTop">
-                  <span className="cozyRevealAnswerTeam" style={{ color: accentColor }}>{team.name || team.id}</span>
+                  <span className="cozyRevealAnswerTeam" style={{ color: teamColor }}>{team.name || team.id}</span>
                 </div>
                 <div className="cozyRevealAnswerText">{formatTeamAnswer(team.answer)}</div>
               </div>

@@ -424,6 +424,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [resultPoints, setResultPoints] = useState<number | null>(null);
   const [resultDetail, setResultDetail] = useState<string | null>(null);
   const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>(() =>
+    localStorage.getItem('teamSelectedColor') || '#7c3aed'
+  );
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
@@ -627,7 +630,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             roomCode,
             teamName: cleanName,
             teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
-            avatarId: selectedAvatarId
+            avatarId: selectedAvatarId,
+            color: selectedColor
           },
           (resp?: { ok: boolean; error?: string; team?: Team }) => {
             if (!resp?.ok || !resp?.team) {
@@ -3427,6 +3431,17 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     setIsReady(false);
   }
 
+  const TEAM_COLORS = [
+    { value: '#7c3aed', label: 'Lila' },
+    { value: '#2563eb', label: 'Blau' },
+    { value: '#0891b2', label: 'Cyan' },
+    { value: '#16a34a', label: 'Grün' },
+    { value: '#ca8a04', label: 'Gold' },
+    { value: '#ea580c', label: 'Orange' },
+    { value: '#dc2626', label: 'Rot' },
+    { value: '#db2777', label: 'Pink' },
+  ];
+
   function renderNotJoined() {
     const joinDisabled = !roomCode || !teamName.trim() || joinPending || !avatarId;
     return (
@@ -3703,15 +3718,47 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           )}
         </div>
       </div>
+      {/* Team Color Picker */}
+      <div style={{ marginTop: 16, marginBottom: 4 }}>
+        <div style={{ ...pillLabel, marginBottom: 10 }}>Teamfarbe wählen</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {TEAM_COLORS.map((c) => (
+            <button
+              key={c.value}
+              title={c.label}
+              onClick={() => {
+                setSelectedColor(c.value);
+                localStorage.setItem('teamSelectedColor', c.value);
+              }}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: c.value,
+                border: selectedColor === c.value ? '3px solid white' : '3px solid transparent',
+                outline: selectedColor === c.value ? `3px solid ${c.value}` : 'none',
+                outlineOffset: 2,
+                cursor: 'pointer',
+                boxShadow: selectedColor === c.value ? `0 0 16px ${c.value}` : '0 2px 8px rgba(0,0,0,0.4)',
+                transition: 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transform: selectedColor === c.value ? 'scale(1.2)' : 'scale(1)',
+                padding: 0
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
       <button
         style={{
           ...primaryButton,
           marginTop: 12,
+          background: `linear-gradient(135deg, ${selectedColor} 0%, ${selectedColor}cc 100%)`,
+          boxShadow: joinDisabled ? 'none' : `0 0 32px ${selectedColor}55, 0 12px 32px rgba(0,0,0,0.4)`,
           opacity: joinDisabled ? 0.5 : 1,
           cursor: joinDisabled ? 'not-allowed' : 'pointer',
           transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
           transform: 'scale(1)',
-          boxShadow: joinDisabled ? 'none' : '0 8px 20px rgba(99,229,255,0.3)'
         }}
         aria-label={joinPending ? 'Joining team...' : 'Join quiz with team name and avatar'}
         aria-disabled={joinDisabled}
@@ -3991,7 +4038,17 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     <div
       id="team-root"
       ref={pageRootRef}
-      style={{...pageStyleTeam, position: 'relative', overflowY: 'auto', overflowX: 'hidden'}}
+      style={{
+        ...pageStyleTeam,
+        position: 'relative',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        background: teamId
+          ? `radial-gradient(ellipse 140% 90% at 50% -5%, ${selectedColor}88 0%, ${selectedColor}33 25%, #0e0a2a 55%, #080617 100%)`
+          : pageStyleTeam.background,
+        ['--team-color' as any]: selectedColor,
+        ['--team-color-dim' as any]: `${selectedColor}55`,
+      }}
       data-timer={timerTick}
       data-team-ui="1"
       data-team-marker={teamMarker}
@@ -4138,7 +4195,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
         )}
 
-        {mainContent}
+        <div key={phase} className="phase-enter">
+          {mainContent}
+        </div>
 
         {/* Removed: Ready button - teams don't need to confirm ready status */}
         {teamId && phase === 'waitingForQuestion' && allowReadyToggle && gameState === 'LOBBY' && connectionStatus !== 'connected' && (

@@ -271,6 +271,7 @@ export interface Team {
   score: number;
   isReady?: boolean;
   avatarId?: string;
+  color?: string;
 }
 
 export interface SlotTransitionMeta {
@@ -582,6 +583,7 @@ export type TeamStatusSnapshot = {
   submitted: boolean;
   isReady?: boolean;
   answer?: any; // The submitted answer value (only included during reveal/evaluation)
+  color?: string;
 };
 
 export type StateUpdatePayload = {

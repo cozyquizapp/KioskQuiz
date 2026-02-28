@@ -26,7 +26,7 @@ const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, d
           src={avatarSrc}
           alt=""
           className="beamer-score-avatar"
-          style={{ width: 60, height: 60, borderRadius: 12, border: '1px solid rgba(255,255,255,0.16)', objectFit: 'contain' }}
+          style={{ width: 60, height: 60, borderRadius: 12, border: '1px solid #e5e7eb', objectFit: 'contain' }}
         />
       )}
       <div className="beamer-score-content">

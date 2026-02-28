@@ -4,7 +4,7 @@
   --beamer-soft: rgba(0, 0, 0, 0.05);
   --beamer-text: #111827;
   --beamer-muted: #374151;
-  --beamer-accent: linear-gradient(135deg, #f59e0b, #6366f1);
+  --beamer-accent: linear-gradient(135deg, #f59e0b, #f97316);
   --font-game: 'Rajdhani', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
   --tile-a: #1565C0;
@@ -245,16 +245,16 @@
 }
 
 .beamer-frame.scene-blitz {
-  background: linear-gradient(160deg, rgba(21, 26, 52, 0.96), rgba(13, 17, 30, 0.9));
+  background: linear-gradient(160deg, rgba(251, 191, 36, 0.08), rgba(245, 158, 11, 0.04));
 }
 
 .beamer-frame.scene-potato {
-  background: linear-gradient(160deg, rgba(38, 20, 12, 0.95), rgba(10, 6, 4, 0.9));
+  background: linear-gradient(160deg, rgba(239, 68, 68, 0.07), rgba(220, 38, 38, 0.03));
 }
 
 .beamer-frame.scene-scoreboard,
 .beamer-frame.scene-scoreboard_pause {
-  background: linear-gradient(160deg, rgba(10, 24, 38, 0.95), rgba(4, 10, 16, 0.9));
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.07), rgba(37, 99, 235, 0.03));
 }
 
 /* Phase-based accent colors */
@@ -317,7 +317,7 @@
 
 .beamer-hint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #9ca3af;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -331,7 +331,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.6);
+  color: #9ca3af;
   position: fixed;
   bottom: 24px;
   left: 50%;
@@ -441,32 +441,33 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
 }
 
 .beamer-badge.tone-accent {
-  border-color: rgba(99, 102, 241, 0.6);
-  background: rgba(99, 102, 241, 0.16);
-  color: #c7d2fe;
+  border-color: #a5b4fc;
+  background: #eef2ff;
+  color: #4338ca;
 }
 
 .beamer-badge.tone-warning {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.16);
-  color: #fcd34d;
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
 }
 
 .beamer-badge.tone-success {
-  border-color: rgba(74, 222, 128, 0.45);
-  background: rgba(34, 197, 94, 0.16);
-  color: #bbf7d0;
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
 }
 
 .beamer-badge.tone-muted {
-  border-color: rgba(148, 163, 184, 0.4);
-  background: rgba(148, 163, 184, 0.12);
-  color: #cbd5e1;
+  border-color: #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
 }
 
 .beamer-question-layout {
@@ -516,14 +517,14 @@
 
 .beamer-question-media {
   border-radius: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid #e5e7eb;
+  background: #f9fafb;
   min-height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .beamer-question-media img {
@@ -570,7 +571,7 @@
 .beamer-lobby-hero p {
   margin: 0;
   font-size: 18px;
-  color: #e2e8f0;
+  color: #6b7280;
 }
 
 .beamer-lobby-badge {
@@ -579,8 +580,9 @@
   justify-content: center;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #374151;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -623,19 +625,20 @@
   bottom: 0;
   padding: 10px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.001);
-  backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  backdrop-filter: none;
   text-align: center;
   font-size: 12px;
-  color: #cbd5e1;
+  color: #6b7280;
+  box-shadow: 0 3px 0 #e5e7eb;
 }
 
 .beamer-lobby-qr img {
   width: 120px;
   height: 120px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid #e5e7eb;
   margin-bottom: 6px;
 }
 
@@ -877,11 +880,9 @@
 .beamer-select-card {
   padding: 32px 24px;
   border-radius: 28px;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(60px) saturate(220%) brightness(1.25);
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  backdrop-filter: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -889,8 +890,7 @@
   transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15),
-              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 0 #e5e7eb, 0 8px 20px rgba(0, 0, 0, 0.08);
   min-height: 140px;
   display: flex;
   align-items: center;
@@ -920,10 +920,8 @@
 
 .beamer-select-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2),
-              0 0 30px rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 0 #d1d5db, 0 16px 40px rgba(0, 0, 0, 0.12);
+  border-color: #d1d5db;
 }
 
 .beamer-select-card.banned {
@@ -939,13 +937,10 @@
 }
 
 .beamer-select-card.picked {
-  border-color: rgba(34, 197, 94, 0.8);
-  background: linear-gradient(135deg,
-    rgba(34, 197, 94, 0.25) 0%,
-    rgba(34, 197, 94, 0.15) 100%);
-  box-shadow: 0 0 40px rgba(34, 197, 94, 0.6),
-              0 20px 48px rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: #86efac;
+  background: #f0fdf4;
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.3),
+              0 6px 0 #86efac;
   transform: scale(1.1);
   animation: theme-pick 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
              theme-pick-glow 1.8s 1.2s ease-in-out infinite;

@@ -1687,14 +1687,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           }}
         />
       </button>
-      {showTimerProgress && (
-        <div className="timer-track-gaming">
-          <div
-            className={`timer-bar-gaming${progress < 40 ? ' warn' : ''}${progress < 15 ? ' danger' : ''}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
       {message && <div className={`message-state message-${message.type}`}>{message.text}</div>}
     </div>
   );

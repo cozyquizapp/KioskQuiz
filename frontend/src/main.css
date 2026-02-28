@@ -904,8 +904,11 @@ button:focus-visible {
   overflow: hidden;
 }
 
-/* A/B/C/D letter badge */
-.team-choice::before {
+/* A/B/C/D letter badge — only when attribute is set */
+.team-choice:not([data-choice-letter])::before {
+  display: none;
+}
+.team-choice[data-choice-letter]::before {
   content: attr(data-choice-letter);
   position: absolute;
   left: 0;
@@ -931,7 +934,7 @@ button:focus-visible {
   transform: scale(1.02) translateY(-2px) translateZ(0);
 }
 
-.team-choice.is-selected::before {
+.team-choice.is-selected[data-choice-letter]::before {
   background: var(--team-color, rgba(109,40,217,0.7));
   color: white;
 }

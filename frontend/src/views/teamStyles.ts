@@ -32,18 +32,16 @@ export const pageStyleTeam: CSSProperties = {
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
   color: 'white',
-  background: 'linear-gradient(145deg, #07090f 0%, #0c0f1d 30%, #080b14 55%, #0d1020 80%, #07090f 100%)',
+  background: 'linear-gradient(145deg, #04050f 0%, #090c20 25%, #06091a 50%, #0b0d22 75%, #04050f 100%)',
   backgroundSize: '220% 220%',
   animation: 'ambient-shift 32s ease-in-out infinite',
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
-  // iOS optimization
   WebkitFontSmoothing: 'antialiased',
   WebkitTouchCallout: 'none',
   WebkitUserSelect: 'none',
   userSelect: 'none',
   WebkitTapHighlightColor: 'transparent',
-  // Prevent zoom on input focus (iOS)
   fontSize: 16
 };
 
@@ -161,16 +159,16 @@ export const metaChip: CSSProperties = {
 };
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(10, 12, 24, 0.55)',
+  background: 'rgba(8, 10, 24, 0.82)',
   padding: 'clamp(18px, 5vw, 24px) clamp(18px, 5vw, 22px)',
   borderRadius: theme.radius,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(99, 102, 241, 0.14)',
+  borderColor: 'rgba(99, 102, 241, 0.28)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(99,102,241,0.07)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 28px 64px rgba(0,0,0,0.55), 0 0 48px rgba(99,102,241,0.14)',
   backdropFilter: 'blur(50px)',
   position: 'relative',
   overflow: 'hidden'
@@ -196,10 +194,11 @@ export const pillLabel: CSSProperties = {
 export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
-  fontSize: 'clamp(22px, 6vw, 28px)',
-  lineHeight: 1.4,
-  letterSpacing: '-0.02em',
-  background: 'linear-gradient(155deg, #ffffff 0%, #dde4ff 55%, #c4b5fd 100%)',
+  fontSize: 'clamp(24px, 6.5vw, 32px)',
+  lineHeight: 1.3,
+  letterSpacing: '-0.03em',
+  fontWeight: 900,
+  background: 'linear-gradient(135deg, #ffffff 0%, #a5b4fc 45%, #818cf8 100%)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
   backgroundClip: 'text',
@@ -225,66 +224,61 @@ export const inputStyle: CSSProperties = {
   padding: 'clamp(18px, 4.5vw, 20px) clamp(18px, 4.5vw, 20px)',
   minHeight: 'clamp(56px, 14vw, 68px)',
   borderRadius: theme.radius,
-  borderWidth: 1,
+  borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.02)',
+  borderColor: 'rgba(255,255,255,0.16)',
+  background: 'rgba(255,255,255,0.06)',
   color: '#f8fafc',
   marginTop: 10,
   fontSize: 'max(16px, clamp(18px, 4vw, 21px))',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 0 rgba(0,0,0,0.25)',
   backdropFilter: 'blur(30px)',
   WebkitAppearance: 'none',
   WebkitBorderRadius: theme.radius,
   WebkitBoxSizing: 'border-box',
-  // iOS optimization: Prevents zoom on input focus
   WebkitFontSmoothing: 'antialiased',
-  // Hardware acceleration for smooth typing (applied via CSS)
   transform: 'translateZ(0)'
 };
 
 export const primaryButton: CSSProperties = {
-  marginTop: 14,
-  background: 'linear-gradient(160deg, rgba(99,102,241,0.25), rgba(139,92,246,0.18), rgba(99,102,241,0.12))',
-  backdropFilter: 'blur(30px) saturate(200%) brightness(1.15)',
-  color: '#f0f0ff',
-  border: '1px solid rgba(99,102,241,0.30)',
-  padding: 'clamp(18px, 4.5vw, 20px) clamp(20px, 5.5vw, 24px)',
-  minHeight: 'clamp(56px, 14vw, 68px)',
+  marginTop: 16,
+  background: 'linear-gradient(135deg, #fbbf24 0%, #f97316 60%, #ef4444 100%)',
+  color: '#18080a',
+  border: 'none',
+  padding: 'clamp(20px, 5vw, 24px) clamp(20px, 5.5vw, 28px)',
+  minHeight: 'clamp(64px, 16vw, 76px)',
   borderRadius: theme.radius,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
-  fontWeight: 800,
-  fontSize: 'max(16px, clamp(18px, 4.2vw, 21px))',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 24px rgba(99,102,241,0.15)',
+  fontWeight: 900,
+  fontSize: 'max(18px, clamp(20px, 4.5vw, 24px))',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  boxShadow: '0 0 36px rgba(251,191,36,0.35), 0 16px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35)',
   transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
   WebkitFontSmoothing: 'antialiased',
-  // Hardware acceleration for smooth tap feedback
   transform: 'translateZ(0)',
   WebkitTapHighlightColor: 'transparent',
-  // Touch optimization for both platforms
   touchAction: 'manipulation'
 };
 
 export const choiceButton: CSSProperties = {
   flex: 1,
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.16)',
-  color: '#e2e8f0',
+  background: 'rgba(255,255,255,0.07)',
+  border: '2px solid rgba(255,255,255,0.20)',
+  color: '#f0f4ff',
   borderRadius: theme.radius,
   padding: 'clamp(18px, 4.5vw, 20px) clamp(16px, 4.5vw, 18px)',
   cursor: 'pointer',
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: 'max(16px, clamp(17px, 3.8vw, 20px))',
-  minHeight: 'clamp(56px, 14vw, 68px)',
+  minHeight: 'clamp(60px, 15vw, 72px)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 20px rgba(0,0,0,0.35)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
-  // Faster transition for immediate touch feedback
   transition: 'all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1)',
-  // Hardware acceleration
   transform: 'translateZ(0)',
-  // Touch optimization for both platforms
   touchAction: 'manipulation'
 };
 
@@ -325,13 +319,13 @@ export const questionShell: CSSProperties = {
   padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 20px) clamp(16px, 4vw, 22px)',
   margin: '0 auto',
   borderRadius: 22,
-  borderWidth: 1,
+  borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.12)',
-  background: 'rgba(12,14,20,0.9)',
+  borderColor: 'rgba(255,255,255,0.18)',
+  background: 'rgba(8, 10, 20, 0.92)',
   overflow: 'hidden',
-  boxShadow: '0 14px 30px rgba(0,0,0,0.38)',
-  backdropFilter: 'blur(14px)',
+  boxShadow: '0 24px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+  backdropFilter: 'blur(20px)',
   width: '100%',
   maxWidth: 720,
   transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'

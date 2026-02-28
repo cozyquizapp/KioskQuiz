@@ -842,54 +842,58 @@ button:focus-visible {
 
 .team-answer-input {
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
 }
 
-.team-answer-input:focus {
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
-}
-
+.team-answer-input:focus,
 .team-answer-input:focus-visible {
-  border-color: rgba(96, 165, 250, 1);
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.45), 0 12px 24px rgba(0, 0, 0, 0.45);
-  background: rgba(15, 23, 42, 0.7);
-}
-
-.team-answer-input:focus {
-  border-color: rgba(96, 165, 250, 1);
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.45), 0 12px 24px rgba(0,  0, 0, 0.45);
-  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(251, 191, 36, 0.9) !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3), 0 0 24px rgba(251, 191, 36, 0.2), 0 12px 28px rgba(0, 0, 0, 0.45) !important;
+  background: rgba(20, 16, 4, 0.85) !important;
 }
 
 .team-answer-input.is-active {
-  border-color: rgba(96, 165, 250, 0.7);
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+  border-color: rgba(251, 191, 36, 0.6);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
 }
 
 .team-answer-input:disabled {
-  opacity: 0.65;
-  border-color: rgba(148, 163, 184, 0.35);
+  opacity: 0.55;
+  border-color: rgba(148, 163, 184, 0.25);
   background: rgba(2, 6, 23, 0.55);
+}
+
+/* Game-show submit button pulse */
+@keyframes game-btn-pulse {
+  0%, 100% { box-shadow: 0 0 36px rgba(251,191,36,0.35), 0 16px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35); }
+  50%       { box-shadow: 0 0 56px rgba(251,191,36,0.60), 0 16px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35); }
+}
+
+.game-btn-ready {
+  animation: game-btn-pulse 2s ease-in-out infinite;
 }
 
 .team-choice {
   position: relative;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .team-choice.is-selected {
-  border-color: rgba(96, 165, 250, 0.95);
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3), 0 12px 24px rgba(0, 0, 0, 0.4);
-  background: rgba(30, 64, 175, 0.22);
-  outline: 3px solid rgba(96, 165, 250, 0.5);
-  outline-offset: 2px;
+  border-color: rgba(99, 102, 241, 1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4), 0 0 32px rgba(99, 102, 241, 0.35), 0 16px 32px rgba(0, 0, 0, 0.45);
+  background: rgba(99, 102, 241, 0.22);
+  transform: scale(1.02) translateZ(0);
+  outline: none;
 }
 
 .team-choice:focus-visible {
-  outline: 3px solid rgba(96, 165, 250, 0.6);
+  outline: 3px solid rgba(99, 102, 241, 0.7);
   outline-offset: 2px;
+}
+
+.team-choice:active {
+  transform: scale(0.97) translateZ(0);
 }
 
 .team-header {

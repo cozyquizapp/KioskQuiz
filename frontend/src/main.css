@@ -392,6 +392,15 @@ body:has(.cozy-beamer-shell)::after {
   display: none;
 }
 
+/* Light background for team view — suppress dark body gradients */
+body:has(#team-root) {
+  background: #f0f2f5;
+}
+body:has(#team-root)::before,
+body:has(#team-root)::after {
+  display: none;
+}
+
 /* Kill the film grain on beamer (dark noise on white = pointless) */
 .cozy-beamer-shell::before {
   display: none !important;

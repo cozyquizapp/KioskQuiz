@@ -4026,9 +4026,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         position: 'relative',
         overflowY: 'auto',
         overflowX: 'hidden',
-        background: teamId
-          ? `radial-gradient(ellipse 140% 90% at 50% -5%, ${selectedColor}88 0%, ${selectedColor}33 25%, #0e0a2a 55%, #080617 100%)`
-          : pageStyleTeam.background,
+        background: `linear-gradient(180deg, ${selectedColor}14 0%, transparent 28%), #f0f2f5`,
         ['--team-color' as any]: selectedColor,
         ['--team-color-dim' as any]: `${selectedColor}55`,
       }}

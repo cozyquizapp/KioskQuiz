@@ -28,9 +28,9 @@
 .beamer-frame.beamer-jackbox {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(160deg, rgba(12, 10, 28, 0.96), rgba(8, 10, 22, 0.93));
-  box-shadow: 0 24px 80px rgba(2, 4, 20, 0.6), 0 0 0 1px rgba(125, 211, 252, 0.10) inset, 0 0 120px rgba(99,102,241,0.08);
+  border: 1px solid rgba(167, 139, 250, 0.30);
+  background: linear-gradient(160deg, rgba(22, 10, 48, 0.97), rgba(12, 8, 35, 0.95));
+  box-shadow: 0 24px 80px rgba(2, 4, 20, 0.7), 0 0 0 1px rgba(167,139,250,0.18) inset, 0 0 160px rgba(109,40,217,0.20);
 }
 
 .beamer-frame.beamer-jackbox::before {
@@ -86,11 +86,12 @@
   position: relative;
   z-index: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 102, 241, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 80% at 80% 85%, rgba(139, 92, 246, 0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 60% 40%, rgba(56, 189, 248, 0.10) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 60% at 10% 90%, rgba(168, 85, 247, 0.14) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 40% at 90% 10%, rgba(251, 191, 36, 0.07) 0%, transparent 50%);
+    radial-gradient(ellipse 100% 70% at 15% 5%, rgba(109, 40, 217, 0.55) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 90% at 85% 90%, rgba(139, 92, 246, 0.45) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 50% at 55% 45%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+    radial-gradient(ellipse 60% 60% at 5% 85%, rgba(168, 85, 247, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 92% 8%, rgba(251, 191, 36, 0.15) 0%, transparent 45%),
+    #08051a;
 }
 
 .cozy-beamer-shell::after {

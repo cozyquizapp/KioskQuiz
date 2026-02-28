@@ -31,16 +31,10 @@ export const pageStyleTeam: CSSProperties = {
   overflowX: 'hidden',
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
-  color: 'white',
-  background: `
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(251,191,36,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(139,92,246,0.38) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 80% at 15% 80%, rgba(109,40,217,0.25) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 85% 80%, rgba(109,40,217,0.25) 0%, transparent 50%),
-    #0f0d22
-  `,
+  background: '#f0f2f5',
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
+  color: '#111827',
   WebkitFontSmoothing: 'antialiased',
   WebkitTouchCallout: 'none',
   WebkitUserSelect: 'none',
@@ -94,31 +88,31 @@ export const headerBarTeam: CSSProperties = {
   flexWrap: 'wrap',
   gap: 'clamp(8px, 2vw, 12px)',
   borderRadius: 16,
-  background: 'rgba(255,255,255,0.001)',
-  backdropFilter: 'blur(40px) saturate(200%) brightness(1.15)',
-  borderWidth: 1,
+  background: '#ffffff',
+  borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)'
+  borderColor: '#e5e7eb'
   // padding removed to rely on .team-header CSS for responsive header height
 };
 
 export const pillSmall: CSSProperties = {
   padding: 'clamp(10px, 2vw, 12px) clamp(14px, 3vw, 16px)',
   borderRadius: 999,
-  background: primary ? `${primary}11` : 'rgba(255,255,255,0.06)',
+  background: '#f3f4f6',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: primary ? `${primary}55` : 'rgba(255,255,255,0.08)',
+  borderColor: '#d1d5db',
   fontSize: 'clamp(14px, 3vw, 16px)',
   fontWeight: 700,
-  color: '#e2e8f0'
+  color: '#374151'
 };
 
 export const logoBadge: CSSProperties = {
   padding: 'clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px)',
   borderRadius: 12,
-  background: 'rgba(255,255,255,0.02)',
-  color: '#0d0f14',
+  background: '#f3f4f6',
+  border: '1px solid #e5e7eb',
+  color: '#111827',
   fontWeight: 900,
   letterSpacing: '0.04em',
   fontSize: 'clamp(12px, 2vw, 14px)'
@@ -126,11 +120,10 @@ export const logoBadge: CSSProperties = {
 
 export const heroCard: CSSProperties = {
   padding: 'clamp(12px, 4vw, 18px)',
-  borderRadius: 20,
-  background: 'var(--glass-bg)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  boxShadow: 'var(--glass-shadow)',
-  backdropFilter: 'blur(14px)'
+  borderRadius: 16,
+  background: '#ffffff',
+  border: '2px solid #e5e7eb',
+  boxShadow: '0 3px 0 #e5e7eb'
 };
 
 export const heroIcon: CSSProperties = {
@@ -143,7 +136,7 @@ export const eyebrow: CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.18em',
   fontSize: 'clamp(10px, 2vw, 11px)',
-  color: 'rgba(255,255,255,0.66)',
+  color: '#9ca3af',
   margin: 0,
   marginBottom: 2
 };
@@ -157,24 +150,20 @@ export const metaRow: CSSProperties = {
 
 export const metaChip: CSSProperties = {
   ...pillSmall,
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: '#f3f4f6',
+  border: '1px solid #e5e7eb',
   textTransform: 'capitalize'
 };
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(10, 5, 30, 0.55)',
+  background: '#ffffff',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 16,
-  borderTop: '1px solid rgba(251,191,36,0.25)',
-  borderLeft: '1px solid rgba(139,92,246,0.15)',
-  borderRight: '1px solid rgba(139,92,246,0.15)',
-  borderBottom: '1px solid rgba(0,0,0,0.5)',
+  border: '2px solid #d1d5db',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: '0 40px 80px rgba(0,0,0,0.7), 0 0 80px rgba(139,92,246,0.12), inset 0 1px 0 rgba(251,191,36,0.15)',
-  backdropFilter: 'blur(30px)',
+  boxShadow: '0 4px 0 #d1d5db, 0 8px 24px rgba(0,0,0,0.08)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -183,17 +172,17 @@ export const pillLabel: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 'clamp(5px, 1.5vw, 8px)',
-  padding: 'clamp(8px, 2vw, 10px) clamp(12px, 3vw, 14px)',
+  padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2.5vw, 14px)',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.05)',
-  borderWidth: 1,
+  background: '#f3f4f6',
+  borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: 'rgba(139, 92, 246, 0.35)',
-  fontSize: 'clamp(16px, 3.5vw, 18px)',
-  letterSpacing: '0.12em',
+  borderColor: '#d1d5db',
+  fontSize: 'clamp(15px, 3.5vw, 17px)',
+  letterSpacing: '0.1em',
   textTransform: 'uppercase',
   fontWeight: 700,
-  color: 'rgba(255,255,255,0.9)',
+  color: '#374151',
   marginBottom: 8
 };
 
@@ -201,49 +190,46 @@ export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
   fontFamily: "'Rajdhani', var(--font)",
-  fontSize: 'clamp(32px, 9vw, 48px)',
-  lineHeight: 1.0,
+  fontSize: 'clamp(26px, 7vw, 36px)',
+  lineHeight: 1.1,
   letterSpacing: '0.03em',
   fontWeight: 700,
   textTransform: 'uppercase',
-  background: 'linear-gradient(160deg, #ffffff 0%, #fde68a 35%, #c4b5fd 70%, #a78bfa 100%)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-  filter: 'drop-shadow(0 2px 24px rgba(251,191,36,0.4))',
+  color: '#111827',
+  background: 'none',
+  WebkitTextFillColor: '#111827',
 };
 
 export const mutedText: CSSProperties = {
-  color: 'rgba(203,213,225,0.9)',
+  color: '#6b7280',
   marginTop: 0,
   marginBottom: 12,
-  fontSize: 'clamp(17px, 4vw, 20px)',
+  fontSize: 'clamp(16px, 4vw, 18px)',
   lineHeight: 1.5
 };
 
 export const softDivider: CSSProperties = {
   height: 1,
   width: '100%',
-  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+  background: 'linear-gradient(90deg, transparent, #d1d5db, transparent)',
   margin: '10px 0'
 };
 
 export const inputStyle: CSSProperties = {
   width: '100%',
-  padding: 'clamp(18px, 4.5vw, 20px) clamp(18px, 4.5vw, 20px)',
-  minHeight: 'clamp(56px, 14vw, 68px)',
-  borderRadius: theme.radius,
+  padding: 'clamp(14px, 3.5vw, 18px) clamp(16px, 4vw, 20px)',
+  minHeight: 'clamp(54px, 14vw, 64px)',
+  borderRadius: 10,
   borderWidth: 2,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.16)',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#f8fafc',
+  borderColor: '#d1d5db',
+  background: '#ffffff',
+  color: '#111827',
   marginTop: 10,
-  fontSize: 'max(16px, clamp(18px, 4vw, 21px))',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 0 rgba(0,0,0,0.25)',
-  backdropFilter: 'blur(30px)',
+  fontSize: 'max(16px, clamp(18px, 4vw, 20px))',
+  boxShadow: '0 2px 0 #d1d5db',
   WebkitAppearance: 'none',
-  WebkitBorderRadius: theme.radius,
+  WebkitBorderRadius: 10,
   WebkitBoxSizing: 'border-box',
   WebkitFontSmoothing: 'antialiased',
   transform: 'translateZ(0)'
@@ -251,22 +237,22 @@ export const inputStyle: CSSProperties = {
 
 export const primaryButton: CSSProperties = {
   marginTop: 16,
-  background: 'linear-gradient(135deg, #fbbf24 0%, #f97316 60%, #ef4444 100%)',
-  color: '#18080a',
-  border: 'none',
-  padding: 'clamp(20px, 5vw, 24px) clamp(20px, 5.5vw, 28px)',
-  minHeight: 'clamp(64px, 16vw, 76px)',
-  borderRadius: theme.radius,
+  background: 'var(--team-color, #2563eb)',
+  color: '#ffffff',
+  border: '2px solid transparent',
+  padding: 'clamp(16px, 4vw, 20px) clamp(20px, 5vw, 28px)',
+  minHeight: 'clamp(56px, 14vw, 68px)',
+  borderRadius: 10,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
   fontFamily: "'Rajdhani', var(--font)",
   fontWeight: 700,
-  fontSize: 'max(20px, clamp(22px, 5vw, 26px))',
+  fontSize: 'max(18px, clamp(20px, 5vw, 24px))',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  boxShadow: '0 0 36px rgba(251,191,36,0.35), 0 16px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35)',
-  transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  boxShadow: '0 4px 0 rgba(0,0,0,0.25), 0 8px 20px rgba(0,0,0,0.1)',
+  transition: 'transform 0.1s ease, box-shadow 0.1s ease',
   WebkitFontSmoothing: 'antialiased',
   transform: 'translateZ(0)',
   WebkitTapHighlightColor: 'transparent',
@@ -275,26 +261,25 @@ export const primaryButton: CSSProperties = {
 
 export const choiceButton: CSSProperties = {
   flex: 1,
-  background: 'rgba(30, 15, 70, 0.7)',
-  border: '1px solid rgba(139,92,246,0.25)',
-  borderBottom: '3px solid rgba(80,30,180,0.6)',
-  color: '#f0e8ff',
+  background: '#ffffff',
+  border: '2px solid #d1d5db',
+  borderBottom: '4px solid #9ca3af',
+  color: '#111827',
   borderRadius: 12,
-  padding: 'clamp(20px, 5vw, 24px) clamp(14px, 4vw, 18px)',
+  padding: 'clamp(18px, 4.5vw, 22px) clamp(14px, 4vw, 18px)',
   cursor: 'pointer',
   fontFamily: "'Rajdhani', var(--font)",
   fontWeight: 700,
   fontSize: 'max(17px, clamp(18px, 4.2vw, 22px))',
   letterSpacing: '0.04em',
   minHeight: 'clamp(64px, 16vw, 80px)',
-  boxShadow: '0 6px 0 rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.45)',
+  boxShadow: '0 3px 0 #d1d5db',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
   transition: 'all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1)',
   transform: 'translateZ(0)',
   touchAction: 'manipulation',
   textAlign: 'left',
-  backdropFilter: 'blur(10px)',
 };
 
 export const progressOuter = (color: string): CSSProperties => ({
@@ -302,7 +287,7 @@ export const progressOuter = (color: string): CSSProperties => ({
   width: '100%',
   height: 'clamp(8px, 2vw, 12px)',
   borderRadius: 999,
-  background: 'linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1))',
+  background: '#e5e7eb',
   overflow: 'hidden',
   position: 'relative',
   boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 16px ${color}25`
@@ -331,11 +316,11 @@ export const progressKnob = (color: string): CSSProperties => ({
 
 export const questionShell: CSSProperties = {
   position: 'relative',
-  padding: 'clamp(8px, 3vw, 14px) 0 clamp(12px, 3vw, 16px)',
+  padding: 'clamp(8px, 3vw, 14px) clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px)',
   margin: '0 auto',
-  borderRadius: 0,
-  borderBottom: '1px solid rgba(251,191,36,0.2)',
-  background: 'transparent',
+  borderRadius: 16,
+  border: '2px solid #d1d5db',
+  background: '#ffffff',
   overflow: 'visible',
   width: '100%',
   maxWidth: 720,
@@ -346,7 +331,7 @@ export const gradientHalo: CSSProperties = {
   position: 'absolute',
   inset: -6,
   zIndex: 0,
-  opacity: 0.9,
+  opacity: 0,
   filter: 'blur(18px)',
   pointerEvents: 'none'
 };
@@ -367,10 +352,9 @@ export const categoryChip: CSSProperties = {
   gap: 10,
   padding: '8px 12px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.02)',
-  backdropFilter: 'blur(20px)',
-  color: '#fff',
-  border: '1px solid rgba(255,255,255,0.06)',
+  background: '#f3f4f6',
+  color: '#374151',
+  border: '2px solid #e5e7eb',
   fontWeight: 800
 };
 
@@ -398,8 +382,8 @@ export const connectionPill = (status: 'connecting' | 'connected' | 'disconnecte
 
 export const timerPill: CSSProperties = {
   ...categoryChip,
-  background: 'rgba(255,255,255,0.1)',
-  color: '#fff',
+  background: '#f9fafb',
+  color: '#111827',
   letterSpacing: '0.05em'
 };
 
@@ -407,6 +391,8 @@ export const questionStyleTeam: CSSProperties = {
   position: 'relative',
   zIndex: 1,
   margin: '8px 0 12px',
-  fontSize: 22,
+  fontSize: 'clamp(20px, 5vw, 26px)',
+  fontWeight: 700,
+  color: '#111827',
   lineHeight: 1.4
 };

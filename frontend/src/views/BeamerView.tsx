@@ -1612,13 +1612,13 @@ useEffect(() => {
             status="info"
             rightNode={
               teamJoinQr ? (
-                <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', fontFamily: 'var(--font-game)', fontWeight: 700 }}>
                   <img
                     src={teamJoinQr}
                     alt="Team QR"
-                    style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 6 }}
+                    style={{ width: 180, height: 180, borderRadius: 12, border: '3px solid #111827', background: '#fff', padding: 6, marginBottom: 6, display: 'block' }}
                   />
-                  <div>{joinDisplay}</div>
+                  <div style={{ fontSize: 16, color: '#111827', letterSpacing: '0.04em' }}>{joinDisplay}</div>
                 </div>
               ) : undefined
             }

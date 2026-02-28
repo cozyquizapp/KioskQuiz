@@ -3815,7 +3815,7 @@ useEffect(() => {
       {toast && <div style={toastStyle}>{toast}</div>}
       
       {/* Walking Animals at Bottom of Screen */}
-      {teams.filter(t => t.id && t.avatarId).map((team, index) => {
+      {avatarsEnabled && teams.filter(t => t.id && t.avatarId).map((team, index) => {
         const avatar = AVATARS.find(a => a.id === team.avatarId);
         if (!avatar) return null;
         

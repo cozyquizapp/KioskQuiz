@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
 
 :root {
   --bg: #08051a;
@@ -28,6 +28,7 @@
   --cat-cheese: #e2a9f1;
   --cat-gemischte: #d85f58;
   --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-game: 'Rajdhani', 'Geist', system-ui, sans-serif;
   --glass: rgba(13, 15, 20, 0.55);
   --glass-strong: rgba(17, 23, 42, 0.75);
   --ui-panel-bg: rgba(12, 16, 26, 0.82);
@@ -83,6 +84,19 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.025em;
+}
+
+/* Gaming font — headings, buttons, labels */
+#team-root h1,
+#team-root h2,
+#team-root h3,
+#team-root button,
+.cozy-beamer-shell h1,
+.cozy-beamer-shell h2,
+.cozyQuestionHero .cozyQuestionTitle,
+.cozyLobbyTitle {
+  font-family: var(--font-game);
+  letter-spacing: 0.03em;
 }
 
 /* Film grain noise overlay — shared by team and beamer */
@@ -861,6 +875,17 @@ button:focus-visible {
   opacity: 0.55;
   border-color: rgba(148, 163, 184, 0.25);
   background: rgba(2, 6, 23, 0.55);
+}
+
+/* 3D depth on all team primary buttons */
+#team-root button[style*="fbbf24"],
+#team-root button[style*="f97316"] {
+  box-shadow: 0 6px 0 rgba(120,40,0,0.5), 0 0 36px rgba(251,191,36,0.35), 0 12px 32px rgba(0,0,0,0.45) !important;
+}
+#team-root button[style*="fbbf24"]:active,
+#team-root button[style*="f97316"]:active {
+  transform: translateY(4px) scale(0.99) !important;
+  box-shadow: 0 2px 0 rgba(120,40,0,0.5), 0 0 20px rgba(251,191,36,0.2), 0 4px 12px rgba(0,0,0,0.4) !important;
 }
 
 /* Game-show submit button pulse */
@@ -3273,4 +3298,92 @@ button:active:not(:disabled),
   40% { transform: scale(1.35); }
   70% { transform: scale(1.15); }
   100% { transform: scale(1.2); }
+}
+
+/* =====================================================
+   GAMING UPGRADES
+   ===================================================== */
+
+/* 1. Scanline overlay on team + beamer backgrounds */
+#team-root::before,
+.cozy-beamer-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.07) 3px,
+    rgba(0, 0, 0, 0.07) 4px
+  );
+}
+
+/* 2. 3D press-effect for primary/choice buttons */
+#team-root button:not([disabled]):active {
+  transform: translateY(2px) scale(0.98) !important;
+  box-shadow: none !important;
+  transition: transform 0.06s ease, box-shadow 0.06s ease !important;
+}
+
+/* 3D raised look — bottom shadow acts as "depth" */
+.btn-3d {
+  box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35) !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+.btn-3d:active {
+  transform: translateY(4px) !important;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25) !important;
+}
+
+/* 3. Uppercase gaming labels */
+#team-root .pillLabel,
+#team-root [class*="pill"],
+#team-root [class*="chip"],
+#team-root [class*="badge"],
+#team-root [class*="label"],
+.cozyRevealAnswersLabel,
+.cozy-beamer-shell [class*="label"],
+.cozy-beamer-shell [class*="phase"] {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--font-game);
+  font-weight: 700;
+}
+
+/* 4. Health-bar timer — thick, color-shifting */
+.timer-bar-gaming {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #22c55e, #84cc16);
+  box-shadow: 0 0 12px rgba(34,197,94,0.6);
+  transition: width 0.4s linear, background 0.8s ease, box-shadow 0.8s ease;
+}
+.timer-bar-gaming.warn {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  box-shadow: 0 0 12px rgba(245,158,11,0.7);
+}
+.timer-bar-gaming.danger {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  box-shadow: 0 0 18px rgba(239,68,68,0.8);
+  animation: timer-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes timer-pulse {
+  from { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+  to   { box-shadow: 0 0 24px rgba(239,68,68,1); }
+}
+
+/* Health bar outer track */
+.timer-track-gaming {
+  width: 100%;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  position: relative;
+  margin-top: 10px;
 }

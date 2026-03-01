@@ -609,14 +609,14 @@
 
 .beamer-lobby-tile strong {
   font-family: var(--font-game);
-  font-size: 16px;
+  font-size: 20px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #111827;
 }
 
 .beamer-lobby-tile span {
-  font-size: 14px;
+  font-size: 17px;
   color: #6b7280;
 }
 
@@ -772,10 +772,10 @@
 
 .beamer-score-rank {
   font-family: var(--font-game);
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: #6b7280;
-  min-width: 28px;
+  min-width: 32px;
   text-align: center;
 }
 
@@ -787,14 +787,14 @@
 
 .beamer-score-name {
   font-family: var(--font-game);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #111827;
   letter-spacing: 0.02em;
 }
 
 .beamer-score-detail {
-  font-size: 11px;
+  font-size: 13px;
   color: #9ca3af;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -802,7 +802,7 @@
 
 .beamer-score-value {
   font-family: var(--font-game);
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
   color: #1565C0;
 }
@@ -1477,7 +1477,7 @@
 }
 
 .cozyRevealAnswersLabel {
-  font-size: 13px;
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: #6b7280;
@@ -1487,7 +1487,7 @@
 }
 
 .cozyRevealAnswerRow {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-radius: 14px;
   background: #f8fafc;
   border: 1px solid #e5e7eb;
@@ -1500,7 +1500,7 @@
 }
 
 .cozyRevealAnswerRow.estimate-winner {
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-radius: 16px;
   background: #f0fdf4 !important;
   border: 1.5px solid #bbf7d0;
@@ -1515,7 +1515,7 @@
 }
 
 .cozyRevealAnswerRank {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   opacity: 0.6;
   flex-shrink: 0;
@@ -1523,28 +1523,28 @@
 }
 
 .cozyRevealAnswerTeam {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
   flex: 1;
   letter-spacing: 0.01em;
 }
 
 .cozyRevealAnswerRow.estimate-winner .cozyRevealAnswerTeam {
-  font-size: 22px;
+  font-size: 26px;
 }
 
 .cozyRevealAnswerResult {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 900;
   flex-shrink: 0;
 }
 
 .cozyRevealAnswerRow.estimate-winner .cozyRevealAnswerResult {
-  font-size: 28px;
+  font-size: 32px;
 }
 
 .cozyRevealAnswerText {
-  font-size: 16px;
+  font-size: 20px;
   color: #374151;
   word-break: break-word;
   line-height: 1.4;
@@ -1552,7 +1552,7 @@
 }
 
 .cozyRevealAnswerRow.estimate-winner .cozyRevealAnswerText {
-  font-size: 20px;
+  font-size: 24px;
   color: #111827;
 }
 
@@ -2207,17 +2207,17 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 15px;
+  font-size: 19px;
 }
 
 .cozyTeamStatusDot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #22c55e;
 }
@@ -2228,7 +2228,7 @@
 
 .cozyTeamStatusName {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 19px;
 }
 
 .cozyTeamAnswerDot {

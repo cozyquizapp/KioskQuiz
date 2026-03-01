@@ -2910,6 +2910,7 @@ useEffect(() => {
       const teamColorMap = Object.fromEntries((teamStatus ?? []).map(t => [t.id, t.color]));
       const label = language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Answers' : 'Team answers';
       const isEstimate = question?.type === 'SCHAETZCHEN' || (question as any)?.mechanic === 'estimate';
+      const isBetting = (question as any)?.mechanic === 'betting';
       const formatAnswer = (answer: any): string => {
         if (answer === null || answer === undefined) return '–';
         if (typeof answer === 'string') return answer;
@@ -2961,11 +2962,17 @@ useEffect(() => {
                     <span className="cozyRevealAnswerResult" style={{ color: resultColor, fontWeight: 900 }}>
                       {isEstimate
                         ? (isCorrect ? '🏆' : devLabel ?? '–')
+                        : isBetting
+                        ? (isCorrect ? '✓' : isWrong ? '✗' : '–')
                         : (isCorrect ? '✓' : isWrong ? '✗' : '–')}
                     </span>
                   </div>
                   <div className="cozyRevealAnswerText" style={{ fontWeight: isTopRank ? 700 : 400 }}>
-                    {formatAnswer(entry.answer)}
+                    {isBetting
+                      ? <span style={{ fontWeight: 700, color: isCorrect ? '#16a34a' : isWrong ? '#dc2626' : '#374151' }}>
+                          {entry.betPoints ?? 0} / {entry.betPool ?? 10} Pkt. auf richtiger Antwort
+                        </span>
+                      : formatAnswer(entry.answer)}
                     {isEstimate && devLabel && !isCorrect && (
                       <span style={{ marginLeft: 10, color: '#9ca3af', fontSize: '0.9em' }}>{devLabel}</span>
                     )}

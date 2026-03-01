@@ -616,6 +616,8 @@ export interface AnswerAwardSnapshot {
   awardedPoints?: number | null;
   awardedDetail?: string | null;
   tieBreaker?: AnswerTieBreaker | null;
+  betPoints?: number;
+  betPool?: number;
 }
 
 // Event-Payloads (optional gemeinsame Nutzung)

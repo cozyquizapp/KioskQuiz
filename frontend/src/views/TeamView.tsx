@@ -2178,7 +2178,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <PulseIndicator />
         </div>
       )}
-      {answer && (
+      {!isFinal && answer && (
         <p style={{ margin: evaluating ? '12px 0 0' : '8px 0 0', color: '#374151', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
           <span style={{ color: '#6b7280', fontSize: 12 }}>{t('yourAnswer')}</span>
           <br />
@@ -2186,7 +2186,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         </p>
       )}
       {/* Show other teams' answers during evaluation */}
-      {evaluating && teamStatus && teamStatus.length > 1 && (
+      {!isFinal && evaluating && teamStatus && teamStatus.length > 1 && (
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
           <span style={{ color: '#9ca3af', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
             {language === 'de' ? 'Andere Teams' : 'Other teams'}
@@ -2230,8 +2230,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
         </div>
       )}
-      {resultMessage && <div className="message-state message-accent">{resultMessage}</div>}
-      {resultPoints !== null && (
+      {!isFinal && resultMessage && <div className="message-state message-accent">{resultMessage}</div>}
+      {!isFinal && resultPoints !== null && (
         <div className="message-state message-success">
           +{resultPoints} {language === 'de' ? 'Punkte' : 'Points'}
           {resultDetail ? ` (${resultDetail})` : ''}
@@ -2272,7 +2272,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
         </div>
       )}
-      {renderTop5Solution()}
+      {!isFinal && renderTop5Solution()}
     </div>
     );
   }

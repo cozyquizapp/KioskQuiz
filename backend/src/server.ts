@@ -3897,7 +3897,9 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
         isCorrect: entry.isCorrect,
         awardedPoints: entry.awardedPoints ?? null,
         awardedDetail: entry.awardedDetail ?? null,
-        tieBreaker: entry.tieBreaker ?? null
+        tieBreaker: entry.tieBreaker ?? null,
+        betPoints: entry.betPoints,
+        betPool: entry.betPool
       }))
     : undefined;
   const liveAnswers = !includeResults

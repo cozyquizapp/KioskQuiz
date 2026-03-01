@@ -47,11 +47,9 @@ const BeamerFrame: React.FC<Props> = ({
       : null;
   return (
     <div className={`beamer-frame beamer-jackbox scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
-      {normalizedProgress !== null && (
-        <div className="beamer-frame-progress">
-          <div className="beamer-frame-progress-inner" style={{ width: `${normalizedProgress * 100}%` }} />
-        </div>
-      )}
+      <div className="beamer-frame-progress" style={{ visibility: normalizedProgress !== null ? 'visible' : 'hidden' }}>
+        <div className="beamer-frame-progress-inner" style={{ width: `${(normalizedProgress ?? 0) * 100}%` }} />
+      </div>
       {!hideHeader && (
         <BeamerHeader
           leftLabel={leftLabel}

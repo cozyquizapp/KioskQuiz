@@ -2062,7 +2062,7 @@ function ModeratorPage(): React.ReactElement {
                     border: '1px solid #e5e7eb',
                     borderRadius: 12,
                     padding: 10,
-                    background: 'rgba(0,0,0,0.25)',
+                    background: '#f9fafb',
                     display: 'grid',
                     gap: 6
                   }}
@@ -2331,7 +2331,7 @@ function ModeratorPage(): React.ReactElement {
       >
         <div style={{ fontSize: 10, opacity: 0.7, letterSpacing: '0.18em', textTransform: 'uppercase' }}>NÄCHSTER SCHRITT</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ padding: '4px 10px', borderRadius: 8, background: 'rgba(0,0,0,0.25)', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', fontFamily: 'monospace', flexShrink: 0 }}>
+          <span style={{ padding: '4px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', fontFamily: 'monospace', flexShrink: 0 }}>
             {hotkeyLabel}
           </span>
           <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: '0.02em' }}>

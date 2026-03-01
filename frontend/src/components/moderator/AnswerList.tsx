@@ -77,7 +77,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
             color: '#86efac'
           }}
         >
-          Loesung: {answers.solution}
+          Lösung: {answers.solution}
         </span>
       )}
     </div>

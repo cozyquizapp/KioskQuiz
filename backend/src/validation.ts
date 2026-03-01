@@ -64,11 +64,14 @@ export const validateTeamName = (input: unknown): { valid: boolean; value: strin
 };
 
 /**
- * Validate answer submission: 0-1000 chars, allow most chars but sanitize
+ * Validate answer submission: sanitize strings, pass through structured values
  */
-export const validateAnswer = (input: unknown): { valid: boolean; value: string } => {
+export const validateAnswer = (input: unknown): { valid: boolean; value: unknown } => {
+  // Structured answers (objects, arrays, numbers from bunte/betting mechanics) pass through as-is
+  if (input !== null && typeof input !== 'string') {
+    return { valid: true, value: input };
+  }
   const sanitized = sanitizeString(input, LIMITS.ANSWER);
-  // Answers can be empty (for some mechanics), but must be sanitized
   return { valid: true, value: sanitized };
 };
 

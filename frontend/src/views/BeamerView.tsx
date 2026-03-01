@@ -374,6 +374,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [blitzTick, setBlitzTick] = useState(0);
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
+  const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -946,6 +947,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
         setQuestion(payload.currentQuestion);
         if (payload.currentQuestion) {
           setAnswerResults(null);
+          setMediaIsPortrait(null);
         }
       }
       if (payload.timer) {
@@ -1986,8 +1988,6 @@ useEffect(() => {
             })}
           </div>
         )}
-        
-        {renderTeamAnswersSection()}
       </div>
     );
   };
@@ -2972,7 +2972,7 @@ useEffect(() => {
                       ? <span style={{ fontWeight: 700, color: isCorrect ? '#16a34a' : isWrong ? '#dc2626' : '#374151' }}>
                           {entry.betPoints ?? 0} / {entry.betPool ?? 10} Pkt. auf richtiger Antwort
                         </span>
-                      : formatAnswer(entry.answer)}
+                      : formatTeamAnswer(entry.answer)}
                     {isEstimate && devLabel && !isCorrect && (
                       <span style={{ marginLeft: 10, color: '#9ca3af', fontSize: '0.9em' }}>{devLabel}</span>
                     )}
@@ -3093,7 +3093,7 @@ useEffect(() => {
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           <div className={`cozyQuestionGrid ${phase === 'reveal' ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
-            <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
+            <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${mediaIsPortrait ? ' has-portrait-media' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase !== 'reveal' && (
                   <div className={`cozyQuestionPhaseBadge${phase === 'locked' ? ' locked' : ''}`}>
@@ -3112,8 +3112,15 @@ useEffect(() => {
               <div className="cozyQuestionText">{questionTextLocalized}</div>
               {promptText && <div className="cozyQuestionHint">{promptText}</div>}
               {mediaUrl && (
-                <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}`}>
-                  <img src={mediaUrl} alt="" />
+                <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}${mediaIsPortrait ? ' portrait' : ''}`}>
+                  <img
+                    src={mediaUrl}
+                    alt=""
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      setMediaIsPortrait(img.naturalHeight > img.naturalWidth);
+                    }}
+                  />
                 </div>
               )}
               <div className="cozyQuestionBody">{renderHeroBody()}</div>

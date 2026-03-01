@@ -132,7 +132,7 @@ const COPY = {
     waitingJoin: 'Bitte beitreten, dann geht es gleich los.',
     waitingAdmin: 'Warte auf Admin ...',
     joinWelcome: 'Willkommen beim Cozy Kiosk Quiz',
-    joinHint: "Gib deinen Teamnamen ein, bestaetige und dann geht's los.",
+    joinHint: "Gib deinen Teamnamen ein, bestätige und dann geht's los.",
     timerActiveLabel: 'Timer aktiv',
     timerDoneLabel: 'Zeit vorbei',
     evaluating: 'Wir prüfen alle Antworten ...',
@@ -141,10 +141,10 @@ const COPY = {
     joinTitle: 'Team beitreten',
     joinPlaceholder: 'Teamname',
     joinButton: 'Beitreten',
-    avatarTitle: 'Avatar waehlen',
+    avatarTitle: 'Avatar wählen',
     avatarHint: 'Tippe eine Figur an',
     avatarRandom: 'Zufall',
-    waitingMsg: 'Bitte wartet auf die naechste Frage ...',
+    waitingMsg: 'Bitte wartet auf die nächste Frage ...',
     tfTrue: 'Wahr',
     tfFalse: 'Falsch',
     inputNumber: (unit?: string) => (unit ? `Zahl (${unit}) eingeben` : 'Zahl eingeben'),
@@ -447,6 +447,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [isFinal, setIsFinal] = useState(false);
   const [resultPoints, setResultPoints] = useState<number | null>(null);
   const [resultDetail, setResultDetail] = useState<string | null>(null);
+  const [resultDeviation, setResultDeviation] = useState<number | null>(null);
   const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>(() =>
     localStorage.getItem('teamSelectedColor') || '#7c3aed'
@@ -1245,6 +1246,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       }) => {
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
+        setResultDeviation(typeof deviation === 'number' && Number.isFinite(deviation) ? deviation : null);
         setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, question));
         setPhase('showResult');
         
@@ -1388,6 +1390,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     setBunteOrderCriteria(null);
     setResultPoints(null);
     setResultDetail(null);
+    setResultDeviation(null);
   }
 
   function applyRankingSelection(current: string[], index: number, value: string) {
@@ -1708,7 +1711,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
     if (payload.kind === 'oneOfEight') {
       if (!bunteOneChoice) {
-        showError(language === 'de' ? 'Bitte eine Option waehlen.' : 'Please choose an option.');
+        showError(language === 'de' ? 'Bitte eine Option wählen.' : 'Please choose an option.');
         return null;
       }
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
@@ -1830,7 +1833,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 disabled={!canAnswer}
                 style={{ ...inputStyle }}
               >
-                <option value="">{language === 'de' ? 'Waehlen...' : 'Select...'}</option>
+                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
                 {payload.items.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
@@ -1941,6 +1944,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 className={`team-choice shimmer-card hover-spring btn-ripple${answer === String(idx) ? ' is-selected' : ''}`}
                 style={{
                   ...choiceButton,
+                  display: 'flex',
+                  alignItems: 'center',
                   border: `2px solid ${accent}55`,
                   borderBottom: `4px solid ${accent}99`,
                   background: answer === String(idx) ? `${accent}18` : '#ffffff',
@@ -2142,19 +2147,17 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}
         style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
       >
-      <div style={{ ...pillLabel }}>
-        {isFinal
-          ? language === 'de'
-            ? 'Final'
-            : 'Final'
-          : evaluating
-          ? language === 'de'
-            ? 'Host prueft...'
-            : 'Host reviewing...'
-          : language === 'de'
-          ? 'Ergebnis'
-          : 'Result'}
-      </div>
+      {!isFinal && (
+        <div style={{ ...pillLabel }}>
+          {evaluating
+            ? language === 'de'
+              ? 'Host prüft...'
+              : 'Host reviewing...'
+            : language === 'de'
+            ? 'Ergebnis'
+            : 'Result'}
+        </div>
+      )}
       {!evaluating && (
         <div style={{
           margin: '12px 0 0',
@@ -2183,6 +2186,18 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <span style={{ color: '#6b7280', fontSize: 12 }}>{t('yourAnswer')}</span>
           <br />
           {formatSubmittedAnswer(answer)}
+        </p>
+      )}
+      {isFinal && answer && isClosenessQuestion(question) && (
+        <p style={{ margin: '8px 0 0', color: '#374151', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
+          <span style={{ color: '#6b7280', fontSize: 12 }}>{t('yourAnswer')}</span>
+          <br />
+          {formatSubmittedAnswer(answer)}
+          {resultDeviation !== null && (
+            <span style={{ marginLeft: 8, color: '#6b7280', fontSize: 12, fontWeight: 600 }}>
+              ({language === 'de' ? 'Abweichung' : 'deviation'}: ±{Math.round(resultDeviation * 100) / 100})
+            </span>
+          )}
         </p>
       )}
       {/* Show other teams' answers during evaluation */}
@@ -2564,7 +2579,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                         disabled={isPinned || isBanned}
                         onClick={() => submitRundlaufPick(entry.id)}
                       >
-                        {language === 'de' ? 'Waehlen' : 'Pick'}
+                        {language === 'de' ? 'Wählen' : 'Pick'}
                       </button>
                     )}
                   </div>
@@ -2864,7 +2879,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           {canShowPick && (
             <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
               {language === 'de'
-                ? '✓ Deine Runde: waehlen Sie 1 Kategorie'
+                ? '✓ Deine Runde: wählen Sie 1 Kategorie'
                 : '✓ Your turn: pick 1 category'}
             </div>
           )}
@@ -3328,7 +3343,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1' }}>
               {language === 'de'
-                ? 'Set abgeschlossen. Warte auf das naechste.'
+                ? 'Set abgeschlossen. Warte auf das nächste.'
                 : 'Set finished. Waiting for the next one.'}
             </div>
             {Object.keys(results).length > 0 && (

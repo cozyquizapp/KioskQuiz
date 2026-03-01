@@ -46,12 +46,11 @@ type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?
 type NextActionHintDetails = { hotkey: string; label: string; detail: string; context?: string };
 
 const card: React.CSSProperties = {
-  background: 'linear-gradient(160deg, rgba(15,23,42,0.78), rgba(10,14,24,0.88))',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: '#ffffff',
+  border: '1px solid #e5e7eb',
   borderRadius: 'var(--radius)',
   padding: 16,
-  boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
-  backdropFilter: 'blur(16px)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   overflow: 'hidden'
 };
 
@@ -59,10 +58,9 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px 14px',
   borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.16)',
-  background: 'rgba(15,23,42,0.6)',
-  color: 'var(--ui-input-text)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+  border: '1px solid #d1d5db',
+  background: '#f9fafb',
+  color: '#111827',
   fontWeight: 600
 };
 
@@ -75,12 +73,12 @@ const timerButtonStyle: React.CSSProperties = {
 };
 
 const statChip: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.14)',
+  background: '#f3f4f6',
+  border: '1px solid #e5e7eb',
   borderRadius: 9999,
   padding: '6px 10px',
   fontSize: 12,
-  color: '#cbd5e1',
+  color: '#374151',
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
@@ -88,21 +86,20 @@ const statChip: React.CSSProperties = {
 };
 
 const actionWrap: React.CSSProperties = {
-  background: 'rgba(12,16,26,0.7)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: '#f9fafb',
+  border: '1px solid #e5e7eb',
   borderRadius: 'var(--radius)',
   padding: 12,
-  boxShadow: '0 14px 30px rgba(0,0,0,0.32)',
-  backdropFilter: 'blur(14px)',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
   overflow: 'hidden'
 };
 
 const pillStyle = (tone: 'setup' | 'live' | 'eval' | 'final'): React.CSSProperties => {
   const map = {
-    setup: { bg: 'rgba(99,229,255,0.12)', border: 'rgba(99,229,255,0.4)', color: '#7dd3fc' },
-    live: { bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.4)', color: '#86efac' },
-    eval: { bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.4)', color: '#fcd34d' },
-    final: { bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.4)', color: '#7dd3fc' }
+    setup: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
+    live: { bg: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.4)', color: '#15803d' },
+    eval: { bg: 'rgba(217,119,6,0.1)', border: 'rgba(217,119,6,0.4)', color: '#b45309' },
+    final: { bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.4)', color: '#0369a1' }
   } as const;
   const p = map[tone];
   return {
@@ -1417,15 +1414,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Pause</div>
-          <p style={{ color: 'var(--ui-chip-text)' }}>K.O.-Rallye startet gleich.</p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-            <button
-              style={{ ...inputStyle, width: 'auto', background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' }}
-              onClick={handleNextQuestion}
-            >
-              WEITER
-            </button>
-          </div>
+          <p style={{ color: '#6b7280' }}>K.O.-Rallye startet gleich.</p>
         </section>
       );
     }
@@ -1434,16 +1423,8 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Scoreboard vor K.O.-Rallye</div>
-          <p style={{ color: 'var(--ui-chip-text)' }}>Platzierung entscheidet die Auswahl.</p>
+          <p style={{ color: '#6b7280' }}>Platzierung entscheidet die Auswahl.</p>
           <div style={{ marginTop: 10 }}>{renderCompactScoreboard('Standings')}</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-            <button
-              style={{ ...inputStyle, width: 'auto', background: 'var(--ui-button-primary)', color: 'var(--ui-button-on-light)' }}
-              onClick={handleNextQuestion}
-            >
-              WEITER
-            </button>
-          </div>
         </section>
       );
     }
@@ -1470,8 +1451,8 @@ function ModeratorPage(): React.ReactElement {
                     style={{
                       ...statChip,
                       opacity: isBanned ? 0.35 : 1,
-                      borderColor: isPinned ? 'rgba(96,165,250,0.6)' : 'rgba(255,255,255,0.15)',
-                      background: isPinned ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.06)'
+                      borderColor: isPinned ? 'rgba(59,130,246,0.5)' : '#e5e7eb',
+                      background: isPinned ? 'rgba(59,130,246,0.1)' : '#f3f4f6'
                     }}
                   >
                     {entry.title} {label ? `(${label})` : ''}
@@ -1480,7 +1461,7 @@ function ModeratorPage(): React.ReactElement {
               })}
             </div>
             {selectedTitles.length > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--ui-chip-text)' }}>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>
                 Auswahl: {selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' � ')}
               </div>
             )}
@@ -1529,7 +1510,7 @@ function ModeratorPage(): React.ReactElement {
                   ))}
                 </select>
                 <button
-                  style={{ ...inputStyle, width: 'auto', background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }}
+                  style={{ ...inputStyle, width: 'auto', background: 'rgba(22,163,74,0.1)', borderColor: 'rgba(22,163,74,0.4)', color: '#15803d' }}
                   onClick={() => {
                     const selection = rundlaufPickDraft.trim();
                     if (!selection) return;
@@ -1555,7 +1536,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Auswahl abgeschlossen</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: 13, color: '#374151' }}>
             {selectedTitles.length > 0
               ? selectedTitles.map((title, idx) => `R${idx + 1}: ${title}`).join(' | ')
               : 'Kategorien bereit'}
@@ -1576,7 +1557,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Kategorie-Showcase</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>Animation laeuft auf dem Beamer...</div>
+          <div style={{ fontSize: 13, color: '#374151' }}>Animation laeuft auf dem Beamer...</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
               style={{ ...inputStyle, width: 'auto', background: 'rgba(148,163,184,0.16)' }}
@@ -1593,7 +1574,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye Runde {roundLabel}</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>Kategorie: {currentCategoryTitle || 'n/a'}</div>
+          <div style={{ fontSize: 13, color: '#374151' }}>Kategorie: {currentCategoryTitle || 'n/a'}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             <button
               style={{ ...inputStyle, width: 'auto', background: 'linear-gradient(135deg, #63e5ff, #60a5fa)', color: '#0b1020' }}
@@ -1612,27 +1593,27 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>K.O.-Rallye live</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: 13, color: '#374151' }}>
             Runde {roundLabel} � Kategorie: {currentCategoryTitle || 'n/a'}
           </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span style={statChip}>Aktiv: {activeTeamName || 'n/a'}</span>
             {rundlaufTimeLeft !== null && <span style={statChip}>Restzeit {rundlaufTimeLeft}s</span>}
             <span style={statChip}>Antworten: {rundlauf?.usedAnswers?.length ?? 0}/{totalCount}</span>
-            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#93c5fd'}}>�brig: {remainingCount}</span>}
+            {remainingCount > 0 && <span style={{...statChip, background: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.3)', color: '#1d4ed8'}}>�brig: {remainingCount}</span>}
           </div>
 
           {/* Remaining answers hint */}
           {totalCount > 0 && remainingCount > 0 && remainingCount <= 5 && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: '#93c5fd' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} �brig:</div>
-              <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: '#1d4ed8' }}>Noch {remainingCount} Antwort{remainingCount !== 1 ? 'en' : ''} �brig:</div>
+              <div style={{ fontSize: 12, color: '#374151', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {(rundlauf?.remainingAnswers ?? []).slice(0, 10).map((answer, idx) => (
                   <span key={idx} style={{ background: 'rgba(148,163,184,0.2)', padding: '4px 8px', borderRadius: 4 }}>
                     {answer}
                   </span>
                 ))}
-                {remainingCount > 10 && <span style={{ color: '#94a3b8' }}>... +{remainingCount - 10} mehr</span>}
+                {remainingCount > 10 && <span style={{ color: '#6b7280' }}>... +{remainingCount - 10} mehr</span>}
               </div>
             </div>
           )}
@@ -1642,13 +1623,13 @@ function ModeratorPage(): React.ReactElement {
               <div style={{ fontWeight: 700, marginBottom: 4 }}>
                 Letzter Versuch: {lastAttemptTeamName || lastAttempt.teamId}
               </div>
-              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{lastAttempt.text || '�'}</div>
-              {lastAttemptLabel && <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>{lastAttemptLabel}</div>}
+              <div style={{ color: '#111827', fontSize: 14 }}>{lastAttempt.text || '�'}</div>
+              {lastAttemptLabel && <div style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>{lastAttemptLabel}</div>}
               
               {/* Validation hint: show if answer is similar to any available answer */}
               {lastAttempt.verdict === 'invalid' && lastAttempt.reason === 'not-listed' && rundlauf?.availableAnswers && (
                 <div style={{ marginTop: 8, padding: 8, background: 'rgba(248,113,113,0.1)', borderRadius: 6 }}>
-                  <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>�hnliche Antworten:</div>
+                  <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 600, marginBottom: 4 }}>�hnliche Antworten:</div>
                   <div style={{ fontSize: 12, color: '#fecaca', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {rundlauf.availableAnswers.slice(0, 5).map((answer, idx) => (
                       <span key={idx} style={{ background: 'rgba(248,113,113,0.2)', padding: '3px 6px', borderRadius: 3 }}>
@@ -1662,19 +1643,19 @@ function ModeratorPage(): React.ReactElement {
           )}
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'rgba(34,197,94,0.18)', borderColor: 'rgba(34,197,94,0.4)', color: '#bbf7d0' }}
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(34,197,94,0.18)', borderColor: 'rgba(34,197,94,0.4)', color: '#15803d' }}
               onClick={() => handleRundlaufMark('ok')}
             >
               OK
             </button>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'rgba(250,204,21,0.16)', borderColor: 'rgba(250,204,21,0.4)', color: '#fde68a' }}
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(250,204,21,0.16)', borderColor: 'rgba(250,204,21,0.4)', color: '#92400e' }}
               onClick={() => handleRundlaufMark('dup')}
             >
               DUP
             </button>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.2)', borderColor: 'rgba(248,113,113,0.45)', color: '#fecaca' }}
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.4)', color: '#dc2626' }}
               onClick={() => handleRundlaufMark('invalid')}
             >
               INVALID
@@ -1686,7 +1667,7 @@ function ModeratorPage(): React.ReactElement {
               Naechstes Team
             </button>
             <button
-              style={{ ...inputStyle, width: 'auto', background: 'rgba(248,113,113,0.2)', borderColor: 'rgba(248,113,113,0.45)', color: '#fecaca' }}
+              style={{ ...inputStyle, width: 'auto', background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.4)', color: '#dc2626' }}
               onClick={() => handleRundlaufEliminate(rundlauf?.activeTeamId ?? null)}
             >
               Team rausnehmen
@@ -1707,7 +1688,7 @@ function ModeratorPage(): React.ReactElement {
       return (
         <section style={{ ...card, marginTop: 12 }}>
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Runde beendet</div>
-          <div style={{ color: '#cbd5e1' }}>
+          <div style={{ color: '#374151' }}>
             {winners.length ? `Sieger: ${winners.join(', ')}` : 'Keine Sieger gemeldet'}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
@@ -1795,11 +1776,11 @@ function ModeratorPage(): React.ReactElement {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <strong>{teamName}</strong>
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>
+            <span style={{ fontSize: 12, color: '#6b7280' }}>
               {used}/{limit}
             </span>
           </div>
-          <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+          <div style={{ fontSize: 12, color: '#374151' }}>
             {bans[teamId]?.join(', ') || 'Keine Bans'}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -1840,7 +1821,7 @@ function ModeratorPage(): React.ReactElement {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div>
             <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Blitz Battle</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
               Phase: {phase} · Set {Math.max(0, setIndex + 1)}/{Math.max(3, selected.length || 3)}
             </div>
           </div>
@@ -1891,7 +1872,7 @@ function ModeratorPage(): React.ReactElement {
             <div style={{ fontWeight: 700 }}>
               {language === 'de' ? 'Fotosprint bereit' : 'Photo sprint ready'}
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
               {topTeamName
                 ? `Platz 1 (${topTeamName}) streicht 2 Themen`
                 : 'Platz 1 streicht 2 Themen'}{' '}
@@ -1906,7 +1887,7 @@ function ModeratorPage(): React.ReactElement {
                   {theme.title}
                 </span>
               ))}
-              {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
+              {pool.length === 0 && <span style={{ color: '#6b7280' }}>Keine Themen</span>}
             </div>
             <button
               style={{ ...inputStyle, width: 'auto' }}
@@ -1927,7 +1908,7 @@ function ModeratorPage(): React.ReactElement {
                   {theme.title}
                 </span>
               ))}
-              {pool.length === 0 && <span style={{ color: '#94a3b8' }}>Keine Themen</span>}
+              {pool.length === 0 && <span style={{ color: '#6b7280' }}>Keine Themen</span>}
             </div>
             {topTeamId && (
               <div style={{ display: 'grid', gap: 8 }}>
@@ -1992,7 +1973,7 @@ function ModeratorPage(): React.ReactElement {
                   key={`blitz-theme-${theme.id}-${idx}`}
                   style={{
                     ...statChip,
-                    background: idx === setIndex ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
+                    background: idx === setIndex ? 'rgba(59,130,246,0.12)' : '#f3f4f6',
                     borderColor: idx === setIndex ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)'
                   }}
                 >
@@ -2004,7 +1985,7 @@ function ModeratorPage(): React.ReactElement {
         )}
 
         {phase === 'ROUND_INTRO' && (
-          <div style={{ marginTop: 10, fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ marginTop: 10, fontSize: 13, color: '#374151' }}>
             Runde startet gleich. Thema: {currentTheme?.title || '-'}
           </div>
         )}
@@ -2012,7 +1993,7 @@ function ModeratorPage(): React.ReactElement {
         {phase === 'SELECTION_COMPLETE' && (
           <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
             <div style={{ fontWeight: 700, color: '#4ade80' }}>Auswahl fertig!</div>
-            <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+            <div style={{ fontSize: 12, color: '#374151' }}>
               Die 3 Themen sind ausgelost. Jetzt kann die erste Runde starten.
             </div>
             <button
@@ -2035,7 +2016,7 @@ function ModeratorPage(): React.ReactElement {
             <div style={{ fontWeight: 700 }}>
               Set {Math.max(1, setIndex + 1)} · Thema: {currentTheme?.title || '-'}
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
               Einsendungen: {submissions.length}/{scoreboard.length}
             </div>
             
@@ -2050,14 +2031,14 @@ function ModeratorPage(): React.ReactElement {
                       <div
                         key={`blitz-ans-${teamId}`}
                         style={{
-                          border: '1px solid rgba(255,255,255,0.12)',
+                          border: '1px solid #e5e7eb',
                           borderRadius: 12,
                           padding: '8px 10px',
-                          background: 'rgba(15,23,42,0.6)'
+                          background: '#f8fafc'
                         }}
                       >
                         <div style={{ fontWeight: 700, marginBottom: 4 }}>{teamName}</div>
-                        <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                        <div style={{ fontSize: 12, color: '#374151' }}>
                           {teamAnswers.length > 0 ? teamAnswers.join(', ') : 'Keine Antworten'}
                         </div>
                       </div>
@@ -2078,7 +2059,7 @@ function ModeratorPage(): React.ReactElement {
                 <div
                   key={item.id || `blitz-item-${idx}`}
                   style={{
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid #e5e7eb',
                     borderRadius: 12,
                     padding: 10,
                     background: 'rgba(0,0,0,0.25)',
@@ -2094,7 +2075,7 @@ function ModeratorPage(): React.ReactElement {
                       style={{ width: '100%', borderRadius: 10, objectFit: 'cover', maxHeight: 140 }}
                     />
                   )}
-                  {item.prompt && <div style={{ fontSize: 12, color: '#cbd5e1' }}>{item.prompt}</div>}
+                  {item.prompt && <div style={{ fontSize: 12, color: '#374151' }}>{item.prompt}</div>}
                 </div>
               ))}
             </div>
@@ -2212,16 +2193,16 @@ function ModeratorPage(): React.ReactElement {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <div style={{ fontWeight: 800 }}>{title}</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ ...statChip, background: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.35)', color: '#93c5fd' }}>
+            <span style={{ ...statChip, background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.3)', color: '#1d4ed8' }}>
               Teams: {totalTeams || 0}
             </span>
-            <span style={{ ...statChip, background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.35)', color: '#bbf7d0' }}>
+            <span style={{ ...statChip, background: 'rgba(22,163,74,0.08)', borderColor: 'rgba(22,163,74,0.3)', color: '#15803d' }}>
               Connected: {connectedTeams || 0}
             </span>
           </div>
         </div>
         {dataset.length === 0 ? (
-          <div style={{ padding: 10, borderRadius: 12, border: '1px dashed rgba(255,255,255,0.12)', color: '#94a3b8' }}>
+          <div style={{ padding: 10, borderRadius: 12, border: '1px dashed #d1d5db', color: '#6b7280' }}>
             Noch keine Teams verbunden.
           </div>
         ) : (
@@ -2235,8 +2216,8 @@ function ModeratorPage(): React.ReactElement {
                   gap: 8,
                   padding: '6px 8px',
                   borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(0,0,0,0.35)'
+                  border: '1px solid #e5e7eb',
+                  background: '#f8fafc'
                 }}
               >
                 <span style={{ fontWeight: 700 }}>{idx + 1}.</span>
@@ -2285,15 +2266,15 @@ function ModeratorPage(): React.ReactElement {
         style={{
           ...card,
           marginTop: 12,
-          border: '1px solid rgba(251,191,36,0.45)',
-          background: 'rgba(120,53,15,0.35)'
+          border: '1px solid rgba(251,191,36,0.5)',
+          background: '#fffbeb'
         }}
       >
         <summary
           style={{
             cursor: 'pointer',
             fontWeight: 800,
-            color: '#fbbf24',
+            color: '#92400e',
             listStyle: 'none',
             outline: 'none',
             appearance: 'none',
@@ -2302,7 +2283,7 @@ function ModeratorPage(): React.ReactElement {
         >
           Hinweise ({structuralWarnings.length})
         </summary>
-        <ul style={{ margin: 0, paddingLeft: 18, color: '#fde68a', fontSize: 13 }}>
+        <ul style={{ margin: 0, paddingLeft: 18, color: '#78350f', fontSize: 13 }}>
           {structuralWarnings.map((warning, idx) => (
             <li key={`${warning}-${idx}`}>{warning}</li>
           ))}
@@ -2333,7 +2314,7 @@ function ModeratorPage(): React.ReactElement {
           padding: '20px 22px',
           borderRadius: 18,
           border: 'none',
-          background: busy ? 'rgba(255,255,255,0.08)' : bg,
+          background: busy ? '#e5e7eb' : bg,
           color: '#ffffff',
           cursor: busy ? 'not-allowed' : 'pointer',
           textAlign: 'left',
@@ -2382,7 +2363,7 @@ function ModeratorPage(): React.ReactElement {
       >
         <div style={{ ...card, maxWidth: 420, width: '92%', textAlign: 'left' }}>
           <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 6 }}>Session aktiv</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: '#374151', marginBottom: 12 }}>
             Eine Session läuft bereits. Willst du reconnecten oder neu starten?
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -2426,10 +2407,10 @@ function ModeratorPage(): React.ReactElement {
         : 'R1: - | R2: - | R3: -';
       return (
         <div style={{ ...card, flex: '1 1 240px', minWidth: 220, padding: 12 }}>
-          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>FOTOSPRINT STATUS</div>
-          <div style={{ marginTop: 6, fontSize: 13, color: '#e2e8f0' }}>Top bans: {topBans}/2</div>
-          <div style={{ fontSize: 13, color: '#e2e8f0' }}>Last pick: {pinned ?? '-'}</div>
-          <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{orderLabel}</div>
+          <div style={{ fontSize: 12, color: '#6b7280', letterSpacing: '0.16em' }}>FOTOSPRINT STATUS</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#111827' }}>Top bans: {topBans}/2</div>
+          <div style={{ fontSize: 13, color: '#111827' }}>Last pick: {pinned ?? '-'}</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>{orderLabel}</div>
         </div>
       );
     }
@@ -2442,10 +2423,10 @@ function ModeratorPage(): React.ReactElement {
         : 'R1: - | R2: - | R3: -';
       return (
         <div style={{ ...card, flex: '1 1 240px', minWidth: 220, padding: 12 }}>
-          <div style={{ fontSize: 12, color: '#cbd5e1', letterSpacing: '0.16em' }}>RUNDLAUF STATUS</div>
-          <div style={{ marginTop: 6, fontSize: 13, color: '#e2e8f0' }}>Top bans: {topBans}/2</div>
-          <div style={{ fontSize: 13, color: '#e2e8f0' }}>Last pick: {pinned ?? '-'}</div>
-          <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{orderLabel}</div>
+          <div style={{ fontSize: 12, color: '#6b7280', letterSpacing: '0.16em' }}>RUNDLAUF STATUS</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#111827' }}>Top bans: {topBans}/2</div>
+          <div style={{ fontSize: 13, color: '#111827' }}>Last pick: {pinned ?? '-'}</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>{orderLabel}</div>
         </div>
       );
     }
@@ -2463,9 +2444,9 @@ function ModeratorPage(): React.ReactElement {
           gap: 8,
           padding: 12,
           borderRadius: 18,
-          border: '1px solid rgba(34,197,94,0.35)',
-          background: 'rgba(10,14,24,0.92)',
-          boxShadow: '0 18px 40px rgba(15,23,42,0.35)',
+          border: '1px solid rgba(34,197,94,0.4)',
+          background: '#ffffff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           width: '100%',
           maxWidth: 540,
           minWidth: 0,
@@ -2591,7 +2572,7 @@ function ModeratorPage(): React.ReactElement {
         >
           <span style={{
             ...statChip,
-            ...(noAnswers ? { borderColor: 'rgba(239,68,68,0.6)', color: '#fca5a5', background: 'rgba(239,68,68,0.12)' } : {})
+            ...(noAnswers ? { borderColor: 'rgba(239,68,68,0.5)', color: '#dc2626', background: 'rgba(239,68,68,0.08)' } : {})
           }}>
             Antworten {answersCount}/{teamsCount || '0'}
           </span>
@@ -2605,8 +2586,8 @@ function ModeratorPage(): React.ReactElement {
           {questionTimerSecondsLeft !== null && (
             <span style={{
               ...statChip,
-              color: questionTimerSecondsLeft <= 5 ? '#fca5a5' : questionTimerSecondsLeft <= 15 ? '#fcd34d' : '#86efac',
-              borderColor: questionTimerSecondsLeft <= 5 ? 'rgba(239,68,68,0.5)' : questionTimerSecondsLeft <= 15 ? 'rgba(252,211,77,0.5)' : 'rgba(74,222,128,0.5)',
+              color: questionTimerSecondsLeft <= 5 ? '#dc2626' : questionTimerSecondsLeft <= 15 ? '#d97706' : '#16a34a',
+              borderColor: questionTimerSecondsLeft <= 5 ? 'rgba(220,38,38,0.4)' : questionTimerSecondsLeft <= 15 ? 'rgba(217,119,6,0.4)' : 'rgba(22,163,74,0.4)',
               fontWeight: 700
             }}>
               ⏱ {questionTimerSecondsLeft}s
@@ -2615,7 +2596,7 @@ function ModeratorPage(): React.ReactElement {
           <span style={{ ...statChip, gap: 4 }}>
             <button
               onClick={() => adjustTimer(-5)}
-              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#cbd5e1', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
+              style={{ background: '#e5e7eb', border: 'none', color: '#374151', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
               title="Timer −5s"
             >−</button>
             <input
@@ -2631,18 +2612,18 @@ function ModeratorPage(): React.ReactElement {
               }}
               style={{
                 width: 52,
-                background: 'rgba(15,23,42,0.7)',
-                border: '1px solid rgba(148,163,184,0.4)',
+                background: '#ffffff',
+                border: '1px solid #d1d5db',
                 borderRadius: 6,
-                color: '#e2e8f0',
+                color: '#111827',
                 padding: '2px 4px',
                 textAlign: 'center'
               }}
             />
-            <span style={{ color: '#64748b', fontSize: 11 }}>s</span>
+            <span style={{ color: '#6b7280', fontSize: 11 }}>s</span>
             <button
               onClick={() => adjustTimer(5)}
-              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#cbd5e1', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
+              style={{ background: '#e5e7eb', border: 'none', color: '#374151', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
               title="Timer +5s"
             >+</button>
           </span>
@@ -2655,7 +2636,7 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     if (!featureFlags.showLegacyPanels) return null;
     return (
-      <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
+      <div style={{ marginTop: 10, fontSize: 12, color: '#6b7280' }}>
         Shortcuts: 1 Weiter{singleActionMode ? '' : ' | 2 Sperren | 3 Aufdecken'} | 6 Scoreboard
       </div>
     );
@@ -2669,7 +2650,7 @@ const renderCozyStagePanel = () => {
     return (
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ fontWeight: 800, marginBottom: 6 }}>Awards & Finale</div>
-        <p style={{ color: '#cbd5e1', marginBottom: 10 }}>
+        <p style={{ color: '#374151', marginBottom: 10 }}>
           Scoreboard bitte auf dem Beamer lassen, Awards via Button triggern.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -2712,20 +2693,20 @@ const renderCozyStagePanel = () => {
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>
           <div style={{ display: 'grid', gap: 10 }}>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>Roomcode</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>Roomcode</div>
             <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: '0.3em' }}>{roomCode}</div>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            <div style={{ fontSize: 13, color: '#374151' }}>
               {connected} {connected === 1 ? 'Team verbunden' : 'Teams verbunden'}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
-                style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                style={{ ...inputStyle, width: 'auto', cursor: 'pointer' }}
                 onClick={handleOpenBeamerLink}
               >
                 Beamer oeffnen
               </button>
               <button
-                style={{ ...inputStyle, width: 'auto', background: 'rgba(15,23,42,0.85)', cursor: 'pointer' }}
+                style={{ ...inputStyle, width: 'auto', cursor: 'pointer' }}
                 onClick={handleCopyTeamLink}
               >
                 Team-Link kopieren
@@ -2740,17 +2721,17 @@ const renderCozyStagePanel = () => {
           </div>
           <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))' }}>
             {teamQr && (
-              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Team</div>
-                <img src={teamQr} alt="Team QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.12)' }} />
-                {teamDisplay && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{teamDisplay}</div>}
+                <img src={teamQr} alt="Team QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid #e5e7eb' }} />
+                {teamDisplay && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{teamDisplay}</div>}
               </div>
             )}
             {beamerQr && (
-              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Beamer</div>
-                <img src={beamerQr} alt="Beamer QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid rgba(255,255,255,0.12)' }} />
-                {beamerDisplay && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{beamerDisplay}</div>}
+                <img src={beamerQr} alt="Beamer QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid #e5e7eb' }} />
+                {beamerDisplay && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{beamerDisplay}</div>}
               </div>
             )}
           </div>
@@ -2758,17 +2739,17 @@ const renderCozyStagePanel = () => {
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 800, marginBottom: 8 }}>Teams im Raum</div>
           {joinScreenTeams.length === 0 ? (
-            <span style={{ color: '#94a3b8' }}>Noch keine Teams verbunden</span>
+            <span style={{ color: '#6b7280' }}>Noch keine Teams verbunden</span>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {joinScreenTeams.map((team) => (
                 <span
                   key={team.id || team.name}
-                  style={{ ...statChip, borderRadius: 12, borderColor: 'rgba(255,255,255,0.18)' }}
+                  style={{ ...statChip, borderRadius: 12 }}
                 >
                   {team.name || 'Team'}
                   {team.isReady && (
-                    <span style={{ fontSize: 10, marginLeft: 6, color: '#5eead4' }}>Ready</span>
+                    <span style={{ fontSize: 10, marginLeft: 6, color: '#16a34a' }}>Ready</span>
                   )}
                 </span>
               ))}
@@ -2788,8 +2769,8 @@ const renderCozyStagePanel = () => {
           gap: 6,
           padding: 12,
           borderRadius: 12,
-          border: '1px solid rgba(148,163,184,0.3)',
-          background: 'rgba(12,16,26,0.7)'
+          border: '1px solid #e5e7eb',
+          background: '#f9fafb'
         }}
       >
         <div style={{ fontWeight: 900 }}>
@@ -2809,7 +2790,7 @@ const renderCozyStagePanel = () => {
                   borderRadius: 999,
                   border: `1px solid ${team.submitted ? '#22c55e55' : 'rgba(148,163,184,0.4)'}`,
                   background: team.submitted ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.12)',
-                  color: '#e2e8f0',
+                  color: '#111827',
                   fontSize: 12,
                   opacity: team.connected ? 1 : 0.55
                 }}
@@ -2857,12 +2838,12 @@ const renderCozyStagePanel = () => {
             }}
           >
             <div style={{ display: 'grid', gap: 6 }}>
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>Roomcode</span>
+              <span style={{ fontSize: 12, color: '#6b7280' }}>Roomcode</span>
               <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: '0.3em' }}>{roomCode || '----'}</span>
             </div>
             <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-start' }}>
   {pill(stateInfo.label, stateInfo.tone)}
-  <span style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700 }}>Frage {askedCount}/{totalQuestions}</span>
+  <span style={{ color: '#374151', fontSize: 14, fontWeight: 700 }}>Frage {askedCount}/{totalQuestions}</span>
 </div>
             <div style={{ display: 'grid', gap: 6, justifyItems: 'flex-end' }}>
   {questionTimerSecondsLeft !== null && <span style={statChip}>Timer {questionTimerSecondsLeft}s</span>}
@@ -2870,9 +2851,9 @@ const renderCozyStagePanel = () => {
     <span
       style={{
         ...statChip,
-        background: 'rgba(52,211,153,0.14)',
-        borderColor: 'rgba(52,211,153,0.32)',
-        color: '#86efac'
+        background: 'rgba(22,163,74,0.1)',
+        borderColor: 'rgba(22,163,74,0.35)',
+        color: '#15803d'
       }}
     >
       Bereit {readyCount.ready}/{readyCount.total}
@@ -2889,7 +2870,7 @@ const renderCozyStagePanel = () => {
           width: 40,
           height: 40,
           padding: 0,
-          background: 'rgba(255,255,255,0.08)',
+          background: '#e5e7eb',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -2900,11 +2881,11 @@ const renderCozyStagePanel = () => {
         onClick={() => setShowSettingsPanel((prev) => !prev)}
         title={showSettingsPanel ? 'Einstellungen schliessen' : 'Einstellungen'}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.12)';
+          (e.currentTarget as HTMLButtonElement).style.background = '#d1d5db';
           (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+          (e.currentTarget as HTMLButtonElement).style.background = '#e5e7eb';
           (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
         }}
       >
@@ -2915,15 +2896,15 @@ const renderCozyStagePanel = () => {
       <div style={{ ...actionWrap, marginTop: 10, display: 'grid', gap: 12 }}>
         {/* Session & Quiz Sektion */}
         <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Session & Quiz
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
-            <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
+            <span style={{ ...statChip, background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.3)', color: '#1d4ed8' }}>
               Roomcode: <strong>{roomCode || '�'}</strong>
             </span>
             {currentQuizName && (
-              <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
+              <span style={{ ...statChip, background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.3)', color: '#1d4ed8' }}>
                 Quiz: {currentQuizName}
               </span>
             )}
@@ -2934,7 +2915,7 @@ const renderCozyStagePanel = () => {
                 ...inputStyle,
                 background: 'rgba(59,130,246,0.15)',
                 border: '1px solid rgba(59,130,246,0.4)',
-                color: '#93c5fd',
+                color: '#1d4ed8',
                 fontWeight: 700,
                 cursor: 'pointer',
                 width: '100%'
@@ -2964,7 +2945,7 @@ const renderCozyStagePanel = () => {
 
         {/* Sprache Sektion */}
         <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Sprache
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -3005,12 +2986,12 @@ const renderCozyStagePanel = () => {
 
         {/* Fotoblitz Timer Sektion */}
         <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Fotoblitz Timer
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <label style={{ fontSize: 13, color: '#cbd5e1', minWidth: 100 }}>
+              <label style={{ fontSize: 13, color: '#374151', minWidth: 100 }}>
                 Bild-Phase:
               </label>
               <input
@@ -3024,7 +3005,7 @@ const renderCozyStagePanel = () => {
               <span style={{ fontSize: 13, color: '#64748b' }}>Sekunden</span>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <label style={{ fontSize: 13, color: '#cbd5e1', minWidth: 100 }}>
+              <label style={{ fontSize: 13, color: '#374151', minWidth: 100 }}>
                 Eingabe-Phase:
               </label>
               <input
@@ -3075,7 +3056,7 @@ const renderCozyStagePanel = () => {
 
         {/* Anzeige Sektion */}
         <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Anzeige
           </div>
           <button
@@ -3083,7 +3064,7 @@ const renderCozyStagePanel = () => {
               ...inputStyle,
               background: avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
               border: `1px solid ${avatarsEnabled ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`,
-              color: avatarsEnabled ? '#86efac' : '#fca5a5',
+              color: avatarsEnabled ? '#15803d' : '#dc2626',
               fontWeight: 700,
               cursor: 'pointer',
               width: '100%'
@@ -3108,7 +3089,7 @@ const renderCozyStagePanel = () => {
                     style={{ ...inputStyle, flex: 1 }}
                   />
                   <button
-                    style={{ ...inputStyle, width: 'auto', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                    style={{ ...inputStyle, width: 'auto', background: '#e5e7eb', cursor: 'pointer' }}
                     onClick={handleRoomConnect}
                   >
                     Verbinden
@@ -3162,7 +3143,7 @@ const renderCozyStagePanel = () => {
                     style={{
                       ...inputStyle,
                       width: 'auto',
-                      background: 'rgba(255,255,255,0.04)',
+                      background: '#f3f4f6',
                       cursor: 'pointer'
                     }}
                     onClick={() => setShowSessionSetup(false)}
@@ -3226,8 +3207,8 @@ const renderCozyStagePanel = () => {
       style={{
         minHeight: '100vh',
         height: '100dvh',
-        background: 'var(--bg)',
-        color: '#e2e8f0',
+        background: '#f0f2f5',
+        color: '#111827',
         padding: 12,
         boxSizing: 'border-box',
         overflowY: 'auto',
@@ -3280,7 +3261,7 @@ const renderCozyStagePanel = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {readyCount.total > 0 && (
-                    <span style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#86efac' }}>
+                    <span style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#15803d' }}>
                       Bereit {readyCount.ready}/{readyCount.total}
                     </span>
                   )}
@@ -3288,7 +3269,7 @@ const renderCozyStagePanel = () => {
                 </div>
               </div>
               <div style={{ display: 'grid', gap: 6 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8' }}>Aktueller Roomcode</div>
+                <div style={{ fontSize: 12, color: '#6b7280' }}>Aktueller Roomcode</div>
                 <div
                   style={{
                     fontWeight: 900,
@@ -3316,7 +3297,7 @@ const renderCozyStagePanel = () => {
                     style={{
                       ...inputStyle,
                       width: 'auto',
-                      background: 'rgba(255,255,255,0.08)',
+                      background: '#e5e7eb',
                       cursor: 'pointer'
                     }}
                     onClick={handleRoomConnect}
@@ -3346,7 +3327,7 @@ const renderCozyStagePanel = () => {
                     setLang(val);
                     localStorage.setItem('moderatorLanguage', val);
                   }}
-                  style={{ ...inputStyle, background: 'rgba(255,255,255,0.05)', color: '#f8fafc' }}
+                  style={{ ...inputStyle, background: '#f9fafb', color: '#111827' }}
                 >
                   <option value="de">Deutsch</option>
                   <option value="en">Englisch</option>
@@ -3380,14 +3361,14 @@ const renderCozyStagePanel = () => {
                         ? 'rgba(34,197,94,0.16)'
                         : health === 'fail'
                         ? 'rgba(239,68,68,0.16)'
-                        : 'rgba(255,255,255,0.05)',
+                        : '#f3f4f6',
                     border:
                       health === 'ok'
-                        ? '1px solid rgba(34,197,94,0.5)'
+                        ? '1px solid rgba(22,163,74,0.5)'
                         : health === 'fail'
                         ? '1px solid rgba(239,68,68,0.5)'
-                        : '1px solid rgba(255,255,255,0.08)',
-                    color: health === 'ok' ? '#bbf7d0' : health === 'fail' ? '#fecdd3' : '#e2e8f0',
+                        : '1px solid #d1d5db',
+                    color: health === 'ok' ? '#15803d' : health === 'fail' ? '#be123c' : '#374151',
                     cursor: 'pointer'
                   }}
                   onClick={async () => {
@@ -3412,7 +3393,7 @@ const renderCozyStagePanel = () => {
                       width: 'auto',
                       background: 'rgba(52,211,153,0.12)',
                       border: '1px solid rgba(52,211,153,0.35)',
-                      color: '#bbf7d0',
+                      color: '#15803d',
                       padding: '10px 12px',
                       fontWeight: 700
                     }}
@@ -3457,14 +3438,14 @@ const renderCozyStagePanel = () => {
             </button>
           ))}
           {currentQuizName && (
-            <span style={{ ...statChip, background: 'rgba(99,229,255,0.14)', borderColor: 'rgba(99,229,255,0.32)', color: '#7dd3fc' }}>
+            <span style={{ ...statChip, background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.3)', color: '#1d4ed8' }}>
               Quiz: {currentQuizName}
             </span>
           )}
           {leaderboard.slice(0, 1).map((run, idx) => (
             <span
               key={idx}
-              style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#bbf7d0' }}
+              style={{ ...statChip, background: 'rgba(52,211,153,0.14)', borderColor: 'rgba(52,211,153,0.32)', color: '#15803d' }}
               title={`Letzter Run: ${new Date(run.date).toLocaleString()} | Gewinner: ${run.winners?.join(', ') || 'n/a'}`}
             >
               Letzter Run: {run.quizId} {run.winners?.[0] ? `(${run.winners[0]})` : 'n/a'}
@@ -3516,13 +3497,13 @@ const renderCozyStagePanel = () => {
                 {topTexts.length > 0 && <span style={statChip}>Top: {topTexts.map(([k, v]) => `${k} (${v})`).join(', ')}</span>}
               </div>
               {answerStats ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#cbd5e1', fontSize: 12 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#374151', fontSize: 12 }}>
                   <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
                   {Object.keys(answerStats.perOption || {}).length > 0 && (
                     <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
                       {Object.entries(answerStats.perOption).map(([opt, count]) => (
                         <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ padding: '2px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
+                          <span style={{ padding: '2px 6px', borderRadius: 8, background: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
                           <span>{count}</span>
                         </span>
                       ))}
@@ -3530,7 +3511,7 @@ const renderCozyStagePanel = () => {
                   )}
                 </div>
               ) : (
-                <div style={{ color: '#94a3b8', fontSize: 13 }}>Noch keine Antworten eingegangen.</div>
+                <div style={{ color: '#6b7280', fontSize: 13 }}>Noch keine Antworten eingegangen.</div>
               )}
             </div>
           )}
@@ -3550,7 +3531,7 @@ const renderCozyStagePanel = () => {
             padding: '10px 14px',
             borderRadius: 12,
             background: toast.toLowerCase().includes('fehl') || toast.toLowerCase().includes('error') ? 'rgba(239,68,68,0.14)' : 'rgba(15,23,42,0.9)',
-            color: '#e2e8f0',
+            color: '#111827',
             border: '1px solid rgba(255,255,255,0.12)',
             boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
             zIndex: 30,
@@ -3625,13 +3606,13 @@ const renderCozyStagePanel = () => {
                   )}
                 </div>
                 {answerStats && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#cbd5e1', fontSize: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#374151', fontSize: 12 }}>
                     <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
                     {Object.keys(answerStats.perOption || {}).length > 0 && (
                       <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
                         {Object.entries(answerStats.perOption).map(([opt, count]) => (
                           <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ padding: '2px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
+                            <span style={{ padding: '2px 6px', borderRadius: 8, background: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
                             <span>{count}</span>
                           </span>
                         ))}
@@ -3669,7 +3650,7 @@ const renderCozyStagePanel = () => {
         <>
           <section style={{ ...card, marginTop: 12 }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Regeln kurz</div>
-            <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', lineHeight: 1.5 }}>
+            <ul style={{ margin: 0, paddingLeft: 16, color: '#374151', lineHeight: 1.5 }}>
               <li>Alle Teams beitreten und "Team ist bereit" klicken.</li>
               <li>Timer startet mit Frage, Antworten rechtzeitig abschicken.</li>
               <li>Schaetzfragen: am nächsten dran gewinnt.</li>
@@ -3734,7 +3715,7 @@ const renderCozyStagePanel = () => {
       
       {/* Keyboard Shortcuts Help */}
       <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
-        <div style={{ fontSize: 11, color: '#7dd3fc', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 11, color: '#0369a1', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
           ?? Keyboard Shortcuts
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>

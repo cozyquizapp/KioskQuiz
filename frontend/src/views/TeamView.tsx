@@ -1589,12 +1589,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         >
           {question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}
         </h2>
-      {hasTimer && (
-        <div style={{ ...progressOuter(selectedColor), marginTop: 12 }}>
-          <div style={{ ...progressInner(selectedColor), width: `${progress}%` }} />
-          <div style={{ ...progressKnob(selectedColor), left: `${progress}%` }} />
-        </div>
-      )}
       <div style={{ marginTop: 10 }}>{renderInput(selectedColor)}</div>
       {renderBunteDetails()}
       {timeUp && (

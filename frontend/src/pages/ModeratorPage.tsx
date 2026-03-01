@@ -2435,7 +2435,7 @@ function ModeratorPage(): React.ReactElement {
 
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 720;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
     const actionHintCard = renderNextActionHint();
     const answersPanel = Object.keys(answers?.answers || {}).length > 0 || Object.keys(answers?.teams || {}).length > 0 ? (
       <div
@@ -2482,7 +2482,7 @@ function ModeratorPage(): React.ReactElement {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
               gap: 12,
               marginBottom: 12,
               alignItems: 'stretch'
@@ -3240,12 +3240,10 @@ const renderCozyStagePanel = () => {
         height: '100dvh',
         background: '#f0f2f5',
         color: '#111827',
-        padding: 12,
+        padding: 'clamp(8px, 2vw, 16px)',
         boxSizing: 'border-box',
         overflowY: 'auto',
         overscrollBehavior: 'contain',
-        maxWidth: 1100,
-        margin: '0 auto',
         fontFamily: 'var(--font)'
       }}
     >

@@ -3418,7 +3418,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           ))}
         </div>
       </div>
-      <p style={mutedText}>{avatarsEnabled ? 'Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe, dann geht\'s los!' : 'Gib deinen Teamnamen ein, wähle eine Teamfarbe und dann geht\'s los!'}</p>
+      <p style={mutedText}>{language === 'en'
+        ? (avatarsEnabled ? 'Enter your team name, pick a companion and a color, then you\'re good to go!' : 'Enter your team name, pick a team color, then you\'re good to go!')
+        : (avatarsEnabled ? 'Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe, dann geht\'s los!' : 'Gib deinen Teamnamen ein, wähle eine Teamfarbe und dann geht\'s los!')}
+      </p>
       
       {/* Hidden hints for screen readers */}
       <div id="team-name-hint" style={{ display: 'none' }}>
@@ -3699,7 +3702,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             <button
               key={c.value}
               title={c.label}
-              aria-label={`Teamfarbe ${c.label}`}
+              aria-label={`${language === 'de' ? 'Teamfarbe' : 'Team color'} ${c.label}`}
               aria-pressed={selectedColor === c.value}
               onClick={() => {
                 setSelectedColor(c.value);
@@ -4078,7 +4081,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   }
                 }
               }}
-              title="Klick mich an!"
+              title={language === 'de' ? 'Klick mich an!' : 'Tap me!'}
             >
               <AvatarMedia
                 avatar={getAvatarById(avatarId)}

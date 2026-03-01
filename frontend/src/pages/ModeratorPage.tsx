@@ -2469,44 +2469,6 @@ function ModeratorPage(): React.ReactElement {
         />
       </div>
     ) : null;
-    const baseButtonStyle: React.CSSProperties = {
-      ...inputStyle,
-      width: '100%',
-      padding: '14px 16px',
-      fontSize: 16,
-      fontWeight: 800,
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-      cursor: 'pointer',
-      boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
-      minHeight: 52
-    };
-    const buttonConfigs: Array<{
-      label: string;
-      hotkey: string;
-      onClick: () => void;
-      busy: boolean;
-      tone: 'primary' | 'warning' | 'accent';
-      disabled?: boolean;
-    }> = singleActionMode
-      ? [{ label: 'Weiter', hotkey: 'SPACE', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' }]
-      : [
-          { label: 'Weiter', hotkey: 'SPACE', onClick: handleNextQuestion, busy: actionState.next, tone: 'primary' },
-          { label: 'Sperren', hotkey: '2', onClick: handleLockQuestion, busy: actionState.lock, tone: 'warning', disabled: normalizedGameState !== 'Q_ACTIVE' },
-          {
-            label: 'Aufdecken',
-            hotkey: '3',
-            onClick: handleReveal,
-            busy: actionState.reveal,
-            tone: 'accent',
-            disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL'
-          }
-        ];
-    const toneStyle = (tone: 'primary' | 'warning' | 'accent') => {
-      if (tone === 'primary') return { background: 'var(--ui-button-success)', color: '#0b1020' };
-      if (tone === 'warning') return { background: 'var(--ui-button-warning)', color: '#1f1305' };
-      return { background: 'var(--ui-button-accent)', color: '#130924' };
-    };
     const adjustTimer = (delta: number) => {
       const val = Math.max(5, Math.min(300, timerSeconds + delta));
       setTimerSeconds(val);
@@ -2530,37 +2492,88 @@ function ModeratorPage(): React.ReactElement {
             {answersPanel}
           </div>
         )}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : `repeat(${buttonConfigs.length}, 1fr)`,
-            gap: 10
-          }}
-        >
-          {buttonConfigs.map(({ label, hotkey, onClick, busy, tone, disabled }) => (
-            <button
-              key={label}
-              style={{
-                ...baseButtonStyle,
-                ...(toneStyle(tone) as React.CSSProperties),
-                opacity: busy || disabled ? 0.55 : 1,
-                cursor: busy || disabled ? 'not-allowed' : 'pointer',
-                padding: '18px 16px',
-                fontSize: 18,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                minHeight: 64
-              }}
-              onClick={busy || disabled ? undefined : onClick}
-              disabled={busy || disabled}
-            >
-              <span style={{ fontWeight: 900 }}>{busy ? `${label} …` : label}</span>
-              <span style={{ fontSize: 11, opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.06em' }}>[{hotkey}]</span>
-            </button>
-          ))}
-        </div>
+        {!singleActionMode && (() => {
+          const sdTiles: Array<{
+            label: string;
+            icon: string;
+            fKey: string;
+            numKey: string;
+            onClick: () => void;
+            busy: boolean;
+            disabled: boolean;
+            bg: string;
+            shadow: string;
+          }> = [
+            {
+              label: 'Sperren',
+              icon: '🔒',
+              fKey: 'F14',
+              numKey: '2',
+              onClick: handleLockQuestion,
+              busy: actionState.lock,
+              disabled: normalizedGameState !== 'Q_ACTIVE',
+              bg: '#d97706',
+              shadow: '#b45309'
+            },
+            {
+              label: 'Aufdecken',
+              icon: '👁',
+              fKey: 'F15',
+              numKey: '3',
+              onClick: handleReveal,
+              busy: actionState.reveal,
+              disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL',
+              bg: '#b45309',
+              shadow: '#92400e'
+            }
+          ];
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+              {sdTiles.map(({ label, icon, fKey, numKey, onClick, busy, disabled, bg, shadow }) => {
+                const inactive = busy || disabled;
+                return (
+                  <button
+                    key={label}
+                    disabled={inactive}
+                    onClick={inactive ? undefined : onClick}
+                    style={{
+                      width: '100%',
+                      minHeight: 80,
+                      padding: '14px 16px',
+                      borderRadius: 16,
+                      border: 'none',
+                      background: inactive ? '#e5e7eb' : bg,
+                      color: inactive ? '#9ca3af' : '#ffffff',
+                      cursor: inactive ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 4,
+                      boxShadow: inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`,
+                      opacity: inactive ? 0.5 : 1,
+                      transition: 'transform 0.1s ease, box-shadow 0.1s ease'
+                    }}
+                    onMouseDown={e => { if (!inactive) { e.currentTarget.style.transform = 'translateY(2px)'; e.currentTarget.style.boxShadow = `0 2px 0 ${shadow}`; } }}
+                    onMouseUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`; }}
+                  >
+                    <span style={{ fontSize: 22 }}>{icon}</span>
+                    <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                      {busy ? `${label} …` : label}
+                    </span>
+                    <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
+                      {[fKey, numKey].map(k => (
+                        <span key={k} style={{ padding: '2px 7px', borderRadius: 6, background: 'rgba(0,0,0,0.2)', fontSize: 11, fontWeight: 800, fontFamily: 'monospace', letterSpacing: '0.04em' }}>
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
         <div
           style={{
             marginTop: 10,
@@ -2634,10 +2647,28 @@ function ModeratorPage(): React.ReactElement {
 
   const renderHotkeyLegend = () => {
     if (!roomCode) return null;
-    if (!featureFlags.showLegacyPanels) return null;
+    const entries: Array<{ keys: string[]; label: string }> = [
+      { keys: ['F13', 'SPACE', '1'], label: 'Nächste Aktion' },
+      ...(singleActionMode ? [] : [
+        { keys: ['F14', '2'], label: 'Sperren' },
+        { keys: ['F15', '3'], label: 'Aufdecken' },
+      ]),
+      { keys: ['F16', '4'], label: 'Blitz' },
+      { keys: ['F18', '6'], label: 'Scoreboard' },
+    ];
     return (
-      <div style={{ marginTop: 10, fontSize: 12, color: '#6b7280' }}>
-        Shortcuts: 1 Weiter{singleActionMode ? '' : ' | 2 Sperren | 3 Aufdecken'} | 6 Scoreboard
+      <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: '6px 14px', alignItems: 'center' }}>
+        {entries.map(({ keys, label }) => (
+          <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#6b7280' }}>
+            {keys.map((k, i) => (
+              <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ padding: '1px 6px', borderRadius: 5, background: '#e5e7eb', color: '#374151', fontFamily: 'monospace', fontWeight: 700, fontSize: 11 }}>{k}</span>
+                {i < keys.length - 1 && <span style={{ color: '#d1d5db' }}>/</span>}
+              </span>
+            ))}
+            <span style={{ marginLeft: 2 }}>{label}</span>
+          </span>
+        ))}
       </div>
     );
   };

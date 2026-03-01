@@ -3840,20 +3840,21 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           padding: '18px 16px 16px',
           background: '#ffffff',
           borderColor: '#e5e7eb',
+          boxShadow: '0 4px 0 #e5e7eb',
           animation: 'spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           willChange: 'transform, opacity',
           position: 'relative',
           overflow: 'hidden'
         }}
       >
-        <div style={pillLabel}>{phase === 'waitingForQuestion' ? 'WARTEN' : 'INFO'}</div>
         <h3
           style={{
             ...heading,
             marginBottom: 8,
-            marginTop: 16,
-            fontSize: 'clamp(26px, 5.5vw, 36px)',
-            color: '#111827'
+            marginTop: 0,
+            fontSize: 'clamp(22px, 5vw, 30px)',
+            color: '#111827',
+            textTransform: 'none'
           }}
         >
           {title}
@@ -4142,10 +4143,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 background: 'rgba(255,255,255,0.25)',
                 border: '1px solid rgba(255,255,255,0.4)',
                 borderRadius: 8,
-                padding: '2px 8px',
+                padding: '0 8px',
+                height: 32,
                 color: '#ffffff',
                 fontWeight: 700,
-                fontSize: 13
+                fontSize: 13,
+                display: 'inline-flex',
+                alignItems: 'center'
               }}>🔒</span>
             )}
             <button
@@ -4155,7 +4159,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 background: 'rgba(255,255,255,0.22)',
                 border: '1px solid rgba(255,255,255,0.35)',
                 borderRadius: 8,
-                padding: '2px 6px',
+                padding: '0 8px',
+                height: 32,
                 cursor: 'pointer',
                 fontSize: 18,
                 lineHeight: 1,

@@ -59,7 +59,7 @@ export const contentShell: CSSProperties = {
   maxWidth: 'min(760px, calc(100vw - 24px))',
   margin: '0 auto',
   display: 'grid',
-  gap: 'clamp(16px, 4vw, 20px)',
+  gap: 'clamp(8px, 2vw, 12px)',
   zIndex: 2,
   pointerEvents: 'auto'
 };

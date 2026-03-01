@@ -2215,7 +2215,7 @@ useEffect(() => {
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
             <h2>{headline}</h2>
-            <p>Platz 1 streicht 2 Themen, letzter Platz waehlt 1 Thema.</p>
+            <p>Platz 1 streicht 2 Themen, letzter Platz wählt 1 Thema.</p>
           </div>
           <div className="beamer-select-grid">
             {pool.length ? (
@@ -2237,7 +2237,7 @@ useEffect(() => {
                 );
               })
             ) : (
-              <div className="beamer-select-card">Keine Themen verfuegbar</div>
+              <div className="beamer-select-card">Keine Themen verfügbar</div>
             )}
           </div>
           {statusLine && <div className="beamer-select-status">{statusLine}</div>}
@@ -2259,9 +2259,9 @@ useEffect(() => {
         const slot2Id = slotPositions[1];
 
         return (
-          <div className="blitz-stack" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%)' }}>
+          <div className="blitz-stack">
             <div className="beamer-intro-card">
-              <h2 style={{ color: '#4ade80', fontSize: '36px' }}>🎰 KATEGORIE-AUSWAHL</h2>
+              <h2>🎰 KATEGORIE-AUSWAHL</h2>
               <p>Die 3 Themen werden ausgewählt...</p>
             </div>
             <div className="blitz-pool-grid" style={{ position: 'relative' }}>
@@ -2308,22 +2308,16 @@ useEffect(() => {
 
       // Phase 2: Final cards (zoom effect)
       return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
+        <div className="blitz-stack" style={{
           alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          gap: '30px',
-          padding: '40px 20px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
+          padding: '20px',
           animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
           {/* Header */}
           <div style={{
             fontSize: '32px',
             fontWeight: '900',
-            color: '#4ade80',
+            color: '#111827',
             textAlign: 'center',
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
@@ -2379,7 +2373,7 @@ useEffect(() => {
               <div style={{
                 fontSize: '28px',
                 fontWeight: '900',
-                color: '#fff',
+                color: '#111827',
                 lineHeight: '1.2'
               }}>
                 {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
@@ -2429,7 +2423,7 @@ useEffect(() => {
                 <div style={{
                   fontSize: '28px',
                   fontWeight: '900',
-                  color: '#fff',
+                  color: '#111827',
                   lineHeight: '1.2'
                 }}>
                   {theme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || `Thema ${idx + 2}`}
@@ -2442,11 +2436,10 @@ useEffect(() => {
           <div style={{
             fontSize: '20px',
             fontWeight: '600',
-            color: 'rgba(226, 232, 240, 0.9)',
+            color: '#6b7280',
             textAlign: 'center',
             textTransform: 'uppercase',
             letterSpacing: '0.15em',
-            marginTop: '20px',
             animation: 'fadeIn 1s ease-in 0.8s both'
           }}>
             ⏱️ Start in wenigen Sekunden...
@@ -2466,7 +2459,7 @@ useEffect(() => {
               <div style={{
                 fontSize: '80px',
                 fontWeight: '900',
-                color: '#4ade80',
+                color: '#15803d',
                 marginTop: '30px',
                 animation: 'pulse 0.5s ease-in-out infinite'
               }}>
@@ -2505,10 +2498,10 @@ useEffect(() => {
                   animationDelay: '0s'
                 } as any}
               >
-                <div style={{ fontSize: '14px', color: 'rgba(59, 130, 246, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '14px', color: '#1d4ed8', fontWeight: '700', textTransform: 'uppercase' }}>
                   Platz 1 wählt
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
                   {pickedTheme.title}
                 </div>
               </div>
@@ -2531,10 +2524,10 @@ useEffect(() => {
                   animationDelay: `${0.2 + idx * 0.15}s`
                 }}
               >
-                <div style={{ fontSize: '14px', color: 'rgba(74, 222, 128, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '14px', color: '#15803d', fontWeight: '700', textTransform: 'uppercase' }}>
                   Zufällig
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
                   {theme.title}
                 </div>
               </div>
@@ -2646,7 +2639,7 @@ useEffect(() => {
             )}
             {scoreboardReady && (
               <>
-                <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(148,163,184,0.8)', marginBottom: '8px' }}>
+                <div style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '8px' }}>
                   {language === 'de' ? 'Lösungen' : 'Solutions'}
                 </div>
                 {/* All 5 images in one row */}
@@ -2662,10 +2655,10 @@ useEffect(() => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '6px',
-                      background: 'rgba(15, 23, 42, 0.6)',
+                      background: '#f8fafc',
                       borderRadius: '10px',
                       padding: '8px',
-                      border: '1px solid rgba(148, 163, 184, 0.15)'
+                      border: '1px solid #e5e7eb'
                     }}>
                       {item.mediaUrl && (
                         <img
@@ -2682,7 +2675,7 @@ useEffect(() => {
                       <div style={{
                         fontSize: '13px',
                         fontWeight: '700',
-                        color: '#4ade80',
+                        color: '#111827',
                         textAlign: 'center'
                       }}>
                         {item.prompt || `Item ${idx + 1}`}
@@ -2691,7 +2684,7 @@ useEffect(() => {
                   ))}
                 </div>
                 {/* Scoreboard below */}
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(148, 163, 184, 0.15)' }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
                   {renderCozyScoreboardGrid(sortedScoreTeams, { highlightTop: true, detailMap })}
                 </div>
               </>
@@ -3406,10 +3399,10 @@ useEffect(() => {
                     animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
                   } as any}
                 >
-                  <div style={{ fontSize: '14px', color: 'rgba(59, 130, 246, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '14px', color: '#1d4ed8', fontWeight: '700', textTransform: 'uppercase' }}>
                     Letzter wählt
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
                     {pickedCategory.title}
                   </div>
                 </div>
@@ -3432,10 +3425,10 @@ useEffect(() => {
                     animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
                   }}
                 >
-                  <div style={{ fontSize: '14px', color: 'rgba(74, 222, 128, 0.9)', fontWeight: '700', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '14px', color: '#15803d', fontWeight: '700', textTransform: 'uppercase' }}>
                     Zufällig
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
                     {cat.title}
                   </div>
                 </div>
@@ -3457,9 +3450,9 @@ useEffect(() => {
           const displayPool = pool.length >= 12 ? pool.slice(0, 12) : pool.length >= 9 ? pool.slice(0, 9) : pool;
 
           return (
-            <div className="blitz-stack" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%)' }}>
+            <div className="blitz-stack">
               <div className="beamer-intro-card">
-                <h2 style={{ color: '#60a5fa', fontSize: '36px' }}>🎰 KATEGORIE-AUSWAHL</h2>
+                <h2>🎰 KATEGORIE-AUSWAHL</h2>
                 <p>Die 3 Kategorien werden ausgewählt...</p>
               </div>
               <div className="blitz-pool-grid" style={{ position: 'relative' }}>
@@ -3502,21 +3495,15 @@ useEffect(() => {
 
         // Phase 2: Final cards (zoom on 3 selected categories)
         return (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
+          <div className="blitz-stack" style={{
             alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            gap: '30px',
-            padding: '40px 20px',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
+            padding: '20px',
             animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             <div style={{
               fontSize: '32px',
               fontWeight: '900',
-              color: '#60a5fa',
+              color: '#111827',
               textAlign: 'center',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
@@ -3561,7 +3548,7 @@ useEffect(() => {
                 }}>
                   GEWÄHLT
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', lineHeight: '1.2' }}>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: '#111827', lineHeight: '1.2' }}>
                   {pickedCategory?.title || 'Kategorie 1'}
                 </div>
               </div>
@@ -3598,7 +3585,7 @@ useEffect(() => {
                   }}>
                     ZUFÄLLIG
                   </div>
-                  <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', lineHeight: '1.2' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: '#111827', lineHeight: '1.2' }}>
                     {cat.title}
                   </div>
                 </div>
@@ -3632,7 +3619,7 @@ useEffect(() => {
                 <div style={{
                   fontSize: '80px',
                   fontWeight: '900',
-                  color: '#4ade80',
+                  color: '#15803d',
                   marginTop: '30px',
                   animation: 'pulse 0.5s ease-in-out infinite'
                 }}>

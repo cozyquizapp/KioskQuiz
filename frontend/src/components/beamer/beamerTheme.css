@@ -394,6 +394,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  justify-content: center;
 }
 
 .beamer-footer {
@@ -2006,6 +2007,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  justify-content: center;
 }
 
 .blitz-current-card {
@@ -2030,7 +2032,7 @@
   min-height: 500px;
   border-radius: 0;
   object-fit: cover;
-  background: rgba(15, 23, 42, 0.5);
+  background: #f1f5f9;
   border: none;
   grid-column: 1;
   grid-row: 1 / -1;
@@ -2166,22 +2168,22 @@
 .blitz-chip.current {
   border-color: rgba(59, 130, 246, 0.6);
   background: rgba(59, 130, 246, 0.15);
-  color: #bfdbfe;
+  color: #1e40af;
   box-shadow: 0 12px 28px rgba(59, 130, 246, 0.2);
 }
 
 .blitz-chip.done {
   border-color: rgba(34, 197, 94, 0.5);
   background: rgba(34, 197, 94, 0.15);
-  color: #bbf7d0;
+  color: #15803d;
 }
 
 .blitz-results-card {
   padding: 18px;
   border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.01);
-  backdrop-filter: blur(30px);
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 4px 0 #e5e7eb;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2192,7 +2194,7 @@
 
 .blitz-results-pending {
   font-weight: 700;
-  color: #fcd34d;
+  color: #92400e;
 }
 
 .cozyQuestionIntro {

@@ -2909,6 +2909,7 @@ useEffect(() => {
       const fallbackColors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
       const teamColorMap = Object.fromEntries((teamStatus ?? []).map(t => [t.id, t.color]));
       const label = language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Answers' : 'Team answers';
+      const isEstimate = question?.type === 'SCHAETZCHEN' || (question as any)?.mechanic === 'estimate';
       const formatAnswer = (answer: any): string => {
         if (answer === null || answer === undefined) return '–';
         if (typeof answer === 'string') return answer;
@@ -2918,24 +2919,57 @@ useEffect(() => {
         return JSON.stringify(answer);
       };
       if (answerResults?.length) {
+        // For estimate questions: sort by deviation ascending (closest first)
+        const sorted = isEstimate
+          ? [...answerResults].sort((a, b) => {
+              const da = a.tieBreaker?.primary ?? Infinity;
+              const db = b.tieBreaker?.primary ?? Infinity;
+              return da - db;
+            })
+          : answerResults;
         return (
           <>
             <div className="cozyRevealAnswersLabel">{label}</div>
-            {answerResults.map((entry, idx) => {
+            {sorted.map((entry, idx) => {
               const isCorrect = entry.isCorrect === true;
+              const isWrong = entry.isCorrect === false;
               const teamColor = teamColorMap[entry.teamId] || fallbackColors[idx % fallbackColors.length];
-              const accentColor = isCorrect ? '#22c55e' : entry.isCorrect === false ? '#ef4444' : teamColor;
+              const resultColor = isCorrect ? '#16a34a' : isWrong ? '#dc2626' : teamColor;
+              const deviation = entry.tieBreaker?.primary;
+              const devLabel = isEstimate && deviation !== undefined && Number.isFinite(deviation)
+                ? (language === 'de' ? `±${Math.round(deviation * 100) / 100}` : `±${Math.round(deviation * 100) / 100}`)
+                : null;
+              const isTopRank = isEstimate && idx === 0;
               return (
                 <div
                   key={`reveal-ans-${entry.teamId}-${idx}`}
-                  className="cozyRevealAnswerRow"
-                  style={{ borderLeftColor: teamColor, background: `${teamColor}18`, animationDelay: `${idx * 70}ms` }}
+                  className={`cozyRevealAnswerRow${isTopRank ? ' estimate-winner' : ''}`}
+                  style={{
+                    borderLeftColor: isEstimate ? resultColor : teamColor,
+                    borderLeftWidth: isTopRank ? 6 : 4,
+                    background: isTopRank ? `${resultColor}20` : isCorrect ? '#f0fdf420' : isWrong ? '#fef2f220' : `${teamColor}12`,
+                    animationDelay: `${idx * 90}ms`
+                  }}
                 >
                   <div className="cozyRevealAnswerTop">
-                    <span className="cozyRevealAnswerTeam" style={{ color: teamColor }}>{entry.teamName || entry.teamId}</span>
-                    <span className="cozyRevealAnswerResult" style={{ color: accentColor }}>{isCorrect ? '✓' : entry.isCorrect === false ? '✗' : '–'}</span>
+                    <span className="cozyRevealAnswerRank" style={{ color: '#6b7280' }}>
+                      {isEstimate ? `#${idx + 1}` : ''}
+                    </span>
+                    <span className="cozyRevealAnswerTeam" style={{ color: isEstimate ? resultColor : teamColor, fontWeight: isTopRank ? 900 : 800 }}>
+                      {entry.teamName || entry.teamId}
+                    </span>
+                    <span className="cozyRevealAnswerResult" style={{ color: resultColor, fontWeight: 900 }}>
+                      {isEstimate
+                        ? (isCorrect ? '🏆' : devLabel ?? '–')
+                        : (isCorrect ? '✓' : isWrong ? '✗' : '–')}
+                    </span>
                   </div>
-                  <div className="cozyRevealAnswerText">{formatAnswer(entry.answer)}</div>
+                  <div className="cozyRevealAnswerText" style={{ fontWeight: isTopRank ? 700 : 400 }}>
+                    {formatAnswer(entry.answer)}
+                    {isEstimate && devLabel && !isCorrect && (
+                      <span style={{ marginLeft: 10, color: '#9ca3af', fontSize: '0.9em' }}>{devLabel}</span>
+                    )}
+                  </div>
                 </div>
               );
             })}

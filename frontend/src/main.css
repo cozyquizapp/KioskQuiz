@@ -883,13 +883,13 @@ button:focus-visible {
 
 .team-answer-input:focus,
 .team-answer-input:focus-visible {
-  border-color: rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--team-color, #6366f1) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--team-color, #6366f1) 20%, transparent) !important;
   outline: none !important;
 }
 
 .team-answer-input.is-active {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: var(--team-color, #6366f1);
 }
 
 .team-answer-input:disabled {
@@ -897,7 +897,7 @@ button:focus-visible {
 }
 
 .team-answer-input::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+  color: #9ca3af;
 }
 
 

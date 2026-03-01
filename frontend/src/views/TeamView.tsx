@@ -4012,9 +4012,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       ? (language === 'de' ? 'Ergebnis' : 'Result')
       : (language === 'de' ? 'Warten' : 'Waiting');
 
+  // If we have a stored teamId but haven't received the server state yet, show loading
+  // to prevent a flash of stale/default state (purple color, wrong phase, etc.)
+  const stillInitializing = viewState === 'active' && !hasStateUpdate;
+
   const mainContent =
     viewState === 'error'
       ? renderErrorCard()
+      : stillInitializing
+      ? renderLoadingCard()
       : viewState === 'join'
       ? renderNotJoined()
       : renderByPhase();
@@ -4048,7 +4054,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <header
           className="team-header"
           style={{
-            display: teamId ? 'flex' : 'none',
+            display: teamId && !stillInitializing ? 'flex' : 'none',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,

@@ -4064,13 +4064,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               onClick={() => updateLanguage(language === 'de' ? 'en' : 'de')}
               title={language === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
               style={{
-                background: 'rgba(255,255,255,0.22)',
-                border: '1px solid rgba(255,255,255,0.35)',
-                borderRadius: 8,
-                padding: '0 8px',
-                height: 32,
+                background: 'none',
+                border: 'none',
+                padding: 0,
                 cursor: 'pointer',
-                fontSize: 18,
+                fontSize: 22,
                 lineHeight: 1,
                 display: 'flex',
                 alignItems: 'center'

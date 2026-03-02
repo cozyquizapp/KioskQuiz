@@ -375,7 +375,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
-  const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -564,10 +563,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => window.clearInterval(id);
   }, [blitz?.itemDeadline]);
 
-  // Reset portrait detection when blitz item changes
-  useEffect(() => {
-    setBlitzImageIsPortrait(null);
-  }, [blitz?.itemIndex]);
 
   useEffect(() => {
     if (!blitz?.deadline) {
@@ -2206,8 +2201,6 @@ useEffect(() => {
     const bannedIds = new Set(Object.values(blitz.bans ?? {}).flat());
     const selectedThemes = blitz.selectedThemes ?? [];
     const pinnedTheme = blitz.pinnedTheme ?? null;
-    const totalSets = Math.max(1, selectedThemes.length || 3);
-
     if (phase === 'READY' || phase === 'BANNING') {
       const headline = phase === 'READY' ? 'FOTOSPRINT BEREIT' : 'FOTOSPRINT AUSWAHL';
       const selectedIds = new Set(selectedThemes.map((entry) => entry.id));
@@ -2566,7 +2559,6 @@ useEffect(() => {
       const awardedLabel = `${awarded >= 0 ? '+' : ''}${awarded}`;
       detailMap[teamId] = `${stats.correctCount ?? 0}/5 · ${awardedLabel}`;
     });
-    const submissions = blitz.submissions?.length ?? 0;
     const items = blitz.items ?? [];
     const totalItems = Math.max(1, items.length || 5);
     const maxIndex = totalItems - 1;
@@ -2585,7 +2577,6 @@ useEffect(() => {
       if (idx === activeIndex) return 'current';
       return 'pending';
     });
-    const setLabel = `${Math.max(1, (blitz.setIndex ?? -1) + 1)}/${totalSets}`;
     const resultsMap = blitz.results || {};
     const scoreboardReady = Object.keys(resultsMap).length > 0;
     const setFinished = blitz.phase !== 'PLAYING';
@@ -2596,36 +2587,13 @@ useEffect(() => {
 
         {(blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING') ? (
           <>
-            <div className={`beamer-card blitz-current-card${blitzImageIsPortrait ? ' has-portrait-blitz' : ''}`}>
+            <div className="beamer-card blitz-current-card">
               {activeItem?.mediaUrl && (
                 <img
                   src={activeItem.mediaUrl}
                   alt={`Item ${activeIndex + 1}`}
                   className="blitz-current-image"
-                  onLoad={(e) => {
-                    const img = e.currentTarget;
-                    setBlitzImageIsPortrait(img.naturalHeight > img.naturalWidth);
-                  }}
                 />
-              )}
-              {/* Compact info overlay at the top of the image */}
-              <div className="blitz-info-overlay">
-                <div className="blitz-info-left">
-                  <span className="blitz-info-set">Set {setLabel}</span>
-                  <span className="blitz-info-theme">{blitz.theme?.title || '-'}</span>
-                </div>
-                <div className="blitz-info-right">
-                  {blitzCountdown !== null && <span className="beamer-countdown">{blitzCountdown}s</span>}
-                  <span className="blitz-info-count">{submissions}/{teams.length}</span>
-                </div>
-              </div>
-              {/* Only show item number during DISPLAYING */}
-              {blitz.phase === 'DISPLAYING' && (
-                <div className="blitz-text-overlay">
-                  <div className="blitz-item-meta">
-                    {language === 'de' ? 'Item' : 'Item'} {activeIndex + 1}/{totalItems}
-                  </div>
-                </div>
               )}
             </div>
             <div className="blitz-timeline">

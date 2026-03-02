@@ -41,7 +41,7 @@ const renderTieBreaker = (ans: any) => {
   if (!tie || !tie.label) return null;
   const secondary = typeof tie.secondary === 'number' && Number.isFinite(tie.secondary) ? `/${tie.secondary}` : '';
   return (
-    <div style={{ fontSize: 11, color: '#cbd5f5', marginTop: 2 }}>
+    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
       Tie ({tie.label}): {tie.primary}{secondary}
       {tie.detail ? ` - ${tie.detail}` : ''}
     </div>
@@ -54,27 +54,26 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
   <section
     style={{
       marginTop: 12,
-      background: 'rgba(10,14,24,0.92)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: '#f9fafb',
+      border: '1px solid #e5e7eb',
       borderRadius: 14,
       padding: 16,
-      boxShadow: '0 14px 32px rgba(0,0,0,0.32)',
-      backdropFilter: 'blur(10px)',
+      boxShadow: '0 2px 0 #e5e7eb',
       overflow: 'hidden'
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
       <strong>Antworten</strong>
-      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+      <span style={{ fontSize: 12, color: '#6b7280' }}>
         {answersCount}/{teamsCount} | Offen: {unreviewedCount}
       </span>
       {answers?.solution && (
         <span
           style={{
             ...statChip,
-            background: 'rgba(34,197,94,0.12)',
-            borderColor: 'rgba(34,197,94,0.35)',
-            color: '#86efac'
+            background: 'rgba(34,197,94,0.1)',
+            borderColor: '#bbf7d0',
+            color: '#15803d'
           }}
         >
           Lösung: {answers.solution}
@@ -88,8 +87,8 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
           style={{
             padding: 10,
             borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid #e5e7eb',
+            background: '#ffffff',
             display: 'grid',
             gridTemplateColumns: '1fr auto',
             gap: 10,
@@ -107,9 +106,9 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
                 <button
                   style={{
                     ...inputStyle,
-                    background: 'rgba(239,68,68,0.14)',
+                    background: 'rgba(239,68,68,0.08)',
                     color: '#ef4444',
-                    border: '1px solid rgba(239,68,68,0.4)',
+                    border: '1px solid rgba(239,68,68,0.3)',
                     width: 'auto',
                     padding: '4px 8px',
                     fontSize: 11,
@@ -122,9 +121,9 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
                 </button>
               )}
             </div>
-            <div style={{ color: 'var(--muted)', fontSize: 12 }}>{formatAnswerValue(ans, question)}</div>
+            <div style={{ color: '#6b7280', fontSize: 12 }}>{formatAnswerValue(ans, question)}</div>
             {(ans as any).awardedPoints !== undefined && (
-              <div style={{ fontSize: 12, color: '#facc15', marginTop: 2, fontWeight: 700 }}>
+              <div style={{ fontSize: 12, color: '#b45309', marginTop: 2, fontWeight: 700 }}>
                 +{(ans as any).awardedPoints}{' '}
                 {(ans as any).awardedDetail ? `(${(ans as any).awardedDetail})` : ''}
               </div>
@@ -134,7 +133,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
           <div
             style={{
               fontSize: 12,
-              color: (ans as any).isCorrect === false ? '#ef4444' : (ans as any).isCorrect ? '#22c55e' : '#94a3b8',
+              color: (ans as any).isCorrect === false ? '#ef4444' : (ans as any).isCorrect ? '#15803d' : '#6b7280',
               fontWeight: 700
             }}
           >
@@ -143,9 +142,9 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
               <button
                 style={{
                   ...inputStyle,
-                  background: 'rgba(34,197,94,0.16)',
-                  color: '#22c55e',
-                  border: '1px solid rgba(34,197,94,0.4)',
+                  background: 'rgba(34,197,94,0.1)',
+                  color: '#15803d',
+                  border: '1px solid #bbf7d0',
                   padding: '6px 10px',
                   width: 'auto',
                   minWidth: 52,
@@ -158,9 +157,9 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
               <button
                 style={{
                   ...inputStyle,
-                  background: 'rgba(239,68,68,0.16)',
+                  background: 'rgba(239,68,68,0.08)',
                   color: '#ef4444',
-                  border: '1px solid rgba(239,68,68,0.4)',
+                  border: '1px solid rgba(239,68,68,0.3)',
                   padding: '6px 10px',
                   width: 'auto',
                   minWidth: 52,
@@ -182,23 +181,23 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
             style={{
               padding: 10,
               borderRadius: 12,
-              border: '1px dashed rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.02)',
+              border: '1px dashed #d1d5db',
+              background: '#fafafa',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}
           >
             <div>
-              <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, color: '#111827' }}>
                 <span>{answers?.teams?.[id]?.name ?? 'Team'}</span>
                 {onKickTeam && (
                   <button
                     style={{
                       ...inputStyle,
-                      background: 'rgba(239,68,68,0.14)',
+                      background: 'rgba(239,68,68,0.08)',
                       color: '#ef4444',
-                      border: '1px solid rgba(239,68,68,0.4)',
+                      border: '1px solid rgba(239,68,68,0.3)',
                       width: 'auto',
                       padding: '4px 8px',
                       fontSize: 11,
@@ -211,7 +210,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, answersCount, teamsCou
                   </button>
                 )}
               </div>
-              <div style={{ color: 'var(--muted)', fontSize: 12 }}>Noch keine Antwort</div>
+              <div style={{ color: '#9ca3af', fontSize: 12 }}>Noch keine Antwort</div>
             </div>
           </div>
         ))}

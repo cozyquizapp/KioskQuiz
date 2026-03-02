@@ -921,10 +921,6 @@ button:focus-visible {
 .team-choice:not([data-choice-letter])::before {
   display: none;
 }
-.team-choice[data-choice-letter] {
-  padding-left: calc(44px + 14px);
-}
-
 .team-choice[data-choice-letter]::before {
   content: attr(data-choice-letter);
   position: absolute;
@@ -946,7 +942,7 @@ button:focus-visible {
 
 @media (max-width: 480px) {
   .team-choice[data-choice-letter] {
-    padding-left: calc(36px + 12px);
+    padding-left: calc(36px + 12px) !important;
   }
   .team-choice[data-choice-letter]::before {
     width: 36px;

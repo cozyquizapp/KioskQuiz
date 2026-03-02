@@ -1775,7 +1775,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   justifyContent: 'flex-start',
                   cursor: canAnswer ? 'pointer' : 'not-allowed',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  paddingLeft: 'calc(44px + 14px)'
                 }}
               >
                 {statement.text}
@@ -1939,7 +1940,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   color: '#111827',
                   boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  paddingLeft: 'calc(44px + 14px)'
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}

@@ -1963,10 +1963,22 @@ useEffect(() => {
           </div>
         )}
         {top5.length > 0 && (
-          <div className="beamer-grid" key={`top5-${revealStamp}`}>
+          <div key={`top5-${revealStamp}`} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             {top5.map((item: string, idx: number) => (
-              <div className="beamer-card" key={`top5-${idx}-${item}`}>
-                <strong>{idx + 1}.</strong> {resolveLabel(item)}
+              <div
+                key={`top5-${idx}-${item}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  background: '#ffffff', border: '1.5px solid #e5e7eb',
+                  borderRadius: 12, padding: '12px 20px',
+                  boxShadow: '0 2px 0 #e5e7eb',
+                  fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 20,
+                  color: '#111827',
+                  minWidth: 140,
+                }}
+              >
+                <span style={{ color: '#9ca3af', fontSize: 16, fontWeight: 800, minWidth: 22 }}>{idx + 1}.</span>
+                {resolveLabel(item)}
               </div>
             ))}
           </div>

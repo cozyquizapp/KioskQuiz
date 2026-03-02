@@ -1820,7 +1820,7 @@ function ModeratorPage(): React.ReactElement {
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div>
-            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Blitz Battle</div>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14 }}>Fotosprint</div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>
               Phase: {phase} · Set {Math.max(0, setIndex + 1)}/{Math.max(3, selected.length || 3)}
             </div>
@@ -2653,7 +2653,7 @@ function ModeratorPage(): React.ReactElement {
         { keys: ['F14', '2'], label: 'Sperren' },
         { keys: ['F15', '3'], label: 'Aufdecken' },
       ]),
-      { keys: ['F16', '4'], label: 'Blitz' },
+      { keys: ['F16', '4'], label: 'Fotosprint' },
       { keys: ['F18', '6'], label: 'Scoreboard' },
     ];
     return (

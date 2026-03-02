@@ -2124,6 +2124,64 @@
   font-weight: 600;
 }
 
+/* Portrait blitz image: info left, image right */
+.blitz-current-card.has-portrait-blitz {
+  grid-template-columns: minmax(200px, 38%) 1fr;
+  grid-template-rows: 1fr;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-current-image {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: unset;
+  border-radius: 0 28px 28px 0;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-info-overlay {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  background: transparent;
+  padding: 20px 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-self: stretch;
+  z-index: 2;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-info-left {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-info-set {
+  color: #6b7280;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-info-theme {
+  color: #111827;
+  font-size: clamp(16px, 2vw, 22px);
+  white-space: normal;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-info-right {
+  margin-top: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.blitz-current-card.has-portrait-blitz .blitz-text-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: auto;
+  z-index: 4;
+  grid-column: unset;
+  grid-row: unset;
+}
+
 @media (max-width: 960px) {
   .blitz-current-card {
     min-height: 500px;

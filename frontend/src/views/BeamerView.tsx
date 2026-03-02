@@ -375,6 +375,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
+  const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -562,6 +563,11 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const id = window.setInterval(() => setBlitzItemTick((tick) => tick + 1), 300);
     return () => window.clearInterval(id);
   }, [blitz?.itemDeadline]);
+
+  // Reset portrait detection when blitz item changes
+  useEffect(() => {
+    setBlitzImageIsPortrait(null);
+  }, [blitz?.itemIndex]);
 
   useEffect(() => {
     if (!blitz?.deadline) {
@@ -2590,12 +2596,16 @@ useEffect(() => {
 
         {(blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING') ? (
           <>
-            <div className="beamer-card blitz-current-card">
+            <div className={`beamer-card blitz-current-card${blitzImageIsPortrait ? ' has-portrait-blitz' : ''}`}>
               {activeItem?.mediaUrl && (
                 <img
                   src={activeItem.mediaUrl}
                   alt={`Item ${activeIndex + 1}`}
                   className="blitz-current-image"
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    setBlitzImageIsPortrait(img.naturalHeight > img.naturalWidth);
+                  }}
                 />
               )}
               {/* Compact info overlay at the top of the image */}

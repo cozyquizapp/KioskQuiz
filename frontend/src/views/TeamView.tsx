@@ -2786,8 +2786,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (!blitzState) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-          <div style={pillLabel}>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</div>
-          <p style={mutedText}>{language === 'de' ? 'Host bereitet gerade den Blitz vor.' : 'Host is preparing the blitz round.'}</p>
+          <div style={pillLabel}>Fotosprint</div>
+          <p style={mutedText}>{language === 'de' ? 'Host bereitet gerade den Fotosprint vor.' : 'Host is preparing the Fotosprint round.'}</p>
         </div>
       );
     }
@@ -3110,12 +3110,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
     if (phase !== 'PLAYING') {
       // Fallback für unbekannte Phasen
-      return renderWaiting(language === 'de' ? 'Blitz Battle...' : 'Blitz battle...', '');
+      return renderWaiting('Fotosprint...', '');
     }
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
         <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
-          <span>{language === 'de' ? 'Blitz Battle' : 'Blitz battle'}</span>
+          <span>Fotosprint</span>
           <span>
             Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 - {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
           </span>

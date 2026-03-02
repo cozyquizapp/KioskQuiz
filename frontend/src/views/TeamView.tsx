@@ -48,7 +48,6 @@ import {
   metaRow,
   metaChip,
   glassCard,
-  pillLabel,
   heading,
   mutedText,
   softDivider,
@@ -1538,21 +1537,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           {accentLabel}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ ...pillLabel, marginBottom: 0 }}>
-            {isFinal
-              ? language === 'de'
-                ? 'Final'
-                : 'Final'
-              : evaluating || phase === 'waitingForResult'
-              ? language === 'de'
-                ? 'Host prueft...'
-                : 'Host reviewing...'
-              : phase === 'answering'
-              ? language === 'de'
-                ? 'Antworten'
-                : 'Answering'
-              : language === 'de' ? 'Warten' : 'Waiting'}
-          </div>
 
         </div>
       </div>
@@ -1844,7 +1828,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (payload.kind === 'order') {
       return (
         <div style={{ marginTop: 12 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Liste' : 'List'}</div>
           <ol style={{ margin: '6px 0 0', paddingInlineStart: 18, color: '#374151' }}>
             {payload.items.map((item) => (
               <li key={item.id} style={{ marginBottom: 4 }}>
@@ -1858,7 +1841,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (payload.kind === 'oneOfEight') {
       return (
         <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Aussagen' : 'Statements'}</div>
           {payload.statements.map((statement) => (
             <div key={statement.id} style={{ fontSize: 14, color: '#374151' }}>
               <strong style={{ marginRight: 6 }}>{statement.id}.</strong> {statement.text}
@@ -1870,7 +1852,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (payload.kind === 'precision') {
       return (
         <div style={{ marginTop: 12, color: '#cbd5e1' }}>
-          <div style={pillLabel}>{language === 'de' ? 'Hinweis' : 'Hint'}</div>
           <p style={{ margin: '4px 0 0' }}>{payload.prompt}</p>
         </div>
       );
@@ -1987,7 +1968,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     background: '#f9fafb'
                   }}
                 >
-                  <div style={{ ...pillLabel, background: `${accent}18`, color: accent }}>{letters[idx]}</div>
                   <div style={{ color: '#111827', fontWeight: 700 }}>{opt}</div>
                   <input
                     type="number"
@@ -2136,17 +2116,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}
         style={{ ...glassCard, alignItems: 'center', textAlign: 'center', padding: '24px 20px' }}
       >
-      {!isFinal && (
-        <div style={{ ...pillLabel }}>
-          {evaluating
-            ? language === 'de'
-              ? 'Host prüft...'
-              : 'Host reviewing...'
-            : language === 'de'
-            ? 'Ergebnis'
-            : 'Result'}
-        </div>
-      )}
       {!evaluating && (
         <div style={{
           margin: '12px 0 0',
@@ -2394,7 +2363,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (!state) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-          <div style={pillLabel}>K.O.-Rallye</div>
           <p style={mutedText}>
             {language === 'de'
               ? 'K.O.-Rallye wird vorbereitet.'
@@ -2478,7 +2446,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (gameState === 'RUNDLAUF_SCOREBOARD_PRE') {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-          <div style={{...pillLabel}}>📊 {language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
           <p style={mutedText}>{language === 'de' ? 'Platzierung vor der K.O.-Rallye.' : 'Standings before the knockout relay.'}</p>
           {scoreboardBlock}
         </div>
@@ -2493,7 +2460,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const banCount = rundlaufState?.bans?.length ?? 0;
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }} className="card-tilt">
-          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(147,51,234,0.2), rgba(126,34,206,0.15))', border: '1px solid rgba(147,51,234,0.5)', color: '#e9d5ff'}}>🎯 {language === 'de' ? 'Kategorienwahl' : 'Category select'}</div>
           {isTopTeam && (
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
               {language === 'de'
@@ -2589,7 +2555,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       if (isEliminated) {
         return (
           <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-            <div style={{...pillLabel, background: '#fee2e2', borderColor: '#fca5a5', color: '#dc2626'}}>❌ {language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de'
                 ? 'Du bist für diese Runde raus.'
@@ -2603,7 +2568,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       if (!isActive) {
         return (
           <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-            <div style={{...pillLabel}}>⏳ {language === 'de' ? 'K.O.-Rallye' : 'Knockout relay'}</div>
             <p style={mutedText}>
               {activeTeamName
                 ? inlineCopy(`${activeTeamName} ist dran.`, `${activeTeamName} is up.`)
@@ -2616,7 +2580,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const ownAttempt = state.lastAttempt && state.lastAttempt.teamId === teamId ? state.lastAttempt : null;
       return (
         <div style={{ ...glassCard, display: 'grid', gap: 10 }} className="card-tilt">
-          <div style={{...pillLabel, background: '#dcfce7', borderColor: '#86efac', color: '#16a34a'}}>⚡ {language === 'de' ? 'Du bist dran' : language === 'both' ? 'Du bist dran / Your turn' : 'Your turn'}</div>
           <div style={{ fontWeight: 700, fontSize: 18, color: '#111827' }}>📂 {currentCategory}</div>
           <input
             className="team-answer-input"
@@ -2670,7 +2633,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (gameState === 'RUNDLAUF_ROUND_END') {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))', border: '1px solid rgba(34,197,94,0.5)', color: '#bbf7d0'}}>✅ {language === 'de' ? 'Runde beendet' : 'Round finished'}</div>
           {winnerNames && (
             <p style={{ ...mutedText, marginBottom: 0 }}>
               {language === 'de' ? 'Gewinner' : 'Winner'}: {winnerNames}
@@ -2684,9 +2646,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const rest = sortedScoreboard.slice(3);
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
-          <div style={{...pillLabel, background: '#d1fae5', borderColor: '#6ee7b7', color: '#065f46'}}>
-            {gameState === 'SIEGEREHRUNG' ? '🎉 ' : '🏁 '}{language === 'de' ? 'Finale' : 'Final'}{gameState === 'SIEGEREHRUNG' ? ' 🎉' : ' 🏁'}
-          </div>
           
           {/* Podium Top 3 */}
           {topThree.length > 0 && (
@@ -2775,7 +2734,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (!blitzState) {
       return (
         <div style={{ ...glassCard, textAlign: 'center' }} className="card-tilt">
-          <div style={pillLabel}>Fotosprint</div>
           <p style={mutedText}>{language === 'de' ? 'Host bereitet gerade den Fotosprint vor.' : 'Host is preparing the Fotosprint round.'}</p>
         </div>
       );
@@ -2824,7 +2782,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (phase === 'READY') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>
             {language === 'de' ? 'Fotosprint startet gleich' : 'Photo sprint starts soon'}
           </div>
@@ -2840,7 +2797,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (phase === 'BANNING') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>
             {language === 'de' ? 'Themen-Auswahl' : 'Theme selection'}
           </div>
@@ -2971,7 +2927,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (phase === 'ROUND_INTRO') {
       return (
           <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 22, fontWeight: 800 }}>{themeLabel}</div>
           <div style={{ fontSize: 12, color: '#94a3b8' }}>
             {language === 'de' ? 'Runde startet jetzt' : 'Round is starting'}
@@ -2984,9 +2939,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const rest = sortedScoreboard.slice(3);
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 16 }} className="card-tilt page-transition-enter-active">
-          <div style={{...pillLabel, background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,146,60,0.15))', border: '1px solid rgba(251,191,36,0.5)', color: '#fcd34d'}}>
-            🏆 {language === 'de' ? 'Zwischenstand' : 'Scoreboard'}
-          </div>
           
           {/* Podium Top 3 */}
           {topThree.length > 0 && (
@@ -3074,7 +3026,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (phase === 'SET_END') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Fotosprint' : 'Photo sprint'}</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>
             {language === 'de' ? 'Runde beendet!' : 'Round complete!'}
           </div>
@@ -3103,12 +3054,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
     return (
       <div style={{ ...glassCard, display: 'grid', gap: 10 }}>
-        <div style={{ ...pillLabel, justifyContent: 'space-between', display: 'flex' }}>
-          <span>Fotosprint</span>
-          <span>
-            Set {Math.max(1, (blitzState.setIndex ?? -1) + 1)}/3 - {language === 'de' ? 'Thema' : 'Theme'}: {themeLabel}
-          </span>
-        </div>
         {phase === 'PLAYING' ? (
           <>
             <div style={{ fontSize: 14, color: '#cbd5e1', fontWeight: 600 }}>
@@ -3321,11 +3266,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 : 'Submit answers'}
             </button>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {blitzCountdown !== null && (
-                <div style={{ ...pillLabel }}>
-                  {language === 'de' ? 'Set Restzeit' : 'Set time'}: {blitzCountdown}s
-                </div>
-              )}
             </div>
           </>
         ) : (
@@ -3468,7 +3408,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       />
       {avatarsEnabled && <div style={{ marginTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 0 }}>
-          <div style={{ ...pillLabel }}>{t('avatarTitle')}</div>
           <button
             type="button"
             title={t('avatarRandom')}
@@ -3698,9 +3637,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       </div>}
       {/* Team Color Picker */}
       <div style={{ marginTop: 16, marginBottom: 4 }}>
-        <div style={{ ...pillLabel, marginBottom: 12 }}>
-          {language === 'de' ? 'Teamfarbe wählen' : 'Choose team color'}
-        </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
           {TEAM_COLORS.map((c) => (
             <button
@@ -3877,7 +3813,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   function renderErrorCard() {
     return (
       <div key="error-screen" style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.3)', animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
-        <div style={pillLabel}>{language === 'de' ? 'Fehler' : 'Error'}</div>
         <h3 style={{ ...heading, marginBottom: 6 }}>
           {language === 'de' ? 'Verbindung fehlgeschlagen' : 'Connection failed'}
         </h3>
@@ -3903,7 +3838,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (gameState === 'SCOREBOARD_PRE_BLITZ') {
       return (
         <div style={{ ...glassCard, textAlign: 'center', display: 'grid', gap: 10 }}>
-          <div style={pillLabel}>{language === 'de' ? 'Zwischenstand' : 'Scoreboard'}</div>
           <div style={{ display: 'grid', gap: 6 }}>
             {sortedScoreboard.map((entry, idx) => {
               const avatar = getAvatarById(entry.avatarId);

@@ -22,7 +22,6 @@ import {
 import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
-import { categoryIcons } from '../categoryAssets';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
@@ -63,7 +62,6 @@ import {
   gradientHalo,
   questionHeader,
   categoryChip,
-  chipIcon,
   connectionPill,
   timerPill,
   questionStyleTeam
@@ -1537,17 +1535,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             transition: 'all 0.3s ease'
           }}
         >
-          {accentIcon && (
-            <img
-              src={accentIcon}
-              alt={accentLabel}
-              style={{
-                ...chipIcon,
-                transform: `translate(${layout.logoOffsetX ?? 0}px, ${layout.logoOffsetY ?? 0}px)`
-              }}
-            />
-          )}
-          {/* Only logo in header; label removed to keep header minimal */}
+          {accentLabel}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ ...pillLabel, marginBottom: 0 }}>
@@ -1787,8 +1775,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   justifyContent: 'flex-start',
                   cursor: canAnswer ? 'pointer' : 'not-allowed',
                   overflow: 'hidden',
-                  position: 'relative',
-                  paddingLeft: 'calc(44px + 14px)'
+                  position: 'relative'
                 }}
               >
                 {statement.text}
@@ -1952,8 +1939,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   color: '#111827',
                   boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none',
                   overflow: 'hidden',
-                  position: 'relative',
-                  paddingLeft: 'calc(44px + 14px)'
+                  position: 'relative'
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
@@ -4010,7 +3996,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const accentCategory = (question?.category as keyof typeof categoryColors) ?? 'GemischteTuete';
   const accentColor = categoryColors[accentCategory] ?? '#d6a2ff';
   const accentPink = '#ff4f9e';
-  const accentIcon = categoryIcons[accentCategory];
   const labelLang = language === 'both' ? 'de' : language;
   const accentLabel =
     categoryLabels[accentCategory]?.[labelLang] ?? categoryLabels[accentCategory]?.de ?? accentCategory;

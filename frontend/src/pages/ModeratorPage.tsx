@@ -24,7 +24,6 @@ import {
 } from '../api';
 import { AnswerEntry, AnyQuestion, QuizTemplate, Language, CozyGameState, RundlaufState } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
-import { categoryIcons } from '../categoryAssets';
 import { useQuizSocket } from '../hooks/useQuizSocket';
 import { useLiveAnswers, type AnswersState } from '../hooks/useLiveAnswers';
 import TimerCard from '../components/moderator/TimerCard';
@@ -1268,7 +1267,6 @@ function ModeratorPage(): React.ReactElement {
 
   const catKey = (question as any)?.category as keyof typeof categoryColors;
   const catColor = categoryColors[catKey] ?? '#6dd5fa';
-  const catIcon = categoryIcons[catKey];
   const readyCount = useMemo(() => {
     const teams = Object.values(answers?.teams || {});
     const ready = teams.filter((t: any) => t?.isReady).length;
@@ -3594,23 +3592,6 @@ const renderCozyStagePanel = () => {
 
           <section style={{ ...card, marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {question && (
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: '50%',
-                    background: '#0f141d',
-                    border: `2px solid ${catColor}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {catIcon && <img src={catIcon} alt="" style={{ width: 24, height: 24 }} />}
-                </div>
-              )}
               <div>
                 <div style={{ fontWeight: 800 }}>{question?.question ?? 'Keine Frage aktiv'}</div>
                 <div style={{ color: 'var(--muted)', fontSize: 12 }}>

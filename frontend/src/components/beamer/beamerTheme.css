@@ -77,7 +77,7 @@
   background: #f0f2f5;
 }
 
-.cozy-beamer-shell::after {
+.cozy-beamer-lobby::after {
   content: '';
   position: fixed;
   top: 50%;

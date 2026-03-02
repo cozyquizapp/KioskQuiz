@@ -3844,7 +3844,7 @@ useEffect(() => {
   };
 
   return (
-    <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? 'cozy-beamer-shell' : undefined}>
+    <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? `cozy-beamer-shell${gameState === 'LOBBY' ? ' cozy-beamer-lobby' : ''}` : undefined}>
       {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}
       

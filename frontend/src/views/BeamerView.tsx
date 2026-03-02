@@ -2976,9 +2976,6 @@ useEffect(() => {
                           {entry.betPoints ?? 0} / {entry.betPool ?? 10} Pkt. auf richtiger Antwort
                         </span>
                       : formatTeamAnswer(entry.answer)}
-                    {isEstimate && devLabel && !isCorrect && (
-                      <span style={{ marginLeft: 10, color: '#9ca3af', fontSize: '0.9em' }}>{devLabel}</span>
-                    )}
                   </div>
                 </div>
               );

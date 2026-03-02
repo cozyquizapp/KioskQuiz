@@ -1806,13 +1806,14 @@ useEffect(() => {
   const getQuestionPromptText = (): string | undefined => {
     if (!question) return undefined;
     const q: any = question;
-    if (language === 'both' && q.promptEn) {
-      return `${q.prompt ?? ''}${q.promptEn ? ` / ${q.promptEn}` : ''}`;
+    const dePrompt = q.prompt || q.bunteTuete?.prompt || '';
+    const enPrompt = q.promptEn || q.bunteTuete?.promptEn || '';
+    if (language === 'both') {
+      if (dePrompt && enPrompt) return `${dePrompt} / ${enPrompt}`;
+      return dePrompt || enPrompt || undefined;
     }
-    if (language === 'en' && q.promptEn) return q.promptEn;
-    if (q.prompt) return q.prompt;
-    if (q.bunteTuete?.prompt) return q.bunteTuete.prompt;
-    return undefined;
+    if (language === 'en') return enPrompt || dePrompt || undefined;
+    return dePrompt || undefined;
   };
 
   const formatEstimateValue = (value: number | string | null | undefined, unit?: string): string => {
@@ -1940,67 +1941,23 @@ useEffect(() => {
     return null;
   };
 
-  const renderTop5Solution = (): JSX.Element | null => {
-    const q: any = question;
-    if (!q?.bunteTuete || q.bunteTuete.kind !== 'top5') return null;
-    const top5 = Array.isArray(q.bunteTuete.correctOrder) ? q.bunteTuete.correctOrder : [];
-    const itemMap = new Map(
-      Array.isArray(q.bunteTuete.items)
-        ? q.bunteTuete.items.map((item: any) => [item.id, item.label])
-        : []
-    );
-    const resolveLabel = (value: string) => String(itemMap.get(value) ?? value);
-    
+  const renderTop5Confetti = (): JSX.Element | null => {
+    if (!showConfetti) return null;
     return (
-      <div className="beamer-stack">
-        {solution && (
-          <div
-            key={`solution-${revealStamp}`}
-            className="beamer-intro-card beamer-solution-card"
-          >
-            <h2 className="beamer-solution-title">{language === 'de' ? 'Lösung' : 'Solution'}</h2>
-            <p className="beamer-solution-text" style={{ fontSize: 18, fontWeight: 800, marginTop: 12 }}>{solution}</p>
-          </div>
-        )}
-        {top5.length > 0 && (
-          <div key={`top5-${revealStamp}`} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {top5.map((item: string, idx: number) => (
-              <div
-                key={`top5-${idx}-${item}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  background: '#ffffff', border: '1.5px solid #e5e7eb',
-                  borderRadius: 12, padding: '12px 20px',
-                  boxShadow: '0 2px 0 #e5e7eb',
-                  fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 20,
-                  color: '#111827',
-                  minWidth: 140,
-                }}
-              >
-                <span style={{ color: '#9ca3af', fontSize: 16, fontWeight: 800, minWidth: 22 }}>{idx + 1}.</span>
-                {resolveLabel(item)}
-              </div>
-            ))}
-          </div>
-        )}
-        {showConfetti && (
-          <div className="confetti-overlay" aria-hidden>
-            {[...Array(30)].map((_, i) => {
-              const left = Math.round((i / 30) * 100);
-              const delay = (i % 10) * 80;
-              const size = 6 + (i % 4);
-              const hueShift = (i * 17) % 360;
-              const color = accentColor;
-              return (
-                <span
-                  key={`confetti-${revealStamp}-${i}`}
-                  className="confetti-piece"
-                  style={{ left: `${left}%`, animationDelay: `${delay}ms`, width: size, height: size, background: color, filter: `hue-rotate(${hueShift}deg)` }}
-                />
-              );
-            })}
-          </div>
-        )}
+      <div className="confetti-overlay" aria-hidden>
+        {[...Array(30)].map((_, i) => {
+          const left = Math.round((i / 30) * 100);
+          const delay = (i % 10) * 80;
+          const size = 6 + (i % 4);
+          const hueShift = (i * 17) % 360;
+          return (
+            <span
+              key={`confetti-${revealStamp}-${i}`}
+              className="confetti-piece"
+              style={{ left: `${left}%`, animationDelay: `${delay}ms`, width: size, height: size, background: accentColor, filter: `hue-rotate(${hueShift}deg)` }}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -3040,7 +2997,33 @@ useEffect(() => {
             return renderMultipleChoiceList(true);
           }
           if ((question as any)?.bunteTuete?.kind === 'top5') {
-            return null;
+            const top5 = Array.isArray((question as any).bunteTuete.correctOrder) ? (question as any).bunteTuete.correctOrder : [];
+            const itemMap = new Map(
+              Array.isArray((question as any).bunteTuete.items)
+                ? (question as any).bunteTuete.items.map((item: any) => [item.id, item.label])
+                : []
+            );
+            const resolveLabel = (value: string) => String(itemMap.get(value) ?? value);
+            return (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {top5.map((item: string, idx: number) => (
+                  <div
+                    key={`top5-${idx}-${item}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      background: '#ffffff', border: '1.5px solid #e5e7eb',
+                      borderRadius: 12, padding: '10px 18px',
+                      boxShadow: '0 2px 0 #e5e7eb',
+                      fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 20,
+                      color: '#111827',
+                    }}
+                  >
+                    <span style={{ color: '#9ca3af', fontSize: 16, fontWeight: 800, minWidth: 22 }}>{idx + 1}.</span>
+                    {resolveLabel(item)}
+                  </div>
+                ))}
+              </div>
+            );
           }
           return (
             <div className="cozyRevealGeneric">
@@ -3063,6 +3046,7 @@ useEffect(() => {
         return null;
       };
 
+      const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
       const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
       return (
         <BeamerFrame
@@ -3075,7 +3059,7 @@ useEffect(() => {
           footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          <div className={`cozyQuestionGrid ${phase === 'reveal' ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
+          <div className={`cozyQuestionGrid ${phase === 'reveal' && !isTop5 ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${mediaIsPortrait ? ' has-portrait-media' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
                 {phase === 'active' && (
@@ -3153,7 +3137,7 @@ useEffect(() => {
               </div>
             )}
           </div>
-          {phase === 'reveal' && renderTop5Solution()}
+          {phase === 'reveal' && renderTop5Confetti()}
         </BeamerFrame>
       );
     };

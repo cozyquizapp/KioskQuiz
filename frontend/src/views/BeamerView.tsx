@@ -3027,6 +3027,9 @@ useEffect(() => {
           if (question.type === 'MU_CHO') {
             return renderMultipleChoiceList(true);
           }
+          if ((question as any)?.bunteTuete?.kind === 'top5') {
+            return null;
+          }
           return (
             <div className="cozyRevealGeneric">
               {solution ||
@@ -3132,7 +3135,7 @@ useEffect(() => {
                 </div>
               )}
             </div>
-            {phase === 'reveal' && (
+            {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' && (
               <div className="cozyRevealAnswersPanel">
                 {renderRevealAnswersList()}
               </div>

@@ -155,8 +155,8 @@ const COPY = {
       correct === null ? 'Ergebnis' : correct ? 'Richtig!' : 'Leider falsch',
     loginError: 'Bitte zuerst beitreten.',
     kicked: 'Du wurdest vom Admin entfernt. Bitte neu beitreten.',
-    estimateBest: 'Richtig! Ihr wart näher dran.',
-    estimateWorse: 'Ein anderes Team war leider näher dran.',
+    estimateBest: 'Ihr wart am nächsten dran!',
+    estimateWorse: 'Leider war ein anderes Team näher dran.',
     answerCorrect: 'Richtig beantwortet!',
     answerWrong: 'Leider falsch.',
     betWin: 'Richtig! Ihr hattet die meisten Punkte auf der richtigen Antwort.',
@@ -209,8 +209,8 @@ const COPY = {
     timeLeft: (s: number) => `${s}s remaining`,
     resultTitle: (correct: boolean | null) =>
       correct === null ? 'Result' : correct ? 'Correct!' : 'Incorrect',
-    estimateBest: 'Correct! You were closer.',
-    estimateWorse: 'Another team was closer.',
+    estimateBest: 'You were the closest!',
+    estimateWorse: 'Another team was closer, unfortunately.',
     answerCorrect: 'Correct answer!',
     answerWrong: 'Incorrect.',
     betWin: 'Correct! You placed the most points on the right answer.',
@@ -2142,6 +2142,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   function renderShowResult() {
     const isCorrect = resultCorrect === true;
     const isIncorrect = resultCorrect === false;
+    const isEstimateQ = isClosenessQuestion(question);
     return (
       <div 
         className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}
@@ -2172,7 +2173,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             fontWeight: 900,
             color: isCorrect ? '#16a34a' : isIncorrect ? '#dc2626' : '#374151'
           }}>
-            {t('resultTitle')(resultCorrect)}
+            {isEstimateQ && resultMessage ? resultMessage : t('resultTitle')(resultCorrect)}
           </p>
         </div>
       )}
@@ -2245,7 +2246,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
         </div>
       )}
-      {!isFinal && resultMessage && <div className="message-state message-accent">{resultMessage}</div>}
+      {!isFinal && resultMessage && !isEstimateQ && <div className="message-state message-accent">{resultMessage}</div>}
       {!isFinal && resultPoints !== null && (
         <div className="message-state message-success">
           +{resultPoints} {language === 'de' ? 'Punkte' : 'Points'}

@@ -3095,16 +3095,12 @@ useEffect(() => {
           <div className={`cozyQuestionGrid ${phase === 'reveal' ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
             <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${mediaIsPortrait ? ' has-portrait-media' : ''}`}>
               <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
-                {phase !== 'reveal' && (
-                  <div className={`cozyQuestionPhaseBadge${phase === 'locked' ? ' locked' : ''}`}>
-                    {phase === 'active' ? (
-                      language === 'de' ? (
-                        <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
-                      ) : (
-                        <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
-                      )
+                {phase === 'active' && (
+                  <div className="cozyQuestionPhaseBadge">
+                    {language === 'de' ? (
+                      <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
                     ) : (
-                      <span>🔒</span>
+                      <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
                     )}
                   </div>
                 )}

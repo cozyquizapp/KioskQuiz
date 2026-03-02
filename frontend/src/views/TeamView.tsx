@@ -4124,20 +4124,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               border: '2px solid rgba(255,255,255,0.5)',
               flexShrink: 0
             }} />
-            {isLocked && (
-              <span style={{
-                background: 'rgba(255,255,255,0.25)',
-                border: '1px solid rgba(255,255,255,0.4)',
-                borderRadius: 8,
-                padding: '0 8px',
-                height: 32,
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: 13,
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}>🔒</span>
-            )}
             <button
               onClick={() => updateLanguage(language === 'de' ? 'en' : 'de')}
               title={language === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}

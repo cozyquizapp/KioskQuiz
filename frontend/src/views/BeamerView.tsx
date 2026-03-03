@@ -3068,6 +3068,12 @@ useEffect(() => {
         const img = e.currentTarget;
         setMediaIsPortrait(img.naturalHeight > img.naturalWidth);
       };
+      // Handle cached images that never fire onLoad
+      const onMediaRef = (el: HTMLImageElement | null) => {
+        if (el?.complete && el.naturalHeight > 0) {
+          setMediaIsPortrait(el.naturalHeight > el.naturalWidth);
+        }
+      };
 
       const heroEl = (
         <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
@@ -3150,10 +3156,10 @@ useEffect(() => {
         >
           {showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
-            <div className={`cozyMediaLayout ${mediaIsPortrait === true ? 'portrait-split' : 'landscape-split'}`}>
+            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
               {heroEl}
               <div className="cozyExternalMedia">
-                <img src={mediaUrl!} alt="" onLoad={onMediaLoad} />
+                <img src={mediaUrl!} alt="" ref={onMediaRef} onLoad={onMediaLoad} />
               </div>
             </div>
           ) : (

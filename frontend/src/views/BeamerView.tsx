@@ -2174,19 +2174,24 @@ useEffect(() => {
     const selectedThemes = blitz.selectedThemes ?? [];
     const pinnedTheme = blitz.pinnedTheme ?? null;
     if (phase === 'READY' || phase === 'BANNING') {
-      const headline = phase === 'READY' ? 'FOTOSPRINT BEREIT' : 'FOTOSPRINT AUSWAHL';
-      const selectedIds = new Set(selectedThemes.map((entry) => entry.id));
       const randomIds = new Set(
         selectedThemes.filter((entry) => entry.id !== pinnedTheme?.id).map((entry) => entry.id)
       );
       const statusLine = selectedThemes.length
-        ? selectedThemes.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' | ')
+        ? selectedThemes.map((entry, idx) => `R${idx + 1}: ${entry.title}`).join(' · ')
         : null;
       return (
-        <div className="beamer-stack blitz-stack">
-          <div className="beamer-intro-card">
-            <h2>{headline}</h2>
-            <p>Platz 1 streicht 2 Themen, letzter Platz wählt 1 Thema.</p>
+        <div className="blitz-stack">
+          {/* Compact rule hint — header already shows FOTOSPRINT / Kategorienwahl */}
+          <div style={{
+            fontSize: 13, fontWeight: 700, color: '#6b7280',
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            padding: '7px 16px', background: '#e5e7eb',
+            borderRadius: 999, alignSelf: 'center'
+          }}>
+            {phase === 'READY'
+              ? 'Bereit — Auswahl startet gleich'
+              : 'Platz 1 streicht 2 · Letzter Platz wählt'}
           </div>
           <div className="beamer-select-grid">
             {pool.length ? (

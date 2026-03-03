@@ -375,6 +375,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
+  const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -562,6 +563,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     const id = window.setInterval(() => setBlitzItemTick((tick) => tick + 1), 300);
     return () => window.clearInterval(id);
   }, [blitz?.itemDeadline]);
+
+  useEffect(() => { setBlitzImageIsPortrait(null); }, [blitz?.itemIndex]);
 
 
   useEffect(() => {
@@ -2562,6 +2565,11 @@ useEffect(() => {
                   src={activeItem.mediaUrl}
                   alt={`Item ${activeIndex + 1}`}
                   className="blitz-current-image"
+                  style={blitzImageIsPortrait ? { objectFit: 'contain', background: '#111' } : undefined}
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    setBlitzImageIsPortrait(img.naturalHeight > img.naturalWidth);
+                  }}
                 />
               )}
             </div>
@@ -3131,7 +3139,8 @@ useEffect(() => {
                 </div>
               )}
             </div>
-            {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' && (
+            {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' &&
+              (answerResults?.length || teamStatus?.some(t => t.answer !== undefined)) && (
               <div className="cozyRevealAnswersPanel">
                 {renderRevealAnswersList()}
               </div>

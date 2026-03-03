@@ -298,6 +298,7 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   align-items: center;
+  min-height: 48px; /* reserve space so layout doesn't jump when timer appears/disappears */
 }
 
 .beamer-header-brand {
@@ -1457,6 +1458,7 @@
 .cozyQuestionGrid.phase-reveal .cozyQuestionHero {
   padding: 20px 24px;
   gap: 14px;
+  flex: 1; /* fill height in reveal two-column layout */
   animation: revealSlideLeft 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -1620,18 +1622,17 @@
 
 .cozyQuestionHero {
   border-radius: 20px;
-  padding: 28px 32px;
+  padding: 20px 26px;
   border: 3px solid #111827;
   background: #ffffff;
   backdrop-filter: none;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   box-shadow: 0 6px 0 #111827, 0 12px 32px rgba(0,0,0,0.12);
   transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
-  flex: 1;
 }
 
 .cozyQuestionHero::before {
@@ -1726,7 +1727,7 @@
 
 .cozyQuestionText {
   font-family: var(--font-game);
-  font-size: clamp(42px, 5.5vw, 72px);
+  font-size: clamp(26px, 3.5vw, 52px);
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -1739,12 +1740,12 @@
 
 /* Shrink question when team answers are coming in */
 .cozyQuestionGrid.has-submissions .cozyQuestionText {
-  font-size: clamp(22px, 2.8vw, 38px);
+  font-size: clamp(20px, 2.5vw, 34px);
 }
 
 .cozyQuestionGrid.has-submissions .cozyQuestionHero {
-  padding: 18px 24px;
-  gap: 12px;
+  padding: 14px 20px;
+  gap: 10px;
 }
 
 .cozyQuestionGrid.has-submissions .cozyTeamStatusBar {
@@ -1833,9 +1834,9 @@
 .cozyOption {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
-  padding-left: 24px;
+  gap: 12px;
+  padding: 10px 16px;
+  padding-left: 20px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);

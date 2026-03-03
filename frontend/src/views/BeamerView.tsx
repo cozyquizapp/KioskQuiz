@@ -3056,6 +3056,82 @@ useEffect(() => {
 
       const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
       const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
+      // Split layout: image takes half the screen, question card takes the other half
+      const showSplitLayout = !!mediaUrl && phase !== 'reveal';
+
+      const onMediaLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        const img = e.currentTarget;
+        setMediaIsPortrait(img.naturalHeight > img.naturalWidth);
+      };
+
+      const heroEl = (
+        <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
+          <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
+            {phase === 'active' && (
+              <div className="cozyQuestionPhaseBadge">
+                {language === 'de' ? (
+                  <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
+                ) : (
+                  <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="cozyQuestionText">{questionTextLocalized}</div>
+          {promptText && <div className="cozyQuestionHint">{promptText}</div>}
+          {/* Image inside hero only for reveal phase (split layout handles active/locked) */}
+          {!showSplitLayout && mediaUrl && (
+            <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}${mediaIsPortrait ? ' portrait' : ''}`}>
+              <img src={mediaUrl} alt="" onLoad={onMediaLoad} />
+            </div>
+          )}
+          <div className="cozyQuestionBody">{renderHeroBody()}</div>
+          {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (
+            <div className="cozyTeamStatusBar">
+              {teamStatus.map((team, idx) => {
+                const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
+                const accentColor = colors[idx % colors.length];
+                return (
+                  <div
+                    key={team.id}
+                    className="cozyTeamStatusChip"
+                    style={{
+                      animation: team.submitted ? `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none',
+                      borderLeft: `3px solid ${accentColor}`,
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {avatarsEnabled && team.avatarId && (
+                      <img
+                        src={getAvatarById(team.avatarId).dataUri}
+                        alt=""
+                        style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }}
+                      />
+                    )}
+                    <span
+                      className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
+                      style={{ backgroundColor: accentColor }}
+                    />
+                    <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 600 }}>
+                      {team.name || 'Team'}
+                    </span>
+                    <span
+                      className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`}
+                      style={{
+                        backgroundColor: team.submitted ? accentColor : 'transparent',
+                        animation: team.submitted ? `pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none'
+                      }}
+                    >
+                      {team.submitted && '✓'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+
       return (
         <BeamerFrame
           {...baseFrameProps}
@@ -3067,85 +3143,26 @@ useEffect(() => {
           footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          <div className={`cozyQuestionGrid ${phase === 'reveal' && !isTop5 ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
-            <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${mediaIsPortrait ? ' has-portrait-media' : ''}`}>
-              <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
-                {phase === 'active' && (
-                  <div className="cozyQuestionPhaseBadge">
-                    {language === 'de' ? (
-                      <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
-                    ) : (
-                      <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
-                    )}
-                  </div>
-                )}
+          {showSplitLayout ? (
+            /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
+            <div className={`cozyMediaLayout ${mediaIsPortrait === true ? 'portrait-split' : 'landscape-split'}`}>
+              {heroEl}
+              <div className="cozyExternalMedia">
+                <img src={mediaUrl!} alt="" onLoad={onMediaLoad} />
               </div>
-              <div className="cozyQuestionText">{questionTextLocalized}</div>
-              {promptText && <div className="cozyQuestionHint">{promptText}</div>}
-              {mediaUrl && (
-                <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}${mediaIsPortrait ? ' portrait' : ''}`}>
-                  <img
-                    src={mediaUrl}
-                    alt=""
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      setMediaIsPortrait(img.naturalHeight > img.naturalWidth);
-                    }}
-                  />
-                </div>
-              )}
-              <div className="cozyQuestionBody">{renderHeroBody()}</div>
-              {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (
-                <div className="cozyTeamStatusBar">
-                  {teamStatus.map((team, idx) => {
-                    const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
-                    const accentColor = colors[idx % colors.length];
-                    return (
-                      <div
-                        key={team.id}
-                        className="cozyTeamStatusChip"
-                        style={{
-                          animation: team.submitted ? `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none',
-                          borderLeft: `3px solid ${accentColor}`,
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        {avatarsEnabled && team.avatarId && (
-                          <img
-                            src={getAvatarById(team.avatarId).dataUri}
-                            alt=""
-                            style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }}
-                          />
-                        )}
-                        <span
-                          className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
-                          style={{ backgroundColor: accentColor }}
-                        />
-                        <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 600 }}>
-                          {team.name || 'Team'}
-                        </span>
-                        <span 
-                          className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`}
-                          style={{ 
-                            backgroundColor: team.submitted ? accentColor : 'transparent',
-                            animation: team.submitted ? `pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none'
-                          }}
-                        >
-                          {team.submitted && '✓'}
-                        </span>
-                      </div>
-                    );
-                  })}
+            </div>
+          ) : (
+            /* No image or reveal: original grid layout */
+            <div className={`cozyQuestionGrid ${phase === 'reveal' && !isTop5 ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
+              {heroEl}
+              {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' &&
+                (answerResults?.length || teamStatus?.some(t => t.answer !== undefined)) && (
+                <div className="cozyRevealAnswersPanel">
+                  {renderRevealAnswersList()}
                 </div>
               )}
             </div>
-            {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' &&
-              (answerResults?.length || teamStatus?.some(t => t.answer !== undefined)) && (
-              <div className="cozyRevealAnswersPanel">
-                {renderRevealAnswersList()}
-              </div>
-            )}
-          </div>
+          )}
           {phase === 'reveal' && renderTop5Confetti()}
         </BeamerFrame>
       );

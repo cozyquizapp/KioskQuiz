@@ -19,7 +19,7 @@
   height: 100%;
   max-height: 100%;
   margin: 0;
-  padding: 24px 32px 20px;
+  padding: 20px 32px 20px;
   border-radius: 0;
   border: none;
   background: transparent;
@@ -27,7 +27,7 @@
   color: #111827;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   box-shadow: none;
   animation: beamerFade 0.45s ease;
   font-family: var(--font-game);
@@ -1467,6 +1467,57 @@
   text-align: left;
 }
 
+/* Image split layout: question card + external image filling the body */
+.cozyMediaLayout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* Portrait image: side by side (question left, image right) */
+.cozyMediaLayout.portrait-split {
+  flex-direction: row;
+}
+.cozyMediaLayout.portrait-split .cozyQuestionHero {
+  flex: 0 0 44%;
+  min-width: 0;
+}
+.cozyMediaLayout.portrait-split .cozyExternalMedia {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Landscape image: stacked (image on top, question below) */
+.cozyMediaLayout.landscape-split {
+  flex-direction: column;
+}
+.cozyMediaLayout.landscape-split .cozyQuestionHero {
+  flex-shrink: 0;
+  order: 2;
+}
+.cozyMediaLayout.landscape-split .cozyExternalMedia {
+  flex: 1;
+  min-height: 0;
+  order: 1;
+}
+
+/* External media container (image shown outside the question card) */
+.cozyExternalMedia {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0f172a;
+  min-height: 0;
+  min-width: 0;
+}
+.cozyExternalMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 /* Right panel: team answers */
 .cozyRevealAnswersPanel {
   display: flex;
@@ -1818,11 +1869,10 @@
 }
 
 .cozyQuestionBody {
-  min-height: 160px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex: 1;
   justify-content: center;
 }
 

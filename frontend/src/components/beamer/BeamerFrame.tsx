@@ -47,8 +47,11 @@ const BeamerFrame: React.FC<Props> = ({
       : null;
   return (
     <div className={`beamer-frame beamer-jackbox scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
-      <div className="beamer-frame-progress" style={{ visibility: normalizedProgress !== null ? 'visible' : 'hidden' }}>
-        <div className="beamer-frame-progress-inner" style={{ width: `${(normalizedProgress ?? 0) * 100}%` }} />
+      <div className="beamer-frame-progress-wrap">
+        <div className="beamer-frame-progress" style={{ visibility: normalizedProgress !== null ? 'visible' : 'hidden' }}>
+          <div className="beamer-frame-progress-inner" style={{ width: `${(normalizedProgress ?? 0) * 100}%` }} />
+        </div>
+        {timerText && <div className="beamer-header-timer beamer-progress-timer">{timerText}</div>}
       </div>
       {!hideHeader && (
         <BeamerHeader
@@ -58,7 +61,6 @@ const BeamerFrame: React.FC<Props> = ({
           subtitle={subtitle}
           badge={badgeLabel ? <BeamerBadge label={badgeLabel} tone={badgeTone} /> : undefined}
           progressText={progressText}
-          timerText={timerText}
           rightNode={rightNode}
         />
       )}

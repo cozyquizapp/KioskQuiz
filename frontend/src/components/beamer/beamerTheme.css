@@ -281,25 +281,23 @@
 
 .beamer-frame-progress-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 5px;
+  height: 5px; /* fixed — timer overflows absolutely, no layout displacement */
 }
 
 .beamer-frame-progress {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 5px;
+  inset: 0;
   border-radius: 999px;
   background: #e5e7eb;
   overflow: hidden;
 }
 
 .beamer-progress-timer {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
 }
 
 .beamer-frame-progress-inner {
@@ -411,6 +409,13 @@
   flex-direction: column;
   gap: 18px;
   justify-content: center;
+  align-items: center;
+}
+
+/* Layouts inside beamer-frame-body must stretch to full width */
+.beamer-frame-body > * {
+  width: 100%;
+  min-width: 0;
 }
 
 .beamer-footer {

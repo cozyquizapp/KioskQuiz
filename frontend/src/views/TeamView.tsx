@@ -17,7 +17,6 @@ import {
   joinRoom,
   submitAnswer,
   fetchLanguage,
-  setLanguage as setLanguageApi
 } from '../api';
 import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
@@ -500,6 +499,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     // Don't auto-sync carousel index on avatarId changes - user should stay in carousel position
   }, [avatarId, availableAvatars]);
   
+  const questionRef = useRef<AnyQuestion | null>(null);
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
   const lastQuestionIdRef = useRef<string | null>(null);
@@ -988,10 +988,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
 
   function updateLanguage(lang: Language) {
     // Team-View soll nur einsprachig sein, nicht 'both'
+    // Sprachänderung ist lokal — kein API-Call, damit der Beamer unberührt bleibt
     const singleLang = lang === 'both' ? 'de' : lang;
     setLanguageState(singleLang);
     localStorage.setItem('teamLanguage', singleLang);
-    setLanguageApi(roomCode, singleLang).catch(() => undefined);
   }
 
   // Socket connection & live updates
@@ -1190,7 +1190,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       if (teamId && answers && answers[teamId]) {
         const entry = answers[teamId];
         setResultCorrect(Boolean(entry.isCorrect));
-        setResultMessage(getResultMessage(entry, question));
+        setResultMessage(getResultMessage(entry, questionRef.current));
         
         // Determine if result is happy or sad
         let isHappy = false;
@@ -1244,7 +1244,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         if (tId !== teamId) return;
         setResultCorrect(Boolean(isCorrect));
         setResultDeviation(typeof deviation === 'number' && Number.isFinite(deviation) ? deviation : null);
-        setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, question));
+        setResultMessage(getResultMessage({ isCorrect, deviation, bestDeviation }, questionRef.current));
         setPhase('showResult');
         
         // Determine if result is happy or sad
@@ -1301,6 +1301,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       socket.disconnect();
     };
   }, [roomCode, teamId, language, reconnectKey]);
+
+  // Keep questionRef in sync so socket handlers always see the current question
+  useEffect(() => { questionRef.current = question; }, [question]);
 
   // Timer tick for smooth progress animations
   useEffect(() => {

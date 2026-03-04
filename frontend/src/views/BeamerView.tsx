@@ -3175,9 +3175,9 @@ useEffect(() => {
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 8,
                     padding: '6px 20px', borderRadius: 999,
-                    background: '#4285F4', color: '#fff',
+                    background: '#942d59', color: '#fff',
                     fontWeight: 700, fontSize: 20,
-                    boxShadow: '0 3px 0 #1d62d4'
+                    boxShadow: '0 3px 0 #6b1e3f'
                   }}>
                     Weiter →
                   </span>

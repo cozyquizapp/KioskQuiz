@@ -87,7 +87,7 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
     
     video.addEventListener('timeupdate', handleTimeUpdate);
     return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [avatar.isVideo]);
+  }, [avatar.id, avatar.isVideo]);
   
   if (avatar.isVideo && avatar.videoSrc) {
     return (

@@ -20,6 +20,7 @@ export const useLiveAnswers = (roomCode: string | null, questionId?: string | nu
   });
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const roomCodeRef = useRef(roomCode);
+  const mountedRef = useRef(false);
 
   // Update roomCode ref
   useEffect(() => {
@@ -28,9 +29,10 @@ export const useLiveAnswers = (roomCode: string | null, questionId?: string | nu
 
   const poll = useCallback(async () => {
     if (!roomCodeRef.current) return;
-    
+
     try {
       const res = await fetchAnswers(roomCodeRef.current);
+      if (!mountedRef.current) return;
       const nextAnswers = (res.answers ?? {}) as Record<string, AnswerEntry & { answer?: unknown }>;
       const nextTeams = res.teams ?? {};
       const nextSolution = res.solution;
@@ -72,7 +74,7 @@ export const useLiveAnswers = (roomCode: string | null, questionId?: string | nu
       return;
     }
 
-    let mounted = true;
+    mountedRef.current = true;
 
     // Initial poll immediately
     poll();
@@ -81,7 +83,7 @@ export const useLiveAnswers = (roomCode: string | null, questionId?: string | nu
     pollIntervalRef.current = setInterval(poll, 1000);
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;

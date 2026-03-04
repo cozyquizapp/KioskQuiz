@@ -2457,7 +2457,7 @@ useEffect(() => {
               boxShadow: '0 4px 0 rgba(59,130,246,0.4), 0 8px 24px rgba(59,130,246,0.15)',
               animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.5s both',
             }}>
-              <div style={{ ...badgeBase, background: '#3b82f6', color: '#ffffff' }}>GEWÄHLT</div>
+              <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
               <div style={{ fontSize: '52px' }}>{pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}</div>
               <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
                 {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
@@ -3628,7 +3628,7 @@ useEffect(() => {
                   boxShadow: '0 4px 0 rgba(59,130,246,0.4), 0 8px 24px rgba(59,130,246,0.15)',
                   animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.5s both',
                 }}>
-                  <div style={{ ...badgeBase, background: '#3b82f6', color: '#ffffff' }}>GEWÄHLT</div>
+                  <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
                   <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
                     {pickedCategory?.title || 'Kategorie 1'}
                   </div>

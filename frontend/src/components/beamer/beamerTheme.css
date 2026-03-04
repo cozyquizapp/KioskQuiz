@@ -4,7 +4,7 @@
   --beamer-soft: rgba(0, 0, 0, 0.05);
   --beamer-text: #111827;
   --beamer-muted: #374151;
-  --beamer-accent: linear-gradient(135deg, #f59e0b, #f97316);
+  --beamer-accent: linear-gradient(90deg, #942d59, #c04080);
   --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
   --tile-a: #3B82F6;
@@ -2285,10 +2285,10 @@
 }
 
 .blitz-chip.current {
-  border-color: rgba(59, 130, 246, 0.6);
-  background: rgba(59, 130, 246, 0.15);
-  color: #1e40af;
-  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.2);
+  border-color: rgba(148, 45, 89, 0.6);
+  background: rgba(148, 45, 89, 0.12);
+  color: #942d59;
+  box-shadow: 0 12px 28px rgba(148, 45, 89, 0.2);
 }
 
 .blitz-chip.done {

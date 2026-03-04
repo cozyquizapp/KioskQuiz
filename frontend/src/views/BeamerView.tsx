@@ -122,7 +122,7 @@ type FrameBaseProps = {
 const translations = {
   de: {
     lobbyTitle: "Gleich geht's los.",
-    lobbySubtitle: 'Macht es euch gemuetlich - der Moderator legt gleich los.',
+    lobbySubtitle: 'Macht es euch gemütlich - der Moderator legt gleich los.',
     codeLabel: 'Code',
     languageLabel: 'Sprache',
     waitingForHost: 'Warten auf Moderator ...',
@@ -131,10 +131,10 @@ const translations = {
     timeLeft: (s: number) => `${s}s`,
     timeUp: 'Zeit abgelaufen',
     noTimer: 'Kein Timer aktiv',
-    calculating: 'Wir rechnen die Loesung aus... Bitte einen Moment geduldig sein.',
+    calculating: 'Wir rechnen die Lösung aus... Bitte einen Moment geduldig sein.',
     answerLabel: 'Antwort',
     answerFallback: 'Antwort wird eingeblendet.',
-    slotTitle: 'Naechste Kategorie',
+    slotTitle: 'Nächste Kategorie',
     slotHint: 'Macht euch bereit - gleich seht ihr die Frage auf dem Beamer.',
     mixedMechanic: 'Gemischte Tüte - Sondermechanik.',
     questionLabel: (index: number, total: number) => `Frage ${index}/${total}`,
@@ -220,7 +220,7 @@ const CATEGORY_DESCRIPTIONS: Record<QuizCategory, Record<'de' | 'en', string>> =
     en: 'Three statements, only one is true.'
   },
   Cheese: {
-    de: 'Ein Bild. Ein Blick. Eine Loesung.',
+    de: 'Ein Bild. Ein Blick. Eine Lösung.',
     en: 'All about the picture \u2013 look closely.'
   },
   GemischteTuete: {
@@ -1543,7 +1543,7 @@ useEffect(() => {
 
   const renderIntro = () => {
     const slide = introSlides[introIndex % introSlides.length];
-    const backLabel = language === 'de' ? 'Zurueck' : 'Back';
+    const backLabel = language === 'de' ? 'Zurück' : 'Back';
     const nextLabel = language === 'de' ? 'Weiter' : 'Next';
     return (
       <div style={{ ...cardFrame, padding: 0 }}>

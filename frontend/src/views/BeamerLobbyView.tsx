@@ -119,7 +119,7 @@ const heroPanel: React.CSSProperties = {
   padding: '16px 20px',
   borderRadius: 20,
   background: '#ffffff',
-  border: '2px solid #d1d5db',
+  border: 'none',
   boxShadow: '0 4px 0 #d1d5db',
   display: 'flex',
   flexDirection: 'column',
@@ -206,7 +206,7 @@ const categoryRow: React.CSSProperties = {
   padding: '10px 14px',
   borderRadius: 12,
   border: '2px solid #e5e7eb',
-  borderLeft: '5px solid #1565C0',
+  borderLeft: '5px solid #3B82F6',
 };
 
 const iconCircle: React.CSSProperties = {

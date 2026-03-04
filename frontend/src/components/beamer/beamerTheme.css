@@ -429,35 +429,16 @@
   align-items: center;
   padding: 7px 14px;
   border-radius: 12px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
+  border: none;
+  background: transparent;
   font-family: var(--font-game);
   font-weight: 700;
-  color: #374151;
+  color: #6b7280;
 }
 
-.beamer-frame.beamer-jackbox .beamer-footer {
-  border-color: #e5e7eb;
-  background: #ffffff;
-}
-
-.beamer-footer.status-active {
-  border-color: #6ee7b7;
-  color: #065f46;
-  background: #ecfdf5;
-}
-
-.beamer-footer.status-locked {
-  border-color: #fca5a5;
-  color: #991b1b;
-  background: #fef2f2;
-}
-
-.beamer-footer.status-final {
-  border-color: #fcd34d;
-  color: #92400e;
-  background: #fffbeb;
-}
+.beamer-footer.status-active { color: #065f46; }
+.beamer-footer.status-locked { color: #991b1b; }
+.beamer-footer.status-final  { color: #92400e; }
 
 .beamer-badge {
   display: inline-flex;

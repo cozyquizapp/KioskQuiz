@@ -4448,7 +4448,9 @@ const runNextQuestion = (room: RoomState) => {
 const startOneOfEightTurnState = (room: RoomState, question: AnyQuestion) => {
   const statements = ((question as any).bunteTuete?.statements as Array<{ id: string }> | undefined) || [];
   const teamIds = getConnectedTeamIds(room);
-  const order = teamIds.length ? [...teamIds] : Object.keys(room.teams);
+  const raw = teamIds.length ? [...teamIds] : Object.keys(room.teams);
+  // Random start: shuffle turn order
+  const order = raw.sort(() => Math.random() - 0.5);
   room.oneOfEightTurnOrder = order;
   room.oneOfEightTurnIndex = 0;
   room.oneOfEightActiveTeamId = order[0] ?? null;
@@ -4512,9 +4514,9 @@ const concludeOneOfEight = (
 };
 
 const advanceOneOfEightTurn = (room: RoomState) => {
-  room.oneOfEightTurnIndex += 1;
-  const nextTeam = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
-  room.oneOfEightActiveTeamId = nextTeam ?? null;
+  if (room.oneOfEightTurnOrder.length === 0) return;
+  room.oneOfEightTurnIndex = (room.oneOfEightTurnIndex + 1) % room.oneOfEightTurnOrder.length;
+  room.oneOfEightActiveTeamId = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
 };
 
 const handleOneOfEightSubmission = (
@@ -4556,24 +4558,28 @@ const handleOneOfEightSubmission = (
     return;
   }
 
-  // Keine falsche Aussage gewählt: weiter zum nächsten Team oder Unentschieden, wenn alle durch sind
-  const submissions = room.oneOfEightUsedChoiceIds.length;
-  const maxTurns = Math.min(statements.length || 0, room.oneOfEightTurnOrder.length || statements.length || 0);
-  advanceOneOfEightTurn(room);
+  // Keine falsche Aussage gewählt: prüfen ob alle richtigen Optionen aufgebraucht sind
+  const allCorrectUsed = statements
+    .filter((stmt) => !stmt.isFalse)
+    .every((stmt) =>
+      room.oneOfEightUsedChoiceIds.some((id) => id.toLowerCase() === String(stmt.id).toLowerCase())
+    );
 
-  if (submissions >= maxTurns || room.oneOfEightUsedChoiceIds.length >= (statements.length || 0)) {
+  if (allCorrectUsed) {
+    // Nur noch die falsche Option übrig → alle Teams gewinnen (Unentschieden mit Punkten)
     concludeOneOfEight(
       room,
       question,
       null,
-      [],
-      'Unentschieden',
-      'Unentschieden',
-      'Unentschieden – falsche Aussage nicht gewählt'
+      [...room.oneOfEightTurnOrder],
+      'Alle sicher — falsche Option nicht gewählt',
+      'Alle sicher — falsche Option nicht gewählt',
+      'Alle sicher — falsche Option nicht gewählt'
     );
     return;
   }
 
+  advanceOneOfEightTurn(room);
   broadcastState(room);
 };
 

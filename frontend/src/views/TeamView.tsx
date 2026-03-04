@@ -453,6 +453,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
   const [blitzState, setBlitzState] = useState<BlitzState | null>(null);
   const [rundlaufState, setRundlaufState] = useState<RundlaufState | null>(null);
+  const [oneOfEightState, setOneOfEightState] = useState<StateUpdatePayload['oneOfEight'] | null>(null);
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
@@ -469,6 +470,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   
+  // Derived turn-state — declared early so effects below can reference them
+  const isOneOfEightQuestion = question?.type === 'BUNTE_TUETE' && (question as any)?.bunteTuete?.kind === 'oneOfEight';
+  const isOneOfEightActiveTurn = isOneOfEightQuestion && oneOfEightState?.activeTeamId === teamId && !oneOfEightState?.finished;
+
   // Filter out avatars already chosen by other teams
   const availableAvatars = useMemo(() => {
     if (!teamStatus || teamStatus.length === 0) return AVATARS;
@@ -585,6 +590,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       setBunteOrderCriteria(payload.defaultCriteriaId ?? payload.criteriaOptions?.[0]?.id ?? null);
     }
   }, [question?.id]);
+
+  // Reset oneOfEight selection when it becomes this team's turn again
+  useEffect(() => {
+    if (isOneOfEightActiveTurn) {
+      setBunteOneChoice('');
+    }
+  }, [isOneOfEightActiveTurn]);
 
   // inject animations once
   useEffect(() => {
@@ -1105,6 +1117,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       }
       if (payload.rundlauf !== undefined) {
         setRundlaufState(payload.rundlauf ?? null);
+      }
+      if (payload.oneOfEight !== undefined) {
+        setOneOfEightState(payload.oneOfEight ?? null);
       }
       if (payload.avatarsEnabled !== undefined) {
         setAvatarsEnabled(payload.avatarsEnabled !== false);
@@ -1776,31 +1791,57 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       );
     }
     if (payload.kind === 'oneOfEight') {
+      const usedIds = new Set(oneOfEightState?.usedChoiceIds?.map((id) => id.toLowerCase()) ?? []);
+      const activeTeamName = oneOfEightState?.activeTeamId
+        ? (teamStatus?.find((t) => t.id === oneOfEightState!.activeTeamId)?.name ?? null)
+        : null;
+      const waitingBanner = !isOneOfEightActiveTurn && !oneOfEightState?.finished && activeTeamName && (
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: 12,
+          background: '#f3f4f6',
+          border: '2px solid #e5e7eb',
+          color: '#374151',
+          fontWeight: 700,
+          fontSize: 'clamp(14px, 3.5vw, 16px)',
+          textAlign: 'center',
+          marginBottom: 8
+        }}>
+          {language === 'de' ? `${activeTeamName} ist dran` : `${activeTeamName} is up`}
+        </div>
+      );
       return (
-        <div style={{ display: 'grid', gap: 8 }} className="stagger-container">
-          {payload.statements.map((statement) => {
-            const selected = bunteOneChoice === statement.id;
-            return (
-              <button
-                key={statement.id}
-                type="button"
-                data-choice-letter={statement.id}
-                className={`team-choice shimmer-card hover-spring btn-ripple${selected ? ' is-selected' : ''}`}
-                onClick={() => setBunteOneChoice(statement.id)}
-                disabled={!canAnswer}
-                style={{
-                  ...choiceButton,
-                  justifyContent: 'flex-start',
-                  cursor: canAnswer ? 'pointer' : 'not-allowed',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  paddingLeft: 'calc(44px + 14px)'
-                }}
-              >
-                {statement.text}
-              </button>
-            );
-          })}
+        <div style={{ display: 'grid', gap: 8 }}>
+          {waitingBanner}
+          <div style={{ display: 'grid', gap: 8 }} className="stagger-container">
+            {payload.statements.map((statement) => {
+              const isUsed = usedIds.has(String(statement.id).toLowerCase());
+              const selected = bunteOneChoice === statement.id;
+              const tileDisabled = !canAnswer || isUsed;
+              return (
+                <button
+                  key={statement.id}
+                  type="button"
+                  data-choice-letter={statement.id}
+                  className={`team-choice shimmer-card hover-spring btn-ripple${selected ? ' is-selected' : ''}`}
+                  onClick={() => !isUsed && setBunteOneChoice(statement.id)}
+                  disabled={tileDisabled}
+                  style={{
+                    ...choiceButton,
+                    justifyContent: 'flex-start',
+                    cursor: tileDisabled ? 'not-allowed' : 'pointer',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    paddingLeft: 'calc(44px + 14px)',
+                    opacity: isUsed ? 0.35 : 1,
+                    textDecoration: isUsed ? 'line-through' : 'none'
+                  }}
+                >
+                  {statement.text}
+                </button>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -3943,7 +3984,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       : 0;
   const timeUp = timerEndsAt !== null && remainingSeconds <= 0;
   const questionAnsweringActive = gameState === 'Q_ACTIVE' && phase === 'answering';
-  const canAnswer = questionAnsweringActive && !timeUp && !answerSubmitted;
+  // For oneOfEight: canAnswer only when it's this team's turn (ignores answerSubmitted since teams may answer multiple turns)
+  const canAnswer = isOneOfEightQuestion
+    ? questionAnsweringActive && !timeUp && isOneOfEightActiveTurn
+    : questionAnsweringActive && !timeUp && !answerSubmitted;
   const waitForQuestionHeadline = gameState === 'LOBBY' ? t('waitingStart') : t('waitingMsg');
   const isLocked = gameState === 'Q_LOCKED';
     const timerContextActive = gameState === 'Q_ACTIVE' || isBlitzPlaying || isRundlaufActiveTurn;

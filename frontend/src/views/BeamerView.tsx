@@ -370,6 +370,11 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
   const [blitz, setBlitz] = useState<BlitzState | null>(null);
   const [rundlauf, setRundlauf] = useState<RundlaufState | null>(null);
+  const [oneOfEight, setOneOfEight] = useState<StateUpdatePayload['oneOfEight'] | null>(null);
+  // Random start animation: cycle through team names before landing on the actual start team
+  const [oneOfEightSpinTeamId, setOneOfEightSpinTeamId] = useState<string | null>(null);
+  const [oneOfEightSpinDone, setOneOfEightSpinDone] = useState(false);
+  const oneOfEightSpinRef = useRef<{ questionId: string | null; timer: number | null }>({ questionId: null, timer: null });
   const [blitzItemTick, setBlitzItemTick] = useState(0);
   const [blitzTick, setBlitzTick] = useState(0);
   const [rundlaufTick, setRundlaufTick] = useState(0);
@@ -587,6 +592,46 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => { if (imageRevealTimerRef.current) window.clearTimeout(imageRevealTimerRef.current); };
   }, [question?.id]);
 
+  // oneOfEight: random team picker spin animation when question starts
+  useEffect(() => {
+    const isOneOfEightQ = (question as any)?.bunteTuete?.kind === 'oneOfEight';
+    if (!isOneOfEightQ || !oneOfEight?.activeTeamId || !oneOfEight?.turnOrder?.length) {
+      setOneOfEightSpinDone(false);
+      setOneOfEightSpinTeamId(null);
+      if (oneOfEightSpinRef.current.timer) window.clearTimeout(oneOfEightSpinRef.current.timer);
+      oneOfEightSpinRef.current.timer = null;
+      return;
+    }
+    if (oneOfEight.usedChoiceIds.length > 0) {
+      // Already in progress — no spin needed
+      setOneOfEightSpinDone(true);
+      return;
+    }
+    if (oneOfEightSpinRef.current.questionId === question?.id) return; // already ran for this question
+    oneOfEightSpinRef.current.questionId = question?.id ?? null;
+    setOneOfEightSpinDone(false);
+
+    const order = oneOfEight.turnOrder;
+    let step = 0;
+    const totalSteps = 14;
+    const finalTeamId = oneOfEight.activeTeamId;
+    const spin = () => {
+      const delay = step < 8 ? 120 : step < 12 ? 200 : 340;
+      oneOfEightSpinRef.current.timer = window.setTimeout(() => {
+        const idx = step % order.length;
+        setOneOfEightSpinTeamId(order[idx]);
+        step += 1;
+        if (step < totalSteps) {
+          spin();
+        } else {
+          setOneOfEightSpinTeamId(finalTeamId);
+          setOneOfEightSpinDone(true);
+        }
+      }, delay);
+    };
+    spin();
+    return () => { if (oneOfEightSpinRef.current.timer) window.clearTimeout(oneOfEightSpinRef.current.timer); };
+  }, [question?.id, oneOfEight?.activeTeamId]);
 
   useEffect(() => {
     if (!blitz?.deadline) {
@@ -991,6 +1036,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.rundlauf !== undefined) {
         setRundlauf(payload.rundlauf ?? null);
+      }
+      if (payload.oneOfEight !== undefined) {
+        setOneOfEight(payload.oneOfEight ?? null);
       }
       if (payload.results !== undefined) {
         setAnswerResults(payload.results ?? null);
@@ -1922,6 +1970,63 @@ useEffect(() => {
               {item.label || item.text || item.prompt || item.id}
             </div>
           ))}
+        </div>
+      );
+    }
+    if (bunte?.statements?.length && bunte?.kind === 'oneOfEight') {
+      const usedIds = new Set((oneOfEight?.usedChoiceIds ?? []).map((id: string) => id.toLowerCase()));
+      const displayTeamId = oneOfEightSpinDone ? oneOfEight?.activeTeamId : oneOfEightSpinTeamId;
+      const displayTeamName = displayTeamId
+        ? (teamStatus?.find((t) => t.id === displayTeamId)?.name ?? displayTeamId)
+        : null;
+      const spinning = !oneOfEightSpinDone && !!oneOfEightSpinTeamId;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+          {/* Active team banner */}
+          {displayTeamName && !oneOfEight?.finished && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              padding: '10px 20px',
+              borderRadius: 16,
+              background: spinning ? '#374151' : '#111827',
+              color: '#f9fafb',
+              fontFamily: 'var(--font-game)',
+              fontWeight: 800,
+              fontSize: 'clamp(18px, 2.2vw, 28px)',
+              letterSpacing: '0.04em',
+              transition: 'background 0.2s',
+              boxShadow: '0 3px 0 #374151'
+            }}>
+              <span style={{ opacity: 0.6, fontSize: '0.75em' }}>{language === 'de' ? 'Am Zug:' : 'Up:'}</span>
+              <span style={{
+                animation: spinning ? 'beamerFade 0.15s ease' : 'none',
+                display: 'inline-block'
+              }}>{displayTeamName}</span>
+            </div>
+          )}
+          <div className="beamer-grid">
+            {bunte.statements.map((statement: any) => {
+              const isUsed = usedIds.has(String(statement.id).toLowerCase());
+              return (
+                <div
+                  key={statement.id}
+                  className="beamer-card"
+                  style={{
+                    position: 'relative',
+                    paddingBottom: 34,
+                    opacity: isUsed ? 0.35 : 1,
+                    transition: 'opacity 0.4s ease',
+                    textDecoration: isUsed ? 'line-through' : 'none'
+                  }}
+                >
+                  <strong>{statement.id}.</strong> {statement.text}
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }

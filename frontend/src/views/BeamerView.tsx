@@ -3165,49 +3165,49 @@ useEffect(() => {
             </div>
           )}
           <div className="cozyQuestionBody">{renderHeroBody()}</div>
-          {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (
-            <div className="cozyTeamStatusBar">
-              {teamStatus.map((team, idx) => {
-                const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
-                const accentColor = colors[idx % colors.length];
-                return (
-                  <div
-                    key={team.id}
-                    className="cozyTeamStatusChip"
-                    style={{
-                      animation: team.submitted ? `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none',
-                      borderLeft: `3px solid ${accentColor}`,
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    {avatarsEnabled && team.avatarId && (
-                      <img
-                        src={getAvatarById(team.avatarId).dataUri}
-                        alt=""
-                        style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }}
-                      />
-                    )}
-                    <span
-                      className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
-                      style={{ backgroundColor: accentColor }}
-                    />
-                    <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 600 }}>
-                      {team.name || 'Team'}
-                    </span>
-                    <span
-                      className={`cozyTeamAnswerDot ${team.submitted ? 'submitted' : ''}`}
-                      style={{
-                        backgroundColor: team.submitted ? accentColor : 'transparent',
-                        animation: team.submitted ? `pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none'
-                      }}
+          {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (() => {
+            const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
+            const connectedTeams = teamStatus.filter(t => t.connected);
+            const allSubmitted = connectedTeams.length > 0 && connectedTeams.every(t => t.submitted);
+            if (allSubmitted) {
+              return (
+                <div className="cozyTeamStatusBar">
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '6px 20px', borderRadius: 999,
+                    background: '#4285F4', color: '#fff',
+                    fontWeight: 700, fontSize: 20,
+                    boxShadow: '0 3px 0 #1d62d4'
+                  }}>
+                    Weiter →
+                  </span>
+                </div>
+              );
+            }
+            return (
+              <div className="cozyTeamStatusBar">
+                {teamStatus.map((team, idx) => {
+                  const accentColor = colors[idx % colors.length];
+                  return (
+                    <div
+                      key={team.id}
+                      className="cozyTeamStatusChip"
+                      style={{ borderLeft: `3px solid ${accentColor}`, transition: 'all 0.3s ease' }}
                     >
-                      {team.submitted && '✓'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      <span
+                        className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
+                        style={{ backgroundColor: team.submitted ? accentColor : 'transparent', border: `2px solid ${accentColor}` }}
+                      />
+                      <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 500 }}>
+                        {team.name || 'Team'}
+                      </span>
+                      {team.submitted && <span style={{ color: accentColor, fontWeight: 700, fontSize: 15 }}>✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       );
 

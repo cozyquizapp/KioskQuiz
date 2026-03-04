@@ -9,7 +9,7 @@
   /* Answer tile colors */
   --tile-a: #1565C0;
   --tile-b: #2E7D32;
-  --tile-c: #C62828;
+  --tile-c: #D33F3F;
   --tile-d: #E65100;
 }
 
@@ -101,6 +101,10 @@
   min-height: 28px;
   display: flex;
   align-items: center;
+}
+/* Hide pill badge when leftLabel is empty (prevents black-dot artifact) */
+.beamer-label:empty {
+  display: none !important;
 }
 
 /* Confetti overlay */
@@ -1721,15 +1725,15 @@
 
 .cozyQuestionHero {
   border-radius: 20px;
-  padding: 24px 36px 24px; /* reduced — phase badge removed, no need for big top gap */
-  border: 2px solid #e2e8f0;
+  padding: 20px 20px 16px;
+  border: 1px solid #f0f2f5;
   background: #ffffff;
   backdrop-filter: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
   justify-content: center;
-  box-shadow: 0 4px 0 #cbd5e1, 0 8px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
   transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
@@ -1832,7 +1836,7 @@
 
 .cozyQuestionText {
   font-family: var(--font-game);
-  font-size: clamp(40px, 5.5vw, 92px);
+  font-size: clamp(36px, 4.6vw, 76px);
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -1946,7 +1950,7 @@
   background: #e5e7eb;
   color: #111827;
   font-weight: 700;
-  font-size: clamp(18px, 2.2vw, 28px);
+  font-size: clamp(16px, 1.8vw, 24px);
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;

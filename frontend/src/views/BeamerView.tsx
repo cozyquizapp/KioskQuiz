@@ -3010,6 +3010,9 @@ useEffect(() => {
       const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
       // Split layout: image takes half the screen, question card takes the other half
       const showSplitLayout = !!mediaUrl && phase !== 'reveal';
+      // During reveal: only use 2-column layout when team answers are actually present
+      const hasRevealAnswers = phase === 'reveal' && !isTop5 &&
+        !!(answerResults?.length || teamStatus?.some(t => t.answer !== undefined));
 
       const onMediaLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
@@ -3023,13 +3026,13 @@ useEffect(() => {
       };
 
       const heroEl = (
-        <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
+        <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${phase === 'reveal' && !hasRevealAnswers ? ' reveal-solo' : ''}`}>
           <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo" />
           <div className="cozyQuestionText">{questionTextLocalized}</div>
           {promptText && <div className="cozyQuestionHint">{promptText}</div>}
-          {/* Image inside hero only for reveal phase (split layout handles active/locked) */}
-          {!showSplitLayout && mediaUrl && (
-            <div className={`cozyQuestionMedia${phase === 'reveal' ? ' reveal' : ''}${mediaIsPortrait ? ' portrait' : ''}`}>
+          {/* Image: only during active/locked phase — hidden during reveal (was cut-off/cropped) */}
+          {!showSplitLayout && mediaUrl && phase !== 'reveal' && (
+            <div className={`cozyQuestionMedia${mediaIsPortrait ? ' portrait' : ''}`}>
               <img src={mediaUrl} alt="" onLoad={onMediaLoad} />
             </div>
           )}
@@ -3101,10 +3104,9 @@ useEffect(() => {
             </div>
           ) : (
             /* No image or reveal: original grid layout */
-            <div className={`cozyQuestionGrid ${phase === 'reveal' && !isTop5 ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
+            <div className={`cozyQuestionGrid ${hasRevealAnswers ? 'phase-reveal' : `cozyQuestionGridSolo${hasSubmissions ? ' has-submissions' : ''}`}`}>
               {heroEl}
-              {phase === 'reveal' && (question as any)?.bunteTuete?.kind !== 'top5' &&
-                (answerResults?.length || teamStatus?.some(t => t.answer !== undefined)) && (
+              {hasRevealAnswers && (
                 <div className="cozyRevealAnswersPanel">
                   {renderRevealAnswersList()}
                 </div>

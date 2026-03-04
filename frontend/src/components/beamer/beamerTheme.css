@@ -269,7 +269,7 @@
 }
 
 .beamer-frame.scene-q_active .cozyQuestionHero {
-  box-shadow: 0 6px 0 #d97706, 0 12px 32px rgba(245,158,11,0.15);
+  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
 }
 
 .beamer-frame.scene-q_reveal {
@@ -278,7 +278,7 @@
 }
 
 .beamer-frame.scene-q_reveal .cozyQuestionHero {
-  box-shadow: 0 6px 0 #15803d, 0 12px 32px rgba(22,163,74,0.15);
+  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
 }
 
 .beamer-frame-progress-wrap {

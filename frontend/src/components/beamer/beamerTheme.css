@@ -1256,7 +1256,7 @@
 
 .cozyLobbyTeams {
   border-radius: 20px;
-  border: 2px solid #d1d5db;
+  border: 3px solid #111827;
   background: rgba(255, 255, 255, 0.82);
   padding: 16px 18px;
   display: flex;
@@ -1265,7 +1265,7 @@
   min-height: 0;
   overflow: hidden;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 0 #d1d5db;
+  box-shadow: 0 5px 0 #1f2937, 0 10px 24px rgba(0,0,0,0.08);
 }
 
 .cozyLobbyTeamsHeader {
@@ -1306,7 +1306,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  box-shadow: 0 4px 0 #d97706;
+  box-shadow: 0 4px 0 #374151;
 }
 
 .cozyLobbyTeamsEmpty::before {

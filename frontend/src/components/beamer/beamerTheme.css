@@ -19,7 +19,7 @@
   height: 100%;
   max-height: 100%;
   margin: 0;
-  padding: 14px 24px;
+  padding: 6px 12px;
   border-radius: 0;
   border: none;
   background: #f0f2f5; /* explicit light bg — prevents dark body from showing through */
@@ -27,7 +27,7 @@
   color: #111827;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   box-shadow: none;
   animation: beamerFade 0.45s ease;
   font-family: var(--font-game);
@@ -342,16 +342,11 @@
 }
 
 .beamer-header-title {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9ca3af;
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+  color: #374151;
 }
 
 .beamer-frame.beamer-jackbox .beamer-header-title {
@@ -1690,7 +1685,7 @@
 
 .cozyQuestionHero {
   border-radius: 20px;
-  padding: 52px 48px 36px; /* top padding leaves room for the absolute badge */
+  padding: 24px 36px 24px; /* reduced — phase badge removed, no need for big top gap */
   border: 3px solid #111827;
   background: #ffffff;
   backdrop-filter: none;
@@ -1801,7 +1796,7 @@
 
 .cozyQuestionText {
   font-family: var(--font-game);
-  font-size: clamp(30px, 4vw, 62px);
+  font-size: clamp(40px, 5.5vw, 92px);
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -1814,11 +1809,11 @@
 
 /* Shrink question when team answers are coming in */
 .cozyQuestionGrid.has-submissions .cozyQuestionText {
-  font-size: clamp(22px, 2.8vw, 40px);
+  font-size: clamp(26px, 3.2vw, 52px);
 }
 
 .cozyQuestionGrid.has-submissions .cozyQuestionHero {
-  padding: 14px 20px;
+  padding: 14px 24px;
   gap: 10px;
 }
 
@@ -1901,32 +1896,34 @@
 
 .cozyOptionList {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
 .cozyOption {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  padding-left: 20px;
+  gap: 14px;
+  padding: 18px 24px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(30px) saturate(200%) brightness(1.15);
+  border: 3px solid rgba(0, 0, 0, 0.18);
+  background: #e5e7eb;
+  color: #111827;
   font-weight: 700;
-  font-size: 24px;
+  font-size: 30px;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
   animation: slideIn 0.4s ease-out forwards;
   opacity: 0;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.18);
 }
 
-.cozyOption:nth-child(1) { animation-delay: 0.05s; }
-.cozyOption:nth-child(2) { animation-delay: 0.1s; }
-.cozyOption:nth-child(3) { animation-delay: 0.15s; }
-.cozyOption:nth-child(4) { animation-delay: 0.2s; }
+/* Tile colors: A=blue, B=green, C=red, D=orange */
+.cozyOption:nth-child(1) { animation-delay: 0.05s; background: var(--tile-a); color: #fff; border-color: #0d47a1; box-shadow: 0 4px 0 #0d3a7a; }
+.cozyOption:nth-child(2) { animation-delay: 0.1s;  background: var(--tile-b); color: #fff; border-color: #1b5e20; box-shadow: 0 4px 0 #1a4d1d; }
+.cozyOption:nth-child(3) { animation-delay: 0.15s; background: var(--tile-c); color: #fff; border-color: #7f0000; box-shadow: 0 4px 0 #7b1515; }
+.cozyOption:nth-child(4) { animation-delay: 0.2s;  background: var(--tile-d); color: #fff; border-color: #bf360c; box-shadow: 0 4px 0 #8a3100; }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -1935,28 +1932,27 @@
 
 .cozyOption:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  filter: brightness(1.12);
 }
 
 .cozyOption:focus {
-  outline: 2px solid rgba(251, 191, 36, 0.5);
+  outline: 3px solid rgba(251, 191, 36, 0.8);
   outline-offset: 2px;
 }
 
 .cozyOption.correct {
-  border-color: rgba(34, 197, 94, 0.6);
-  background: rgba(34, 197, 94, 0.12);
-  box-shadow: 0 16px 32px rgba(34, 197, 94, 0.2);
+  outline: 4px solid #22c55e;
+  outline-offset: 3px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 0 0 6px rgba(34,197,94,0.25);
 }
 
 .cozyOption.correct::before {
   content: '✓';
   position: absolute;
-  left: 12px;
+  right: 16px;
   font-weight: 900;
-  color: #86efac;
-  font-size: 16px;
+  color: #bbf7d0;
+  font-size: 26px;
 }
 
 .cozyOption.hopping {
@@ -1967,7 +1963,8 @@
 .cozyOptionPrefix {
   font-weight: 900;
   letter-spacing: 0.08em;
-  color: #a5b4fc;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85em;
 }
 
 .cozyQuestionSupplement .beamer-grid {

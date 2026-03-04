@@ -7,10 +7,10 @@
   --beamer-accent: linear-gradient(135deg, #f59e0b, #f97316);
   --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
-  --tile-a: #1565C0;
-  --tile-b: #2E7D32;
-  --tile-c: #D33F3F;
-  --tile-d: #E65100;
+  --tile-a: #3B82F6;
+  --tile-b: #22C55E;
+  --tile-c: #EF4444;
+  --tile-d: #F97316;
 }
 
 /* Beamer: full-viewport, no card wrapper, light background */
@@ -269,7 +269,6 @@
 }
 
 .beamer-frame.scene-q_active .cozyQuestionHero {
-  border-color: #f59e0b;
   box-shadow: 0 6px 0 #d97706, 0 12px 32px rgba(245,158,11,0.15);
 }
 
@@ -279,7 +278,6 @@
 }
 
 .beamer-frame.scene-q_reveal .cozyQuestionHero {
-  border-color: #16a34a;
   box-shadow: 0 6px 0 #15803d, 0 12px 32px rgba(22,163,74,0.15);
 }
 
@@ -394,7 +392,7 @@
   letter-spacing: 0.1em;
   padding: 6px 16px;
   border-radius: 999px;
-  border: 2px solid #111827;
+  border: none;
   background: #111827;
   color: #f9fafb;
   text-transform: uppercase;
@@ -513,7 +511,7 @@
   padding: 28px 32px;
   border-radius: 16px;
   background: #ffffff;
-  border: 3px solid #111827;
+  border: none;
   box-shadow: 0 6px 0 #111827, 0 12px 32px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
@@ -1726,7 +1724,7 @@
 .cozyQuestionHero {
   border-radius: 20px;
   padding: 20px 20px 16px;
-  border: 1px solid #f0f2f5;
+  border: none;
   background: #ffffff;
   backdrop-filter: none;
   display: flex;
@@ -1946,7 +1944,7 @@
   gap: 12px;
   padding: 14px 18px;
   border-radius: 20px;
-  border: 3px solid rgba(0, 0, 0, 0.18);
+  border: none;
   background: #e5e7eb;
   color: #111827;
   font-weight: 700;
@@ -1960,10 +1958,10 @@
 }
 
 /* Tile colors: A=blue, B=green, C=red, D=orange */
-.cozyOption:nth-child(1) { animation-delay: 0.05s; background: var(--tile-a); color: #fff; border-color: #0d47a1; box-shadow: 0 4px 0 #0d3a7a; }
-.cozyOption:nth-child(2) { animation-delay: 0.1s;  background: var(--tile-b); color: #fff; border-color: #1b5e20; box-shadow: 0 4px 0 #1a4d1d; }
-.cozyOption:nth-child(3) { animation-delay: 0.15s; background: var(--tile-c); color: #fff; border-color: #7f0000; box-shadow: 0 4px 0 #7b1515; }
-.cozyOption:nth-child(4) { animation-delay: 0.2s;  background: var(--tile-d); color: #fff; border-color: #bf360c; box-shadow: 0 4px 0 #8a3100; }
+.cozyOption:nth-child(1) { animation-delay: 0.05s; background: var(--tile-a); color: #fff; box-shadow: 0 4px 0 #1d4ed8; }
+.cozyOption:nth-child(2) { animation-delay: 0.1s;  background: var(--tile-b); color: #fff; box-shadow: 0 4px 0 #15803d; }
+.cozyOption:nth-child(3) { animation-delay: 0.15s; background: var(--tile-c); color: #fff; box-shadow: 0 4px 0 #b91c1c; }
+.cozyOption:nth-child(4) { animation-delay: 0.2s;  background: var(--tile-d); color: #fff; box-shadow: 0 4px 0 #c2410c; }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(10px); }

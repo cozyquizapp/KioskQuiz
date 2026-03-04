@@ -952,10 +952,10 @@ button:focus-visible {
 
 /* MC tile colors: consistent with beamer cozyOption. Must come BEFORE .is-selected so selected state overrides. */
 /* !important needed to beat TeamView.tsx inline background: '#ffffff' on non-selected tiles */
-.team-choice[data-choice-letter="A"] { background: #1565C0 !important; color: #fff !important; border-color: #0d47a1 !important; box-shadow: 0 4px 0 #0d3a7a !important; }
-.team-choice[data-choice-letter="B"] { background: #2E7D32 !important; color: #fff !important; border-color: #1b5e20 !important; box-shadow: 0 4px 0 #1a4d1d !important; }
-.team-choice[data-choice-letter="C"] { background: #D33F3F !important; color: #fff !important; border-color: #b02828 !important; box-shadow: 0 4px 0 #7b1515 !important; }
-.team-choice[data-choice-letter="D"] { background: #E65100 !important; color: #fff !important; border-color: #bf360c !important; box-shadow: 0 4px 0 #8a3100 !important; }
+.team-choice[data-choice-letter="A"] { background: #3B82F6 !important; color: #fff !important; border: none !important; box-shadow: 0 4px 0 #1d4ed8 !important; }
+.team-choice[data-choice-letter="B"] { background: #22C55E !important; color: #fff !important; border: none !important; box-shadow: 0 4px 0 #15803d !important; }
+.team-choice[data-choice-letter="C"] { background: #EF4444 !important; color: #fff !important; border: none !important; box-shadow: 0 4px 0 #b91c1c !important; }
+.team-choice[data-choice-letter="D"] { background: #F97316 !important; color: #fff !important; border: none !important; box-shadow: 0 4px 0 #c2410c !important; }
 .team-choice[data-choice-letter="A"]::before,
 .team-choice[data-choice-letter="B"]::before,
 .team-choice[data-choice-letter="C"]::before,

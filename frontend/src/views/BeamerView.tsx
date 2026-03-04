@@ -376,6 +376,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
   const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
+  // Image-reveal sequence: show image full-screen first, then slide in question after delay
+  const [imageRevealDone, setImageRevealDone] = useState(true);
+  const imageRevealTimerRef = useRef<number | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -565,6 +568,24 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [blitz?.itemDeadline]);
 
   useEffect(() => { setBlitzImageIsPortrait(null); }, [blitz?.itemIndex]);
+
+  // Image reveal: show image full-screen for 10s when a new image question appears,
+  // then slide in the question card alongside it
+  useEffect(() => {
+    if (imageRevealTimerRef.current) window.clearTimeout(imageRevealTimerRef.current);
+    const qMediaUrl =
+      (question as any)?.media?.url ||
+      (question as any)?.mediaUrl ||
+      (question as any)?.imageUrl ||
+      (question as any)?.image || null;
+    if (qMediaUrl) {
+      setImageRevealDone(false);
+      imageRevealTimerRef.current = window.setTimeout(() => setImageRevealDone(true), 10000);
+    } else {
+      setImageRevealDone(true);
+    }
+    return () => { if (imageRevealTimerRef.current) window.clearTimeout(imageRevealTimerRef.current); };
+  }, [question?.id]);
 
 
   useEffect(() => {
@@ -3013,6 +3034,8 @@ useEffect(() => {
       // During reveal: only use 2-column layout when team answers are actually present
       const hasRevealAnswers = phase === 'reveal' && !isTop5 &&
         !!(answerResults?.length || teamStatus?.some(t => t.answer !== undefined));
+      // Image-only phase: first 10s show image full-screen, then question slides in
+      const showImageOnly = showSplitLayout && phase === 'active' && !imageRevealDone;
 
       const onMediaLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
@@ -3096,7 +3119,7 @@ useEffect(() => {
         >
           {showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
-            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
+            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}${showImageOnly ? ' image-only' : ''}`}>
               {heroEl}
               <div className="cozyExternalMedia">
                 <img src={mediaUrl!} alt="" ref={onMediaRef} onLoad={onMediaLoad} />

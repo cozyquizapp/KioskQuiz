@@ -1495,6 +1495,10 @@
 .cozyMediaLayout.portrait-split .cozyQuestionHero {
   flex: 0 0 44%;
   min-width: 0;
+  transition: flex-basis 0.85s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.6s ease 0.2s,
+              padding 0.85s ease,
+              border-width 0.4s ease;
 }
 .cozyMediaLayout.portrait-split .cozyExternalMedia {
   flex: 1;
@@ -1508,6 +1512,11 @@
 .cozyMediaLayout.landscape-split .cozyQuestionHero {
   flex-shrink: 0;
   order: 2;
+  max-height: 600px;
+  transition: max-height 0.85s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.6s ease 0.2s,
+              padding 0.85s ease,
+              border-width 0.4s ease;
 }
 .cozyMediaLayout.landscape-split .cozyExternalMedia {
   flex: 1;
@@ -1515,18 +1524,37 @@
   order: 1;
 }
 
+/* Image-only phase: question card collapses instantly, image fills the frame */
+.cozyMediaLayout.image-only {
+  gap: 0;
+}
+.cozyMediaLayout.image-only .cozyExternalMedia {
+  border-radius: 16px; /* slightly tighter corners when full-width */
+}
+.cozyMediaLayout.image-only .cozyQuestionHero {
+  flex-basis: 0% !important; /* portrait: zero width */
+  max-height: 0 !important;  /* landscape: zero height */
+  padding: 0 !important;
+  border-width: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden;
+  transition: none !important; /* instant collapse at question start, no animation */
+}
+
 /* External media container (image shown outside the question card) */
 .cozyExternalMedia {
   border-radius: 20px;
   overflow: hidden;
-  background: #0f172a;
+  background: #f0f2f5; /* match beamer bg — no dark letterboxing if image doesn't fill exactly */
   min-height: 0;
   min-width: 0;
+  transition: border-radius 0.8s ease;
 }
 .cozyExternalMedia img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* fill container cleanly — slight edge crop beats dark bars */
+  object-position: center center;
   display: block;
 }
 

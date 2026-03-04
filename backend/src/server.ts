@@ -3289,6 +3289,7 @@ const restartRoomSession = (room: RoomState) => {
     team.isReady = false;
   });
   configureRoomForQuiz(room, room.quizId);
+  io.to(room.roomCode).emit('session:restarted');
   return { quizId: room.quizId };
 };
 

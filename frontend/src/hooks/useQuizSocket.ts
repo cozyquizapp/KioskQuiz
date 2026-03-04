@@ -147,6 +147,10 @@ export const useQuizSocket = (roomCode: string) => {
 
     const onEvaluationStarted = () => setEvents((prev) => ({ ...prev, questionPhase: 'evaluated' }));
     const onEvaluationRevealed = () => setEvents((prev) => ({ ...prev, questionPhase: 'revealed' }));
+    const onSessionRestarted = () => {
+      if (!active) return;
+      setEvents({});
+    };
     const onQuizEnded = ({ reason }: { reason?: string }) => {
       // Disable reconnection by clearing the socket
       if (socketRef.current) {
@@ -237,6 +241,7 @@ export const useQuizSocket = (roomCode: string) => {
     socket.on('timerStarted', onTimerStarted);
     socket.on('timerStopped', onTimerStopped);
     socket.on('server:stateUpdate', onStateUpdate);
+    socket.on('session:restarted', onSessionRestarted);
 
     return () => {
       active = false;
@@ -255,6 +260,7 @@ export const useQuizSocket = (roomCode: string) => {
       socket.off('timerStarted', onTimerStarted);
       socket.off('timerStopped', onTimerStopped);
       socket.off('server:stateUpdate', onStateUpdate);
+      socket.off('session:restarted', onSessionRestarted);
       socket.disconnect();
     };
   }, [roomCode]);

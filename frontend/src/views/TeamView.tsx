@@ -1296,8 +1296,35 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       if (lang === 'de' || lang === 'en' || lang === 'both') setLanguageState(lang);
     });
 
+    const onSessionRestarted = () => {
+      // Reset all in-game state
+      setQuestion(null);
+      setPhase('notJoined');
+      setAnswerSubmitted(false);
+      setTimerEndsAt(null);
+      setEvaluating(false);
+      setResultMessage(null);
+      setResultCorrect(null);
+      setSolution(null);
+      // Silent rejoin so server re-registers the team for the new session
+      const savedName = localStorage.getItem(`team:${roomCode}:name`);
+      const savedId = localStorage.getItem(`team:${roomCode}:id`);
+      const savedAvatar = localStorage.getItem(`team:${roomCode}:avatar`);
+      if (savedName && savedId) {
+        socket.emit(
+          'team:join',
+          { roomCode, teamName: savedName, teamId: savedId, avatarId: savedAvatar || undefined },
+          (resp?: { ok: boolean; team?: Team }) => {
+            if (resp?.ok && resp?.team) setTeamId(resp.team.id);
+          }
+        );
+      }
+    };
+    socket.on('session:restarted', onSessionRestarted);
+
     return () => {
       socket.off('server:stateUpdate', onStateUpdate);
+      socket.off('session:restarted', onSessionRestarted);
       socket.disconnect();
     };
   }, [roomCode, teamId, language, reconnectKey]);

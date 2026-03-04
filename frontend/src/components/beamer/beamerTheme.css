@@ -19,7 +19,7 @@
   height: 100%;
   max-height: 100%;
   margin: 0;
-  padding: 20px 32px 20px;
+  padding: 14px 24px;
   border-radius: 0;
   border: none;
   background: #f0f2f5; /* explicit light bg — prevents dark body from showing through */
@@ -27,7 +27,7 @@
   color: #111827;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   box-shadow: none;
   animation: beamerFade 0.45s ease;
   font-family: var(--font-game);
@@ -311,7 +311,7 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   align-items: center;
-  min-height: 48px; /* reserve space so layout doesn't jump when timer appears/disappears */
+  min-height: 28px;
 }
 
 .beamer-header-brand {
@@ -422,7 +422,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 7px 14px;
   border-radius: 12px;
   border: 2px solid #e5e7eb;
   background: #ffffff;
@@ -1452,9 +1452,11 @@
 .cozyQuestionGrid {
   display: grid;
   grid-template-columns: 260px 1fr;
+  grid-template-rows: 1fr;
   gap: 24px;
   align-items: stretch;
   min-height: 0;
+  flex: 1;
 }
 
 .cozyQuestionGridSolo {
@@ -1688,13 +1690,14 @@
 
 .cozyQuestionHero {
   border-radius: 20px;
-  padding: 20px 26px;
+  padding: 52px 48px 36px; /* top padding leaves room for the absolute badge */
   border: 3px solid #111827;
   background: #ffffff;
   backdrop-filter: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  justify-content: center;
   box-shadow: 0 6px 0 #111827, 0 12px 32px rgba(0,0,0,0.12);
   transition: all 0.35s ease;
   position: relative;
@@ -1717,10 +1720,15 @@
 }
 
 .cozyQuestionHeroHeader {
+  position: absolute;
+  top: 16px;
+  left: 26px;
+  right: 26px;
   display: flex;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  z-index: 2;
 }
 
 .cozyQuestionHeroHeaderSolo {
@@ -1793,7 +1801,7 @@
 
 .cozyQuestionText {
   font-family: var(--font-game);
-  font-size: clamp(26px, 3.5vw, 52px);
+  font-size: clamp(30px, 4vw, 62px);
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -1806,7 +1814,7 @@
 
 /* Shrink question when team answers are coming in */
 .cozyQuestionGrid.has-submissions .cozyQuestionText {
-  font-size: clamp(20px, 2.5vw, 34px);
+  font-size: clamp(22px, 2.8vw, 40px);
 }
 
 .cozyQuestionGrid.has-submissions .cozyQuestionHero {

@@ -3024,17 +3024,7 @@ useEffect(() => {
 
       const heroEl = (
         <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}`}>
-          <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo">
-            {phase === 'active' && (
-              <div className="cozyQuestionPhaseBadge">
-                {language === 'de' ? (
-                  <span>Antworten offen <span className="lang-sep">·</span> Answers open</span>
-                ) : (
-                  <span>Answers open <span className="lang-sep">·</span> Antworten offen</span>
-                )}
-              </div>
-            )}
-          </div>
+          <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo" />
           <div className="cozyQuestionText">{questionTextLocalized}</div>
           {promptText && <div className="cozyQuestionHint">{promptText}</div>}
           {/* Image inside hero only for reveal phase (split layout handles active/locked) */}

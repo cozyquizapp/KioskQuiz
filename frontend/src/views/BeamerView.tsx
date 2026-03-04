@@ -2283,140 +2283,89 @@ useEffect(() => {
       }
 
       // Phase 2: Final cards (zoom effect)
+      const cardBase: React.CSSProperties = {
+        borderRadius: '20px',
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'visible',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '44px 28px 28px',
+      };
+      const badgeBase: React.CSSProperties = {
+        position: 'absolute',
+        top: '-15px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '6px 22px',
+        borderRadius: '20px',
+        fontSize: '13px',
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        whiteSpace: 'nowrap',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      };
       return (
-        <div className="blitz-stack" style={{
-          alignItems: 'center',
-          padding: '20px',
-          animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
-        }}>
+        <div className="blitz-stack" style={{ padding: '20px 24px', animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           {/* Header */}
           <div style={{
-            fontSize: '32px',
-            fontWeight: '900',
-            color: '#111827',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            animation: 'slideInDown 0.5s ease-out'
+            fontSize: '26px', fontWeight: '900', color: '#111827',
+            textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em',
+            flexShrink: 0, animation: 'slideInDown 0.5s ease-out'
           }}>
             🎯 Die 3 Themen für diese Runde
           </div>
 
-          {/* Main Grid: 3 Columns */}
+          {/* Main Grid — fills remaining height */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '24px',
-            maxWidth: '1400px',
-            width: '100%',
-            marginTop: '20px'
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '24px', width: '100%', flex: 1, minHeight: 0
           }}>
-            {/* Column 1: Picked Theme (by last place team) */}
+            {/* Picked Theme */}
             <div style={{
-              padding: '32px',
-              background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(59, 130, 246, 0.15))',
-              border: '3px solid rgba(96, 165, 250, 0.6)',
-              borderRadius: '20px',
-              textAlign: 'center',
-              animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
-              position: 'relative',
-              minHeight: '200px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
+              ...cardBase,
+              background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(59,130,246,0.15))',
+              border: '3px solid rgba(96,165,250,0.7)',
+              boxShadow: '0 4px 0 rgba(59,130,246,0.4), 0 8px 24px rgba(59,130,246,0.15)',
+              animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.15s both',
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(96, 165, 250, 0.9)',
-                color: '#0f172a',
-                padding: '6px 20px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: '800',
-                textTransform: 'uppercase'
-              }}>
-                GEWÄHLT
-              </div>
-              <div style={{
-                fontSize: '48px',
-                marginBottom: '8px'
-              }}>
-                {pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}
-              </div>
-              <div style={{
-                fontSize: '28px',
-                fontWeight: '900',
-                color: '#111827',
-                lineHeight: '1.2'
-              }}>
+              <div style={{ ...badgeBase, background: '#3b82f6', color: '#ffffff' }}>GEWÄHLT</div>
+              <div style={{ fontSize: '52px' }}>{pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}</div>
+              <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
                 {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
               </div>
             </div>
 
-            {/* Column 2 & 3: Random Picks */}
+            {/* Random Picks — appear quickly one after the other */}
             {randomThemes.map((theme, idx) => (
               <div
                 key={`random-${theme.id}-${idx}`}
                 style={{
-                  padding: '32px',
-                  background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.1))',
-                  border: '3px solid rgba(74, 222, 128, 0.5)',
-                  borderRadius: '20px',
-                  textAlign: 'center',
-                  animation: `scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${5.0 + idx * 0.8}s both`,
-                  position: 'relative',
-                  minHeight: '200px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  overflow: 'hidden'
+                  ...cardBase,
+                  background: 'linear-gradient(135deg, rgba(74,222,128,0.2), rgba(34,197,94,0.1))',
+                  border: '3px solid rgba(74,222,128,0.6)',
+                  boxShadow: '0 4px 0 rgba(34,197,94,0.35), 0 8px 24px rgba(34,197,94,0.15)',
+                  animation: `scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.35 + idx * 0.2}s both`,
                 }}
               >
-                <div style={{
-                  position: 'absolute',
-                  top: '-12px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'rgba(74, 222, 128, 0.9)',
-                  color: '#0f172a',
-                  padding: '6px 20px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: '800',
-                  textTransform: 'uppercase'
-                }}>
-                  RANDOM {idx + 1}
-                </div>
-                <div style={{
-                  fontSize: '48px',
-                  marginBottom: '8px'
-                }}>
-                  {theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}
-                </div>
-                <div style={{
-                  fontSize: '28px',
-                  fontWeight: '900',
-                  color: '#111827',
-                  lineHeight: '1.2'
-                }}>
+                <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>RANDOM {idx + 1}</div>
+                <div style={{ fontSize: '52px' }}>{theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}</div>
+                <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
                   {theme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || `Thema ${idx + 2}`}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Footer message */}
+          {/* Footer */}
           <div style={{
-            fontSize: '20px',
-            fontWeight: '600',
-            color: '#6b7280',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            animation: 'fadeIn 1s ease-in 0.8s both'
+            flexShrink: 0, fontSize: '18px', fontWeight: '700', color: '#6b7280',
+            textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.15em',
+            animation: 'fadeIn 0.6s ease-in 0.6s both'
           }}>
             ⏱️ Start in wenigen Sekunden...
           </div>
@@ -3262,6 +3211,7 @@ useEffect(() => {
           {...baseFrameProps}
           title="FOTOSPRINT"
           subtitle={subtitle}
+          progressText={undefined}
           badgeLabel={showSetBadge ? setLabel : undefined}
           badgeTone={showSetBadge ? 'accent' : undefined}
           footerMessage={undefined}

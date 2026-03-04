@@ -1297,16 +1297,20 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     });
 
     const onSessionRestarted = () => {
-      // Reset all in-game state
+      // Reset game state — server:stateUpdate (LOBBY) already arrived before this event,
+      // so gameState is already 'LOBBY' and phase is 'waitingForQuestion'.
+      // Do NOT set phase='notJoined' here — it would get stuck since gameState and teamId
+      // don't change after the auto-rejoin, preventing the [gameState, teamId] effect from
+      // re-running to restore the correct phase.
       setQuestion(null);
-      setPhase('notJoined');
       setAnswerSubmitted(false);
       setTimerEndsAt(null);
       setEvaluating(false);
       setResultMessage(null);
       setResultCorrect(null);
       setSolution(null);
-      // Silent rejoin so server re-registers the team for the new session
+      // Silent rejoin so server re-registers the team's socket for the new session
+      // (needed if socket reconnected, and triggers broadcastTeamsReady for moderator)
       const savedName = localStorage.getItem(`team:${roomCode}:name`);
       const savedId = localStorage.getItem(`team:${roomCode}:id`);
       const savedAvatar = localStorage.getItem(`team:${roomCode}:avatar`);

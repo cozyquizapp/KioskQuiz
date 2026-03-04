@@ -149,7 +149,9 @@ export const useQuizSocket = (roomCode: string) => {
     const onEvaluationRevealed = () => setEvents((prev) => ({ ...prev, questionPhase: 'revealed' }));
     const onSessionRestarted = () => {
       if (!active) return;
-      setEvents({});
+      // Keep teams — teamsReady arrives before session:restarted and must not be wiped.
+      // Server will re-broadcast teamsReady anyway as teams auto-rejoin.
+      setEvents((prev) => ({ teams: prev.teams }));
     };
     const onQuizEnded = ({ reason }: { reason?: string }) => {
       // Disable reconnection by clearing the socket

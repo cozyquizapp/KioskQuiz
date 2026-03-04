@@ -28,7 +28,7 @@
   --cat-cheese: #e2a9f1;
   --cat-gemischte: #d85f58;
   --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-game: 'Rajdhani', 'Geist', system-ui, sans-serif;
+  --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   --glass: rgba(13, 15, 20, 0.55);
   --glass-strong: rgba(17, 23, 42, 0.75);
   --ui-panel-bg: rgba(12, 16, 26, 0.82);
@@ -948,6 +948,21 @@ button:focus-visible {
     width: 36px;
     font-size: 16px;
   }
+}
+
+/* MC tile colors: consistent with beamer cozyOption. Must come BEFORE .is-selected so selected state overrides. */
+/* !important needed to beat TeamView.tsx inline background: '#ffffff' on non-selected tiles */
+.team-choice[data-choice-letter="A"] { background: #1565C0 !important; color: #fff !important; border-color: #0d47a1 !important; box-shadow: 0 4px 0 #0d3a7a !important; }
+.team-choice[data-choice-letter="B"] { background: #2E7D32 !important; color: #fff !important; border-color: #1b5e20 !important; box-shadow: 0 4px 0 #1a4d1d !important; }
+.team-choice[data-choice-letter="C"] { background: #C62828 !important; color: #fff !important; border-color: #7f0000 !important; box-shadow: 0 4px 0 #7b1515 !important; }
+.team-choice[data-choice-letter="D"] { background: #E65100 !important; color: #fff !important; border-color: #bf360c !important; box-shadow: 0 4px 0 #8a3100 !important; }
+.team-choice[data-choice-letter="A"]::before,
+.team-choice[data-choice-letter="B"]::before,
+.team-choice[data-choice-letter="C"]::before,
+.team-choice[data-choice-letter="D"]::before {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border-right-color: rgba(0, 0, 0, 0.18) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .team-choice.is-selected {

@@ -5,7 +5,7 @@
   --beamer-text: #111827;
   --beamer-muted: #374151;
   --beamer-accent: linear-gradient(135deg, #f59e0b, #f97316);
-  --font-game: 'Rajdhani', 'Geist', system-ui, sans-serif;
+  --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
   --tile-a: #1565C0;
   --tile-b: #2E7D32;
@@ -323,18 +323,25 @@
 
 .beamer-label {
   font-family: var(--font-game);
-  font-size: 13px;
-  letter-spacing: 0.18em;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-weight: 700;
-  color: #6b7280;
+  box-shadow: 0 2px 0 #374151;
 }
 
 .beamer-hint {
   font-size: 11px;
-  color: #9ca3af;
+  color: #6b7280;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  padding-left: 2px;
 }
 
 .beamer-header-center {
@@ -379,21 +386,22 @@
 .beamer-header-timer {
   font-family: var(--font-game);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.1em;
   padding: 6px 16px;
   border-radius: 999px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-  color: #374151;
+  border: 2px solid #111827;
+  background: #111827;
+  color: #f9fafb;
   text-transform: uppercase;
-  box-shadow: 0 2px 0 #e5e7eb;
+  box-shadow: 0 2px 0 #374151;
 }
 
 .beamer-frame.beamer-jackbox .beamer-header-progress,
 .beamer-frame.beamer-jackbox .beamer-header-timer {
-  background: #ffffff;
-  border-color: #e5e7eb;
+  background: #111827;
+  border-color: #111827;
+  color: #f9fafb;
 }
 
 .beamer-frame-body {
@@ -1714,14 +1722,14 @@
 .cozyQuestionHero {
   border-radius: 20px;
   padding: 24px 36px 24px; /* reduced — phase badge removed, no need for big top gap */
-  border: 3px solid #111827;
+  border: 2px solid #e2e8f0;
   background: #ffffff;
   backdrop-filter: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
   justify-content: center;
-  box-shadow: 0 6px 0 #111827, 0 12px 32px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 0 #cbd5e1, 0 8px 24px rgba(0,0,0,0.06);
   transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
@@ -1924,21 +1932,21 @@
 
 .cozyOptionList {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
 .cozyOption {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 24px;
+  gap: 12px;
+  padding: 14px 18px;
   border-radius: 20px;
   border: 3px solid rgba(0, 0, 0, 0.18);
   background: #e5e7eb;
   color: #111827;
   font-weight: 700;
-  font-size: 30px;
+  font-size: clamp(18px, 2.2vw, 28px);
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;

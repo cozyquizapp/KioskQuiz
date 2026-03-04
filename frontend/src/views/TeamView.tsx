@@ -1842,15 +1842,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       );
     }
     if (payload.kind === 'oneOfEight') {
-      return (
-        <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
-          {payload.statements.map((statement) => (
-            <div key={statement.id} style={{ fontSize: 14, color: '#374151' }}>
-              <strong style={{ marginRight: 6 }}>{statement.id}.</strong> {statement.text}
-            </div>
-          ))}
-        </div>
-      );
+      return null; // statements already shown as buttons in renderBunteInput
     }
     if (payload.kind === 'precision') {
       return (

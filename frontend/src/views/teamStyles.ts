@@ -91,7 +91,7 @@ export const headerBarTeam: CSSProperties = {
   background: 'var(--ui-panel-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--ui-panel-border)'
+  borderColor: 'rgba(255, 255, 255, 0.1)'
 };
 
 export const pillSmall: CSSProperties = {
@@ -110,7 +110,7 @@ export const logoBadge: CSSProperties = {
   padding: 'clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px)',
   borderRadius: 16,
   background: 'var(--ui-chip-bg)',
-  border: '1px solid var(--ui-chip-border)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   color: 'var(--text)',
   fontWeight: 900,
   letterSpacing: '0.04em',
@@ -150,7 +150,7 @@ export const metaRow: CSSProperties = {
 export const metaChip: CSSProperties = {
   ...pillSmall,
   background: 'var(--ui-chip-bg)',
-  border: '1px solid var(--ui-chip-border)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   textTransform: 'capitalize'
 };
 
@@ -177,7 +177,7 @@ export const pillLabel: CSSProperties = {
   background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--team-color, rgba(255,255,255,0.12))',
+  borderColor: 'var(--team-color, rgba(255,255,255,0.1))',
   fontSize: 'clamp(15px, 3.5vw, 17px)',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -211,7 +211,7 @@ export const mutedText: CSSProperties = {
 export const softDivider: CSSProperties = {
   height: 1,
   width: '100%',
-  background: 'linear-gradient(90deg, transparent, rgba(240,95,178,0.28), transparent)',
+  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
   margin: '10px 0'
 };
 
@@ -222,7 +222,7 @@ export const inputStyle: CSSProperties = {
   borderRadius: 16,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--team-color, rgba(255,255,255,0.12))',
+  borderColor: 'var(--team-color, rgba(255,255,255,0.1))',
   background: 'var(--ui-input-bg)',
   color: 'var(--ui-input-text)',
   marginTop: 10,

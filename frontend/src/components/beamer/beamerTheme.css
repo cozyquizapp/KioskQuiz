@@ -653,7 +653,7 @@
 .beamer-card {
   padding: 20px 24px;
   border-radius: 14px;
-  border: none;
+  border: 1px solid rgba(255,255,255,0.1);
   background: var(--tile-a);
   box-shadow: 0 5px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.15);
   font-family: var(--font-game);
@@ -833,7 +833,7 @@
   padding: 18px;
   border-radius: 16px;
   background: #1a2035;
-  border: 2px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 3px 0 rgba(0,0,0,0.5);
   text-align: center;
 }
@@ -1661,7 +1661,7 @@
   padding: 14px 18px;
   border-radius: 14px;
   background: #1a2035;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   border-left: 4px solid transparent;
   display: flex;
   flex-direction: column;
@@ -1791,7 +1791,7 @@
 .cozyQuestionHero {
   border-radius: 20px;
   padding: 20px 20px 16px;
-  border: none;
+  border: 1px solid rgba(255,255,255,0.1);
   background: #1a2035;
   backdrop-filter: none;
   display: flex;

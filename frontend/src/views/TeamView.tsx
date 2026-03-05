@@ -4139,18 +4139,27 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <div
           key={phase}
           className="phase-enter"
-          style={
-            isWaitingPhase
-              ? {
-                  minHeight: 'min(62dvh, 560px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }
-              : undefined
-          }
+          style={{
+            minHeight: 'calc(100dvh - 140px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            paddingTop: 8,
+            paddingBottom: 8
+          }}
         >
-          {mainContent}
+          <div style={{ 
+            width: '100%',
+            maxHeight: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            {mainContent}
+          </div>
         </div>
 
         {/* Removed: Ready button - teams don't need to confirm ready status */}

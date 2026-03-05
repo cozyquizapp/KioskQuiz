@@ -215,14 +215,14 @@ const cardStyle: React.CSSProperties = {
   position: 'relative',
   width: '100%',
   maxWidth: 1100,
-  borderRadius: 30,
+  borderRadius: 24,
   padding: '26px 28px 36px',
-  border: '1px solid rgba(255,255,255,0.08)',
-  color: '#f8fafc',
-  boxShadow: 'none',
+  border: '1px solid rgba(240,95,178,0.26)',
+  color: 'var(--text)',
+  boxShadow: '0 24px 44px rgba(0,0,0,0.5)',
   overflow: 'hidden',
-  backdropFilter: 'blur(50px) saturate(200%) brightness(1.15)',
-  background: 'rgba(255,255,255,0.001)'
+  backdropFilter: 'blur(24px) saturate(125%)',
+  background: 'linear-gradient(145deg, rgba(11,24,46,0.8), rgba(14,33,63,0.68))'
 };
 
 const cardGlow: React.CSSProperties = {
@@ -260,9 +260,9 @@ const pill: React.CSSProperties = {
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   fontSize: 12,
-  background: 'rgba(255,255,255,0.01)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  color: '#f8fafc',
+  background: 'rgba(240,95,178,0.1)',
+  border: '1px solid rgba(240,95,178,0.26)',
+  color: 'var(--text)',
   backdropFilter: 'blur(30px)',
   boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
 };
@@ -286,9 +286,9 @@ const statusPillDangerStyle = (color: string): React.CSSProperties => ({
 
 const titleStyle: React.CSSProperties = {
   margin: '8px 0 14px',
-  fontSize: 36,
-  lineHeight: 1.2,
-  color: '#f8fafc',
+  fontSize: 44,
+  lineHeight: 1.18,
+  color: 'var(--text)',
   textShadow: '0 2px 8px rgba(0,0,0,0.35)'
 };
 
@@ -296,7 +296,7 @@ const barOuter: React.CSSProperties = {
   width: '100%',
   height: 14,
   borderRadius: 999,
-  background: 'rgba(0,0,0,0.35)',
+  background: 'rgba(255,255,255,0.08)',
   overflow: 'hidden',
   marginBottom: 12,
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.25)'
@@ -304,7 +304,7 @@ const barOuter: React.CSSProperties = {
 
 const barInnerStyle = (color: string): React.CSSProperties => ({
   height: '100%',
-  background: `linear-gradient(90deg, ${color}, ${color}dd, ${color})`,
+  background: `linear-gradient(90deg, var(--color-primary), var(--color-secondary), var(--color-primary))`,
   backgroundSize: '200% 100%',
   borderRadius: 999,
   transition: 'width 0.2s ease',

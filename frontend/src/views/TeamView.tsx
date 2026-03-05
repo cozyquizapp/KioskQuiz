@@ -1971,6 +1971,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     switch (question.mechanic) {
       case 'multipleChoice': {
         const q = question as MultipleChoiceQuestion;
+        const cozyChoicePalette = [
+          { base: 'rgba(63, 116, 174, 0.34)', border: '#5a93c7', text: '#cfe8ff' },
+          { base: 'rgba(70, 133, 108, 0.34)', border: '#67b58f', text: '#d6ffe8' },
+          { base: 'rgba(167, 74, 96, 0.34)', border: '#d68598', text: '#ffd6df' },
+          { base: 'rgba(176, 122, 74, 0.34)', border: '#d7a46f', text: '#ffe9d1' },
+          { base: 'rgba(88, 96, 120, 0.34)', border: '#a6acc2', text: '#e4e8f5' }
+        ] as const;
         return (
           <div style={{ display: 'grid', gap: 10 }} className="stagger-container">
             {q.options.map((opt, idx) => (
@@ -1980,13 +1987,21 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 className={`team-choice shimmer-card hover-spring btn-ripple${answer === String(idx) ? ' is-selected' : ''}`}
                 style={{
                   ...choiceButton,
+                  ...(cozyChoicePalette[idx]
+                    ? {
+                        border: `2px solid ${cozyChoicePalette[idx].border}`,
+                        borderBottom: `4px solid ${cozyChoicePalette[idx].border}`,
+                        color: cozyChoicePalette[idx].text,
+                        background: cozyChoicePalette[idx].base,
+                      }
+                    : {}),
                   display: 'flex',
                   alignItems: 'center',
-                  border: `2px solid ${accent}55`,
-                  borderBottom: `4px solid ${accent}99`,
-                  background: answer === String(idx) ? `${accent}18` : '#ffffff',
-                  color: '#111827',
-                  boxShadow: answer === String(idx) ? `0 10px 24px ${accent}35` : 'none',
+                  background:
+                    answer === String(idx)
+                      ? `linear-gradient(135deg, ${cozyChoicePalette[idx]?.base ?? `${accent}24`}, rgba(240,95,178,0.22))`
+                      : cozyChoicePalette[idx]?.base ?? 'var(--ui-card-bg)',
+                  boxShadow: answer === String(idx) ? `0 10px 24px ${accent}3d, 0 0 0 1px rgba(240,95,178,0.36)` : 'none',
                   overflow: 'hidden',
                   position: 'relative',
                   paddingLeft: 'calc(44px + 14px)'
@@ -2030,12 +2045,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     alignItems: 'center',
                     gap: 10,
                     padding: '10px 12px',
-                    borderRadius: 12,
+                    borderRadius: 16,
                     border: `1px solid ${accent}55`,
-                    background: '#f9fafb'
+                    background: 'var(--ui-card-bg)'
                   }}
                 >
-                  <div style={{ color: '#111827', fontWeight: 700 }}>{opt}</div>
+                    <div style={{ color: 'var(--text)', fontWeight: 700 }}>{opt}</div>
                   <input
                     type="number"
                     min={0}
@@ -2047,10 +2062,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     style={{
                       width: 70,
                       padding: '8px 10px',
-                      borderRadius: 10,
-                      border: `2px solid #d1d5db`,
-                      background: '#ffffff',
-                      color: '#111827',
+                      borderRadius: 12,
+                      border: `2px solid rgba(240,95,178,0.3)`,
+                      background: 'var(--ui-input-bg)',
+                      color: 'var(--text)',
                       fontWeight: 800,
                       textAlign: 'center'
                     }}

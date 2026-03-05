@@ -1,7 +1,6 @@
 import { CSSProperties } from 'react';
 import { theme } from '../theme';
 // Removed getDraftTheme (missing file)
-const primary = '#6dd5fa';
 
 /**
  * MOBILE OPTIMIZATIONS:
@@ -31,10 +30,10 @@ export const pageStyleTeam: CSSProperties = {
   overflowX: 'hidden',
   overscrollBehavior: 'contain',
   boxSizing: 'border-box',
-  background: '#0d1117',
+  background: 'var(--bg)',
   backgroundAttachment: 'fixed',
   fontFamily: 'var(--font)',
-  color: '#f1f5f9',
+  color: 'var(--text)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTouchCallout: 'none',
   WebkitUserSelect: 'none',
@@ -87,31 +86,31 @@ export const headerBarTeam: CSSProperties = {
   alignItems: 'center',
   flexWrap: 'wrap',
   gap: 'clamp(8px, 2vw, 12px)',
-  borderRadius: 16,
-  background: '#1a2035',
+  borderRadius: 24,
+  background: 'var(--ui-panel-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)'
+  borderColor: 'var(--ui-panel-border)'
 };
 
 export const pillSmall: CSSProperties = {
   padding: 'clamp(10px, 2vw, 12px) clamp(14px, 3vw, 16px)',
   borderRadius: 999,
-  background: '#1e2a45',
+  background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.08)',
+  borderColor: 'var(--ui-chip-border)',
   fontSize: 'clamp(14px, 3vw, 16px)',
   fontWeight: 700,
-  color: '#94a3b8'
+  color: 'var(--ui-chip-text)'
 };
 
 export const logoBadge: CSSProperties = {
   padding: 'clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px)',
-  borderRadius: 12,
-  background: '#1e2a45',
-  border: '1px solid rgba(255,255,255,0.08)',
-  color: '#f1f5f9',
+  borderRadius: 16,
+  background: 'var(--ui-chip-bg)',
+  border: '1px solid var(--ui-chip-border)',
+  color: 'var(--text)',
   fontWeight: 900,
   letterSpacing: '0.04em',
   fontSize: 'clamp(12px, 2vw, 14px)'
@@ -119,10 +118,10 @@ export const logoBadge: CSSProperties = {
 
 export const heroCard: CSSProperties = {
   padding: 'clamp(12px, 4vw, 18px)',
-  borderRadius: 16,
-  background: '#1a2035',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow: '0 3px 0 rgba(0,0,0,0.5)'
+  borderRadius: 24,
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
+  boxShadow: 'var(--ui-card-shadow)'
 };
 
 export const heroIcon: CSSProperties = {
@@ -135,7 +134,7 @@ export const eyebrow: CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.18em',
   fontSize: 'clamp(10px, 2vw, 11px)',
-  color: '#64748b',
+  color: 'var(--muted)',
   margin: 0,
   marginBottom: 2
 };
@@ -149,20 +148,20 @@ export const metaRow: CSSProperties = {
 
 export const metaChip: CSSProperties = {
   ...pillSmall,
-  background: '#1e2a45',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--ui-chip-bg)',
+  border: '1px solid var(--ui-chip-border)',
   textTransform: 'capitalize'
 };
 
 export const glassCard: CSSProperties = {
-  background: '#1a2035',
+  background: 'var(--glass-bg)',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
-  borderRadius: 16,
-  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 24,
+  border: 'var(--glass-border)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: '0 4px 0 rgba(0,0,0,0.5)',
+  boxShadow: 'var(--glass-shadow)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -173,7 +172,7 @@ export const pillLabel: CSSProperties = {
   gap: 'clamp(5px, 1.5vw, 8px)',
   padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2.5vw, 14px)',
   borderRadius: 999,
-  background: '#1e2a45',
+  background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'var(--team-color, rgba(255,255,255,0.12))',
@@ -181,7 +180,7 @@ export const pillLabel: CSSProperties = {
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
   fontWeight: 700,
-  color: '#94a3b8',
+  color: 'var(--ui-chip-text)',
   marginBottom: 8
 };
 
@@ -194,13 +193,13 @@ export const heading: CSSProperties = {
   letterSpacing: '0.03em',
   fontWeight: 700,
   textTransform: 'uppercase',
-  color: '#f1f5f9',
+  color: 'var(--text)',
   background: 'none',
-  WebkitTextFillColor: '#f1f5f9',
+  WebkitTextFillColor: 'var(--text)',
 };
 
 export const mutedText: CSSProperties = {
-  color: '#94a3b8',
+  color: 'var(--muted)',
   marginTop: 0,
   marginBottom: 12,
   fontSize: 'clamp(16px, 4vw, 18px)',
@@ -210,7 +209,7 @@ export const mutedText: CSSProperties = {
 export const softDivider: CSSProperties = {
   height: 1,
   width: '100%',
-  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+  background: 'linear-gradient(90deg, transparent, rgba(240,95,178,0.28), transparent)',
   margin: '10px 0'
 };
 
@@ -218,15 +217,15 @@ export const inputStyle: CSSProperties = {
   width: '100%',
   padding: 'clamp(14px, 3.5vw, 18px) clamp(16px, 4vw, 20px)',
   minHeight: 'clamp(54px, 14vw, 64px)',
-  borderRadius: 10,
+  borderRadius: 16,
   borderWidth: 1,
   borderStyle: 'solid',
   borderColor: 'var(--team-color, rgba(255,255,255,0.12))',
-  background: '#1e2a45',
-  color: '#f1f5f9',
+  background: 'var(--ui-input-bg)',
+  color: 'var(--ui-input-text)',
   marginTop: 10,
   fontSize: 'max(16px, clamp(18px, 4vw, 20px))',
-  boxShadow: '0 2px 0 rgba(0,0,0,0.5)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
   WebkitAppearance: 'none',
   WebkitBorderRadius: 10,
   WebkitBoxSizing: 'border-box',
@@ -236,12 +235,12 @@ export const inputStyle: CSSProperties = {
 
 export const primaryButton: CSSProperties = {
   marginTop: 16,
-  background: '#942d59',
+  background: 'var(--ui-button-primary)',
   color: '#ffffff',
   border: '2px solid transparent',
   padding: 'clamp(16px, 4vw, 20px) clamp(20px, 5vw, 28px)',
   minHeight: 'clamp(56px, 14vw, 68px)',
-  borderRadius: 10,
+  borderRadius: 16,
   cursor: 'pointer',
   display: 'block',
   width: '100%',
@@ -250,8 +249,8 @@ export const primaryButton: CSSProperties = {
   fontSize: 'max(18px, clamp(20px, 5vw, 24px))',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  boxShadow: '0 4px 0 #6b1e3f, 0 8px 20px rgba(0,0,0,0.3)',
-  transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+  boxShadow: '0 4px 0 rgba(128, 8, 77, 0.95), 0 10px 24px rgba(0,0,0,0.38)',
+  transition: 'transform var(--transition-soft), box-shadow var(--transition-soft)',
   WebkitFontSmoothing: 'antialiased',
   transform: 'translateZ(0)',
   WebkitTapHighlightColor: 'transparent',
@@ -260,11 +259,11 @@ export const primaryButton: CSSProperties = {
 
 export const choiceButton: CSSProperties = {
   flex: 1,
-  background: '#1a2035',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderBottom: '1px solid rgba(255,255,255,0.08)',
-  color: '#f1f5f9',
-  borderRadius: 12,
+  background: 'var(--ui-card-bg)',
+  border: '1px solid var(--ui-card-border)',
+  borderBottom: '1px solid var(--ui-card-border)',
+  color: 'var(--text)',
+  borderRadius: 16,
   padding: 'clamp(18px, 4.5vw, 22px) clamp(14px, 4vw, 18px)',
   cursor: 'pointer',
   fontFamily: "'Nunito', var(--font)",
@@ -272,7 +271,7 @@ export const choiceButton: CSSProperties = {
   fontSize: 'max(17px, clamp(18px, 4.2vw, 22px))',
   letterSpacing: '0.04em',
   minHeight: 'clamp(64px, 16vw, 80px)',
-  boxShadow: '0 3px 0 rgba(0,0,0,0.5)',
+  boxShadow: '0 3px 0 rgba(0,0,0,0.45)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
   transition: 'all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -286,7 +285,7 @@ export const progressOuter = (color: string): CSSProperties => ({
   width: '100%',
   height: 'clamp(8px, 2vw, 12px)',
   borderRadius: 999,
-  background: '#1e2a45',
+  background: 'rgba(15, 30, 57, 0.85)',
   overflow: 'hidden',
   position: 'relative',
   boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 16px ${color}25`
@@ -309,7 +308,7 @@ export const progressKnob = (color: string): CSSProperties => ({
   transform: 'translate(-50%, -50%)',
   transition: 'left 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
   pointerEvents: 'none',
-  background: 'linear-gradient(135deg, #1e2a45, #0d1117)',
+  background: 'linear-gradient(135deg, #1b457d, #0c1d38)',
   boxShadow: `0 0 0 3px ${color}55, 0 10px 18px rgba(0,0,0,0.5)`
 });
 
@@ -317,14 +316,14 @@ export const questionShell: CSSProperties = {
   position: 'relative',
   padding: 'clamp(8px, 3vw, 14px) clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px)',
   margin: '0 auto',
-  borderRadius: 16,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: '#1a2035',
+  borderRadius: 24,
+  border: '1px solid var(--ui-card-border)',
+  background: 'var(--ui-card-bg)',
   overflow: 'visible',
   width: '100%',
   maxWidth: 720,
-  boxShadow: '0 4px 0 rgba(0,0,0,0.5)',
-  transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+  boxShadow: 'var(--ui-card-shadow)',
+  transition: 'transform var(--transition-soft)'
 };
 
 export const gradientHalo: CSSProperties = {
@@ -352,9 +351,9 @@ export const categoryChip: CSSProperties = {
   gap: 10,
   padding: '8px 12px',
   borderRadius: 999,
-  background: '#1e2a45',
-  color: '#94a3b8',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--ui-chip-bg)',
+  color: 'var(--ui-chip-text)',
+  border: '1px solid var(--ui-chip-border)',
   fontWeight: 800
 };
 
@@ -382,8 +381,8 @@ export const connectionPill = (status: 'connecting' | 'connected' | 'disconnecte
 
 export const timerPill: CSSProperties = {
   ...categoryChip,
-  background: '#1e2a45',
-  color: '#f1f5f9',
+  background: 'var(--ui-chip-bg)',
+  color: 'var(--text)',
   letterSpacing: '0.05em'
 };
 
@@ -393,6 +392,6 @@ export const questionStyleTeam: CSSProperties = {
   margin: '8px 0 12px',
   fontSize: 'clamp(20px, 5vw, 26px)',
   fontWeight: 700,
-  color: '#f1f5f9',
+  color: 'var(--text)',
   lineHeight: 1.4
 };

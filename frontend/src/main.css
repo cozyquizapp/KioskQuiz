@@ -1,22 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
 
 :root {
-  --bg: #08051a;
-  --panel: rgba(16, 20, 31, 0.82);
-  --surface: #141823;
-  --surface-2: #191f2b;
-  --accent: #fbbf24;
-  --accent-strong: #f97316;
-  --text: #f4f5fb;
-  --muted: #94a3b8;
+  --color-bg: #050505;
+  --color-surface: #11315d;
+  --color-primary: #b10a6c;
+  --color-secondary: #f05fb2;
+  --color-text: #ffd1e8;
+  --color-muted: #c49ab5;
+  --bg: var(--color-bg);
+  --panel: rgba(10, 25, 49, 0.84);
+  --surface: var(--color-surface);
+  --surface-2: #0d274a;
+  --accent: var(--color-primary);
+  --accent-strong: #d62f93;
+  --text: var(--color-text);
+  --muted: var(--color-muted);
   --success: #22c55e;
   --danger: #ef4444;
-  --glass-bg: rgba(13, 15, 20, 0.78);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 26px 60px rgba(0, 0, 0, 0.45);
+  --glass-bg: rgba(11, 22, 42, 0.7);
+  --glass-border: 1px solid rgba(240, 95, 178, 0.28);
+  --glass-shadow: 0 26px 60px rgba(0, 0, 0, 0.58);
   --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.35);
   --shadow-strong: 0 24px 48px rgba(0, 0, 0, 0.45);
-  --radius: 20px;
+  --radius: 24px;
   --radius-pill: 999px;
   --space-1: 6px;
   --space-2: 10px;
@@ -29,29 +35,30 @@
   --cat-gemischte: #d85f58;
   --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
-  --glass: rgba(13, 15, 20, 0.55);
-  --glass-strong: rgba(17, 23, 42, 0.75);
-  --ui-panel-bg: rgba(12, 16, 26, 0.82);
-  --ui-panel-border: rgba(255, 255, 255, 0.12);
+  --glass: rgba(11, 22, 42, 0.55);
+  --glass-strong: rgba(14, 33, 63, 0.8);
+  --ui-panel-bg: rgba(10, 24, 46, 0.85);
+  --ui-panel-border: rgba(240, 95, 178, 0.2);
   --ui-panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
-  --ui-card-bg: rgba(9, 12, 22, 0.88);
-  --ui-card-border: rgba(99, 102, 241, 0.15);
+  --ui-card-bg: rgba(10, 22, 44, 0.9);
+  --ui-card-border: rgba(240, 95, 178, 0.18);
   --ui-card-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
-  --ui-input-bg: rgba(15, 23, 42, 0.85);
-  --ui-input-border: rgba(255, 255, 255, 0.14);
-  --ui-input-text: #e5e7eb;
-  --ui-chip-bg: rgba(255, 255, 255, 0.06);
-  --ui-chip-border: rgba(255, 255, 255, 0.12);
-  --ui-chip-text: #cbd5e1;
-  --ui-button-primary: linear-gradient(135deg, #63e5ff, #60a5fa);
+  --ui-input-bg: rgba(15, 30, 57, 0.88);
+  --ui-input-border: rgba(240, 95, 178, 0.24);
+  --ui-input-text: #ffd1e8;
+  --ui-chip-bg: rgba(240, 95, 178, 0.12);
+  --ui-chip-border: rgba(240, 95, 178, 0.28);
+  --ui-chip-text: #ffc1e3;
+  --ui-button-primary: linear-gradient(135deg, #d62f93, #b10a6c);
   --ui-button-success: linear-gradient(135deg, #34d399, #22c55e);
-  --ui-button-warning: linear-gradient(135deg, #fcd34d, #f59e0b);
-  --ui-button-accent: linear-gradient(135deg, #c084fc, #8b5cf6);
-  --ui-button-neutral: linear-gradient(135deg, #1f2937, #0f172a);
-  --ui-button-info: linear-gradient(135deg, #63e5ff, #38bdf8);
+  --ui-button-warning: linear-gradient(135deg, #e3aa58, #c9862d);
+  --ui-button-accent: linear-gradient(135deg, #f05fb2, #c81f83);
+  --ui-button-neutral: linear-gradient(135deg, #13345f, #0a1b36);
+  --ui-button-info: linear-gradient(135deg, #3e78b8, #2b5b98);
   --ui-button-danger: linear-gradient(135deg, #fca5a5, #f87171);
   --ui-button-on-dark: #f8fafc;
   --ui-button-on-light: #0b1020;
+  --transition-soft: 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -70,7 +77,7 @@ body {
   letter-spacing: -0.01em;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.5) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(240, 95, 178, 0.45) rgba(255, 255, 255, 0.05);
   position: relative;
 }
 
@@ -91,9 +98,9 @@ body {
 #team-root h1,
 #team-root h2,
 #team-root h3 {
-  color: #f1f5f9;
+  color: var(--text);
   background: none;
-  -webkit-text-fill-color: #f1f5f9;
+  -webkit-text-fill-color: var(--text);
 }
 
 /* Animated Gradient Mesh Background */
@@ -103,10 +110,10 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(ellipse at 18% 28%, rgba(99, 102, 241, 0.22), transparent 42%),
-    radial-gradient(ellipse at 82% 72%, rgba(168, 85, 247, 0.18), transparent 42%),
-    radial-gradient(ellipse at 55% 52%, rgba(236, 72, 153, 0.10), transparent 50%),
-    radial-gradient(ellipse at 70% 15%, rgba(56, 189, 248, 0.10), transparent 35%);
+    radial-gradient(ellipse at 18% 28%, rgba(214, 47, 147, 0.2), transparent 42%),
+    radial-gradient(ellipse at 82% 72%, rgba(17, 49, 93, 0.34), transparent 44%),
+    radial-gradient(ellipse at 55% 52%, rgba(240, 95, 178, 0.14), transparent 52%),
+    radial-gradient(ellipse at 70% 15%, rgba(43, 91, 152, 0.16), transparent 35%);
   animation: gradient-shift 22s ease infinite;
 }
 
@@ -116,9 +123,9 @@ body::after {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 62% 38%, rgba(59, 130, 246, 0.13), transparent 38%),
-    radial-gradient(ellipse at 28% 82%, rgba(139, 92, 246, 0.13), transparent 38%),
-    radial-gradient(ellipse at 85% 55%, rgba(20, 184, 166, 0.08), transparent 30%);
+    radial-gradient(ellipse at 62% 38%, rgba(17, 49, 93, 0.3), transparent 38%),
+    radial-gradient(ellipse at 28% 82%, rgba(177, 10, 108, 0.2), transparent 40%),
+    radial-gradient(ellipse at 85% 55%, rgba(240, 95, 178, 0.1), transparent 30%);
   animation: gradient-shift 28s ease-in-out infinite reverse;
   opacity: 0.7;
 }
@@ -150,15 +157,30 @@ body::after {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(168, 85, 247, 0.6));
+  background: linear-gradient(135deg, rgba(240, 95, 178, 0.62), rgba(177, 10, 108, 0.62));
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, rgba(240, 95, 178, 0.82), rgba(177, 10, 108, 0.82));
+  box-shadow: 0 0 10px rgba(240, 95, 178, 0.45);
+}
+
+@keyframes cozy-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cozy-enter {
+  animation: cozy-enter var(--transition-soft);
 }
 
 /* Select Styling */

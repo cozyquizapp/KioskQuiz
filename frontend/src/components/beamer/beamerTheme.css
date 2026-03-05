@@ -1,16 +1,16 @@
 :root {
-  --beamer-surface: #1a2035;
-  --beamer-border: rgba(255,255,255,0.08);
-  --beamer-soft: rgba(255,255,255,0.04);
-  --beamer-text: #f1f5f9;
-  --beamer-muted: #94a3b8;
-  --beamer-accent: linear-gradient(90deg, #942d59, #c04080);
+  --beamer-surface: var(--color-surface);
+  --beamer-border: rgba(240, 95, 178, 0.26);
+  --beamer-soft: rgba(240, 95, 178, 0.1);
+  --beamer-text: var(--color-text);
+  --beamer-muted: var(--color-muted);
+  --beamer-accent: linear-gradient(90deg, #d62f93, #b10a6c);
   --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
-  --tile-a: #3B82F6;
-  --tile-b: #22C55E;
-  --tile-c: #EF4444;
-  --tile-d: #F97316;
+  --tile-a: #5a93c7;
+  --tile-b: #67b58f;
+  --tile-c: #d68598;
+  --tile-d: #d7a46f;
 }
 
 /* Beamer: full-viewport, no card wrapper, light background */
@@ -22,9 +22,9 @@
   padding: 6px 12px;
   border-radius: 0;
   border: none;
-  background: #0d1117; /* dark bg */
+  background: var(--bg);
   backdrop-filter: none;
-  color: #f1f5f9;
+  color: var(--beamer-text);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -74,7 +74,7 @@
 .cozy-beamer-shell {
   position: relative;
   z-index: 0;
-  background: #0d1117;
+  background: var(--bg);
 }
 
 .cozy-beamer-lobby::after {
@@ -2993,4 +2993,243 @@
 .beamer-score-card.rank-3 {
   border-color: rgba(180, 120, 60, 0.3);
   background: linear-gradient(135deg, rgba(180, 120, 60, 0.06), rgba(120, 80, 40, 0.03));
+}
+
+/* ===== COZY TOKEN OVERRIDES ===== */
+.beamer-frame,
+.beamer-frame-body,
+.cozy-beamer-shell {
+  color: var(--beamer-text);
+}
+
+.beamer-intro-card,
+.beamer-card,
+.blitz-results-card,
+.beamer-scoreboard-card,
+.beamer-score-card,
+.cozyLobbyTeams,
+.cozyLobbyQrPane {
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(10, 24, 46, 0.9), rgba(13, 39, 74, 0.82));
+  border: 1px solid var(--beamer-border);
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.45);
+}
+
+.beamer-frame-progress,
+.blitz-timeline {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(240, 95, 178, 0.2);
+}
+
+.beamer-frame-progress-inner,
+.scoreboard-race-bar {
+  background: linear-gradient(90deg, #d62f93, #b10a6c);
+  box-shadow: 0 0 14px rgba(240, 95, 178, 0.36);
+}
+
+.blitz-chip.current {
+  background: linear-gradient(135deg, rgba(214, 47, 147, 0.32), rgba(177, 10, 108, 0.28));
+  border-color: rgba(240, 95, 178, 0.45);
+}
+
+.blitz-chip.done {
+  background: linear-gradient(135deg, rgba(95, 170, 129, 0.32), rgba(78, 143, 108, 0.28));
+  border-color: rgba(120, 200, 150, 0.4);
+}
+
+.beamer-select-card,
+.blitz-current-card {
+  border-radius: 24px;
+  border: 1px solid rgba(240, 95, 178, 0.24);
+  background: linear-gradient(145deg, rgba(11, 23, 44, 0.94), rgba(14, 33, 63, 0.88));
+}
+
+.beamer-select-card.picked {
+  border-color: rgba(240, 95, 178, 0.6);
+  box-shadow: 0 0 0 1px rgba(240, 95, 178, 0.25), 0 16px 30px rgba(177, 10, 108, 0.25);
+}
+
+.beamer-select-badge.pick,
+.beamer-select-badge.random,
+.beamer-select-badge.picked {
+  background: linear-gradient(135deg, #d62f93, #b10a6c);
+  color: #fff;
+}
+
+.blitz-current-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.blitz-current-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(240, 95, 178, 0.14), rgba(240, 95, 178, 0));
+}
+
+.cozyLobbyTitle,
+.beamer-intro-card h2,
+.beamer-score-title {
+  color: var(--color-secondary);
+}
+
+.cozyLobbySubtitle,
+.beamer-intro-card p,
+.beamer-label,
+.beamer-score-detail {
+  color: var(--beamer-muted);
+}
+
+.beamer-stack > *,
+.blitz-stack > *,
+.beamer-scoreboard-grid > * {
+  animation: cozy-enter 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== 1080P READABILITY TUNING ===== */
+.beamer-label {
+  font-size: clamp(16px, 1.3vw, 22px);
+  letter-spacing: 0.08em;
+  color: var(--beamer-muted);
+}
+
+.beamer-intro-card {
+  padding: clamp(20px, 2vw, 30px);
+}
+
+.beamer-intro-card h2 {
+  font-size: clamp(30px, 2.5vw, 46px);
+  line-height: 1.15;
+  color: var(--beamer-text);
+}
+
+.beamer-intro-card p,
+.beamer-list {
+  font-size: clamp(22px, 1.8vw, 34px);
+  line-height: 1.35;
+  color: var(--beamer-muted);
+}
+
+.cozyQuestionHero {
+  border-radius: 24px;
+  padding: 26px 28px 20px;
+  border: 1px solid rgba(240, 95, 178, 0.24);
+}
+
+.cozyQuestionText {
+  font-size: clamp(44px, 5vw, 86px);
+  line-height: 1.12;
+  letter-spacing: 0.005em;
+  color: var(--beamer-text);
+  -webkit-text-fill-color: var(--beamer-text);
+}
+
+.cozyQuestionHint {
+  font-size: clamp(18px, 1.5vw, 26px);
+  color: var(--beamer-muted);
+}
+
+.cozyRevealAnswerTeam {
+  font-size: clamp(22px, 1.9vw, 34px);
+}
+
+.cozyRevealAnswerText {
+  font-size: clamp(18px, 1.45vw, 24px);
+  color: var(--beamer-muted);
+}
+
+.blitz-current-card,
+.blitz-results-card,
+.beamer-select-card {
+  border-radius: 24px;
+}
+
+.blitz-chip {
+  font-size: clamp(20px, 1.5vw, 30px);
+  min-height: clamp(56px, 4.4vw, 80px);
+}
+
+@media (min-width: 1600px) and (max-width: 2300px) {
+  .beamer-frame {
+    padding: 12px 18px;
+  }
+
+  .beamer-header-title {
+    font-size: clamp(30px, 2.2vw, 42px);
+  }
+
+  .beamer-header-subtitle {
+    font-size: clamp(18px, 1.2vw, 24px);
+  }
+
+  .beamer-header-progress,
+  .beamer-header-timer {
+    font-size: clamp(18px, 1.2vw, 24px);
+  }
+
+  .cozyQuestionGrid.has-submissions .cozyQuestionText {
+    font-size: clamp(34px, 3.5vw, 58px);
+  }
+}
+
+/* ===== PROJECTOR MODE (append ?projector=1 to /beamer URL) ===== */
+body.projector-mode .cozy-beamer-shell,
+body.projector-mode .beamer-frame {
+  background: #050505;
+}
+
+body.projector-mode .beamer-intro-card,
+body.projector-mode .beamer-card,
+body.projector-mode .cozyQuestionHero,
+body.projector-mode .blitz-results-card,
+body.projector-mode .blitz-current-card,
+body.projector-mode .beamer-select-card,
+body.projector-mode .beamer-score-card,
+body.projector-mode .beamer-scoreboard-card {
+  backdrop-filter: none !important;
+  background: #0b2343 !important;
+  border-color: rgba(240, 95, 178, 0.55) !important;
+  box-shadow: 0 0 0 1px rgba(240, 95, 178, 0.2), 0 18px 34px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.projector-mode .beamer-label,
+body.projector-mode .beamer-header-subtitle,
+body.projector-mode .cozyQuestionHint,
+body.projector-mode .beamer-score-detail,
+body.projector-mode .cozyLobbySubtitle,
+body.projector-mode .beamer-intro-card p {
+  color: #ffd1e8 !important;
+  opacity: 0.92;
+}
+
+body.projector-mode .beamer-header-title,
+body.projector-mode .cozyQuestionText,
+body.projector-mode .beamer-intro-card h2,
+body.projector-mode .cozyLobbyTitle,
+body.projector-mode .beamer-score-name,
+body.projector-mode .beamer-score-value {
+  color: #ffe4f2 !important;
+  -webkit-text-fill-color: #ffe4f2 !important;
+  font-weight: 900;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+body.projector-mode .beamer-frame-progress,
+body.projector-mode .blitz-timeline {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(240, 95, 178, 0.44) !important;
+}
+
+body.projector-mode .beamer-frame-progress-inner,
+body.projector-mode .scoreboard-race-bar {
+  background: linear-gradient(90deg, #f05fb2, #b10a6c) !important;
+  box-shadow: 0 0 16px rgba(240, 95, 178, 0.5) !important;
+}
+
+body.projector-mode .blitz-chip,
+body.projector-mode .cozyTeamStatusChip {
+  font-weight: 800;
+  border-color: rgba(240, 95, 178, 0.5);
 }

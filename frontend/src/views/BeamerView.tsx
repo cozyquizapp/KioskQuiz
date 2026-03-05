@@ -439,6 +439,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1'),
     []
   );
+  const projectorMode = useMemo(
+    () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('projector') === '1',
+    []
+  );
   const joinLinks = useMemo(() => {
     const effectiveRoom = roomCode || (featureFlags.singleSessionMode ? featureFlags.singleSessionRoomCode : '');
     if (!featureFlags.singleSessionMode && !effectiveRoom) return null;
@@ -1255,6 +1259,12 @@ useEffect(() => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('projector-mode', projectorMode);
+    return () => document.body.classList.remove('projector-mode');
+  }, [projectorMode]);
 
   const rawViewMode: BeamerViewMode =
     screen === 'intro'
@@ -2437,7 +2447,7 @@ useEffect(() => {
         <div className="blitz-stack" style={{ padding: '20px 24px', animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           {/* Header */}
           <div style={{
-            fontSize: '26px', fontWeight: '900', color: '#111827',
+            fontSize: '26px', fontWeight: '900', color: 'var(--text)',
             textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em',
             flexShrink: 0, animation: 'slideInDown 0.5s ease-out'
           }}>
@@ -2452,14 +2462,14 @@ useEffect(() => {
             {/* Picked Theme */}
             <div style={{
               ...cardBase,
-              background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(59,130,246,0.15))',
-              border: '3px solid rgba(96,165,250,0.7)',
-              boxShadow: '0 4px 0 rgba(59,130,246,0.4), 0 8px 24px rgba(59,130,246,0.15)',
+              background: 'linear-gradient(135deg, rgba(214,47,147,0.22), rgba(177,10,108,0.18))',
+              border: '3px solid rgba(240,95,178,0.6)',
+              boxShadow: '0 4px 0 rgba(177,10,108,0.5), 0 8px 24px rgba(177,10,108,0.2)',
               animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.5s both',
             }}>
               <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
               <div style={{ fontSize: '52px' }}>{pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}</div>
-              <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '30px', fontWeight: '900', color: 'var(--text)', lineHeight: 1.2 }}>
                 {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
               </div>
             </div>
@@ -2470,15 +2480,15 @@ useEffect(() => {
                 key={`random-${theme.id}-${idx}`}
                 style={{
                   ...cardBase,
-                  background: 'linear-gradient(135deg, rgba(74,222,128,0.2), rgba(34,197,94,0.1))',
-                  border: '3px solid rgba(74,222,128,0.6)',
-                  boxShadow: '0 4px 0 rgba(34,197,94,0.35), 0 8px 24px rgba(34,197,94,0.15)',
+                  background: 'linear-gradient(135deg, rgba(43,91,152,0.22), rgba(17,49,93,0.18))',
+                  border: '3px solid rgba(90,147,199,0.55)',
+                  boxShadow: '0 4px 0 rgba(27,63,112,0.45), 0 8px 24px rgba(17,49,93,0.2)',
                   animation: `scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) ${1.5 + idx * 1.5}s both`,
                 }}
               >
                 <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>RANDOM {idx + 1}</div>
                 <div style={{ fontSize: '52px' }}>{theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}</div>
-                <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
+                <div style={{ fontSize: '30px', fontWeight: '900', color: 'var(--text)', lineHeight: 1.2 }}>
                   {theme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || `Thema ${idx + 2}`}
                 </div>
               </div>
@@ -2487,7 +2497,7 @@ useEffect(() => {
 
           {/* Footer */}
           <div style={{
-            flexShrink: 0, fontSize: '18px', fontWeight: '700', color: '#6b7280',
+            flexShrink: 0, fontSize: '18px', fontWeight: '700', color: 'var(--muted)',
             textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.15em',
             animation: 'fadeIn 0.6s ease-in 0.6s both'
           }}>
@@ -2508,7 +2518,7 @@ useEffect(() => {
               <div style={{
                 fontSize: '80px',
                 fontWeight: '900',
-                color: '#15803d',
+                color: 'var(--color-primary)',
                 marginTop: '30px',
                 animation: 'pulse 0.5s ease-in-out infinite'
               }}>
@@ -2534,8 +2544,8 @@ useEffect(() => {
               <div
                 className="blitz-theme-pop"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2))',
-                  border: '2px solid rgba(59, 130, 246, 0.6)',
+                  background: 'linear-gradient(135deg, rgba(214, 47, 147, 0.22), rgba(177, 10, 108, 0.18))',
+                  border: '2px solid rgba(240, 95, 178, 0.6)',
                   borderRadius: '16px',
                   padding: '24px',
                   textAlign: 'center',
@@ -2547,10 +2557,10 @@ useEffect(() => {
                   animationDelay: '0s'
                 } as any}
               >
-                <div style={{ fontSize: '14px', color: '#1d4ed8', fontWeight: '700', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
                   Platz 1 wählt
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text)' }}>
                   {pickedTheme.title}
                 </div>
               </div>
@@ -2560,8 +2570,8 @@ useEffect(() => {
                 key={`random-${idx}-${theme.id}`}
                 className="blitz-theme-pop"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.15))',
-                  border: '2px solid rgba(74, 222, 128, 0.5)',
+                  background: 'linear-gradient(135deg, rgba(43, 91, 152, 0.2), rgba(17, 49, 93, 0.16))',
+                  border: '2px solid rgba(90, 147, 199, 0.55)',
                   borderRadius: '16px',
                   padding: '24px',
                   textAlign: 'center',
@@ -2573,10 +2583,10 @@ useEffect(() => {
                   animationDelay: `${0.2 + idx * 0.15}s`
                 }}
               >
-                <div style={{ fontSize: '14px', color: '#15803d', fontWeight: '700', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
                   Zufällig
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text)' }}>
                   {theme.title}
                 </div>
               </div>
@@ -2688,10 +2698,10 @@ useEffect(() => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '6px',
-                      background: '#f8fafc',
+                      background: 'linear-gradient(145deg, rgba(10,24,46,0.88), rgba(13,39,74,0.78))',
                       borderRadius: '10px',
                       padding: '8px',
-                      border: '1px solid #e5e7eb'
+                      border: '1px solid rgba(240,95,178,0.24)'
                     }}>
                       {item.mediaUrl && (
                         <img
@@ -2708,7 +2718,7 @@ useEffect(() => {
                       <div style={{
                         fontSize: '13px',
                         fontWeight: '700',
-                        color: '#111827',
+                        color: 'var(--text)',
                         textAlign: 'center'
                       }}>
                         {item.prompt || `Item ${idx + 1}`}

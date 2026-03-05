@@ -1,6 +1,6 @@
 import React from 'react';
 import { QuizCategory, Language } from '@shared/quizTypes';
-import BilingualLabel from '../components/BilingualLabel.tsx';
+import BilingualLabel from '../components/BilingualLabel';
 import { DESIGN_SYSTEM } from '../config/designSystem';
 
 type Lang = Language;

@@ -1872,7 +1872,7 @@ useEffect(() => {
               {sortedTeams.length === 0 ? (
                 <div className="cozyLobbyTeamsEmpty">
                   <BilingualLabel
-                    en="WAITING FOR TEAMS"
+                    en="WAITING FOR TEAMS TO JOIN"
                     de="Warten auf Teams"
                     variant="label"
                     primaryColor="#f1f5f9"

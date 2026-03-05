@@ -1551,10 +1551,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           opacity: transitioning ? 0.4 : 1,
           transform: transitioning ? 'translateY(12px) scale(0.995)' : 'translateY(0) scale(1)',
           transition: 'opacity 0.3s ease, transform 0.35s ease',
-          background: '#ffffff',
-          color: '#111827',
-          borderColor: timeUp ? '#fca5a5' : '#d1d5db',
-          boxShadow: timeUp ? '0 4px 0 #fca5a5' : '0 4px 0 #d1d5db',
+          background: 'rgba(17, 24, 39, 0.85)',
+          backdropFilter: 'blur(20px)',
+          color: '#f8fafc',
+          borderColor: timeUp ? '#fca5a5' : 'rgba(240, 95, 178, 0.24)',
+          boxShadow: timeUp ? '0 4px 0 #fca5a5, 0 14px 32px rgba(0, 0, 0, 0.35)' : '0 4px 0 rgba(177, 10, 108, 0.4), 0 14px 32px rgba(0, 0, 0, 0.35)',
           animation: timeUp
             ? 'timeup-pulse 0.35s ease-in-out 2'
             : 'spring-entrance 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
@@ -1580,9 +1581,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             marginTop: 8,
             padding: '8px 12px',
             borderRadius: 10,
-            border: '2px solid #fcd34d',
-            background: '#fffbeb',
-            color: '#92400e',
+            border: '2px solid #fbbf24',
+            background: 'rgba(251, 191, 36, 0.1)',
+            color: '#fde047',
             fontWeight: 700
           }}
         >
@@ -1592,7 +1593,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <h2
           style={{
             ...questionStyleTeam,
-            color: '#111827',
+            color: '#ffd1e8',
             animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both'
           }}
         >
@@ -1602,13 +1603,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       {renderBunteDetails()}
       {timeUp && (
         <p style={{
-          color: '#9a3412',
+          color: '#fef3c7',
           fontWeight: 700,
           marginTop: 8,
           padding: '8px 12px',
           borderRadius: 10,
-          background: '#fff7ed',
-          border: '2px solid #fed7aa',
+          background: 'rgba(245, 158, 11, 0.15)',
+          border: '2px solid rgba(245, 158, 11, 0.4)',
           margin: '8px 0 0'
         }}>
           {language === 'de' ? 'Leider ist die Zeit schon vorbei.' : 'Time is up.'}
@@ -1742,7 +1743,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const maxEntries = 5;
       return (
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ color: '#6b7280', fontSize: 12 }}>
+          <div style={{ color: '#94a3b8', fontSize: 12 }}>
             {language === 'de'
               ? 'Bis zu 5 Antworten, Reihenfolge egal.'
               : 'Up to 5 answers, order irrelevant.'}
@@ -1784,9 +1785,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         <div style={{
           padding: '10px 14px',
           borderRadius: 12,
-          background: '#f3f4f6',
-          border: '2px solid #e5e7eb',
-          color: '#374151',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '2px solid rgba(59, 130, 246, 0.3)',
+          color: '#93c5fd',
           fontWeight: 700,
           fontSize: 'clamp(14px, 3.5vw, 16px)',
           textAlign: 'center',
@@ -1842,9 +1843,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   onClick={() => setBunteOrderCriteria(option.id)}
                   style={{
                     ...pillSmall,
-                    borderColor: bunteOrderCriteria === option.id ? accent : '#d1d5db',
-                    background: bunteOrderCriteria === option.id ? `${accent}18` : '#f3f4f6',
-                    color: bunteOrderCriteria === option.id ? accent : '#374151'
+                    borderColor: bunteOrderCriteria === option.id ? accent : 'rgba(148, 163, 184, 0.3)',
+                    background: bunteOrderCriteria === option.id ? `${accent}18` : 'rgba(148, 163, 184, 0.1)',
+                    color: bunteOrderCriteria === option.id ? accent : '#cbd5e1'
                   }}
                 >
                   {option.label}
@@ -1854,7 +1855,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           )}
           {payload.items.map((item, idx) => (
             <div key={item.id} style={{ display: 'grid', gap: 4 }}>
-              <label style={{ fontSize: 12, color: '#6b7280' }}>
+              <label style={{ fontSize: 12, color: '#94a3b8' }}>
                 {language === 'de' ? 'Position' : 'Position'} {idx + 1}
               </label>
               <select
@@ -1888,7 +1889,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (payload.kind === 'order') {
       return (
         <div style={{ marginTop: 12 }}>
-          <ol style={{ margin: '6px 0 0', paddingInlineStart: 18, color: '#374151' }}>
+          <ol style={{ margin: '6px 0 0', paddingInlineStart: 18, color: '#cbd5e1' }}>
             {payload.items.map((item) => (
               <li key={item.id} style={{ marginBottom: 4 }}>
                 {item.label}
@@ -1926,15 +1927,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       <div
         style={{
           margin: '12px 0 0',
-          color: '#111827',
+          color: '#e2e8f0',
           fontWeight: 700,
           padding: '10px',
           borderRadius: 10,
-          background: '#f3f4f6',
-          border: '1px solid #e5e7eb'
+          background: 'rgba(30, 41, 59, 0.5)',
+          border: '1px solid rgba(148, 163, 184, 0.2)'
         }}
       >
-        <div style={{ color: '#6b7280', fontSize: 12 }}>
+        <div style={{ color: '#94a3b8', fontSize: 12 }}>
           {language === 'de' ? 'Top 5 Lösung:' : 'Top 5 solution:'}
         </div>
         <ol style={{ margin: '6px 0 0', paddingInlineStart: 18 }}>

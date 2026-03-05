@@ -45,11 +45,11 @@ type LeaderboardRun = { quizId: string; date: string; winners: string[]; scores?
 type NextActionHintDetails = { hotkey: string; label: string; detail: string; context?: string };
 
 const card: React.CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #e5e7eb',
+  background: 'rgba(11, 35, 67, 0.88)',
+  border: '1px solid rgba(240,95,178,0.22)',
   borderRadius: 'var(--radius)',
   padding: 16,
-  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  boxShadow: '0 16px 34px rgba(0,0,0,0.38)',
   overflow: 'hidden'
 };
 
@@ -57,9 +57,9 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px 14px',
   borderRadius: 12,
-  border: '1px solid #d1d5db',
-  background: '#f9fafb',
-  color: '#111827',
+  border: '1px solid rgba(240,95,178,0.24)',
+  background: 'rgba(5,5,5,0.55)',
+  color: '#ffe4f2',
   fontWeight: 600
 };
 
@@ -72,12 +72,12 @@ const timerButtonStyle: React.CSSProperties = {
 };
 
 const statChip: React.CSSProperties = {
-  background: '#f3f4f6',
-  border: '1px solid #e5e7eb',
+  background: 'rgba(240,95,178,0.1)',
+  border: '1px solid rgba(240,95,178,0.24)',
   borderRadius: 9999,
   padding: '6px 10px',
   fontSize: 12,
-  color: '#374151',
+  color: '#ffd1e8',
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
@@ -85,11 +85,11 @@ const statChip: React.CSSProperties = {
 };
 
 const actionWrap: React.CSSProperties = {
-  background: '#f9fafb',
-  border: '1px solid #e5e7eb',
+  background: 'rgba(5,5,5,0.45)',
+  border: '1px solid rgba(240,95,178,0.22)',
   borderRadius: 'var(--radius)',
   padding: 12,
-  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+  boxShadow: '0 12px 26px rgba(0,0,0,0.32)',
   overflow: 'hidden'
 };
 
@@ -2433,40 +2433,43 @@ function ModeratorPage(): React.ReactElement {
 
   const renderPrimaryControls = () => {
     if (!roomCode) return null;
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
-    const actionHintCard = renderNextActionHint();
-    const answersPanel = Object.keys(answers?.answers || {}).length > 0 || Object.keys(answers?.teams || {}).length > 0 ? (
-      <div
-        style={{
-          display: 'grid',
-          gap: 8,
-          padding: 12,
-          borderRadius: 18,
-          border: '1px solid rgba(34,197,94,0.4)',
-          background: '#ffffff',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          width: '100%',
-          maxWidth: 540,
-          minWidth: 0,
-          flex: '1 1 320px'
-        }}
-      >
-        <AnswerList
-          answers={answers}
-          answersCount={answersCount}
-          teamsCount={teamsCount}
-          unreviewedCount={unreviewedCount}
-          question={question}
-          statChip={statChip}
-          inputStyle={inputStyle}
-          onOverride={(teamId, isCorrect) =>
-            doAction(async () => {
-              await hookOverrideAnswer(teamId, isCorrect);
-            }, isCorrect ? 'Als richtig markiert' : 'Als falsch markiert')
-          }
-        />
-      </div>
-    ) : null;
+    const formatAnswerValue = (value: unknown): string => {
+      if (value === null || value === undefined) return '—';
+      if (typeof value === 'string') return value.trim() || '—';
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+      if (Array.isArray(value)) return value.join(', ');
+      if (typeof value === 'object') {
+        const maybeOrder = value as { order?: unknown[] };
+        if (Array.isArray(maybeOrder.order)) return maybeOrder.order.join(' → ');
+        return JSON.stringify(value);
+      }
+      return String(value);
+    };
+
+    const answerRows = Object.entries(answers?.answers || {})
+      .map(([teamId, answerEntry]) => {
+        const entry = answerEntry as any;
+        const raw = entry?.answer ?? entry?.value;
+        return {
+          teamId,
+          teamName: teamLookup[teamId]?.name || answers?.teams?.[teamId]?.name || teamId,
+          answer: formatAnswerValue(raw),
+          isCorrect: entry?.isCorrect as boolean | undefined
+        };
+      })
+      .sort((a, b) => a.teamName.localeCompare(b.teamName));
+
+    const nextAction = (() => {
+      const label = nextActionHint?.label ?? 'WEITER';
+      if (label === 'SPERREN') {
+        return { onClick: handleLockQuestion, busy: actionState.lock, hotkey: '[2]', style: 'bg-[#d97706] ring-[#d97706]/40' };
+      }
+      if (label === 'AUFDECKEN') {
+        return { onClick: handleReveal, busy: actionState.reveal, hotkey: '[3]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
+      }
+      return { onClick: handleNextQuestion, busy: actionState.next, hotkey: '[SPACE]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
+    })();
+
     const adjustTimer = (delta: number) => {
       const val = Math.max(5, Math.min(300, timerSeconds + delta));
       setTimerSeconds(val);
@@ -2475,141 +2478,104 @@ function ModeratorPage(): React.ReactElement {
     const noAnswers = answersCount === 0 && normalizedGameState === 'Q_ACTIVE';
     const connectedCount = connectedTeams || teamsCount || 0;
     return (
-      <section style={{ ...card, marginTop: 12, position: 'sticky', top: 0, zIndex: 10 }}>
-        {(actionHintCard || answersPanel) && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
-              gap: 12,
-              marginBottom: 12,
-              alignItems: 'stretch'
-            }}
+      <section className="sticky top-0 z-10 mt-3 rounded-3xl border border-[#f05fb244] bg-[#0b2343]/95 p-3 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur">
+        <div className="mb-3 rounded-2xl border border-[#f05fb233] bg-[#050505]/55 p-3">
+          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Aktuelle Frage</p>
+          <p className="text-lg font-extrabold leading-tight text-[#ffe4f2] sm:text-2xl">{question?.question ?? 'Keine Frage aktiv'}</p>
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#ffb8df]">Lösung</p>
+          <p className="text-base font-black text-[#ffd1e8] sm:text-xl">{socketSolution || answers?.solution || '—'}</p>
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.4fr_1fr]">
+          <button
+            onClick={nextAction.busy ? undefined : nextAction.onClick}
+            disabled={nextAction.busy}
+            className={`min-h-[160px] rounded-3xl p-5 text-left text-white shadow-[0_12px_28px_rgba(0,0,0,0.4)] ring-2 transition ${nextAction.style} ${nextAction.busy ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.01] active:scale-[0.99]'}`}
           >
-            {actionHintCard}
-            {answersPanel}
-          </div>
-        )}
-        {!singleActionMode && (() => {
-          const sdTiles: Array<{
-            label: string;
-            icon: string;
-            fKey: string;
-            numKey: string;
-            onClick: () => void;
-            busy: boolean;
-            disabled: boolean;
-            bg: string;
-            shadow: string;
-          }> = [
-            {
-              label: 'Sperren',
-              icon: '🔒',
-              fKey: 'F14',
-              numKey: '2',
-              onClick: handleLockQuestion,
-              busy: actionState.lock,
-              disabled: normalizedGameState !== 'Q_ACTIVE',
-              bg: '#d97706',
-              shadow: '#b45309'
-            },
-            {
-              label: 'Aufdecken',
-              icon: '👁',
-              fKey: 'F15',
-              numKey: '3',
-              onClick: handleReveal,
-              busy: actionState.reveal,
-              disabled: normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL',
-              bg: '#b45309',
-              shadow: '#92400e'
-            }
-          ];
-          return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
-              {sdTiles.map(({ label, icon, fKey, numKey, onClick, busy, disabled, bg, shadow }) => {
-                const inactive = busy || disabled;
-                return (
-                  <button
-                    key={label}
-                    disabled={inactive}
-                    onClick={inactive ? undefined : onClick}
-                    style={{
-                      width: '100%',
-                      minHeight: 80,
-                      padding: '14px 16px',
-                      borderRadius: 16,
-                      border: 'none',
-                      background: inactive ? '#e5e7eb' : bg,
-                      color: inactive ? '#9ca3af' : '#ffffff',
-                      cursor: inactive ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      gap: 4,
-                      boxShadow: inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`,
-                      opacity: inactive ? 0.5 : 1,
-                      transition: 'transform 0.1s ease, box-shadow 0.1s ease'
-                    }}
-                    onMouseDown={e => { if (!inactive) { e.currentTarget.style.transform = 'translateY(2px)'; e.currentTarget.style.boxShadow = `0 2px 0 ${shadow}`; } }}
-                    onMouseUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = inactive ? 'none' : `0 4px 0 ${shadow}, 0 8px 20px rgba(0,0,0,0.18)`; }}
-                  >
-                    <span style={{ fontSize: 22 }}>{icon}</span>
-                    <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                      {busy ? `${label} …` : label}
-                    </span>
-                    <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
-                      {[fKey, numKey].map(k => (
-                        <span key={k} style={{ padding: '2px 7px', borderRadius: 6, background: 'rgba(0,0,0,0.2)', fontSize: 11, fontWeight: 800, fontFamily: 'monospace', letterSpacing: '0.04em' }}>
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="mb-3 inline-flex rounded-lg bg-black/30 px-3 py-1 text-xs font-black tracking-[0.14em]">NÄCHSTER SCHRITT</div>
+            <div className="flex items-center gap-3">
+              <span className="rounded-md bg-white/20 px-3 py-1 font-mono text-sm font-black">{nextAction.hotkey}</span>
+              <span className="text-3xl font-black tracking-wide sm:text-4xl">{nextAction.busy ? `${nextActionHint.label} …` : nextActionHint.label}</span>
             </div>
-          );
-        })()}
-        <div
-          style={{
-            marginTop: 10,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            alignItems: 'center'
-          }}
-        >
-          <span style={{
-            ...statChip,
-            ...(noAnswers ? { borderColor: 'rgba(239,68,68,0.5)', color: '#dc2626', background: 'rgba(239,68,68,0.08)' } : {})
-          }}>
-            Antworten {answersCount}/{teamsCount || '0'}
-          </span>
-          <span style={statChip}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: connectedCount > 0 ? '#4ade80' : '#6b7280', display: 'inline-block', flexShrink: 0 }} />
-            {connectedCount} {connectedCount === 1 ? 'Team' : 'Teams'}
-          </span>
-          {readyCount.total > 0 && (
-            <span style={statChip}>Bereit {readyCount.ready}/{readyCount.total}</span>
-          )}
-          {questionTimerSecondsLeft !== null && (
-            <span style={{
-              ...statChip,
-              color: questionTimerSecondsLeft <= 5 ? '#dc2626' : questionTimerSecondsLeft <= 15 ? '#d97706' : '#16a34a',
-              borderColor: questionTimerSecondsLeft <= 5 ? 'rgba(220,38,38,0.4)' : questionTimerSecondsLeft <= 15 ? 'rgba(217,119,6,0.4)' : 'rgba(22,163,74,0.4)',
-              fontWeight: 700
-            }}>
-              ⏱ {questionTimerSecondsLeft}s
-            </span>
-          )}
-          <span style={{ ...statChip, gap: 4 }}>
-            <button
-              onClick={() => adjustTimer(-5)}
-              style={{ background: '#e5e7eb', border: 'none', color: '#374151', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
-              title="Timer −5s"
-            >−</button>
+            {nextActionHint.context && <p className="mt-3 text-sm font-semibold uppercase tracking-[0.1em] text-white/80">{nextActionHint.context}</p>}
+          </button>
+
+          <div className="rounded-3xl border border-[#f05fb233] bg-[#050505]/55 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#f05fb2]">Antworten-Kontrolle</p>
+              <span className="rounded-md bg-[#f05fb21a] px-2 py-1 text-xs font-bold text-[#ffd1e8]">{answersCount}/{teamsCount || 0}</span>
+            </div>
+            <div className="max-h-[310px] space-y-2 overflow-y-auto pr-1">
+              {answerRows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#f05fb244] p-4 text-center text-sm text-[#ffc1e3]">Noch keine Antworten</div>
+              ) : (
+                answerRows.map((row) => (
+                  <div key={row.teamId} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-[#f05fb22e] bg-[#0b2343]/80 p-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
+                      <p className="truncate text-xs text-[#ffd1e8]/85">{row.answer}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        className="rounded-md border border-[#67b58f] bg-[#1f6b50]/65 px-2 py-1 text-xs font-black text-[#d6ffe8] hover:bg-[#24805e]"
+                        onClick={() =>
+                          doAction(async () => {
+                            await hookOverrideAnswer(row.teamId, true);
+                          }, 'Als richtig markiert')
+                        }
+                        title="Richtig"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        className="rounded-md border border-[#d68598] bg-[#7e2e46]/65 px-2 py-1 text-xs font-black text-[#ffd6df] hover:bg-[#9d3858]"
+                        onClick={() =>
+                          doAction(async () => {
+                            await hookOverrideAnswer(row.teamId, false);
+                          }, 'Als falsch markiert')
+                        }
+                        title="Falsch"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <button
+            onClick={handleLockQuestion}
+            disabled={actionState.lock || normalizedGameState !== 'Q_ACTIVE'}
+            className="rounded-xl border border-[#d7a46f] bg-[#8b5e2b]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe9d1] disabled:opacity-50"
+          >
+            Sperren <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[2]</span>
+          </button>
+          <button
+            onClick={handleReveal}
+            disabled={actionState.reveal || (normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL')}
+            className="rounded-xl border border-[#f05fb2] bg-[#b10a6c]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe4f2] disabled:opacity-50"
+          >
+            Aufdecken <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[3]</span>
+          </button>
+          <button
+            onClick={handleScoreboardAction}
+            className="rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff]"
+          >
+            Scoreboard <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[F4/F6]</span>
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+          <span className={`rounded-md border px-2 py-1 ${noAnswers ? 'border-red-400/60 text-red-200' : 'border-[#f05fb255] text-[#ffd1e8]'}`}>Antworten {answersCount}/{teamsCount || 0}</span>
+          <span className="rounded-md border border-[#5a93c755] px-2 py-1 text-[#cfe8ff]">{connectedCount} {connectedCount === 1 ? 'Team' : 'Teams'}</span>
+          {readyCount.total > 0 && <span className="rounded-md border border-[#67b58f66] px-2 py-1 text-[#d6ffe8]">Bereit {readyCount.ready}/{readyCount.total}</span>}
+          {questionTimerSecondsLeft !== null && <span className="rounded-md border border-[#d7a46f66] px-2 py-1 text-[#ffe9d1]">⏱ {questionTimerSecondsLeft}s</span>}
+          <span className="inline-flex items-center gap-1 rounded-md border border-[#f05fb244] px-1.5 py-1">
+            <button onClick={() => adjustTimer(-5)} className="rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8]">−</button>
             <input
               type="number"
               min={5}
@@ -2621,22 +2587,9 @@ function ModeratorPage(): React.ReactElement {
                 setTimerSeconds(val);
                 localStorage.setItem('moderatorTimerSeconds', String(val));
               }}
-              style={{
-                width: 52,
-                background: '#ffffff',
-                border: '1px solid #d1d5db',
-                borderRadius: 6,
-                color: '#111827',
-                padding: '2px 4px',
-                textAlign: 'center'
-              }}
+              className="w-12 rounded border border-[#f05fb244] bg-[#050505] px-1 py-0.5 text-center text-[#ffe4f2]"
             />
-            <span style={{ color: '#6b7280', fontSize: 11 }}>s</span>
-            <button
-              onClick={() => adjustTimer(5)}
-              style={{ background: '#e5e7eb', border: 'none', color: '#374151', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}
-              title="Timer +5s"
-            >+</button>
+            <button onClick={() => adjustTimer(5)} className="rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8]">+</button>
           </span>
         </div>
       </section>
@@ -3232,16 +3185,9 @@ const renderCozyStagePanel = () => {
 
   return (
     <main
-      className="page-transition-enter-active moderator-jackbox"
+      className="page-transition-enter-active moderator-jackbox min-h-screen h-[100dvh] overflow-y-auto overscroll-contain bg-[#050505] px-2 py-2 text-[#ffe4f2] sm:px-3 lg:px-4"
       style={{
-        minHeight: '100vh',
-        height: '100dvh',
-        background: '#f0f2f5',
-        color: '#111827',
-        padding: 'clamp(8px, 2vw, 16px)',
         boxSizing: 'border-box',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
         fontFamily: 'var(--font)'
       }}
     >

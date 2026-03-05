@@ -2478,7 +2478,7 @@ function ModeratorPage(): React.ReactElement {
     const noAnswers = answersCount === 0 && normalizedGameState === 'Q_ACTIVE';
     const connectedCount = connectedTeams || teamsCount || 0;
     return (
-      <section className="sticky top-0 z-10 mt-3 rounded-3xl border border-[#f05fb244] bg-[#0b2343]/95 p-3 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur">
+      <section className="moderator-primary-controls z-10 mt-3 rounded-3xl border border-[#f05fb244] bg-[#0b2343]/95 p-3 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur md:sticky md:top-2">
         <div className="mb-3 rounded-2xl border border-[#f05fb233] bg-[#050505]/55 p-3">
           <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Aktuelle Frage</p>
           <p className="text-lg font-extrabold leading-tight text-[#ffe4f2] sm:text-2xl">{question?.question ?? 'Keine Frage aktiv'}</p>
@@ -2486,38 +2486,38 @@ function ModeratorPage(): React.ReactElement {
           <p className="text-base font-black text-[#ffd1e8] sm:text-xl">{socketSolution || answers?.solution || '—'}</p>
         </div>
 
-        <div className="grid gap-3 xl:grid-cols-[1.4fr_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr] xl:grid-cols-[1.4fr_1fr]">
           <button
             onClick={nextAction.busy ? undefined : nextAction.onClick}
             disabled={nextAction.busy}
-            className={`min-h-[160px] rounded-3xl p-5 text-left text-white shadow-[0_12px_28px_rgba(0,0,0,0.4)] ring-2 transition ${nextAction.style} ${nextAction.busy ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.01] active:scale-[0.99]'}`}
+            className={`moderator-next-action min-h-[132px] rounded-3xl p-4 text-left text-white shadow-[0_12px_28px_rgba(0,0,0,0.4)] ring-2 transition touch-manipulation sm:min-h-[160px] sm:p-5 ${nextAction.style} ${nextAction.busy ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.01] active:scale-[0.99]'}`}
           >
             <div className="mb-3 inline-flex rounded-lg bg-black/30 px-3 py-1 text-xs font-black tracking-[0.14em]">NÄCHSTER SCHRITT</div>
             <div className="flex items-center gap-3">
               <span className="rounded-md bg-white/20 px-3 py-1 font-mono text-sm font-black">{nextAction.hotkey}</span>
-              <span className="text-3xl font-black tracking-wide sm:text-4xl">{nextAction.busy ? `${nextActionHint.label} …` : nextActionHint.label}</span>
+              <span className="moderator-next-action-label text-2xl font-black tracking-wide sm:text-3xl xl:text-4xl">{nextAction.busy ? `${nextActionHint.label} …` : nextActionHint.label}</span>
             </div>
-            {nextActionHint.context && <p className="mt-3 text-sm font-semibold uppercase tracking-[0.1em] text-white/80">{nextActionHint.context}</p>}
+            {nextActionHint.context && <p className="moderator-next-action-context mt-3 text-sm font-semibold uppercase tracking-[0.1em] text-white/80">{nextActionHint.context}</p>}
           </button>
 
-          <div className="rounded-3xl border border-[#f05fb233] bg-[#050505]/55 p-3">
+          <div className="moderator-answers-panel rounded-3xl border border-[#f05fb233] bg-[#050505]/55 p-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-[#f05fb2]">Antworten-Kontrolle</p>
               <span className="rounded-md bg-[#f05fb21a] px-2 py-1 text-xs font-bold text-[#ffd1e8]">{answersCount}/{teamsCount || 0}</span>
             </div>
-            <div className="max-h-[310px] space-y-2 overflow-y-auto pr-1">
+            <div className="moderator-answer-scroll max-h-[44vh] space-y-2 overflow-y-auto pr-1 sm:max-h-[320px] lg:max-h-[360px]">
               {answerRows.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[#f05fb244] p-4 text-center text-sm text-[#ffc1e3]">Noch keine Antworten</div>
               ) : (
                 answerRows.map((row) => (
-                  <div key={row.teamId} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-[#f05fb22e] bg-[#0b2343]/80 p-2">
+                  <div key={row.teamId} className="moderator-answer-row grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-[#f05fb22e] bg-[#0b2343]/80 p-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
                       <p className="truncate text-xs text-[#ffd1e8]/85">{row.answer}</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        className="rounded-md border border-[#67b58f] bg-[#1f6b50]/65 px-2 py-1 text-xs font-black text-[#d6ffe8] hover:bg-[#24805e]"
+                        className="min-h-[42px] min-w-[42px] rounded-md border border-[#67b58f] bg-[#1f6b50]/65 px-2.5 py-1 text-xs font-black text-[#d6ffe8] hover:bg-[#24805e] touch-manipulation"
                         onClick={() =>
                           doAction(async () => {
                             await hookOverrideAnswer(row.teamId, true);
@@ -2528,7 +2528,7 @@ function ModeratorPage(): React.ReactElement {
                         ✓
                       </button>
                       <button
-                        className="rounded-md border border-[#d68598] bg-[#7e2e46]/65 px-2 py-1 text-xs font-black text-[#ffd6df] hover:bg-[#9d3858]"
+                        className="min-h-[42px] min-w-[42px] rounded-md border border-[#d68598] bg-[#7e2e46]/65 px-2.5 py-1 text-xs font-black text-[#ffd6df] hover:bg-[#9d3858] touch-manipulation"
                         onClick={() =>
                           doAction(async () => {
                             await hookOverrideAnswer(row.teamId, false);
@@ -2546,36 +2546,36 @@ function ModeratorPage(): React.ReactElement {
           </div>
         </div>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="moderator-secondary-actions mt-3 grid gap-2 sm:grid-cols-3">
           <button
             onClick={handleLockQuestion}
             disabled={actionState.lock || normalizedGameState !== 'Q_ACTIVE'}
-            className="rounded-xl border border-[#d7a46f] bg-[#8b5e2b]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe9d1] disabled:opacity-50"
+            className="min-h-[48px] rounded-xl border border-[#d7a46f] bg-[#8b5e2b]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe9d1] touch-manipulation disabled:opacity-50"
           >
             Sperren <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[2]</span>
           </button>
           <button
             onClick={handleReveal}
             disabled={actionState.reveal || (normalizedGameState !== 'Q_LOCKED' && normalizedGameState !== 'Q_REVEAL')}
-            className="rounded-xl border border-[#f05fb2] bg-[#b10a6c]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe4f2] disabled:opacity-50"
+            className="min-h-[48px] rounded-xl border border-[#f05fb2] bg-[#b10a6c]/75 px-3 py-2 text-left text-sm font-extrabold text-[#ffe4f2] touch-manipulation disabled:opacity-50"
           >
             Aufdecken <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[3]</span>
           </button>
           <button
             onClick={handleScoreboardAction}
-            className="rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff]"
+            className="min-h-[48px] rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff] touch-manipulation"
           >
             Scoreboard <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[F4/F6]</span>
           </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+        <div className="moderator-status-row mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
           <span className={`rounded-md border px-2 py-1 ${noAnswers ? 'border-red-400/60 text-red-200' : 'border-[#f05fb255] text-[#ffd1e8]'}`}>Antworten {answersCount}/{teamsCount || 0}</span>
           <span className="rounded-md border border-[#5a93c755] px-2 py-1 text-[#cfe8ff]">{connectedCount} {connectedCount === 1 ? 'Team' : 'Teams'}</span>
           {readyCount.total > 0 && <span className="rounded-md border border-[#67b58f66] px-2 py-1 text-[#d6ffe8]">Bereit {readyCount.ready}/{readyCount.total}</span>}
           {questionTimerSecondsLeft !== null && <span className="rounded-md border border-[#d7a46f66] px-2 py-1 text-[#ffe9d1]">⏱ {questionTimerSecondsLeft}s</span>}
-          <span className="inline-flex items-center gap-1 rounded-md border border-[#f05fb244] px-1.5 py-1">
-            <button onClick={() => adjustTimer(-5)} className="rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8]">−</button>
+          <span className="moderator-timer-adjust inline-flex items-center gap-1 rounded-md border border-[#f05fb244] px-1.5 py-1">
+            <button onClick={() => adjustTimer(-5)} className="min-h-[32px] min-w-[32px] rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8] touch-manipulation">−</button>
             <input
               type="number"
               min={5}
@@ -2587,9 +2587,9 @@ function ModeratorPage(): React.ReactElement {
                 setTimerSeconds(val);
                 localStorage.setItem('moderatorTimerSeconds', String(val));
               }}
-              className="w-12 rounded border border-[#f05fb244] bg-[#050505] px-1 py-0.5 text-center text-[#ffe4f2]"
+              className="h-8 w-14 rounded border border-[#f05fb244] bg-[#050505] px-1 py-0.5 text-center text-[#ffe4f2]"
             />
-            <button onClick={() => adjustTimer(5)} className="rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8]">+</button>
+            <button onClick={() => adjustTimer(5)} className="min-h-[32px] min-w-[32px] rounded bg-[#0b2343] px-2 font-black text-[#ffd1e8] touch-manipulation">+</button>
           </span>
         </div>
       </section>

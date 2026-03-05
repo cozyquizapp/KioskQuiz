@@ -445,9 +445,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [resultDetail, setResultDetail] = useState<string | null>(null);
   const [resultDeviation, setResultDeviation] = useState<number | null>(null);
   const [feedbackAnimation, setFeedbackAnimation] = useState<'success' | 'error' | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string>(() =>
-    localStorage.getItem('teamSelectedColor') || '#7c3aed'
-  );
   const [gameState, setGameState] = useState<CozyGameState>('LOBBY');
   const [scoreboard, setScoreboard] = useState<StateUpdatePayload['scores']>([]);
   const [teamStatus, setTeamStatus] = useState<StateUpdatePayload['teamStatus']>([]);
@@ -665,7 +662,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             teamName: cleanName,
             teamId: useSavedId ? savedIdRef.current ?? undefined : undefined,
             avatarId: selectedAvatarId,
-            color: selectedColor
+            color: 'var(--color-primary)'
           },
           (resp?: { ok: boolean; error?: string; team?: Team }) => {
             if (!resp?.ok || !resp?.team) {
@@ -1601,7 +1598,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         >
           {question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}
         </h2>
-      <div style={{ marginTop: 10 }}>{renderInput(selectedColor)}</div>
+      <div style={{ marginTop: 10 }}>{renderInput('var(--color-primary)')}</div>
       {renderBunteDetails()}
       {timeUp && (
         <p style={{
@@ -1622,12 +1619,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         style={{
           ...primaryButton,
           marginTop: 14,
-          background: answerSubmitted ? '#16a34a' : canAnswer ? selectedColor : '#d1d5db',
+          background: answerSubmitted ? '#16a34a' : canAnswer ? 'var(--color-primary)' : '#d1d5db',
           color: '#ffffff',
           border: '2px solid rgba(255,255,255,0.25)',
           boxShadow: answerSubmitted
             ? '0 4px 0 #15803d'
-            : canAnswer ? `0 4px 0 ${selectedColor}99` : '0 4px 0 #b0b8c1',
+            : canAnswer ? '0 4px 0 rgba(177, 10, 108, 0.6)' : '0 4px 0 #b0b8c1',
           backdropFilter: 'none',
           animation: canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
@@ -3393,17 +3390,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     setIsReady(false);
   }
 
-  const TEAM_COLORS = [
-    { value: '#7c3aed', label: 'Lila' },
-    { value: '#2563eb', label: 'Blau' },
-    { value: '#0891b2', label: 'Cyan' },
-    { value: '#16a34a', label: 'Grün' },
-    { value: '#ca8a04', label: 'Gold' },
-    { value: '#ea580c', label: 'Orange' },
-    { value: '#dc2626', label: 'Rot' },
-    { value: '#db2777', label: 'Pink' },
-  ];
-
   function renderNotJoined() {
     const joinDisabled = !roomCode || !teamName.trim() || joinPending || (avatarsEnabled && !avatarId);
     return (
@@ -3704,48 +3690,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           )}
         </div>
       </div>}
-      {/* Team Color Picker */}
-      <div style={{ marginTop: 16, marginBottom: 4 }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {TEAM_COLORS.map((c) => (
-            <button
-              key={c.value}
-              title={c.label}
-              aria-label={`${language === 'de' ? 'Teamfarbe' : 'Team color'} ${c.label}`}
-              aria-pressed={selectedColor === c.value}
-              onClick={() => {
-                setSelectedColor(c.value);
-                localStorage.setItem('teamSelectedColor', c.value);
-              }}
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                background: c.value,
-                border: selectedColor === c.value ? '4px solid white' : '4px solid transparent',
-                outline: selectedColor === c.value ? `3px solid ${c.value}` : 'none',
-                outlineOffset: 3,
-                cursor: 'pointer',
-                boxShadow: selectedColor === c.value
-                  ? `0 0 0 3px white, 0 0 20px ${c.value}99, 0 4px 12px rgba(0,0,0,0.4)`
-                  : '0 3px 8px rgba(0,0,0,0.45)',
-                transition: 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transform: selectedColor === c.value ? 'scale(1.18)' : 'scale(1)',
-                padding: 0,
-                WebkitTapHighlightColor: 'transparent',
-                touchAction: 'manipulation',
-                flexShrink: 0,
-              }}
-            />
-          ))}
-        </div>
-      </div>
+
 
       <button
         style={{
           ...primaryButton,
           marginTop: 12,
-          background: selectedColor,
+          background: 'var(--color-primary)',
           boxShadow: joinDisabled ? 'none' : `0 4px 0 rgba(0,0,0,0.25)`,
           opacity: joinDisabled ? 0.45 : 1,
           cursor: joinDisabled ? 'not-allowed' : 'pointer',
@@ -4049,9 +4000,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         position: 'relative',
         overflowY: 'auto',
         overflowX: 'hidden',
-        background: `linear-gradient(180deg, ${selectedColor}14 0%, transparent 28%), #0d1117`,
-        ['--team-color' as any]: selectedColor,
-        ['--team-color-dim' as any]: `${selectedColor}55`,
+        background: `linear-gradient(180deg, var(--color-primary)08 0%, transparent 28%), #0d1117`,
       }}
       data-timer={timerTick}
       data-team-ui="1"
@@ -4075,9 +4024,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             gap: 10,
             padding: '8px 16px',
             minHeight: 56,
-            background: selectedColor,
+            background: 'var(--color-primary)',
             borderRadius: '0 0 16px 16px',
-            boxShadow: `0 4px 0 ${selectedColor}99`,
+            boxShadow: '0 4px 0 rgba(177, 10, 108, 0.6)',
             position: 'relative',
             overflow: 'hidden',
           }}

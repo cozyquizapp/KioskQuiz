@@ -100,7 +100,7 @@ export const pillSmall: CSSProperties = {
   background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--ui-chip-border)',
+  borderColor: 'rgba(255, 255, 255, 0.1)',
   fontSize: 'clamp(14px, 3vw, 16px)',
   fontWeight: 700,
   color: 'var(--ui-chip-text)'
@@ -121,7 +121,7 @@ export const heroCard: CSSProperties = {
   padding: 'clamp(12px, 4vw, 18px)',
   borderRadius: 24,
   background: 'var(--ui-card-bg)',
-  border: '1px solid var(--ui-card-border)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   boxShadow: 'var(--ui-card-shadow)'
 };
 
@@ -159,7 +159,7 @@ export const glassCard: CSSProperties = {
   backdropFilter: 'blur(20px)',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 24,
-  border: '1px solid rgba(240, 95, 178, 0.28)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
@@ -262,8 +262,8 @@ export const primaryButton: CSSProperties = {
 export const choiceButton: CSSProperties = {
   flex: 1,
   background: 'var(--ui-card-bg)',
-  border: '1px solid var(--ui-card-border)',
-  borderBottom: '1px solid var(--ui-card-border)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   color: 'var(--text)',
   borderRadius: 16,
   padding: 'clamp(18px, 4.5vw, 22px) clamp(14px, 4vw, 18px)',
@@ -319,7 +319,7 @@ export const questionShell: CSSProperties = {
   padding: 'clamp(8px, 3vw, 14px) clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px)',
   margin: '0 auto',
   borderRadius: 24,
-  border: '1px solid var(--ui-card-border)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   background: 'var(--ui-card-bg)',
   overflow: 'visible',
   width: '100%',

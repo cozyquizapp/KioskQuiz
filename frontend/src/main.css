@@ -3602,3 +3602,49 @@ button:active:not(:disabled),
   background: var(--ui-card-bg) !important;
   color: var(--ui-input-text) !important;
 }
+
+/* Loading State: Progress Bar Animation */
+@keyframes progress-fill {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 30%;
+  }
+}
+
+/* Mascot/Logo Pulsing Animation */
+@keyframes mascot-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Gentle Glow Animation for Background */
+@keyframes glow-animate {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(240, 95, 178, 0.15));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(240, 95, 178, 0.25));
+  }
+}
+
+/* Apply mascot pulsing to footer logo */
+.footer-logo,
+[class*="footer"][class*="logo"] {
+  animation: mascot-pulse 3s ease-in-out infinite;
+}
+
+/* Animated Glow Background */
+#team-root::after {
+  animation: glow-animate 6s ease-in-out infinite;
+}

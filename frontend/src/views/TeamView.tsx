@@ -3830,24 +3830,25 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           alignItems: 'center',
           justifyContent: 'center',
           maxWidth: 620,
-          minHeight: 240,
-          padding: '18px 16px 16px',
-          background: '#ffffff',
-          borderColor: '#e5e7eb',
-          boxShadow: '0 4px 0 #e5e7eb',
+          minHeight: 280,
+          padding: '32px 24px',
+          background: 'var(--ui-card-bg)',
+          borderColor: 'var(--ui-card-border)',
+          boxShadow: 'var(--ui-card-shadow)',
           animation: 'spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           willChange: 'transform, opacity',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          margin: '0 auto'
         }}
       >
         <h3
           style={{
             ...heading,
-            marginBottom: 8,
+            marginBottom: 12,
             marginTop: 0,
             fontSize: 'clamp(22px, 5vw, 30px)',
-            color: '#111827',
+            color: 'var(--ui-input-text)',
             textTransform: 'none'
           }}
         >
@@ -3857,16 +3858,23 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <p
             style={{
               ...mutedText,
-              marginBottom: 18,
+              marginBottom: 24,
               fontSize: 'clamp(14px, 3.6vw, 16px)',
-              color: '#6b7280'
+              color: '#d0d5e0',
+              opacity: 0.9
             }}
           >
             {subtitle}
           </p>
         )}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
-        <PulseIndicator style={{ fontSize: 48, color: '#a5b4fc', margin: '28px 0 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', width: '100%', marginTop: 20 }}>
+          <PulseIndicator style={{ fontSize: 48, color: 'var(--color-secondary)', margin: 0 }} />
+          {/* Progress bar */}
+          <div style={{ width: '100%', maxWidth: 200, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))', animation: 'progress-fill 2s ease-in-out infinite', width: '30%', borderRadius: 999 }} />
+          </div>
+        </div>
       </div>
     );
   }

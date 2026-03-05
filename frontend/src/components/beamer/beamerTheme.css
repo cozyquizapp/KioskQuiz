@@ -1194,8 +1194,8 @@
   position: absolute;
   pointer-events: none;
   border-radius: 999px;
-  filter: blur(16px);
-  animation: cozyLobbyGlow 9s ease-in-out infinite;
+  filter: blur(24px);
+  animation: cozyLobbyGlow 90s ease-in-out infinite;
 }
 
 .cozyLobbyShell::before {
@@ -1207,7 +1207,7 @@
   max-height: 520px;
   left: -8%;
   top: -10%;
-  background: radial-gradient(circle, rgba(240, 95, 178, 0.12) 0%, rgba(240, 95, 178, 0) 70%);
+  background: radial-gradient(circle, rgba(67, 56, 202, 0.14) 0%, rgba(67, 56, 202, 0) 70%);
 }
 
 .cozyLobbyShell::after {
@@ -1219,14 +1219,16 @@
   max-height: 460px;
   right: -6%;
   bottom: -14%;
-  background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0) 72%);
-  animation-delay: 2.5s;
+  background: radial-gradient(circle, rgba(109, 40, 217, 0.12) 0%, rgba(109, 40, 217, 0) 72%);
+  animation-delay: 45s;
 }
 
 @keyframes cozyLobbyGlow {
   0%,
-  100% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 0.6; transform: translate(0, 0) scale(1); }
+  25% { opacity: 0.8; transform: translate(2%, -2%) scale(1.05); }
+  50% { opacity: 1; transform: translate(-2%, 2%) scale(1.08); }
+  75% { opacity: 0.8; transform: translate(2%, 2%) scale(1.05); }
 }
 
 .cozyLobbyHeader {

@@ -54,7 +54,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
     cursor: onClick ? 'pointer' : 'default',
     transition: 'all 280ms cubic-bezier(0.22, 1, 0.36, 1)',
     transform: highlight ? 'scale(1.02)' : 'scale(1)',
-    opcity: isConnected ? 1 : 0.7,
+    opacity: isConnected ? 1 : 0.7,
   };
 
   const avatarStyle: React.CSSProperties = {

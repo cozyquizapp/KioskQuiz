@@ -3405,12 +3405,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               title={lang === 'de' ? 'Deutsch' : 'English'}
               style={{
                 width: 36, height: 36, borderRadius: 10, border: '2px solid',
-                borderColor: language === lang ? accentColor : '#e5e7eb',
-                background: language === lang ? `${accentColor}18` : '#f9fafb',
+                borderColor: language === lang ? accentColor : 'rgba(148, 163, 184, 0.3)',
+                background: language === lang ? `${accentColor}18` : 'rgba(30, 41, 59, 0.4)',
                 cursor: 'pointer', fontSize: 20, lineHeight: 1,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: 0, transition: 'all 0.18s ease',
-                boxShadow: language === lang ? `0 2px 0 ${accentColor}66` : '0 2px 0 #e5e7eb'
+                boxShadow: language === lang ? `0 2px 0 ${accentColor}66` : '0 2px 0 rgba(148, 163, 184, 0.2)'
               }}
             >
               {lang === 'de' ? '🇩🇪' : '🇬🇧'}
@@ -3472,9 +3472,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               height: 32,
               padding: 0,
               borderRadius: '50%',
-              background: '#f3f4f6',
-              border: '2px solid #d1d5db',
-              color: '#374151',
+              background: 'rgba(30, 41, 59, 0.5)',
+              border: '2px solid rgba(148, 163, 184, 0.3)',
+              color: '#e2e8f0',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -3496,10 +3496,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               }
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#e5e7eb';
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(30, 41, 59, 0.7)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#f3f4f6';
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(30, 41, 59, 0.5)';
             }}
           >
             🎲
@@ -3511,7 +3511,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           style={{
             textAlign: 'center',
             fontSize: isMobileSize ? 11 : 12,
-            color: '#9ca3af',
+            color: '#94a3b8',
             marginBottom: isMobileSize ? 6 : 8,
             fontStyle: 'italic'
           }}
@@ -3524,8 +3524,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           style={{
             position: 'relative',
             borderRadius: 16,
-            background: '#f3f4f6',
-            border: '2px solid #e5e7eb',
+            background: 'rgba(30, 41, 59, 0.4)',
+            border: '2px solid rgba(148, 163, 184, 0.2)',
             padding: isMobileSize ? '20px 0' : '30px 0',
             overflow: 'hidden',
             marginBottom: isMobileSize ? 12 : 20,
@@ -3637,10 +3637,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   padding: 16,
                   borderRadius: 20,
                   border: `4px solid ${accentColor}`,
-                  background: '#ffffff',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  backdropFilter: 'blur(8px)',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: `0 4px 0 ${accentColor}66, 0 8px 24px rgba(0,0,0,0.08)`,
+                  boxShadow: `0 4px 0 ${accentColor}66, 0 8px 24px rgba(0,0,0,0.4)`,
                   display: 'flex',
                   alignItems: 'flex-end',
                   justifyContent: 'center',
@@ -3733,10 +3734,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             style={{
               ...primaryButton,
               marginTop: 8,
-              background: '#f3f4f6',
-              color: '#111827',
-              border: '2px solid #d1d5db',
-              boxShadow: '0 3px 0 #d1d5db',
+              background: 'rgba(30, 41, 59, 0.6)',
+              color: '#e2e8f0',
+              border: '2px solid rgba(148, 163, 184, 0.3)',
+              boxShadow: '0 3px 0 rgba(148, 163, 184, 0.2)',
               minHeight: 44
             }}
             aria-label={`Resume team ${teamName || ''}. Continue with previously saved credentials`}
@@ -3750,10 +3751,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             style={{
               ...primaryButton,
               marginTop: 8,
-              background: '#fee2e2',
-              color: '#dc2626',
-              border: '2px solid #fca5a5',
-              boxShadow: '0 3px 0 #fca5a5',
+              background: 'rgba(220, 38, 38, 0.15)',
+              color: '#fca5a5',
+              border: '2px solid rgba(220, 38, 38, 0.3)',
+              boxShadow: '0 3px 0 rgba(220, 38, 38, 0.2)',
               minHeight: 38,
               fontSize: 14
             }}

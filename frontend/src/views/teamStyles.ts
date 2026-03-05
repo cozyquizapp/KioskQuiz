@@ -155,14 +155,15 @@ export const metaChip: CSSProperties = {
 };
 
 export const glassCard: CSSProperties = {
-  background: 'var(--glass-bg)',
+  background: 'rgba(11, 22, 42, 0.85)',
+  backdropFilter: 'blur(20px)',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 24,
-  border: 'var(--glass-border)',
+  border: '1px solid rgba(240, 95, 178, 0.28)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: 'var(--glass-shadow)',
+  boxShadow: '0 26px 60px rgba(0, 0, 0, 0.58)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -194,13 +195,13 @@ export const heading: CSSProperties = {
   letterSpacing: '0.03em',
   fontWeight: 700,
   textTransform: 'uppercase',
-  color: 'var(--text)',
+  color: '#ffd1e8',
   background: 'none',
-  WebkitTextFillColor: 'var(--text)',
+  WebkitTextFillColor: '#ffd1e8',
 };
 
 export const mutedText: CSSProperties = {
-  color: 'var(--muted)',
+  color: '#c49ab5',
   marginTop: 0,
   marginBottom: 12,
   fontSize: 'clamp(16px, 4vw, 18px)',

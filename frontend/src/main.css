@@ -399,7 +399,7 @@ select:hover:not(:focus) {
 
 /* Override dark body background for beamer */
 .cozy-beamer-shell {
-  background: #f0f2f5 !important;
+  background: #0d1117 !important;
   min-height: 100vh;
   position: relative;
   z-index: 0;

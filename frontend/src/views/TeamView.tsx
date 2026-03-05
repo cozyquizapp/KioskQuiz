@@ -1573,18 +1573,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         }}
       />
       <div style={questionHeader}>
-        <div
-          style={{
-            ...categoryChip,
-            background: '#f3f4f6',
-            border: '2px solid #e5e7eb',
-            color: '#374151',
-            boxShadow: '0 2px 0 #e5e7eb',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          {accentLabel}
-        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
 
         </div>
@@ -2655,7 +2643,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 ? inlineCopy(`${activeTeamName} ist dran.`, `${activeTeamName} is up.`)
                 : inlineCopy('Ein anderes Team ist dran.', 'Another team is up.')}
             </p>
-            <div style={{ ...pillSmall, marginTop: 8 }}>{currentCategory}</div>
           </div>
         );
       }

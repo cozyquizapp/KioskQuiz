@@ -4003,7 +4003,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         position: 'relative',
         overflowY: 'auto',
         overflowX: 'hidden',
-        background: `linear-gradient(180deg, var(--color-primary)08 0%, transparent 28%), #0d1117`,
+        backgroundColor: '#0d1117',
+        backgroundImage: 'linear-gradient(180deg, rgba(177, 10, 108, 0.08) 0%, transparent 28%)',
       }}
       data-timer={timerTick}
       data-team-ui="1"

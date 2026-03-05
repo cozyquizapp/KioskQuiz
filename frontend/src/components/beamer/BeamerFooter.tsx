@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 type Props = {
-  message?: string;
+  message?: string | React.ReactNode;
   detail?: string;
   status?: 'active' | 'locked' | 'info' | 'final';
 };

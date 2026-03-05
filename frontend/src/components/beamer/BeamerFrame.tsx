@@ -8,14 +8,14 @@ type Props = {
   scene: string;
   leftLabel: string;
   leftHint?: string;
-  title: string;
-  subtitle?: string;
+  title: string | React.ReactNode;
+  subtitle?: string | React.ReactNode;
   badgeLabel?: string;
   badgeTone?: BeamerBadgeTone;
   progressText?: string;
   progressValue?: number | null;
   timerText?: string;
-  footerMessage?: string;
+  footerMessage?: string | React.ReactNode;
   footerDetail?: string;
   status?: 'active' | 'locked' | 'info' | 'final';
   rightNode?: React.ReactNode;

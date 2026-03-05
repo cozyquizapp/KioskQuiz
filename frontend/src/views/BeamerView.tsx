@@ -1675,13 +1675,23 @@ useEffect(() => {
             scene="lobby"
             leftLabel={headerLeftLabel}
             leftHint={headerLeftHint}
-            title={language === 'de' ? 'Room offen' : language === 'both' ? 'Room offen / room open' : 'Room open'}
+            title={
+              language === 'both' ? (
+                <BilingualLabel en="ROOM OPEN" de="Room offen" variant="label" />
+              ) : language === 'de' ? (
+                'Room offen'
+              ) : (
+                'Room open'
+              )
+            }
             subtitle={
-              language === 'de'
-                ? 'Moderator startet gleich'
-                : language === 'both'
-                ? 'Moderator startet / host starts soon'
-                : 'Moderator starts soon'
+              language === 'both' ? (
+                <BilingualLabel en="Host starts soon" de="Moderator startet gleich" variant="badge" />
+              ) : language === 'de' ? (
+                'Moderator startet gleich'
+              ) : (
+                'Host starts soon'
+              )
             }
             badgeLabel="LOBBY"
             badgeTone="muted"
@@ -1689,11 +1699,13 @@ useEffect(() => {
             progressValue={progressValue}
             timerText={headerTimerText}
             footerMessage={
-              language === 'de'
-                ? 'Teams via QR oder Code beitreten lassen'
-                : language === 'both'
-                ? 'Teams via QR / Code beitreten lassen'
-                : 'Let teams join via QR or code'
+              language === 'both' ? (
+                <BilingualLabel en="Let teams join via QR or code" de="Teams via QR oder Code beitreten lassen" variant="badge" />
+              ) : language === 'de' ? (
+                'Teams via QR oder Code beitreten lassen'
+              ) : (
+                'Let teams join via QR or code'
+              )
             }
             status="info"
             rightNode={
@@ -1711,7 +1723,11 @@ useEffect(() => {
           >
             <div className="beamer-stack">
               <div className="beamer-intro-card">
-                <h2>{language === 'de' ? 'Room Code' : language === 'both' ? 'Room Code / Code' : 'Room code'}</h2>
+                {language === 'both' ? (
+                  <BilingualLabel en="ROOM CODE" de="Room Code" variant="label" />
+                ) : (
+                  <h2>{language === 'de' ? 'Room Code' : 'Room code'}</h2>
+                )}
                 <p style={{ fontSize: 48, fontWeight: 800 }}>{roomCode || '----'}</p>
                 <p>{connectedInfo}</p>
               </div>
@@ -2176,7 +2192,13 @@ useEffect(() => {
       return (
         <div className="beamer-stack">
           <div className="beamer-label">
-            {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
+            {language === 'both' ? (
+              <BilingualLabel en="TEAM ANSWERS" de="Team-Antworten" variant="badge" />
+            ) : language === 'de' ? (
+              'Team-Antworten'
+            ) : (
+              'Team answers'
+            )}
           </div>
           <div className="beamer-scoreboard-grid">
             {answerResults.map((entry, idx) => {
@@ -2246,7 +2268,13 @@ useEffect(() => {
     return (
       <div className="beamer-stack">
         <div className="beamer-label">
-          {language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Team answers' : 'Team answers'}
+          {language === 'both' ? (
+            <BilingualLabel en="TEAM ANSWERS" de="Team-Antworten" variant="badge" />
+          ) : language === 'de' ? (
+            'Team-Antworten'
+          ) : (
+            'Team answers'
+          )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }} className="stagger-container">
           {teamsWithAnswers.map((team, idx) => {
@@ -2289,7 +2317,13 @@ useEffect(() => {
     return (
       <div className="beamer-stack">
         <div className="beamer-label">
-          {language === 'de' ? 'Teamwertung' : language === 'both' ? 'Teamwertung / Team results' : 'Team results'}
+          {language === 'both' ? (
+            <BilingualLabel en="TEAM RESULTS" de="Teamwertung" variant="badge" />
+          ) : language === 'de' ? (
+            'Teamwertung'
+          ) : (
+            'Team results'
+          )}
         </div>
         <div className="beamer-scoreboard-grid">
           {revealResultRows.map((entry, idx) => {
@@ -2715,11 +2749,13 @@ useEffect(() => {
           <div className="beamer-card blitz-results-card">
             {waitingForReveal && (
               <div className="blitz-results-pending">
-                {language === 'de'
-                  ? 'Set abgeschlossen. Moderator zeigt gleich die Ergebnisse.'
-                  : language === 'both'
-                  ? 'Set abgeschlossen / Waiting for reveal.'
-                  : 'Set finished. Waiting for reveal.'}
+                {language === 'both' ? (
+                  <BilingualLabel en="Waiting for reveal" de="Set abgeschlossen" variant="label" />
+                ) : language === 'de' ? (
+                  'Set abgeschlossen. Moderator zeigt gleich die Ergebnisse.'
+                ) : (
+                  'Set finished. Waiting for reveal.'
+                )}
               </div>
             )}
             {scoreboardReady && (
@@ -2807,14 +2843,22 @@ useEffect(() => {
             marginBottom: 8,
             animation: 'shake-celebrate 0.5s ease-in-out'
           }}>
-            {language === 'de' ? '🎉 Siegerehrung 🎉' : language === 'both' ? '🎉 Siegerehrung / Awards 🎉' : '🎉 Awards 🎉'}
+            {language === 'both' ? (
+              <BilingualLabel en="🎉 AWARDS 🎉" de="🎉 Siegerehrung 🎉" variant="heading" />
+            ) : language === 'de' ? (
+              '🎉 Siegerehrung 🎉'
+            ) : (
+              '🎉 Awards 🎉'
+            )}
           </h2>
           <p style={{ fontSize: 18, opacity: 0.9 }}>
-            {language === 'de'
-              ? 'Top Teams des Abends'
-              : language === 'both'
-              ? 'Top Teams des Abends / Top teams tonight'
-              : 'Top teams tonight'}
+            {language === 'both' ? (
+              <BilingualLabel en="Top teams tonight" de="Top Teams des Abends" variant="badge" />
+            ) : language === 'de' ? (
+              'Top Teams des Abends'
+            ) : (
+              'Top teams tonight'
+            )}
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 20 }}>
@@ -2986,7 +3030,6 @@ useEffect(() => {
     const renderRevealAnswersList = (): JSX.Element => {
       const fallbackColors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981', '#f87171', '#60a5fa'];
       const teamColorMap = Object.fromEntries((teamStatus ?? []).map(t => [t.id, t.color]));
-      const label = language === 'de' ? 'Team-Antworten' : language === 'both' ? 'Team-Antworten / Answers' : 'Team answers';
       const isEstimate = question?.type === 'SCHAETZCHEN' || (question as any)?.mechanic === 'estimate';
       const isBetting = (question as any)?.mechanic === 'betting';
       const formatAnswer = (answer: any): string => {
@@ -3008,7 +3051,15 @@ useEffect(() => {
           : answerResults;
         return (
           <>
-            <div className="cozyRevealAnswersLabel">{label}</div>
+            <div className="cozyRevealAnswersLabel">
+              {language === 'both' ? (
+                <BilingualLabel en="TEAM ANSWERS" de="Team-Antworten" variant="badge" />
+              ) : language === 'de' ? (
+                'Team-Antworten'
+              ) : (
+                'Team answers'
+              )}
+            </div>
             {sorted.map((entry, idx) => {
               const isCorrect = entry.isCorrect === true;
               const isWrong = entry.isCorrect === false;
@@ -3196,12 +3247,12 @@ useEffect(() => {
                 }}>
                   {fallbackSolution}
                 </div>
+              ) : language === 'both' ? (
+                <BilingualLabel en="REVEAL" de="Auflösung" variant="heading" />
+              ) : language === 'de' ? (
+                'Auflösung eingeblendet'
               ) : (
-                language === 'de'
-                  ? 'Auflösung eingeblendet'
-                  : language === 'both'
-                  ? 'Auflösung / Reveal'
-                  : 'Solution'
+                'Solution'
               )}
             </div>
           );
@@ -3344,10 +3395,22 @@ useEffect(() => {
       >
         <div className="cozyQuestionIntro">
           <div className="cozyQuestionIntroTitle">
-            {language === 'de' ? 'Neue Frage kommt' : language === 'both' ? 'Neue Frage / New question' : 'New question'}
+            {language === 'both' ? (
+              <BilingualLabel en="NEW QUESTION" de="Neue Frage kommt" variant="heading" />
+            ) : language === 'de' ? (
+              'Neue Frage kommt'
+            ) : (
+              'New question'
+            )}
           </div>
           <div className="cozyQuestionIntroSub">
-            {language === 'de' ? 'Bereit machen' : language === 'both' ? 'Bereit machen / Get ready' : 'Get ready'}
+            {language === 'both' ? (
+              <BilingualLabel en="Get ready" de="Bereit machen" variant="badge" />
+            ) : language === 'de' ? (
+              'Bereit machen'
+            ) : (
+              'Get ready'
+            )}
           </div>
         </div>
       </BeamerFrame>
@@ -4071,9 +4134,17 @@ useEffect(() => {
               fontWeight: 800
             }}
           >
-            {language === 'de'
-              ? 'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen. / No connection for >5s. Check Wi-Fi/backend.'
-              : 'No connection for >5s. Please check Wi-Fi/backend.'}
+            {language === 'both' ? (
+              <BilingualLabel 
+                en="No connection for >5s. Check Wi-Fi/backend." 
+                de="Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen." 
+                variant="label" 
+              />
+            ) : language === 'de' ? (
+              'Keine Verbindung seit >5s. Bitte WLAN/Backend prüfen.'
+            ) : (
+              'No connection for >5s. Please check Wi-Fi/backend.'
+            )}
           </div>
         )}
         {scoreboardOverlayForced ? (

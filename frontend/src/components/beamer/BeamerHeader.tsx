@@ -3,8 +3,8 @@ import * as React from 'react';
 type Props = {
   leftLabel: string;
   leftHint?: string;
-  title: string;
-  subtitle?: string;
+  title: string | React.ReactNode;
+  subtitle?: string | React.ReactNode;
   badge?: React.ReactNode;
   progressText?: string;
   timerText?: string;

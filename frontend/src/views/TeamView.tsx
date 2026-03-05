@@ -4041,7 +4041,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         position: 'relative',
         overflowY: 'auto',
         overflowX: 'hidden',
-        background: `linear-gradient(180deg, ${selectedColor}14 0%, transparent 28%), #f0f2f5`,
+        background: `linear-gradient(180deg, ${selectedColor}14 0%, transparent 28%), #0d1117`,
         ['--team-color' as any]: selectedColor,
         ['--team-color-dim' as any]: `${selectedColor}55`,
       }}

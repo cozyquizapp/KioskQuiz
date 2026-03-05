@@ -431,12 +431,12 @@ body:has(#team-root)::after {
   display: none !important;
 }
 
-/* Fix heading gradient — on light bg the white gradient is invisible */
+/* Fix heading gradient — on dark bg use light text */
 .cozy-beamer-shell h1,
 .cozy-beamer-shell h2 {
   background: none !important;
-  -webkit-text-fill-color: #111827 !important;
-  color: #111827 !important;
+  -webkit-text-fill-color: var(--text) !important;
+  color: var(--text) !important;
   letter-spacing: 0.02em;
 }
 

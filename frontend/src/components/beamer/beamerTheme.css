@@ -13,7 +13,7 @@
   --tile-d: #d7a46f;
 }
 
-/* Beamer: full-viewport, no card wrapper, light background */
+/* Beamer: full-viewport, no card wrapper, dark theme */
 .beamer-frame {
   width: 100%;
   height: 100%;
@@ -328,14 +328,14 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 14px;
-  background: #111827;
-  color: #f9fafb;
+  background: var(--ui-chip-bg);
+  color: var(--ui-chip-text);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  box-shadow: 0 2px 0 #374151;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
 }
 
 .beamer-hint {
@@ -1793,7 +1793,7 @@
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #111827;
+  color: #1f2937;
   align-self: flex-start;
   display: flex;
   align-items: center;

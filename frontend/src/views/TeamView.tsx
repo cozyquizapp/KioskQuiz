@@ -21,6 +21,7 @@ import {
 import { connectToRoom, SOCKET_URL } from '../socket';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
+import BilingualLabel from '../components/BilingualLabel';
 import { PrimaryButton, Pill } from '../components/uiPrimitives';
 import { SyncStatePayload } from '@shared/quizTypes';
 import { CountUpNumber } from '../components/CountUpNumber';
@@ -3395,7 +3396,17 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     return (
       <div key="join-screen" style={{ ...glassCard, animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-        <h3 style={{ ...heading, marginBottom: 0 }}>{t('joinWelcome')}</h3>
+        <div style={{ marginBottom: 2 }}>
+          <BilingualLabel
+            en="WELCOME TO COZY KIOSK QUIZ"
+            de="Willkommen beim Cozy Kiosk Quiz"
+            variant="label"
+            primaryColor="var(--color-secondary)"
+            secondaryColor="rgba(255,255,255,0.6)"
+            align="left"
+            style={{ gap: 2 }}
+          />
+        </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {(['de', 'en'] as const).map((lang) => (
             <button
@@ -3417,10 +3428,21 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           ))}
         </div>
       </div>
-      <p style={mutedText}>{language === 'en'
-        ? (avatarsEnabled ? 'Enter your team name, pick a companion and a color, then you\'re good to go!' : 'Enter your team name, pick a team color, then you\'re good to go!')
-        : (avatarsEnabled ? 'Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe, dann geht\'s los!' : 'Gib deinen Teamnamen ein, wähle eine Teamfarbe und dann geht\'s los!')}
-      </p>
+      <div style={{ marginBottom: 10 }}>
+        <BilingualLabel
+          en={avatarsEnabled
+            ? "ENTER YOUR TEAM NAME, PICK A COMPANION AND A COLOR"
+            : "ENTER YOUR TEAM NAME AND PICK A TEAM COLOR"}
+          de={avatarsEnabled
+            ? "Gib deinen Teamnamen ein, wähle einen Begleiter und eine Farbe"
+            : "Gib deinen Teamnamen ein und wähle eine Teamfarbe"}
+          variant="badge"
+          primaryColor="#f1f5f9"
+          secondaryColor="rgba(255,255,255,0.6)"
+          align="left"
+          style={{ gap: 2 }}
+        />
+      </div>
       
       {/* Hidden hints for screen readers */}
       <div id="team-name-hint" style={{ display: 'none' }}>
@@ -3768,7 +3790,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     );
   }
 
-  function renderWaiting(title: string, subtitle?: string) {
+  function renderWaiting(
+    title: string,
+    subtitle?: string,
+    bilingual?: { en: string; de: string; subEn?: string; subDe?: string }
+  ) {
     return (
       <div
         key={`waiting-${phase}-${title}`}
@@ -3793,30 +3819,25 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           margin: '0 auto'
         }}
       >
-        <h3
-          style={{
-            ...heading,
-            marginBottom: 12,
-            marginTop: 0,
-            fontSize: 'clamp(22px, 5vw, 30px)',
-            color: 'var(--ui-input-text)',
-            textTransform: 'none'
-          }}
-        >
-          {title}
-        </h3>
-        {subtitle && (
-          <p
-            style={{
-              ...mutedText,
-              marginBottom: 24,
-              fontSize: 'clamp(14px, 3.6vw, 16px)',
-              color: '#d0d5e0',
-              opacity: 0.9
-            }}
-          >
-            {subtitle}
-          </p>
+        <BilingualLabel
+          en={bilingual?.en ?? title}
+          de={bilingual?.de ?? title}
+          variant="label"
+          primaryColor="var(--color-secondary)"
+          secondaryColor="rgba(255,255,255,0.6)"
+          align="center"
+          style={{ marginBottom: 12, marginTop: 0, gap: 3 }}
+        />
+        {(subtitle || bilingual?.subEn || bilingual?.subDe) && (
+          <BilingualLabel
+            en={bilingual?.subEn ?? subtitle ?? ''}
+            de={bilingual?.subDe ?? subtitle ?? ''}
+            variant="badge"
+            primaryColor="#e2e8f0"
+            secondaryColor="rgba(255,255,255,0.6)"
+            align="center"
+            style={{ marginBottom: 18, gap: 2 }}
+          />
         )}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', width: '100%', marginTop: 18 }}>
@@ -3839,9 +3860,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   function renderErrorCard() {
     return (
       <div key="error-screen" style={{ ...glassCard, borderColor: 'rgba(248,113,113,0.3)', animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}>
-        <h3 style={{ ...heading, marginBottom: 6 }}>
-          {language === 'de' ? 'Verbindung fehlgeschlagen' : 'Connection failed'}
-        </h3>
+        <BilingualLabel
+          en="CONNECTION FAILED"
+          de="Verbindung fehlgeschlagen"
+          variant="label"
+          primaryColor="#fda4af"
+          secondaryColor="rgba(255,255,255,0.6)"
+          align="left"
+          style={{ marginBottom: 10, gap: 2 }}
+        />
         <p style={mutedText}>{socketError || 'Unknown error'}</p>
         <button
           style={{
@@ -3915,20 +3942,47 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             ? 'Bereit machen ...'
             : language === 'both'
             ? 'Bereit machen / Get ready ...'
-            : 'Get ready ...'
+            : 'Get ready ...',
+          {
+            en: 'NEW QUESTION INCOMING',
+            de: 'Neue Frage kommt',
+            subEn: 'GET READY',
+            subDe: 'Bereit machen'
+          }
         );
       case 'waitingForQuestion':
         return evaluating
-          ? renderWaiting(t('evaluating'))
-          : renderWaiting(waitForQuestionHeadline, teamId ? undefined : t('waitingJoin'));
+          ? renderWaiting(t('evaluating'), undefined, {
+              en: 'EVALUATING ANSWERS',
+              de: 'Wir prüfen alle Antworten'
+            })
+          : renderWaiting(waitForQuestionHeadline, teamId ? undefined : t('waitingJoin'), {
+              en: gameState === 'LOBBY' ? 'WAITING FOR QUIZ START' : 'WAITING FOR NEXT QUESTION',
+              de: gameState === 'LOBBY' ? 'Warte auf Quizstart' : 'Warte auf die nächste Frage',
+              subEn: teamId ? undefined : 'PLEASE JOIN TO GET STARTED',
+              subDe: teamId ? undefined : 'Bitte beitreten, dann geht es gleich los'
+            });
       case 'answering':
         return renderAnswering();
       case 'waitingForResult':
-        return evaluating ? renderWaiting(t('evaluating')) : renderWaitingForResult();
+        return evaluating
+          ? renderWaiting(t('evaluating'), undefined, {
+              en: 'EVALUATING ANSWERS',
+              de: 'Wir prüfen alle Antworten'
+            })
+          : renderWaitingForResult();
       case 'showResult':
         return renderShowResult();
       default:
-        return evaluating ? renderWaiting(t('evaluating')) : renderWaiting(waitForQuestionHeadline);
+        return evaluating
+          ? renderWaiting(t('evaluating'), undefined, {
+              en: 'EVALUATING ANSWERS',
+              de: 'Wir prüfen alle Antworten'
+            })
+          : renderWaiting(waitForQuestionHeadline, undefined, {
+              en: 'WAITING',
+              de: 'Warten'
+            });
     }
   };
   // Removed: toggleReady function - teams don't need to signal ready anymore

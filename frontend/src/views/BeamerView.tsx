@@ -1647,9 +1647,9 @@ useEffect(() => {
     if (featureFlags.isCozyMode && !featureFlags.showLegacyCategories) {
       const steps =
         language === 'de'
-          ? ['QR scannen oder Code eingeben.', 'Moderator waehlt Sprache & Quiz.', 'Bereit fuer Cozy Quiz 60.']
+          ? ['QR scannen oder Code eingeben.', 'Moderator wählt Sprache & Quiz.', 'Bereit für Cozy Quiz 60.']
           : language === 'both'
-          ? ['QR scannen / scan QR code.', 'Moderator waehlt Sprache / selects language.', 'Bereit fuer Cozy Quiz 60 / Get ready.']
+          ? ['QR scannen / scan QR code.', 'Moderator wählt Sprache / selects language.', 'Bereit für Cozy Quiz 60 / Get ready.']
           : ['Scan QR or enter the room code.', 'Host selects language & quiz.', 'Get ready for Cozy Quiz 60.'];
       const connectedInfo =
         readyCount > 0
@@ -3415,7 +3415,7 @@ useEffect(() => {
             subtitle={language === 'de' ? 'Kategorienwahl' : 'Category selection'}
             badgeLabel="AUSWAHL"
             badgeTone="accent"
-            footerMessage={language === 'de' ? 'Platz 1 streicht, letzter waehlt.' : 'Top bans, last picks.'}
+            footerMessage={language === 'de' ? 'Platz 1 streicht, letzter wählt.' : 'Top bans, last picks.'}
             status="info"
           >
             <div className="beamer-stack">

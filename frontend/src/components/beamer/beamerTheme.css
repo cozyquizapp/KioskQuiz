@@ -1451,7 +1451,7 @@
 /* Reveal: vertical split — question left, answers right */
 .cozyQuestionGrid.phase-reveal {
   grid-template-columns: 1fr 1fr;
-  align-items: start;
+  align-items: stretch;
   flex: 1;
   min-height: 0;
   overflow: hidden;

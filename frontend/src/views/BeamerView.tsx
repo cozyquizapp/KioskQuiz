@@ -2979,8 +2979,10 @@ useEffect(() => {
         ? { label: `SET ${(blitz?.setIndex ?? -1) + 1}/3`, tone: 'accent' as const }
         : gameState === 'AWARDS'
         ? { label: 'FINAL', tone: 'success' as const }
+        : gameState === 'QUESTION'
+        ? { label: `RUNDE ${normalizedRound}/${totalQuestions || 20}`, tone: 'muted' as const }
         : undefined;
-    const questionTitle = `RUNDE ${normalizedRound}/${totalQuestions || 20}`;
+    const questionTitle = undefined; // Round display moved to badge
     const questionSubtitle = undefined;
     const promptText = getQuestionPromptText();
     const mediaUrl =

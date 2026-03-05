@@ -705,15 +705,26 @@ function ModeratorPage(): React.ReactElement {
       // Ignore if typing in input field
       if (isTypingTarget(e.target)) return;
       
-      // Space: Next action (next question, reveal, etc.)
+      // Don't process if no room active
+      if (!roomCode) return;
+      
+      // Space: Smart next action based on state
       if (e.code === 'Space') {
         e.preventDefault();
         if (socketGameState === 'Q_LOCKED') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgelöst');
-        } else if (socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
+          handleReveal();
+        } else if (socketGameState === 'Q_REVEAL' || socketGameState === 'Q_ACTIVE') {
+          handleNextQuestion();
         } else if (socketGameState === 'LOBBY') {
           doAction(() => fetch(`/api/rooms/${roomCode}/start-quiz`, { method: 'POST' }), 'Quiz gestartet');
+        }
+      }
+      
+      // L: Lock question (stop answers)
+      if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (socketGameState === 'Q_ACTIVE') {
+          handleLockQuestion();
         }
       }
       
@@ -721,7 +732,7 @@ function ModeratorPage(): React.ReactElement {
       if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         if (socketGameState === 'Q_LOCKED') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/reveal`, { method: 'POST' }), 'Antwort aufgedeckt');
+          handleReveal();
         }
       }
       
@@ -735,12 +746,10 @@ function ModeratorPage(): React.ReactElement {
         }
       }
       
-      // N: Next question (even when not revealed)
+      // N: Next question (force skip)
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        if (socketGameState === 'Q_ACTIVE' || socketGameState === 'Q_LOCKED' || socketGameState === 'Q_REVEAL') {
-          doAction(() => fetch(`/api/rooms/${roomCode}/next-question`, { method: 'POST' }), 'Nächste Frage');
-        }
+        handleNextQuestion();
       }
       
       // S: Show scoreboard
@@ -752,7 +761,7 @@ function ModeratorPage(): React.ReactElement {
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [roomCode, socketGameState, timerActive]);
+  }, [roomCode, socketGameState, timerActive, timerSeconds]);
 
   const doAction = async (fn: () => Promise<any>, msg?: string) => {
     try {
@@ -3672,10 +3681,11 @@ const renderCozyStagePanel = () => {
       {/* Keyboard Shortcuts Help */}
       <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
         <div style={{ fontSize: 11, color: '#0369a1', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
-          ?? Keyboard Shortcuts
+          ⌨️ Keyboard Shortcuts
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>L</kbd> Frage sperren (Lock)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>N</kbd> Nächste Frage (Überspringen)</div>

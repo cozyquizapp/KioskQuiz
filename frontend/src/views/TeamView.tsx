@@ -3819,10 +3819,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </p>
         )}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', width: '100%', marginTop: 20 }}>
-          <PulseIndicator style={{ fontSize: 48, color: 'var(--color-secondary)', margin: 0 }} />
-          {/* Progress bar */}
-          <div style={{ width: '100%', maxWidth: 200, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', width: '100%', marginTop: 18 }}>
+          <div style={{ width: '100%', maxWidth: 240, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
             <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))', animation: 'progress-fill 2s ease-in-out infinite', width: '30%', borderRadius: 999 }} />
           </div>
         </div>
@@ -3991,6 +3989,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       ? renderNotJoined()
       : renderByPhase();
 
+  const isWaitingPhase =
+    viewState === 'active' &&
+    !stillInitializing &&
+    (phase === 'intro' || phase === 'waitingForQuestion' || phase === 'waitingForResult');
+
   return (
     <div
       id="team-root"
@@ -4136,7 +4139,20 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           </div>
         )}
 
-        <div key={phase} className="phase-enter">
+        <div
+          key={phase}
+          className="phase-enter"
+          style={
+            isWaitingPhase
+              ? {
+                  minHeight: 'min(62dvh, 560px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }
+              : undefined
+          }
+        >
           {mainContent}
         </div>
 

@@ -246,7 +246,7 @@ const TeamPage = () => {
               position: 'fixed',
               inset: 0,
               zIndex: 50,
-              background: '#f0f2f5',
+              background: 'rgba(0,0,0,0.6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -258,13 +258,13 @@ const TeamPage = () => {
                 width: '100%',
                 maxWidth: 360,
                 padding: 24,
-                background: '#ffffff',
+                background: 'rgba(13,17,26,0.95)',
                 borderRadius: 20,
-                border: '2px solid #e5e7eb',
-                boxShadow: '0 4px 0 #e5e7eb'
+                border: '2px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.45)'
               }}
             >
-              <h2 style={{ marginBottom: 12, color: '#111827', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roomcode eingeben</h2>
+              <h2 style={{ marginBottom: 12, color: '#e2e8f0', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roomcode eingeben</h2>
               <input
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
@@ -273,9 +273,9 @@ const TeamPage = () => {
                   width: '100%',
                   padding: 12,
                   borderRadius: 12,
-                  border: '2px solid #e5e7eb',
-                  background: '#f9fafb',
-                  color: '#111827',
+                  border: '2px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(15, 30, 57, 0.88)',
+                  color: '#e2e8f0',
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
                   fontWeight: 700,
@@ -311,7 +311,7 @@ const TeamPage = () => {
               position: 'fixed',
               inset: 0,
               zIndex: 70,
-              background: '#f0f2f5',
+              background: 'rgba(0,0,0,0.6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -323,17 +323,17 @@ const TeamPage = () => {
                 width: '100%',
                 maxWidth: 420,
                 padding: 24,
-                background: '#ffffff',
+                background: 'rgba(13,17,26,0.95)',
                 borderRadius: 20,
-                border: '2px solid #e5e7eb',
-                boxShadow: '0 4px 0 #e5e7eb',
+                border: '2px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 10
               }}
             >
-              <h2 style={{ margin: 0, color: '#111827', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Willkommen zurück!</h2>
-              <p style={{ color: '#6b7280', margin: 0 }}>
+              <h2 style={{ margin: 0, color: '#e2e8f0', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Willkommen zurück!</h2>
+              <p style={{ color: '#d0d5e0', margin: 0 }}>
                 {savedTeamName ? `Du warst im Team "${savedTeamName}".` : 'Du hast bereits ein Team.'}
               </p>
               <button
@@ -362,9 +362,9 @@ const TeamPage = () => {
                   width: '100%',
                   padding: 12,
                   borderRadius: 12,
-                  border: '2px solid #fca5a5',
-                  background: '#fff1f2',
-                  color: '#dc2626',
+                  border: '2px solid rgba(220, 38, 38, 0.3)',
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  color: '#fca5a5',
                   fontWeight: 700,
                   cursor: 'pointer'
                 }}
@@ -380,7 +380,7 @@ const TeamPage = () => {
               position: 'fixed',
               inset: 0,
               zIndex: 60,
-              background: '#f0f2f5',
+              background: 'rgba(0,0,0,0.6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -394,19 +394,19 @@ const TeamPage = () => {
                   width: '100%',
                   maxWidth: 420,
                   padding: 24,
-                  background: '#ffffff',
+                  background: 'rgba(13,17,26,0.95)',
                   borderRadius: 20,
-                  border: '2px solid #fca5a5',
-                  boxShadow: '0 4px 0 #fca5a5',
+                  border: '2px solid rgba(239, 68, 68, 0.4)',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 10
                 }}
               >
-                <h2 style={{ margin: 0, color: '#dc2626', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <h2 style={{ margin: 0, color: '#fca5a5', fontFamily: 'var(--font-game)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Team UI konnte nicht starten
                 </h2>
-                <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>
+                <p style={{ color: '#d0d5e0', margin: 0, fontSize: 14 }}>
                   Bitte neu laden. Falls es bleibt, sende uns ein Screenshot von /team?debug=1.
                 </p>
                 <button
@@ -434,9 +434,9 @@ const TeamPage = () => {
                     width: '100%',
                     padding: 10,
                     borderRadius: 12,
-                    border: '2px solid #e5e7eb',
-                    background: '#f9fafb',
-                    color: '#6b7280',
+                    border: '2px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(30, 41, 59, 0.3)',
+                    color: '#d0d5e0',
                     fontWeight: 700,
                     cursor: 'pointer',
                     fontSize: 13
@@ -447,7 +447,7 @@ const TeamPage = () => {
               </div>
             ) : (
               /* Brief spinner — shown during normal mount (~250ms) */
-              <div style={{ textAlign: 'center', color: '#9ca3af', fontFamily: 'var(--font-game)', letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: 14 }}>
+              <div style={{ textAlign: 'center', color: '#d0d5e0', fontFamily: 'var(--font-game)', letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: 14 }}>
                 Lädt…
               </div>
             )}

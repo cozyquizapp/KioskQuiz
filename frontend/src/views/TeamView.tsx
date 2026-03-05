@@ -3249,8 +3249,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     fontSize: '16px',
                     padding: '14px',
                     border: '2px solid #93c5fd',
-                    background: '#ffffff',
-                    color: '#111827',
+                    background: 'rgba(15, 30, 57, 0.88)',
+                    color: '#e2e8f0',
                     minHeight: '50px'
                   }}
                   value={blitzAnswers[expandedBlitzItem] || ''}

@@ -1140,7 +1140,8 @@ img {
 
 .team-join-input:focus {
   outline: none;
-  background: #ffffff !important;
+  background: rgba(15, 30, 57, 0.95) !important;
+  border-color: rgba(240, 95, 178, 0.4) !important;
 }
 
 @keyframes glow-pulse {

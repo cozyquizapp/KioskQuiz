@@ -3590,34 +3590,15 @@ button:active:not(:disabled),
   margin-top: 10px;
 }
 
-/* Team Dark Mode: Override all inline light backgrounds in quiz elements */
-#team-root [style*="background"] {
-  background-color: var(--ui-card-bg) !important;
-  color: var(--ui-input-text) !important;
-}
-
-/* Keep accent colors for active items */
-#team-root [style*="background"] [style*="accent"],
-#team-root [style*="background"][style*="#d62f93"],
-#team-root [style*="background"][style*="#b10a6c"] {
-  background-color: inherit !important;
-}
-
-/* Specific card/input overrides */
-#team-root .beamer-card,
-#team-root [class*="card"],
-#team-root [class*="input"],
-#team-root [class*="glass"] {
-  background: var(--ui-card-bg) !important;
-  border-color: var(--ui-card-border) !important;
-  color: var(--ui-input-text) !important;
-}
-
-/* White text on dark backgrounds */
-#team-root div[style*="ffffff"],
-#team-root div[style*="f0f2f5"],
-#team-root div[style*="f3f4f6"],
-#team-root div[style*="fef2f2"] {
+/* Team Dark Mode: Target only the light background colors in cards, not timer bars */
+#team-root [style*="background: '#f0f2f5'"],
+#team-root [style*="background: '#f3f4f6'"],
+#team-root [style*="background: '#ffffff'"],
+#team-root [style*="background: '#fef2f2'"],
+#team-root [style*="background: '#fffbeb'"],
+#team-root [style*="background: '#fff7ed'"],
+#team-root [style*="background: '#f9fafb'"],
+#team-root [style*="background: '#fee2e2'"] {
   background: var(--ui-card-bg) !important;
   color: var(--ui-input-text) !important;
 }

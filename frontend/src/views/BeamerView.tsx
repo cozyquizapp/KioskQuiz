@@ -3143,34 +3143,66 @@ useEffect(() => {
             );
             const resolveLabel = (value: string) => String(itemMap.get(value) ?? value);
             return (
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', padding: '10px 0' }}>
                 {top5.map((item: string, idx: number) => (
                   <div
                     key={`top5-${idx}-${item}`}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
-                      background: '#ffffff', border: '1.5px solid #e5e7eb',
-                      borderRadius: 12, padding: '10px 18px',
-                      boxShadow: '0 2px 0 #e5e7eb',
-                      fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 20,
-                      color: '#111827',
+                      background: 'linear-gradient(135deg, rgba(177, 10, 108, 0.15), rgba(240, 95, 178, 0.1))',
+                      border: '2px solid rgba(240, 95, 178, 0.3)',
+                      borderRadius: 14, padding: '12px 20px',
+                      boxShadow: '0 4px 0 rgba(177, 10, 108, 0.3), 0 8px 16px rgba(0, 0, 0, 0.3)',
+                      fontFamily: 'var(--font-game)', fontWeight: 800, fontSize: 'clamp(18px, 3vw, 24px)',
+                      color: '#ffd1e8',
+                      animation: `popSoft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 0.1}s both`,
+                      backdropFilter: 'blur(8px)',
                     }}
                   >
-                    <span style={{ color: '#9ca3af', fontSize: 16, fontWeight: 800, minWidth: 22 }}>{idx + 1}.</span>
+                    <span style={{ 
+                      color: '#f05fb2', 
+                      fontSize: 'clamp(16px, 2.5vw, 20px)', 
+                      fontWeight: 900, 
+                      minWidth: 28,
+                      background: 'rgba(177, 10, 108, 0.2)',
+                      borderRadius: 8,
+                      padding: '2px 8px',
+                      textAlign: 'center'
+                    }}>{idx + 1}</span>
                     {resolveLabel(item)}
                   </div>
                 ))}
               </div>
             );
           }
+          // Generic reveal: extract solution from question object if not provided by event
+          const fallbackSolution = 
+            solution ||
+            (question as any)?.correctAnswer || 
+            (question as any)?.answer || 
+            (question as any)?.solution ||
+            (question as any)?.answerText;
           return (
             <div className="cozyRevealGeneric">
-              {solution ||
-                (language === 'de'
+              {fallbackSolution ? (
+                <div style={{
+                  fontSize: 'clamp(28px, 6vw, 48px)',
+                  fontWeight: 900,
+                  color: '#ffd1e8',
+                  textAlign: 'center',
+                  lineHeight: 1.2,
+                  padding: '20px 0',
+                  textShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                }}>
+                  {fallbackSolution}
+                </div>
+              ) : (
+                language === 'de'
                   ? 'Auflösung eingeblendet'
                   : language === 'both'
                   ? 'Auflösung / Reveal'
-                  : 'Solution')}
+                  : 'Solution'
+              )}
             </div>
           );
         }

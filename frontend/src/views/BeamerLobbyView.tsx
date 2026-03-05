@@ -1,5 +1,7 @@
 import React from 'react';
 import { QuizCategory, Language } from '@shared/quizTypes';
+import BilingualLabel from '../components/BilingualLabel';
+import { DESIGN_SYSTEM } from '../config/designSystem';
 
 type Lang = Language;
 
@@ -37,16 +39,30 @@ const BeamerLobbyView: React.FC<BeamerLobbyViewProps> = ({
   return (
     <div style={shellSingle}>
       <div style={heroPanel}>
-        <p style={eyebrow}>{language === 'de' ? 'Eure Kategorien' : 'Your categories'}</p>
+        <BilingualLabel 
+          en="YOUR CATEGORIES" 
+          de="Eure Kategorien"
+          variant="badge"
+          primaryColor="#94a3b8"
+          secondaryColor="rgba(255, 255, 255, 0.6)"
+          style={{
+            marginBottom: 8
+          }}
+        />
         <h1 style={heroTitle}>{t.lobbySubtitle}</h1>
 
         <div style={activeCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {activeIcon && <img src={activeIcon} alt={activeLabel} style={activeIconStyle} />}
             <div>
-              <div style={{ ...pill, background: `${activeColor}22`, borderColor: `${activeColor}66`, color: activeColor }}>
-                {language === 'de' ? 'Kategorie' : 'Category'}
-              </div>
+              <BilingualLabel 
+                en="CATEGORY" 
+                de="Kategorie"
+                variant="badge"
+                primaryColor={activeColor}
+                secondaryColor={activeColor}
+                style={{ marginBottom: 6 }}
+              />
               <div style={activeLabelStyle}>{activeLabel}</div>
             </div>
           </div>
@@ -135,16 +151,6 @@ const heroTitle: React.CSSProperties = {
   color: '#f1f5f9',
 };
 
-const eyebrow: React.CSSProperties = {
-  margin: 0,
-  fontFamily: 'var(--font-game)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.18em',
-  fontSize: 13,
-  fontWeight: 700,
-  color: '#94a3b8',
-};
-
 const activeCard: React.CSSProperties = {
   padding: 16,
   borderRadius: 14,
@@ -154,19 +160,6 @@ const activeCard: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: 10,
-};
-
-const pill: React.CSSProperties = {
-  padding: '4px 10px',
-  borderRadius: 999,
-  border: '1px solid',
-  fontSize: 11,
-  letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  fontWeight: 700,
-  fontFamily: 'var(--font-game)',
-  display: 'inline-flex',
-  marginBottom: 6,
 };
 
 const activeLabelStyle: React.CSSProperties = {

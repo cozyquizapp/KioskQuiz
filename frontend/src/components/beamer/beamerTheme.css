@@ -1,9 +1,9 @@
 :root {
-  --beamer-surface: #ffffff;
-  --beamer-border: rgba(0, 0, 0, 0.12);
-  --beamer-soft: rgba(0, 0, 0, 0.05);
-  --beamer-text: #111827;
-  --beamer-muted: #374151;
+  --beamer-surface: #1a2035;
+  --beamer-border: rgba(255,255,255,0.08);
+  --beamer-soft: rgba(255,255,255,0.04);
+  --beamer-text: #f1f5f9;
+  --beamer-muted: #94a3b8;
   --beamer-accent: linear-gradient(90deg, #942d59, #c04080);
   --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Answer tile colors */
@@ -22,9 +22,9 @@
   padding: 6px 12px;
   border-radius: 0;
   border: none;
-  background: #f0f2f5; /* explicit light bg — prevents dark body from showing through */
+  background: #0d1117; /* dark bg */
   backdrop-filter: none;
-  color: #111827;
+  color: #f1f5f9;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -74,7 +74,7 @@
 .cozy-beamer-shell {
   position: relative;
   z-index: 0;
-  background: #f0f2f5;
+  background: #0d1117;
 }
 
 .cozy-beamer-lobby::after {
@@ -269,7 +269,7 @@
 }
 
 .beamer-frame.scene-q_active .cozyQuestionHero {
-  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .beamer-frame.scene-q_reveal {
@@ -278,7 +278,7 @@
 }
 
 .beamer-frame.scene-q_reveal .cozyQuestionHero {
-  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .beamer-frame-progress-wrap {
@@ -290,7 +290,7 @@
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: rgba(255,255,255,0.08);
   overflow: hidden;
 }
 
@@ -340,7 +340,7 @@
 
 .beamer-hint {
   font-size: 11px;
-  color: #6b7280;
+  color: #64748b;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding-left: 2px;
@@ -355,11 +355,11 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #374151;
+  color: #f1f5f9;
 }
 
 .beamer-frame.beamer-jackbox .beamer-header-title {
-  color: #374151;
+  color: #f1f5f9;
   text-shadow: none;
 }
 
@@ -367,13 +367,13 @@
   margin-top: 4px;
   font-family: var(--font-game);
   font-size: 16px;
-  color: #6b7280;
+  color: #94a3b8;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .beamer-frame.beamer-jackbox .beamer-header-subtitle {
-  color: #6b7280;
+  color: #94a3b8;
   letter-spacing: 0.1em;
 }
 
@@ -432,7 +432,7 @@
   background: transparent;
   font-family: var(--font-game);
   font-weight: 700;
-  color: #6b7280;
+  color: #64748b;
 }
 
 .beamer-footer.status-active { color: #065f46; }
@@ -449,33 +449,33 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #374151;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1a2035;
+  color: #94a3b8;
 }
 
 .beamer-badge.tone-accent {
-  border-color: #a5b4fc;
-  background: #eef2ff;
-  color: #4338ca;
+  border-color: rgba(165, 180, 252, 0.4);
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
 }
 
 .beamer-badge.tone-warning {
-  border-color: #fcd34d;
-  background: #fffbeb;
-  color: #92400e;
+  border-color: rgba(252, 211, 77, 0.4);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fcd34d;
 }
 
 .beamer-badge.tone-success {
-  border-color: #86efac;
-  background: #f0fdf4;
-  color: #166534;
+  border-color: rgba(134, 239, 172, 0.4);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
 }
 
 .beamer-badge.tone-muted {
-  border-color: #e5e7eb;
-  background: #f9fafb;
-  color: #6b7280;
+  border-color: rgba(255,255,255,0.08);
+  background: #1e2a45;
+  color: #64748b;
 }
 
 .beamer-question-layout {
@@ -490,9 +490,9 @@
 .beamer-question-main {
   padding: 28px 32px;
   border-radius: 16px;
-  background: #ffffff;
+  background: #1a2035;
   border: none;
-  box-shadow: 0 6px 0 #111827, 0 12px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -503,7 +503,7 @@
   font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: #94a3b8;
   font-weight: 700;
 }
 
@@ -512,7 +512,7 @@
   font-size: clamp(38px, 5.5vw, 70px);
   font-weight: 700;
   line-height: 1.15;
-  color: #111827;
+  color: #f1f5f9;
   letter-spacing: 0.01em;
 }
 
@@ -520,13 +520,13 @@
   font-family: var(--font-game);
   font-size: 38px;
   font-weight: 700;
-  color: #1565C0;
+  color: #60a5fa;
 }
 
 .beamer-question-media {
   border-radius: 32px;
-  border: 2px solid #e5e7eb;
-  background: #f9fafb;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
   min-height: 360px;
   display: flex;
   align-items: center;
@@ -563,7 +563,7 @@
   font-size: 13px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #374151;
+  color: #94a3b8;
 }
 
 .beamer-lobby-hero h1 {
@@ -573,13 +573,13 @@
   margin: 0;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 .beamer-lobby-hero p {
   margin: 0;
   font-size: 18px;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .beamer-lobby-badge {
@@ -588,9 +588,9 @@
   justify-content: center;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f3f4f6;
-  color: #374151;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1a2035;
+  color: #94a3b8;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -606,9 +606,9 @@
 .beamer-lobby-tile {
   border-radius: 16px;
   padding: 18px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 3px 0 #e5e7eb;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5);
   min-height: 140px;
   display: grid;
   gap: 6px;
@@ -619,12 +619,12 @@
   font-size: 20px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 .beamer-lobby-tile span {
   font-size: 17px;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .beamer-lobby-qr {
@@ -633,20 +633,20 @@
   bottom: 0;
   padding: 10px;
   border-radius: 18px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
   backdrop-filter: none;
   text-align: center;
   font-size: 12px;
-  color: #6b7280;
-  box-shadow: 0 3px 0 #e5e7eb;
+  color: #94a3b8;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5);
 }
 
 .beamer-lobby-qr img {
   width: 120px;
   height: 120px;
   border-radius: 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.08);
   margin-bottom: 6px;
 }
 
@@ -756,10 +756,10 @@
   align-items: center;
   padding: 14px 18px;
   border-radius: 14px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid rgba(255,255,255,0.08);
   border-left: 6px solid var(--team-color, #6366f1);
-  background: #ffffff;
-  box-shadow: 0 3px 0 #e5e7eb, 0 6px 16px rgba(0,0,0,0.08);
+  background: #1a2035;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 16px rgba(0,0,0,0.3);
   font-family: var(--font-game);
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   animation: scoreboardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -781,7 +781,7 @@
   font-family: var(--font-game);
   font-size: 26px;
   font-weight: 700;
-  color: #6b7280;
+  color: #94a3b8;
   min-width: 32px;
   text-align: center;
 }
@@ -796,7 +796,7 @@
   font-family: var(--font-game);
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: #f1f5f9;
   letter-spacing: 0.02em;
 }
 
@@ -811,7 +811,7 @@
   font-family: var(--font-game);
   font-size: 30px;
   font-weight: 700;
-  color: #1565C0;
+  color: #60a5fa;
 }
 
 @keyframes scoreboardPop {
@@ -832,9 +832,9 @@
 .beamer-intro-card {
   padding: 18px;
   border-radius: 16px;
-  background: #ffffff;
-  border: 2px solid #e5e7eb;
-  box-shadow: 0 3px 0 #e5e7eb;
+  background: #1a2035;
+  border: 2px solid rgba(255,255,255,0.08);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5);
   text-align: center;
 }
 
@@ -844,12 +844,12 @@
   font-size: 24px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 .beamer-intro-card p {
   margin: 0;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .beamer-list {
@@ -859,7 +859,7 @@
   font-family: var(--font-game);
   font-size: clamp(20px, 2.4vw, 30px);
   font-weight: 700;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 .beamer-list-banned {
@@ -893,8 +893,8 @@
 .beamer-select-card {
   padding: 20px 18px;
   border-radius: 20px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -904,7 +904,7 @@
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   overflow: visible;
-  box-shadow: 0 3px 0 #d1d5db, 0 6px 16px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 16px rgba(0, 0, 0, 0.3);
   min-height: 100px;
 }
 
@@ -931,8 +931,8 @@
 
 .beamer-select-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 8px 0 #d1d5db, 0 16px 40px rgba(0, 0, 0, 0.12);
-  border-color: #d1d5db;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.5), 0 16px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255,255,255,0.12);
 }
 
 .beamer-select-card.banned {
@@ -948,10 +948,10 @@
 }
 
 .beamer-select-card.picked {
-  border-color: #86efac;
-  background: #f0fdf4;
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.1);
   box-shadow: 0 0 24px rgba(34, 197, 94, 0.3),
-              0 6px 0 #86efac;
+              0 6px 0 rgba(34, 197, 94, 0.4);
   transform: scale(1.1);
   animation: theme-pick 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
              theme-pick-glow 1.8s 1.2s ease-in-out infinite;
@@ -1038,7 +1038,7 @@
   font-size: 16px;
   line-height: 1.35;
   text-shadow: none;
-  color: #111827;
+  color: #f1f5f9;
   word-break: break-word;
   text-align: center;
   z-index: 1;
@@ -1060,35 +1060,35 @@
 }
 
 .beamer-select-badge.pick {
-  background: #dcfce7;
-  border: 1.5px solid #86efac;
-  color: #16a34a;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1.5px solid rgba(134, 239, 172, 0.4);
+  color: #86efac;
 }
 
 .beamer-select-badge.random {
-  background: #ede9fe;
-  border: 1.5px solid #c4b5fd;
-  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.15);
+  border: 1.5px solid rgba(196, 181, 253, 0.4);
+  color: #c4b5fd;
 }
 
 .beamer-select-badge.banned {
-  background: #fee2e2;
-  border: 1.5px solid #fca5a5;
-  color: #dc2626;
+  background: rgba(220, 38, 38, 0.15);
+  border: 1.5px solid rgba(252, 165, 165, 0.4);
+  color: #fca5a5;
 }
 
 .beamer-select-status {
   font-size: 14px;
-  color: #374151;
+  color: #94a3b8;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
   padding: 10px 20px;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid rgba(255,255,255,0.08);
   border-radius: 999px;
-  background: #ffffff;
+  background: #1a2035;
   text-align: center;
-  box-shadow: 0 2px 0 #e5e7eb;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.5);
 }
 
 /* Large 16:9 displays (1920x1080) - More columns */
@@ -1212,7 +1212,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #111827;
+  color: #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1221,7 +1221,7 @@
 .cozyLobbySubtitle {
   font-family: var(--font-game);
   font-size: clamp(24px, 3vw, 40px);
-  color: #111827;
+  color: #f1f5f9;
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -1241,8 +1241,8 @@
 
 .cozyLobbyTeams {
   border-radius: 20px;
-  border: 3px solid #111827;
-  background: rgba(255, 255, 255, 0.82);
+  border: 3px solid rgba(255,255,255,0.08);
+  background: #1e2a45;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -1250,7 +1250,7 @@
   min-height: 0;
   overflow: hidden;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 0 #1f2937, 0 10px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.3);
 }
 
 .cozyLobbyTeamsHeader {
@@ -1261,7 +1261,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #6b7280;
+  color: #94a3b8;
   flex-shrink: 0;
 }
 
@@ -1278,9 +1278,9 @@
 .cozyLobbyTeamsEmpty {
   padding: 32px 24px;
   border-radius: 16px;
-  border: 3px solid #111827;
-  background: #fefce8;
-  color: #111827;
+  border: 3px solid rgba(255,255,255,0.08);
+  background: #1a2035;
+  color: #f1f5f9;
   font-family: var(--font-game);
   font-weight: 700;
   font-size: clamp(24px, 3vw, 36px);
@@ -1291,7 +1291,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  box-shadow: 0 4px 0 #374151;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5);
 }
 
 .cozyLobbyTeamsEmpty::before {
@@ -1318,20 +1318,20 @@
   align-items: center;
   padding: 12px 16px;
   border-radius: 12px;
-  border: 2px solid #e5e7eb;
-  background: #f9fafb;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
   font-family: var(--font-game);
   font-size: 20px;
   font-weight: 700;
-  color: #111827;
+  color: #f1f5f9;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 0 #e5e7eb;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.5);
   flex-shrink: 0;
 }
 
 .cozyLobbyTeamRow:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: #1e2a45;
+  border-color: rgba(255,255,255,0.12);
 }
 
 .cozyLobbyStatusDot {
@@ -1356,7 +1356,7 @@
   font-family: var(--font-game);
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 .cozyLobbyTeamStatus {
@@ -1365,13 +1365,13 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .cozyLobbyQrPane {
   border-radius: 20px;
-  border: 3px solid #111827;
-  background: #f5f5f5;
+  border: 3px solid rgba(255,255,255,0.08);
+  background: #1e2a45;
   padding: 20px 24px;
   display: grid;
   gap: 14px;
@@ -1379,7 +1379,7 @@
   justify-items: center;
   text-align: center;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 0 #111827, 0 10px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.3);
 }
 
 .cozyLobbyQrTitle {
@@ -1388,7 +1388,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #111827;
+  color: #f1f5f9;
   animation: qr-pulse 2.5s ease-in-out infinite;
 }
 
@@ -1402,7 +1402,7 @@
   font-size: clamp(18px, 2.2vw, 26px);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #111827;
+  color: #f1f5f9;
   word-break: break-all;
 }
 
@@ -1410,9 +1410,9 @@
   width: min(300px, 30vh);
   height: min(300px, 30vh);
   border-radius: 12px;
-  border: 4px solid #111827;
-  background: #ffffff;
-  box-shadow: 0 4px 0 #374151, 0 8px 20px rgba(0,0,0,0.15);
+  border: 4px solid rgba(255,255,255,0.08);
+  background: #ffffff; /* keep white for QR code readability */
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.3);
   padding: 8px;
 }
 
@@ -1535,7 +1535,7 @@
 .cozyExternalMedia {
   border-radius: 20px;
   overflow: hidden;
-  background: #f0f2f5; /* match beamer bg — no dark letterboxing if image doesn't fill exactly */
+  background: #0d1117; /* match beamer dark bg */
   min-height: 0;
   min-width: 0;
   transition: border-radius 0.8s ease;
@@ -1564,7 +1564,7 @@
   font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: #6b7280;
+  color: #94a3b8;
   font-weight: 800;
   flex-shrink: 0;
   padding: 0 2px 6px;
@@ -1573,8 +1573,8 @@
 .cozyRevealAnswerRow {
   padding: 14px 18px;
   border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
+  background: #1a2035;
+  border: 1px solid rgba(255,255,255,0.08);
   border-left: 4px solid transparent;
   display: flex;
   flex-direction: column;
@@ -1586,8 +1586,8 @@
 .cozyRevealAnswerRow.estimate-winner {
   padding: 18px 20px;
   border-radius: 16px;
-  background: #f0fdf4 !important;
-  border: 1.5px solid #bbf7d0;
+  background: rgba(34,197,94,0.1) !important;
+  border: 1.5px solid rgba(34,197,94,0.3);
   border-left: 6px solid transparent;
 }
 
@@ -1629,7 +1629,7 @@
 
 .cozyRevealAnswerText {
   font-size: 20px;
-  color: #374151;
+  color: #94a3b8;
   word-break: break-word;
   line-height: 1.4;
   font-weight: 600;
@@ -1637,7 +1637,7 @@
 
 .cozyRevealAnswerRow.estimate-winner .cozyRevealAnswerText {
   font-size: 24px;
-  color: #111827;
+  color: #f1f5f9;
 }
 
 @keyframes revealSlideLeft {
@@ -1692,7 +1692,7 @@
 
 .cozyCategoryPill span {
   font-size: 12px;
-  color: #4b5563;
+  color: #64748b;
 }
 
 .cozyCategoryPill.active {
@@ -1705,13 +1705,13 @@
   border-radius: 20px;
   padding: 20px 20px 16px;
   border: none;
-  background: #ffffff;
+  background: #1a2035;
   backdrop-filter: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
   justify-content: center;
-  box-shadow: 0 4px 0 #e5e7eb, 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
   transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
@@ -1774,19 +1774,19 @@
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #374151;
+  color: #94a3b8;
 }
 
 .cozyQuestionBadge small {
   display: block;
   font-size: 12px;
-  color: #4b5563;
+  color: #64748b;
 }
 
 .cozyQuestionPhaseBadge {
   padding: 6px 14px;
   border-radius: 999px;
-  border: 2px solid #111827;
+  border: 2px solid rgba(0,0,0,0.5);
   background: #fbbf24;
   font-family: var(--font-game);
   font-weight: 700;
@@ -1798,7 +1798,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 0 #111827;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
 }
 
 .cozyQuestionPhaseBadge.locked {
@@ -1819,9 +1819,9 @@
   line-height: 1.15;
   text-align: center;
   letter-spacing: 0.01em;
-  color: #111827;
+  color: #f1f5f9;
   background: none;
-  -webkit-text-fill-color: #111827;
+  -webkit-text-fill-color: #f1f5f9;
   transition: font-size 0.5s ease;
 }
 
@@ -1847,7 +1847,7 @@
 
 .cozyQuestionHint {
   font-size: 18px;
-  color: #374151;
+  color: #94a3b8;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1855,10 +1855,10 @@
 .cozyQuestionMedia {
   border-radius: 26px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.08);
   max-height: 480px;
   display: block;
-  background: #f1f5f9;
+  background: #1e2a45;
   transition: all 0.4s ease;
 }
 
@@ -1925,8 +1925,9 @@
   padding: 14px 18px;
   border-radius: 20px;
   border: none;
-  background: #e5e7eb;
-  color: #111827;
+  border-left: 5px solid transparent;
+  background: #1a2035;
+  color: #f1f5f9;
   font-weight: 700;
   font-size: clamp(16px, 1.8vw, 24px);
   transition: all 0.3s ease;
@@ -1934,14 +1935,20 @@
   position: relative;
   animation: slideIn 0.4s ease-out forwards;
   opacity: 0;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5);
 }
 
-/* Tile colors: A=blue, B=green, C=red, D=orange */
-.cozyOption:nth-child(1) { animation-delay: 0.05s; background: var(--tile-a); color: #fff; box-shadow: 0 4px 0 #1d4ed8; }
-.cozyOption:nth-child(2) { animation-delay: 0.1s;  background: var(--tile-b); color: #fff; box-shadow: 0 4px 0 #15803d; }
-.cozyOption:nth-child(3) { animation-delay: 0.15s; background: var(--tile-c); color: #fff; box-shadow: 0 4px 0 #b91c1c; }
-.cozyOption:nth-child(4) { animation-delay: 0.2s;  background: var(--tile-d); color: #fff; box-shadow: 0 4px 0 #c2410c; }
+/* Tile colors: A=blue, B=green, C=red, D=orange — dark mode: colored left border only */
+.cozyOption:nth-child(1) { animation-delay: 0.05s; border-left-color: #3B82F6; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
+.cozyOption:nth-child(2) { animation-delay: 0.1s;  border-left-color: #22C55E; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
+.cozyOption:nth-child(3) { animation-delay: 0.15s; border-left-color: #EF4444; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
+.cozyOption:nth-child(4) { animation-delay: 0.2s;  border-left-color: #F97316; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
+
+/* Prefix letter colored to match left border */
+.cozyOption:nth-child(1) .cozyOptionPrefix { color: #3B82F6; }
+.cozyOption:nth-child(2) .cozyOptionPrefix { color: #22C55E; }
+.cozyOption:nth-child(3) .cozyOptionPrefix { color: #EF4444; }
+.cozyOption:nth-child(4) .cozyOptionPrefix { color: #F97316; }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -1981,7 +1988,7 @@
 .cozyOptionPrefix {
   font-weight: 900;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.75);
+  color: #94a3b8; /* overridden per-nth-child with tile accent color */
   font-size: 0.85em;
 }
 
@@ -1998,7 +2005,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 14px;
-  color: #374151;
+  color: #94a3b8;
 }
 
 .cozyWolfBadge {
@@ -2046,13 +2053,13 @@
 .cozyRevealGeneric {
   padding: 20px 24px;
   border-radius: 18px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1a2035;
   text-align: center;
   font-weight: 700;
   letter-spacing: 0.06em;
   font-size: clamp(24px, 3.5vw, 48px);
-  color: #111827;
+  color: #f1f5f9;
 }
 
 /* Solo reveal: no team answers panel — center everything, shrink question, enlarge answer */
@@ -2064,7 +2071,7 @@
 
 .cozyQuestionHero.reveal-solo .cozyQuestionText {
   font-size: clamp(18px, 2.2vw, 34px);
-  color: #6b7280;
+  color: #94a3b8;
   font-weight: 600;
   text-align: center;
 }
@@ -2081,7 +2088,7 @@
 .cozyQuestionHero.reveal-solo .cozyRevealGeneric {
   font-size: clamp(36px, 5.5vw, 80px);
   padding: 30px 40px;
-  border: 2px solid #d1d5db;
+  border: 2px solid rgba(255,255,255,0.08);
   width: 100%;
 }
 
@@ -2131,8 +2138,8 @@
 .blitz-current-card {
   padding: 0;
   border-radius: 28px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   display: grid;
   gap: 0;
   grid-template-columns: 1fr;
@@ -2150,7 +2157,7 @@
   min-height: 500px;
   border-radius: 0;
   object-fit: cover;
-  background: #f1f5f9;
+  background: #1e2a45;
   border: none;
   grid-column: 1;
   grid-row: 1 / -1;
@@ -2214,7 +2221,7 @@
 .blitz-info-count {
   font-size: 13px;
   font-weight: 700;
-  color: #4b5563;
+  color: #94a3b8;
 }
 
 .blitz-item-title {
@@ -2279,9 +2286,9 @@
   border-radius: 16px;
   font-weight: 900;
   font-size: 20px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  color: #374151;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #1e2a45;
+  color: #94a3b8;
 }
 
 .blitz-chip.current {
@@ -2294,15 +2301,15 @@
 .blitz-chip.done {
   border-color: rgba(34, 197, 94, 0.5);
   background: rgba(34, 197, 94, 0.15);
-  color: #15803d;
+  color: #4ade80;
 }
 
 .blitz-results-card {
   padding: 18px;
   border-radius: 26px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 4px 0 #e5e7eb;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #1a2035;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2353,7 +2360,7 @@
   gap: 7px;
   padding: 8px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 19px;
@@ -2668,10 +2675,10 @@
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.cozyOption:nth-child(1) { animation-delay: 0.1s; }
-.cozyOption:nth-child(2) { animation-delay: 0.15s; }
-.cozyOption:nth-child(3) { animation-delay: 0.2s; }
-.cozyOption:nth-child(4) { animation-delay: 0.25s; }
+.cozyOption:nth-child(1) { animation-delay: 0.1s; border-left-color: #3B82F6; }
+.cozyOption:nth-child(2) { animation-delay: 0.15s; border-left-color: #22C55E; }
+.cozyOption:nth-child(3) { animation-delay: 0.2s; border-left-color: #EF4444; }
+.cozyOption:nth-child(4) { animation-delay: 0.25s; border-left-color: #F97316; }
 
 .cozyTeamStatusBar {
   animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;

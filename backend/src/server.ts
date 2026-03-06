@@ -5487,8 +5487,6 @@ app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
   io.to(roomCode).emit('timerStopped');
-   // automatisches Bewerten, wenn noch nicht erfolgt
-  evaluateCurrentQuestion(room);
   broadcastState(room);
   return res.json({ ok: true });
 });

@@ -1841,7 +1841,7 @@ useEffect(() => {
               variant="heading"
               primaryColor="#f05fb2"
               secondaryColor="rgba(255, 255, 255, 0.6)"
-              align="left"
+              align="center"
               style={{ gap: 2 }}
             />
           </div>
@@ -1849,14 +1849,7 @@ useEffect(() => {
         <div className="cozyLobbyMain">
           <div className="cozyLobbyTeams">
             <div className="cozyLobbyTeamsHeader">
-              <BilingualLabel
-                en="TEAMS"
-                de="Teams"
-                variant="badge"
-                primaryColor="#f1f5f9"
-                secondaryColor="rgba(255, 255, 255, 0.6)"
-                align="left"
-              />
+              <span className="cozyLobbyTeamsHeaderLabel">TEAMS</span>
               <span>{teams.length || 0}</span>
             </div>
             <div className="cozyLobbyTeamsList">

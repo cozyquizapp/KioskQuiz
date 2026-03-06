@@ -544,7 +544,7 @@
 .beamer-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .beamer-lobby-slide {
@@ -651,16 +651,16 @@
 }
 
 .beamer-card {
-  padding: 20px 24px;
+  padding: 28px 32px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.1);
   background: var(--tile-a);
   box-shadow: 0 5px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.15);
   font-family: var(--font-game);
   font-weight: 700;
-  font-size: 22px;
+  font-size: 26px;
   color: #ffffff;
-  min-height: 90px;
+  min-height: 120px;
   display: flex;
   flex-direction: column;
   justify-content: center;

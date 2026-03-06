@@ -2985,6 +2985,15 @@ useEffect(() => {
     const questionTitle = undefined; // Round display moved to badge
     const questionSubtitle = undefined;
     const promptText = getQuestionPromptText();
+    
+    // Bilingual prompt rendering
+    const promptDeRaw = (question as any)?.prompt || (question as any)?.bunteTuete?.prompt || '';
+    const promptEnRaw = (question as any)?.promptEn || (question as any)?.bunteTuete?.promptEn || '';
+    const promptTextElement =
+      language === 'both' && promptDeRaw && promptEnRaw
+        ? <BilingualLabel en={promptEnRaw} de={promptDeRaw} variant="badge" />
+        : promptText;
+    
     const mediaUrl =
       (question as any)?.media?.url ||
       (question as any)?.mediaUrl ||
@@ -3013,18 +3022,7 @@ useEffect(() => {
     
     const questionTextLocalized =
       language === 'both' && germanText && englishText
-        ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-              <div>{germanText}</div>
-              <div style={{
-                width: '100%',
-                height: '1px',
-                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                margin: '4px 0'
-              }} />
-              <div>{englishText}</div>
-            </div>
-          )
+        ? <BilingualLabel en={englishText} de={germanText} variant="heading" />
         : language === 'en'
         ? englishText || germanText || ''
         : germanText || englishText || '';
@@ -3294,7 +3292,7 @@ useEffect(() => {
         <div className={`cozyQuestionHero${phase === 'locked' ? ' locked' : ''}${phase === 'reveal' && !hasRevealAnswers ? ' reveal-solo' : ''}`}>
           <div className="cozyQuestionHeroHeader cozyQuestionHeroHeaderSolo" />
           <div className="cozyQuestionText">{questionTextLocalized}</div>
-          {promptText && <div className="cozyQuestionHint">{promptText}</div>}
+          {promptTextElement && <div className="cozyQuestionHint">{promptTextElement}</div>}
           {/* Image: only during active/locked phase — hidden during reveal (was cut-off/cropped) */}
           {!showSplitLayout && mediaUrl && phase !== 'reveal' && (
             <div className={`cozyQuestionMedia${mediaIsPortrait ? ' portrait' : ''}`}>

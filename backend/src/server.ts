@@ -217,7 +217,7 @@ type RoomState = {
   language: Language;
   gameState: CozyGameState;
   stateHistory: CozyGameState[];
-  undoSnapshot: RoomUndoSnapshot | null;
+  undoSnapshots: RoomUndoSnapshot[];
   segmentTwoBaselineScores: Record<string, number> | null;
   blitzPool: BlitzThemeOption[];
   blitzThemeLibrary: Record<string, QuizBlitzTheme>;
@@ -1817,7 +1817,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       language: 'de',
       gameState: INITIAL_GAME_STATE,
       stateHistory: [INITIAL_GAME_STATE],
-      undoSnapshot: null,
+      undoSnapshots: [],
       segmentTwoBaselineScores: null,
       blitzPool: [],
       blitzThemeLibrary: {},
@@ -1936,7 +1936,7 @@ const canSnapshotUndo = (room: RoomState) => QUIZ_UNDO_STATES.has(room.gameState
 
 const saveUndoSnapshot = (room: RoomState) => {
   if (!canSnapshotUndo(room)) return;
-  room.undoSnapshot = {
+  const snapshot: RoomUndoSnapshot = {
     gameState: room.gameState,
     questionPhase: room.questionPhase,
     currentQuestionId: room.currentQuestionId,
@@ -1948,21 +1948,25 @@ const saveUndoSnapshot = (room: RoomState) => {
     screen: room.screen,
     scoreboardOverlayForced: room.scoreboardOverlayForced
   };
+  room.undoSnapshots.push(snapshot);
+  if (room.undoSnapshots.length > 10) {
+    room.undoSnapshots.shift();
+  }
 };
 
 const withUndoSnapshot = <T,>(room: RoomState, fn: () => T): T => {
-  const prevSnapshot = room.undoSnapshot;
+  const prevLength = room.undoSnapshots.length;
   saveUndoSnapshot(room);
   try {
     return fn();
   } catch (err) {
-    room.undoSnapshot = prevSnapshot;
+    room.undoSnapshots = room.undoSnapshots.slice(0, prevLength);
     throw err;
   }
 };
 
 const undoLastHostStep = (room: RoomState) => {
-  const snapshot = room.undoSnapshot;
+  const snapshot = room.undoSnapshots.pop();
   if (!snapshot) throw new Error('Kein Schritt zum Zurückgehen verfügbar');
 
   clearQuestionTimers(room);
@@ -1978,7 +1982,6 @@ const undoLastHostStep = (room: RoomState) => {
   room.scoreboardOverlayForced = snapshot.scoreboardOverlayForced;
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
-  room.undoSnapshot = null;
   room.stateHistory = [...room.stateHistory.slice(-9), room.gameState];
 
   broadcastState(room);

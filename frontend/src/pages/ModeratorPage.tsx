@@ -516,6 +516,11 @@ function ModeratorPage(): React.ReactElement {
         handleNextQuestion();
         return;
       }
+      if (matchesHotkey(event, ['f17', 'digit5', 'numpad5', '5'])) {
+        event.preventDefault();
+        handleStepBack();
+        return;
+      }
       if (!singleActionMode) {
         if (matchesHotkey(event, ['f14', 'digit2', 'numpad2', '2'])) {
           event.preventDefault();
@@ -557,6 +562,7 @@ function ModeratorPage(): React.ReactElement {
     handleScoreboardAction,
     emitBlitzEvent,
     handleNextQuestion,
+    handleStepBack,
     handleLockQuestion,
     handleReveal,
     singleActionMode
@@ -751,6 +757,12 @@ function ModeratorPage(): React.ReactElement {
         e.preventDefault();
         handleNextQuestion();
       }
+
+      // U: Undo / one step back
+      if (e.code === 'KeyU' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleStepBack();
+      }
       
       // S: Show scoreboard
       if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) {
@@ -936,7 +948,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   const sendHostCommand = (
-    eventName: 'host:next' | 'host:lock' | 'host:reveal',
+    eventName: 'host:next' | 'host:lock' | 'host:reveal' | 'host:back',
     onSuccess?: () => void
   ) => {
     if (!roomCode) {
@@ -946,7 +958,8 @@ function ModeratorPage(): React.ReactElement {
     const keyMap = {
       'host:next': 'next',
       'host:lock': 'lock',
-      'host:reveal': 'reveal'
+      'host:reveal': 'reveal',
+      'host:back': 'next'
     } as const;
     const key = keyMap[eventName];
     setActionState((prev) => ({ ...prev, [key]: true }));
@@ -980,6 +993,14 @@ function ModeratorPage(): React.ReactElement {
   function handleReveal() {
     sendHostCommand('host:reveal', async () => {
       // Answers will be updated by useLiveAnswers polling
+    });
+  }
+
+  function handleStepBack() {
+    sendHostCommand('host:back', async () => {
+      await loadCurrentQuestion();
+      setToast('Ein Schritt zurück');
+      setTimeout(() => setToast(null), 1800);
     });
   }
 
@@ -2555,7 +2576,13 @@ function ModeratorPage(): React.ReactElement {
           </div>
         </div>
 
-        <div className="moderator-secondary-actions mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="moderator-secondary-actions mt-3 grid gap-2 sm:grid-cols-4">
+          <button
+            onClick={handleStepBack}
+            className="min-h-[48px] rounded-xl border border-[#8aa0ff] bg-[#273b8a]/80 px-3 py-2 text-left text-sm font-extrabold text-[#dde5ff] touch-manipulation"
+          >
+            Zurück <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[U/F17/5]</span>
+          </button>
           <button
             onClick={handleLockQuestion}
             disabled={actionState.lock || normalizedGameState !== 'Q_ACTIVE'}
@@ -2609,6 +2636,7 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     const entries: Array<{ keys: string[]; label: string }> = [
       { keys: ['F13', 'SPACE', '1'], label: 'Nächste Aktion' },
+      { keys: ['F17', 'U', '5'], label: 'Ein Schritt zurück' },
       ...(singleActionMode ? [] : [
         { keys: ['F14', '2'], label: 'Sperren' },
         { keys: ['F15', '3'], label: 'Aufdecken' },
@@ -3685,6 +3713,7 @@ const renderCozyStagePanel = () => {
         </div>
         <div style={{ fontSize: 11, color: '#bae6fd', display: 'grid', gap: 3 }}>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>SPACE</kbd> Nächste Aktion (Quiz starten / Reveal / Weiter)</div>
+          <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>U</kbd> Ein Schritt zurück</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>L</kbd> Frage sperren (Lock)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>R</kbd> Antwort aufdecken (Reveal)</div>
           <div><kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.1)', fontWeight: 700 }}>T</kbd> Timer starten/stoppen</div>

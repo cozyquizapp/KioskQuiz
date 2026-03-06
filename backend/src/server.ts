@@ -217,6 +217,7 @@ type RoomState = {
   language: Language;
   gameState: CozyGameState;
   stateHistory: CozyGameState[];
+  undoSnapshot: RoomUndoSnapshot | null;
   segmentTwoBaselineScores: Record<string, number> | null;
   blitzPool: BlitzThemeOption[];
   blitzThemeLibrary: Record<string, QuizBlitzTheme>;
@@ -280,6 +281,19 @@ type RoomState = {
   statsAnswerTimings: Map<string, { teamName: string; timeMs: number; answer: unknown; isCorrect: boolean; questionId: string; timestamp: number }[]>;
   statsFunnyAnswers: Map<string, { teamName: string; answer: string; questionId: string; markedAt: number }[]>;
   statsWrongAnswerCounts: Map<string, Map<string, number>>;
+};
+
+type RoomUndoSnapshot = {
+  gameState: CozyGameState;
+  questionPhase: QuestionPhase;
+  currentQuestionId: string | null;
+  answers: Record<string, AnswerEntry>;
+  teams: Record<string, Team>;
+  remainingQuestionIds: string[];
+  askedQuestionIds: string[];
+  nextStage: NextStageHint | null;
+  screen: ScreenState;
+  scoreboardOverlayForced: boolean;
 };
 
 const rooms = new Map<string, RoomState>();
@@ -1803,6 +1817,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       language: 'de',
       gameState: INITIAL_GAME_STATE,
       stateHistory: [INITIAL_GAME_STATE],
+      undoSnapshot: null,
       segmentTwoBaselineScores: null,
       blitzPool: [],
       blitzThemeLibrary: {},
@@ -1901,6 +1916,74 @@ const clearQuestionTimers = (room: RoomState) => {
     clearTimeout(room.questionTimerTimeout);
     room.questionTimerTimeout = null;
   }
+};
+
+const clonePlain = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const QUIZ_UNDO_STATES = new Set<CozyGameState>([
+  'LOBBY',
+  'INTRO',
+  'QUESTION_INTRO',
+  'Q_ACTIVE',
+  'Q_LOCKED',
+  'Q_REVEAL',
+  'SCOREBOARD',
+  'SCOREBOARD_PAUSE',
+  'SCOREBOARD_PRE_BLITZ'
+]);
+
+const canSnapshotUndo = (room: RoomState) => QUIZ_UNDO_STATES.has(room.gameState);
+
+const saveUndoSnapshot = (room: RoomState) => {
+  if (!canSnapshotUndo(room)) return;
+  room.undoSnapshot = {
+    gameState: room.gameState,
+    questionPhase: room.questionPhase,
+    currentQuestionId: room.currentQuestionId,
+    answers: clonePlain(room.answers),
+    teams: clonePlain(room.teams),
+    remainingQuestionIds: [...room.remainingQuestionIds],
+    askedQuestionIds: [...room.askedQuestionIds],
+    nextStage: room.nextStage,
+    screen: room.screen,
+    scoreboardOverlayForced: room.scoreboardOverlayForced
+  };
+};
+
+const withUndoSnapshot = <T,>(room: RoomState, fn: () => T): T => {
+  const prevSnapshot = room.undoSnapshot;
+  saveUndoSnapshot(room);
+  try {
+    return fn();
+  } catch (err) {
+    room.undoSnapshot = prevSnapshot;
+    throw err;
+  }
+};
+
+const undoLastHostStep = (room: RoomState) => {
+  const snapshot = room.undoSnapshot;
+  if (!snapshot) throw new Error('Kein Schritt zum Zurückgehen verfügbar');
+
+  clearQuestionTimers(room);
+  room.gameState = snapshot.gameState;
+  room.questionPhase = snapshot.questionPhase;
+  room.currentQuestionId = snapshot.currentQuestionId;
+  room.answers = clonePlain(snapshot.answers);
+  room.teams = clonePlain(snapshot.teams);
+  room.remainingQuestionIds = [...snapshot.remainingQuestionIds];
+  room.askedQuestionIds = [...snapshot.askedQuestionIds];
+  room.nextStage = snapshot.nextStage;
+  room.screen = snapshot.screen;
+  room.scoreboardOverlayForced = snapshot.scoreboardOverlayForced;
+  room.timerEndsAt = null;
+  room.questionTimerDurationMs = null;
+  room.undoSnapshot = null;
+  room.stateHistory = [...room.stateHistory.slice(-9), room.gameState];
+
+  broadcastState(room);
+  io.to(room.roomCode).emit('scoreUpdated');
+  return { stage: room.gameState, undone: true };
 };
 
 const startQuestionTimer = (room: RoomState, durationMs: number) => {
@@ -4891,7 +4974,7 @@ app.post('/api/rooms/:roomCode/next-question', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
   try {
-    const result = runNextQuestion(room);
+    const result = withUndoSnapshot(room, () => runNextQuestion(room));
     if (res.headersSent) return;
     res.json({ ok: true, ...result });
   } catch (err) {
@@ -5111,8 +5194,20 @@ app.post('/api/rooms/:roomCode/reveal', (req, res) => {
   const room = ensureRoom(roomCode);
   touchRoom(room);
   try {
-    const payload = revealAnswersForRoom(room);
+    const payload = withUndoSnapshot(room, () => revealAnswersForRoom(room));
     return res.json({ ok: true, ...payload });
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/api/rooms/:roomCode/step-back', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  try {
+    const result = undoLastHostStep(room);
+    return res.json({ ok: true, ...result });
   } catch (err) {
     return res.status(400).json({ error: (err as Error).message });
   }
@@ -5914,7 +6009,7 @@ io.on('connection', (socket: Socket) => {
   };
 
   socket.on('host:next', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => handleHostNextAdvance(room));
+    withRoom(payload?.roomCode, ack, (room) => withUndoSnapshot(room, () => handleHostNextAdvance(room)));
   });
 
   socket.on('host:restartSession', (payload: { roomCode?: string }, ack) => {
@@ -5923,13 +6018,17 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:lock', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => {
-      const success = evaluateCurrentQuestion(room);
+      const success = withUndoSnapshot(room, () => evaluateCurrentQuestion(room));
       return { locked: success };
     });
   });
 
   socket.on('host:reveal', (payload: { roomCode?: string }, ack) => {
-    withRoom(payload?.roomCode, ack, (room) => revealAnswersForRoom(room));
+    withRoom(payload?.roomCode, ack, (room) => withUndoSnapshot(room, () => revealAnswersForRoom(room)));
+  });
+
+  socket.on('host:back', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => undoLastHostStep(room));
   });
 
   socket.on('host:toggleScoreboardOverlay', (payload: { roomCode?: string }, ack) => {

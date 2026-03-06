@@ -3387,15 +3387,6 @@ useEffect(() => {
               'New question'
             )}
           </div>
-          <div className="cozyQuestionIntroSub">
-            {language === 'both' ? (
-              <BilingualLabel en="Get ready" de="Bereit machen" variant="badge" />
-            ) : language === 'de' ? (
-              'Bereit machen'
-            ) : (
-              'Get ready'
-            )}
-          </div>
         </div>
       </BeamerFrame>
     );

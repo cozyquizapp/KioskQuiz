@@ -1844,15 +1844,6 @@ useEffect(() => {
               align="left"
               style={{ gap: 2 }}
             />
-            <BilingualLabel
-              en="CONNECT YOUR TEAM AND GET READY"
-              de="Teams verbinden und bereit machen"
-              variant="badge"
-              primaryColor="#f1f5f9"
-              secondaryColor="rgba(255, 255, 255, 0.6)"
-              align="left"
-              style={{ marginTop: 6 }}
-            />
           </div>
         </div>
         <div className="cozyLobbyMain">

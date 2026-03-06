@@ -3734,3 +3734,222 @@ button:active:not(:disabled),
 [style*="box-shadow: '0 4px 0 #e5e7eb'"] {
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3) !important;
 }
+/* ========================================
+   QUIZ STATE TRANSITION ANIMATIONS
+   ======================================== */
+
+@keyframes fade-out-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+}
+
+@keyframes fade-in-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scale-in-bounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(40px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(240, 95, 178, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(240, 95, 178, 0);
+  }
+}
+
+@keyframes smooth-color-shift {
+  0% {
+    border-color: rgba(240, 95, 178, 0.2);
+  }
+  100% {
+    border-color: rgba(240, 95, 178, 0.8);
+  }
+}
+
+@keyframes stagger-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotate-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-5deg) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes expand-height {
+  0% {
+    max-height: 0;
+    opacity: 0;
+  }
+  100% {
+    max-height: 500px;
+    opacity: 1;
+  }
+}
+
+/* Reusable animation classes */
+.animate-fade-out-up {
+  animation: fade-out-up 0.5s cubic-bezier(0.34, 1, 0.64, 1) forwards;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-scale-in-bounce {
+  animation: scale-in-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+.animate-smooth-color-shift {
+  animation: smooth-color-shift 0.4s ease-in-out;
+}
+
+.animate-rotate-in {
+  animation: rotate-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-expand-height {
+  animation: expand-height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* State-specific smooth transitions */
+.cozyQuestionIntro {
+  animation: fade-out-up 0.6s cubic-bezier(0.34, 1, 0.64, 1) forwards;
+}
+
+.cozyQuestionHero {
+  animation: fade-in-down 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}
+
+.cozyQuestionHero.locked {
+  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cozyQuestionHero.reveal-solo {
+  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Team answer stagger effect */
+.team-answer-row {
+  animation: stagger-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Beamer state transitions */
+.beamer-frame-enter {
+  animation: fade-in-down 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.beamer-frame-exit {
+  animation: fade-out-up 0.4s cubic-bezier(0.34, 1, 0.64, 1) forwards;
+}
+
+/* Scoreboard smooth entrance */
+.scoreboard-container {
+  animation: slide-in-right 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Button state hover effects */
+.interactive-button {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.interactive-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(240, 95, 178, 0.25);
+}
+
+.interactive-button:active {
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* Smooth text transitions */
+.text-transition {
+  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1), text-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Answer reveal smooth animation */
+.answer-reveal {
+  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Lock state visual feedback */
+.lock-pulse {
+  animation: pulse-lock 0.6s ease-in-out;
+}

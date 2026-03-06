@@ -6,6 +6,9 @@ import {
   startTimer,
   stopTimer,
   setLanguage,
+  toggleMute,
+  togglePause,
+  fetchMuteStatus,
   fetchQuizzes,
   useQuiz,
   overrideAnswer,
@@ -216,6 +219,8 @@ function ModeratorPage(): React.ReactElement {
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showReconnectModal, setShowReconnectModal] = useState(false);
+  const [globalMuted, setGlobalMuted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const reconnectPromptedRef = React.useRef(false);
   const singleActionMode = featureFlags.isCozyMode;
   // TODO(LEGACY): Potato is retired in Cozy60; keep backend handlers hidden for now.
@@ -642,6 +647,14 @@ function ModeratorPage(): React.ReactElement {
     load();
   }, [roomCode, userViewPhase]);
 
+  // Load initial mute status
+  useEffect(() => {
+    if (!roomCode) return;
+    fetchMuteStatus(roomCode)
+      .then(res => setGlobalMuted(res.muted))
+      .catch(() => {});
+  }, [roomCode]);
+
   // Socket updates: separate effects to avoid re-running on every render
   useEffect(() => {
     if (socketQuestion === undefined) return;
@@ -767,7 +780,19 @@ function ModeratorPage(): React.ReactElement {
       // S: Show scoreboard
       if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        doAction(() => fetch(`/api/rooms/${roomCode}/scoreboard`, { method: 'POST' }), 'Scoreboard angezeigt');
+        doAction(() => fetch(`${API_BASE}/rooms/${roomCode}/scoreboard`, { method: 'POST' }), 'Scoreboard angezeigt');
+      }
+
+      // F16: Toggle Mute
+      if (e.code === 'F16') {
+        e.preventDefault();
+        handleToggleMute();
+      }
+
+      // F20: Toggle Pause
+      if (e.code === 'F20') {
+        e.preventDefault();
+        handleTogglePause();
       }
     };
     
@@ -1002,6 +1027,24 @@ function ModeratorPage(): React.ReactElement {
       setToast('Ein Schritt zurück');
       setTimeout(() => setToast(null), 1800);
     });
+  }
+
+  function handleToggleMute() {
+    if (!roomCode) return;
+    doAction(async () => {
+      const result = await toggleMute(roomCode);
+      setGlobalMuted(result.muted);
+      return result;
+    }, globalMuted ? 'Ton an' : 'Ton aus');
+  }
+
+  function handleTogglePause() {
+    if (!roomCode) return;
+    doAction(async () => {
+      const result = await togglePause(roomCode);
+      setIsPaused(result.paused);
+      return result;
+    }, isPaused ? 'Fortgesetzt' : 'Pausiert');
   }
 
   function handleReconnectSession() {
@@ -2576,7 +2619,7 @@ function ModeratorPage(): React.ReactElement {
           </div>
         </div>
 
-        <div className="moderator-secondary-actions mt-3 grid gap-2 sm:grid-cols-4">
+        <div className="moderator-secondary-actions mt-3 grid gap-2 sm:grid-cols-6">
           <button
             onClick={handleStepBack}
             className="min-h-[48px] rounded-xl border border-[#8aa0ff] bg-[#273b8a]/80 px-3 py-2 text-left text-sm font-extrabold text-[#dde5ff] touch-manipulation"
@@ -2602,6 +2645,26 @@ function ModeratorPage(): React.ReactElement {
             className="min-h-[48px] rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff] touch-manipulation"
           >
             Scoreboard <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[F4/F6]</span>
+          </button>
+          <button
+            onClick={handleToggleMute}
+            className={`min-h-[48px] rounded-xl border px-3 py-2 text-left text-sm font-extrabold touch-manipulation ${
+              globalMuted 
+                ? 'border-red-500 bg-red-900/75 text-red-100' 
+                : 'border-green-500 bg-green-900/75 text-green-100'
+            }`}
+          >
+            {globalMuted ? '🔇 Muted' : '🔊 Sound'} <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[F16]</span>
+          </button>
+          <button
+            onClick={handleTogglePause}
+            className={`min-h-[48px] rounded-xl border px-3 py-2 text-left text-sm font-extrabold touch-manipulation ${
+              isPaused 
+                ? 'border-yellow-500 bg-yellow-900/75 text-yellow-100' 
+                : 'border-purple-500 bg-purple-900/75 text-purple-100'
+            }`}
+          >
+            {isPaused ? '▶️ Resume' : '⏸️ Pause'} <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[F20]</span>
           </button>
         </div>
 
@@ -2636,13 +2699,15 @@ function ModeratorPage(): React.ReactElement {
     if (!roomCode) return null;
     const entries: Array<{ keys: string[]; label: string }> = [
       { keys: ['F13', 'SPACE', '1'], label: 'Nächste Aktion' },
+      { keys: ['T'], label: 'Timer' },
       { keys: ['F17', 'U', '5'], label: 'Ein Schritt zurück' },
       ...(singleActionMode ? [] : [
         { keys: ['F14', '2'], label: 'Sperren' },
         { keys: ['F15', '3'], label: 'Aufdecken' },
       ]),
-      { keys: ['F16', '4'], label: 'Fotosprint' },
+      { keys: ['F16'], label: 'Mute/Unmute' },
       { keys: ['F18', '6'], label: 'Scoreboard' },
+      { keys: ['F20'], label: 'Pause' },
     ];
     return (
       <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: '6px 14px', alignItems: 'center' }}>

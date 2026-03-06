@@ -217,6 +217,7 @@ type RoomState = {
   language: Language;
   gameState: CozyGameState;
   stateHistory: CozyGameState[];
+  globalMuted: boolean;
   undoSnapshots: RoomUndoSnapshot[];
   segmentTwoBaselineScores: Record<string, number> | null;
   blitzPool: BlitzThemeOption[];
@@ -1817,6 +1818,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       language: 'de',
       gameState: INITIAL_GAME_STATE,
       stateHistory: [INITIAL_GAME_STATE],
+      globalMuted: false,
       undoSnapshots: [],
       segmentTwoBaselineScores: null,
       blitzPool: [],
@@ -5505,6 +5507,42 @@ app.get('/api/rooms/:roomCode/timer', (req, res) => {
       durationMs: room.questionTimerDurationMs
     }
   });
+});
+
+// Mute/Unmute
+app.post('/api/rooms/:roomCode/toggle-mute', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  room.globalMuted = !room.globalMuted;
+  io.to(roomCode).emit('muteChanged', { muted: room.globalMuted });
+  broadcastState(room);
+  return res.json({ ok: true, muted: room.globalMuted });
+});
+
+app.get('/api/rooms/:roomCode/mute-status', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  return res.json({ muted: room.globalMuted });
+});
+
+// Pause Toggle
+app.post('/api/rooms/:roomCode/toggle-pause', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  
+  // Toggle between pause and previous state
+  if (room.gameState === 'SCOREBOARD_PAUSE') {
+    // Resume from pause - go back to scoreboard
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
+  } else {
+    // Enter pause mode
+    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
+  }
+  
+  broadcastState(room);
+  return res.json({ ok: true, paused: room.gameState === 'SCOREBOARD_PAUSE' });
 });
 
 // Sprache

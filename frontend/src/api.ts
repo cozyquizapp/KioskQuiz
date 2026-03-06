@@ -222,6 +222,26 @@ export const setLanguage = async (roomCode: string, language: Language) => {
   return res.json();
 };
 
+// Mute/Unmute
+export const toggleMute = async (roomCode: string) => {
+  const res = await fetch(`${API_BASE}/rooms/${roomCode}/toggle-mute`, { method: 'POST' });
+  if (!res.ok) throw new Error('Mute konnte nicht umgeschaltet werden');
+  return res.json();
+};
+
+export const fetchMuteStatus = async (roomCode: string): Promise<{ muted: boolean }> => {
+  const res = await fetch(`${API_BASE}/rooms/${roomCode}/mute-status`);
+  if (!res.ok) throw new Error('Mute-Status konnte nicht geladen werden');
+  return res.json();
+};
+
+// Pause Toggle
+export const togglePause = async (roomCode: string) => {
+  const res = await fetch(`${API_BASE}/rooms/${roomCode}/toggle-pause`, { method: 'POST' });
+  if (!res.ok) throw new Error('Pause konnte nicht umgeschaltet werden');
+  return res.json();
+};
+
 // Custom Quiz erstellen (Creator)
 export const createCustomQuiz = async (
   name: string,

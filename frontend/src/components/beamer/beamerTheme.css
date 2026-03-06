@@ -1535,6 +1535,7 @@
 
 .cozyQuestionGridSolo {
   grid-template-columns: 1fr;
+  flex: unset;
 }
 
 /* Reveal: vertical split — question left, answers right */

@@ -1064,12 +1064,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setTimerEndsAt(null);
         return;
       }
-      if (payload.language) {
-        // Team-View soll nur einsprachig sein, nicht 'both'
-        const singleLang = payload.language === 'both' ? 'de' : payload.language;
-        setLanguageState(singleLang);
-        localStorage.setItem('teamLanguage', singleLang);
-      }
+      // Language wird lokal im Team gemanagt, nicht vom Server überschrieben
       if (payload.question) {
         resetInputs();
         setQuestion(payload.question);
@@ -1334,9 +1329,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         setPhase('notJoined');
       }
     });
-    socket.on('languageChanged', ({ language: lang }) => {
-      if (lang === 'de' || lang === 'en' || lang === 'both') setLanguageState(lang);
-    });
+    // Language wird lokal im Team gemanagt, nicht vom Server überschrieben
+    // socket.on('languageChanged', ...) wurde entfernt
 
     socket.on('quizEnded', () => {
       localStorage.removeItem(storageKey('id'));

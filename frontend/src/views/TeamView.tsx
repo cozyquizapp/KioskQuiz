@@ -84,9 +84,9 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
         transform: 'translateX(-50%)',
         padding: '8px 12px',
         borderRadius: 12,
-        background: '#fef2f2',
-        border: '1px solid #fca5a5',
-        color: '#991b1b',
+        background: 'rgba(239, 68, 68, 0.15)',
+        border: '1px solid rgba(252, 165, 165, 0.4)',
+        color: '#fca5a5',
         fontWeight: 700,
         zIndex: 40,
         display: 'flex',
@@ -99,9 +99,9 @@ function OfflineBar({ disconnected, language, onReconnect }: OfflineBarProps) {
         style={{
           padding: '6px 10px',
           borderRadius: 10,
-          border: '1px solid #fca5a5',
-          background: '#fee2e2',
-          color: '#991b1b',
+          border: '1px solid rgba(252, 165, 165, 0.4)',
+          background: 'rgba(239, 68, 68, 0.25)',
+          color: '#fca5a5',
           fontWeight: 700,
           cursor: 'pointer'
         }}
@@ -1433,9 +1433,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             style={{
               padding: '6px 10px',
               borderRadius: 10,
-              border: '1px solid #d1d5db',
-              background: '#f3f4f6',
-              color: '#374151',
+              border: '1px solid rgba(148, 163, 184, 0.3)',
+              background: 'rgba(148, 163, 184, 0.15)',
+              color: '#cbd5e1',
               fontWeight: 700,
               cursor: 'pointer'
             }}
@@ -2214,14 +2214,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           margin: '12px 0 0',
           padding: '12px 16px',
           borderRadius: 14,
-          background: isCorrect ? '#f0fdf4' : isIncorrect ? '#fef2f2' : '#f9fafb',
-          border: `2px solid ${isCorrect ? '#86efac' : isIncorrect ? '#fca5a5' : '#e5e7eb'}`,
+          background: isCorrect ? 'rgba(34, 197, 94, 0.15)' : isIncorrect ? 'rgba(239, 68, 68, 0.15)' : 'rgba(148, 163, 184, 0.1)',
+          border: `2px solid ${isCorrect ? 'rgba(134, 239, 172, 0.4)' : isIncorrect ? 'rgba(252, 165, 165, 0.4)' : 'rgba(148, 163, 184, 0.3)'}`,
         }}>
           <p style={{
             margin: 0,
             fontSize: 24,
             fontWeight: 900,
-            color: isCorrect ? '#16a34a' : isIncorrect ? '#dc2626' : '#374151'
+            color: isCorrect ? '#86efac' : isIncorrect ? '#fca5a5' : '#cbd5e1'
           }}>
             {isEstimateQ && resultMessage ? resultMessage : t('resultTitle')(resultCorrect)}
           </p>
@@ -2233,19 +2233,19 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         </div>
       )}
       {!isFinal && answer && (
-        <p style={{ margin: evaluating ? '12px 0 0' : '8px 0 0', color: '#374151', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
-          <span style={{ color: '#6b7280', fontSize: 12 }}>{t('yourAnswer')}</span>
+        <p style={{ margin: evaluating ? '12px 0 0' : '8px 0 0', color: '#e2e8f0', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>{t('yourAnswer')}</span>
           <br />
           {formatSubmittedAnswer(answer)}
         </p>
       )}
       {isFinal && answer && isClosenessQuestion(question) && (
-        <p style={{ margin: '8px 0 0', color: '#374151', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
-          <span style={{ color: '#6b7280', fontSize: 12 }}>{t('yourAnswer')}</span>
+        <p style={{ margin: '8px 0 0', color: '#e2e8f0', fontWeight: 700, fontSize: 14, wordBreak: 'break-word' }}>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>{t('yourAnswer')}</span>
           <br />
           {formatSubmittedAnswer(answer)}
           {resultDeviation !== null && (
-            <span style={{ marginLeft: 8, color: '#6b7280', fontSize: 12, fontWeight: 600 }}>
+            <span style={{ marginLeft: 8, color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>
               ({language === 'de' ? 'Abweichung' : 'deviation'}: ±{Math.round(resultDeviation * 100) / 100})
             </span>
           )}
@@ -2253,8 +2253,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       )}
       {/* Show other teams' answers during evaluation */}
       {!isFinal && evaluating && teamStatus && teamStatus.length > 1 && (
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
-          <span style={{ color: '#9ca3af', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.2)' }}>
+          <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
             {language === 'de' ? 'Andere Teams' : 'Other teams'}
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="stagger-container">
@@ -2282,12 +2282,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                       {avatarsEnabled && avatar && (
                         <AvatarMedia
                           avatar={avatar}
-                          style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid #e5e7eb' }}
+                          style={{ width: 22, height: 22, borderRadius: 7, border: '1px solid rgba(148, 163, 184, 0.3)' }}
                         />
                       )}
                       {team.name}
                     </div>
-                    <div style={{ color: '#374151', fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 24, fontWeight: 500 }}>
+                    <div style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word', paddingLeft: 24, fontWeight: 500 }}>
                       {formatSubmittedAnswer(team.answer)}
                     </div>
                   </div>
@@ -2489,8 +2489,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 gap: 10,
                 padding: '10px 12px',
                 borderRadius: 12,
-                border: idx < 3 ? `2px solid ${medalColor}` : '1px solid #e5e7eb',
-                background: idx < 3 ? `${medalColor}18` : '#f9fafb',
+                border: idx < 3 ? `2px solid ${medalColor}` : '1px solid rgba(148, 163, 184, 0.2)',
+                background: idx < 3 ? `${medalColor}18` : 'rgba(148, 163, 184, 0.08)',
                 alignItems: 'center',
                 transition: 'all 0.3s ease',
                 animation: `slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)`,
@@ -2690,10 +2690,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             <button
               style={{
                 ...primaryButton,
-                background: '#f3f4f6',
-                color: '#6b7280',
-                border: '2px solid #d1d5db',
-                boxShadow: '0 3px 0 #d1d5db',
+                background: 'rgba(148, 163, 184, 0.15)',
+                color: '#94a3b8',
+                border: '2px solid rgba(148, 163, 184, 0.3)',
+                boxShadow: '0 3px 0 rgba(148, 163, 184, 0.2)',
                 transition: 'all 0.15s ease',
                 minHeight: 44,
                 cursor: rundlaufSubmitting ? 'not-allowed' : 'pointer',
@@ -2701,11 +2701,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               }}
               onMouseEnter={(e) => {
                 if (!rundlaufSubmitting) {
-                  e.currentTarget.style.background = '#e5e7eb';
+                  e.currentTarget.style.background = 'rgba(148, 163, 184, 0.25)';
                 }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#f3f4f6';
+                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.15)';
               }}
               onClick={() => submitRundlaufAnswer(true)}
               disabled={rundlaufSubmitting}
@@ -2804,14 +2804,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     gap: 10,
                     padding: '8px 10px',
                     borderRadius: 12,
-                    border: '1px solid #e5e7eb',
-                    background: '#f9fafb',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    background: 'rgba(148, 163, 184, 0.08)',
                     animation: `fade-transition-enter 0.4s ease ${(idx + 3) * 0.1}s backwards`
                   }}
                 >
-                  <span style={{ fontWeight: 800, color: '#9ca3af' }}>{idx + 4}.</span>
-                  <span style={{ fontSize: 14 }}>{entry.name}</span>
-                  <span style={{ fontWeight: 800 }}>{entry.score ?? 0}</span>
+                  <span style={{ fontWeight: 800, color: '#94a3b8' }}>{idx + 4}.</span>
+                  <span style={{ fontSize: 14, color: '#e2e8f0' }}>{entry.name}</span>
+                  <span style={{ fontWeight: 800, color: '#e2e8f0' }}>{entry.score ?? 0}</span>
                 </div>
               ))}
             </div>

@@ -56,7 +56,7 @@ export const gridOverlay: CSSProperties = {
 export const contentShell: CSSProperties = {
   position: 'relative',
   width: '100%',
-  maxWidth: 'min(760px, calc(100vw - 24px))',
+  maxWidth: 'min(820px, calc(100vw - 24px))',
   margin: '0 auto',
   display: 'grid',
   gap: 'clamp(8px, 2vw, 12px)',
@@ -155,15 +155,15 @@ export const metaChip: CSSProperties = {
 };
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(11, 22, 42, 0.85)',
-  backdropFilter: 'blur(20px)',
+  background: 'var(--ui-card-bg)',
+  backdropFilter: 'blur(12px)',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 24,
   border: '1px solid rgba(255, 255, 255, 0.1)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
-  boxShadow: '0 26px 60px rgba(0, 0, 0, 0.58)',
+  boxShadow: 'var(--ui-card-shadow)',
   position: 'relative',
   overflow: 'hidden'
 };
@@ -190,7 +190,7 @@ export const heading: CSSProperties = {
   marginTop: 4,
   marginBottom: 4,
   fontFamily: "'Nunito', var(--font)",
-  fontSize: 'clamp(26px, 7vw, 36px)',
+  fontSize: 'clamp(30px, 7.6vw, 42px)',
   lineHeight: 1.1,
   letterSpacing: '0.03em',
   fontWeight: 700,
@@ -204,7 +204,7 @@ export const mutedText: CSSProperties = {
   color: '#c49ab5',
   marginTop: 0,
   marginBottom: 12,
-  fontSize: 'clamp(16px, 4vw, 18px)',
+  fontSize: 'clamp(18px, 4.4vw, 20px)',
   lineHeight: 1.5
 };
 
@@ -266,13 +266,13 @@ export const choiceButton: CSSProperties = {
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   color: 'var(--text)',
   borderRadius: 16,
-  padding: 'clamp(18px, 4.5vw, 22px) clamp(14px, 4vw, 18px)',
+  padding: 'clamp(20px, 5vw, 24px) clamp(16px, 4.5vw, 20px)',
   cursor: 'pointer',
   fontFamily: "'Nunito', var(--font)",
   fontWeight: 700,
-  fontSize: 'max(17px, clamp(18px, 4.2vw, 22px))',
+  fontSize: 'max(18px, clamp(20px, 4.8vw, 24px))',
   letterSpacing: '0.04em',
-  minHeight: 'clamp(64px, 16vw, 80px)',
+  minHeight: 'clamp(72px, 18vw, 92px)',
   boxShadow: '0 3px 0 rgba(0,0,0,0.45)',
   WebkitFontSmoothing: 'antialiased',
   WebkitTapHighlightColor: 'transparent',
@@ -392,7 +392,7 @@ export const questionStyleTeam: CSSProperties = {
   position: 'relative',
   zIndex: 1,
   margin: '8px 0 12px',
-  fontSize: 'clamp(20px, 5vw, 26px)',
+  fontSize: 'clamp(24px, 6vw, 34px)',
   fontWeight: 700,
   color: 'var(--text)',
   lineHeight: 1.4

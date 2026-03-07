@@ -1958,11 +1958,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       case 'multipleChoice': {
         const q = question as MultipleChoiceQuestion;
         const cozyChoicePalette = [
-          { base: 'rgba(63, 116, 174, 0.34)', border: '#5a93c7', text: '#cfe8ff' },
-          { base: 'rgba(70, 133, 108, 0.34)', border: '#67b58f', text: '#d6ffe8' },
-          { base: 'rgba(167, 74, 96, 0.34)', border: '#d68598', text: '#ffd6df' },
-          { base: 'rgba(176, 122, 74, 0.34)', border: '#d7a46f', text: '#ffe9d1' },
-          { base: 'rgba(88, 96, 120, 0.34)', border: '#a6acc2', text: '#e4e8f5' }
+          { base: 'rgba(63, 116, 174, 0.14)', border: '#5a93c7', text: '#d7ecff' },
+          { base: 'rgba(70, 133, 108, 0.14)', border: '#67b58f', text: '#ddffec' },
+          { base: 'rgba(167, 74, 96, 0.14)', border: '#d68598', text: '#ffe2e9' },
+          { base: 'rgba(176, 122, 74, 0.14)', border: '#d7a46f', text: '#ffeed9' },
+          { base: 'rgba(88, 96, 120, 0.14)', border: '#a6acc2', text: '#ebeffa' }
         ] as const;
         return (
           <div style={{ display: 'grid', gap: 10 }} className="stagger-container">

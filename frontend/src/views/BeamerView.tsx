@@ -1517,7 +1517,7 @@ useEffect(() => {
       animation: 'ambient-shift 28s ease-in-out infinite',
       color: '#e2e8f0',
       overflow: 'hidden',
-      padding: '20px 18px',
+      padding: '12px 12px',
       fontFamily: 'var(--font)',
       display: 'flex',
       flexDirection: 'column',
@@ -1957,8 +1957,9 @@ useEffect(() => {
     const mcOptions =
       language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
     if (Array.isArray(mcOptions) && mcOptions.length) {
+      const optionsGridClassName = `beamer-grid beamer-grid-options${mcOptions.length === 4 ? ' beamer-grid-options-4' : ''}`;
       return (
-        <div className="beamer-grid">
+        <div className={optionsGridClassName}>
           {mcOptions.map((opt: string, idx: number) => {
             const avatars = choiceAvatars?.[idx] || [];
             return (
@@ -3127,8 +3128,9 @@ useEffect(() => {
 
       const renderMultipleChoiceList = (showReveal: boolean) => {
         if (!mcOptions?.length) return null;
+        const optionsClassName = `cozyOptionList${mcOptions.length === 4 ? ' cozyOptionList-4' : ''}`;
         return (
-          <div className="cozyOptionList">
+          <div className={optionsClassName}>
             {mcOptions.map((option, idx) => {
               const hopMatch = muChoLockedIndex ?? mcCorrectIndex;
               const isHop = showReveal && muChoHopIndex === idx && hopMatch !== idx;
@@ -4236,10 +4238,10 @@ const beamerAurora = (color: string): React.CSSProperties => ({
 
 const beamerShell: React.CSSProperties = {
   position: 'relative',
-  maxWidth: 1380,
+  maxWidth: 1580,
   width: '100%',
   margin: '0 auto',
-  padding: '0 16px',
+  padding: '0 10px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',

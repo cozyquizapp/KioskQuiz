@@ -1009,10 +1009,40 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     socketRef.current = socket;
     setConnectionStatus('connecting');
 
+    const silentRejoinStoredTeam = () => {
+      const savedName = localStorage.getItem(storageKey('name'));
+      const savedId = localStorage.getItem(storageKey('id'));
+      const savedAvatar = localStorage.getItem(storageKey('avatar'));
+      if (!savedName || !savedId) return;
+      socket.emit(
+        'team:join',
+        { roomCode, teamName: savedName, teamId: savedId, avatarId: savedAvatar || undefined },
+        (resp?: { ok?: boolean; team?: Team; error?: string }) => {
+          if (resp?.ok && resp?.team?.id) {
+            setTeamId(resp.team.id);
+            setPhase('waitingForQuestion');
+            setSocketError(null);
+            setConnectionStatus('connected');
+            return;
+          }
+          if (resp?.error) {
+            const msg = String(resp.error).toLowerCase();
+            if (msg.includes('team unbekannt') || msg.includes('team unknown')) {
+              localStorage.removeItem(storageKey('id'));
+              savedIdRef.current = null;
+              setTeamId(null);
+              setPhase('notJoined');
+            }
+          }
+        }
+      );
+    };
+
     socket.on('connect', () => {
       setConnectionStatus('connected');
       setSocketError(null);
       setToast(null);
+      silentRejoinStoredTeam();
     });
     socket.on('disconnect', () => setConnectionStatus('disconnected'));
     socket.on('connect_error', (err) => {
@@ -1308,6 +1338,20 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       if (lang === 'de' || lang === 'en' || lang === 'both') setLanguageState(lang);
     });
 
+    socket.on('quizEnded', () => {
+      localStorage.removeItem(storageKey('id'));
+      savedIdRef.current = null;
+      setTeamId(null);
+      setQuestion(null);
+      setQuestionMeta(null);
+      setPhase('notJoined');
+      setAllowReadyToggle(true);
+      setAnswerSubmitted(false);
+      setEvaluating(false);
+      setTimerEndsAt(null);
+      showError(language === 'de' ? 'Quiz beendet. Bitte neu beitreten.' : 'Quiz ended. Please join again.');
+    });
+
     const onSessionRestarted = () => {
       // Reset game state — server:stateUpdate (LOBBY) already arrived before this event,
       // so gameState is already 'LOBBY' and phase is 'waitingForQuestion'.
@@ -1321,20 +1365,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       setResultMessage(null);
       setResultCorrect(null);
       setSolution(null);
-      // Silent rejoin so server re-registers the team's socket for the new session
-      // (needed if socket reconnected, and triggers broadcastTeamsReady for moderator)
-      const savedName = localStorage.getItem(`team:${roomCode}:name`);
-      const savedId = localStorage.getItem(`team:${roomCode}:id`);
-      const savedAvatar = localStorage.getItem(`team:${roomCode}:avatar`);
-      if (savedName && savedId) {
-        socket.emit(
-          'team:join',
-          { roomCode, teamName: savedName, teamId: savedId, avatarId: savedAvatar || undefined },
-          (resp?: { ok: boolean; team?: Team }) => {
-            if (resp?.ok && resp?.team) setTeamId(resp.team.id);
-          }
-        );
-      }
+      silentRejoinStoredTeam();
     };
     socket.on('session:restarted', onSessionRestarted);
 

@@ -2033,7 +2033,8 @@
   border-radius: 20px;
   border: none;
   border-left: 5px solid transparent;
-  background: #1a2035;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
   color: #f1f5f9;
   font-weight: 700;
   font-size: clamp(24px, 2.6vw, 36px);
@@ -2047,10 +2048,10 @@
 }
 
 /* Tile colors: A=blue, B=green, C=red, D=orange — dark mode: colored left border only */
-.cozyOption:nth-child(1) { animation-delay: 0.05s; border-left-color: #3B82F6; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
-.cozyOption:nth-child(2) { animation-delay: 0.1s;  border-left-color: #22C55E; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
-.cozyOption:nth-child(3) { animation-delay: 0.15s; border-left-color: #EF4444; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
-.cozyOption:nth-child(4) { animation-delay: 0.2s;  border-left-color: #F97316; box-shadow: 0 4px 0 rgba(0,0,0,0.5); }
+.cozyOption:nth-child(1) { animation-delay: 0.05s; border-left-color: #3B82F6; background: rgba(59,130,246,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(2) { animation-delay: 0.1s;  border-left-color: #22C55E; background: rgba(34,197,94,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(3) { animation-delay: 0.15s; border-left-color: #EF4444; background: rgba(239,68,68,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(4) { animation-delay: 0.2s;  border-left-color: #F97316; background: rgba(249,115,22,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
 
 /* Prefix letter colored to match left border */
 .cozyOption:nth-child(1) .cozyOptionPrefix { color: #3B82F6; }
@@ -2772,6 +2773,30 @@
   min-height: 136px;
   font-size: clamp(28px, 2.6vw, 40px);
   padding: 30px 30px;
+}
+
+.beamer-grid.beamer-grid-options .beamer-card:nth-child(4n+1) {
+  background: rgba(90, 147, 199, 0.24) !important;
+  border-color: rgba(90, 147, 199, 0.58) !important;
+  box-shadow: 0 4px 0 rgba(13, 58, 122, 0.65), 0 12px 24px rgba(0,0,0,0.2) !important;
+}
+
+.beamer-grid.beamer-grid-options .beamer-card:nth-child(4n+2) {
+  background: rgba(103, 181, 143, 0.24) !important;
+  border-color: rgba(103, 181, 143, 0.58) !important;
+  box-shadow: 0 4px 0 rgba(26, 77, 29, 0.65), 0 12px 24px rgba(0,0,0,0.2) !important;
+}
+
+.beamer-grid.beamer-grid-options .beamer-card:nth-child(4n+3) {
+  background: rgba(214, 133, 152, 0.24) !important;
+  border-color: rgba(214, 133, 152, 0.58) !important;
+  box-shadow: 0 4px 0 rgba(123, 21, 21, 0.65), 0 12px 24px rgba(0,0,0,0.2) !important;
+}
+
+.beamer-grid.beamer-grid-options .beamer-card:nth-child(4n+4) {
+  background: rgba(215, 164, 111, 0.24) !important;
+  border-color: rgba(215, 164, 111, 0.58) !important;
+  box-shadow: 0 4px 0 rgba(138, 49, 0, 0.65), 0 12px 24px rgba(0,0,0,0.2) !important;
 }
 
 .cozyQuestionText {

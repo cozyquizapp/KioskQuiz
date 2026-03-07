@@ -3049,18 +3049,18 @@ useEffect(() => {
                     <span className="cozyRevealAnswerRank" style={{ color: '#6b7280' }}>
                       {isEstimate ? `#${idx + 1}` : ''}
                     </span>
-                    <span className="cozyRevealAnswerTeam" style={{ color: isEstimate ? resultColor : teamColor, fontWeight: isTopRank ? 900 : 800 }}>
+                    <span className="cozyRevealAnswerTeam" style={{ color: isEstimate ? resultColor : teamColor, fontWeight: 800 }}>
                       {entry.teamName || entry.teamId}
                     </span>
                     <span className="cozyRevealAnswerResult" style={{ color: resultColor, fontWeight: 900 }}>
                       {isEstimate
-                        ? (isCorrect ? '🏆' : devLabel ?? '–')
+                        ? (isCorrect && devLabel ? `🏆 ${devLabel}` : devLabel ?? '–')
                         : isBetting
                         ? (isCorrect ? '✓' : isWrong ? '✗' : '–')
                         : (isCorrect ? '✓' : isWrong ? '✗' : '–')}
                     </span>
                   </div>
-                  <div className="cozyRevealAnswerText" style={{ fontWeight: isTopRank ? 700 : 400 }}>
+                  <div className="cozyRevealAnswerText" style={{ fontWeight: 400 }}>
                     {isBetting
                       ? <span style={{ fontWeight: 700, color: isCorrect ? '#16a34a' : isWrong ? '#dc2626' : '#374151' }}>
                           {entry.betPoints ?? 0} / {entry.betPool ?? 10} Pkt. auf richtiger Antwort

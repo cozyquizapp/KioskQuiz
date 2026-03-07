@@ -5948,7 +5948,11 @@ io.on('connection', (socket: Socket) => {
         const { quizId, language } = payload || {};
         if (!quizId || !quizzes.has(quizId)) throw new Error('quizId fehlt oder unbekannt');
         const code = SINGLE_SESSION_MODE ? DEFAULT_ROOM_CODE : createRoomCode();
+        const hadExistingSingleSession = SINGLE_SESSION_MODE && rooms.has(code);
         if (SINGLE_SESSION_MODE) {
+          if (hadExistingSingleSession) {
+            io.to(code).emit('session:restarted');
+          }
           rooms.delete(code);
         }
         const room = ensureRoom(code);

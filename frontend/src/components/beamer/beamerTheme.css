@@ -1616,23 +1616,6 @@
   order: 1;
 }
 
-/* Image-only phase: question card collapses instantly, image fills the frame */
-.cozyMediaLayout.image-only {
-  gap: 0;
-}
-.cozyMediaLayout.image-only .cozyExternalMedia {
-  border-radius: 16px; /* slightly tighter corners when full-width */
-}
-.cozyMediaLayout.image-only .cozyQuestionHero {
-  flex-basis: 0% !important; /* portrait: zero width */
-  max-height: 0 !important;  /* landscape: zero height */
-  padding: 0 !important;
-  border-width: 0 !important;
-  opacity: 0 !important;
-  overflow: hidden;
-  transition: none !important; /* instant collapse at question start, no animation */
-}
-
 /* External media container (image shown outside the question card) */
 .cozyExternalMedia {
   border-radius: 20px;
@@ -2455,7 +2438,7 @@
 }
 
 .cozyQuestionIntroTitle {
-  font-size: clamp(32px, 4vw, 56px);
+  font-size: clamp(46px, 6.2vw, 92px);
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2466,6 +2449,37 @@
   color: var(--beamer-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.beamer-submission-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  color: #f1f5f9;
+}
+
+.beamer-submission-pill.is-ready {
+  background: #942d59;
+  border-color: #942d59;
+  box-shadow: 0 2px 0 #6b1e3f;
+}
+
+.beamer-submission-count {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.beamer-submission-avatars {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .cozyTeamStatusBar {

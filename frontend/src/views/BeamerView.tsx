@@ -382,9 +382,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
   const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
-  // Image-reveal sequence: show image full-screen first, then slide in question after delay
-  const [imageRevealDone, setImageRevealDone] = useState(true);
-  const imageRevealTimerRef = useRef<number | null>(null);
 
   // Blitz CATEGORY_SHOWCASE animation state
   const [showcasePhase, setShowcasePhase] = useState<'POOL_ANIMATION' | 'FINAL_CARDS'>('POOL_ANIMATION');
@@ -578,24 +575,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [blitz?.itemDeadline]);
 
   useEffect(() => { setBlitzImageIsPortrait(null); }, [blitz?.itemIndex]);
-
-  // Image reveal: show image full-screen for 10s when a new image question appears,
-  // then slide in the question card alongside it
-  useEffect(() => {
-    if (imageRevealTimerRef.current) window.clearTimeout(imageRevealTimerRef.current);
-    const qMediaUrl =
-      (question as any)?.media?.url ||
-      (question as any)?.mediaUrl ||
-      (question as any)?.imageUrl ||
-      (question as any)?.image || null;
-    if (qMediaUrl) {
-      setImageRevealDone(false);
-      imageRevealTimerRef.current = window.setTimeout(() => setImageRevealDone(true), 10000);
-    } else {
-      setImageRevealDone(true);
-    }
-    return () => { if (imageRevealTimerRef.current) window.clearTimeout(imageRevealTimerRef.current); };
-  }, [question?.id]);
 
   // oneOfEight: random team picker spin animation when question starts
   useEffect(() => {
@@ -3255,13 +3234,37 @@ useEffect(() => {
 
       const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
       const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
+      const connectedTeams = Array.isArray(teamStatus) ? teamStatus.filter((team) => team.connected) : [];
+      const submittedConnectedTeams = connectedTeams.filter((team) => team.submitted);
+      const allSubmitted = connectedTeams.length > 0 && submittedConnectedTeams.length === connectedTeams.length;
+      const headerSubmissionNode = phase !== 'reveal' && connectedTeams.length > 0 ? (
+        <div className={`beamer-submission-pill${allSubmitted ? ' is-ready' : ''}`}>
+          <span className="beamer-submission-count">
+            {allSubmitted
+              ? (language === 'de' ? 'Weiter →' : language === 'both' ? 'Weiter → / Continue →' : 'Continue →')
+              : `${submittedConnectedTeams.length}/${connectedTeams.length} ${language === 'de' ? 'geantwortet' : language === 'both' ? 'geantwortet / answered' : 'answered'}`}
+          </span>
+          {!allSubmitted && submittedConnectedTeams.length > 0 && (
+            <span className="beamer-submission-avatars" aria-hidden>
+              {submittedConnectedTeams.slice(-3).map((team) => {
+                const avatar = getAvatarById(team.avatarId);
+                return (
+                  <AvatarMedia
+                    key={`submitted-avatar-${team.id}`}
+                    avatar={avatar}
+                    style={{ width: 20, height: 20, borderRadius: 7, border: '1px solid rgba(255,255,255,0.28)' }}
+                  />
+                );
+              })}
+            </span>
+          )}
+        </div>
+      ) : undefined;
       // Split layout: image takes half the screen, question card takes the other half
       const showSplitLayout = !!mediaUrl && phase !== 'reveal';
       // During reveal: only use 2-column layout when team answers are actually present
       const hasRevealAnswers = phase === 'reveal' && !isTop5 &&
         !!(answerResults?.length || teamStatus?.some(t => t.answer !== undefined));
-      // Image-only phase: first 10s show image full-screen, then question slides in
-      const showImageOnly = showSplitLayout && phase === 'active' && !imageRevealDone;
 
       const onMediaLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
@@ -3286,49 +3289,6 @@ useEffect(() => {
             </div>
           )}
           <div className="cozyQuestionBody">{renderHeroBody()}</div>
-          {phase !== 'reveal' && Array.isArray(teamStatus) && teamStatus.length > 0 && (() => {
-            const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#10b981'];
-            const connectedTeams = teamStatus.filter(t => t.connected);
-            const allSubmitted = connectedTeams.length > 0 && connectedTeams.every(t => t.submitted);
-            if (allSubmitted) {
-              return (
-                <div className="cozyTeamStatusBar">
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '6px 20px', borderRadius: 999,
-                    background: '#942d59', color: '#fff',
-                    fontWeight: 700, fontSize: 20,
-                    boxShadow: '0 3px 0 #6b1e3f'
-                  }}>
-                    Weiter →
-                  </span>
-                </div>
-              );
-            }
-            return (
-              <div className="cozyTeamStatusBar">
-                {teamStatus.map((team, idx) => {
-                  const accentColor = colors[idx % colors.length];
-                  return (
-                    <div
-                      key={team.id}
-                      className="cozyTeamStatusChip"
-                      style={{ borderLeft: `3px solid ${accentColor}`, transition: 'all 0.3s ease' }}
-                    >
-                      <span
-                        className={`cozyTeamStatusDot ${team.connected ? 'online' : 'offline'}`}
-                        style={{ backgroundColor: team.submitted ? accentColor : 'transparent', border: `2px solid ${accentColor}` }}
-                      />
-                      <span className="cozyTeamStatusName" style={{ color: accentColor, fontWeight: team.submitted ? 700 : 500 }}>
-                        {team.name || 'Team'}
-                      </span>
-                      {team.submitted && <span style={{ color: accentColor, fontWeight: 700, fontSize: 15 }}>✓</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
         </div>
       );
 
@@ -3341,11 +3301,12 @@ useEffect(() => {
           badgeTone={undefined}
           progressText={undefined}
           footerMessage={undefined}
+          rightNode={headerSubmissionNode}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           {showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
-            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}${showImageOnly ? ' image-only' : ''}`}>
+            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
               {heroEl}
               <div className="cozyExternalMedia">
                 <img src={mediaUrl!} alt="" ref={onMediaRef} onLoad={onMediaLoad} />

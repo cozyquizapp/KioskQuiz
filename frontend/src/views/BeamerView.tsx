@@ -3233,33 +3233,6 @@ useEffect(() => {
       };
 
       const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
-      const hasSubmissions = phase !== 'reveal' && (teamStatus?.some(t => t.submitted) ?? false);
-      const connectedTeams = Array.isArray(teamStatus) ? teamStatus.filter((team) => team.connected) : [];
-      const submittedConnectedTeams = connectedTeams.filter((team) => team.submitted);
-      const allSubmitted = connectedTeams.length > 0 && submittedConnectedTeams.length === connectedTeams.length;
-      const headerSubmissionNode = phase !== 'reveal' && connectedTeams.length > 0 ? (
-        <div className={`beamer-submission-pill${allSubmitted ? ' is-ready' : ''}`}>
-          <span className="beamer-submission-count">
-            {allSubmitted
-              ? (language === 'de' ? 'Weiter →' : language === 'both' ? 'Weiter → / Continue →' : 'Continue →')
-              : `${submittedConnectedTeams.length}/${connectedTeams.length} ${language === 'de' ? 'geantwortet' : language === 'both' ? 'geantwortet / answered' : 'answered'}`}
-          </span>
-          {!allSubmitted && submittedConnectedTeams.length > 0 && (
-            <span className="beamer-submission-avatars" aria-hidden>
-              {submittedConnectedTeams.slice(-3).map((team) => {
-                const avatar = getAvatarById(team.avatarId);
-                return (
-                  <AvatarMedia
-                    key={`submitted-avatar-${team.id}`}
-                    avatar={avatar}
-                    style={{ width: 20, height: 20, borderRadius: 7, border: '1px solid rgba(255,255,255,0.28)' }}
-                  />
-                );
-              })}
-            </span>
-          )}
-        </div>
-      ) : undefined;
       // Split layout: image takes half the screen, question card takes the other half
       const showSplitLayout = !!mediaUrl && phase !== 'reveal';
       // During reveal: only use 2-column layout when team answers are actually present
@@ -3301,7 +3274,6 @@ useEffect(() => {
           badgeTone={undefined}
           progressText={undefined}
           footerMessage={undefined}
-          rightNode={headerSubmissionNode}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           {showSplitLayout ? (

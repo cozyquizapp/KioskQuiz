@@ -77,7 +77,7 @@
   background: var(--bg);
 }
 
-.cozy-beamer-lobby::after {
+.cozy-beamer-shell::after {
   content: '';
   position: fixed;
   top: 50%;
@@ -2451,36 +2451,7 @@
   text-transform: uppercase;
 }
 
-.beamer-submission-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px);
-  color: #f1f5f9;
-}
 
-.beamer-submission-pill.is-ready {
-  background: #942d59;
-  border-color: #942d59;
-  box-shadow: 0 2px 0 #6b1e3f;
-}
-
-.beamer-submission-count {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.beamer-submission-avatars {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
 
 .cozyTeamStatusBar {
   margin-top: 14px;

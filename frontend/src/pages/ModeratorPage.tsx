@@ -2287,8 +2287,8 @@ function ModeratorPage(): React.ReactElement {
                   gap: 8,
                   padding: '6px 8px',
                   borderRadius: 10,
-                  border: '1px solid #e5e7eb',
-                  background: '#f8fafc'
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.04)'
                 }}
               >
                 <span style={{ fontWeight: 700 }}>{idx + 1}.</span>

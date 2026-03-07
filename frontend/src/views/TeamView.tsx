@@ -2315,14 +2315,14 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             margin: '14px 0 0',
             padding: '14px 16px',
             borderRadius: 14,
-            background: '#f0fdf4',
-            border: '2px solid #86efac',
-            boxShadow: '0 3px 0 #86efac'
+            background: 'rgba(34, 197, 94, 0.12)',
+            border: '2px solid rgba(134, 239, 172, 0.35)',
+            boxShadow: '0 3px 0 rgba(134, 239, 172, 0.25)'
           }}
         >
           <div
             style={{
-              color: '#16a34a',
+              color: '#86efac',
               fontSize: 12,
               fontWeight: 800,
               textTransform: 'uppercase',
@@ -2334,7 +2334,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <div
             style={{
               marginTop: 6,
-              color: '#14532d',
+              color: '#f0fdf4',
               fontSize: 22,
               fontWeight: 900,
               wordBreak: 'break-word'

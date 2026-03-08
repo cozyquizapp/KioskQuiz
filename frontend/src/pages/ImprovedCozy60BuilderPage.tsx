@@ -773,10 +773,32 @@ const ImprovedCozy60BuilderPage = () => {
                   <div style={{ width: 400, borderLeft: '1px solid rgba(148,163,184,0.2)', overflow: 'auto' }}>
                     <QuestionCatalog
                       onSelectQuestion={(q: AnyQuestion) => {
-                        console.log('Selected question:', q);
-                        // TODO: Add question to draft
+                        // Find first empty slot in same category
+                        if (!draft) return;
+                        
+                        const emptySlots = draft.questions
+                          .map((question, idx) => ({ question, idx }))
+                          .filter(({ question }) => !question.question || question.question.trim() === '');
+                        
+                        if (emptySlots.length === 0) {
+                          alert('✗ Keine leeren Slots verfügbar. Bitte Slot löschen oder Frage ersetzen.');
+                          return;
+                        }
+                        
+                        // Prefer same category
+                        const sameCat = emptySlots.find(({ question }) => question.category === q.category);
+                        const targetIdx = sameCat ? sameCat.idx : emptySlots[0].idx;
+                        
+                        // Replace slot with catalog question
+                        const updatedQuestions = [...draft.questions];
+                        updatedQuestions[targetIdx] = { ...q, category: q.category };
+                        
+                        setDraft({
+                          ...draft,
+                          questions: updatedQuestions
+                        });
                       }}
-                      usedQuestionIds={draft.questions.map(q => q.id)}
+                      usedQuestionIds={draft?.questions.map(q => q.id) || []}
                     />
                   </div>
                 )}

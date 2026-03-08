@@ -3,6 +3,7 @@ import type { AnyQuestion, QuizCategory, CozyQuestionType } from '@shared/quizTy
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
 import KanbanQuestionEditor from '../components/KanbanQuestionEditor';
+import { API_BASE } from '../api';
 
 const MECHANIC_LABELS: Record<string, string> = {
   estimate: '📊 Schätzfrage',
@@ -37,7 +38,7 @@ export default function QuestionCatalogPage() {
 
   const loadQuestions = async () => {
     try {
-      const response = await fetch('/api/questions');
+      const response = await fetch(`${API_BASE}/questions`);
       const data = await response.json();
       setQuestions(data.questions || []);
       setFilteredQuestions(data.questions || []);
@@ -72,7 +73,7 @@ export default function QuestionCatalogPage() {
 
   const handleSaveQuestion = async (question: AnyQuestion) => {
     try {
-      const response = await fetch(`/api/questions/${question.id}`, {
+      const response = await fetch(`${API_BASE}/questions/${question.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(question)
@@ -92,7 +93,7 @@ export default function QuestionCatalogPage() {
     if (!window.confirm('🗑️ Frage wirklich dauerhaft löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.')) return;
 
     try {
-      const response = await fetch(`/api/questions/${questionId}`, {
+      const response = await fetch(`${API_BASE}/questions/${questionId}`, {
         method: 'DELETE'
       });
 
@@ -116,7 +117,7 @@ export default function QuestionCatalogPage() {
       const data = JSON.parse(text);
       const questionsToUpload = Array.isArray(data) ? data : [data];
 
-      const response = await fetch('/api/questions/bulk', {
+      const response = await fetch(`${API_BASE}/questions/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions: questionsToUpload })

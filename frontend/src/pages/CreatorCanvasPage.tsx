@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnyQuestion } from '@shared/quizTypes'
-import { fetchQuestions } from '../api'
+import { fetchQuestions, API_BASE } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
 import { Modal } from '../components/Modal'
 import { useRef } from 'react'
@@ -318,7 +318,7 @@ export default function CreatorCanvasPage() {
     }
     setQuestions((prev) => prev.map((q) => (q.id === editQuestion.id ? updated : q)))
     try {
-      await fetch('/api/questions/' + editQuestion.id, {
+      await fetch(`${API_BASE}/questions/${editQuestion.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),

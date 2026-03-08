@@ -7,7 +7,8 @@ import {
   deleteQuestionImage,
   setQuestionLayout,
   resetQuestionLayout,
-  createQuestion
+  createQuestion,
+  API_BASE
 } from '../api';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
@@ -201,7 +202,7 @@ const QuestionEditorPage: React.FC = () => {
 
   const handleExportCustom = async () => {
     try {
-      const res = await fetch('/api/questions/custom/export');
+      const res = await fetch(`${API_BASE}/questions/custom/export`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       const blob = new Blob([JSON.stringify(data.questions, null, 2)], { type: 'application/json' });

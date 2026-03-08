@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { AnyQuestion, QuizCategory, CozyQuestionType, MultipleChoiceQuestion } from '@shared/quizTypes';
 import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
+import { API_BASE } from '../api';
 
 interface QuestionCatalogProps {
   onSelectQuestion: (question: AnyQuestion) => void;
@@ -43,7 +44,7 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
   const loadQuestions = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/questions');
+      const response = await fetch(`${API_BASE}/questions`);
       const data = await response.json();
       setQuestions(data.questions || []);
       setFilteredQuestions(data.questions || []);

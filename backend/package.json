@@ -2,11 +2,11 @@
   "name": "quiz-backend",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/server.js",
+  "main": "dist/backend/src/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc --project tsconfig.json",
-    "start": "node dist/src/server.js"
+    "start": "node dist/backend/src/server.js"
   },
   "dependencies": {
     "@sentry/node": "^7.57.0",

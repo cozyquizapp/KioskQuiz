@@ -188,82 +188,178 @@ export const questions: AnyQuestion[] = [
     pointsPool: 10
   },
 
-  // Cheese (Image)
+  // Cheese (Image) - Fotoblitz Finale
   {
     id: 'q-img-1',
     category: 'Cheese',
     mechanic: 'imageQuestion',
-    question: 'Welches Wahrzeichen ist hier zu sehen?',
-    questionEn: 'Which landmark is shown here?',
+    question: 'Welches ikonische Wahrzeichen ist hier zu sehen?',
+    questionEn: 'Which iconic landmark is this?',
     points: 1,
     segmentIndex: 0,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg',
-      alt: 'Eiffelturm'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Eiffel_Tower_from_Trocadero%2C_Paris_%282D%2C_retouched%29.jpg/1200px-Eiffel_Tower_from_Trocadero%2C_Paris_%282D%2C_retouched%29.jpg',
+      alt: 'Eiffelturm Paris'
     },
     answer: 'Eiffelturm',
-    answerEn: 'Eiffel Tower'
+    answerEn: 'Eiffel Tower',
+    tags: ['Fotoblitz', 'Sehenswürdigkeiten', 'Paris']
   },
   {
     id: 'q-img-2',
     category: 'Cheese',
     mechanic: 'imageQuestion',
-    question: 'Welche Bruecke ist das?',
-    questionEn: 'Which bridge is this?',
+    question: 'Erkenne dieses berühmte Bauwerk!',
+    questionEn: 'Name this iconic building!',
     points: 1,
     segmentIndex: 0,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/0/0c/GoldenGateBridge-001.jpg',
-      alt: 'Golden Gate Bridge'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat_03.jpg/1200px-Cat_03.jpg',
+      alt: 'Statue of Liberty'
     },
-    answer: 'Golden Gate Bridge'
+    answer: 'Freiheitsstatue',
+    answerEn: 'Statue of Liberty',
+    tags: ['Fotoblitz', 'Sehenswürdigkeiten', 'USA']
   },
   {
     id: 'q-img-3',
     category: 'Cheese',
     mechanic: 'imageQuestion',
-    question: 'Welches Tier ist auf dem Bild?',
-    questionEn: 'Which animal is in the picture?',
+    question: 'Welches berühmte Tier ist das?',
+    questionEn: 'What famous animal is this?',
     points: 2,
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Koala_climbing_tree.jpg',
-      alt: 'Koala'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Giant_Panda_2.jpg/1024px-Giant_Panda_2.jpg',
+      alt: 'Großer Panda'
     },
-    answer: 'Koala'
+    answer: 'Panda',
+    answerEn: 'Panda',
+    tags: ['Fotoblitz', 'Tiere', 'Asien']
   },
   {
     id: 'q-img-4',
     category: 'Cheese',
     mechanic: 'imageQuestion',
-    question: 'Welche Stadt ist auf diesem Skyline-Foto?',
-    questionEn: 'Which city is shown in this skyline photo?',
+    question: 'Welches Wunderwerk der Architektur ist das?',
+    questionEn: 'Which architectural wonder is shown?',
     points: 2,
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/NYC_Midtown_Skyline_at_night_-_Jan_2006_edit1.jpg',
-      alt: 'New York Skyline'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Sydney_Opera_House_-_Dec_2008_%28edit%29.jpg/1200px-Sydney_Opera_House_-_Dec_2008_%28edit%29.jpg',
+      alt: 'Sydney Opera House'
     },
-    answer: 'New York'
+    answer: 'Sydney Opera House',
+    answerEn: 'Sydney Opera House',
+    tags: ['Fotoblitz', 'Sehenswürdigkeiten', 'Australien']
   },
   {
     id: 'q-img-5',
     category: 'Cheese',
     mechanic: 'imageQuestion',
-    question: 'Welches Bauwerk ist das?',
-    questionEn: 'Which building is this?',
+    question: 'Erkenne diese berühmte Brücke!',
+    questionEn: 'Which famous bridge is this?',
     points: 2,
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Sydney_Opera_House_-_Dec_2008.jpg',
-      alt: 'Sydney Opera House'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Brooklyn_Bridge_Manhattan.jpg/1200px-Brooklyn_Bridge_Manhattan.jpg',
+      alt: 'Brooklyn Bridge'
     },
-    answer: 'Sydney Opera House'
+    answer: 'Brooklyn Bridge',
+    answerEn: 'Brooklyn Bridge',
+    tags: ['Fotoblitz', 'Sehenswürdigkeiten', 'USA']
+  },
+
+  // === Zusätzliche Fotoblitz Finale Bilder (für Spannungssteigerung) ===
+  {
+    id: 'q-blitz-1',
+    category: 'Cheese',
+    mechanic: 'imageQuestion',
+    question: 'Dieses weltberühmte Kunstwerk - wer malte es?',
+    questionEn: 'Who painted this world-famous artwork?',
+    points: 3,
+    segmentIndex: 1,
+    media: {
+      type: 'image',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/24701-nature-natural-beauty.jpg/1024px-24701-nature-natural-beauty.jpg',
+      alt: 'Starry Night'
+    },
+    answer: 'Van Gogh',
+    answerEn: 'Van Gogh',
+    tags: ['Fotoblitz-Finale', 'Kunst', 'Klassiker']
+  },
+  {
+    id: 'q-blitz-2',
+    category: 'Cheese',
+    mechanic: 'imageQuestion',
+    question: 'In welchem Land steht dieser Monolith?',
+    questionEn: 'In which country is this monolith located?',
+    points: 3,
+    segmentIndex: 1,
+    media: {
+      type: 'image',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Uluru%2C_near_Alice_Springs%2C_NT%2C_07.2007.jpg/800px-Uluru%2C_near_Alice_Springs%2C_NT%2C_07.2007.jpg',
+      alt: 'Uluru Australien'
+    },
+    answer: 'Australien',
+    answerEn: 'Australia',
+    tags: ['Fotoblitz-Finale', 'Natur', 'Australien']
+  },
+  {
+    id: 'q-blitz-3',
+    category: 'Cheese',
+    mechanic: 'imageQuestion',
+    question: 'Dieses Tier ist bekannt für sein Gift - welches Tier?',
+    questionEn: 'This animal is famous for its venom - what is it?',
+    points: 3,
+    segmentIndex: 1,
+    media: {
+      type: 'image',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Elaphe_quadrivirgata_01.jpg/800px-Elaphe_quadrivirgata_01.jpg',
+      alt: 'Kobra Schlange'
+    },
+    answer: 'Kobra',
+    answerEn: 'Cobra',
+    tags: ['Fotoblitz-Finale', 'Tiere', 'Gefährlich']
+  },
+  {
+    id: 'q-blitz-4',
+    category: 'Cheese',
+    mechanic: 'imageQuestion',
+    question: 'In welcher Stadt wurde dieses Kunstwerk erschaffen?',
+    questionEn: 'In which city was this masterpiece created?',
+    points: 3,
+    segmentIndex: 1,
+    media: {
+      type: 'image',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Colosseum_2020.jpg/1024px-Colosseum_2020.jpg',
+      alt: 'Kolosseum Rom'
+    },
+    answer: 'Rom',
+    answerEn: 'Rome',
+    tags: ['Fotoblitz-Finale', 'Sehenswürdigkeiten', 'Italien']
+  },
+  {
+    id: 'q-blitz-5',
+    category: 'Cheese',
+    mechanic: 'imageQuestion',
+    question: 'Welches Land hat diesen prächtigen Palast als UNESCO Weltkulturerbe?',
+    questionEn: 'Which country has this magnificent palace as UNESCO heritage?',
+    points: 3,
+    segmentIndex: 1,
+    media: {
+      type: 'image',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Taj_Mahal.jpg/1024px-Taj_Mahal.jpg',
+      alt: 'Taj Mahal'
+    },
+    answer: 'Indien',
+    answerEn: 'India',
+    tags: ['Fotoblitz-Finale', 'Sehenswürdigkeiten', 'Indien']
   },
 
   // Gemischte Tuete (Legacy Beispiele)

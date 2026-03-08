@@ -550,7 +550,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                         onMouseLeave={() => setHoveredSlot(null)}
                         style={{
                           ...questionCardStyle,
-                          padding: isDense ? 8 : 10,
+                          padding: 0,
                           opacity: isBeingDragged ? 0.5 : 1,
                           borderColor: isSelected ? '#3b82f6' : isBeingDragged ? `${catColor}88` : catColor,
                           borderWidth: isSelected ? 2 : 1,
@@ -561,58 +561,203 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                             : 'rgba(15,23,42,0.6)',
                           cursor: 'grab',
                           transform: isHovered ? 'translateY(-2px)' : 'none',
-                          boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'
+                          boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
+                          overflow: 'hidden'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
-                            Slot {index + 1} • {slot.defaultPoints}pts
-                          </div>
-                          {isUsed && (
-                            <div style={{
-                              background: 'rgba(251,191,36,0.2)',
-                              border: '1px solid rgba(251,191,36,0.4)',
-                              borderRadius: 4,
-                              padding: isDense ? '1px 5px' : '2px 6px',
-                              fontSize: isDense ? 9 : 10,
-                              fontWeight: 600,
-                              color: '#fbbf24'
-                            }}>
-                              {usedCount}x
-                            </div>
-                          )}
-                          {isSelected && (
-                            <div style={{
-                              background: '#3b82f6',
-                              color: '#fff',
-                              borderRadius: 4,
-                              padding: '2px 6px',
-                              fontSize: 10,
-                              fontWeight: 700
-                            }}>
-                              ✓
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ fontSize: isDense ? 11 : 12, fontWeight: 600, marginBottom: isDense ? 4 : 6, lineHeight: 1.35 }}>
-                          {question.question || '(leer)'}
-                        </div>
-                        {question.imageUrl && (
+                        {/* Visual Header for Slot 1 */}
+                        {index === 0 && (
                           <div style={{
-                            width: '100%',
-                            height: isDense ? 48 : 60,
-                            background: `url(${question.imageUrl}) center/cover`,
-                            borderRadius: 6,
-                            marginBottom: isDense ? 4 : 6
-                          }} />
+                            position: 'relative',
+                            height: 60,
+                            background: `linear-gradient(135deg, ${catColor}88 0%, ${catColor}44 50%, ${catColor}22 100%)`,
+                            borderBottom: `2px solid ${catColor}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0 12px',
+                            overflow: 'hidden'
+                          }}>
+                            {/* Glassmorphism Overlay */}
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: 'rgba(255,255,255,0.03)',
+                              backdropFilter: 'blur(10px)',
+                              WebkitBackdropFilter: 'blur(10px)'
+                            }} />
+                            
+                            {/* Decorative Circles */}
+                            <div style={{
+                              position: 'absolute',
+                              top: -20,
+                              right: -20,
+                              width: 80,
+                              height: 80,
+                              borderRadius: '50%',
+                              background: `${catColor}22`,
+                              filter: 'blur(20px)'
+                            }} />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: -30,
+                              left: -30,
+                              width: 100,
+                              height: 100,
+                              borderRadius: '50%',
+                              background: `${catColor}15`,
+                              filter: 'blur(30px)'
+                            }} />
+                            
+                            {/* Content */}
+                            <div style={{
+                              position: 'relative',
+                              zIndex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10
+                            }}>
+                              <div style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: '50%',
+                                background: `linear-gradient(135deg, ${catColor} 0%, ${catColor}88 100%)`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                color: '#0f172a',
+                                boxShadow: `0 4px 12px ${catColor}44`
+                              }}>
+                                1
+                              </div>
+                              <div>
+                                <div style={{
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: '#e2e8f0',
+                                  textShadow: '0 2px 8px rgba(0,0,0,0.4)'
+                                }}>
+                                  Frage 1
+                                </div>
+                                <div style={{
+                                  fontSize: 10,
+                                  color: '#cbd5e1',
+                                  opacity: 0.8
+                                }}>
+                                  {catLabel}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div style={{
+                              position: 'relative',
+                              zIndex: 1,
+                              background: 'rgba(255,255,255,0.1)',
+                              backdropFilter: 'blur(10px)',
+                              WebkitBackdropFilter: 'blur(10px)',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                              borderRadius: 8,
+                              padding: '4px 10px',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: '#e2e8f0',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}>
+                              {slot.defaultPoints} Pkt.
+                            </div>
+                          </div>
                         )}
-                        <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.6 }}>
-                          {question.mechanic} • {question.category}
-                          {question.tags && question.tags.length > 0 && (
-                            <span style={{ marginLeft: 4 }}>
-                              • {question.tags.slice(0, 2).join(', ')}
-                            </span>
+                        
+                        {/* Card Content */}
+                        <div style={{ padding: isDense ? 8 : 10 }}>
+                          {index !== 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
+                                Slot {index + 1} • {slot.defaultPoints}pts
+                              </div>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                {isUsed && (
+                                  <div style={{
+                                    background: 'rgba(251,191,36,0.2)',
+                                    border: '1px solid rgba(251,191,36,0.4)',
+                                    borderRadius: 4,
+                                    padding: isDense ? '1px 5px' : '2px 6px',
+                                    fontSize: isDense ? 9 : 10,
+                                    fontWeight: 600,
+                                    color: '#fbbf24'
+                                  }}>
+                                    {usedCount}x
+                                  </div>
+                                )}
+                                {isSelected && (
+                                  <div style={{
+                                    background: '#3b82f6',
+                                    color: '#fff',
+                                    borderRadius: 4,
+                                    padding: '2px 6px',
+                                    fontSize: 10,
+                                    fontWeight: 700
+                                  }}>
+                                    ✓
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           )}
+                          {index === 0 && (isUsed || isSelected) && (
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                              {isUsed && (
+                                <div style={{
+                                  background: 'rgba(251,191,36,0.2)',
+                                  border: '1px solid rgba(251,191,36,0.4)',
+                                  borderRadius: 4,
+                                  padding: isDense ? '1px 5px' : '2px 6px',
+                                  fontSize: isDense ? 9 : 10,
+                                  fontWeight: 600,
+                                  color: '#fbbf24'
+                                }}>
+                                  {usedCount}x verwendet
+                                </div>
+                              )}
+                              {isSelected && (
+                                <div style={{
+                                  background: '#3b82f6',
+                                  color: '#fff',
+                                  borderRadius: 4,
+                                  padding: '2px 6px',
+                                  fontSize: 10,
+                                  fontWeight: 700
+                                }}>
+                                  ✓ Ausgewählt
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div style={{ fontSize: isDense ? 11 : 12, fontWeight: 600, marginBottom: isDense ? 4 : 6, lineHeight: 1.35 }}>
+                            {question.question || '(leer)'}
+                          </div>
+                          {question.imageUrl && (
+                            <div style={{
+                              width: '100%',
+                              height: isDense ? 48 : 60,
+                              background: `url(${question.imageUrl}) center/cover`,
+                              borderRadius: 6,
+                              marginBottom: isDense ? 4 : 6
+                            }} />
+                          )}
+                          <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.6 }}>
+                            {question.mechanic} • {question.category}
+                            {question.tags && question.tags.length > 0 && (
+                              <span style={{ marginLeft: 4 }}>
+                                • {question.tags.slice(0, 2).join(', ')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       

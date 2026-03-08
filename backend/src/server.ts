@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import mongoose from 'mongoose';
 
 
 import * as Sentry from '@sentry/node';
@@ -101,6 +102,16 @@ import {
   isQuestionInputOpen,
   GameStateAction
 } from './game/stateMachine';
+import { connectDB, isDBConnected } from './db/mongo';
+import { 
+  Question,
+  getQuestionsFromDB, 
+  getCustomQuestionsFromDB, 
+  saveQuestionToDB, 
+  deleteQuestionFromDB, 
+  bulkUploadQuestionsToDB,
+  initializeDefaultQuestions
+} from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -4207,38 +4218,91 @@ if (DEBUG) {
   });
 }
 
-app.get('/api/questions', (_req, res) => {
+app.get('/api/questions', async (_req, res) => {
   const cacheKey = 'questions';
   const cached = cache.get<any>(cacheKey);
   if (cached) {
     return res.json({ questions: cached });
   }
-  const mapped = questions.map((q) => {
-    const usage = questionUsageMap[q.id] ?? {};
-    const isCustom = customQuestions.some((c) => c.id === q.id);
-    return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom };
-  });
-  cache.set(cacheKey, mapped);
-  res.json({ questions: mapped });
+
+  try {
+    let allQuestions: AnyQuestion[];
+    
+    // Lade von MongoDB wenn verfügbar
+    if (isDBConnected()) {
+      allQuestions = await getQuestionsFromDB();
+    } else {
+      // Fallback zu In-Memory
+      allQuestions = Array.from(questions);
+    }
+
+    const mapped = allQuestions.map((q) => {
+      const usage = questionUsageMap[q.id] ?? {};
+      return { ...q, usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null };
+    });
+    
+    cache.set(cacheKey, mapped);
+    res.json({ questions: mapped });
+  } catch (err) {
+    console.error('Fehler beim Laden von Fragen:', err);
+    res.status(500).json({ error: 'Fragen konnten nicht geladen werden' });
+  }
 });
 
-app.get('/api/questions/custom', (_req, res) => {
-  const mapped = customQuestions.map((q) => {
-    const usage = questionUsageMap[q.id] ?? {};
-    return { ...applyOverrides(q), usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom: true };
-  });
-  res.json({ questions: mapped });
+app.get('/api/questions/custom', async (_req, res) => {
+  try {
+    let customQs: AnyQuestion[];
+    
+    if (isDBConnected()) {
+      customQs = await getCustomQuestionsFromDB();
+    } else {
+      customQs = customQuestions.filter(q => q.id);
+    }
+
+    const mapped = customQs.map((q) => {
+      const usage = questionUsageMap[q.id] ?? {};
+      return { ...q, usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom: true };
+    });
+    res.json({ questions: mapped });
+  } catch (err) {
+    console.error('Fehler beim Laden custom questions:', err);
+    res.status(500).json({ error: 'Custom-Fragen konnten nicht geladen werden' });
+  }
 });
 
 // Katalogliste
-app.get('/api/catalogs', (_req, res) => {
-  const set = new Set<string>();
-  [...questions, ...customQuestions].forEach((q) => set.add((q as any).catalogId || 'default'));
-  res.json({ catalogs: Array.from(set).sort() });
+app.get('/api/catalogs', async (_req, res) => {
+  try {
+    let allQs: AnyQuestion[];
+    
+    if (isDBConnected()) {
+      allQs = await getQuestionsFromDB();
+    } else {
+      allQs = Array.from(questions);
+    }
+
+    const set = new Set<string>();
+    allQs.forEach((q) => set.add((q as any).catalogId || 'default'));
+    res.json({ catalogs: Array.from(set).sort() });
+  } catch (err) {
+    res.status(500).json({ error: 'Katalog konnte nicht geladen werden' });
+  }
 });
 
-app.get('/api/questions/custom/export', (_req, res) => {
-  res.json({ questions: customQuestions });
+app.get('/api/questions/custom/export', async (_req, res) => {
+  try {
+    let customQs: AnyQuestion[];
+    
+    if (isDBConnected()) {
+      customQs = await getCustomQuestionsFromDB();
+    } else {
+      customQs = customQuestions;
+    }
+
+    res.json({ questions: customQs });
+  } catch (err) {
+    res.status(500).json({ error: 'Export fehlgeschlagen' });
+  }
 });
 
 app.get('/api/quizzes', (_req, res) => {
@@ -5657,47 +5721,16 @@ app.delete('/api/questions/:id/layout', (req, res) => {
 });
 
 // Neue Frage anlegen
-app.post('/api/questions', (req, res) => {
-  const { id, category, mechanic, question, points = 1, ...rest } = req.body as Partial<AnyQuestion>;
-  if (!category || !mechanic || !question) {
-    return res.status(400).json({ error: 'category, mechanic, question erforderlich' });
-  }
-  const newId = id && typeof id === 'string' ? id : uuid();
-  if (questionById.has(newId)) return res.status(400).json({ error: 'ID bereits vorhanden' });
-  const created: AnyQuestion = {
-    id: newId,
-    category: category as QuizCategory,
-    mechanic: mechanic as AnyQuestion['mechanic'],
-    question,
-    points: Number(points) || 1,
-    createdAt: Date.now(),
-    catalogId: (rest as any)?.catalogId || 'default',
-    mediaSlots: (rest as any)?.mediaSlots,
-    ...(rest as any)
-  };
-  customQuestions.push(created);
-  questions.push(created);
-  questionById.set(newId, created);
-  persistCustomQuestions();
-  return res.json({ ok: true, question: created });
-});
-
-// Bulk-Upload von Fragen
-app.post('/api/questions/bulk', (req, res) => {
-  const { questions: questionsToAdd } = req.body as { questions: Partial<AnyQuestion>[] };
-  if (!Array.isArray(questionsToAdd) || questionsToAdd.length === 0) {
-    return res.status(400).json({ error: 'questions array erforderlich' });
-  }
-
-  const created: AnyQuestion[] = [];
-  for (const q of questionsToAdd) {
-    const { id, category, mechanic, question, points = 1, ...rest } = q;
-    if (!category || !mechanic || !question) continue; // Skip invalid questions
-    
+app.post('/api/questions', async (req, res) => {
+  try {
+    const { id, category, mechanic, question, points = 1, ...rest } = req.body as Partial<AnyQuestion>;
+    if (!category || !mechanic || !question) {
+      return res.status(400).json({ error: 'category, mechanic, question erforderlich' });
+    }
     const newId = id && typeof id === 'string' ? id : uuid();
-    if (questionById.has(newId)) continue; // Skip duplicates
+    if (questionById.has(newId)) return res.status(400).json({ error: 'ID bereits vorhanden' });
     
-    const newQuestion: AnyQuestion = {
+    const created: AnyQuestion = {
       id: newId,
       category: category as QuizCategory,
       mechanic: mechanic as AnyQuestion['mechanic'],
@@ -5706,35 +5739,112 @@ app.post('/api/questions/bulk', (req, res) => {
       createdAt: Date.now(),
       catalogId: (rest as any)?.catalogId || 'default',
       mediaSlots: (rest as any)?.mediaSlots,
+      isCustom: true,
       ...(rest as any)
     };
-    
-    customQuestions.push(newQuestion);
-    questions.push(newQuestion);
-    questionById.set(newId, newQuestion);
-    created.push(newQuestion);
-  }
 
-  persistCustomQuestions();
-  return res.json({ ok: true, count: created.length, questions: created });
+    // Versuche in MongoDB zu speichern
+    if (isDBConnected()) {
+      await saveQuestionToDB(created);
+    } else {
+      // Fallback zu In-Memory
+      customQuestions.push(created);
+      persistCustomQuestions();
+    }
+
+    questions.push(created);
+    questionById.set(newId, created);
+    cache.del('questions');
+    
+    return res.json({ ok: true, question: created });
+  } catch (err) {
+    console.error('Fehler beim Erstellen der Frage:', err);
+    res.status(500).json({ error: 'Frage konnte nicht erstellt werden' });
+  }
 });
 
-// Frage aktualisieren (nur f?r Custom empfohlen)
-app.put('/api/questions/:id', (req, res) => {
-  const { id } = req.params;
-  if (!questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
-  const prev = questionById.get(id)!;
-  const updated = { ...prev, ...req.body, id, updatedAt: Date.now() };
-  // replace in customQuestions if exists, else allow patching base in-memory
-  const idx = customQuestions.findIndex((q) => q.id === id);
-  if (idx >= 0) {
-    customQuestions[idx] = updated;
-    persistCustomQuestions();
+// Bulk-Upload von Fragen
+app.post('/api/questions/bulk', async (req, res) => {
+  try {
+    const { questions: questionsToAdd } = req.body as { questions: Partial<AnyQuestion>[] };
+    if (!Array.isArray(questionsToAdd) || questionsToAdd.length === 0) {
+      return res.status(400).json({ error: 'questions array erforderlich' });
+    }
+
+    const created: AnyQuestion[] = [];
+    const toSave: AnyQuestion[] = [];
+
+    for (const q of questionsToAdd) {
+      const { id, category, mechanic, question, points = 1, ...rest } = q;
+      if (!category || !mechanic || !question) continue; // Skip invalid questions
+      
+      const newId = id && typeof id === 'string' ? id : uuid();
+      if (questionById.has(newId)) continue; // Skip duplicates
+      
+      const newQuestion: AnyQuestion = {
+        id: newId,
+        category: category as QuizCategory,
+        mechanic: mechanic as AnyQuestion['mechanic'],
+        question,
+        points: Number(points) || 1,
+        createdAt: Date.now(),
+        catalogId: (rest as any)?.catalogId || 'default',
+        mediaSlots: (rest as any)?.mediaSlots,
+        isCustom: true,
+        ...(rest as any)
+      };
+      
+      questions.push(newQuestion);
+      questionById.set(newId, newQuestion);
+      customQuestions.push(newQuestion);
+      created.push(newQuestion);
+      toSave.push(newQuestion);
+    }
+
+    // Versuche in MongoDB zu speichern
+    if (isDBConnected()) {
+      await bulkUploadQuestionsToDB(toSave);
+    } else {
+      persistCustomQuestions();
+    }
+
+    cache.del('questions');
+    return res.json({ ok: true, count: created.length, questions: created });
+  } catch (err) {
+    console.error('Fehler beim Bulk-Upload:', err);
+    res.status(500).json({ error: 'Bulk-Upload fehlgeschlagen' });
   }
-  const baseIdx = questions.findIndex((q) => q.id === id);
-  if (baseIdx >= 0) questions[baseIdx] = updated;
-  questionById.set(id, updated);
-  return res.json({ ok: true, question: updated });
+});
+
+// Frage aktualisieren
+app.put('/api/questions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!questionById.has(id)) return res.status(404).json({ error: 'Frage nicht gefunden' });
+    const prev = questionById.get(id)!;
+    const updated = { ...prev, ...req.body, id, updatedAt: Date.now() };
+    
+    // Versuche in MongoDB zu speichern
+    if (isDBConnected()) {
+      await saveQuestionToDB(updated);
+    } else {
+      const idx = customQuestions.findIndex((q) => q.id === id);
+      if (idx >= 0) {
+        customQuestions[idx] = updated;
+        persistCustomQuestions();
+      }
+    }
+    
+    const baseIdx = questions.findIndex((q) => q.id === id);
+    if (baseIdx >= 0) questions[baseIdx] = updated;
+    questionById.set(id, updated);
+    cache.del('questions');
+    
+    return res.json({ ok: true, question: updated });
+  } catch (err) {
+    console.error('Fehler beim Aktualisieren der Frage:', err);
+    res.status(500).json({ error: 'Frage konnte nicht aktualisiert werden' });
+  }
 });
 
 // Quizzes löschen
@@ -6696,8 +6806,17 @@ setInterval(() => {
 // --- Start server -----------------------------------------------------------
 const listenWithFallback = (port: number, attemptsLeft: number) => {
   httpServer
-    .listen(port, () => {
-      console.log(`Quiz-Backend l?uft auf Port ${port}`);
+    .listen(port, async () => {
+      console.log(`Quiz-Backend läuft auf Port ${port}`);
+      
+      // Initialize MongoDB
+      try {
+        await connectDB();
+        await initializeDefaultQuestions(questions);
+        console.log('✓ Datenbank bereit');
+      } catch (err) {
+        console.warn('MongoDB nicht verfügbar, nutze In-Memory Fallback:', err);
+      }
     })
     .on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {

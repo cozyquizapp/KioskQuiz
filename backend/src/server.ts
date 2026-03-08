@@ -7,6 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import mongoose from 'mongoose';
+import { v2 as cloudinary } from 'cloudinary';
 
 
 import * as Sentry from '@sentry/node';
@@ -139,6 +140,22 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb' }));
 
+const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;
+const isCloudinaryEnabled = Boolean(cloudinaryCloudName && cloudinaryApiKey && cloudinaryApiSecret);
+
+if (isCloudinaryEnabled) {
+  cloudinary.config({
+    cloud_name: cloudinaryCloudName,
+    api_key: cloudinaryApiKey,
+    api_secret: cloudinaryApiSecret,
+    secure: true
+  });
+} else {
+  console.warn('⚠️ Cloudinary nicht konfiguriert - nutze lokalen Upload-Speicher');
+}
+
 // static files for uploads
 const uploadRoot = path.join(__dirname, '..', '..', 'uploads');
 const uploadDir = path.join(uploadRoot, 'questions');
@@ -216,6 +233,33 @@ const blitzUpload = multer({
     else cb(new Error('Nur Bildformate erlaubt'));
   }
 });
+
+const extractCloudinaryPublicId = (url: string): string | null => {
+  try {
+    const marker = '/upload/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    const afterUpload = url.slice(idx + marker.length);
+    const withoutVersion = afterUpload.replace(/^v\d+\//, '');
+    const withoutQuery = withoutVersion.split('?')[0];
+    const ext = path.extname(withoutQuery);
+    if (!ext) return withoutQuery || null;
+    return withoutQuery.slice(0, -ext.length);
+  } catch {
+    return null;
+  }
+};
+
+const uploadLocalFileToCloudinary = async (
+  localPath: string,
+  folder: 'questions' | 'blitz'
+): Promise<string> => {
+  const result = await cloudinary.uploader.upload(localPath, {
+    folder: `cozyquiz/${folder}`,
+    resource_type: 'image'
+  });
+  return result.secure_url;
+};
 
 // --- Types & State ---------------------------------------------------------
 type RoomState = {
@@ -4473,27 +4517,74 @@ app.post('/api/quizzes/custom', (req, res) => {
 });
 
 // Bild-Upload
-app.post('/api/upload/question-image', upload.single('file'), (req, res) => {
+app.post('/api/upload/question-image', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
   const { questionId } = req.body as { questionId?: string };
-  const url = `/uploads/questions/${req.file.filename}`;
-  if (questionId) {
-    questionImageMap[questionId] = url;
-    persistQuestionImages();
+  const localUrl = `/uploads/questions/${req.file.filename}`;
+
+  try {
+    const finalUrl = isCloudinaryEnabled
+      ? await uploadLocalFileToCloudinary(req.file.path, 'questions')
+      : localUrl;
+
+    if (questionId) {
+      questionImageMap[questionId] = finalUrl;
+      persistQuestionImages();
+    }
+
+    return res.json({ imageUrl: finalUrl });
+  } catch (err) {
+    console.error('Fehler beim Question-Image Upload:', err);
+    return res.status(500).json({ error: 'Bild konnte nicht hochgeladen werden' });
+  } finally {
+    if (isCloudinaryEnabled && req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
   }
-  return res.json({ imageUrl: url });
 });
 
 // Blitz image upload
-app.post('/api/upload/blitz-image', blitzUpload.single('file'), (req, res) => {
+app.post('/api/upload/blitz-image', blitzUpload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
-  const url = `/uploads/blitz/${req.file.filename}`;
-  return res.json({ imageUrl: url });
+  const localUrl = `/uploads/blitz/${req.file.filename}`;
+
+  try {
+    const finalUrl = isCloudinaryEnabled
+      ? await uploadLocalFileToCloudinary(req.file.path, 'blitz')
+      : localUrl;
+    return res.json({ imageUrl: finalUrl });
+  } catch (err) {
+    console.error('Fehler beim Blitz-Image Upload:', err);
+    return res.status(500).json({ error: 'Bild konnte nicht hochgeladen werden' });
+  } finally {
+    if (isCloudinaryEnabled && req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+  }
 });
 
 app.delete('/api/upload/blitz-image', (req, res) => {
   const { imageUrl } = req.body as { imageUrl?: string };
   if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
+
+  if (isCloudinaryEnabled && imageUrl.startsWith('https://res.cloudinary.com/')) {
+    const publicId = extractCloudinaryPublicId(imageUrl);
+    if (publicId) {
+      cloudinary.uploader.destroy(publicId, { resource_type: 'image' }).catch(() => {
+        // ignore delete errors for non-blocking UX
+      });
+    }
+    return res.json({ ok: true });
+  }
+
   const filename = path.basename(imageUrl);
   const filePath = path.join(blitzUploadDir, filename);
   if (fs.existsSync(filePath)) {
@@ -4510,6 +4601,21 @@ app.delete('/api/upload/question-image', (req, res) => {
   const { questionId, imageUrl } = req.body as { questionId?: string; imageUrl?: string };
   const url = imageUrl || (questionId ? questionImageMap[questionId] : null);
   if (!url) return res.status(400).json({ error: 'imageUrl oder questionId fehlt' });
+
+  if (isCloudinaryEnabled && url.startsWith('https://res.cloudinary.com/')) {
+    const publicId = extractCloudinaryPublicId(url);
+    if (publicId) {
+      cloudinary.uploader.destroy(publicId, { resource_type: 'image' }).catch(() => {
+        // ignore delete errors for non-blocking UX
+      });
+    }
+    if (questionId && questionImageMap[questionId]) {
+      delete questionImageMap[questionId];
+      persistQuestionImages();
+    }
+    return res.json({ ok: true });
+  }
+
   const filename = path.basename(url);
   const filePath = path.join(uploadDir, filename);
   if (fs.existsSync(filePath)) {

@@ -423,6 +423,278 @@ export const questions: AnyQuestion[] = [
       partialPoints: 1,
       fullPoints: 2
     }
+  },
+
+  // --- NEUE FRAGEN (Aha-Effekt Bonus Pack) ---
+  // Schaetzchen Extra (6-10)
+  {
+    id: 'q-est-6',
+    category: 'Schaetzchen',
+    mechanic: 'estimate',
+    question: 'Wie viele Menschen sind in der GESAMTEN Menschheitsgeschichte gestorben und beerdigt (Homo sapiens)?',
+    questionEn: 'How many humans have ever been born and died in all of human history?',
+    points: 2,
+    segmentIndex: 1,
+    targetValue: 108_000_000_000,
+    unit: 'Menschen',
+    tags: ['Statistik', 'Bevölkerung', 'Geschichte']
+  },
+  {
+    id: 'q-est-7',
+    category: 'Schaetzchen',
+    mechanic: 'estimate',
+    question: 'Welcher Prozentsatz der Ozeane haben wir ERFORSCHT?',
+    questionEn: 'What percentage of the ocean have we explored?',
+    points: 2,
+    segmentIndex: 1,
+    targetValue: 5,
+    unit: '%',
+    tags: ['Ozean', 'Raumfahrt', 'Aha-Effekt']
+  },
+  {
+    id: 'q-est-8',
+    category: 'Schaetzchen',
+    mechanic: 'estimate',
+    question: 'Wie viele Filme wurden in DER GESAMTEN KINO-GESCHICHTE gedreht?',
+    questionEn: 'How many feature films have been made in cinema history?',
+    points: 2,
+    segmentIndex: 1,
+    targetValue: 2_500_000,
+    unit: 'Filme',
+    tags: ['Kino', 'Statistik']
+  },
+  {
+    id: 'q-est-9',
+    category: 'Schaetzchen',
+    mechanic: 'estimate',
+    question: 'Wie viele NEUE ZELLEN produziert der menschliche Körper PRO TAG?',
+    questionEn: 'How many new cells does the human body produce per day?',
+    points: 2,
+    segmentIndex: 1,
+    targetValue: 330_000_000_000,
+    unit: 'Zellen',
+    tags: ['Biologie', 'Körper', 'Science']
+  },
+  {
+    id: 'q-est-10',
+    category: 'Schaetzchen',
+    mechanic: 'estimate',
+    question: 'Wie lange braucht Licht VON DER SONNE ZUR ERDE?',
+    questionEn: 'How many seconds does light take from the sun to Earth?',
+    points: 1,
+    segmentIndex: 0,
+    targetValue: 500,
+    unit: 'Sekunden',
+    tags: ['Physik', 'Sonne', 'Astronomie']
+  },
+
+  // Mu-Cho Extra (6-10)
+  {
+    id: 'q-mc-6',
+    category: 'Mu-Cho',
+    mechanic: 'multipleChoice',
+    question: 'Welches Material ist zaeher als Stahl und kommt in der Natur vor?',
+    questionEn: 'What natural material is tougher than steel?',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Diamant', 'Spinnenseide', 'Perlmutt', 'Obsidian'],
+    optionsEn: ['Diamond', 'Spider silk', 'Mother-of-pearl', 'Obsidian'],
+    correctIndex: 1,
+    tags: ['Aha-Effekt', 'Natur', 'Materialwissenschaft']
+  },
+  {
+    id: 'q-mc-7',
+    category: 'Mu-Cho',
+    mechanic: 'multipleChoice',
+    question: 'Welches Tier hat 9 Gehirne?',
+    questionEn: 'Which animal has 9 brains?',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Octopus', 'Seestern', 'Schnecke', 'Qualle'],
+    optionsEn: ['Octopus', 'Starfish', 'Snail', 'Jellyfish'],
+    correctIndex: 0,
+    tags: ['Tiere', 'Neurologie', 'Aha-Effekt']
+  },
+  {
+    id: 'q-mc-8',
+    category: 'Mu-Cho',
+    mechanic: 'multipleChoice',
+    question: 'Welche FRUCHT ist botanisch kein Obst?',
+    questionEn: 'Which "fruit" is botanically NOT a fruit?',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Erdbeere', 'Tomate', 'Banane', 'Apfel'],
+    optionsEn: ['Strawberry', 'Tomato', 'Banana', 'Apple'],
+    correctIndex: 0,
+    tags: ['Botanik', 'Ueberschneidung', 'Aha-Effekt']
+  },
+  {
+    id: 'q-mc-9',
+    category: 'Mu-Cho',
+    mechanic: 'multipleChoice',
+    question: 'Welcher US-Präsident hatte eine schwarze Katze namens Mittens?',
+    questionEn: 'Which U.S. President had a black cat named Mittens?',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Barack Obama', 'Bill Clinton', 'Ronald Reagan', 'George W. Bush'],
+    optionsEn: ['Barack Obama', 'Bill Clinton', 'Ronald Reagan', 'George W. Bush'],
+    correctIndex: 1,
+    tags: ['Trivial', 'USA', 'History']
+  },
+  {
+    id: 'q-mc-10',
+    category: 'Mu-Cho',
+    mechanic: 'multipleChoice',
+    question: 'Welches Tier kann NICHT rückwärts gehen?',
+    questionEn: 'Which animal cannot walk backwards?',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Kangaroo', 'Elephant', 'Ostrich', 'Walking Stick'],
+    optionsEn: ['Kangaroo', 'Elephant', 'Ostrich', 'Walking Stick'],
+    correctIndex: 0,
+    tags: ['Tiere', 'Bewegung', 'Symbolik']
+  },
+
+  // Stimmt's Extra (6-10)
+  {
+    id: 'q-tf-6',
+    category: 'Stimmts',
+    mechanic: 'betting',
+    question: 'Kühe haben beste Freunde und leiden unter Trennungen.',
+    questionEn: 'Cows have best friends and suffer from separation.',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10,
+    tags: ['Tierkunde', 'Aha-Effekt', 'Wissenschaft']
+  },
+  {
+    id: 'q-tf-7',
+    category: 'Stimmts',
+    mechanic: 'betting',
+    question: 'Honig ist das einzige Lebensmittel das über 3000 Jahre haltbar ist.',
+    questionEn: 'Honey is the only food that never expires and lasts 3000+ years.',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10,
+    tags: ['Chemie', 'Konservierung', 'Aha-Effekt']
+  },
+  {
+    id: 'q-tf-8',
+    category: 'Stimmts',
+    mechanic: 'betting',
+    question: 'Es gibt mehr Sterne im Universum als Sandkörner auf allen Erden zusammen.',
+    questionEn: 'There are more stars in the universe than grains of sand on Earth.',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 1,
+    pointsPool: 10,
+    tags: ['Astronomie', 'Kontraintuitivität', 'Mathe']
+  },
+  {
+    id: 'q-tf-9',
+    category: 'Stimmts',
+    mechanic: 'betting',
+    question: 'Menschen sind die einzigen Tiere die weinen können.',
+    questionEn: 'Humans are the only animals that can cry.',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 1,
+    pointsPool: 10,
+    tags: ['Biologie', 'Tiere', 'Emotionen']
+  },
+  {
+    id: 'q-tf-10',
+    category: 'Stimmts',
+    mechanic: 'betting',
+    question: 'Der menschliche Körper hat mehr Atome als es Sterne im Universum gibt.',
+    questionEn: 'The human body has more atoms than there are stars in the universe.',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10,
+    tags: ['Physik', 'Mathe', 'Aha-Effekt']
+  },
+
+  // Cheese Extra (6-10)
+  {
+    id: 'q-cheese-6',
+    category: 'Cheese',
+    mechanic: 'multipleChoice',
+    question: 'Welches Land hat das längste Wort in seinem Namen?',
+    questionEn: 'Which country has the longest word in its name?',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Liechtenstein', 'Kapverdische Inseln', 'Deutschland', 'Bulgarien'],
+    optionsEn: ['Liechtenstein', 'Cape Verde', 'Germany', 'Bulgaria'],
+    correctIndex: 0,
+    tags: ['Geographie', 'Sprache', 'Trivial']
+  },
+  {
+    id: 'q-cheese-7',
+    category: 'Cheese',
+    mechanic: 'betting',
+    question: 'Bananen sind technisch BEEREN, aber Erdbeeren sind KEINE Beeren.',
+    questionEn: 'Bananas are technically berries, but strawberries are NOT.',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10,
+    tags: ['Botanik', 'Ueberraschung', 'Fruechte']
+  },
+  {
+    id: 'q-cheese-8',
+    category: 'Cheese',
+    mechanic: 'betting',
+    question: 'Nase und Ohren wachsen dein Leben lang immer weiter.',
+    questionEn: 'Your nose and ears continue to grow throughout your life.',
+    points: 1,
+    segmentIndex: 0,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 0,
+    pointsPool: 10,
+    tags: ['Biologie', 'Altern', 'Koerper']
+  },
+  {
+    id: 'q-cheese-9',
+    category: 'Cheese',
+    mechanic: 'multipleChoice',
+    question: 'Mit welchem Wort bezeichnet man die Angst vor langen Wörtern?',
+    questionEn: 'What is the phobia of long words called?',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Hippophobie', 'Glossophobie', 'Hippopotomonstrosesquippedaliophobia', 'Lexiphobie'],
+    optionsEn: ['Hippophobia', 'Glossophobia', 'Hippopotomonstrosesquippedaliophobia', 'Lexiphobia'],
+    correctIndex: 2,
+    tags: ['Sprache', 'Meta', 'Aha-Effekt']
+  },
+  {
+    id: 'q-cheese-10',
+    category: 'Cheese',
+    mechanic: 'betting',
+    question: 'Jeder Mensch ist automatisch Neffe oder Nichte von mindestens einer Person.',
+    questionEn: 'Everyone is automatically a nephew or niece of at least one person.',
+    points: 2,
+    segmentIndex: 1,
+    options: ['Ja, stimmt', 'Nein, stimmt nicht', 'Unsicher'],
+    optionsEn: ['True', 'False', 'Not sure'],
+    correctIndex: 1,
+    pointsPool: 10,
+    tags: ['Logik', 'Familie', 'Denksport']
   }
 ];
 

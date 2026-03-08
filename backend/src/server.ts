@@ -14,8 +14,9 @@ import * as Sentry from '@sentry/node';
 import NodeCache from 'node-cache';
 
 Sentry.init({
-  dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0', // TODO: Replace with your real DSN
+  dsn: process.env.SENTRY_DSN || '', // Requires env var on production
   tracesSampleRate: 1.0,
+  enabled: !!process.env.SENTRY_DSN // Only enable if DSN provided
 });
 
 // Initialize cache (default TTL: 10 minutes)
@@ -130,7 +131,8 @@ const io = new SocketIOServer(httpServer, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb' }));
 
 // static files for uploads
 const uploadRoot = path.join(__dirname, '..', '..', 'uploads');
@@ -139,7 +141,12 @@ const blitzUploadDir = path.join(uploadRoot, 'blitz');
 
 // Healthcheck / Room-Check
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({ 
+    ok: true,
+    timestamp: new Date().toISOString(),
+    db: isDBConnected() ? 'connected' : 'fallback',
+    uptime: process.uptime()
+  });
 });
 
 app.get('/api/rooms/:roomCode', (req, res) => {
@@ -6036,6 +6043,20 @@ setInterval(() => {
 
 // --- Socket.IO --------------------------------------------------------------
 io.on('connection', (socket: Socket) => {
+  // Error handling for socket
+  socket.on('error', (error: Error) => {
+    console.error(`[Socket ${socket.id}] Error:`, error.message);
+    Sentry.captureException(error);
+  });
+  
+  socket.on('disconnect', (reason: string) => {
+    if (reason === 'transport close' || reason === 'server namespace disconnect') {
+      // Normal disconnect - no logging needed
+    } else {
+      console.warn(`[Socket ${socket.id}] Disconnect (${reason})`);
+    }
+  });
+  
   socket.on('joinRoom', (roomCode: string) => {
     const resolved = normalizeRoomCode(roomCode);
     if (!resolved) {
@@ -6803,20 +6824,55 @@ setInterval(() => {
   }
 }, ROOM_IDLE_CLEANUP_MS);
 
+// --- Error Handling ---------------------------------------------------------
+// Express error handler (must be last)
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Express Error]', err.message);
+  Sentry.captureException(err);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Rejection]', reason);
+  Sentry.captureException(new Error(`Unhandled Rejection: ${reason}`));
+});
+
+// Uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('[Uncaught Exception]', error);
+  Sentry.captureException(error);
+  // Exit after logging - cannot recover from uncaught exceptions
+  process.exit(1);
+});
+
 // --- Start server -----------------------------------------------------------
 const listenWithFallback = (port: number, attemptsLeft: number) => {
   httpServer
     .listen(port, async () => {
       console.log(`Quiz-Backend läuft auf Port ${port}`);
       
+      // Validate required environment variables
+      if (!process.env.MONGODB_URI) {
+        console.warn('⚠️ MONGODB_URI nicht gesetzt - nutze In-Memory Fallback');
+      }
+      if (!process.env.SENTRY_DSN) {
+        console.warn('⚠️ SENTRY_DSN nicht gesetzt - Fehlertracking deaktiviert');
+      }
+      
       // Initialize MongoDB
       try {
         await connectDB();
         await initializeDefaultQuestions(questions);
-        console.log('✓ Datenbank bereit');
+        console.log('✓ MongoDB bereit');
       } catch (err) {
-        console.warn('MongoDB nicht verfügbar, nutze In-Memory Fallback:', err);
+        console.warn('⚠️ MongoDB nicht verfügbar, nutze In-Memory Fallback:', err);
       }
+      
+      console.log('✓ Server bereit');
     })
     .on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {
@@ -6831,6 +6887,29 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM empfangen, fahre Server herunter...');
+  httpServer.close(() => {
+    console.log('✓ HTTP Server geschlossen');
+    process.exit(0);
+  });
+  
+  // Force exit after 10 seconds
+  setTimeout(() => {
+    console.error('Erzwungenes Herunterfahren nach Timeout');
+    process.exit(1);
+  }, 10000);
+});
+
+process.on('SIGINT', () => {
+  console.log('⚠️ SIGINT empfangen, fahre Server herunter...');
+  httpServer.close(() => {
+    console.log('✓ HTTP Server geschlossen');
+    process.exit(0);
+  });
+});
 
 
 

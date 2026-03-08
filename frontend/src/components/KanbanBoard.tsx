@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   AnyQuestion,
   QuizCategory,
@@ -16,6 +16,12 @@ interface KanbanBoardProps {
   onUpdate: (draft: CozyQuizDraft) => void;
 }
 
+// Undo/Redo History
+interface HistoryState {
+  questions: AnyQuestion[];
+  timestamp: number;
+}
+
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoardProps) => {
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [draggedSlot, setDraggedSlot] = useState<number | null>(null);
@@ -29,9 +35,59 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     Cheese: false,
     GemischteTuete: false
   });
+  const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
+  const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  
+  // Undo/Redo
+  const [history, setHistory] = useState<HistoryState[]>([{ questions: draft.questions, timestamp: Date.now() }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  
   const language = draft.meta.language === 'en' ? 'en' : 'de'; // Vereinfacht
 
   const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
+
+  // Undo/Redo System
+  const addToHistory = useCallback((questions: AnyQuestion[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push({ questions: [...questions], timestamp: Date.now() });
+    // Keep max 50 history states
+    if (newHistory.length > 50) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  }, [history, historyIndex]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      onUpdate({ ...draft, questions: history[newIndex].questions });
+    }
+  }, [historyIndex, history, draft, onUpdate]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      onUpdate({ ...draft, questions: history[newIndex].questions });
+    }
+  }, [historyIndex, history, draft, onUpdate]);
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   // Gruppiere Fragen nach Kategorie
   const getQuestionsByCategory = (category: QuizCategory) => {
@@ -41,13 +97,136 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     if (!filterQuery.trim()) return items;
     const qLower = filterQuery.trim().toLowerCase();
     return items.filter(({ question }) =>
-      (question.question || '').toLowerCase().includes(qLower)
+      (question.question || '').toLowerCase().includes(qLower) ||
+      (question.tags || []).some((tag: string) => tag.toLowerCase().includes(qLower)) ||
+      (question.mechanic || '').toLowerCase().includes(qLower)
     );
   };
+
+  // Auto-Balance: Gleicht Kategorien aus (5 pro Kategorie)
+  const autoBalance = useCallback(() => {
+    if (!window.confirm('⚖️ Kategorien automatisch ausgleichen?\n\nVerteilt Fragen gleichmäßig: 5 pro Kategorie.')) return;
+    
+    const nextQuestions = [...draft.questions];
+    const categoryCounts: Record<QuizCategory, number> = {
+      Schaetzchen: 0,
+      'Mu-Cho': 0,
+      Stimmts: 0,
+      Cheese: 0,
+      GemischteTuete: 0
+    };
+    
+    // Count current distribution
+    nextQuestions.forEach(q => {
+      categoryCounts[q.category] = (categoryCounts[q.category] || 0) + 1;
+    });
+    
+    // Find over/under filled categories
+    const overFilled = categories.filter(cat => categoryCounts[cat] > 5);
+    const underFilled = categories.filter(cat => categoryCounts[cat] < 5);
+    
+    if (overFilled.length === 0 && underFilled.length === 0) {
+      alert('✓ Bereits ausbalanciert!');
+      return;
+    }
+    
+    // Move excess questions to underfilled categories
+    overFilled.forEach(catFrom => {
+      while (categoryCounts[catFrom] > 5 && underFilled.length > 0) {
+        const catTo = underFilled[0];
+        const excessIdx = nextQuestions.findIndex(q => q.category === catFrom);
+        if (excessIdx >= 0) {
+          nextQuestions[excessIdx] = { ...nextQuestions[excessIdx], category: catTo };
+          categoryCounts[catFrom]--;
+          categoryCounts[catTo]++;
+          if (categoryCounts[catTo] >= 5) underFilled.shift();
+        } else break;
+      }
+    });
+    
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+  }, [draft, onUpdate, categories, addToHistory]);
+
+  // Bulk Actions: Delete/Move selected questions
+  const bulkDelete = useCallback(() => {
+    if (selectedSlots.size === 0) return;
+    if (!window.confirm(`🗑️ ${selectedSlots.size} Fragen zurücksetzen?`)) return;
+    
+    const nextQuestions = draft.questions.map((q, idx) => {
+      if (selectedSlots.has(idx)) {
+        const slot = COZY_SLOT_TEMPLATE[idx] || COZY_SLOT_TEMPLATE[0];
+        return createEmptyQuestion(idx, slot);
+      }
+      return q;
+    });
+    
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+    setSelectedSlots(new Set());
+  }, [selectedSlots, draft, onUpdate, addToHistory]);
+
+  const bulkMove = useCallback((targetCategory: QuizCategory) => {
+    if (selectedSlots.size === 0) return;
+    
+    const nextQuestions = draft.questions.map((q, idx) => {
+      if (selectedSlots.has(idx)) {
+        return { ...q, category: targetCategory };
+      }
+      return q;
+    });
+    
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+    setSelectedSlots(new Set());
+  }, [selectedSlots, draft, onUpdate, addToHistory]);
+
+  // Templates
+  const applyTemplate = useCallback((templateName: string) => {
+    let nextQuestions = [...draft.questions];
+    
+    if (templateName === 'difficulty-ascending') {
+      // Sort by difficulty: easy → hard
+      nextQuestions.sort((a, b) => (a.points || 10) - (b.points || 10));
+    } else if (templateName === 'difficulty-descending') {
+      // Sort by difficulty: hard → easy
+      nextQuestions.sort((a, b) => (b.points || 10) - (a.points || 10));
+    } else if (templateName === 'shuffle') {
+      // Shuffle questions
+      for (let i = nextQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nextQuestions[i], nextQuestions[j]] = [nextQuestions[j], nextQuestions[i]];
+      }
+    } else if (templateName === 'alternate-categories') {
+      // Alternate categories
+      const byCat: Record<QuizCategory, AnyQuestion[]> = {
+        Schaetzchen: [],
+        'Mu-Cho': [],
+        Stimmts: [],
+        Cheese: [],
+        GemischteTuete: []
+      };
+      nextQuestions.forEach(q => byCat[q.category].push(q));
+      nextQuestions = [];
+      let catIndex = 0;
+      while (nextQuestions.length < 25) {
+        const cat = categories[catIndex % categories.length];
+        if (byCat[cat].length > 0) {
+          nextQuestions.push(byCat[cat].shift()!);
+        }
+        catIndex++;
+      }
+    }
+    
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+    setShowTemplateMenu(false);
+  }, [draft, onUpdate, categories, addToHistory]);
 
   const handleQuestionSave = (slotIndex: number, updatedQuestion: AnyQuestion) => {
     const nextQuestions = draft.questions.slice();
     nextQuestions[slotIndex] = updatedQuestion;
+    addToHistory(nextQuestions);
     onUpdate({ ...draft, questions: nextQuestions });
     setEditingSlot(null);
   };
@@ -111,7 +290,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
           const firstEmpty = targetSlots[0].idx;
           handleQuestionSave(firstEmpty, { ...question, category: targetCategory });
         } else {
-          alert(`Keine freien Slots in ${targetCategory}`);
+          alert(`✗ Keine freien Slots in ${targetCategory}`);
         }
       } catch (err) {
         // Parsing error - ignore dropped data
@@ -130,11 +309,43 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     const nextQuestions = draft.questions.slice();
     const draggedQuestion = nextQuestions[draggedSlot];
     nextQuestions[draggedSlot] = { ...draggedQuestion, category: targetCategory };
+    addToHistory(nextQuestions);
     onUpdate({ ...draft, questions: nextQuestions });
 
     setDraggedSlot(null);
     setDraggedCategory(null);
   };
+
+  // Multi-select toggle
+  const toggleSlotSelection = useCallback((slotIndex: number, event: React.MouseEvent) => {
+    if (event.ctrlKey || event.metaKey) {
+      event.stopPropagation();
+      setSelectedSlots(prev => {
+        const next = new Set(prev);
+        if (next.has(slotIndex)) {
+          next.delete(slotIndex);
+        } else {
+          next.add(slotIndex);
+        }
+        return next;
+      });
+    } else if (event.shiftKey && selectedSlots.size > 0) {
+      // Shift-select range
+      event.stopPropagation();
+      const indices = Array.from(selectedSlots);
+      const lastSelected = indices[indices.length - 1];
+      const start = Math.min(lastSelected, slotIndex);
+      const end = Math.max(lastSelected, slotIndex);
+      const next = new Set(selectedSlots);
+      for (let i = start; i <= end; i++) {
+        next.add(i);
+      }
+      setSelectedSlots(next);
+    } else {
+      // Regular click
+      setEditingSlot(slotIndex);
+    }
+  }, [selectedSlots]);
 
   return (
     <div style={kanbanContainerStyle}>
@@ -142,26 +353,116 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
           📋 Kanban-Board - Fragen nach Kategorien
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+        
+        {/* Toolbar */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
           <input
             type="text"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            placeholder="Suchen… (Fragentext)"
+            placeholder="🔍 Suchen... (Text, Tags, Mechanik)"
             style={{
               padding: '8px 10px',
               borderRadius: 8,
               border: '1px solid rgba(255,255,255,0.14)',
               background: 'rgba(0,0,0,0.25)',
-              color: '#e2e8f0'
+              color: '#e2e8f0',
+              flex: '1 1 200px',
+              minWidth: 200
             }}
           />
+          
+          {/* Action Buttons */}
+          <button
+            onClick={autoBalance}
+            style={toolbarButtonStyle}
+            title="Kategorien automatisch ausgleichen (5 pro Kategorie)"
+          >
+            ⚖️ Auto-Balance
+          </button>
+          
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+              style={toolbarButtonStyle}
+              title="Vorgefertigte Vorlagen anwenden"
+            >
+              📋 Templates
+            </button>
+            {showTemplateMenu && (
+              <div style={templateMenuStyle}>
+                <button onClick={() => applyTemplate('difficulty-ascending')} style={templateItemStyle}>
+                  📈 Schwierigkeit aufsteigend
+                </button>
+                <button onClick={() => applyTemplate('difficulty-descending')} style={templateItemStyle}>
+                  📉 Schwierigkeit absteigend
+                </button>
+                <button onClick={() => applyTemplate('shuffle')} style={templateItemStyle}>
+                  🔀 Zufällig mischen
+                </button>
+                <button onClick={() => applyTemplate('alternate-categories')} style={templateItemStyle}>
+                  🎯 Kategorien abwechseln
+                </button>
+              </div>
+            )}
+          </div>
+          
+          <button
+            onClick={undo}
+            disabled={historyIndex === 0}
+            style={{ ...toolbarButtonStyle, opacity: historyIndex === 0 ? 0.4 : 1 }}
+            title="Rückgängig (Ctrl+Z)"
+          >
+            ↶ Undo
+          </button>
+          
+          <button
+            onClick={redo}
+            disabled={historyIndex === history.length - 1}
+            style={{ ...toolbarButtonStyle, opacity: historyIndex === history.length - 1 ? 0.4 : 1 }}
+            title="Wiederherstellen (Ctrl+Y)"
+          >
+            ↷ Redo
+          </button>
+          
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, opacity: 0.8 }}>
             <input type="checkbox" checked={isDense} onChange={(e) => setIsDense(e.target.checked)} />
-            Dichtes Layout
+            Kompakt
           </label>
-          <small style={{ opacity: 0.6 }}>Drag & Drop zwischen Kategorien. Click zum Editieren.</small>
+          
+          <small style={{ opacity: 0.6, marginLeft: 'auto' }}>
+            Ctrl+Click: Mehrfachauswahl • Drag & Drop zwischen Kategorien
+          </small>
         </div>
+        
+        {/* Bulk Actions Bar */}
+        {selectedSlots.size > 0 && (
+          <div style={bulkActionsBarStyle}>
+            <span style={{ fontWeight: 700 }}>{selectedSlots.size} Fragen ausgewählt</span>
+            <button onClick={bulkDelete} style={bulkActionButtonStyle}>
+              🗑️ Löschen
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => bulkMove(cat)}
+                style={{
+                  ...bulkActionButtonStyle,
+                  background: `${categoryColors[cat]}22`,
+                  borderColor: categoryColors[cat]
+                }}
+              >
+                → {categoryLabels[cat]?.[language] || cat}
+              </button>
+            ))}
+            <button
+              onClick={() => setSelectedSlots(new Set())}
+              style={bulkActionButtonStyle}
+            >
+              ✕ Abbrechen
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={boardStyle}>
@@ -170,6 +471,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
           const catColor = categoryColors[category];
           const questions = getQuestionsByCategory(category);
           const count = questions.length;
+          const isValid = count === 5;
+          const isOverfilled = count > 5;
+          const isUnderfilled = count < 5;
 
           return (
             <div
@@ -178,9 +482,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
               onDrop={(e) => handleDrop(e, category)}
               style={{
                 ...columnStyle,
-                borderColor: catColor,
-                borderTopColor: catColor,
-                backgroundColor: `${catColor}08`
+                borderColor: isOverfilled ? '#ef4444' : isUnderfilled ? '#f59e0b' : catColor,
+                borderTopColor: isOverfilled ? '#ef4444' : isUnderfilled ? '#f59e0b' : catColor,
+                backgroundColor: isOverfilled ? 'rgba(239,68,68,0.08)' : isUnderfilled ? 'rgba(245,158,11,0.08)' : `${catColor}08`
               }}
             >
               {/* Column Header */}
@@ -197,14 +501,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                   <strong style={{ fontSize: 13 }}>{catLabel}</strong>
                 </div>
                 <div style={{
-                  background: `${catColor}20`,
-                  color: catColor,
+                  background: isOverfilled ? 'rgba(239,68,68,0.2)' : isUnderfilled ? 'rgba(245,158,11,0.2)' : `${catColor}20`,
+                  color: isOverfilled ? '#ef4444' : isUnderfilled ? '#f59e0b' : catColor,
                   padding: '2px 8px',
                   borderRadius: 4,
                   fontSize: 11,
                   fontWeight: 700
                 }}>
-                  {count}/5
+                  {count}/5 {isOverfilled ? '⚠️' : isUnderfilled ? '⚠️' : '✓'}
                 </div>
                 <button
                   onClick={() => setCollapsed(prev => ({ ...prev, [category]: !prev[category] }))}
@@ -231,59 +535,120 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                 {questions.map(({ question, index }: { question: AnyQuestion; index: number }) => {
                   const slot = COZY_SLOT_TEMPLATE[index] || COZY_SLOT_TEMPLATE[0];
                   const isBeingDragged = draggedSlot === index;
+                  const isSelected = selectedSlots.has(index);
+                  const isHovered = hoveredSlot === index;
                   const usedCount = question.usedIn?.length || 0;
                   const isUsed = usedCount > 0;
 
                   return (
-                    <div
-                      key={index}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index, category)}
-                      onClick={() => setEditingSlot(index)}
-                      style={{
-                        ...questionCardStyle,
-                        padding: isDense ? 8 : 10,
-                        opacity: isBeingDragged ? 0.5 : 1,
-                        borderColor: isBeingDragged ? `${catColor}88` : catColor,
-                        background: isBeingDragged
-                          ? `${catColor}15`
-                          : 'rgba(15,23,42,0.6)',
-                        cursor: 'grab'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
-                          Slot {index + 1} • {slot.defaultPoints}pts
-                        </div>
-                        {isUsed && (
-                          <div style={{
-                            background: 'rgba(251,191,36,0.2)',
-                            border: '1px solid rgba(251,191,36,0.4)',
-                            borderRadius: 4,
-                            padding: isDense ? '1px 5px' : '2px 6px',
-                            fontSize: isDense ? 9 : 10,
-                            fontWeight: 600,
-                            color: '#fbbf24'
-                          }}>
-                            {usedCount}x verwendet
+                    <div key={index} style={{ position: 'relative' }}>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index, category)}
+                        onClick={(e) => toggleSlotSelection(index, e)}
+                        onMouseEnter={() => setHoveredSlot(index)}
+                        onMouseLeave={() => setHoveredSlot(null)}
+                        style={{
+                          ...questionCardStyle,
+                          padding: isDense ? 8 : 10,
+                          opacity: isBeingDragged ? 0.5 : 1,
+                          borderColor: isSelected ? '#3b82f6' : isBeingDragged ? `${catColor}88` : catColor,
+                          borderWidth: isSelected ? 2 : 1,
+                          background: isSelected
+                            ? 'rgba(59,130,246,0.15)'
+                            : isBeingDragged
+                            ? `${catColor}15`
+                            : 'rgba(15,23,42,0.6)',
+                          cursor: 'grab',
+                          transform: isHovered ? 'translateY(-2px)' : 'none',
+                          boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
+                            Slot {index + 1} • {slot.defaultPoints}pts
                           </div>
+                          {isUsed && (
+                            <div style={{
+                              background: 'rgba(251,191,36,0.2)',
+                              border: '1px solid rgba(251,191,36,0.4)',
+                              borderRadius: 4,
+                              padding: isDense ? '1px 5px' : '2px 6px',
+                              fontSize: isDense ? 9 : 10,
+                              fontWeight: 600,
+                              color: '#fbbf24'
+                            }}>
+                              {usedCount}x
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div style={{
+                              background: '#3b82f6',
+                              color: '#fff',
+                              borderRadius: 4,
+                              padding: '2px 6px',
+                              fontSize: 10,
+                              fontWeight: 700
+                            }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: isDense ? 11 : 12, fontWeight: 600, marginBottom: isDense ? 4 : 6, lineHeight: 1.35 }}>
+                          {question.question || '(leer)'}
+                        </div>
+                        {question.imageUrl && (
+                          <div style={{
+                            width: '100%',
+                            height: isDense ? 48 : 60,
+                            background: `url(${question.imageUrl}) center/cover`,
+                            borderRadius: 6,
+                            marginBottom: isDense ? 4 : 6
+                          }} />
                         )}
+                        <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.6 }}>
+                          {question.mechanic} • {question.category}
+                          {question.tags && question.tags.length > 0 && (
+                            <span style={{ marginLeft: 4 }}>
+                              • {question.tags.slice(0, 2).join(', ')}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: isDense ? 11 : 12, fontWeight: 600, marginBottom: isDense ? 4 : 6, lineHeight: 1.35 }}>
-                        {question.question || '(leer)'}
-                      </div>
-                      {question.imageUrl && (
-                        <div style={{
-                          width: '100%',
-                          height: isDense ? 48 : 60,
-                          background: `url(${question.imageUrl}) center/cover`,
-                          borderRadius: 6,
-                          marginBottom: isDense ? 4 : 6
-                        }} />
+                      
+                      {/* Hover Preview Tooltip */}
+                      {isHovered && !isBeingDragged && !isDense && (
+                        <div style={hoverPreviewStyle}>
+                          <strong style={{ fontSize: 12, marginBottom: 6, display: 'block' }}>
+                            {question.question}
+                          </strong>
+                          {question.mechanic === 'multipleChoice' && (question as any).options && (
+                            <div style={{ fontSize: 11, opacity: 0.9 }}>
+                              <div style={{ fontWeight: 600, marginBottom: 4 }}>Optionen:</div>
+                              {((question as any).options || []).map((opt: string, i: number) => (
+                                <div key={i} style={{
+                                  padding: '2px 4px',
+                                  background: (question as any).correctIndex === i ? 'rgba(34,197,94,0.2)' : 'transparent',
+                                  borderRadius: 4
+                                }}>
+                                  {String.fromCharCode(65 + i)}) {opt}
+                                  {(question as any).correctIndex === i && ' ✓'}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {question.mechanic === 'estimate' && (
+                            <div style={{ fontSize: 11 }}>
+                              Zielwert: {(question as any).targetValue} {(question as any).unit}
+                            </div>
+                          )}
+                          {(question as any).answer && (
+                            <div style={{ fontSize: 11 }}>
+                              Antwort: {(question as any).answer}
+                            </div>
+                          )}
+                        </div>
                       )}
-                      <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.6 }}>
-                        {question.mechanic} • {question.category}
-                      </div>
                     </div>
                   );
                 })}
@@ -381,6 +746,87 @@ const questionCardStyle: React.CSSProperties = {
   cursor: 'pointer',
   transition: 'all 0.2s',
   userSelect: 'none'
+};
+
+const toolbarButtonStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.14)',
+  background: 'rgba(0,0,0,0.25)',
+  color: '#e2e8f0',
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+  transition: 'all 0.2s'
+};
+
+const bulkActionsBarStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  alignItems: 'center',
+  padding: '10px 12px',
+  borderRadius: 8,
+  background: 'rgba(59,130,246,0.15)',
+  border: '1px solid rgba(59,130,246,0.3)'
+};
+
+const bulkActionButtonStyle: React.CSSProperties = {
+  padding: '6px 10px',
+  borderRadius: 6,
+  border: '1px solid rgba(255,255,255,0.2)',
+  background: 'rgba(0,0,0,0.3)',
+  color: '#e2e8f0',
+  fontSize: 11,
+  fontWeight: 600,
+  cursor: 'pointer',
+  transition: 'all 0.2s'
+};
+
+const templateMenuStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  marginTop: 4,
+  background: 'rgba(15,23,42,0.95)',
+  border: '1px solid rgba(255,255,255,0.14)',
+  borderRadius: 8,
+  padding: 4,
+  zIndex: 100,
+  minWidth: 200,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2
+};
+
+const templateItemStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 6,
+  border: 'none',
+  background: 'transparent',
+  color: '#e2e8f0',
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+  textAlign: 'left',
+  transition: 'all 0.2s'
+};
+
+const hoverPreviewStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  marginTop: 4,
+  background: 'rgba(15,23,42,0.98)',
+  border: '1px solid rgba(255,255,255,0.2)',
+  borderRadius: 8,
+  padding: 10,
+  zIndex: 10,
+  minWidth: 250,
+  maxWidth: 300,
+  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  color: '#e2e8f0',
+  fontSize: 11,
+  lineHeight: 1.4
 };
 
 export default KanbanBoard;

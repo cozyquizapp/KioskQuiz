@@ -106,7 +106,7 @@ export async function initializeDefaultQuestions(defaultQuestions: AnyQuestion[]
   try {
     const count = await Question.countDocuments();
     if (count === 0) {
-      console.log('Initialisiere 25 Standard-Fragen...');
+      console.log(`Initialisiere ${defaultQuestions.length} Standard-Fragen...`);
       await Question.insertMany(
         defaultQuestions.map(q => ({
           ...q,
@@ -115,7 +115,7 @@ export async function initializeDefaultQuestions(defaultQuestions: AnyQuestion[]
           updatedAt: new Date()
         }))
       );
-      console.log('✓ Standard-Fragen erstellt');
+      console.log(`✓ ${defaultQuestions.length} Standard-Fragen erstellt`);
     }
   } catch (err) {
     console.error('Fehler beim Initialisieren von Standard-Fragen:', err);

@@ -111,7 +111,12 @@ import {
   saveQuestionToDB, 
   deleteQuestionFromDB, 
   bulkUploadQuestionsToDB,
-  initializeDefaultQuestions
+  initializeDefaultQuestions,
+  CozyQuizDraftModel,
+  getCozyDraftFromDB,
+  getAllCozyDraftsFromDB,
+  saveCozyDraftToDB,
+  deleteCozyDraftFromDB
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -1658,38 +1663,95 @@ app.get('/api/stats/question/:questionId', (req, res) => {
 });
 
 // Cozy60 Builder API
-app.get('/api/studio/cozy60', (_req, res) => {
-  const list = [...cozyDrafts]
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .map((draft) => summarizeCozyDraft(draft));
-  res.json({ drafts: list });
+app.get('/api/studio/cozy60', async (_req, res) => {
+  try {
+    // Try to load from MongoDB first
+    if (isDBConnected()) {
+      const drafted = await getAllCozyDraftsFromDB();
+      const list = drafted.map((draft) => summarizeCozyDraft(draft));
+      return res.json({ drafts: list });
+    }
+    
+    // Fallback to in-memory
+    const list = [...cozyDrafts]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((draft) => summarizeCozyDraft(draft));
+    res.json({ drafts: list });
+  } catch (err) {
+    console.error('Fehler beim Laden von Cozy Drafts:', err);
+    // Fallback to in-memory on error
+    const list = [...cozyDrafts]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((draft) => summarizeCozyDraft(draft));
+    res.json({ drafts: list });
+  }
 });
 
-app.post('/api/studio/cozy60', (req, res) => {
+app.post('/api/studio/cozy60', async (req, res) => {
   try {
     const meta = req.body?.meta as Partial<CozyQuizMeta> | undefined;
     const draft = createNewCozyDraft(meta);
-    cozyDrafts.push(draft);
-    persistCozyDrafts();
+    
+    // Save to MongoDB if connected
+    if (isDBConnected()) {
+      await saveCozyDraftToDB(draft);
+    } else {
+      // Fallback to in-memory
+      cozyDrafts.push(draft);
+      persistCozyDrafts();
+    }
+    
     res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
   } catch (err) {
+    console.error('Fehler beim Erstellen von Cozy Draft:', err);
     res.status(400).json({ error: (err as Error).message });
   }
 });
 
-app.get('/api/studio/cozy60/:id', (req, res) => {
+app.get('/api/studio/cozy60/:id', async (req, res) => {
   try {
-    const { draft } = getCozyDraftOrFail(req.params.id);
+    const draftId = req.params.id;
+    
+    // Try MongoDB first
+    if (isDBConnected()) {
+      const draft = await getCozyDraftFromDB(draftId);
+      if (!draft) {
+        return res.status(404).json({ error: 'Draft nicht gefunden' });
+      }
+      return res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
+    }
+    
+    // Fallback to in-memory
+    const { draft } = getCozyDraftOrFail(draftId);
     res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
   } catch (err) {
-    res.status(404).json({ error: (err as Error).message });
+    const message = (err as Error).message;
+    const status = message === 'Draft nicht gefunden' ? 404 : 400;
+    res.status(status).json({ error: message });
   }
 });
 
-app.put('/api/studio/cozy60/:id', (req, res) => {
+app.put('/api/studio/cozy60/:id', async (req, res) => {
   try {
-    const { draft, index } = getCozyDraftOrFail(req.params.id);
-    const updated = applyDraftUpdate(draft, (req.body as Partial<CozyQuizDraft>) || {});
+    const draftId = req.params.id;
+    const updates = (req.body as Partial<CozyQuizDraft>) || {};
+    
+    if (isDBConnected()) {
+      const existing = await getCozyDraftFromDB(draftId);
+      if (!existing) {
+        return res.status(404).json({ error: 'Draft nicht gefunden' });
+      }
+      
+      const updated = applyDraftUpdate(existing, updates);
+      updated.updatedAt = Date.now();
+      await saveCozyDraftToDB(updated);
+      
+      return res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
+    }
+    
+    // Fallback to in-memory
+    const { draft, index } = getCozyDraftOrFail(draftId);
+    const updated = applyDraftUpdate(draft, updates);
     cozyDrafts[index] = updated;
     persistCozyDrafts();
     res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
@@ -1700,10 +1762,26 @@ app.put('/api/studio/cozy60/:id', (req, res) => {
   }
 });
 
-app.post('/api/studio/cozy60/:id/publish', (req, res) => {
+app.post('/api/studio/cozy60/:id/publish', async (req, res) => {
   try {
-    const { draft, index } = getCozyDraftOrFail(req.params.id);
+    const draftId = req.params.id;
     const updates = (req.body?.draft || req.body?.updates) as Partial<CozyQuizDraft> | undefined;
+    
+    let draft: CozyQuizDraft;
+    let index = -1;
+    
+    if (isDBConnected()) {
+      const dbDraft = await getCozyDraftFromDB(draftId);
+      if (!dbDraft) {
+        return res.status(404).json({ error: 'Draft nicht gefunden' });
+      }
+      draft = dbDraft;
+    } else {
+      const result = getCozyDraftOrFail(draftId);
+      draft = result.draft;
+      index = result.index;
+    }
+    
     const updatedDraft = updates ? applyDraftUpdate(draft, updates) : draft;
     const now = Date.now();
     const finalized: CozyQuizDraft = {
@@ -1712,7 +1790,16 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
       lastPublishedAt: now,
       updatedAt: now
     };
-    cozyDrafts[index] = finalized;
+    
+    // Save finalized draft
+    if (isDBConnected()) {
+      await saveCozyDraftToDB(finalized);
+    } else {
+      cozyDrafts[index] = finalized;
+      persistCozyDrafts();
+    }
+    
+    // Save questions and create published quiz
     const requestedQuizId = typeof req.body?.quizId === 'string' ? req.body.quizId : undefined;
     const quizId = buildQuizIdFromDraft(finalized, requestedQuizId);
     finalized.questions.forEach((question) => upsertCustomQuestion(question));
@@ -1735,7 +1822,7 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
       enableBingo: finalized.enableBingo
     };
     upsertPublishedQuiz(publishedPayload);
-    persistCozyDrafts();
+    
     res.json({ ok: true, draft: finalized, quizId, warnings: collectCozyDraftWarnings(finalized) });
   } catch (err) {
     const message = (err as Error).message;
@@ -1744,9 +1831,22 @@ app.post('/api/studio/cozy60/:id/publish', (req, res) => {
   }
 });
 
-app.post('/api/studio/cozy60/:id/duplicate', (req, res) => {
+app.post('/api/studio/cozy60/:id/duplicate', async (req, res) => {
   try {
-    const { draft } = getCozyDraftOrFail(req.params.id);
+    const draftId = req.params.id;
+    let draft: CozyQuizDraft;
+    
+    if (isDBConnected()) {
+      const dbDraft = await getCozyDraftFromDB(draftId);
+      if (!dbDraft) {
+        return res.status(404).json({ error: 'Draft nicht gefunden' });
+      }
+      draft = dbDraft;
+    } else {
+      const result = getCozyDraftOrFail(draftId);
+      draft = result.draft;
+    }
+    
     const newTitle = typeof req.body?.newTitle === 'string' ? req.body.newTitle : `${draft.meta.title} (Kopie)`;
     
     const newDraft: CozyQuizDraft = {
@@ -1761,8 +1861,14 @@ app.post('/api/studio/cozy60/:id/duplicate', (req, res) => {
       lastPublishedAt: undefined
     };
     
-    cozyDrafts.push(newDraft);
-    persistCozyDrafts();
+    // Save duplicated draft
+    if (isDBConnected()) {
+      await saveCozyDraftToDB(newDraft);
+    } else {
+      cozyDrafts.push(newDraft);
+      persistCozyDrafts();
+    }
+    
     res.json({ draft: newDraft, warnings: collectCozyDraftWarnings(newDraft) });
   } catch (err) {
     const message = (err as Error).message;

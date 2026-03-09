@@ -15,6 +15,7 @@ import { API_BASE } from '../api';
 interface KanbanBoardProps {
   draft: CozyQuizDraft;
   onUpdate: (draft: CozyQuizDraft) => void;
+  onSlotFocus?: (slotIndex: number) => void;
 }
 
 // Undo/Redo History
@@ -23,7 +24,7 @@ interface HistoryState {
   timestamp: number;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoardProps) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus }: KanbanBoardProps) => {
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [draggedSlot, setDraggedSlot] = useState<number | null>(null);
   const [draggedCategory, setDraggedCategory] = useState<QuizCategory | null>(null);
@@ -319,6 +320,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
   };
 
   const quickSuggestForSlot = useCallback((slotIndex: number) => {
+    onSlotFocus?.(slotIndex);
     const current = draft.questions[slotIndex];
     if (current && !isSlotPlaceholder(current, slotIndex)) {
       const ok = window.confirm('Slot ist bereits gefuellt. Mit Vorschlag ersetzen?');
@@ -341,7 +343,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     nextQuestions[slotIndex] = suggested;
     addToHistory(nextQuestions);
     onUpdate({ ...draft, questions: nextQuestions });
-  }, [draft, isSlotPlaceholder, getSuggestionForSlot, addToHistory, onUpdate]);
+  }, [draft, isSlotPlaceholder, getSuggestionForSlot, addToHistory, onUpdate, onSlotFocus]);
 
   const fillEmptySlotsSmart = useCallback(() => {
     const emptyIndices = draft.questions
@@ -485,8 +487,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     } else {
       // Regular click
       setEditingSlot(slotIndex);
+      onSlotFocus?.(slotIndex);
     }
-  }, [selectedSlots]);
+  }, [selectedSlots, onSlotFocus]);
 
   return (
     <div style={kanbanContainerStyle}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CozyQuizDraft, Language, AnyQuestion } from '@shared/quizTypes';
+import { CozyQuizDraft, Language, AnyQuestion, CozyQuestionSlotTemplate } from '@shared/quizTypes';
 import {
   listCozyDrafts,
   fetchCozyDraft,
@@ -47,6 +47,89 @@ const ImprovedCozy60BuilderPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [restoredFromLocal, setRestoredFromLocal] = useState(false);
   const [lastAutoSave, setLastAutoSave] = useState<number | null>(null);
+  const [focusedSlotIndex, setFocusedSlotIndex] = useState<number | null>(null);
+  const [catalogOnlyMatching, setCatalogOnlyMatching] = useState(true);
+
+  const slotCategoryMap: Record<CozyQuestionSlotTemplate['type'], AnyQuestion['category']> = {
+    MU_CHO: 'Mu-Cho',
+    SCHAETZCHEN: 'Schaetzchen',
+    STIMMTS: 'Stimmts',
+    CHEESE: 'Cheese',
+    BUNTE_TUETE: 'GemischteTuete'
+  };
+
+  const isPlaceholder = (question: AnyQuestion, idx: number) => {
+    const slot = COZY_SLOT_TEMPLATE[idx] || COZY_SLOT_TEMPLATE[0];
+    const text = (question.question || '').trim().toLowerCase();
+    if (!text) return true;
+    if (text === slot.label.trim().toLowerCase()) return true;
+    if (text === `frage ${idx + 1}`) return true;
+    return false;
+  };
+
+  const matchesSlot = (question: AnyQuestion, slotIndex: number) => {
+    const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
+    const expectedCategory = slotCategoryMap[slot.type];
+    if (question.category !== expectedCategory) return false;
+
+    const typeByMechanic: Record<string, CozyQuestionSlotTemplate['type']> = {
+      multipleChoice: 'MU_CHO',
+      estimate: 'SCHAETZCHEN',
+      betting: 'STIMMTS',
+      trueFalse: 'STIMMTS',
+      imageQuestion: 'CHEESE',
+      sortItems: 'BUNTE_TUETE'
+    };
+
+    const normalizedType = question.type || typeByMechanic[question.mechanic] || null;
+    if (normalizedType !== slot.type) return false;
+
+    if (slot.type === 'BUNTE_TUETE' && slot.bunteKind) {
+      const kind = (question as any).bunteTuete?.kind;
+      return !kind || kind === slot.bunteKind;
+    }
+
+    return true;
+  };
+
+  const normalizeQuestionForSlot = (question: AnyQuestion, slotIndex: number): AnyQuestion => {
+    const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
+    return {
+      ...question,
+      category: slotCategoryMap[slot.type],
+      type: slot.type,
+      points: slot.defaultPoints,
+      segmentIndex: slot.segmentIndex
+    } as AnyQuestion;
+  };
+
+  const insertQuestionIntoSlot = (question: AnyQuestion, slotIndex: number) => {
+    if (!draft) return;
+    if (!matchesSlot(question, slotIndex)) {
+      alert(`Frage passt nicht zu Slot ${slotIndex + 1}.`);
+      return;
+    }
+
+    const updatedQuestions = [...draft.questions];
+    updatedQuestions[slotIndex] = normalizeQuestionForSlot(question, slotIndex);
+    setDraft({ ...draft, questions: updatedQuestions });
+  };
+
+  const insertQuestionIntoNextFreeSlot = (question: AnyQuestion) => {
+    if (!draft) return;
+
+    const match = draft.questions
+      .map((existing, idx) => ({ existing, idx }))
+      .find(({ existing, idx }) => isPlaceholder(existing, idx) && matchesSlot(question, idx));
+
+    if (!match) {
+      alert('Kein passender freier Slot gefunden.');
+      return;
+    }
+
+    insertQuestionIntoSlot(question, match.idx);
+    setFocusedSlotIndex(match.idx);
+  };
 
   const formatRelative = (ts: number) => {
     const diff = Date.now() - ts;
@@ -614,6 +697,7 @@ const ImprovedCozy60BuilderPage = () => {
                     <KanbanBoard
                       draft={draft}
                       onUpdate={(updated: CozyQuizDraft) => setDraft(updated)}
+                      onSlotFocus={(slotIndex) => setFocusedSlotIndex(slotIndex)}
                     />
                   )}
 
@@ -778,43 +862,66 @@ const ImprovedCozy60BuilderPage = () => {
 
                 {showCatalog && tab === 'board' && (
                   <div style={{ width: 400, borderLeft: '1px solid rgba(148,163,184,0.2)', overflow: 'auto' }}>
+                    <div
+                      style={{
+                        padding: '10px 12px',
+                        borderBottom: '1px solid rgba(148,163,184,0.2)',
+                        background: 'rgba(15,23,42,0.4)',
+                        display: 'grid',
+                        gap: 8
+                      }}
+                    >
+                      <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>
+                          {focusedSlotIndex !== null
+                            ? `🎯 Markierter Slot: #${focusedSlotIndex + 1}`
+                            : '🎯 Markiere einen Slot im Board fuer Fokus'}
+                        </span>
+                        {focusedSlotIndex !== null && (
+                          <button
+                            onClick={() => setFocusedSlotIndex(null)}
+                            style={{
+                              border: '1px solid rgba(148,163,184,0.45)',
+                              background: 'rgba(15,23,42,0.6)',
+                              color: '#cbd5e1',
+                              borderRadius: 6,
+                              padding: '2px 6px',
+                              fontSize: 11,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Fokus aus
+                          </button>
+                        )}
+                      </div>
+                      <label style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={catalogOnlyMatching}
+                          onChange={(e) => setCatalogOnlyMatching(e.target.checked)}
+                        />
+                        Nur passende Fragen zum markierten Slot zeigen
+                      </label>
+                    </div>
                     <QuestionCatalog
                       onSelectQuestion={(q: AnyQuestion) => {
-                        // Find first empty slot in same category
-                        if (!draft) return;
-
-                        const isPlaceholder = (question: AnyQuestion, idx: number) => {
-                          const slot = COZY_SLOT_TEMPLATE[idx] || COZY_SLOT_TEMPLATE[0];
-                          const text = (question.question || '').trim().toLowerCase();
-                          if (!text) return true;
-                          if (text === slot.label.trim().toLowerCase()) return true;
-                          if (text === `frage ${idx + 1}`) return true;
-                          return false;
-                        };
-                        
-                        const emptySlots = draft.questions
-                          .map((question, idx) => ({ question, idx }))
-                          .filter(({ question, idx }) => isPlaceholder(question, idx));
-                        
-                        if (emptySlots.length === 0) {
-                          alert('✗ Keine leeren Slots verfügbar. Bitte Slot löschen oder Frage ersetzen.');
+                        if (focusedSlotIndex !== null) {
+                          insertQuestionIntoSlot(q, focusedSlotIndex);
                           return;
                         }
-                        
-                        // Prefer same category
-                        const sameCat = emptySlots.find(({ question }) => question.category === q.category);
-                        const targetIdx = sameCat ? sameCat.idx : emptySlots[0].idx;
-                        
-                        // Replace slot with catalog question
-                        const updatedQuestions = [...draft.questions];
-                        updatedQuestions[targetIdx] = { ...q, category: q.category };
-                        
-                        setDraft({
-                          ...draft,
-                          questions: updatedQuestions
-                        });
+                        insertQuestionIntoNextFreeSlot(q);
                       }}
                       usedQuestionIds={draft?.questions.map(q => q.id) || []}
+                      focusedSlotIndex={focusedSlotIndex}
+                      onlyMatchingFocusedSlot={catalogOnlyMatching}
+                      isQuestionMatchingFocusedSlot={(q) =>
+                        focusedSlotIndex === null ? true : matchesSlot(q, focusedSlotIndex)
+                      }
+                      onInsertToFocusedSlot={(q) => {
+                        if (focusedSlotIndex === null) return;
+                        insertQuestionIntoSlot(q, focusedSlotIndex);
+                      }}
+                      onInsertToNextFree={(q) => insertQuestionIntoNextFreeSlot(q)}
                     />
                   </div>
                 )}

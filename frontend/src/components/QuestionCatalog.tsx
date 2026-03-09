@@ -7,6 +7,11 @@ import { API_BASE } from '../api';
 interface QuestionCatalogProps {
   onSelectQuestion: (question: AnyQuestion) => void;
   usedQuestionIds?: string[];
+  focusedSlotIndex?: number | null;
+  onlyMatchingFocusedSlot?: boolean;
+  isQuestionMatchingFocusedSlot?: (question: AnyQuestion) => boolean;
+  onInsertToFocusedSlot?: (question: AnyQuestion) => void;
+  onInsertToNextFree?: (question: AnyQuestion) => void;
 }
 
 // Mechanik-Labels für verschiedene Frage-Typen
@@ -27,7 +32,15 @@ const BUNTE_TUETE_LABELS: Record<string, string> = {
   order: '🔢 Ordnen nach Kriterium'
 };
 
-export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: QuestionCatalogProps) {
+export function QuestionCatalog({
+  onSelectQuestion,
+  usedQuestionIds = [],
+  focusedSlotIndex = null,
+  onlyMatchingFocusedSlot = false,
+  isQuestionMatchingFocusedSlot,
+  onInsertToFocusedSlot,
+  onInsertToNextFree
+}: QuestionCatalogProps) {
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<AnyQuestion[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,8 +97,23 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
       filtered = filtered.filter((q) => !usedQuestionIds.includes(q.id));
     }
 
+    // Optionaler Fokus-Filter (nur Fragen passend zum markierten Slot)
+    if (onlyMatchingFocusedSlot && focusedSlotIndex !== null && isQuestionMatchingFocusedSlot) {
+      filtered = filtered.filter((q) => isQuestionMatchingFocusedSlot(q));
+    }
+
     setFilteredQuestions(filtered);
-  }, [searchTerm, categoryFilter, mechanicFilter, hideUsed, questions, usedQuestionIds]);
+  }, [
+    searchTerm,
+    categoryFilter,
+    mechanicFilter,
+    hideUsed,
+    questions,
+    usedQuestionIds,
+    onlyMatchingFocusedSlot,
+    focusedSlotIndex,
+    isQuestionMatchingFocusedSlot
+  ]);
 
   const isQuestionUsed = (questionId: string) => usedQuestionIds.includes(questionId);
 
@@ -111,6 +139,12 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>📚 Fragenkatalog</h3>
             <div style={{ fontSize: 12, opacity: 0.6 }}>{filteredQuestions.length} Fragen</div>
+            {focusedSlotIndex !== null && (
+              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
+                🎯 Fokus: Slot {focusedSlotIndex + 1}
+                {onlyMatchingFocusedSlot ? ' • Nur passende Fragen' : ''}
+              </div>
+            )}
           </div>
           <button onClick={handleCreateQuestion} style={createButtonStyle}>
             ➕ Neue Frage
@@ -182,6 +216,10 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
           const catColor = categoryColors[q.category] || '#64748b';
           const used = isQuestionUsed(q.id);
           const bunteKind = (q as any).bunteTuete?.kind;
+          const isMatchingFocused =
+            focusedSlotIndex !== null && isQuestionMatchingFocusedSlot
+              ? isQuestionMatchingFocusedSlot(q)
+              : true;
 
           return (
             <div
@@ -195,7 +233,13 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
               style={{
                 ...questionCardStyle,
                 borderColor: catColor,
-                opacity: used ? 0.5 : 1
+                opacity: used ? 0.5 : 1,
+                boxShadow:
+                  focusedSlotIndex !== null
+                    ? isMatchingFocused
+                      ? '0 0 0 1px rgba(34,197,94,0.5)'
+                      : '0 0 0 1px rgba(239,68,68,0.35)'
+                    : undefined
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -255,6 +299,42 @@ export function QuestionCatalog({ onSelectQuestion, usedQuestionIds = [] }: Ques
                   ))}
                 </div>
               )}
+
+              <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                {focusedSlotIndex !== null && onInsertToFocusedSlot && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInsertToFocusedSlot(q);
+                    }}
+                    disabled={!isMatchingFocused}
+                    style={{
+                      ...quickActionButtonStyle,
+                      opacity: !isMatchingFocused ? 0.45 : 1,
+                      cursor: !isMatchingFocused ? 'not-allowed' : 'pointer'
+                    }}
+                    title={
+                      isMatchingFocused
+                        ? `In Slot ${focusedSlotIndex + 1} einsetzen`
+                        : `Frage passt nicht zu Slot ${focusedSlotIndex + 1}`
+                    }
+                  >
+                    → Slot {focusedSlotIndex + 1}
+                  </button>
+                )}
+                {onInsertToNextFree && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInsertToNextFree(q);
+                    }}
+                    style={quickActionButtonStyle}
+                    title="In den naechsten passenden freien Slot einsetzen"
+                  >
+                    → Nächster frei
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
@@ -351,4 +431,15 @@ const createButtonStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 6
+};
+
+const quickActionButtonStyle: React.CSSProperties = {
+  padding: '4px 8px',
+  borderRadius: 6,
+  border: '1px solid rgba(59,130,246,0.45)',
+  background: 'rgba(59,130,246,0.2)',
+  color: '#93c5fd',
+  cursor: 'pointer',
+  fontWeight: 700,
+  fontSize: 11
 };

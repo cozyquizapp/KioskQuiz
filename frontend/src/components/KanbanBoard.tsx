@@ -10,6 +10,7 @@ import { categoryColors } from '../categoryColors';
 import { categoryLabels } from '../categoryLabels';
 import { categoryIcons } from '../categoryAssets';
 import KanbanQuestionEditor from './KanbanQuestionEditor';
+import { API_BASE } from '../api';
 
 interface KanbanBoardProps {
   draft: CozyQuizDraft;
@@ -38,6 +39,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [catalogPool, setCatalogPool] = useState<AnyQuestion[]>([]);
   
   // Undo/Redo
   const [history, setHistory] = useState<HistoryState[]>([{ questions: draft.questions, timestamp: Date.now() }]);
@@ -46,6 +48,82 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
   const language = draft.meta.language === 'en' ? 'en' : 'de'; // Vereinfacht
 
   const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
+
+  React.useEffect(() => {
+    const loadCatalogPool = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/questions`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setCatalogPool(Array.isArray(data.questions) ? data.questions : []);
+      } catch {
+        // Keep board usable even if catalog fetch fails
+      }
+    };
+
+    loadCatalogPool();
+  }, []);
+
+  const slotCategoryMap: Record<CozyQuestionSlotTemplate['type'], QuizCategory> = {
+    MU_CHO: 'Mu-Cho',
+    SCHAETZCHEN: 'Schaetzchen',
+    STIMMTS: 'Stimmts',
+    CHEESE: 'Cheese',
+    BUNTE_TUETE: 'GemischteTuete'
+  };
+
+  const isSlotPlaceholder = useCallback((question: AnyQuestion, slotIndex: number) => {
+    const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
+    const text = (question.question || '').trim().toLowerCase();
+    if (!text) return true;
+    if (text === slot.label.trim().toLowerCase()) return true;
+    if (text === `frage ${slotIndex + 1}`) return true;
+    return false;
+  }, []);
+
+  const matchesSlot = useCallback((question: AnyQuestion, slot: CozyQuestionSlotTemplate) => {
+    const expectedCategory = slotCategoryMap[slot.type];
+    const categoryMatch = question.category === expectedCategory;
+    if (!categoryMatch) return false;
+
+    const typeByMechanic: Record<string, CozyQuestionSlotTemplate['type']> = {
+      multipleChoice: 'MU_CHO',
+      estimate: 'SCHAETZCHEN',
+      betting: 'STIMMTS',
+      trueFalse: 'STIMMTS',
+      imageQuestion: 'CHEESE',
+      sortItems: 'BUNTE_TUETE'
+    };
+
+    const normalizedType = question.type || typeByMechanic[question.mechanic] || null;
+    if (normalizedType !== slot.type) return false;
+
+    if (slot.type === 'BUNTE_TUETE' && slot.bunteKind) {
+      const kind = (question as any).bunteTuete?.kind;
+      return !kind || kind === slot.bunteKind;
+    }
+
+    return true;
+  }, []);
+
+  const buildSlotQuestion = useCallback((source: AnyQuestion, slotIndex: number): AnyQuestion => {
+    const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
+    return {
+      ...source,
+      category: slotCategoryMap[slot.type],
+      type: slot.type,
+      points: slot.defaultPoints,
+      segmentIndex: slot.segmentIndex
+    } as AnyQuestion;
+  }, []);
+
+  const getSuggestionForSlot = useCallback((slotIndex: number, blockedIds: Set<string>) => {
+    const slot = COZY_SLOT_TEMPLATE[slotIndex] || COZY_SLOT_TEMPLATE[0];
+    const candidates = catalogPool.filter((q) => matchesSlot(q, slot) && !blockedIds.has(q.id));
+    if (candidates.length === 0) return null;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    return buildSlotQuestion(pick, slotIndex);
+  }, [catalogPool, matchesSlot, buildSlotQuestion]);
 
   // Undo/Redo System
   const addToHistory = useCallback((questions: AnyQuestion[]) => {
@@ -240,6 +318,69 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
     handleQuestionSave(slotIndex, emptyQuestion);
   };
 
+  const quickSuggestForSlot = useCallback((slotIndex: number) => {
+    const current = draft.questions[slotIndex];
+    if (current && !isSlotPlaceholder(current, slotIndex)) {
+      const ok = window.confirm('Slot ist bereits gefuellt. Mit Vorschlag ersetzen?');
+      if (!ok) return;
+    }
+
+    const usedIds = new Set(
+      draft.questions
+        .filter((q, idx) => idx !== slotIndex && !isSlotPlaceholder(q, idx))
+        .map((q) => q.id)
+    );
+
+    const suggested = getSuggestionForSlot(slotIndex, usedIds);
+    if (!suggested) {
+      alert('Kein passender Vorschlag gefunden (Kategorie/Mechanik bereits ausgereizt).');
+      return;
+    }
+
+    const nextQuestions = draft.questions.slice();
+    nextQuestions[slotIndex] = suggested;
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+  }, [draft, isSlotPlaceholder, getSuggestionForSlot, addToHistory, onUpdate]);
+
+  const fillEmptySlotsSmart = useCallback(() => {
+    const emptyIndices = draft.questions
+      .map((q, idx) => ({ q, idx }))
+      .filter(({ q, idx }) => isSlotPlaceholder(q, idx))
+      .map(({ idx }) => idx);
+
+    if (emptyIndices.length === 0) {
+      alert('Keine leeren Slots gefunden.');
+      return;
+    }
+
+    const blockedIds = new Set(
+      draft.questions
+        .filter((q, idx) => !isSlotPlaceholder(q, idx))
+        .map((q) => q.id)
+    );
+
+    const nextQuestions = draft.questions.slice();
+    let filled = 0;
+
+    emptyIndices.forEach((slotIndex) => {
+      const suggested = getSuggestionForSlot(slotIndex, blockedIds);
+      if (!suggested) return;
+      nextQuestions[slotIndex] = suggested;
+      blockedIds.add(suggested.id);
+      filled++;
+    });
+
+    if (filled === 0) {
+      alert('Keine passenden Fragen fuer die leeren Slots gefunden.');
+      return;
+    }
+
+    addToHistory(nextQuestions);
+    onUpdate({ ...draft, questions: nextQuestions });
+    alert(`✓ ${filled}/${emptyIndices.length} leere Slots intelligent gefuellt`);
+  }, [draft, isSlotPlaceholder, getSuggestionForSlot, addToHistory, onUpdate]);
+
   const createEmptyQuestion = (slotIndex: number, slot: CozyQuestionSlotTemplate): AnyQuestion => {
     const base = {
       id: draft.questions[slotIndex]?.id || `${draft.id}-q${slotIndex + 1}`,
@@ -379,6 +520,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
             title="Kategorien automatisch ausgleichen (5 pro Kategorie)"
           >
             ⚖️ Auto-Balance
+          </button>
+
+          <button
+            onClick={fillEmptySlotsSmart}
+            style={toolbarButtonStyle}
+            title="Leere Slots mit passenden Fragen aus dem Katalog fuellen"
+          >
+            ✨ Leere Slots fuellen
           </button>
           
           <div style={{ position: 'relative' }}>
@@ -709,6 +858,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate }: KanbanBoar
                               </div>
                             </div>
                           )}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                quickSuggestForSlot(index);
+                              }}
+                              style={{
+                                border: '1px solid rgba(74,222,128,0.45)',
+                                background: 'rgba(74,222,128,0.14)',
+                                color: '#86efac',
+                                borderRadius: 6,
+                                padding: isDense ? '2px 6px' : '3px 8px',
+                                fontSize: isDense ? 9 : 10,
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                              title="Passende Frage fuer diesen Slot vorschlagen"
+                            >
+                              ✨ Vorschlag
+                            </button>
+                          </div>
                           {index === 0 && (isUsed || isSelected) && (
                             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
                               {isUsed && (

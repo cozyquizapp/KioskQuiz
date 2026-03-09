@@ -15,6 +15,7 @@ import { RundlaufEditor } from '../components/RundlaufEditor';
 import { QuestionCatalog } from '../components/QuestionCatalog';
 import { ThemeCustomizer } from '../components/ThemeCustomizer';
 import { MECHANIC_RULES } from '../config/mechanicRules';
+import { COZY_SLOT_TEMPLATE } from '@shared/cozyTemplate';
 
 const LOCAL_BACKUP_KEY = 'cozy-builder-draft';
 const LOCAL_BACKUP_TS_KEY = 'cozy-builder-timestamp';
@@ -781,10 +782,19 @@ const ImprovedCozy60BuilderPage = () => {
                       onSelectQuestion={(q: AnyQuestion) => {
                         // Find first empty slot in same category
                         if (!draft) return;
+
+                        const isPlaceholder = (question: AnyQuestion, idx: number) => {
+                          const slot = COZY_SLOT_TEMPLATE[idx] || COZY_SLOT_TEMPLATE[0];
+                          const text = (question.question || '').trim().toLowerCase();
+                          if (!text) return true;
+                          if (text === slot.label.trim().toLowerCase()) return true;
+                          if (text === `frage ${idx + 1}`) return true;
+                          return false;
+                        };
                         
                         const emptySlots = draft.questions
                           .map((question, idx) => ({ question, idx }))
-                          .filter(({ question }) => !question.question || question.question.trim() === '');
+                          .filter(({ question, idx }) => isPlaceholder(question, idx));
                         
                         if (emptySlots.length === 0) {
                           alert('✗ Keine leeren Slots verfügbar. Bitte Slot löschen oder Frage ersetzen.');

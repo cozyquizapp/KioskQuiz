@@ -74,8 +74,14 @@ const ImprovedCozy60BuilderPage = () => {
       setIsOffline(data.offline || false);
 
       const localRaw = localStorage.getItem(LOCAL_BACKUP_KEY);
+      // Clear stale localStorage backup if MongoDB is online (prevent accidental restore)
+      if (!data.offline) {
+        localStorage.removeItem(LOCAL_BACKUP_KEY);
+        localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
+      }
+
       const localTs = localStorage.getItem(LOCAL_BACKUP_TS_KEY);
-      if (localRaw && !restoredFromLocal) {
+      if (localRaw && !restoredFromLocal && data.offline) {
         try {
           const localDraft = JSON.parse(localRaw) as CozyQuizDraft;
           const tsNum = localTs ? Number(localTs) : null;

@@ -53,6 +53,7 @@ const ImprovedCozy60BuilderPage = () => {
   const [catalogOnlyMatching, setCatalogOnlyMatching] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
   const [lastPersistedSignature, setLastPersistedSignature] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const slotCategoryMap: Record<CozyQuestionSlotTemplate['type'], AnyQuestion['category']> = {
     MU_CHO: 'Mu-Cho',
@@ -280,7 +281,8 @@ const ImprovedCozy60BuilderPage = () => {
   };
 
   const handleSave = async () => {
-    if (!draft) return;
+    if (!draft || !isDirty || isSaving) return;
+    setIsSaving(true);
     setStatus('Speichere...');
     try {
       const response = await saveCozyDraft(draft.id, draft);
@@ -293,6 +295,8 @@ const ImprovedCozy60BuilderPage = () => {
     } catch (err) {
       setError((err as Error).message);
       setStatus('');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -598,7 +602,19 @@ const ImprovedCozy60BuilderPage = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button onClick={() => setShowPreview(true)} style={buttonSecondaryStyle} className="tap-squish">👀 Vorschau</button>
-                  <button onClick={handleSave} style={buttonSuccessStyle} className="tap-squish">💾 Speichern</button>
+                  <button
+                    onClick={handleSave}
+                    disabled={!isDirty || isSaving}
+                    style={{
+                      ...buttonSuccessStyle,
+                      opacity: !isDirty || isSaving ? 0.6 : 1,
+                      cursor: !isDirty || isSaving ? 'not-allowed' : 'pointer'
+                    }}
+                    className="tap-squish"
+                    title={!isDirty ? 'Keine ungespeicherten Aenderungen' : 'Aenderungen speichern'}
+                  >
+                    {isSaving ? '⏳ Speichere...' : isDirty ? '💾 Speichern *' : '💾 Gespeichert'}
+                  </button>
                   <button onClick={handlePublish} style={buttonPrimaryStyle} className="tap-squish">🚀 Publish</button>
                 </div>
               </header>

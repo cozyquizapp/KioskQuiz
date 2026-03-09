@@ -44,6 +44,8 @@ const decorations: DecorationKey[] = [
   'dice', 'questionBag', 'camera', 'filmStrip', 'lightbulb', 'book', 'stopwatch'
 ];
 
+const IMAGE_POLICY_HINT = 'Tipp: Wenn moeglich Bild-Links nutzen und Uploads fuer eigene Spezialbilder reservieren.';
+
 export function KanbanQuestionEditor({
   question,
   slotIndex,
@@ -111,7 +113,7 @@ export function KanbanQuestionEditor({
       const data = await response.json();
       setLocalQuestion(prev => ({ ...prev, imageUrl: data.imageUrl }));
       setImagePreview(data.imageUrl);
-      showNotification('success', '✅ Bild erfolgreich hochgeladen');
+      showNotification('success', '✅ Bild hochgeladen. Tipp: Fuer Standardbilder lieber stabile Bild-Links nutzen.');
     } catch (err) {
       showNotification('error', `❌ Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
       // Revert preview on error
@@ -382,6 +384,9 @@ export function KanbanQuestionEditor({
                 >
                   {isUploading ? '⏳ Lädt...' : `📁 ${imagePreview ? 'Bild ändern' : 'Bild auswählen'}`}
                 </button>
+                <small style={{ display: 'block', marginTop: 8, opacity: 0.75, fontSize: 11 }}>
+                  {IMAGE_POLICY_HINT}
+                </small>
               </div>
 
               <div style={formSectionStyle}>

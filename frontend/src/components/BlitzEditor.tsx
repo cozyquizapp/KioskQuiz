@@ -65,6 +65,8 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
     );
   };
 
+  const uploadHint = 'Tipp: Fuer Standardbilder lieber URL eintragen, Upload nur fuer eigene Spezialbilder.';
+
   return (
     <div style={{ padding: 20, maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -170,6 +172,7 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
                             />
 
                             <label style={labelStyle}>Bild (URL oder Upload)</label>
+                            <div style={{ fontSize: 11, opacity: 0.72, marginBottom: 6 }}>{uploadHint}</div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
                               <input
                                 type="text"

@@ -79,6 +79,8 @@ const inputStyle: React.CSSProperties = {
   color: '#f8fafc'
 };
 
+const IMAGE_POLICY_HINT = 'Tipp: Nutze bevorzugt stabile Bild-Links und Upload nur fuer eigene Spezialbilder.';
+
 type CsvPreviewRow = { line: number; raw: string; id?: string; category?: string; mechanic?: string; valid: boolean; reason?: string };
 
 const CreatorWizardPage: React.FC = () => {
@@ -506,7 +508,7 @@ const CreatorWizardPage: React.FC = () => {
                           setQuestions((prev) =>
                             prev.map((item) => (item.id === q.id ? ({ ...item, imageUrl: res.imageUrl } as AnyQuestion) : item))
                           );
-                          setStatus('Bild aktualisiert');
+                          setStatus('Bild aktualisiert. Tipp: Links sparen Cloudinary-Credits.');
                         } catch (err) {
                           setStatus('Upload fehlgeschlagen');
                         } finally {
@@ -515,6 +517,7 @@ const CreatorWizardPage: React.FC = () => {
                         }
                       }}
                     />
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{IMAGE_POLICY_HINT}</div>
                     {uploading[q.id] && <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 4 }}>Upload läuft ...</div>}
                   </div>
                 )}

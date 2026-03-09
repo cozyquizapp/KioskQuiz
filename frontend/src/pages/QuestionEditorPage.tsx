@@ -37,6 +37,8 @@ const badge = (color: string, inverted?: boolean): React.CSSProperties => ({
   color: inverted ? '#e2e8f0' : '#0d0f14'
 });
 
+const IMAGE_POLICY_HINT = 'Tipp: Nutze bevorzugt Bild-Links; Upload nur fuer eigene Spezialbilder.';
+
 const QuestionEditorPage: React.FC = () => {
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -131,7 +133,7 @@ const QuestionEditorPage: React.FC = () => {
     setStatus('Upload lÃ¤uft ...');
     try {
       await uploadQuestionImage(uploadTarget, file);
-      setStatus('Bild gespeichert');
+      setStatus('Bild gespeichert. Tipp: Links sparen Cloudinary-Credits.');
       load();
     } catch {
       setStatus('Upload fehlgeschlagen');
@@ -626,6 +628,7 @@ const QuestionEditorPage: React.FC = () => {
                   >
                     Bild hochladen/ersetzen
                   </button>
+                  <div style={{ fontSize: 11, color: '#9ca3af', maxWidth: 260 }}>{IMAGE_POLICY_HINT}</div>
                   <a
                     href={`/creator-wizard?add=${q.id}`}
                     style={{ ...badge('#ffffff', true), cursor: 'pointer', textDecoration: 'none' }}

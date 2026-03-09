@@ -35,6 +35,14 @@ const summarizeDraft = (draft: CozyQuizDraft): CozyDraftSummary => ({
 
 const draftSignature = (draft: CozyQuizDraft) => JSON.stringify(draft);
 
+const toCozyDraftErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('mongodb nicht verbunden') || normalized.includes('503')) {
+    return 'MongoDB ist aktuell nicht verbunden. Dein Draft wurde nicht auf dem Server gespeichert.';
+  }
+  return message;
+};
+
 const ImprovedCozy60BuilderPage = () => {
   const [drafts, setDrafts] = useState<CozyDraftSummary[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -163,6 +171,11 @@ const ImprovedCozy60BuilderPage = () => {
       const deduped = Array.from(new Map(data.drafts.map((d) => [d.id, d])).values());
       setDrafts(deduped);
       setIsOffline(data.offline || false);
+      if (data.offlineReason) {
+        setError(toCozyDraftErrorMessage(data.offlineReason));
+      } else {
+        setError('');
+      }
 
       const localRaw = localStorage.getItem(LOCAL_BACKUP_KEY);
       // Clear stale localStorage backup if MongoDB is online (prevent accidental restore)
@@ -200,7 +213,7 @@ const ImprovedCozy60BuilderPage = () => {
         await loadDraft(data.drafts[0].id);
       }
     } catch (err) {
-      setError((err as Error).message);
+      setError(toCozyDraftErrorMessage((err as Error).message));
     }
   };
 
@@ -221,7 +234,7 @@ const ImprovedCozy60BuilderPage = () => {
       setShowCreateDialog(false);
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {
-      setError((err as Error).message);
+      setError(toCozyDraftErrorMessage((err as Error).message));
       setStatus('');
     } finally {
       setIsCreating(false);
@@ -273,7 +286,7 @@ const ImprovedCozy60BuilderPage = () => {
         return;
       }
 
-      setError((err as Error).message);
+      setError(toCozyDraftErrorMessage((err as Error).message));
       setStatus('');
     } finally {
       setIsCreating(false);
@@ -293,7 +306,7 @@ const ImprovedCozy60BuilderPage = () => {
       setStatus('✓ Gespeichert');
       setTimeout(() => setStatus(''), 2000);
     } catch (err) {
-      setError((err as Error).message);
+      setError(toCozyDraftErrorMessage((err as Error).message));
       setStatus('');
     } finally {
       setIsSaving(false);
@@ -391,7 +404,7 @@ const ImprovedCozy60BuilderPage = () => {
       setStatus(`✓ Veröffentlicht als ${response.quizId}`);
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {
-      setError((err as Error).message);
+      setError(toCozyDraftErrorMessage((err as Error).message));
       setStatus('');
     }
   };

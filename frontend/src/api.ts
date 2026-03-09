@@ -443,7 +443,22 @@ export interface CozyDraftSummary {
   blitzThemes: number;
 }
 
-export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; offline?: boolean }> => {
+const extractApiErrorMessage = async (res: Response, fallback: string): Promise<string> => {
+  try {
+    const data = await res.json();
+    if (data && typeof data.error === 'string' && data.error.trim()) {
+      return data.error;
+    }
+  } catch {
+    // Ignore parse issues and use fallback below.
+  }
+  if (res.status === 503) {
+    return 'MongoDB nicht verbunden - bitte spaeter erneut versuchen';
+  }
+  return fallback;
+};
+
+export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; offline?: boolean; offlineReason?: string }> => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -453,7 +468,10 @@ export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; of
     });
     clearTimeout(timeout);
     
-    if (!res.ok) throw new Error('Cozy-Drafts konnten nicht geladen werden');
+    if (!res.ok) {
+      const message = await extractApiErrorMessage(res, 'Cozy-Drafts konnten nicht geladen werden');
+      throw new Error(message);
+    }
     const data = await res.json();
     
     // Cache the result for offline fallback
@@ -461,19 +479,20 @@ export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; of
     
     return { drafts: data.drafts, offline: false };
   } catch (err) {
+    const offlineReason = err instanceof Error ? err.message : 'Cozy-Drafts offline';
     // Try to load from local cache
     const cached = localStorage.getItem('cozy-drafts-backup');
     if (cached) {
       try {
         const data = JSON.parse(cached);
-        return { drafts: data.drafts || [], offline: true };
+        return { drafts: data.drafts || [], offline: true, offlineReason };
       } catch {
-        return { drafts: [], offline: true };
+        return { drafts: [], offline: true, offlineReason };
       }
     }
     // No cache available, return empty list in offline mode instead of throwing
     console.warn('Cozy-Drafts offline und kein Cache vorhanden');
-    return { drafts: [], offline: true };
+    return { drafts: [], offline: true, offlineReason };
   }
 };
 
@@ -483,13 +502,13 @@ export const createCozyDraft = async (meta?: Partial<CozyQuizDraft['meta']>): Pr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ meta })
   });
-  if (!res.ok) throw new Error('Draft konnte nicht erstellt werden');
+  if (!res.ok) throw new Error(await extractApiErrorMessage(res, 'Draft konnte nicht erstellt werden'));
   return res.json();
 };
 
 export const fetchCozyDraft = async (draftId: string): Promise<{ draft: CozyQuizDraft; warnings?: string[] }> => {
   const res = await fetch(`${API_BASE}/studio/cozy60/${draftId}`);
-  if (!res.ok) throw new Error('Draft konnte nicht geladen werden');
+  if (!res.ok) throw new Error(await extractApiErrorMessage(res, 'Draft konnte nicht geladen werden'));
   return res.json();
 };
 
@@ -502,15 +521,7 @@ export const duplicateCozyDraft = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ newTitle })
   });
-  if (!res.ok) {
-    try {
-      const data = await res.json();
-      if (data?.error) throw new Error(data.error);
-    } catch {
-      // ignore JSON parse errors
-    }
-    throw new Error('Draft konnte nicht dupliziert werden');
-  }
+  if (!res.ok) throw new Error(await extractApiErrorMessage(res, 'Draft konnte nicht dupliziert werden'));
   return res.json();
 };
 
@@ -523,7 +534,7 @@ export const saveCozyDraft = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) throw new Error('Draft konnte nicht gespeichert werden');
+  if (!res.ok) throw new Error(await extractApiErrorMessage(res, 'Draft konnte nicht gespeichert werden'));
   return res.json();
 };
 
@@ -536,7 +547,7 @@ export const publishCozyDraft = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload ?? {})
   });
-  if (!res.ok) throw new Error('Draft konnte nicht veroeffentlicht werden');
+  if (!res.ok) throw new Error(await extractApiErrorMessage(res, 'Draft konnte nicht veroeffentlicht werden'));
   return res.json();
 };
 

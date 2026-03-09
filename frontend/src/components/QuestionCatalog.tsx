@@ -48,6 +48,7 @@ export function QuestionCatalog({
   const [mechanicFilter, setMechanicFilter] = useState<CozyQuestionType | 'all'>('all');
   const [hideUsed, setHideUsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hoveredQuestionId, setHoveredQuestionId] = useState<string | null>(null);
 
   // Fragen vom Backend laden
   useEffect(() => {
@@ -216,6 +217,9 @@ export function QuestionCatalog({
           const catColor = categoryColors[q.category] || '#64748b';
           const used = isQuestionUsed(q.id);
           const bunteKind = (q as any).bunteTuete?.kind;
+          const usageHistory = (q.usedIn || []).slice(0, 4);
+          const usageOverflow = Math.max(0, (q.usedIn || []).length - usageHistory.length);
+          const teamsPlayed = (q as any).playedByTeams as string[] | undefined;
           const isMatchingFocused =
             focusedSlotIndex !== null && isQuestionMatchingFocusedSlot
               ? isQuestionMatchingFocusedSlot(q)
@@ -229,17 +233,21 @@ export function QuestionCatalog({
                 e.dataTransfer.setData('question', JSON.stringify(q));
                 e.dataTransfer.effectAllowed = 'copy';
               }}
+              onMouseEnter={() => setHoveredQuestionId(q.id)}
+              onMouseLeave={() => setHoveredQuestionId((prev) => (prev === q.id ? null : prev))}
               onClick={() => onSelectQuestion(q)}
               style={{
                 ...questionCardStyle,
                 borderColor: catColor,
                 opacity: used ? 0.5 : 1,
-                boxShadow:
+                outline:
                   focusedSlotIndex !== null
                     ? isMatchingFocused
-                      ? '0 0 0 1px rgba(34,197,94,0.5)'
-                      : '0 0 0 1px rgba(239,68,68,0.35)'
-                    : undefined
+                      ? '1px solid rgba(34,197,94,0.35)'
+                      : '1px solid rgba(148,163,184,0.3)'
+                    : undefined,
+                boxShadow: hoveredQuestionId === q.id ? '0 8px 20px rgba(0,0,0,0.25)' : 'none',
+                position: 'relative'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -261,6 +269,14 @@ export function QuestionCatalog({
                     )}
                     <span>•</span>
                     <span>{q.points}pt</span>
+                    {focusedSlotIndex !== null && (
+                      <>
+                        <span>•</span>
+                        <span style={{ color: isMatchingFocused ? '#86efac' : '#cbd5e1' }}>
+                          {isMatchingFocused ? 'passt zu Fokus-Slot' : 'kein Fokus-Match'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -335,6 +351,42 @@ export function QuestionCatalog({
                   </button>
                 )}
               </div>
+
+              {hoveredQuestionId === q.id && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    zIndex: 20,
+                    width: 240,
+                    borderRadius: 10,
+                    border: '1px solid rgba(99,102,241,0.35)',
+                    background: 'rgba(15,23,42,0.96)',
+                    padding: '8px 10px',
+                    boxShadow: '0 14px 28px rgba(0,0,0,0.45)',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#a5b4fc', marginBottom: 6 }}>
+                    Einsatzzusatz
+                  </div>
+                  <div style={{ fontSize: 11, color: '#e2e8f0', marginBottom: 6 }}>
+                    <strong>Bereits genutzt in:</strong>
+                    {usageHistory.length === 0 ? ' noch keinem Quiz' : ` ${usageHistory.join(', ')}`}
+                    {usageOverflow > 0 ? ` (+${usageOverflow})` : ''}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 6 }}>
+                    <strong>Letzter Einsatz:</strong> {q.lastUsedAt ? new Date(q.lastUsedAt).toLocaleString() : ' unbekannt'}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#cbd5e1' }}>
+                    <strong>Teams:</strong>{' '}
+                    {Array.isArray(teamsPlayed) && teamsPlayed.length > 0
+                      ? teamsPlayed.join(', ')
+                      : 'derzeit nicht separat gespeichert'}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

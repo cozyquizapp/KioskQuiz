@@ -1219,44 +1219,63 @@ const ImprovedCozy60BuilderPage = () => {
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   minHeight: '100vh',
-  background: 'var(--bg)',
+  background:
+    'radial-gradient(1200px 700px at 12% -10%, rgba(56,189,248,0.18), transparent 60%), radial-gradient(900px 600px at 92% 8%, rgba(236,72,153,0.16), transparent 58%), linear-gradient(180deg, #050812 0%, #060b18 48%, #05070f 100%)',
   color: '#e2e8f0',
-  fontFamily: 'var(--font)'
+  fontFamily: 'var(--font)',
+  padding: 14,
+  gap: 14
 };
 
 const sidebarStyle: React.CSSProperties = {
-  width: 280,
-  background: 'rgba(15,23,42,0.6)',
-  borderRight: '1px solid rgba(255,255,255,0.08)',
+  width: 300,
+  background: 'linear-gradient(180deg, rgba(12,20,40,0.82) 0%, rgba(9,16,31,0.88) 100%)',
+  border: '1px solid rgba(148,163,184,0.22)',
   padding: 16,
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  backdropFilter: 'blur(16px)'
+  backdropFilter: 'blur(16px)',
+  borderRadius: 16,
+  boxShadow: '0 24px 60px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
 };
 
 const mainStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  border: '1px solid rgba(148,163,184,0.2)',
+  borderRadius: 18,
+  background: 'linear-gradient(180deg, rgba(8,15,28,0.82) 0%, rgba(6,12,23,0.9) 100%)',
+  boxShadow: '0 28px 70px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.07)',
+  backdropFilter: 'blur(12px)'
 };
 
 const headerStyle: React.CSSProperties = {
   padding: '24px 32px',
-  borderBottom: '1px solid rgba(255,255,255,0.08)',
+  borderBottom: '1px solid rgba(148,163,184,0.2)',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  background: 'rgba(15,23,42,0.5)',
-  backdropFilter: 'blur(12px)'
+  background: 'linear-gradient(180deg, rgba(14,25,46,0.72) 0%, rgba(10,19,35,0.6) 100%)',
+  backdropFilter: 'blur(12px)',
+  position: 'sticky',
+  top: 0,
+  zIndex: 4
 };
 
 const tabsStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 24,
-  padding: '0 32px',
-  borderBottom: '1px solid rgba(255,255,255,0.08)',
+  gap: 10,
+  padding: '10px 24px 8px',
+  borderBottom: '1px solid rgba(148,163,184,0.18)',
+  background: 'rgba(10,19,35,0.48)',
+  position: 'sticky',
+  top: 98,
+  zIndex: 3,
+  backdropFilter: 'blur(10px)',
+  flexWrap: 'wrap'
 };
 
 const previewOverlayStyle: React.CSSProperties = {
@@ -1288,15 +1307,16 @@ const previewSectionStyle: React.CSSProperties = {
 };
 
 const tabButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
+  background: 'rgba(148,163,184,0.08)',
+  border: '1px solid rgba(148,163,184,0.22)',
   borderBottom: '2px solid transparent',
+  borderRadius: 10,
   color: '#94a3b8',
-  padding: '12px 0',
+  padding: '8px 12px',
   fontSize: 13,
   fontWeight: 600,
   cursor: 'pointer',
-  transition: 'color 0.2s'
+  transition: 'all 0.2s'
 };
 
 const draftListStyle: React.CSSProperties = {
@@ -1308,49 +1328,53 @@ const draftListStyle: React.CSSProperties = {
 };
 
 const draftItemStyle: React.CSSProperties = {
-  background: 'rgba(15,23,42,0.5)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 8,
-  padding: 10,
+  background: 'linear-gradient(180deg, rgba(13,22,42,0.75) 0%, rgba(10,17,32,0.84) 100%)',
+  border: '1px solid rgba(148,163,184,0.2)',
+  borderRadius: 10,
+  padding: 11,
   cursor: 'pointer',
   textAlign: 'left',
-  transition: 'all 0.2s'
+  transition: 'all 0.2s',
+  boxShadow: '0 10px 26px rgba(2,6,23,0.32)'
 };
 
 const buttonPrimaryStyle: React.CSSProperties = {
-  background: 'rgba(34,211,238,0.2)',
-  border: '1px solid rgba(34,211,238,0.4)',
-  borderRadius: 6,
-  color: '#22d3ee',
-  padding: '6px 10px',
+  background: 'linear-gradient(135deg, rgba(14,165,233,0.26), rgba(56,189,248,0.16))',
+  border: '1px solid rgba(56,189,248,0.45)',
+  borderRadius: 8,
+  color: '#7dd3fc',
+  padding: '8px 12px',
   fontSize: 12,
   fontWeight: 600,
   cursor: 'pointer',
-  transition: 'all 0.2s'
+  transition: 'all 0.2s',
+  boxShadow: '0 10px 22px rgba(14,116,144,0.25)'
 };
 
 const buttonSecondaryStyle: React.CSSProperties = {
-  background: 'rgba(148,163,184,0.1)',
-  border: '1px solid rgba(148,163,184,0.2)',
+  background: 'linear-gradient(135deg, rgba(51,65,85,0.6), rgba(30,41,59,0.52))',
+  border: '1px solid rgba(148,163,184,0.28)',
   borderRadius: 8,
-  color: '#cbd5e1',
+  color: '#e2e8f0',
   padding: '10px 16px',
   fontSize: 13,
   fontWeight: 600,
   cursor: 'pointer',
-  transition: 'all 0.2s'
+  transition: 'all 0.2s',
+  boxShadow: '0 8px 20px rgba(2,6,23,0.3)'
 };
 
 const buttonSuccessStyle: React.CSSProperties = {
-  background: 'rgba(34,211,238,0.2)',
-  border: '1px solid rgba(34,211,238,0.4)',
+  background: 'linear-gradient(135deg, rgba(16,185,129,0.34), rgba(34,197,94,0.22))',
+  border: '1px solid rgba(74,222,128,0.5)',
   borderRadius: 8,
-  color: '#22d3ee',
+  color: '#dcfce7',
   padding: '10px 16px',
   fontSize: 13,
   fontWeight: 600,
   cursor: 'pointer',
-  transition: 'all 0.2s'
+  transition: 'all 0.2s',
+  boxShadow: '0 12px 26px rgba(22,101,52,0.28)'
 };
 
 const labelStyle: React.CSSProperties = {
@@ -1365,13 +1389,14 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: 'rgba(15,23,42,0.8)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'rgba(9,17,34,0.82)',
+  border: '1px solid rgba(148,163,184,0.22)',
   borderRadius: 8,
   color: '#e2e8f0',
   padding: '10px 12px',
   fontSize: 13,
-  fontFamily: 'inherit'
+  fontFamily: 'inherit',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
 };
 
 export default ImprovedCozy60BuilderPage;

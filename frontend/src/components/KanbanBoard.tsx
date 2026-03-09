@@ -32,10 +32,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
   const [isDense, setIsDense] = useState<boolean>(false);
   const [collapsed, setCollapsed] = useState<Record<QuizCategory, boolean>>({
     Schaetzchen: false,
-    'Mu-Cho': false,
-    Stimmts: false,
-    Cheese: false,
-    GemischteTuete: false
+    'Mu-Cho': true,
+    Stimmts: true,
+    Cheese: true,
+    GemischteTuete: true
   });
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
@@ -49,14 +49,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
   const language = draft.meta.language === 'en' ? 'en' : 'de'; // Vereinfacht
 
   const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
-
-  const slotHeroGradient: Record<QuizCategory, string> = {
-    Schaetzchen: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 55%, #fcd34d 100%)',
-    'Mu-Cho': 'linear-gradient(135deg, #0ea5e9 0%, #22d3ee 55%, #60a5fa 100%)',
-    Stimmts: 'linear-gradient(135deg, #16a34a 0%, #34d399 55%, #86efac 100%)',
-    Cheese: 'linear-gradient(135deg, #a855f7 0%, #c084fc 55%, #e879f9 100%)',
-    GemischteTuete: 'linear-gradient(135deg, #ef4444 0%, #f97316 55%, #fb7185 100%)'
-  };
 
   React.useEffect(() => {
     const loadCatalogPool = async () => {
@@ -725,139 +717,40 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Visual Header for Slot 1 */}
-                        {index === 0 && (
-                          <div style={{
-                            position: 'relative',
-                            height: 60,
-                            background: slotHeroGradient[category],
-                            borderBottom: `2px solid ${catColor}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0 12px',
-                            overflow: 'hidden',
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)'
-                          }}>
-                            {/* Decorative Circles */}
-                            <div style={{
-                              position: 'absolute',
-                              top: -20,
-                              right: -20,
-                              width: 80,
-                              height: 80,
-                              borderRadius: '50%',
-                              background: `${catColor}22`,
-                              filter: 'blur(20px)'
-                            }} />
-                            <div style={{
-                              position: 'absolute',
-                              bottom: -30,
-                              left: -30,
-                              width: 100,
-                              height: 100,
-                              borderRadius: '50%',
-                              background: `${catColor}15`,
-                              filter: 'blur(30px)'
-                            }} />
-                            
-                            {/* Content */}
-                            <div style={{
-                              position: 'relative',
-                              zIndex: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 10
-                            }}>
-                              <div style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '50%',
-                                background: 'rgba(255,255,255,0.92)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 16,
-                                fontWeight: 900,
-                                color: '#0b1324',
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.24)'
-                              }}>
-                                1
-                              </div>
-                              <div>
-                                <div style={{
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                  color: '#ffffff',
-                                  textShadow: '0 2px 8px rgba(0,0,0,0.4)'
-                                }}>
-                                  Frage 1
-                                </div>
-                                <div style={{
-                                  fontSize: 10,
-                                  color: 'rgba(255,255,255,0.85)',
-                                  opacity: 0.95
-                                }}>
-                                  {catLabel}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div style={{
-                              position: 'relative',
-                              zIndex: 1,
-                              background: 'rgba(255,255,255,0.1)',
-                              backdropFilter: 'blur(10px)',
-                              WebkitBackdropFilter: 'blur(10px)',
-                              border: '1px solid rgba(255,255,255,0.2)',
-                              borderRadius: 8,
-                              padding: '4px 10px',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: '#e2e8f0',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                            }}>
-                              {slot.defaultPoints} Pkt.
-                            </div>
-                          </div>
-                        )}
-                        
                         {/* Card Content */}
                         <div style={{ padding: isDense ? 8 : 10 }}>
-                          {index !== 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                              <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
-                                Slot {index + 1} • {slot.defaultPoints}pts
-                              </div>
-                              <div style={{ display: 'flex', gap: 6 }}>
-                                {isUsed && (
-                                  <div style={{
-                                    background: 'rgba(251,191,36,0.2)',
-                                    border: '1px solid rgba(251,191,36,0.4)',
-                                    borderRadius: 4,
-                                    padding: isDense ? '1px 5px' : '2px 6px',
-                                    fontSize: isDense ? 9 : 10,
-                                    fontWeight: 600,
-                                    color: '#fbbf24'
-                                  }}>
-                                    {usedCount}x
-                                  </div>
-                                )}
-                                {isSelected && (
-                                  <div style={{
-                                    background: '#3b82f6',
-                                    color: '#fff',
-                                    borderRadius: 4,
-                                    padding: '2px 6px',
-                                    fontSize: 10,
-                                    fontWeight: 700
-                                  }}>
-                                    ✓
-                                  </div>
-                                )}
-                              </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <div style={{ fontSize: isDense ? 10 : 11, opacity: 0.5 }}>
+                              Slot {index + 1} • {slot.defaultPoints}pts
                             </div>
-                          )}
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {isUsed && (
+                                <div style={{
+                                  background: 'rgba(251,191,36,0.2)',
+                                  border: '1px solid rgba(251,191,36,0.4)',
+                                  borderRadius: 4,
+                                  padding: isDense ? '1px 5px' : '2px 6px',
+                                  fontSize: isDense ? 9 : 10,
+                                  fontWeight: 600,
+                                  color: '#fbbf24'
+                                }}>
+                                  {usedCount}x
+                                </div>
+                              )}
+                              {isSelected && (
+                                <div style={{
+                                  background: '#3b82f6',
+                                  color: '#fff',
+                                  borderRadius: 4,
+                                  padding: '2px 6px',
+                                  fontSize: 10,
+                                  fontWeight: 700
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
                             <button
                               onClick={(e) => {

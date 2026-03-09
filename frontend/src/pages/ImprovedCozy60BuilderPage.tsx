@@ -33,6 +33,8 @@ const summarizeDraft = (draft: CozyQuizDraft): CozyDraftSummary => ({
   blitzThemes: draft.blitz?.pool?.length ?? 0
 });
 
+const draftSignature = (draft: CozyQuizDraft) => JSON.stringify(draft);
+
 const ImprovedCozy60BuilderPage = () => {
   const [drafts, setDrafts] = useState<CozyDraftSummary[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -49,6 +51,8 @@ const ImprovedCozy60BuilderPage = () => {
   const [lastAutoSave, setLastAutoSave] = useState<number | null>(null);
   const [focusedSlotIndex, setFocusedSlotIndex] = useState<number | null>(null);
   const [catalogOnlyMatching, setCatalogOnlyMatching] = useState(true);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastPersistedSignature, setLastPersistedSignature] = useState<string | null>(null);
 
   const slotCategoryMap: Record<CozyQuestionSlotTemplate['type'], AnyQuestion['category']> = {
     MU_CHO: 'Mu-Cho',
@@ -143,6 +147,8 @@ const ImprovedCozy60BuilderPage = () => {
     try {
       const data = await fetchCozyDraft(draftId);
       setDraft(data.draft);
+      setLastPersistedSignature(draftSignature(data.draft));
+      setIsDirty(false);
       setSelectedDraftId(draftId);
       setStatus('');
     } catch (err) {
@@ -176,6 +182,8 @@ const ImprovedCozy60BuilderPage = () => {
             setSelectedDraftId(localDraft.id);
             setStatus('✓ Lokaler Entwurf wiederhergestellt');
             setRestoredFromLocal(true);
+            setLastPersistedSignature(null);
+            setIsDirty(true);
             localStorage.removeItem(LOCAL_BACKUP_KEY);
             localStorage.removeItem(LOCAL_BACKUP_TS_KEY);
             return;
@@ -205,6 +213,8 @@ const ImprovedCozy60BuilderPage = () => {
       const data = await createCozyDraft();
       setDrafts((prev) => [data.draft, ...prev.filter((d) => d.id !== data.draft.id)]);
       setDraft(data.draft);
+      setLastPersistedSignature(draftSignature(data.draft));
+      setIsDirty(false);
       setSelectedDraftId(data.draft.id);
       setStatus('✓ Bereit zum Bearbeiten!');
       setShowCreateDialog(false);
@@ -226,6 +236,8 @@ const ImprovedCozy60BuilderPage = () => {
       const data = await duplicateCozyDraft(sourceDraftId, newTitle);
       setDrafts((prev) => [data.draft, ...prev]);
       setDraft(data.draft);
+      setLastPersistedSignature(draftSignature(data.draft));
+      setIsDirty(false);
       setSelectedDraftId(data.draft.id);
       setStatus('✓ Quiz erfolgreich kopiert!');
       setShowCreateDialog(false);
@@ -249,6 +261,8 @@ const ImprovedCozy60BuilderPage = () => {
 
         setDrafts((prev) => [summarizeDraft(cloned), ...prev]);
         setDraft(cloned);
+        setLastPersistedSignature(null);
+        setIsDirty(true);
         setSelectedDraftId(cloned.id);
         setStatus('✓ Offline kopiert (lokal gespeichert)');
         setShowCreateDialog(false);
@@ -271,6 +285,8 @@ const ImprovedCozy60BuilderPage = () => {
     try {
       const response = await saveCozyDraft(draft.id, draft);
       setDraft(response.draft);
+      setLastPersistedSignature(draftSignature(response.draft));
+      setIsDirty(false);
       await loadDrafts();
       setStatus('✓ Gespeichert');
       setTimeout(() => setStatus(''), 2000);
@@ -365,6 +381,8 @@ const ImprovedCozy60BuilderPage = () => {
     try {
       const response = await publishCozyDraft(draft.id, { draft });
       setDraft(response.draft);
+      setLastPersistedSignature(draftSignature(response.draft));
+      setIsDirty(false);
       await loadDrafts();
       setStatus(`✓ Veröffentlicht als ${response.quizId}`);
       setTimeout(() => setStatus(''), 3000);
@@ -392,6 +410,29 @@ const ImprovedCozy60BuilderPage = () => {
     }, 1000);
     return () => clearTimeout(handle);
   }, [draft]);
+
+  useEffect(() => {
+    if (!draft) {
+      setIsDirty(false);
+      return;
+    }
+    if (!lastPersistedSignature) {
+      setIsDirty(true);
+      return;
+    }
+    setIsDirty(draftSignature(draft) !== lastPersistedSignature);
+  }, [draft, lastPersistedSignature]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   return (
       <div style={containerStyle} className="tool-page">
@@ -531,6 +572,20 @@ const ImprovedCozy60BuilderPage = () => {
                   <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{draft.meta.title || 'Unbenanntes Quiz'}</h2>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8, color: '#94a3b8', fontSize: 12 }}>
                     <span>ID: {draft.id}</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        border: isDirty ? '1px solid rgba(251,146,60,0.45)' : '1px solid rgba(34,197,94,0.4)',
+                        background: isDirty ? 'rgba(251,146,60,0.18)' : 'rgba(34,197,94,0.15)',
+                        color: isDirty ? '#fdba74' : '#86efac',
+                        fontWeight: 700
+                      }}
+                      title={isDirty ? 'Es gibt ungespeicherte Aenderungen' : 'Alle Aenderungen sind gespeichert'}
+                    >
+                      {isDirty ? 'Nicht gespeichert' : 'Gespeichert'}
+                    </span>
                     {restoredFromLocal && <span style={{ color: '#4ade80' }}>Lokaler Restore aktiv</span>}
                     {lastAutoSave && (
                       <span style={{ color: '#94a3b8', fontSize: 11 }}>

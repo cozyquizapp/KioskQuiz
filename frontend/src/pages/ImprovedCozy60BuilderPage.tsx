@@ -438,6 +438,18 @@ const ImprovedCozy60BuilderPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isSaveCombo = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+      if (!isSaveCombo) return;
+      event.preventDefault();
+      handleSave();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSave]);
+
   return (
       <div style={containerStyle} className="tool-page">
         <aside style={sidebarStyle} className="tool-card">

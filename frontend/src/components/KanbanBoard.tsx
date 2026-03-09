@@ -722,26 +722,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                           <div style={{
                             position: 'relative',
                             height: 60,
-                            background: `linear-gradient(135deg, ${catColor}88 0%, ${catColor}44 50%, ${catColor}22 100%)`,
+                            background: `linear-gradient(135deg, ${catColor}80 0%, ${catColor}40 55%, ${catColor}1f 100%)`,
                             borderBottom: `2px solid ${catColor}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '0 12px',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)'
                           }}>
-                            {/* Glassmorphism Overlay */}
-                            <div style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              background: 'rgba(255,255,255,0.03)',
-                              backdropFilter: 'blur(10px)',
-                              WebkitBackdropFilter: 'blur(10px)'
-                            }} />
-                            
                             {/* Decorative Circles */}
                             <div style={{
                               position: 'absolute',

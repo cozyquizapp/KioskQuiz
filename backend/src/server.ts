@@ -1762,7 +1762,9 @@ app.get('/api/studio/cozy60', async (_req, res) => {
     res.json({ drafts: list });
   } catch (err) {
     console.error('Fehler beim Laden von Cozy Drafts:', err);
-    // Fallback to in-memory on error
+    if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB-Fehler beim Laden der Drafts' });
+    }
     const list = [...cozyDrafts]
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((draft) => summarizeCozyDraft(draft));

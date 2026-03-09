@@ -469,18 +469,22 @@ export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; of
     clearTimeout(timeout);
     
     if (!res.ok) {
+      // Clear stale cache on 503 so the real MongoDB error is visible instead of outdated drafts
+      if (res.status === 503) {
+        localStorage.removeItem('cozy-drafts-backup');
+      }
       const message = await extractApiErrorMessage(res, 'Cozy-Drafts konnten nicht geladen werden');
       throw new Error(message);
     }
     const data = await res.json();
-    
+
     // Cache the result for offline fallback
     localStorage.setItem('cozy-drafts-backup', JSON.stringify(data));
-    
+
     return { drafts: data.drafts, offline: false };
   } catch (err) {
     const offlineReason = err instanceof Error ? err.message : 'Cozy-Drafts offline';
-    // Try to load from local cache
+    // Try to load from local cache (not for 503/MongoDB errors — cache was already cleared above)
     const cached = localStorage.getItem('cozy-drafts-backup');
     if (cached) {
       try {

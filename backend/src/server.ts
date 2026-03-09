@@ -1530,14 +1530,14 @@ const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
 
 const summarizeCozyDraft = (draft: CozyQuizDraft) => ({
   id: draft.id,
-  title: draft.meta.title,
-  language: draft.meta.language,
-  date: draft.meta.date ?? null,
-  status: draft.status,
+  title: draft.meta?.title ?? '(kein Titel)',
+  language: draft.meta?.language ?? 'de',
+  date: draft.meta?.date ?? null,
+  status: draft.status ?? 'draft',
   updatedAt: draft.updatedAt,
   createdAt: draft.createdAt,
-  questionCount: draft.questions.length,
-  blitzThemes: draft.blitz?.pool.length ?? 0
+  questionCount: Array.isArray(draft.questions) ? draft.questions.length : 0,
+  blitzThemes: draft.blitz?.pool?.length ?? 0
 });
 
 const sanitizeCozyQuestions = (draftId: string, payload?: AnyQuestion[]): AnyQuestion[] => {
@@ -1746,7 +1746,9 @@ app.get('/api/studio/cozy60', async (_req, res) => {
     // Try to load from MongoDB first
     if (await ensureDraftDbConnection()) {
       const drafted = await getAllCozyDraftsFromDB();
-      const list = drafted.map((draft) => summarizeCozyDraft(draft));
+      const list = drafted.flatMap((draft) => {
+        try { return [summarizeCozyDraft(draft)]; } catch { return []; }
+      });
       return res.json({ drafts: list });
     }
     if (mongoUriConfigured) {

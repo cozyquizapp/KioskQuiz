@@ -39,7 +39,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
   });
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
-  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
   const [catalogPool, setCatalogPool] = useState<AnyQuestion[]>([]);
   
   // Undo/Redo
@@ -299,7 +299,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
     
     addToHistory(nextQuestions);
     onUpdate({ ...draft, questions: nextQuestions });
-    setShowTemplateMenu(false);
+    setShowOverflowMenu(false);
   }, [draft, onUpdate, categories, addToHistory]);
 
   const handleQuestionSave = (slotIndex: number, updatedQuestion: AnyQuestion) => {
@@ -516,43 +516,34 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
             }}
           />
           
-          {/* Action Buttons */}
-          <button
-            onClick={autoBalance}
-            style={toolbarButtonStyle}
-            title="Kategorien automatisch ausgleichen (5 pro Kategorie)"
-          >
-            ⚖️ Auto-Balance
-          </button>
-
-          <button
-            onClick={fillEmptySlotsSmart}
-            style={toolbarButtonStyle}
-            title="Leere Slots mit passenden Fragen aus dem Katalog fuellen"
-          >
-            ✨ Leere Slots fuellen
-          </button>
-          
+          {/* Overflow menu: Auto-Balance, Slots füllen, Templates */}
           <div style={{ position: 'relative' }}>
             <button
-              onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+              onClick={() => setShowOverflowMenu(!showOverflowMenu)}
               style={toolbarButtonStyle}
-              title="Vorgefertigte Vorlagen anwenden"
+              title="Weitere Aktionen"
             >
-              📋 Templates
+              ⋯
             </button>
-            {showTemplateMenu && (
+            {showOverflowMenu && (
               <div style={templateMenuStyle}>
-                <button onClick={() => applyTemplate('difficulty-ascending')} style={templateItemStyle}>
+                <button onClick={() => { autoBalance(); setShowOverflowMenu(false); }} style={templateItemStyle}>
+                  ⚖️ Auto-Balance
+                </button>
+                <button onClick={() => { fillEmptySlotsSmart(); setShowOverflowMenu(false); }} style={templateItemStyle}>
+                  ✨ Leere Slots füllen
+                </button>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 4px' }} />
+                <button onClick={() => { applyTemplate('difficulty-ascending'); setShowOverflowMenu(false); }} style={templateItemStyle}>
                   📈 Schwierigkeit aufsteigend
                 </button>
-                <button onClick={() => applyTemplate('difficulty-descending')} style={templateItemStyle}>
+                <button onClick={() => { applyTemplate('difficulty-descending'); setShowOverflowMenu(false); }} style={templateItemStyle}>
                   📉 Schwierigkeit absteigend
                 </button>
-                <button onClick={() => applyTemplate('shuffle')} style={templateItemStyle}>
+                <button onClick={() => { applyTemplate('shuffle'); setShowOverflowMenu(false); }} style={templateItemStyle}>
                   🔀 Zufällig mischen
                 </button>
-                <button onClick={() => applyTemplate('alternate-categories')} style={templateItemStyle}>
+                <button onClick={() => { applyTemplate('alternate-categories'); setShowOverflowMenu(false); }} style={templateItemStyle}>
                   🎯 Kategorien abwechseln
                 </button>
               </div>
@@ -582,9 +573,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
             Kompakt
           </label>
           
-          <small style={{ opacity: 0.6, marginLeft: 'auto' }}>
-            Ctrl+Click: Mehrfachauswahl • Drag & Drop zwischen Kategorien
-          </small>
         </div>
         
         {/* Bulk Actions Bar */}

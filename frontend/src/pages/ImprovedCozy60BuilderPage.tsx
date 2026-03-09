@@ -599,8 +599,7 @@ const ImprovedCozy60BuilderPage = () => {
               <header style={headerStyle}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{draft.meta.title || 'Unbenanntes Quiz'}</h2>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8, color: '#94a3b8', fontSize: 12 }}>
-                    <span>ID: {draft.id}</span>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6, fontSize: 12 }}>
                     <span
                       style={{
                         fontSize: 11,
@@ -611,17 +610,11 @@ const ImprovedCozy60BuilderPage = () => {
                         color: isDirty ? '#fdba74' : '#86efac',
                         fontWeight: 700
                       }}
-                      title={isDirty ? 'Es gibt ungespeicherte Aenderungen' : 'Alle Aenderungen sind gespeichert'}
                     >
-                      {isDirty ? 'Nicht gespeichert' : 'Gespeichert'}
+                      {isSaving ? '⏳ Speichere…' : isDirty ? 'Ungespeichert' : 'Gespeichert'}
                     </span>
-                    {restoredFromLocal && <span style={{ color: '#4ade80' }}>Lokaler Restore aktiv</span>}
-                    {lastAutoSave && (
-                      <span style={{ color: '#94a3b8', fontSize: 11 }}>
-                        💾 Gespeichert: {new Date(lastAutoSave).toLocaleTimeString()}
-                      </span>
-                    )}
-                    {status && <span style={{ color: '#22d3ee' }}>{status}</span>}
+                    {restoredFromLocal && <span style={{ color: '#4ade80', fontSize: 11 }}>Lokaler Restore</span>}
+                    {status && status !== 'Auto-Save ausgeführt' && <span style={{ color: '#22d3ee' }}>{status}</span>}
                     {error && <span style={{ color: '#f87171' }}>{error}</span>}
                   </div>
                 </div>
@@ -644,71 +637,33 @@ const ImprovedCozy60BuilderPage = () => {
                 </div>
               </header>
 
-              <div
-                style={{
-                  margin: '12px 16px 0',
-                  padding: '12px 14px',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 12
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>
-                      Fortschritt: {progress.filled}/{progress.total} Fragen
-                    </div>
-                    <div style={{ position: 'relative', height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 999 }}>
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          width: `${Math.min(100, Math.max(0, progress.percent))}%`,
-                          background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
-                          borderRadius: 999,
-                          boxShadow: '0 0 12px rgba(34,211,238,0.35)'
-                        }}
-                      />
-                    </div>
-                  </div>
+              <div style={{ margin: '8px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, position: 'relative', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999 }}>
                   <div
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '8px 12px',
-                      borderRadius: 10,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(15,23,42,0.7)',
-                      color: medal.color,
-                      fontWeight: 700,
-                      fontSize: 13
+                      position: 'absolute',
+                      inset: 0,
+                      width: `${Math.min(100, Math.max(0, progress.percent))}%`,
+                      background: 'linear-gradient(90deg, #22d3ee, #818cf8)',
+                      borderRadius: 999,
                     }}
-                    title={`Meilenstein bei ${progress.percent}%`}
-                  >
-                    {medal.label}
-                  </div>
+                  />
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                <span style={{ fontSize: 11, color: '#94a3b8', flexShrink: 0 }}>
+                  {progress.filled}/{progress.total}
+                </span>
+                <span style={{ color: medal.color, fontWeight: 700, fontSize: 12, flexShrink: 0 }} title={`Meilenstein bei ${progress.percent}%`}>
+                  {medal.label}
+                </span>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                   {checklist.map((item, idx) => (
-                    <div
+                    <span
                       key={idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: item.done ? 'rgba(34,197,94,0.12)' : 'rgba(148,163,184,0.06)',
-                        border: item.done ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(148,163,184,0.15)',
-                        color: item.done ? '#bbf7d0' : '#cbd5e1',
-                        fontSize: 12
-                      }}
+                      title={item.label}
+                      style={{ fontSize: 14, opacity: item.done ? 1 : 0.25, cursor: 'default' }}
                     >
-                      <span>{item.done ? '✅' : '⬜'}</span>
-                      <span>{item.label}</span>
-                    </div>
+                      {item.done ? '✅' : '⬜'}
+                    </span>
                   ))}
                 </div>
               </div>

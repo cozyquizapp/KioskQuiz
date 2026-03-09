@@ -359,6 +359,21 @@ export const saveQuizLayout = async (quizId: string, layout: any) => {
   return res.json();
 };
 
+export const translateText = async (
+  text: string,
+  source: 'de' | 'en' = 'de',
+  target: 'de' | 'en' = 'en'
+): Promise<string> => {
+  const res = await fetch(`${API_BASE}/translate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, source, target })
+  });
+  if (!res.ok) throw new Error('Übersetzung fehlgeschlagen');
+  const data = await res.json() as { translatedText?: string };
+  return data.translatedText || '';
+};
+
 // Stats & Leaderboard
 export const fetchLeaderboard = async (): Promise<{ runs: any[]; allTime?: { topTeams: any[]; funnyAnswers: any[]; lastUpdated?: number } }> => {
   const res = await fetch(`${API_BASE}/stats/leaderboard`);

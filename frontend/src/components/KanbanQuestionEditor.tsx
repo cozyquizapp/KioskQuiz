@@ -10,6 +10,7 @@ import type {
 } from '@shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '@shared/cozyTemplate';
 import { BunteTueteEditor } from './BunteTueteEditor';
+import { translateText } from '../api';
 import {
   modalOverlayStyle,
   modalStyle,
@@ -57,6 +58,7 @@ export function KanbanQuestionEditor({
   const [imagePreview, setImagePreview] = useState<string | null>(question.imageUrl || null);
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isTranslatingFunFact, setIsTranslatingFunFact] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'mechanic' | 'media' | 'points'>('basic');
 
@@ -125,6 +127,24 @@ export function KanbanQuestionEditor({
 
   const handleSave = () => {
     onSave(localQuestion);
+  };
+
+  const handleAutoTranslateFunFact = async () => {
+    const source = (localQuestion.funFact || '').trim();
+    if (!source) {
+      showNotification('error', '❌ Bitte zuerst eine deutsche Moderationsnotiz eingeben');
+      return;
+    }
+    setIsTranslatingFunFact(true);
+    try {
+      const translated = await translateText(source, 'de', 'en');
+      setLocalQuestion((prev) => ({ ...prev, funFactEn: translated }));
+      showNotification('success', '✅ Moderationsnotiz automatisch nach EN übersetzt');
+    } catch (err) {
+      showNotification('error', `❌ Übersetzung fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setIsTranslatingFunFact(false);
+    }
   };
 
   // Render mechanik-spezifische Felder
@@ -331,13 +351,43 @@ export function KanbanQuestionEditor({
                 />
               </div>
               <div style={formSectionStyle}>
-                <label style={labelStyle}>Fun Fact / Moderationsnotiz</label>
+                <label style={labelStyle}>Fun Fact / Moderationsnotiz (DE)</label>
                 <textarea
                   value={localQuestion.funFact || ''}
                   onChange={(e) => setLocalQuestion(prev => ({ ...prev, funFact: e.target.value }))}
                   style={textareaStyle}
                   rows={2}
                   placeholder="Interessante Info für den Moderator..."
+                />
+              </div>
+              <div style={formSectionStyle}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Fun Fact / Moderationsnotiz (EN)</label>
+                  <button
+                    onClick={handleAutoTranslateFunFact}
+                    disabled={isTranslatingFunFact}
+                    style={{
+                      border: '1px solid rgba(59,130,246,0.45)',
+                      background: 'rgba(59,130,246,0.2)',
+                      color: '#93c5fd',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: isTranslatingFunFact ? 'not-allowed' : 'pointer',
+                      opacity: isTranslatingFunFact ? 0.6 : 1
+                    }}
+                    title="DE-Notiz automatisch ins Englische übersetzen"
+                  >
+                    {isTranslatingFunFact ? '⏳ Übersetze...' : '🌐 Auto EN'}
+                  </button>
+                </div>
+                <textarea
+                  value={(localQuestion as any).funFactEn || ''}
+                  onChange={(e) => setLocalQuestion((prev) => ({ ...prev, funFactEn: e.target.value }))}
+                  style={textareaStyle}
+                  rows={2}
+                  placeholder="English note for moderator..."
                 />
               </div>
             </>

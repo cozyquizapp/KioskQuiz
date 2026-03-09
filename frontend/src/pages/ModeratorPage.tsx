@@ -2550,11 +2550,21 @@ function ModeratorPage(): React.ReactElement {
     };
     const noAnswers = answersCount === 0 && normalizedGameState === 'Q_ACTIVE';
     const connectedCount = connectedTeams || teamsCount || 0;
+    const funFactDe = ((question as any)?.funFactDe ?? (question as any)?.funFact ?? '').trim();
+    const funFactEn = ((question as any)?.funFactEn ?? '').trim();
+    const hasFunFact = Boolean(funFactDe || funFactEn);
     return (
       <section className="moderator-primary-controls z-10 mt-3 rounded-3xl border border-[#f05fb244] bg-[#0b2343]/95 p-3 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur md:sticky md:top-2">
         <div className="mb-3 rounded-2xl border border-[#f05fb233] bg-[#050505]/55 p-3">
           <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Aktuelle Frage</p>
           <p className="text-lg font-extrabold leading-tight text-[#ffe4f2] sm:text-2xl">{question?.question ?? 'Keine Frage aktiv'}</p>
+          {hasFunFact && (
+            <div className="mt-2 rounded-xl border border-[#f05fb244] bg-[#0b2343]/55 p-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ffb8df]">Moderationsinfo (DE / EN)</p>
+              <p className="mt-1 text-xs font-semibold text-[#ffd1e8]"><span className="text-[#ff9ed1]">DE:</span> {funFactDe || '—'}</p>
+              <p className="mt-1 text-xs font-semibold text-[#cfe8ff]"><span className="text-[#93c5fd]">EN:</span> {funFactEn || '—'}</p>
+            </div>
+          )}
           <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#ffb8df]">Lösung</p>
           <p className="text-base font-black text-[#ffd1e8] sm:text-xl">{socketSolution || answers?.solution || '—'}</p>
         </div>

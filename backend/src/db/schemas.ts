@@ -8,6 +8,8 @@ const QuestionSchema = new mongoose.Schema({
   mechanic: { type: String, required: true },
   question: { type: String, required: true },
   questionEn: String,
+  funFact: String,
+  funFactEn: String,
   points: { type: Number, default: 1 },
   
   // Optional fields für verschiedene Typen

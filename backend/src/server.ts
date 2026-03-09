@@ -171,6 +171,32 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+app.post('/api/translate', async (req, res) => {
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    const source = req.body?.source === 'en' ? 'en' : 'de';
+    const target = req.body?.target === 'de' ? 'de' : 'en';
+
+    if (!text) return res.status(400).json({ error: 'text erforderlich' });
+    if (source === target) return res.json({ translatedText: text });
+
+    // Use a public translation API with graceful fallback.
+    const params = new URLSearchParams({ q: text, langpair: `${source}|${target}` });
+    const response = await fetch(`https://api.mymemory.translated.net/get?${params.toString()}`);
+    if (!response.ok) {
+      return res.status(502).json({ error: 'Übersetzungsdienst nicht erreichbar' });
+    }
+    const data = await response.json() as { responseData?: { translatedText?: string } };
+    const translated = data?.responseData?.translatedText?.trim();
+    if (!translated) return res.status(502).json({ error: 'Keine Übersetzung erhalten' });
+
+    return res.json({ translatedText: translated });
+  } catch (err) {
+    console.error('Fehler bei Übersetzung:', err);
+    return res.status(500).json({ error: 'Übersetzung fehlgeschlagen' });
+  }
+});
+
 app.get('/api/rooms/:roomCode', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
@@ -3379,6 +3405,13 @@ const localizeQuestion = (question: AnyQuestion, language: Language): AnyQuestio
   const base: any = { ...question };
   if (questionImageMap[question.id]) base.imageUrl = questionImageMap[question.id];
   base.question = combineText(question.question, (question as any).questionEn, language);
+  const funFactDe = (question as any).funFact;
+  const funFactEn = (question as any).funFactEn;
+  if (funFactDe || funFactEn) {
+    base.funFactDe = funFactDe;
+    base.funFactEn = funFactEn;
+    base.funFact = combineText(funFactDe, funFactEn, language);
+  }
 
   if (question.mechanic === 'multipleChoice') {
     const deOptions = (question as any).options ?? [];
@@ -4001,6 +4034,8 @@ const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => {
   delete q.correctOrder;   // sortItems: correct ordering
   delete q.correctOrderEn;
   delete q.funFact;        // moderation notes
+  delete q.funFactEn;
+  delete q.funFactDe;
   // Sanitize bunteTuete fotosprint items
   if (q.bunteTuete?.blitzItems) {
     q.bunteTuete = {

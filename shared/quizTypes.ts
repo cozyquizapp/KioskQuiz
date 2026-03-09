@@ -199,6 +199,7 @@ export interface BaseQuestion {
   decorationLeft?: DecorationKey | null;
   decorationRight?: DecorationKey | null;
   funFact?: string | null; // Moderationsnotiz / interessanter Fakt
+  funFactEn?: string | null;
   usedIn?: string[]; // Liste von Quizzes/Vorlagen, in denen die Frage genutzt wurde
   lastUsedAt?: string | null; // ISO-String des letzten Einsatzes
   catalogId?: string; // optionaler Katalog/Tag

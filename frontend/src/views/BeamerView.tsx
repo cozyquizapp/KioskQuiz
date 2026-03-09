@@ -3238,6 +3238,7 @@ useEffect(() => {
       // During reveal: only use 2-column layout when team answers are actually present
       const hasRevealAnswers = phase === 'reveal' && !isTop5 &&
         !!(answerResults?.length || teamStatus?.some(t => t.answer !== undefined));
+      const hasSubmissions = !!(teamStatus?.some((t) => t.answer !== undefined));
 
       const onMediaLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;

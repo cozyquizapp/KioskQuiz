@@ -104,7 +104,7 @@ import {
   isQuestionInputOpen,
   GameStateAction
 } from './game/stateMachine';
-import { connectDB, isDBConnected } from './db/mongo';
+import { connectDB, isDBConnected, getMongoEnvSource } from './db/mongo';
 import { 
   Question,
   getQuestionsFromDB, 
@@ -1116,6 +1116,13 @@ const sanitizeRundlaufDraft = (config?: RundlaufConfig | null): RundlaufConfig =
 // Cozy60 Studio Drafts / Builder
 const cozyDraftsPath = path.join(__dirname, 'data', 'cozyQuizDrafts.json');
 let cozyDrafts: CozyQuizDraft[] = [];
+const mongoUriConfigured = Boolean((process.env.MONGODB_URI || process.env.DATABASE_URL)?.trim());
+
+const ensureDraftDbConnection = async (): Promise<boolean> => {
+  if (isDBConnected()) return true;
+  if (!mongoUriConfigured) return false;
+  return connectDB();
+};
 
 // Initialize with default on first run
 let persistCozyDrafts = () => {
@@ -1320,6 +1327,7 @@ try {
   }
 } catch {
   // Fallback: create default draft if JSON is corrupted
+  console.error(`Fehler beim Laden von ${cozyDraftsPath} - nutze Demo-Draft als Fallback`);
   cozyDrafts = [createDefaultDemoDraft()];
 }
 
@@ -1736,10 +1744,13 @@ app.get('/api/stats/question/:questionId', (req, res) => {
 app.get('/api/studio/cozy60', async (_req, res) => {
   try {
     // Try to load from MongoDB first
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       const drafted = await getAllCozyDraftsFromDB();
       const list = drafted.map((draft) => summarizeCozyDraft(draft));
       return res.json({ drafts: list });
+    }
+    if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Drafts aktuell nicht verfuegbar' });
     }
     
     // Fallback to in-memory
@@ -1763,8 +1774,10 @@ app.post('/api/studio/cozy60', async (req, res) => {
     const draft = createNewCozyDraft(meta);
     
     // Save to MongoDB if connected
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       await saveCozyDraftToDB(draft);
+    } else if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht gespeichert werden' });
     } else {
       // Fallback to in-memory
       cozyDrafts.push(draft);
@@ -1783,12 +1796,15 @@ app.get('/api/studio/cozy60/:id', async (req, res) => {
     const draftId = req.params.id;
     
     // Try MongoDB first
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       const draft = await getCozyDraftFromDB(draftId);
       if (!draft) {
         return res.status(404).json({ error: 'Draft nicht gefunden' });
       }
       return res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
+    }
+    if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft aktuell nicht verfuegbar' });
     }
     
     // Fallback to in-memory
@@ -1806,7 +1822,7 @@ app.put('/api/studio/cozy60/:id', async (req, res) => {
     const draftId = req.params.id;
     const updates = (req.body as Partial<CozyQuizDraft>) || {};
     
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       const existing = await getCozyDraftFromDB(draftId);
       if (!existing) {
         return res.status(404).json({ error: 'Draft nicht gefunden' });
@@ -1817,6 +1833,9 @@ app.put('/api/studio/cozy60/:id', async (req, res) => {
       await saveCozyDraftToDB(updated);
       
       return res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
+    }
+    if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht gespeichert werden' });
     }
     
     // Fallback to in-memory
@@ -1840,12 +1859,14 @@ app.post('/api/studio/cozy60/:id/publish', async (req, res) => {
     let draft: CozyQuizDraft;
     let index = -1;
     
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       const dbDraft = await getCozyDraftFromDB(draftId);
       if (!dbDraft) {
         return res.status(404).json({ error: 'Draft nicht gefunden' });
       }
       draft = dbDraft;
+    } else if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft kann nicht veroeffentlicht werden' });
     } else {
       const result = getCozyDraftOrFail(draftId);
       draft = result.draft;
@@ -1906,12 +1927,14 @@ app.post('/api/studio/cozy60/:id/duplicate', async (req, res) => {
     const draftId = req.params.id;
     let draft: CozyQuizDraft;
     
-    if (isDBConnected()) {
+    if (await ensureDraftDbConnection()) {
       const dbDraft = await getCozyDraftFromDB(draftId);
       if (!dbDraft) {
         return res.status(404).json({ error: 'Draft nicht gefunden' });
       }
       draft = dbDraft;
+    } else if (mongoUriConfigured) {
+      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht dupliziert werden' });
     } else {
       const result = getCozyDraftOrFail(draftId);
       draft = result.draft;
@@ -7103,18 +7126,23 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
       console.log(`Quiz-Backend läuft auf Port ${port}`);
       
       // Validate required environment variables
-      if (!process.env.MONGODB_URI) {
+      if (!(process.env.MONGODB_URI || process.env.DATABASE_URL)) {
         console.warn('⚠️ MONGODB_URI nicht gesetzt - nutze In-Memory Fallback');
       }
+      console.log(`Mongo env source: ${getMongoEnvSource()}`);
       if (!process.env.SENTRY_DSN) {
         console.warn('⚠️ SENTRY_DSN nicht gesetzt - Fehlertracking deaktiviert');
       }
       
       // Initialize MongoDB
       try {
-        await connectDB();
-        await initializeDefaultQuestions(questions);
-        console.log('✓ MongoDB bereit');
+        const connected = await connectDB();
+        if (connected) {
+          await initializeDefaultQuestions(questions);
+          console.log('✓ MongoDB bereit');
+        } else {
+          console.warn('⚠️ MongoDB nicht verfügbar, nutze In-Memory Fallback');
+        }
       } catch (err) {
         console.warn('⚠️ MongoDB nicht verfügbar, nutze In-Memory Fallback:', err);
       }

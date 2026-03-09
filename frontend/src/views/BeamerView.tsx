@@ -710,16 +710,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
     }, 300);
 
-    // After 2.8s, stop slots and show final picks
+    // After 1.5s, stop slots and show final picks
     const finalizeTimeout = setTimeout(() => {
       clearInterval(slotInterval);
       setSlotPositions([randomThemes[0]?.id || '', randomThemes[1]?.id || '']);
-    }, 2800);
+    }, 1500);
 
-    // After 3.8s, transition to final cards (1s pause to see final picks in pool)
+    // After 1.5s, transition directly to final cards
     const transitionTimeout = setTimeout(() => {
       setShowcasePhase('FINAL_CARDS');
-    }, 3800);
+    }, 1500);
 
     return () => {
       clearInterval(slotInterval);
@@ -727,6 +727,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       clearTimeout(transitionTimeout);
     };
   }, [gameState, blitz]);
+
+  // Trigger confetti when showcasePhase becomes FINAL_CARDS (Fotosprint)
+  useEffect(() => {
+    if (showcasePhase === 'FINAL_CARDS' && gameState === 'BLITZ_CATEGORY_SHOWCASE') {
+      if (!confettiRef.current && typeof document !== 'undefined') {
+        confettiRef.current = createConfetti(document.body);
+      }
+      confettiRef.current?.explosion(150);
+    }
+  }, [showcasePhase, gameState]);
 
   // Rundlauf CATEGORY_SHOWCASE animation effect
   useEffect(() => {
@@ -762,16 +772,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setRundlaufSlotPositions([newShuffled[0]?.id || '', newShuffled[1]?.id || '']);
     }, 300);
 
-    // After 2.8s, stop slots and show final picks
+    // After 1.5s, stop slots and show final picks
     const finalizeTimeout = setTimeout(() => {
       clearInterval(slotInterval);
       setRundlaufSlotPositions([randomCategories[0]?.id || '', randomCategories[1]?.id || '']);
-    }, 2800);
+    }, 1500);
 
-    // After 3.8s, transition to final cards
+    // After 1.5s, transition directly to final cards
     const transitionTimeout = setTimeout(() => {
       setRundlaufShowcasePhase('FINAL_CARDS');
-    }, 3800);
+    }, 1500);
 
     return () => {
       clearInterval(slotInterval);
@@ -779,6 +789,16 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       clearTimeout(transitionTimeout);
     };
   }, [gameState, rundlauf]);
+
+  // Trigger confetti when rundlaufShowcasePhase becomes FINAL_CARDS (K.O.-Rallye)
+  useEffect(() => {
+    if (rundlaufShowcasePhase === 'FINAL_CARDS' && gameState === 'RUNDLAUF_CATEGORY_SHOWCASE') {
+      if (!confettiRef.current && typeof document !== 'undefined') {
+        confettiRef.current = createConfetti(document.body);
+      }
+      confettiRef.current?.explosion(150);
+    }
+  }, [rundlaufShowcasePhase, gameState]);
 
 
 
@@ -2434,14 +2454,14 @@ useEffect(() => {
                 return (
                   <div
                     key={theme.id}
-                    className={cardClasses}
+                    className={`${cardClasses}${(isSlot1 || isSlot2) ? ' slot-highlight' : ''}`}
                     style={{
                       position: 'relative',
                       outline: (isSlot1 || isSlot2) ? '3px solid rgba(74, 222, 128, 0.9)' : undefined,
                       outlineOffset: (isSlot1 || isSlot2) ? '2px' : undefined,
                       background: (isSlot1 || isSlot2) ? 'rgba(74, 222, 128, 0.18)' : undefined,
-                      boxShadow: (isSlot1 || isSlot2) ? '0 0 20px rgba(74, 222, 128, 0.55)' : undefined,
-                      transition: 'outline 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
+                      transition: 'outline 0.15s ease, background 0.15s ease',
+                      animation: `slideInUpWave 0.4s ${theme.id === pool[0].id ? 0 : Math.min(pool.indexOf(theme) * 0.05, 0.6)}s both`,
                     }}
                   >
                     <div className="beamer-select-title">{theme.title}</div>
@@ -2505,7 +2525,7 @@ useEffect(() => {
               background: 'linear-gradient(135deg, rgba(214,47,147,0.22), rgba(177,10,108,0.18))',
               border: '3px solid rgba(240,95,178,0.6)',
               boxShadow: '0 4px 0 rgba(177,10,108,0.5), 0 8px 24px rgba(177,10,108,0.2)',
-              animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.5s both',
+              animation: 'flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both',
             }}>
               <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
               <div style={{ fontSize: '52px' }}>{pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}</div>
@@ -2514,7 +2534,7 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Random Picks — staggered 1.5s apart */}
+            {/* Random Picks — all appear almost simultaneously */}
             {randomThemes.map((theme, idx) => (
               <div
                 key={`random-${theme.id}-${idx}`}
@@ -2523,7 +2543,7 @@ useEffect(() => {
                   background: 'linear-gradient(135deg, rgba(43,91,152,0.22), rgba(17,49,93,0.18))',
                   border: '3px solid rgba(90,147,199,0.55)',
                   boxShadow: '0 4px 0 rgba(27,63,112,0.45), 0 8px 24px rgba(17,49,93,0.2)',
-                  animation: `scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) ${1.5 + idx * 1.5}s both`,
+                  animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`,
                 }}
               >
                 <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>RANDOM {idx + 1}</div>
@@ -2549,18 +2569,41 @@ useEffect(() => {
 
     if (phase === 'ROUND_INTRO') {
       const countdownNumber = blitzCountdown !== null && blitzCountdown > 0 ? blitzCountdown : null;
+      const currentSetIndex = (blitz?.setIndex ?? 0) + 1;
+      const totalSets = Math.max(1, blitz?.selectedThemes?.length || 3);
       return (
         <div className="beamer-stack blitz-stack">
           <div className="beamer-intro-card">
-            <h2>FOTOSPRINT</h2>
-            <p>{blitz.theme?.title || '-'}</p>
+            {/* Theme name prominently displayed */}
+            <div style={{
+              fontSize: '60px',
+              fontWeight: '900',
+              color: 'var(--text)',
+              marginBottom: '20px',
+              textAlign: 'center',
+              lineHeight: 1.1,
+              animation: 'zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}>
+              {blitz.theme?.title || '-'}
+            </div>
+            {/* Set badge */}
+            <div style={{
+              fontSize: '18px',
+              fontWeight: '700',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              marginBottom: '10px'
+            }}>
+              Set {currentSetIndex}/{totalSets}
+            </div>
             {countdownNumber !== null && (
               <div style={{
                 fontSize: '80px',
                 fontWeight: '900',
                 color: 'var(--color-primary)',
                 marginTop: '30px',
-                animation: 'pulse 0.5s ease-in-out infinite'
+                animation: 'countdown-pop 0.8s ease-in-out infinite'
               }}>
                 {countdownNumber}
               </div>
@@ -3597,7 +3640,7 @@ useEffect(() => {
             >
               <div className="blitz-stack">
                 <div className="blitz-pool-grid" style={{ position: 'relative' }}>
-                  {displayPool.map((entry) => {
+                  {displayPool.map((entry, entryIdx) => {
                     const isBanned = bans.has(entry.id);
                     const isPicked = entry.id === pinnedId;
                     const isSlot1 = entry.id === slot1Id;
@@ -3606,7 +3649,8 @@ useEffect(() => {
                     const cardClasses = [
                       'beamer-select-card',
                       isBanned ? 'banned' : '',
-                      isPicked ? 'picked' : ''
+                      isPicked ? 'picked' : '',
+                      (isSlot1 || isSlot2) ? 'slot-highlight' : ''
                     ].filter(Boolean).join(' ');
 
                     const badge = isPicked ? 'PICK' : isBanned ? 'BANNED' : '';
@@ -3619,8 +3663,8 @@ useEffect(() => {
                           outline: (isSlot1 || isSlot2) ? '3px solid rgba(74, 222, 128, 0.9)' : undefined,
                           outlineOffset: (isSlot1 || isSlot2) ? '2px' : undefined,
                           background: (isSlot1 || isSlot2) ? 'rgba(74, 222, 128, 0.18)' : undefined,
-                          boxShadow: (isSlot1 || isSlot2) ? '0 0 20px rgba(74, 222, 128, 0.55)' : undefined,
-                          transition: 'outline 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
+                          transition: 'outline 0.15s ease, background 0.15s ease',
+                          animation: `slideInUpWave 0.4s ${entryIdx * 0.05}s both`,
                         }}
                       >
                         <div className="beamer-select-title">{entry.title}</div>
@@ -3686,14 +3730,14 @@ useEffect(() => {
                   background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(59,130,246,0.15))',
                   border: '3px solid rgba(96,165,250,0.7)',
                   boxShadow: '0 4px 0 rgba(59,130,246,0.4), 0 8px 24px rgba(59,130,246,0.15)',
-                  animation: 'scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.5s both',
+                  animation: 'flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both',
                 }}>
                   <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
                   <div style={{ fontSize: '30px', fontWeight: '900', color: '#111827', lineHeight: 1.2 }}>
                     {pickedCategory?.title || 'Kategorie 1'}
                   </div>
                 </div>
-                {/* Random categories — staggered 1.5s apart */}
+                {/* Random categories — all appear almost simultaneously */}
                 {randomCategories.map((cat, idx) => (
                   <div
                     key={`random-${cat.id}-${idx}`}
@@ -3702,7 +3746,7 @@ useEffect(() => {
                       background: 'linear-gradient(135deg, rgba(74,222,128,0.2), rgba(34,197,94,0.1))',
                       border: '3px solid rgba(74,222,128,0.6)',
                       boxShadow: '0 4px 0 rgba(34,197,94,0.35), 0 8px 24px rgba(34,197,94,0.15)',
-                      animation: `scaleInCenter 0.55s cubic-bezier(0.34,1.56,0.64,1) ${1.5 + idx * 1.5}s both`,
+                      animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`,
                     }}
                   >
                     <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>ZUFÄLLIG {idx + 1}</div>
@@ -3719,6 +3763,7 @@ useEffect(() => {
 
       if (gameState === 'RUNDLAUF_ROUND_INTRO') {
         const countdownNumber = rundlaufCountdown !== null && rundlaufCountdown > 0 ? rundlaufCountdown : null;
+        const totalRounds = Math.max(1, (rundlauf?.selected ?? []).length);
         return (
           <BeamerFrame
             key={`${sceneKey}-rundlauf-intro`}
@@ -3731,8 +3776,30 @@ useEffect(() => {
             status="info"
           >
             <div className="beamer-intro-card">
-              <h2>{currentCategoryTitle || 'Kategorie'}</h2>
-              <p>
+              {/* Category name prominently displayed */}
+              <div style={{
+                fontSize: '60px',
+                fontWeight: '900',
+                color: 'var(--text)',
+                marginBottom: '20px',
+                textAlign: 'center',
+                lineHeight: 1.1,
+                animation: 'zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+              }}>
+                {currentCategoryTitle || 'Kategorie'}
+              </div>
+              {/* Round badge */}
+              <div style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: 'var(--muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+                marginBottom: '10px'
+              }}>
+                Runde {roundLabel}/{totalRounds}
+              </div>
+              <p style={{ fontSize: '16px', opacity: 0.85, marginTop: '10px' }}>
                 {language === 'de'
                   ? 'Reihum antworten - wer nichts weiss, fliegt raus.'
                   : 'Take turns answering - pass means eliminated.'}
@@ -3743,7 +3810,7 @@ useEffect(() => {
                   fontWeight: '900',
                   color: '#15803d',
                   marginTop: '30px',
-                  animation: 'pulse 0.5s ease-in-out infinite'
+                  animation: 'countdown-pop 0.8s ease-in-out infinite'
                 }}>
                   {countdownNumber}
                 </div>

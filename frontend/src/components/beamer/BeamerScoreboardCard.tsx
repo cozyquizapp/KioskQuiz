@@ -16,10 +16,35 @@ const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, d
   const numScore = typeof score === 'number' ? score : 0;
   const barWidth = maxScore && maxScore > 0 ? Math.max(4, (numScore / maxScore) * 100) : 0;
   const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+  
+  // Trophy with special styling
+  const getTrophyIcon = (rank: number) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `${rank}.`;
+  };
+
+  const getTrophyStyle = (rank: number): React.CSSProperties => {
+    if (rank === 1) return {
+      fontSize: '32px',
+      animation: 'trophy-bounce 2s ease-in-out infinite, trophy-glow-gold 2s ease-in-out infinite'
+    };
+    if (rank === 2) return {
+      fontSize: '28px',
+      animation: 'trophy-bounce 2.2s ease-in-out infinite, trophy-glow-silver 2.2s ease-in-out infinite'
+    };
+    if (rank === 3) return {
+      fontSize: '26px',
+      animation: 'trophy-bounce 2.4s ease-in-out infinite, trophy-glow-bronze 2.4s ease-in-out infinite'
+    };
+    return {};
+  };
+
   return (
     <div className={`beamer-score-card${highlight ? ' highlight' : ''}${rankClass}`}>
-      <div className="beamer-score-rank">
-        {rank <= 3 ? ['', '\u{1F947}', '\u{1F948}', '\u{1F949}'][rank] : `${rank}.`}
+      <div className="beamer-score-rank" style={getTrophyStyle(rank)}>
+        {getTrophyIcon(rank)}
       </div>
       {avatarSrc && (
         <img

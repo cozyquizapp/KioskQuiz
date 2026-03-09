@@ -50,6 +50,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
 
   const categories: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
 
+  const slotHeroGradient: Record<QuizCategory, string> = {
+    Schaetzchen: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 55%, #fcd34d 100%)',
+    'Mu-Cho': 'linear-gradient(135deg, #0ea5e9 0%, #22d3ee 55%, #60a5fa 100%)',
+    Stimmts: 'linear-gradient(135deg, #16a34a 0%, #34d399 55%, #86efac 100%)',
+    Cheese: 'linear-gradient(135deg, #a855f7 0%, #c084fc 55%, #e879f9 100%)',
+    GemischteTuete: 'linear-gradient(135deg, #ef4444 0%, #f97316 55%, #fb7185 100%)'
+  };
+
   React.useEffect(() => {
     const loadCatalogPool = async () => {
       try {
@@ -722,7 +730,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                           <div style={{
                             position: 'relative',
                             height: 60,
-                            background: `linear-gradient(135deg, ${catColor}80 0%, ${catColor}40 55%, ${catColor}1f 100%)`,
+                            background: slotHeroGradient[category],
                             borderBottom: `2px solid ${catColor}`,
                             display: 'flex',
                             alignItems: 'center',
@@ -765,14 +773,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                                 width: 36,
                                 height: 36,
                                 borderRadius: '50%',
-                                background: `linear-gradient(135deg, ${catColor} 0%, ${catColor}88 100%)`,
+                                background: 'rgba(255,255,255,0.92)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontSize: 16,
                                 fontWeight: 900,
-                                color: '#0f172a',
-                                boxShadow: `0 4px 12px ${catColor}44`
+                                color: '#0b1324',
+                                boxShadow: '0 8px 16px rgba(0,0,0,0.24)'
                               }}>
                                 1
                               </div>
@@ -780,15 +788,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                                 <div style={{
                                   fontSize: 13,
                                   fontWeight: 700,
-                                  color: '#e2e8f0',
+                                  color: '#ffffff',
                                   textShadow: '0 2px 8px rgba(0,0,0,0.4)'
                                 }}>
                                   Frage 1
                                 </div>
                                 <div style={{
                                   fontSize: 10,
-                                  color: '#cbd5e1',
-                                  opacity: 0.8
+                                  color: 'rgba(255,255,255,0.85)',
+                                  opacity: 0.95
                                 }}>
                                   {catLabel}
                                 </div>

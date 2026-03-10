@@ -464,7 +464,8 @@ export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; of
     const timeout = setTimeout(() => controller.abort(), 5000);
     
     const res = await fetch(`${API_BASE}/studio/cozy60`, {
-      signal: controller.signal
+      signal: controller.signal,
+      cache: 'no-store'
     });
     clearTimeout(timeout);
     

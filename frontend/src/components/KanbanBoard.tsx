@@ -31,7 +31,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
   const [filterQuery, setFilterQuery] = useState<string>('');
   const [isDense, setIsDense] = useState<boolean>(false);
   const [collapsed, setCollapsed] = useState<Record<QuizCategory, boolean>>({
-    Schaetzchen: false,
+    Schaetzchen: true,
     'Mu-Cho': true,
     Stimmts: true,
     Cheese: true,
@@ -841,6 +841,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
                           {(question as any).answer && (
                             <div style={{ fontSize: 11 }}>
                               Antwort: {(question as any).answer}
+                            </div>
+                          )}
+                          {(question as any).usedIn?.length > 0 && (
+                            <div style={{ fontSize: 11, marginTop: 6, opacity: 0.8 }}>
+                              <span style={{ fontWeight: 600 }}>Benutzt in: </span>
+                              {((question as any).usedIn as string[]).slice(0, 4).join(', ')}
+                              {(question as any).usedIn.length > 4 && ` +${(question as any).usedIn.length - 4} weitere`}
                             </div>
                           )}
                         </div>

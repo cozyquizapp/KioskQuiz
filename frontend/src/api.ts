@@ -461,7 +461,7 @@ const extractApiErrorMessage = async (res: Response, fallback: string): Promise<
 export const listCozyDrafts = async (): Promise<{ drafts: CozyDraftSummary[]; offline?: boolean; offlineReason?: string }> => {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     
     const res = await fetch(`${API_BASE}/studio/cozy60`, {
       signal: controller.signal,

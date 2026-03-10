@@ -13,7 +13,7 @@ export async function connectDB() {
     await mongoose.connect(MONGO_URI, {
       retryWrites: true,
       writeConcern: { w: 'majority' },
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 15000
     });
     console.log('✓ MongoDB verbunden');
     return true;

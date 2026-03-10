@@ -1736,6 +1736,222 @@ export const questions: AnyQuestion[] = [
       partialPoints: 1,
       fullPoints: 2
     }
+  },
+
+  // === Bunte Tüte: Top 5 ===
+  {
+    id: 'q-top5-2',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'TOP 5: Bevölkerungsreichste Länder der Welt',
+    questionEn: 'TOP 5: Most populous countries in the world',
+    points: 5,
+    segmentIndex: 0,
+    tags: ['Geographie', 'Bevölkerung', 'Top5'],
+    bunteTuete: {
+      kind: 'top5',
+      prompt: 'Nennt die 5 Länder mit den meisten Einwohnern. Reihenfolge egal.',
+      items: [
+        { id: 'india', label: 'Indien' },
+        { id: 'china', label: 'China' },
+        { id: 'usa', label: 'USA' },
+        { id: 'indonesia', label: 'Indonesien' },
+        { id: 'pakistan', label: 'Pakistan' }
+      ],
+      correctOrder: ['india', 'china', 'usa', 'indonesia', 'pakistan'],
+      scoringMode: 'contains'
+    }
+  },
+  {
+    id: 'q-top5-3',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'TOP 5: Meistverkaufte Videospiele aller Zeiten',
+    questionEn: 'TOP 5: Best-selling video games of all time',
+    points: 5,
+    segmentIndex: 1,
+    tags: ['Gaming', 'Pop-Kultur', 'Top5'],
+    bunteTuete: {
+      kind: 'top5',
+      prompt: 'Nennt 5 der meistverkauften Videospiele aller Zeiten. Reihenfolge egal.',
+      items: [
+        { id: 'minecraft', label: 'Minecraft' },
+        { id: 'gta5', label: 'GTA V' },
+        { id: 'tetris', label: 'Tetris' },
+        { id: 'wii-sports', label: 'Wii Sports' },
+        { id: 'pubg', label: 'PUBG' }
+      ],
+      correctOrder: ['minecraft', 'gta5', 'tetris', 'wii-sports', 'pubg'],
+      scoringMode: 'contains'
+    }
+  },
+  {
+    id: 'q-top5-4',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'TOP 5: Längste Flüsse der Welt',
+    questionEn: 'TOP 5: Longest rivers in the world',
+    points: 5,
+    segmentIndex: 0,
+    tags: ['Geographie', 'Natur', 'Top5'],
+    bunteTuete: {
+      kind: 'top5',
+      prompt: 'Nennt die 5 längsten Flüsse der Welt. Reihenfolge egal.',
+      items: [
+        { id: 'nil', label: 'Nil' },
+        { id: 'amazon', label: 'Amazonas' },
+        { id: 'yangtze', label: 'Yangtze' },
+        { id: 'mississippi', label: 'Mississippi' },
+        { id: 'jenissei', label: 'Jenissei' }
+      ],
+      correctOrder: ['nil', 'amazon', 'yangtze', 'mississippi', 'jenissei'],
+      scoringMode: 'contains'
+    }
+  },
+
+  // === Bunte Tüte: Precision ===
+  {
+    id: 'q-precision-2',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Präzision: In welchem Jahr versank die Titanic?',
+    questionEn: 'Precision: In which year did the Titanic sink?',
+    points: 3,
+    segmentIndex: 0,
+    tags: ['Geschichte', 'Präzision'],
+    bunteTuete: {
+      kind: 'precision',
+      prompt: 'Gesucht ist das genaue Jahr, in dem die Titanic versank.',
+      ladder: [
+        { label: 'Exakt', acceptedAnswers: ['1912'], points: 3 },
+        { label: 'Nah dran', acceptedAnswers: ['1911', '1913'], points: 1 }
+      ],
+      similarityThreshold: 0.95
+    }
+  },
+  {
+    id: 'q-precision-3',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Präzision: Wie heißt das schnellste Landtier?',
+    questionEn: 'Precision: What is the fastest land animal?',
+    points: 2,
+    segmentIndex: 1,
+    tags: ['Tiere', 'Rekorde', 'Präzision'],
+    bunteTuete: {
+      kind: 'precision',
+      prompt: 'Gesucht ist der Name des schnellsten Landtieres der Welt.',
+      ladder: [
+        { label: 'Exakt', acceptedAnswers: ['Gepard', 'Cheetah'], points: 2 },
+        { label: 'Nah dran', acceptedAnswers: ['Gepard', 'Geparden', 'Cheetahs'], points: 1 }
+      ],
+      similarityThreshold: 0.8
+    }
+  },
+  {
+    id: 'q-precision-4',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Präzision: Wie heißt die Hauptstadt von Australien?',
+    questionEn: 'Precision: What is the capital of Australia?',
+    points: 2,
+    segmentIndex: 0,
+    tags: ['Geographie', 'Hauptstädte', 'Präzision'],
+    bunteTuete: {
+      kind: 'precision',
+      prompt: 'Gesucht ist die Hauptstadt Australiens (nicht Sydney!)',
+      ladder: [
+        { label: 'Exakt', acceptedAnswers: ['Canberra'], points: 2 },
+        { label: 'Nah dran', acceptedAnswers: ['Camberra', 'Kanberra'], points: 1 }
+      ],
+      similarityThreshold: 0.82
+    }
+  },
+
+  // === Bunte Tüte: One of Eight ===
+  {
+    id: 'q-oneofeight-2',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: '8 Tierfakten – welches stimmt NICHT?',
+    questionEn: '8 animal facts – which one is FALSE?',
+    points: 2,
+    segmentIndex: 0,
+    tags: ['Tiere', 'Biologie', 'OneOfEight'],
+    bunteTuete: {
+      kind: 'oneOfEight',
+      prompt: 'Sieben Statements stimmen, eines ist falsch.',
+      statements: [
+        { id: 'A', text: 'Flamingos werden durch ihre Nahrung rosa.' },
+        { id: 'B', text: 'Oktopusse haben drei Herzen.' },
+        { id: 'C', text: 'Eine Gruppe Krähen heißt "Murder".' },
+        { id: 'D', text: 'Haie sind die einzigen Fische ohne Knochen.' },
+        { id: 'E', text: 'Elefanten können nicht springen.' },
+        { id: 'F', text: 'Delphine schlafen mit einem Auge offen.' },
+        { id: 'G', text: 'Schnecken können bis zu 3 Jahre schlafen.' },
+        { id: 'H', text: 'Haie müssen ständig schwimmen, sonst sterben sie.', isFalse: true }
+      ],
+      chooseMode: 'id'
+    }
+  },
+  {
+    id: 'q-oneofeight-3',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: '8 Weltrekorde – welcher stimmt NICHT?',
+    questionEn: '8 world records – which one is FALSE?',
+    points: 2,
+    segmentIndex: 1,
+    tags: ['Rekorde', 'Weltrekorde', 'OneOfEight'],
+    bunteTuete: {
+      kind: 'oneOfEight',
+      prompt: 'Sieben Rekorde sind echt, einer ist erfunden.',
+      statements: [
+        { id: 'A', text: 'Der größte Buchstabe der Welt ist in der Atacama-Wüste.' },
+        { id: 'B', text: 'Der längste Bart einer Frau war über 25 cm lang.' },
+        { id: 'C', text: 'Das teuerste Buch der Welt wurde für 30 Mio. Dollar verkauft.' },
+        { id: 'D', text: 'Der schnellste Mensch läuft 100m in 9,58 Sekunden.' },
+        { id: 'E', text: 'Das größte Puzzle hatte über 40.000 Teile.' },
+        { id: 'F', text: 'Die älteste Katze wurde 38 Jahre alt.', isFalse: true },
+        { id: 'G', text: 'Der lauteste Schrei wurde mit 129 dB gemessen.' },
+        { id: 'H', text: 'Die längste Fingernägel einer Frau waren zusammen über 8 Meter lang.' }
+      ],
+      chooseMode: 'id'
+    }
+  },
+  {
+    id: 'q-oneofeight-4',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: '8 Aussagen über das Internet – welche stimmt NICHT?',
+    questionEn: '8 internet facts – which one is FALSE?',
+    points: 2,
+    segmentIndex: 1,
+    tags: ['Technologie', 'Internet', 'OneOfEight'],
+    bunteTuete: {
+      kind: 'oneOfEight',
+      prompt: 'Sieben Fakten über das Internet sind wahr, einer ist falsch.',
+      statements: [
+        { id: 'A', text: 'Mehr als 4 Milliarden Menschen nutzen das Internet.' },
+        { id: 'B', text: 'Täglich werden über 300 Milliarden E-Mails verschickt.' },
+        { id: 'C', text: 'Das erste Foto im Internet zeigte eine Band.' },
+        { id: 'D', text: 'Google wurde 1998 gegründet.' },
+        { id: 'E', text: 'Jeden Tag werden über 500 Stunden Video auf YouTube hochgeladen.' },
+        { id: 'F', text: 'Das erste Tweet war: "Hello, World!"', isFalse: true },
+        { id: 'G', text: 'Wikipedia hat über 60 Millionen Artikel in allen Sprachen.' },
+        { id: 'H', text: 'Das Darknet macht nur ca. 5% des gesamten Internets aus.' }
+      ],
+      chooseMode: 'id'
+    }
   }
 ];
 

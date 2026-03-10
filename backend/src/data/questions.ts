@@ -462,8 +462,8 @@ export const questions: AnyQuestion[] = [
       kind: 'precision',
       prompt: 'Gesucht ist der genaue deutsche oder englische Titel eines sehr bekannten Gemaeldes.',
       ladder: [
-        { label: 'Exakt', acceptedAnswers: ['Die Sternennacht', 'The Starry Night'], points: 2 },
-        { label: 'Nah dran', acceptedAnswers: ['Sternennacht', 'Starry Night'], points: 1 }
+        { label: 'Exakt', acceptedAnswers: ['Die Sternennacht', 'The Starry Night'] },
+        { label: 'Nah dran', acceptedAnswers: ['Sternennacht', 'Starry Night'] }
       ],
       similarityThreshold: 0.82
     }
@@ -1827,9 +1827,9 @@ export const questions: AnyQuestion[] = [
       kind: 'precision',
       prompt: 'Wo steht das Taj Mahal? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Kontinent', acceptedAnswers: ['Asien', 'Asia'], points: 1 },
-        { label: 'Land', acceptedAnswers: ['Indien', 'India'], points: 2 },
-        { label: 'Stadt', acceptedAnswers: ['Agra'], points: 3 }
+        { label: 'Kontinent', acceptedAnswers: ['Asien', 'Asia'] },
+        { label: 'Land', acceptedAnswers: ['Indien', 'India'] },
+        { label: 'Stadt', acceptedAnswers: ['Agra'] }
       ],
       similarityThreshold: 0.8
     }
@@ -1848,9 +1848,9 @@ export const questions: AnyQuestion[] = [
       kind: 'precision',
       prompt: 'Wo liegt Machu Picchu? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Kontinent', acceptedAnswers: ['Südamerika', 'South America'], points: 1 },
-        { label: 'Land', acceptedAnswers: ['Peru'], points: 2 },
-        { label: 'Region', acceptedAnswers: ['Cusco', 'Cuzco'], points: 3 }
+        { label: 'Kontinent', acceptedAnswers: ['Südamerika', 'South America'] },
+        { label: 'Land', acceptedAnswers: ['Peru'] },
+        { label: 'Region', acceptedAnswers: ['Cusco', 'Cuzco'] }
       ],
       similarityThreshold: 0.8
     }
@@ -1869,9 +1869,9 @@ export const questions: AnyQuestion[] = [
       kind: 'precision',
       prompt: 'Wo steht das Kolosseum? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Kontinent', acceptedAnswers: ['Europa', 'Europe'], points: 1 },
-        { label: 'Land', acceptedAnswers: ['Italien', 'Italy'], points: 2 },
-        { label: 'Stadt', acceptedAnswers: ['Rom', 'Rome'], points: 3 }
+        { label: 'Kontinent', acceptedAnswers: ['Europa', 'Europe'] },
+        { label: 'Land', acceptedAnswers: ['Italien', 'Italy'] },
+        { label: 'Stadt', acceptedAnswers: ['Rom', 'Rome'] }
       ],
       similarityThreshold: 0.8
     }

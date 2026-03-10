@@ -3440,7 +3440,7 @@ const localizeQuestion = (question: AnyQuestion, language: Language): AnyQuestio
     base.funFact = combineText(funFactDe, funFactEn, language);
   }
 
-  if (question.mechanic === 'multipleChoice') {
+  if (question.mechanic === 'multipleChoice' || question.mechanic === 'betting') {
     const deOptions = (question as any).options ?? [];
     base.options = combineArray(deOptions, (question as any).optionsEn, language);
   }

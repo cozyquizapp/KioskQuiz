@@ -98,7 +98,7 @@ export interface BunteTueteTop5Payload {
 export interface BunteTuetePrecisionStep {
   label: string;
   acceptedAnswers: string[]; // Beispiel-Antworten für Moderator
-  points: number;
+  points?: number; // Optional: Scoring ist immer runden-basiert (Runde 1-10 = 1pt, 11-20 = 2pt)
   
   // Erweiterte Auto-Match Optionen:
   numericRange?: { min: number; max: number }; // Z.B. 1987-1991 für "nah dran"

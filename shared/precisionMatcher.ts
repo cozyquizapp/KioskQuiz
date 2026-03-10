@@ -110,7 +110,7 @@ export function matchPrecisionAnswer(
   // Gehe Ladder von oben nach unten durch (höchste Punkte zuerst)
   const sortedLadder = ladder
     .map((step, idx) => ({ step, idx }))
-    .sort((a, b) => b.step.points - a.step.points);
+    .sort((a, b) => (b.step.points ?? 0) - (a.step.points ?? 0));
 
   for (const { step, idx } of sortedLadder) {
     const caseSensitive = step.caseSensitive ?? false;
@@ -123,7 +123,7 @@ export function matchPrecisionAnswer(
         return {
           matched: true,
           stepIndex: idx,
-          points: step.points,
+          points: step.points ?? 0,
           confidence: 1.0,
           method: 'exact'
         };
@@ -136,7 +136,7 @@ export function matchPrecisionAnswer(
         return {
           matched: true,
           stepIndex: idx,
-          points: step.points,
+          points: step.points ?? 0,
           confidence: 0.95,
           method: 'numeric'
         };
@@ -151,7 +151,7 @@ export function matchPrecisionAnswer(
           return {
             matched: true,
             stepIndex: idx,
-            points: step.points,
+            points: step.points ?? 0,
             confidence: 0.9,
             method: 'regex'
           };
@@ -168,7 +168,7 @@ export function matchPrecisionAnswer(
           return {
             matched: true,
             stepIndex: idx,
-            points: step.points,
+            points: step.points ?? 0,
             confidence: 0.8,
             method: 'fuzzy'
           };

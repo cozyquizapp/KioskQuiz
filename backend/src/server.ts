@@ -6345,13 +6345,34 @@ io.on('connection', (socket: Socket) => {
   });
   socket.on(
     'host:createSession',
-    (
+    async (
       payload: { quizId?: string; language?: Language },
       ack?: (resp: { ok: boolean; roomCode?: string; error?: string }) => void
     ) => {
       try {
         const { quizId, language } = payload || {};
-        if (!quizId || !quizzes.has(quizId)) throw new Error('quizId fehlt oder unbekannt');
+        if (!quizId) throw new Error('quizId fehlt');
+
+        // If quizId not in quizzes map, try loading it as a CozyDraft from MongoDB
+        if (!quizzes.has(quizId) && isDBConnected()) {
+          const draft = await getCozyDraftFromDB(quizId).catch(() => null);
+          if (draft) {
+            draft.questions.forEach((q) => upsertCustomQuestion(q));
+            const draftPayload: PublishedQuiz = {
+              id: quizId,
+              name: draft.meta.title,
+              questionIds: draft.questions.map((q) => q.id),
+              language: draft.meta.language,
+              meta: { description: draft.meta.description || undefined, date: draft.meta.date ?? Date.now(), language: draft.meta.language },
+              blitz: draft.blitz,
+              rundlauf: draft.rundlauf ?? null,
+              enableBingo: draft.enableBingo
+            };
+            upsertPublishedQuiz(draftPayload);
+          }
+        }
+
+        if (!quizzes.has(quizId)) throw new Error('quizId fehlt oder unbekannt');
         const code = SINGLE_SESSION_MODE ? DEFAULT_ROOM_CODE : createRoomCode();
         const hadExistingSingleSession = SINGLE_SESSION_MODE && rooms.has(code);
         if (SINGLE_SESSION_MODE) {

@@ -607,7 +607,7 @@ function ModeratorPage(): React.ReactElement {
           ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds })),
           ...(cozy.drafts || []).map((d: any) => ({ id: d.id, name: `${d.title} (Draft)`, mode: 'cozy60', questionIds: [] }))
         ];
-        const filtered = featureFlags.showLegacyPanels ? merged : merged.filter(isCozyPlayableQuiz);
+        const filtered = featureFlags.showLegacyPanels ? merged : merged.filter((q) => (q as any).mode === 'cozy60' || isCozyPlayableQuiz(q));
         const usable = filtered.length ? filtered : merged; // Fallback: zeige auch kurze Demo-Quizzes, sonst ist die Liste leer
         setQuizzes(usable);
         if (usable.length) {

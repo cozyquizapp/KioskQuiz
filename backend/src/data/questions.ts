@@ -1812,25 +1812,26 @@ export const questions: AnyQuestion[] = [
     }
   },
 
-  // === Bunte Tüte: Precision ===
+  // === Bunte Tüte: Precision (Ort-Zoom) ===
   {
     id: 'q-precision-2',
     category: 'GemischteTuete',
     mechanic: 'custom',
     type: 'BUNTE_TUETE',
-    question: 'Präzision: In welchem Jahr versank die Titanic?',
-    questionEn: 'Precision: In which year did the Titanic sink?',
-    points: 3,
+    question: 'Präzision: Wo steht das Taj Mahal?',
+    questionEn: 'Precision: Where is the Taj Mahal located?',
+    points: 2,
     segmentIndex: 0,
-    tags: ['Geschichte', 'Präzision'],
+    tags: ['Geographie', 'Sehenswürdigkeiten', 'Präzision'],
     bunteTuete: {
       kind: 'precision',
-      prompt: 'Gesucht ist das genaue Jahr, in dem die Titanic versank.',
+      prompt: 'Wo steht das Taj Mahal? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Exakt', acceptedAnswers: ['1912'], points: 3 },
-        { label: 'Nah dran', acceptedAnswers: ['1911', '1913'], points: 1 }
+        { label: 'Kontinent', acceptedAnswers: ['Asien', 'Asia'], points: 1 },
+        { label: 'Land', acceptedAnswers: ['Indien', 'India'], points: 2 },
+        { label: 'Stadt', acceptedAnswers: ['Agra'], points: 3 }
       ],
-      similarityThreshold: 0.95
+      similarityThreshold: 0.8
     }
   },
   {
@@ -1838,17 +1839,18 @@ export const questions: AnyQuestion[] = [
     category: 'GemischteTuete',
     mechanic: 'custom',
     type: 'BUNTE_TUETE',
-    question: 'Präzision: Wie heißt das schnellste Landtier?',
-    questionEn: 'Precision: What is the fastest land animal?',
+    question: 'Präzision: Wo liegt Machu Picchu?',
+    questionEn: 'Precision: Where is Machu Picchu located?',
     points: 2,
     segmentIndex: 1,
-    tags: ['Tiere', 'Rekorde', 'Präzision'],
+    tags: ['Geographie', 'Sehenswürdigkeiten', 'Präzision'],
     bunteTuete: {
       kind: 'precision',
-      prompt: 'Gesucht ist der Name des schnellsten Landtieres der Welt.',
+      prompt: 'Wo liegt Machu Picchu? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Exakt', acceptedAnswers: ['Gepard', 'Cheetah'], points: 2 },
-        { label: 'Nah dran', acceptedAnswers: ['Gepard', 'Geparden', 'Cheetahs'], points: 1 }
+        { label: 'Kontinent', acceptedAnswers: ['Südamerika', 'South America'], points: 1 },
+        { label: 'Land', acceptedAnswers: ['Peru'], points: 2 },
+        { label: 'Region', acceptedAnswers: ['Cusco', 'Cuzco'], points: 3 }
       ],
       similarityThreshold: 0.8
     }
@@ -1858,19 +1860,20 @@ export const questions: AnyQuestion[] = [
     category: 'GemischteTuete',
     mechanic: 'custom',
     type: 'BUNTE_TUETE',
-    question: 'Präzision: Wie heißt die Hauptstadt von Australien?',
-    questionEn: 'Precision: What is the capital of Australia?',
+    question: 'Präzision: Wo steht das Kolosseum?',
+    questionEn: 'Precision: Where is the Colosseum located?',
     points: 2,
     segmentIndex: 0,
-    tags: ['Geographie', 'Hauptstädte', 'Präzision'],
+    tags: ['Geographie', 'Sehenswürdigkeiten', 'Präzision'],
     bunteTuete: {
       kind: 'precision',
-      prompt: 'Gesucht ist die Hauptstadt Australiens (nicht Sydney!)',
+      prompt: 'Wo steht das Kolosseum? Je genauer, desto besser. Das Team mit der präzisesten richtigen Antwort gewinnt.',
       ladder: [
-        { label: 'Exakt', acceptedAnswers: ['Canberra'], points: 2 },
-        { label: 'Nah dran', acceptedAnswers: ['Camberra', 'Kanberra'], points: 1 }
+        { label: 'Kontinent', acceptedAnswers: ['Europa', 'Europe'], points: 1 },
+        { label: 'Land', acceptedAnswers: ['Italien', 'Italy'], points: 2 },
+        { label: 'Stadt', acceptedAnswers: ['Rom', 'Rome'], points: 3 }
       ],
-      similarityThreshold: 0.82
+      similarityThreshold: 0.8
     }
   },
 

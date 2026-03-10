@@ -1594,6 +1594,148 @@ export const questions: AnyQuestion[] = [
     correctIndex: 0,
     pointsPool: 10,
     tags: ['Sprache', 'Linguistik', 'Trivia']
+  },
+
+  // === Bunte Tüte: Ordnen-Fragen ===
+  {
+    id: 'q-order-1',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Ordnen: Städte von Nord nach Süd',
+    questionEn: 'Order: Cities from North to South',
+    points: 2,
+    segmentIndex: 0,
+    tags: ['Geographie', 'Europa', 'Ordnen'],
+    bunteTuete: {
+      kind: 'order',
+      prompt: 'Ordnet die Städte von der nördlichsten zur südlichsten.',
+      items: [
+        { id: 'oslo', label: 'Oslo' },
+        { id: 'berlin', label: 'Berlin' },
+        { id: 'paris', label: 'Paris' },
+        { id: 'madrid', label: 'Madrid' }
+      ],
+      criteriaOptions: [{ id: 'north-south', label: 'Nord → Süd', direction: 'asc' }],
+      defaultCriteriaId: 'north-south',
+      correctByCriteria: {
+        'north-south': ['oslo', 'berlin', 'paris', 'madrid']
+      },
+      partialPoints: 1,
+      fullPoints: 2
+    }
+  },
+  {
+    id: 'q-order-2',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Ordnen: Promis nach Geburtsjahr (älteste zuerst)',
+    questionEn: 'Order: Celebrities by birth year (oldest first)',
+    points: 2,
+    segmentIndex: 0,
+    tags: ['Promis', 'Pop-Kultur', 'Ordnen'],
+    bunteTuete: {
+      kind: 'order',
+      prompt: 'Ordnet die Promis vom ältesten zum jüngsten.',
+      items: [
+        { id: 'obama', label: 'Barack Obama' },
+        { id: 'leo', label: 'Leonardo DiCaprio' },
+        { id: 'gaga', label: 'Lady Gaga' },
+        { id: 'billie', label: 'Billie Eilish' }
+      ],
+      criteriaOptions: [{ id: 'age', label: 'Älteste zuerst', direction: 'asc' }],
+      defaultCriteriaId: 'age',
+      correctByCriteria: {
+        age: ['obama', 'leo', 'gaga', 'billie']
+      },
+      partialPoints: 1,
+      fullPoints: 2
+    }
+  },
+  {
+    id: 'q-order-3',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Ordnen: Berge nach Höhe (höchster zuerst)',
+    questionEn: 'Order: Mountains by height (tallest first)',
+    points: 2,
+    segmentIndex: 1,
+    tags: ['Geographie', 'Natur', 'Ordnen'],
+    bunteTuete: {
+      kind: 'order',
+      prompt: 'Ordnet die Berge vom höchsten zum niedrigsten.',
+      items: [
+        { id: 'everest', label: 'Mount Everest' },
+        { id: 'k2', label: 'K2' },
+        { id: 'kili', label: 'Kilimanjaro' },
+        { id: 'montblanc', label: 'Mont Blanc' }
+      ],
+      criteriaOptions: [{ id: 'height', label: 'Höchster zuerst', direction: 'desc' }],
+      defaultCriteriaId: 'height',
+      correctByCriteria: {
+        height: ['everest', 'k2', 'kili', 'montblanc']
+      },
+      partialPoints: 1,
+      fullPoints: 2
+    }
+  },
+  {
+    id: 'q-order-4',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Ordnen: Hits nach Erscheinungsjahr (ältester zuerst)',
+    questionEn: 'Order: Hits by release year (oldest first)',
+    points: 2,
+    segmentIndex: 1,
+    tags: ['Musik', 'Pop-Kultur', 'Ordnen'],
+    bunteTuete: {
+      kind: 'order',
+      prompt: 'Ordnet die Songs nach ihrem Erscheinungsjahr, ältester zuerst.',
+      items: [
+        { id: 'bohemian', label: 'Bohemian Rhapsody' },
+        { id: 'smells', label: 'Smells Like Teen Spirit' },
+        { id: 'shape', label: 'Shape of You' },
+        { id: 'blinding', label: 'Blinding Lights' }
+      ],
+      criteriaOptions: [{ id: 'year', label: 'Ältester zuerst', direction: 'asc' }],
+      defaultCriteriaId: 'year',
+      correctByCriteria: {
+        year: ['bohemian', 'smells', 'shape', 'blinding']
+      },
+      partialPoints: 1,
+      fullPoints: 2
+    }
+  },
+  {
+    id: 'q-order-5',
+    category: 'GemischteTuete',
+    mechanic: 'custom',
+    type: 'BUNTE_TUETE',
+    question: 'Ordnen: Planeten nach Entfernung von der Sonne (nächster zuerst)',
+    questionEn: 'Order: Planets by distance from the Sun (closest first)',
+    points: 2,
+    segmentIndex: 0,
+    tags: ['Astronomie', 'Weltraum', 'Ordnen'],
+    bunteTuete: {
+      kind: 'order',
+      prompt: 'Ordnet die Planeten vom sonnenächsten zum sonnenfernsten.',
+      items: [
+        { id: 'venus', label: 'Venus' },
+        { id: 'erde', label: 'Erde' },
+        { id: 'merkur', label: 'Merkur' },
+        { id: 'mars', label: 'Mars' }
+      ],
+      criteriaOptions: [{ id: 'distance', label: 'Nächster zur Sonne zuerst', direction: 'asc' }],
+      defaultCriteriaId: 'distance',
+      correctByCriteria: {
+        distance: ['merkur', 'venus', 'erde', 'mars']
+      },
+      partialPoints: 1,
+      fullPoints: 2
+    }
   }
 ];
 

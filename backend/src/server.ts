@@ -3486,6 +3486,31 @@ const persistCustomQuestions = () => {
   }
 };
 
+const translateText = async (text: string, src = 'de', tgt = 'en'): Promise<string> => {
+  if (!text?.trim()) return text;
+  try {
+    const params = new URLSearchParams({ q: text, langpair: `${src}|${tgt}` });
+    const res = await fetch(`https://api.mymemory.translated.net/get?${params}`);
+    const data = await res.json() as any;
+    const translated: string = data?.responseData?.translatedText?.trim();
+    return translated && translated !== text ? translated : text;
+  } catch {
+    return text;
+  }
+};
+
+const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
+  const updates: Record<string, any> = {};
+  const any = q as any;
+  if (!any.questionEn && any.question) updates.questionEn = await translateText(any.question);
+  if (!any.optionsEn && Array.isArray(any.options) && any.options.length > 0)
+    updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => translateText(o)));
+  if (!any.answerEn && any.answer) updates.answerEn = await translateText(any.answer);
+  if (!any.correctOrderEn && Array.isArray(any.correctOrder) && any.correctOrder.length > 0)
+    updates.correctOrderEn = await Promise.all((any.correctOrder as string[]).map((o: string) => translateText(o)));
+  return Object.keys(updates).length ? { ...q, ...updates } : q;
+};
+
 const upsertCustomQuestion = (question: AnyQuestion) => {
   const baseIndex = questions.findIndex((entry) => entry.id === question.id);
   if (baseIndex >= 0) questions[baseIndex] = question;
@@ -6360,11 +6385,13 @@ io.on('connection', (socket: Socket) => {
           const draft = await getCozyDraftFromDB(quizId).catch(() => null);
           console.log(`[host:createSession] draft lookup for "${quizId}":`, draft ? 'found' : 'not found');
           if (draft) {
-            draft.questions.forEach((q) => upsertCustomQuestion(q));
+            // Immer übersetzen damit questionEn verfügbar ist (Teams können individuell Englisch wählen)
+            const translatedQuestions = await Promise.all(draft.questions.map(autoTranslateQuestion));
+            translatedQuestions.forEach((q) => upsertCustomQuestion(q));
             const draftPayload: PublishedQuiz = {
               id: quizId,
               name: draft.meta.title,
-              questionIds: draft.questions.map((q) => q.id),
+              questionIds: translatedQuestions.map((q) => q.id),
               language: draft.meta.language,
               meta: { description: draft.meta.description || undefined, date: draft.meta.date ?? Date.now(), language: draft.meta.language },
               blitz: draft.blitz,

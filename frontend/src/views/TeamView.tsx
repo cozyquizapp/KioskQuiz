@@ -504,6 +504,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const questionRef = useRef<AnyQuestion | null>(null);
   const savedIdRef = useRef<string | null>(null);
   const answerSubmittedRef = useRef(false);
+  const languageRef = useRef(language);
+  useEffect(() => { languageRef.current = language; }, [language]);
   const lastQuestionIdRef = useRef<string | null>(null);
   const lastRejoinTriggerRef = useRef<number | null>(null);
 
@@ -1343,7 +1345,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       setAnswerSubmitted(false);
       setEvaluating(false);
       setTimerEndsAt(null);
-      showError(language === 'de' ? 'Quiz beendet. Bitte neu beitreten.' : 'Quiz ended. Please join again.');
+      showError(languageRef.current === 'de' ? 'Quiz beendet. Bitte neu beitreten.' : 'Quiz ended. Please join again.');
     });
 
     const onSessionRestarted = () => {
@@ -1368,7 +1370,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       socket.off('session:restarted', onSessionRestarted);
       socket.disconnect();
     };
-  }, [roomCode, teamId, language, reconnectKey]);
+  }, [roomCode, teamId, reconnectKey]);
 
   // Keep questionRef in sync so socket handlers always see the current question
   useEffect(() => { questionRef.current = question; }, [question]);

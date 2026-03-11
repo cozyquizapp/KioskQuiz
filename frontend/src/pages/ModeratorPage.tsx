@@ -889,10 +889,11 @@ function ModeratorPage(): React.ReactElement {
       return;
     }
     const socket = controlSocketRef.current;
-    if (!socket) {
-      setToast('Socket nicht verbunden');
+    if (!socket || !socket.connected) {
+      setToast(`Socket nicht verbunden (${socket ? 'disconnected' : 'null'}) – Seite neu laden`);
       return;
     }
+    console.log('[handleCreateSession] emitting host:createSession', { quizId: selectedQuiz, socketId: socket.id });
     setCreatingSession(true);
     
         // Timeout nach 10 Sekunden falls keine Antwort kommt

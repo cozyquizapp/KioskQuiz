@@ -893,7 +893,7 @@ function ModeratorPage(): React.ReactElement {
       setToast(`Socket nicht verbunden (${socket ? 'disconnected' : 'null'}) – Seite neu laden`);
       return;
     }
-    console.log('[handleCreateSession] emitting host:createSession', { quizId: selectedQuiz, socketId: socket.id });
+    console.log('[handleCreateSession] emitting host:createSession', { quizId: selectedQuiz, socketId: socket.id, transport: (socket as any).io?.engine?.transport?.name });
     setCreatingSession(true);
     
         // Timeout nach 10 Sekunden falls keine Antwort kommt

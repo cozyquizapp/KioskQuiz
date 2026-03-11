@@ -6354,8 +6354,10 @@ io.on('connection', (socket: Socket) => {
         if (!quizId) throw new Error('quizId fehlt');
 
         // If quizId not in quizzes map, try loading it as a CozyDraft from MongoDB
-        if (!quizzes.has(quizId) && isDBConnected()) {
+        if (!quizzes.has(quizId)) {
+          await ensureDraftDbConnection();
           const draft = await getCozyDraftFromDB(quizId).catch(() => null);
+          console.log(`[host:createSession] draft lookup for "${quizId}":`, draft ? 'found' : 'not found');
           if (draft) {
             draft.questions.forEach((q) => upsertCustomQuestion(q));
             const draftPayload: PublishedQuiz = {

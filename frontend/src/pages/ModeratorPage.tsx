@@ -915,13 +915,11 @@ function ModeratorPage(): React.ReactElement {
         }
         const nextCode = resp.roomCode || DEFAULT_ROOM_CODE;
         
-        // Quiz SOFORT setzen, kein zweiter Schritt mehr n�tig
+        // Session ist bereits durch host:createSession konfiguriert (quiz + sprache)
         try {
           await ensureAdminSession(nextCode);
-          await useQuiz(nextCode, selectedQuiz);
-          await setLanguage(nextCode, language);
         } catch (err) {
-          console.warn('Quiz konnte nicht sofort gesetzt werden:', err);
+          console.warn('Admin-Session konnte nicht erstellt werden:', err);
         }
         
         setRoomCode(nextCode);

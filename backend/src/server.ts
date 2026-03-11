@@ -6351,6 +6351,7 @@ io.on('connection', (socket: Socket) => {
     ) => {
       try {
         const { quizId, language } = payload || {};
+        console.log(`[host:createSession] quizId="${quizId}" inMap=${quizzes.has(quizId ?? '')}`);
         if (!quizId) throw new Error('quizId fehlt');
 
         // If quizId not in quizzes map, try loading it as a CozyDraft from MongoDB

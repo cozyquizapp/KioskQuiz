@@ -1622,7 +1622,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             animation: 'fadeSlideUpStrong 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both'
           }}
         >
-          {question?.question?.split('/')[0]?.trim() ?? question?.question ?? t('waitingMsg')}
+          {(language === 'en' && (question as any)?.questionEn) || question?.question?.split('/')[0]?.trim() || question?.question || t('waitingMsg')}
         </h2>
       <div style={{ marginTop: 10 }}>{renderInput('var(--color-primary)')}</div>
       {renderBunteDetails()}
@@ -1991,7 +1991,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         ] as const;
         return (
           <div style={{ display: 'grid', gap: 10 }} className="stagger-container">
-            {q.options.map((opt, idx) => (
+            {(language === 'en' && (q as any).optionsEn?.length ? (q as any).optionsEn : q.options).map((opt: string, idx: number) => (
               <button
                 key={idx}
                 data-choice-letter={['A','B','C','D','E'][idx]}
@@ -2027,7 +2027,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         );
       }
       case 'betting': {
-        const opts = Array.isArray((question as any)?.options) ? (question as any).options : ['A', 'B', 'C'];
+        const opts = language === 'en' && (question as any)?.optionsEn?.length
+          ? (question as any).optionsEn
+          : Array.isArray((question as any)?.options) ? (question as any).options : ['A', 'B', 'C'];
         const pool = typeof (question as any)?.pointsPool === 'number' ? (question as any).pointsPool : 10;
         const total = bettingPoints.reduce((a, b) => a + b, 0);
         const remaining = pool - total;

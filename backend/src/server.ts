@@ -7060,10 +7060,10 @@ io.on('connection', (socket: Socket) => {
         persistStats();
       }
       
-      // Broadcast to all connected clients in this room that quiz has ended
+      // Broadcast to all connected clients in this room that quiz has ended,
+      // then disconnect after a short delay so the event is delivered first.
       io.to(code).emit('quizEnded', { reason: 'moderator-ended' });
-      // Disconnect all clients from this room
-      io.to(code).disconnectSockets(true);
+      setTimeout(() => io.to(code).disconnectSockets(true), 800);
       // Delete the room from server
       rooms.delete(code);
       log(code, 'Quiz beendet - Room gelöscht. Final scores gespeichert.');

@@ -358,6 +358,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<QuestionMeta | null>(null);
   const [language, setLanguage] = useState<Lang>('de');
+  const languageRef = React.useRef<Lang>('de');
+  useEffect(() => { languageRef.current = language; }, [language]);
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [timerDurationMs, setTimerDurationMs] = useState<number | null>(null);
   const [remainingMs, setRemainingMs] = useState<number>(0);
@@ -975,7 +977,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
     socket.on('connect', () => {
       setConnectionStatus('connected');
-      setToast(language === 'de' ? 'Verbindung wiederhergestellt' : 'Connection restored');
+      setToast(languageRef.current === 'de' ? 'Verbindung wiederhergestellt' : 'Connection restored');
       setConnectionStuck(false);
       setTimeout(() => setToast(null), 2200);
     });
@@ -1006,7 +1008,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     socket.on('beamer:show-intro', (payload: { slides?: IntroSlide[] }) => {
-      setIntroSlides(payload?.slides ?? slidesForLanguage(language));
+      setIntroSlides(payload?.slides ?? slidesForLanguage(languageRef.current));
       setIntroIndex(0);
       setScreen('intro');
       setQuestion(null);
@@ -1213,7 +1215,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       socket.off('team:avatarStateChanged', onAvatarStateChanged);
       socket.disconnect();
     };
-  }, [roomCode, language, reconnectNonce]);
+  }, [roomCode, reconnectNonce]);
 
 
 

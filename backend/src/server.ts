@@ -3486,16 +3486,22 @@ const persistCustomQuestions = () => {
   }
 };
 
-const translateText = async (text: string, src = 'de', tgt = 'en'): Promise<string> => {
+const translateText = async (text: string, src = 'DE', tgt = 'EN'): Promise<string> => {
   if (!text?.trim()) return text;
+  const apiKey = process.env.DEEPL_API_KEY;
+  if (!apiKey) return text;
   try {
-    const params = new URLSearchParams({ q: text, langpair: `${src}|${tgt}` });
-    const res = await fetch(`https://api.mymemory.translated.net/get?${params}`);
+    const res = await fetch('https://api-free.deepl.com/v2/translate', {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: [text], source_lang: src.toUpperCase(), target_lang: tgt.toUpperCase() }),
+    });
     const data = await res.json() as any;
-    const translated: string = data?.responseData?.translatedText?.trim();
-    // Reject MyMemory rate-limit/error messages (they start with "MYMEMORY WARNING")
-    if (!translated || translated.toUpperCase().startsWith('MYMEMORY')) return text;
-    return translated !== text ? translated : text;
+    const translated: string = data?.translations?.[0]?.text?.trim();
+    return translated && translated !== text ? translated : text;
   } catch {
     return text;
   }

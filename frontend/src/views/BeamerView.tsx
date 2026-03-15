@@ -3235,26 +3235,33 @@ useEffect(() => {
             );
           }
           // Generic reveal: extract solution from question object if not provided by event
-          const fallbackSolution = 
+          const fallbackSolution =
             solution ||
-            (question as any)?.correctAnswer || 
-            (question as any)?.answer || 
+            (question as any)?.correctAnswer ||
+            (question as any)?.answer ||
             (question as any)?.solution ||
             (question as any)?.answerText;
+          const fallbackSolutionEn = (question as any)?.answerEn || fallbackSolution;
+          const revealDe = fallbackSolution ? String(fallbackSolution).split('/')[0].trim() : null;
+          const revealEn = fallbackSolutionEn ? String(fallbackSolutionEn).split('/')[0].trim() : revealDe;
           return (
             <div className="cozyRevealGeneric">
-              {fallbackSolution ? (
-                <div style={{
-                  fontSize: 'clamp(28px, 6vw, 48px)',
-                  fontWeight: 900,
-                  color: '#ffd1e8',
-                  textAlign: 'center',
-                  lineHeight: 1.2,
-                  padding: '20px 0',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                }}>
-                  {fallbackSolution}
-                </div>
+              {revealDe ? (
+                language === 'both' ? (
+                  <BilingualLabel en={revealEn?.toUpperCase() ?? ''} de={revealDe} variant="heading" />
+                ) : (
+                  <div style={{
+                    fontSize: 'clamp(28px, 6vw, 48px)',
+                    fontWeight: 900,
+                    color: '#ffd1e8',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    padding: '20px 0',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                  }}>
+                    {language === 'en' ? revealEn : revealDe}
+                  </div>
+                )
               ) : language === 'both' ? (
                 <BilingualLabel en="REVEAL" de="Auflösung" variant="heading" />
               ) : language === 'de' ? (

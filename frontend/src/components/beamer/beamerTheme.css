@@ -3492,6 +3492,18 @@ body.projector-mode .cozyQuestionMedia {
   font-size: clamp(20px, 2.2vw, 38px);
 }
 
+/* "Neue Frage / New Question" intro screen — BilingualLabel same scale as question text */
+.cozyQuestionIntroTitle > div > div:first-child {
+  font-size: clamp(40px, 5vw, 84px) !important;
+  line-height: 1.1;
+}
+.cozyQuestionIntroTitle > div > div:last-child {
+  font-size: clamp(20px, 2.5vw, 44px) !important;
+  line-height: 1.2;
+}
+
+/* Plain text (DE-only / EN-only) already handled by cozyQuestionIntroTitle clamp */
+
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */
 
 /* Header bar pills */

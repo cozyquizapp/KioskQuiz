@@ -1993,7 +1993,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         ] as const;
         return (
           <div style={{ display: 'grid', gap: 10 }} className="stagger-container">
-            {(language === 'en' && (q as any).optionsEn?.length ? (q as any).optionsEn : q.options).map((opt: string, idx: number) => (
+            {q.options.map((opt: string, idx: number) => {
+              const slashIdx = opt.indexOf('/');
+              const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
+              const enOpt: string | undefined = (q as any).optionsEn?.[idx];
+              const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
+              const displayOpt = language === 'en'
+                ? (dePart !== enPart ? `${enPart} / ${dePart}` : enPart)
+                : dePart;
+              return (
               <button
                 key={idx}
                 data-choice-letter={['A','B','C','D','E'][idx]}
@@ -2022,9 +2030,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
               >
-                {opt}
+                {displayOpt}
               </button>
-            ))}
+              );
+            })}
           </div>
         );
       }

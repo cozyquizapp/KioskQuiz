@@ -3503,8 +3503,18 @@ const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
   const updates: Record<string, any> = {};
   const any = q as any;
   if (!any.questionEn && any.question) updates.questionEn = await translateText(any.question);
-  if (!any.optionsEn && Array.isArray(any.options) && any.options.length > 0)
-    updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => translateText(o)));
+  if (Array.isArray(any.options) && any.options.length > 0) {
+    // If any option contains '/', the user stored bilingual text (DE / EN).
+    // Always re-derive optionsEn from the DE part (before '/') so we get correct translations.
+    const hasBilingual = (any.options as string[]).some((o: string) => o.includes('/'));
+    if (hasBilingual || !any.optionsEn) {
+      updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => {
+        const slashIdx = o.indexOf('/');
+        const dePart = slashIdx >= 0 ? o.slice(0, slashIdx).trim() : o;
+        return translateText(dePart);
+      }));
+    }
+  }
   if (!any.answerEn && any.answer) updates.answerEn = await translateText(any.answer);
   if (!any.correctOrderEn && Array.isArray(any.correctOrder) && any.correctOrder.length > 0)
     updates.correctOrderEn = await Promise.all((any.correctOrder as string[]).map((o: string) => translateText(o)));

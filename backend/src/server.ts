@@ -7417,15 +7417,6 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 
 listenWithFallback(PORT, 3);
 
-// Keep-alive self-ping to prevent Render free tier from sleeping
-if (process.env.NODE_ENV === 'production') {
-  setInterval(() => {
-    const pingUrl = `http://localhost:${PORT}/api/health`;
-    fetch(pingUrl).catch((err) => {
-      console.warn('[keepalive] Self-ping fehlgeschlagen:', err.message);
-    });
-  }, 600000); // every 10 minutes
-}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

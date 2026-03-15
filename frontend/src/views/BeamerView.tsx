@@ -3297,10 +3297,11 @@ useEffect(() => {
               const hopMatch = muChoLockedIndex ?? mcCorrectIndex;
               const isHop = showReveal && muChoHopIndex === idx && hopMatch !== idx;
               const isCorrect = showReveal && hopMatch === idx;
+              const isWrong = showReveal && hopMatch !== null && hopMatch !== undefined && hopMatch !== idx && !isHop;
               return (
                 <div
                   key={`mc-option-${idx}`}
-                  className={`cozyOption${isHop ? ' hopping' : ''}${isCorrect ? ' correct' : ''}`}
+                  className={`cozyOption${isHop ? ' hopping' : ''}${isCorrect ? ' correct' : ''}${isWrong ? ' wrong' : ''}`}
                 >
                   <span className="cozyOptionPrefix">{String.fromCharCode(65 + idx)}.</span>
                   <span>{option}</span>
@@ -3529,6 +3530,7 @@ useEffect(() => {
           <div
             key={introCountdown}
             className="cozyQuestionIntroCountdown"
+            data-num={introCountdown}
           >
             {introCountdown}
           </div>

@@ -3046,6 +3046,298 @@ const renderCozyStagePanel = () => {
       </div>
     );
   };
+  // ─── Mobile-first state-driven layout ───────────────────────────────────────
+  const renderMobileLayout = () => {
+    if (!featureFlags.isCozyMode) return null;
+
+    const gs = normalizedGameState;
+    const isLobby = gs === 'LOBBY';
+    const isActive = gs === 'Q_ACTIVE';
+    const isLocked = gs === 'Q_LOCKED';
+    const isReveal = gs === 'Q_REVEAL';
+    const isBoard = isScoreboardState || isScoreboardPauseState;
+    const isBlitzOrRundlauf = gs.startsWith('BLITZ') || gs.startsWith('RUNDLAUF') || gs === 'AWARDS' || gs === 'SIEGEREHRUNG';
+
+    // Solution
+    const solutionText = socketSolution || answers?.solution;
+
+    // Answer rows (same logic as renderPrimaryControls)
+    const formatAnswerValue = (value: unknown): string => {
+      if (value === null || value === undefined) return '—';
+      if (Array.isArray(value)) return value.join(', ');
+      if (typeof value === 'object') {
+        const maybeOrder = value as { order?: unknown[] };
+        if (Array.isArray(maybeOrder.order)) return maybeOrder.order.join(' → ');
+        return JSON.stringify(value);
+      }
+      return String(value);
+    };
+    const answerRowsMob = Object.entries(answers?.answers || {}).map(([teamId, answerEntry]) => {
+      const entry = answerEntry as any;
+      const raw = entry?.answer ?? entry?.value;
+      return { teamId, teamName: teamLookup[teamId]?.name || answers?.teams?.[teamId]?.name || teamId, answer: formatAnswerValue(raw), isCorrect: entry?.isCorrect as boolean | undefined };
+    }).sort((a, b) => a.teamName.localeCompare(b.teamName));
+    const unreviewedRowsMob = answerRowsMob.filter(r => r.isCorrect === undefined);
+    const reviewedCorrect = answerRowsMob.filter(r => r.isCorrect === true).length;
+    const reviewedWrong = answerRowsMob.filter(r => r.isCorrect === false).length;
+
+    // Fun fact
+    const funFactDe = ((question as any)?.funFactDe ?? (question as any)?.funFact ?? '').trim();
+    const funFactEn = ((question as any)?.funFactEn ?? '').trim();
+    const hasFunFact = Boolean(funFactDe || funFactEn);
+
+    // Primary action
+    const nextAction = (() => {
+      if (gs === 'LOBBY') return { label: 'START', handler: handleNextQuestion, busy: actionState.next, color: '#16a34a' };
+      if (isActive) return { label: 'SPERREN', handler: handleLockQuestion, busy: actionState.lock, color: '#d97706' };
+      if (isLocked) return { label: 'AUFDECKEN', handler: handleReveal, busy: actionState.reveal, color: '#b10a6c' };
+      return { label: nextActionHint?.label ?? 'WEITER', handler: handleNextQuestion, busy: actionState.next, color: '#16a34a' };
+    })();
+
+    // QR / join links
+    const teamLink = joinLinks?.team ?? '';
+    const teamQr = teamLink ? buildQrUrl(teamLink, 200) : '';
+
+    // Lobby content
+    const renderLobbyContent = () => (
+      <div className="space-y-3">
+        <div className="rounded-2xl bg-[#0b2343]/90 border border-[#f05fb233] p-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2] mb-1">Raumcode</p>
+          <p className="text-6xl font-black tracking-[0.25em] text-[#ffe4f2]">{roomCode}</p>
+          <p className="text-sm text-[#94a3b8] mt-2">
+            {joinScreenTeams.length === 0 ? 'Warte auf Teams…' : `${joinScreenTeams.length} ${joinScreenTeams.length === 1 ? 'Team' : 'Teams'} verbunden`}
+          </p>
+        </div>
+        {teamQr && (
+          <div className="flex justify-center">
+            <img src={teamQr} alt="Team QR" className="w-48 h-48 rounded-2xl border border-[#f05fb244] bg-white p-1" />
+          </div>
+        )}
+        {joinScreenTeams.length > 0 && (
+          <div className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] p-3">
+            <div className="flex flex-wrap gap-2">
+              {joinScreenTeams.map((team) => (
+                <span key={team.id || team.name} className="rounded-full px-3 py-1 text-sm font-bold text-[#ffd1e8]" style={{ background: 'rgba(240,95,178,0.12)', border: '1px solid rgba(240,95,178,0.25)' }}>
+                  {team.name || 'Team'}{team.isReady && <span className="ml-1 text-[10px] text-[#4ade80]">✓</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button onClick={handleOpenBeamerLink} className="flex-1 rounded-xl border border-[#a5b4fc] bg-[#1e1b4b]/80 py-3 text-sm font-bold text-[#e0e7ff] touch-manipulation">Beamer öffnen</button>
+          <button onClick={handleCopyTeamLink} className="flex-1 rounded-xl border border-[#f05fb244] bg-[#0b2343]/80 py-3 text-sm font-bold text-[#ffd1e8] touch-manipulation">Link kopieren</button>
+        </div>
+      </div>
+    );
+
+    // Q_ACTIVE content
+    const renderActiveContent = () => (
+      <div className="space-y-3">
+        <div className="rounded-2xl bg-[#0b2343]/90 border border-[#f05fb233] p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2] mb-1">Frage {askedCount}/{totalQuestions}{question && (question as any).categoryKey ? ` · ${(question as any).categoryKey}` : ''}</p>
+          <p className="text-base font-extrabold text-[#ffe4f2] leading-snug">{question?.question ?? '—'}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="rounded-full px-3 py-1.5 text-sm font-black" style={{ background: answersCount >= (teamsCount || 1) ? 'rgba(34,197,94,0.2)' : 'rgba(240,95,178,0.12)', border: `1px solid ${answersCount >= (teamsCount || 1) ? 'rgba(74,222,128,0.4)' : 'rgba(240,95,178,0.25)'}`, color: answersCount >= (teamsCount || 1) ? '#4ade80' : '#ffd1e8' }}>
+            {answersCount}/{teamsCount || 0} geantwortet
+          </span>
+          {questionTimerSecondsLeft !== null && (
+            <span className="rounded-full px-3 py-1.5 text-sm font-black" style={{ background: questionTimerSecondsLeft <= 5 ? 'rgba(239,68,68,0.2)' : questionTimerSecondsLeft <= 10 ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${questionTimerSecondsLeft <= 5 ? 'rgba(248,113,113,0.4)' : questionTimerSecondsLeft <= 10 ? 'rgba(234,179,8,0.4)' : 'rgba(255,255,255,0.1)'}`, color: questionTimerSecondsLeft <= 5 ? '#f87171' : questionTimerSecondsLeft <= 10 ? '#fde047' : '#94a3b8' }}>
+              ⏱ {questionTimerSecondsLeft}s
+            </span>
+          )}
+        </div>
+        {hasFunFact && (
+          <details className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] overflow-hidden">
+            <summary className="px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[#f05fb2] cursor-pointer select-none">Moderationsinfo</summary>
+            <div className="px-3 pb-3 space-y-1">
+              {funFactDe && <p className="text-xs text-[#ffd1e8]"><span className="text-[#f05fb2] font-black">DE</span> {funFactDe}</p>}
+              {funFactEn && <p className="text-xs text-[#93c5fd]"><span className="text-[#60a5fa] font-black">EN</span> {funFactEn}</p>}
+            </div>
+          </details>
+        )}
+        {solutionText && (
+          <details className="rounded-2xl bg-[#0b2343]/70 border border-[rgba(74,222,128,0.2)] overflow-hidden">
+            <summary className="px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[#4ade80] cursor-pointer select-none">Lösung (vertraulich)</summary>
+            <p className="px-3 pb-3 text-base font-black text-[#d6ffe8]">{solutionText}</p>
+          </details>
+        )}
+      </div>
+    );
+
+    // Q_LOCKED content
+    const renderLockedContent = () => (
+      <div className="space-y-3">
+        {solutionText && (
+          <div className="rounded-2xl p-4" style={{ background: 'rgba(20,83,45,0.6)', border: '1px solid rgba(74,222,128,0.35)' }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4ade80] mb-1">Lösung</p>
+            <p className="text-2xl font-black text-[#d6ffe8]">{solutionText}</p>
+          </div>
+        )}
+        {unreviewedRowsMob.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Bitte prüfen ({unreviewedRowsMob.length})</p>
+            {unreviewedRowsMob.map((row) => (
+              <div key={row.teamId} className="grid grid-cols-[1fr_auto] gap-2 items-center rounded-xl p-2" style={{ background: 'rgba(11,35,67,0.8)', border: '1px solid rgba(240,95,178,0.18)' }}>
+                <div>
+                  <p className="text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
+                  <p className="text-xs text-[#ffd1e8]/80">{row.answer}</p>
+                </div>
+                <div className="flex gap-1">
+                  <button className="min-h-[44px] min-w-[44px] rounded-lg border border-[#67b58f] bg-[#1f6b50]/65 text-sm font-black text-[#d6ffe8] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, 'Richtig')}>✓</button>
+                  <button className="min-h-[44px] min-w-[44px] rounded-lg border border-[#d68598] bg-[#7e2e46]/65 text-sm font-black text-[#ffd6df] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, 'Falsch')}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          answerRowsMob.length > 0 && (
+            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(20,83,45,0.3)', border: '1px solid rgba(74,222,128,0.25)' }}>
+              <p className="text-sm font-black text-[#4ade80]">Alle Antworten ausgewertet</p>
+              <p className="text-xs text-[#94a3b8] mt-0.5">{reviewedCorrect} richtig · {reviewedWrong} falsch</p>
+            </div>
+          )
+        )}
+      </div>
+    );
+
+    // Q_REVEAL content
+    const renderRevealContent = () => (
+      <div className="space-y-3">
+        {solutionText && (
+          <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(20,83,45,0.5)', border: '1px solid rgba(74,222,128,0.3)' }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4ade80] mb-1">Richtige Antwort</p>
+            <p className="text-2xl font-black text-[#d6ffe8]">{solutionText}</p>
+          </div>
+        )}
+        {reviewedCorrect > 0 && (
+          <p className="text-center text-sm text-[#94a3b8]">{reviewedCorrect}/{answerRowsMob.length} Teams richtig</p>
+        )}
+        {scoreboard.length > 0 && (
+          <div className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] overflow-hidden">
+            <p className="px-3 pt-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Aktueller Stand</p>
+            <div className="px-3 pb-2 mt-1 space-y-1">
+              {scoreboard.slice(0, 5).map((team, i) => (
+                <div key={team.id} className="flex items-center justify-between text-sm">
+                  <span className="text-[#94a3b8] font-bold w-5">{i + 1}.</span>
+                  <span className="flex-1 font-bold text-[#ffd1e8] truncate">{team.name}</span>
+                  <span className="font-black text-[#ffe4f2]">{team.score ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
+    // Scoreboard content
+    const renderBoardContent = () => (
+      <div className="space-y-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Scoreboard</p>
+        {scoreboard.map((team, i) => (
+          <div key={team.id} className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: i < 3 ? 'rgba(240,95,178,0.1)' : 'rgba(11,35,67,0.5)', border: '1px solid rgba(240,95,178,0.15)' }}>
+            <span className="text-base font-black w-6 text-center" style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#9ca3af' : i === 2 ? '#b45309' : '#64748b' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+            <span className="flex-1 font-bold text-[#ffd1e8] truncate">{team.name}</span>
+            <span className="font-black text-[#ffe4f2] text-lg">{team.score ?? 0}</span>
+          </div>
+        ))}
+      </div>
+    );
+
+    const stateContent = isLobby ? renderLobbyContent()
+      : isActive ? renderActiveContent()
+      : isLocked ? renderLockedContent()
+      : isReveal ? renderRevealContent()
+      : isBoard ? renderBoardContent()
+      : isBlitzOrRundlauf ? renderCozyStagePanel()
+      : null;
+
+    // Settings overlay
+    const renderSettings = () => (
+      <div className="border-b border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 py-3 space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#64748b] w-full">Sprache</span>
+          {(['de', 'both', 'en'] as Language[]).map((lang) => (
+            <button key={lang} onClick={() => doAction(async () => { await setLanguage(roomCode, lang); setLang(lang); }, `Sprache: ${lang}`)} className="rounded-lg px-3 py-1.5 text-sm font-black touch-manipulation" style={{ background: language === lang ? '#942d59' : 'rgba(255,255,255,0.06)', color: language === lang ? '#fff' : '#94a3b8', border: `1px solid ${language === lang ? '#942d59' : 'rgba(255,255,255,0.1)'}` }}>{lang.toUpperCase()}</button>
+          ))}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={handleToggleMute} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>{globalMuted ? '🔇 Ton an' : '🔊 Ton aus'}</button>
+          <button onClick={handleOpenBeamerLink} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>Beamer öffnen</button>
+          <button onClick={() => setShowReconnectModal(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>Neustart</button>
+        </div>
+      </div>
+    );
+
+    // Secondary action buttons row
+    const renderSecondaryActions = () => {
+      const btns: { label: string; onClick: () => void; color?: string }[] = [];
+      if (isActive) {
+        if (timerIsPaused) btns.push({ label: '▶ Weiter', onClick: handleResumeTimer });
+        else btns.push({ label: '⏸ Pause', onClick: handlePauseTimer });
+        btns.push({ label: '+30s', onClick: handleExtendTimer });
+      }
+      btns.push({ label: '↩ Zurück', onClick: handleStepBack });
+      if (isActive || isLocked) btns.push({ label: '⏭ Skip', onClick: handleSkipQuestion });
+      btns.push({ label: '📊', onClick: handleScoreboardAction });
+      return (
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+          {btns.map((btn) => (
+            <button key={btn.label} onClick={btn.onClick} className="flex-shrink-0 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-2 text-sm font-bold text-[#94a3b8] touch-manipulation whitespace-nowrap">{btn.label}</button>
+          ))}
+        </div>
+      );
+    };
+
+    return (
+      <>
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-3 left-1/2 z-50 -translate-x-1/2 rounded-2xl bg-[#0b2343] border border-[#f05fb244] px-4 py-2 text-sm font-bold text-[#ffe4f2] shadow-xl pointer-events-none">
+            {toast}
+          </div>
+        )}
+        <div className="flex flex-col h-[100dvh] bg-[#050505] text-[#ffe4f2]" style={{ fontFamily: 'var(--font)' }}>
+          {/* Header */}
+          <header className="flex items-center gap-3 px-3 py-2.5 border-b border-[rgba(240,95,178,0.15)] bg-[#050a14]">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-black tracking-[0.2em] text-[#ffe4f2]">{roomCode || '----'}</span>
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase" style={{ background: stateInfo.tone === 'live' ? 'rgba(239,68,68,0.2)' : stateInfo.tone === 'eval' ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.08)', color: stateInfo.tone === 'live' ? '#f87171' : stateInfo.tone === 'eval' ? '#fde047' : '#94a3b8' }}>{stateInfo.label}</span>
+                {!isLobby && <span className="text-[11px] text-[#64748b] font-bold">{askedCount}/{totalQuestions}</span>}
+              </div>
+              {currentQuizName && <p className="text-[10px] text-[#64748b] truncate">{currentQuizName}</p>}
+            </div>
+            <button onClick={() => setShowSettingsPanel(p => !p)} className="w-10 h-10 flex items-center justify-center rounded-xl touch-manipulation" style={{ background: showSettingsPanel ? 'rgba(240,95,178,0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${showSettingsPanel ? 'rgba(240,95,178,0.4)' : 'rgba(255,255,255,0.08)'}` }}>⚙️</button>
+          </header>
+
+          {/* Settings panel */}
+          {showSettingsPanel && renderSettings()}
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+            {stateContent}
+            {renderWarningsPanel()}
+          </div>
+
+          {/* Bottom action bar */}
+          <div className="border-t border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 pt-2 pb-3">
+            <button
+              disabled={nextAction.busy}
+              onClick={nextAction.busy ? undefined : nextAction.handler}
+              className="w-full min-h-[60px] rounded-2xl text-xl font-black text-white shadow-lg touch-manipulation disabled:opacity-50"
+              style={{ background: nextAction.color, boxShadow: `0 6px 0 rgba(0,0,0,0.4)` }}
+            >
+              {nextAction.busy ? '…' : nextAction.label}
+            </button>
+            {renderSecondaryActions()}
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const renderCozyLayout = () => {
     if (!featureFlags.isCozyMode) return null;
     const stagePanel = renderCozyStagePanel();
@@ -3430,14 +3722,14 @@ const renderCozyStagePanel = () => {
 
   return (
     <main
-      className="page-transition-enter-active moderator-jackbox min-h-screen h-[100dvh] overflow-y-auto overscroll-contain bg-[#050505] px-2 py-2 text-[#ffe4f2] sm:px-3 lg:px-4"
+      className="page-transition-enter-active moderator-jackbox h-[100dvh] overflow-hidden bg-[#050505] text-[#ffe4f2]"
       style={{
         boxSizing: 'border-box',
         fontFamily: 'var(--font)'
       }}
     >
       {renderReconnectModal()}
-      {renderCozyLayout()}
+      {renderMobileLayout()}
       {featureFlags.showLegacyPanels && (
         <details style={{ marginTop: 24 }}>
           <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Legacy Tools</summary>

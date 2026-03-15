@@ -11,6 +11,9 @@
   --tile-b: #67b58f;
   --tile-c: #d68598;
   --tile-d: #d7a46f;
+  /* Shared easing curves */
+  --ease-elastic: var(--ease-elastic);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Beamer: full-viewport, no card wrapper, dark theme */
@@ -142,7 +145,7 @@
   position: relative;
   overflow: hidden;
   text-align: center;
-  animation: beamerSolutionCard 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: beamerSolutionCard 0.7s var(--ease-elastic);
   will-change: transform, opacity;
 }
 
@@ -164,7 +167,7 @@
 }
 
 .beamer-solution-text {
-  animation: beamerSolutionText 0.6s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: beamerSolutionText 0.6s 0.2s var(--ease-elastic);
   will-change: filter, opacity, transform;
 }
 
@@ -214,7 +217,7 @@
 /* Reveal animations for answer/result items */
 .reveal-item {
   will-change: transform, opacity;
-  animation: beamerRevealItem 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: beamerRevealItem 0.55s var(--ease-elastic);
   animation-fill-mode: backwards;
 }
 
@@ -700,7 +703,7 @@
 }
 
 .beamer-scoreboard-grid.rundlauf-final .beamer-score-card {
-  animation: scoreboardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: scoreboardPop 0.6s var(--ease-elastic) both;
 }
 
 .beamer-scoreboard-grid.rundlauf-final .beamer-score-card:nth-child(1) {
@@ -764,8 +767,8 @@
   background: #1a2035;
   box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 16px rgba(0,0,0,0.3);
   font-family: var(--font-game);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: scoreboardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: all 0.4s var(--ease-elastic);
+  animation: scoreboardPop 0.6s var(--ease-elastic) both;
 }
 
 .beamer-score-card:hover {
@@ -904,7 +907,7 @@
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--ease-elastic);
   position: relative;
   overflow: visible;
   box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 16px rgba(0, 0, 0, 0.3);
@@ -925,7 +928,7 @@
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
-  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.35s var(--ease-elastic);
 }
 
 .beamer-select-card:hover::before {
@@ -942,7 +945,7 @@
   opacity: 0.5;
   transform: scale(0.95);
   filter: grayscale(40%);
-  animation: theme-ban 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: theme-ban 0.5s var(--ease-elastic);
 }
 
 .beamer-select-card.banned .beamer-select-title {
@@ -956,7 +959,7 @@
   box-shadow: 0 0 24px rgba(34, 197, 94, 0.3),
               0 6px 0 rgba(34, 197, 94, 0.4);
   transform: scale(1.1);
-  animation: theme-pick 1.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+  animation: theme-pick 1.2s var(--ease-elastic),
              theme-pick-glow 1.8s 1.2s ease-in-out infinite;
 }
 
@@ -1566,7 +1569,7 @@
   padding: 20px 24px;
   gap: 14px;
   flex: 1; /* fill height in reveal two-column layout */
-  animation: revealSlideLeft 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: revealSlideLeft 0.55s var(--ease-elastic) both;
 }
 
 .cozyQuestionGrid.phase-reveal .cozyQuestionText {
@@ -1590,7 +1593,7 @@
 .cozyMediaLayout.portrait-split .cozyQuestionHero {
   flex: 0 0 44%;
   min-width: 0;
-  transition: flex-basis 0.85s cubic-bezier(0.34, 1.56, 0.64, 1),
+  transition: flex-basis 0.85s var(--ease-elastic),
               opacity 0.6s ease 0.2s,
               padding 0.85s ease,
               border-width 0.4s ease;
@@ -1608,7 +1611,7 @@
   flex-shrink: 0;
   order: 2;
   max-height: 600px;
-  transition: max-height 0.85s cubic-bezier(0.34, 1.56, 0.64, 1),
+  transition: max-height 0.85s var(--ease-elastic),
               opacity 0.6s ease 0.2s,
               padding 0.85s ease,
               border-width 0.4s ease;
@@ -1643,7 +1646,7 @@
   gap: 8px;
   overflow-y: auto;
   padding-right: 4px;
-  animation: revealSlideRight 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: revealSlideRight 0.55s var(--ease-elastic) both;
   min-height: 0;
   max-height: 100%;
 }
@@ -1668,7 +1671,7 @@
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
-  animation: revealAnswerRow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: revealAnswerRow 0.4s var(--ease-elastic) both;
 }
 
 .cozyRevealAnswerRow.estimate-winner {
@@ -2023,21 +2026,21 @@
   backdrop-filter: blur(8px);
   color: #f1f5f9;
   font-weight: 700;
-  font-size: clamp(24px, 2.6vw, 36px);
-  transition: all 0.3s ease;
+  font-size: clamp(24px, 2.8vw, 46px);
+  transition: all 0.3s var(--ease-elastic);
   min-height: 132px;
   cursor: pointer;
   position: relative;
-  animation: slideIn 0.4s ease-out forwards;
+  animation: staggerFadeIn 0.5s var(--ease-elastic) both;
   opacity: 0;
   box-shadow: 0 4px 0 rgba(0,0,0,0.5);
 }
 
-/* Tile colors: A=blue, B=green, C=red, D=orange — dark mode: colored left border only */
-.cozyOption:nth-child(1) { animation-delay: 0.05s; border-left-color: #3B82F6; background: rgba(59,130,246,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
-.cozyOption:nth-child(2) { animation-delay: 0.1s;  border-left-color: #22C55E; background: rgba(34,197,94,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
-.cozyOption:nth-child(3) { animation-delay: 0.15s; border-left-color: #EF4444; background: rgba(239,68,68,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
-.cozyOption:nth-child(4) { animation-delay: 0.2s;  border-left-color: #F97316; background: rgba(249,115,22,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+/* Tile colors: A=blue, B=green, C=red, D=orange */
+.cozyOption:nth-child(1) { animation-delay: 0.10s; border-left-color: #3B82F6; background: rgba(59,130,246,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(2) { animation-delay: 0.15s; border-left-color: #22C55E; background: rgba(34,197,94,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(3) { animation-delay: 0.20s; border-left-color: #EF4444; background: rgba(239,68,68,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
+.cozyOption:nth-child(4) { animation-delay: 0.25s; border-left-color: #F97316; background: rgba(249,115,22,0.16); box-shadow: 0 4px 0 rgba(0,0,0,0.45); }
 
 /* Prefix letter colored to match left border */
 .cozyOption:nth-child(1) .cozyOptionPrefix { color: #3B82F6; }
@@ -2126,7 +2129,7 @@
   background: linear-gradient(135deg, rgba(177, 10, 108, 0.18), rgba(240, 95, 178, 0.12));
   box-shadow: 0 6px 0 rgba(177, 10, 108, 0.35), 0 12px 24px rgba(0, 0, 0, 0.35), inset 0 0 32px rgba(240, 95, 178, 0.15);
   backdrop-filter: blur(12px);
-  animation: popSoft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: popSoft 0.6s var(--ease-elastic) both;
 }
 
 .cozyRevealNumber span {
@@ -2163,7 +2166,7 @@
   font-size: clamp(24px, 3.5vw, 48px);
   color: #ffd1e8;
   box-shadow: 0 6px 0 rgba(177, 10, 108, 0.3), 0 12px 24px rgba(0, 0, 0, 0.3);
-  animation: popSoft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: popSoft 0.6s var(--ease-elastic) both;
 }
 
 /* Solo reveal: no team answers panel — center everything, shrink question, enlarge answer */
@@ -2677,20 +2680,20 @@
 
 /* Anwendung auf Elemente */
 .beamer-frame {
-  animation: beamerFade 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: beamerFade 0.5s var(--ease-elastic);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .beamer-intro-card {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+  animation: slideInUp 0.6s var(--ease-elastic) 0.1s both;
 }
 
 .beamer-label {
-  animation: slideInLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInLeft 0.5s var(--ease-elastic);
 }
 
 .beamer-list > span {
-  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: staggerFadeIn 0.5s var(--ease-elastic);
   animation-fill-mode: both;
 }
 
@@ -2701,19 +2704,19 @@
 .beamer-list > span:nth-child(5) { animation-delay: 0.5s; }
 
 .beamer-stack {
-  animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.6s var(--ease-elastic);
 }
 
 .beamer-scoreboard-grid {
   display: grid;
   gap: 12px;
-  animation: fadeInScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.7s var(--ease-elastic);
 }
 
 .beamer-scoreboard-card {
-  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: staggerFadeIn 0.5s var(--ease-elastic);
   animation-fill-mode: both;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--ease-elastic);
 }
 
 .beamer-scoreboard-card:hover {
@@ -2722,8 +2725,8 @@
 }
 
 .beamer-card {
-  animation: floatIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: floatIn 0.5s var(--ease-elastic);
+  transition: all 0.3s var(--ease-elastic);
 }
 
 .beamer-card:hover {
@@ -2737,7 +2740,7 @@
 }
 
 .beamer-grid > .beamer-card {
-  animation: fadeInScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.5s var(--ease-elastic);
   animation-fill-mode: both;
 }
 
@@ -2788,55 +2791,46 @@
 }
 
 .cozyQuestionText {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+  animation: slideInUp 0.6s var(--ease-elastic) 0.15s both;
   transition: all 0.3s ease;
 }
 
 .cozyQuestionHint {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  animation: slideInUp 0.6s var(--ease-elastic) 0.2s both;
 }
 
 .cozyQuestionMedia {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both;
+  animation: slideInUp 0.6s var(--ease-elastic) 0.25s both;
   transition: all 0.4s ease;
 }
 
 .cozyQuestionBody {
-  animation: fadeInScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  animation: fadeInScale 0.7s var(--ease-elastic) 0.3s both;
 }
 
 .cozyRevealNumber {
-  animation: revealZoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: revealZoom 0.8s var(--ease-elastic);
 }
 
 .cozyRevealGeneric {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInUp 0.6s var(--ease-elastic);
 }
 
 .cozyOptionList {
-  animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.6s var(--ease-elastic);
 }
 
-.cozyOption {
-  animation: staggerFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation-fill-mode: both;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 
-.cozyOption:nth-child(1) { animation-delay: 0.1s; border-left-color: #3B82F6; }
-.cozyOption:nth-child(2) { animation-delay: 0.15s; border-left-color: #22C55E; }
-.cozyOption:nth-child(3) { animation-delay: 0.2s; border-left-color: #EF4444; }
-.cozyOption:nth-child(4) { animation-delay: 0.25s; border-left-color: #F97316; }
 
 .cozyTeamStatusBar {
-  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+  animation: slideInUp 0.5s var(--ease-elastic) 0.35s both;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
 .cozyTeamStatusChip {
-  animation: fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.4s var(--ease-elastic);
   animation-fill-mode: both;
 }
 
@@ -2846,25 +2840,25 @@
 .cozyTeamStatusChip:nth-child(4) { animation-delay: 0.25s; }
 
 .beamer-question-main {
-  animation: slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInLeft 0.6s var(--ease-elastic);
 }
 
 .beamer-question-text {
-  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+  animation: slideInUp 0.5s var(--ease-elastic) 0.15s both;
 }
 
 .blitz-current-card {
-  animation: scaleReveal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scaleReveal 0.7s var(--ease-elastic);
 }
 
 .blitz-timeline {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  animation: slideInUp 0.6s var(--ease-elastic) 0.2s both;
 }
 
 .blitz-chip {
-  animation: fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.4s var(--ease-elastic);
   animation-fill-mode: both;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--ease-elastic);
 }
 
 .blitz-chip:nth-child(1) { animation-delay: 0.1s; }
@@ -2874,25 +2868,25 @@
 .blitz-chip:nth-child(5) { animation-delay: 0.3s; }
 
 .blitz-theme-pop {
-  animation: blitzThemePop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: blitzThemePop 0.7s var(--ease-elastic);
   animation-fill-mode: both;
   perspective: 1000px;
 }
 
 .cozyLobbyShell {
-  animation: fadeInScale 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.8s var(--ease-elastic);
 }
 
 .cozyLobbyHeader {
-  animation: slideInDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInDown 0.6s var(--ease-elastic);
 }
 
 .cozyLobbyTeams {
-  animation: slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+  animation: slideInLeft 0.6s var(--ease-elastic) 0.1s both;
 }
 
 .cozyLobbyTeamRow {
-  animation: staggerFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: staggerFadeIn 0.4s var(--ease-elastic);
   animation-fill-mode: both;
   transition: all 0.3s ease;
 }
@@ -2909,16 +2903,16 @@
 }
 
 .cozyLobbyQrPane {
-  animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+  animation: slideInRight 0.6s var(--ease-elastic) 0.1s both;
 }
 
 .cozyQuestionIntro {
-  animation: fadeInScaleUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScaleUp 0.8s var(--ease-elastic);
 }
 
 /* Smooth transition between phases */
 .beamer-frame[class*="reveal"] {
-  animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInUp 0.6s var(--ease-elastic);
 }
 
 /* Enhanced transitions for better flow */
@@ -2983,7 +2977,7 @@
 
 .beamer-card-3d {
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.6s var(--ease-elastic);
 }
 
 .beamer-card-3d:hover {
@@ -2991,7 +2985,7 @@
 }
 
 .beamer-card-flip {
-  animation: cardFlipReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: cardFlipReveal 0.8s var(--ease-elastic);
   transform-style: preserve-3d;
 }
 
@@ -3046,7 +3040,7 @@
   height: 8px;
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.8));
-  transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: width 1.2s var(--ease-elastic);
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
   position: relative;
   overflow: hidden;
@@ -3069,11 +3063,11 @@
 }
 
 .scoreboard-race-card {
-  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.8s var(--ease-elastic);
 }
 
 .scoreboard-race-card.rank-change {
-  animation: rankBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: rankBounce 0.6s var(--ease-elastic);
 }
 
 @keyframes rankBounce {
@@ -3085,7 +3079,7 @@
 
 /* Score points pop animation */
 .score-points-pop {
-  animation: pointsPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: pointsPop 0.8s var(--ease-elastic);
 }
 
 @keyframes pointsPop {
@@ -3107,8 +3101,8 @@
 
 /* ===== SPRING MICRO-ANIMATIONS ===== */
 .spring-hover {
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s var(--ease-elastic),
+              box-shadow 0.4s var(--ease-elastic);
 }
 
 .spring-hover:hover {
@@ -3520,7 +3514,7 @@ body.projector-mode .cozyQuestionMedia {
   color: #f05fb2;
   line-height: 1;
   letter-spacing: -0.02em;
-  animation: countdownPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: countdownPulse 0.5s var(--ease-elastic) both;
   text-shadow: 0 0 40px rgba(240, 95, 178, 0.5);
 }
 
@@ -3560,9 +3554,7 @@ body.projector-mode .cozyQuestionMedia {
 }
 
 /* MC option tiles: larger for beamer distance */
-.cozyOption {
-  font-size: clamp(24px, 2.8vw, 46px);
-}
+
 
 /* Option prefix letter inherits cozyOption size (0.95em) — add explicit floor */
 .cozyOptionPrefix {

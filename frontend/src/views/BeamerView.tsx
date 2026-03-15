@@ -1309,9 +1309,15 @@ useEffect(() => {
   const mcOptions = useMemo(() => {
     if (!question) return null;
     const q: any = question;
-    const opts =
-      language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
-    return Array.isArray(opts) ? opts : null;
+    const rawOpts: string[] = Array.isArray(q.options) ? q.options : [];
+    return rawOpts.map((opt: string, idx: number) => {
+      const slashIdx = opt.indexOf('/');
+      const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
+      const enOpt: string | undefined = Array.isArray(q.optionsEn) ? q.optionsEn[idx] : undefined;
+      const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
+      if (language === 'en') return dePart !== enPart ? `${enPart} / ${dePart}` : enPart;
+      return dePart;
+    });
   }, [question?.id, language]);
 
   const showChoiceAvatars = gameState === 'Q_REVEAL';
@@ -1953,8 +1959,14 @@ useEffect(() => {
   const renderQuestionCardGrid = (): JSX.Element | null => {
     if (!question) return null;
     const q: any = question;
-    const mcOptions =
-      language === 'en' && Array.isArray(q.optionsEn) && q.optionsEn.length ? q.optionsEn : q.options;
+    const mcOptions = Array.isArray(q.options) ? (q.options as string[]).map((opt: string, idx: number) => {
+      const slashIdx = opt.indexOf('/');
+      const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
+      const enOpt: string | undefined = Array.isArray(q.optionsEn) ? q.optionsEn[idx] : undefined;
+      const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
+      if (language === 'en') return dePart !== enPart ? `${enPart} / ${dePart}` : enPart;
+      return dePart;
+    }) : q.options;
     if (Array.isArray(mcOptions) && mcOptions.length) {
       const optionsGridClassName = `beamer-grid beamer-grid-options${mcOptions.length === 4 ? ' beamer-grid-options-4' : ''}`;
       return (

@@ -3502,7 +3502,12 @@ const translateText = async (text: string, src = 'de', tgt = 'en'): Promise<stri
 const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
   const updates: Record<string, any> = {};
   const any = q as any;
-  if (!any.questionEn && any.question) updates.questionEn = await translateText(any.question);
+  if (any.question) {
+    // Always re-translate to fix stale/wrong cached values in MongoDB.
+    // Extract DE part only when the question uses "DE / EN" slash format.
+    const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
+    updates.questionEn = await translateText(qDe);
+  }
   if (Array.isArray(any.options) && any.options.length > 0) {
     // If any option contains '/', the user stored bilingual text (DE / EN).
     // Always re-derive optionsEn from the DE part (before '/') so we get correct translations.

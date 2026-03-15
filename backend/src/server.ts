@@ -64,6 +64,7 @@ import {
   BunteTuetePrecisionSubmission,
   BunteTueteOneOfEightSubmission,
   BunteTueteOrderSubmission,
+  BunteTueteMapSubmission,
   BunteTuetePayload,
   CozyQuizDraft,
   NextStageHint,
@@ -3912,6 +3913,11 @@ const validateQuestionStructure = (question: AnyQuestion): string[] => {
           }
         });
       }
+    } else if (payload.kind === 'map') {
+      const t = payload.target;
+      if (!t || typeof t.lat !== 'number' || typeof t.lng !== 'number') {
+        issues.push('Karten-Variante benötigt gültige Zielkoordinaten (lat/lng).');
+      }
     }
   }
   return issues;
@@ -3942,6 +3948,16 @@ type BunteEvaluationResult = {
   awardedDetail: string | null;
   isCorrect: boolean;
   tieBreaker?: AnswerTieBreaker | null;
+};
+
+const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
 const quantizePoints = (value: number, limit: number): number => {
@@ -4068,6 +4084,45 @@ const evaluateBunteSubmission = (
             detail: 'Positionen korrekt'
           }
         : null
+    };
+  }
+  if (setup.kind === 'map') {
+    const submission = payload as BunteTueteMapSubmission;
+    const lat = typeof submission.lat === 'number' ? submission.lat : NaN;
+    const lng = typeof submission.lng === 'number' ? submission.lng : NaN;
+    if (isNaN(lat) || isNaN(lng)) {
+      return { awardedPoints: 0, awardedDetail: 'Kein Pin gesetzt', isCorrect: false, tieBreaker: null };
+    }
+    const target = setup.target as { lat: number; lng: number };
+    const distanceKm = haversineKm(lat, lng, target.lat, target.lng);
+    const tiers: Array<{ maxDistanceKm: number; points: number; label: string }> = setup.scoringTiers?.length
+      ? setup.scoringTiers
+      : [
+          { maxDistanceKm: 50,   points: safeMax,                          label: 'Perfekt' },
+          { maxDistanceKm: 300,  points: Math.ceil(safeMax * 0.75),        label: 'Sehr nah' },
+          { maxDistanceKm: 1000, points: Math.ceil(safeMax * 0.5),         label: 'Nah dran' },
+          { maxDistanceKm: 3000, points: Math.max(1, Math.ceil(safeMax * 0.25)), label: 'Weit weg' },
+        ];
+    let awardedPoints = 0;
+    let awardedLabel: string | null = null;
+    for (const tier of tiers.sort((a, b) => a.maxDistanceKm - b.maxDistanceKm)) {
+      if (distanceKm <= tier.maxDistanceKm) {
+        awardedPoints = Math.min(tier.points, safeMax);
+        awardedLabel = tier.label;
+        break;
+      }
+    }
+    const distStr = distanceKm < 1 ? '<1 km' : distanceKm < 1000 ? `${Math.round(distanceKm)} km` : `${(distanceKm / 1000).toFixed(1).replace('.', ',')} Tsd. km`;
+    return {
+      awardedPoints,
+      awardedDetail: awardedLabel ? `${awardedLabel} (${distStr})` : `Zu weit (${distStr})`,
+      isCorrect: awardedPoints >= safeMax,
+      tieBreaker: {
+        label: 'KARTE',
+        primary: -Math.round(distanceKm), // negativ: kleiner = besser
+        secondary: 0,
+        detail: `${distStr} entfernt`
+      }
     };
   }
   return { awardedPoints: 0, awardedDetail: null, isCorrect: false, tieBreaker: null };

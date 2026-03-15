@@ -64,6 +64,250 @@ import {
   timerPill,
   questionStyleTeam
 } from './teamStyles';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default marker icon (webpack asset issue)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+function MapClickHandler({ onPin }: { onPin: (lat: number, lng: number) => void }) {
+  useMapEvents({ click: (e) => onPin(e.latlng.lat, e.latlng.lng) });
+  return null;
+}
+
+function BunteMapPicker({
+  pin, onChange, disabled
+}: {
+  pin: { lat: number; lng: number } | null;
+  onChange: (p: { lat: number; lng: number }) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div style={{ marginTop: 8, borderRadius: 14, overflow: 'hidden', border: '2px solid rgba(240,95,178,0.3)', boxShadow: '0 4px 0 rgba(0,0,0,0.4)' }}>
+      <MapContainer
+        center={[20, 0]}
+        zoom={2}
+        style={{ height: 260, width: '100%', cursor: disabled ? 'not-allowed' : 'crosshair' }}
+        zoomControl={true}
+        scrollWheelZoom={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {!disabled && <MapClickHandler onPin={(lat, lng) => onChange({ lat, lng })} />}
+        {pin && <Marker position={[pin.lat, pin.lng]} />}
+      </MapContainer>
+      {pin ? (
+        <div style={{ padding: '6px 12px', background: 'rgba(20,30,60,0.9)', color: '#94a3b8', fontSize: 12, textAlign: 'center' }}>
+          📍 {pin.lat.toFixed(3)}, {pin.lng.toFixed(3)}
+        </div>
+      ) : (
+        <div style={{ padding: '6px 12px', background: 'rgba(20,30,60,0.9)', color: '#64748b', fontSize: 12, textAlign: 'center' }}>
+          Karte antippen um Pin zu setzen
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Swipe-Karten UI für oneOfEight ──────────────────────────────────────────
+function OneOfEightSwipeCards({
+  statements,
+  usedIds,
+  selectedId,
+  onSelect,
+  canAnswer,
+}: {
+  statements: Array<{ id: string; text: string; isFalse?: boolean }>;
+  usedIds: Set<string>;
+  selectedId: string;
+  onSelect: (id: string) => void;
+  canAnswer: boolean;
+}) {
+  const remaining = statements.filter((s) => !usedIds.has(String(s.id).toLowerCase()));
+  const [idx, setIdx] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [flying, setFlying] = useState<'left' | 'right' | null>(null);
+  const startXRef = useRef(0);
+  const draggingRef = useRef(false);
+
+  // reset when remaining set changes
+  const prevRemaining = useRef(remaining.length);
+  useEffect(() => {
+    if (remaining.length !== prevRemaining.current) {
+      prevRemaining.current = remaining.length;
+      setIdx(0);
+      setDragX(0);
+      setFlying(null);
+    }
+  }, [remaining.length]);
+
+  if (!remaining.length) return null;
+
+  const current = remaining[idx % remaining.length];
+
+  const flyOff = (dir: 'left' | 'right') => {
+    if (flying) return;
+    setFlying(dir);
+    setTimeout(() => {
+      setFlying(null);
+      setDragX(0);
+      if (dir === 'left') {
+        onSelect(current.id);
+      } else {
+        setIdx((prev) => (prev + 1) % remaining.length);
+      }
+    }, 280);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!canAnswer) return;
+    startXRef.current = e.touches[0].clientX;
+    draggingRef.current = true;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!draggingRef.current || flying) return;
+    setDragX(e.touches[0].clientX - startXRef.current);
+  };
+  const onTouchEnd = () => {
+    draggingRef.current = false;
+    if (Math.abs(dragX) > 70) {
+      flyOff(dragX < 0 ? 'left' : 'right');
+    } else {
+      setDragX(0);
+    }
+  };
+
+  const tx = flying === 'left' ? -420 : flying === 'right' ? 420 : dragX;
+  const rotate = (tx / 12).toFixed(1);
+  const isChosen = selectedId === current.id;
+
+  return (
+    <div style={{ position: 'relative', userSelect: 'none' }}>
+      {/* stack cards behind */}
+      {remaining.length > 1 && (
+        <div style={{
+          position: 'absolute', inset: 0, top: 6, left: 6, right: -6,
+          borderRadius: 18, background: 'rgba(30,42,70,0.7)',
+          border: '1.5px solid rgba(148,163,184,0.15)',
+          zIndex: 0,
+        }} />
+      )}
+      {remaining.length > 2 && (
+        <div style={{
+          position: 'absolute', inset: 0, top: 12, left: 12, right: -12,
+          borderRadius: 18, background: 'rgba(22,32,55,0.5)',
+          border: '1.5px solid rgba(148,163,184,0.1)',
+          zIndex: 0,
+        }} />
+      )}
+
+      {/* current card */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          position: 'relative', zIndex: 1,
+          transform: `translateX(${tx}px) rotate(${rotate}deg)`,
+          transition: flying ? 'transform 0.28s cubic-bezier(0.4,0,0.6,1), opacity 0.28s' : dragX ? 'none' : 'transform 0.2s ease',
+          opacity: flying ? 0 : 1,
+          borderRadius: 18,
+          padding: '22px 20px',
+          minHeight: 120,
+          background: isChosen
+            ? 'linear-gradient(135deg, rgba(148,45,89,0.22), rgba(30,42,70,0.9))'
+            : 'rgba(26,32,53,0.95)',
+          border: isChosen ? '2px solid rgba(148,45,89,0.6)' : '2px solid rgba(148,163,184,0.18)',
+          boxShadow: isChosen
+            ? '0 0 0 2px rgba(148,45,89,0.25), 0 8px 24px rgba(0,0,0,0.4)'
+            : '0 8px 24px rgba(0,0,0,0.4)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          cursor: canAnswer ? 'grab' : 'default',
+          touchAction: 'pan-y',
+        }}
+      >
+        {/* ID badge */}
+        <span style={{
+          alignSelf: 'flex-start',
+          background: 'rgba(148,163,184,0.15)',
+          color: '#94a3b8',
+          borderRadius: 8,
+          padding: '2px 10px',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+        }}>{current.id}</span>
+
+        <p style={{
+          margin: 0,
+          fontSize: 'clamp(16px, 4.5vw, 20px)',
+          fontWeight: 700,
+          color: '#f1f5f9',
+          lineHeight: 1.35,
+        }}>{current.text}</p>
+
+        {/* swipe hint overlay */}
+        {dragX < -30 && (
+          <div style={{ position: 'absolute', top: 14, right: 16, fontSize: 13, fontWeight: 800, color: '#f87171', opacity: Math.min(1, (Math.abs(dragX) - 30) / 60) }}>
+            ✗ FALSCH
+          </div>
+        )}
+        {dragX > 30 && (
+          <div style={{ position: 'absolute', top: 14, left: 16, fontSize: 13, fontWeight: 800, color: '#4ade80', opacity: Math.min(1, (dragX - 30) / 60) }}>
+            ✓ WEITER
+          </div>
+        )}
+      </div>
+
+      {/* controls row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
+        <button
+          disabled={!canAnswer}
+          onClick={() => flyOff('left')}
+          style={{
+            flex: 1, padding: '11px 0', borderRadius: 14,
+            background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.35)',
+            color: '#f87171', fontWeight: 800, fontSize: 15, cursor: canAnswer ? 'pointer' : 'not-allowed',
+          }}
+        >✗ Falsch</button>
+
+        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 700, textAlign: 'center', minWidth: 40 }}>
+          {(idx % remaining.length) + 1}/{remaining.length}
+        </div>
+
+        <button
+          disabled={!canAnswer || remaining.length <= 1}
+          onClick={() => flyOff('right')}
+          style={{
+            flex: 1, padding: '11px 0', borderRadius: 14,
+            background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)',
+            color: '#4ade80', fontWeight: 800, fontSize: 15,
+            cursor: (canAnswer && remaining.length > 1) ? 'pointer' : 'not-allowed',
+            opacity: remaining.length <= 1 ? 0.4 : 1,
+          }}
+        >Weiter →</button>
+      </div>
+
+      {selectedId && (
+        <div style={{
+          marginTop: 10, padding: '8px 14px', borderRadius: 12,
+          background: 'rgba(148,45,89,0.15)', border: '1px solid rgba(148,45,89,0.4)',
+          color: '#f9a8d4', fontWeight: 700, fontSize: 13,
+        }}>
+          Gewählt: {statements.find(s => s.id === selectedId)?.text ?? selectedId}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type Phase = 'notJoined' | 'waitingForQuestion' | 'intro' | 'answering' | 'waitingForResult' | 'showResult';
 
@@ -412,6 +656,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [bunteOneChoice, setBunteOneChoice] = useState('');
   const [bunteOrderSelection, setBunteOrderSelection] = useState<string[]>([]);
   const [bunteOrderCriteria, setBunteOrderCriteria] = useState<string | null>(null);
+  const [bunterMapPin, setBunterMapPin] = useState<{ lat: number; lng: number } | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [phase, setPhase] = useState<Phase>('notJoined');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -1510,6 +1755,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     setBunteOneChoice('');
     setBunteOrderSelection([]);
     setBunteOrderCriteria(null);
+    setBunterMapPin(null);
     setResultPoints(null);
     setResultDetail(null);
     setResultDeviation(null);
@@ -1882,6 +2128,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         criteriaId: bunteOrderCriteria ?? undefined
       };
     }
+    if (payload.kind === 'map') {
+      if (!bunterMapPin) {
+        showError(language === 'de' ? 'Bitte einen Pin auf der Karte setzen.' : 'Please place a pin on the map.');
+        return null;
+      }
+      return { kind: 'map', lat: bunterMapPin.lat, lng: bunterMapPin.lng };
+    }
     return null;
   }
 
@@ -1946,35 +2199,13 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       return (
         <div style={{ display: 'grid', gap: 8 }}>
           {waitingBanner}
-          <div style={{ display: 'grid', gap: 8 }} className="stagger-container">
-            {payload.statements.map((statement) => {
-              const isUsed = usedIds.has(String(statement.id).toLowerCase());
-              const selected = bunteOneChoice === statement.id;
-              const tileDisabled = !canAnswer || isUsed;
-              return (
-                <button
-                  key={statement.id}
-                  type="button"
-                  data-choice-letter={statement.id}
-                  className={`team-choice shimmer-card hover-spring btn-ripple${selected ? ' is-selected' : ''}`}
-                  onClick={() => !isUsed && setBunteOneChoice(statement.id)}
-                  disabled={tileDisabled}
-                  style={{
-                    ...choiceButton,
-                    justifyContent: 'flex-start',
-                    cursor: tileDisabled ? 'not-allowed' : 'pointer',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    paddingLeft: 'calc(44px + 14px)',
-                    opacity: isUsed ? 0.35 : 1,
-                    textDecoration: isUsed ? 'line-through' : 'none'
-                  }}
-                >
-                  {statement.text}
-                </button>
-              );
-            })}
-          </div>
+          <OneOfEightSwipeCards
+            statements={payload.statements}
+            usedIds={usedIds}
+            selectedId={bunteOneChoice}
+            onSelect={setBunteOneChoice}
+            canAnswer={canAnswer && isOneOfEightActiveTurn}
+          />
         </div>
       );
     }
@@ -2024,6 +2255,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           ))}
         </div>
       );
+    }
+    if (payload.kind === 'map') {
+      return <BunteMapPicker pin={bunterMapPin} onChange={setBunterMapPin} disabled={!canAnswer} />;
     }
     return null;
   };

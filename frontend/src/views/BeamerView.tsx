@@ -36,6 +36,9 @@ import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
 import { hasStateBasedRendering, getAvatarStatePath, type AvatarState } from '../config/avatarStates';
 import { resumeAudio, playFanfare, playReveal, playTimesUp, playTick, playUrgentTick, playScoreUp, setVolume, getVolume } from '../utils/sounds';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -385,6 +388,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [blitzTick, setBlitzTick] = useState(0);
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
+  const [top5RevealStep, setTop5RevealStep] = useState(0); // how many top5 answers are revealed so far
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
   const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
 
@@ -705,6 +709,23 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setRevealStamp((stamp) => stamp + 1);
       setShowConfetti(true);
       window.setTimeout(() => setShowConfetti(false), 1600);
+
+      // Family Feud Top5 sequential reveal
+      const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
+      if (isTop5) {
+        setTop5RevealStep(0);
+        const top5Len = ((question as any).bunteTuete?.correctOrder?.length ?? 5);
+        let step = 0;
+        const reveal = () => {
+          step += 1;
+          setTop5RevealStep(step);
+          if (step < top5Len) window.setTimeout(reveal, 1100);
+        };
+        window.setTimeout(reveal, 600);
+      }
+    }
+    if (gameState !== 'Q_REVEAL') {
+      setTop5RevealStep(0);
     }
     previousGameStateRef.current = gameState;
     gameStateRef.current = gameState;
@@ -2263,6 +2284,83 @@ useEffect(() => {
         </div>
       );
     }
+    if (bunte?.kind === 'map' && bunte?.target) {
+      const isReveal = gameState === 'Q_REVEAL';
+      const teamPins: Array<{ teamId: string; name: string; lat: number; lng: number; detail: string }> = [];
+      if (isReveal) {
+        const detailByTeam: Record<string, string> = {};
+        (answerResults ?? []).forEach((r) => {
+          if (r.awardedDetail) detailByTeam[r.teamId] = r.awardedDetail;
+        });
+        (teamStatus ?? []).forEach((t) => {
+          const ans = t.answer as any;
+          if (ans?.kind === 'map' && typeof ans.lat === 'number' && typeof ans.lng === 'number') {
+            teamPins.push({
+              teamId: t.id,
+              name: t.name ?? t.id,
+              lat: ans.lat,
+              lng: ans.lng,
+              detail: detailByTeam[t.id] ?? ''
+            });
+          }
+        });
+      }
+      const target = bunte.target as { lat: number; lng: number };
+      const targetIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#942d59;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 3px #942d59"></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+      const teamIcon = (name: string) => L.divIcon({
+        className: '',
+        html: `<div style="background:#1a2035;color:#f1f5f9;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;border:2px solid #942d59;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${name}</div>`,
+        iconSize: [undefined as any, undefined as any],
+        iconAnchor: [0, 10]
+      });
+      const allLats = [target.lat, ...teamPins.map(p => p.lat)];
+      const allLngs = [target.lng, ...teamPins.map(p => p.lng)];
+      const centerLat = (Math.min(...allLats) + Math.max(...allLats)) / 2;
+      const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
+      return (
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <MapContainer
+            key={isReveal ? 'reveal' : 'active'}
+            center={[centerLat, centerLng]}
+            zoom={isReveal && teamPins.length ? 3 : 2}
+            style={{ flex: 1, minHeight: 340, width: '100%' }}
+            zoomControl={false}
+            scrollWheelZoom={false}
+            attributionControl={false}
+          >
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+            {isReveal && (
+              <Marker position={[target.lat, target.lng]} icon={targetIcon}>
+                <Popup>{bunte.targetLabel || `${target.lat.toFixed(3)}, ${target.lng.toFixed(3)}`}</Popup>
+              </Marker>
+            )}
+            {isReveal && teamPins.map((p) => (
+              <Marker key={p.teamId} position={[p.lat, p.lng]} icon={teamIcon(p.name)}>
+                <Popup>{p.name}: {p.detail}</Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+          {isReveal && bunte.targetLabel && (
+            <div style={{ padding: '8px 14px', background: 'rgba(14,22,44,0.95)', color: '#f1f5f9', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#942d59', display: 'inline-block', border: '2px solid #fff', flexShrink: 0 }} />
+              {bunte.targetLabel}
+            </div>
+          )}
+          {!isReveal && (
+            <div style={{ padding: '6px 14px', background: 'rgba(14,22,44,0.95)', color: '#64748b', fontSize: 13, textAlign: 'center' }}>
+              {language === 'de' ? 'Teams setzen ihre Pins …' : 'Teams are placing their pins …'}
+            </div>
+          )}
+        </div>
+      );
+    }
     return null;
   };
 
@@ -3348,35 +3446,51 @@ useEffect(() => {
             );
             const resolveLabel = (value: string) => String(itemMap.get(value) ?? value);
             return (
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', padding: '10px 0' }}>
-                {top5.map((item: string, idx: number) => (
-                  <div
-                    key={`top5-${idx}-${item}`}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      background: 'linear-gradient(135deg, rgba(177, 10, 108, 0.15), rgba(240, 95, 178, 0.1))',
-                      border: '2px solid rgba(240, 95, 178, 0.3)',
-                      borderRadius: 14, padding: '12px 20px',
-                      boxShadow: '0 4px 0 rgba(177, 10, 108, 0.3), 0 8px 16px rgba(0, 0, 0, 0.3)',
-                      fontFamily: 'var(--font-game)', fontWeight: 800, fontSize: 'clamp(18px, 3vw, 24px)',
-                      color: '#ffd1e8',
-                      animation: `popSoft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 0.1}s both`,
-                      backdropFilter: 'blur(8px)',
-                    }}
-                  >
-                    <span style={{ 
-                      color: '#f05fb2', 
-                      fontSize: 'clamp(16px, 2.5vw, 20px)', 
-                      fontWeight: 900, 
-                      minWidth: 28,
-                      background: 'rgba(177, 10, 108, 0.2)',
-                      borderRadius: 8,
-                      padding: '2px 8px',
-                      textAlign: 'center'
-                    }}>{idx + 1}</span>
-                    {resolveLabel(item)}
-                  </div>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 0', width: '100%' }}>
+                {top5.map((item: string, idx: number) => {
+                  const revealed = idx < top5RevealStep;
+                  return (
+                    <div
+                      key={`top5-${idx}-${item}`}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        borderRadius: 14, padding: '14px 22px',
+                        fontFamily: 'var(--font-game)', fontWeight: 800,
+                        fontSize: 'clamp(18px, 2.6vw, 28px)',
+                        transition: 'all 0.35s ease',
+                        ...(revealed ? {
+                          background: 'linear-gradient(135deg, rgba(177,10,108,0.18), rgba(240,95,178,0.08))',
+                          border: '2px solid rgba(240,95,178,0.4)',
+                          color: '#ffd1e8',
+                          boxShadow: '0 4px 0 rgba(177,10,108,0.35), 0 8px 20px rgba(0,0,0,0.35)',
+                          animation: 'popSoft 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+                        } : {
+                          background: 'rgba(20,28,50,0.7)',
+                          border: '2px solid rgba(148,163,184,0.12)',
+                          color: 'transparent',
+                          boxShadow: '0 2px 0 rgba(0,0,0,0.3)',
+                        })
+                      }}
+                    >
+                      <span style={{
+                        fontWeight: 900,
+                        fontSize: 'clamp(16px, 2.2vw, 22px)',
+                        minWidth: 36, textAlign: 'center',
+                        borderRadius: 8, padding: '2px 8px',
+                        ...(revealed ? {
+                          color: '#f05fb2',
+                          background: 'rgba(177,10,108,0.22)',
+                        } : {
+                          color: '#334155',
+                          background: 'rgba(148,163,184,0.08)',
+                        })
+                      }}>{idx + 1}</span>
+                      {revealed ? resolveLabel(item) : (
+                        <span style={{ color: '#1e2a45', userSelect: 'none' }}>████████</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           }

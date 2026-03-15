@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import type { 
+import type {
   BunteTueteQuestion,
   BunteTuetePayload,
   BunteTueteTop5Payload,
   BunteTuetePrecisionPayload,
   BunteTueteOneOfEightPayload,
-  BunteTueteOrderPayload
+  BunteTueteOrderPayload,
+  BunteTueteMapPayload
 } from '@shared/quizTypes';
 import {
   formSectionStyle,
@@ -43,12 +44,19 @@ export const BUNTU_MECHANIC_CONFIGS = [
     color: '#ef4444',
     description: 'Genau eine von 8 Aussagen ist falsch'
   },
-  { 
-    kind: 'order', 
-    label: '📋 Ordnen', 
-    icon: '📋', 
+  {
+    kind: 'order',
+    label: '📋 Ordnen',
+    icon: '📋',
     color: '#10b981',
     description: 'Items in richtige Reihenfolge sortieren'
+  },
+  {
+    kind: 'map',
+    label: '🗺️ Weltkarte',
+    icon: '🗺️',
+    color: '#06b6d4',
+    description: 'Teams setzen einen Pin auf der Weltkarte — wer am nächsten ist, gewinnt'
   }
 ];
 
@@ -107,6 +115,14 @@ export const validateBunteMechanic = (kind: string, question: BunteTueteQuestion
         }
       });
     }
+  } else if (kind === 'map') {
+    if (!payload?.prompt) {
+      errors.push('⚠️ Frage erforderlich');
+    }
+    const t = payload?.target;
+    if (!t || typeof t.lat !== 'number' || typeof t.lng !== 'number') {
+      errors.push('⚠️ Zielkoordinaten erforderlich (Karte anklicken oder Koordinaten eingeben)');
+    }
   }
 
   return errors;
@@ -146,6 +162,15 @@ export const buildBuntePayloadNew = (kind: string, baseId: string): BunteTuetePa
       correctByCriteria: {
         default: Array.from({ length: 5 }).map((_, idx) => `${baseId}-item-${idx + 1}`)
       }
+    };
+  }
+  if (kind === 'map') {
+    return {
+      kind: 'map' as const,
+      prompt: 'Wo auf der Weltkarte befindet sich dieser Ort?',
+      target: { lat: 27.1751, lng: 78.0421 }, // Taj Mahal als Default
+      targetLabel: 'Taj Mahal, Agra, Indien',
+      showTargetOnReveal: true
     };
   }
   return {
@@ -292,9 +317,77 @@ const PrecisionEditor = ({ payload, onUpdate }: { payload: BunteTuetePrecisionPa
   );
 };
 
+const MapEditor = ({ payload, onUpdate }: { payload: BunteTueteMapPayload; onUpdate: (p: BunteTueteMapPayload) => void }) => {
+  const lat = payload.target?.lat ?? '';
+  const lng = payload.target?.lng ?? '';
+  const updateCoord = (field: 'lat' | 'lng', val: string) => {
+    const num = parseFloat(val);
+    if (!isNaN(num)) onUpdate({ ...payload, target: { ...payload.target, [field]: num } });
+  };
+  return (
+    <div style={formSectionStyle}>
+      <label style={labelStyle}>🗺️ Weltkarte — Zielort festlegen</label>
+      <textarea
+        value={payload.prompt || ''}
+        onChange={(e) => onUpdate({ ...payload, prompt: e.target.value })}
+        style={textareaStyle}
+        rows={2}
+        placeholder="z.B. Wo befindet sich der Taj Mahal?"
+      />
+      <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div>
+          <small style={{ opacity: 0.6, fontSize: 11 }}>Breitengrad (Latitude)</small>
+          <input
+            type="number"
+            step="0.0001"
+            min="-90"
+            max="90"
+            value={lat}
+            onChange={(e) => updateCoord('lat', e.target.value)}
+            style={{ ...inputStyle, width: '100%' }}
+            placeholder="z.B. 27.1751"
+          />
+        </div>
+        <div>
+          <small style={{ opacity: 0.6, fontSize: 11 }}>Längengrad (Longitude)</small>
+          <input
+            type="number"
+            step="0.0001"
+            min="-180"
+            max="180"
+            value={lng}
+            onChange={(e) => updateCoord('lng', e.target.value)}
+            style={{ ...inputStyle, width: '100%' }}
+            placeholder="z.B. 78.0421"
+          />
+        </div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <small style={{ opacity: 0.6, fontSize: 11 }}>Ortsbezeichnung (für Reveal)</small>
+        <input
+          type="text"
+          value={payload.targetLabel || ''}
+          onChange={(e) => onUpdate({ ...payload, targetLabel: e.target.value })}
+          style={{ ...inputStyle, width: '100%' }}
+          placeholder="z.B. Taj Mahal, Agra, Indien"
+        />
+      </div>
+      {typeof lat === 'number' && typeof lng === 'number' && (
+        <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.3)', fontSize: 12, color: '#67e8f9' }}>
+          📍 Ziel: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
+          {payload.targetLabel ? ` — ${payload.targetLabel}` : ''}
+        </div>
+      )}
+      <div style={{ marginTop: 8, fontSize: 11, opacity: 0.55, lineHeight: 1.4 }}>
+        💡 Koordinaten über Google Maps ermitteln: Rechtsklick auf Ort → "Was ist hier?"
+      </div>
+    </div>
+  );
+};
+
 export function BunteTueteEditor({ question, onQuestionChange }: BunteTueteEditorProps) {
-  const [activeTab, setActiveTab] = useState<'top5' | 'precision' | 'oneOfEight' | 'order'>(
-    (question.bunteTuete?.kind as 'top5' | 'precision' | 'oneOfEight' | 'order') || 'top5'
+  const [activeTab, setActiveTab] = useState<'top5' | 'precision' | 'oneOfEight' | 'order' | 'map'>(
+    (question.bunteTuete?.kind as 'top5' | 'precision' | 'oneOfEight' | 'order' | 'map') || 'top5'
   );
 
   const payload = question.bunteTuete || {};
@@ -363,6 +456,7 @@ export function BunteTueteEditor({ question, onQuestionChange }: BunteTueteEdito
         {activeTab === 'precision' && <PrecisionEditor payload={payload as BunteTuetePrecisionPayload} onUpdate={handlePayloadUpdate} />}
         {activeTab === 'oneOfEight' && <OneOfEightEditor payload={payload as BunteTueteOneOfEightPayload} onUpdate={handlePayloadUpdate} />}
         {activeTab === 'order' && <OrderEditor payload={payload as BunteTueteOrderPayload} onUpdate={handlePayloadUpdate} />}
+        {activeTab === 'map' && <MapEditor payload={payload as BunteTueteMapPayload} onUpdate={handlePayloadUpdate} />}
       </div>
     </div>
   );

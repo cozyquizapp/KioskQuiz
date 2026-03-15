@@ -143,11 +143,28 @@ export interface BunteTueteOrderPayload {
   maxPoints?: number;
 }
 
+export interface BunteTueteMapScoringTier {
+  maxDistanceKm: number;
+  points: number;
+  label: string; // z.B. "Perfekt", "Sehr nah", "Nah dran"
+}
+
+export interface BunteTueteMapPayload {
+  kind: 'map';
+  prompt: string;
+  target: { lat: number; lng: number };
+  targetLabel?: string; // z.B. "Taj Mahal, Agra, Indien" — nur für Moderator/Reveal sichtbar
+  scoringTiers?: BunteTueteMapScoringTier[]; // Standard-Tiers wenn nicht definiert
+  maxPoints?: number;
+  showTargetOnReveal?: boolean; // Standard: true
+}
+
 export type BunteTuetePayload =
   | BunteTueteTop5Payload
   | BunteTuetePrecisionPayload
   | BunteTueteOneOfEightPayload
-  | BunteTueteOrderPayload;
+  | BunteTueteOrderPayload
+  | BunteTueteMapPayload;
 
 export interface BunteTueteTop5Submission {
   kind: 'top5';
@@ -170,11 +187,18 @@ export interface BunteTueteOrderSubmission {
   criteriaId?: string;
 }
 
+export interface BunteTueteMapSubmission {
+  kind: 'map';
+  lat: number;
+  lng: number;
+}
+
 export type BunteTueteSubmission =
   | BunteTueteTop5Submission
   | BunteTuetePrecisionSubmission
   | BunteTueteOneOfEightSubmission
-  | BunteTueteOrderSubmission;
+  | BunteTueteOrderSubmission
+  | BunteTueteMapSubmission;
 
 export type CozyAnswerValue =
   | string

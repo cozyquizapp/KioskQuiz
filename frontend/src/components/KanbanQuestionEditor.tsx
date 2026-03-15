@@ -59,6 +59,10 @@ export function KanbanQuestionEditor({
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isTranslatingFunFact, setIsTranslatingFunFact] = useState(false);
+  const [isTranslatingQuestion, setIsTranslatingQuestion] = useState(false);
+  const [isTranslatingOptions, setIsTranslatingOptions] = useState<boolean[]>([false, false, false, false]);
+  const [isTranslatingAnswer, setIsTranslatingAnswer] = useState(false);
+  const [isTranslatingAll, setIsTranslatingAll] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'mechanic' | 'media' | 'points' | 'preview'>('basic');
 
@@ -147,6 +151,98 @@ export function KanbanQuestionEditor({
     }
   };
 
+  const handleTranslateQuestion = async () => {
+    const source = ((localQuestion as any).question || '').trim();
+    if (!source) {
+      showNotification('error', '❌ Bitte zuerst eine deutsche Frage eingeben');
+      return;
+    }
+    setIsTranslatingQuestion(true);
+    try {
+      const translated = await translateText(source, 'de', 'en');
+      setLocalQuestion((prev) => ({ ...prev, questionEn: translated } as any));
+      showNotification('success', '✅ Frage nach EN übersetzt');
+    } catch (err) {
+      showNotification('error', `❌ Übersetzung fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setIsTranslatingQuestion(false);
+    }
+  };
+
+  const handleTranslateOption = async (index: number) => {
+    const q = localQuestion as MultipleChoiceQuestion;
+    const options = q.options || ['', '', '', ''];
+    const source = (options[index] || '').trim();
+    if (!source) {
+      showNotification('error', `❌ Bitte zuerst Option ${String.fromCharCode(65 + index)} eingeben`);
+      return;
+    }
+    setIsTranslatingOptions((prev) => { const next = [...prev]; next[index] = true; return next; });
+    try {
+      const translated = await translateText(source, 'de', 'en');
+      setLocalQuestion((prev) => {
+        const optionsEn = [...(((prev as any).optionsEn as string[]) || [])];
+        optionsEn[index] = translated;
+        return { ...prev, optionsEn } as any;
+      });
+    } catch (err) {
+      showNotification('error', `❌ Übersetzung fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setIsTranslatingOptions((prev) => { const next = [...prev]; next[index] = false; return next; });
+    }
+  };
+
+  const handleTranslateAnswer = async () => {
+    const source = ((localQuestion as any).answer || '').trim();
+    if (!source) {
+      showNotification('error', '❌ Bitte zuerst eine Antwort eingeben');
+      return;
+    }
+    setIsTranslatingAnswer(true);
+    try {
+      const translated = await translateText(source, 'de', 'en');
+      setLocalQuestion((prev) => ({ ...prev, answerEn: translated } as any));
+      showNotification('success', '✅ Antwort nach EN übersetzt');
+    } catch (err) {
+      showNotification('error', `❌ Übersetzung fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setIsTranslatingAnswer(false);
+    }
+  };
+
+  const handleTranslateAll = async () => {
+    setIsTranslatingAll(true);
+    try {
+      const any = localQuestion as any;
+      const updates: Record<string, any> = {};
+
+      if (any.question) {
+        updates.questionEn = await translateText(any.question, 'de', 'en');
+      }
+      if (Array.isArray(any.options) && any.options.length > 0) {
+        updates.optionsEn = await Promise.all(
+          (any.options as string[]).map((o: string) => translateText(o, 'de', 'en'))
+        );
+      }
+      if (any.answer) {
+        updates.answerEn = await translateText(any.answer, 'de', 'en');
+      }
+      if (any.funFact) {
+        updates.funFactEn = await translateText(any.funFact, 'de', 'en');
+      }
+      if (Object.keys(updates).length > 0) {
+        setLocalQuestion((prev) => ({ ...prev, ...updates } as any));
+        showNotification('success', '✅ Alle EN-Felder übersetzt');
+      } else {
+        showNotification('error', '❌ Keine DE-Felder zum Übersetzen gefunden');
+      }
+    } catch (err) {
+      showNotification('error', `❌ Übersetzung fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setIsTranslatingAll(false);
+    }
+  };
+
   // Render mechanik-spezifische Felder
   const renderMechanicFields = () => {
     switch (mechanic) {
@@ -193,25 +289,47 @@ export function KanbanQuestionEditor({
                 style={inputStyle}
               />
             </div>
-            <input
-              type="text"
-              value={optionsEn[i] || ''}
-              onChange={(e) => {
-                const newOptionsEn = [...optionsEn];
-                newOptionsEn[i] = e.target.value;
-                setLocalQuestion(prev => ({ ...prev, optionsEn: newOptionsEn } as any));
-              }}
-              placeholder={`🇬🇧 Option ${String.fromCharCode(65 + i)} (EN, auto)`}
-              style={{
-                ...inputStyle,
-                marginTop: 4,
-                marginLeft: 24,
-                fontSize: 12,
-                color: '#94a3b8',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(148,163,184,0.2)'
-              }}
-            />
+            <div style={{ display: 'flex', gap: 6, marginTop: 4, marginLeft: 24, alignItems: 'center' }}>
+              <input
+                type="text"
+                value={optionsEn[i] || ''}
+                onChange={(e) => {
+                  const newOptionsEn = [...optionsEn];
+                  newOptionsEn[i] = e.target.value;
+                  setLocalQuestion(prev => ({ ...prev, optionsEn: newOptionsEn } as any));
+                }}
+                placeholder={`🇬🇧 Option ${String.fromCharCode(65 + i)} (EN, auto)`}
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                  marginTop: 0,
+                  fontSize: 12,
+                  color: '#94a3b8',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(148,163,184,0.2)'
+                }}
+              />
+              <button
+                onClick={() => handleTranslateOption(i)}
+                disabled={isTranslatingOptions[i]}
+                style={{
+                  border: '1px solid rgba(148,163,184,0.3)',
+                  background: 'rgba(148,163,184,0.1)',
+                  color: '#94a3b8',
+                  borderRadius: 999,
+                  padding: '3px 8px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: isTranslatingOptions[i] ? 'not-allowed' : 'pointer',
+                  opacity: isTranslatingOptions[i] ? 0.6 : 1,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+                title={`Option ${String.fromCharCode(65 + i)} übersetzen`}
+              >
+                {isTranslatingOptions[i] ? '⏳' : '🌐'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -303,20 +421,43 @@ export function KanbanQuestionEditor({
           style={inputStyle}
           placeholder="z.B. Eiffelturm"
         />
-        <input
-          type="text"
-          value={(q as any).answerEn || ''}
-          onChange={(e) => setLocalQuestion(prev => ({ ...prev, answerEn: e.target.value } as any))}
-          placeholder="🇬🇧 Answer (EN, auto)"
-          style={{
-            ...inputStyle,
-            marginTop: 6,
-            fontSize: 12,
-            color: '#94a3b8',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(148,163,184,0.2)'
-          }}
-        />
+        <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={(q as any).answerEn || ''}
+            onChange={(e) => setLocalQuestion(prev => ({ ...prev, answerEn: e.target.value } as any))}
+            placeholder="🇬🇧 Answer (EN, auto)"
+            style={{
+              ...inputStyle,
+              flex: 1,
+              marginTop: 0,
+              fontSize: 12,
+              color: '#94a3b8',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(148,163,184,0.2)'
+            }}
+          />
+          <button
+            onClick={handleTranslateAnswer}
+            disabled={isTranslatingAnswer}
+            style={{
+              border: '1px solid rgba(148,163,184,0.3)',
+              background: 'rgba(148,163,184,0.1)',
+              color: '#94a3b8',
+              borderRadius: 999,
+              padding: '3px 8px',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: isTranslatingAnswer ? 'not-allowed' : 'pointer',
+              opacity: isTranslatingAnswer ? 0.6 : 1,
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+            title="Antwort ins Englische übersetzen"
+          >
+            {isTranslatingAnswer ? '⏳' : '🌐'}
+          </button>
+        </div>
       </div>
     );
   };
@@ -457,6 +598,26 @@ export function KanbanQuestionEditor({
         <div style={modalContentStyle}>
           {activeTab === 'basic' && (
             <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <button
+                  onClick={handleTranslateAll}
+                  disabled={isTranslatingAll}
+                  style={{
+                    border: '1px solid rgba(59,130,246,0.45)',
+                    background: 'rgba(59,130,246,0.15)',
+                    color: '#93c5fd',
+                    borderRadius: 999,
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: isTranslatingAll ? 'not-allowed' : 'pointer',
+                    opacity: isTranslatingAll ? 0.6 : 1
+                  }}
+                  title="Alle DE-Felder automatisch ins Englische übersetzen"
+                >
+                  {isTranslatingAll ? '⏳ Übersetze...' : '🌐 Alle übersetzen'}
+                </button>
+              </div>
               <div style={formSectionStyle}>
                 <label style={labelStyle}>Frage (Deutsch)</label>
                 <textarea
@@ -466,20 +627,43 @@ export function KanbanQuestionEditor({
                   rows={3}
                   placeholder="Gib deine Frage ein..."
                 />
-                <input
-                  type="text"
-                  value={(localQuestion as any).questionEn || ''}
-                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, questionEn: e.target.value } as any))}
-                  placeholder="🇬🇧 English (auto)"
-                  style={{
-                    ...inputStyle,
-                    marginTop: 6,
-                    fontSize: 12,
-                    color: '#94a3b8',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(148,163,184,0.2)'
-                  }}
-                />
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={(localQuestion as any).questionEn || ''}
+                    onChange={(e) => setLocalQuestion(prev => ({ ...prev, questionEn: e.target.value } as any))}
+                    placeholder="🇬🇧 English (auto)"
+                    style={{
+                      ...inputStyle,
+                      flex: 1,
+                      marginTop: 0,
+                      fontSize: 12,
+                      color: '#94a3b8',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(148,163,184,0.2)'
+                    }}
+                  />
+                  <button
+                    onClick={handleTranslateQuestion}
+                    disabled={isTranslatingQuestion}
+                    style={{
+                      border: '1px solid rgba(148,163,184,0.3)',
+                      background: 'rgba(148,163,184,0.1)',
+                      color: '#94a3b8',
+                      borderRadius: 999,
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: isTranslatingQuestion ? 'not-allowed' : 'pointer',
+                      opacity: isTranslatingQuestion ? 0.6 : 1,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}
+                    title="Frage ins Englische übersetzen"
+                  >
+                    {isTranslatingQuestion ? '⏳' : '🌐'}
+                  </button>
+                </div>
               </div>
               <div style={formSectionStyle}>
                 <label style={labelStyle}>Fun Fact / Moderationsnotiz (DE)</label>

@@ -1856,19 +1856,61 @@ useEffect(() => {
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
     const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
     const sortedTeams = [...teams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const isBoth = language === 'both';
+    const isEn = language === 'en';
+
+    const lobbyTitle = isBoth ? (
+      <BilingualLabel
+        en="WELCOME TO COZY WOLF QUIZ"
+        de="Willkommen zum Cozy Wolf Quiz"
+        variant="heading"
+        primaryColor="#f05fb2"
+        secondaryColor="rgba(255, 255, 255, 0.6)"
+        align="center"
+        style={{ gap: 2 }}
+      />
+    ) : (
+      <div style={{ color: '#f05fb2', fontFamily: 'var(--font-game)', fontWeight: 900, fontSize: 'clamp(24px, 6vw, 42px)', textAlign: 'center', textTransform: 'uppercase' }}>
+        {isEn ? 'WELCOME TO COZY WOLF QUIZ' : 'WILLKOMMEN ZUM COZY WOLF QUIZ'}
+      </div>
+    );
+
+    const waitingLabel = isBoth ? (
+      <BilingualLabel
+        en="WAITING FOR TEAMS TO JOIN"
+        de="Warten auf Teams"
+        variant="label"
+        primaryColor="#f1f5f9"
+        secondaryColor="rgba(255, 255, 255, 0.6)"
+        align="center"
+        style={{ gap: 6 }}
+      />
+    ) : (
+      <div style={{ color: '#f1f5f9', fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 'clamp(16px, 4vw, 24px)', textAlign: 'center' }}>
+        {isEn ? 'WAITING FOR TEAMS TO JOIN' : 'WARTEN AUF TEAMS'}
+      </div>
+    );
+
+    const scanToJoinLabel = isBoth ? (
+      <BilingualLabel
+        en="SCAN TO JOIN"
+        de="Scannen zum Beitreten"
+        variant="label"
+        primaryColor="#f05fb2"
+        secondaryColor="rgba(255, 255, 255, 0.6)"
+        align="center"
+      />
+    ) : (
+      <div style={{ color: '#f05fb2', fontFamily: 'var(--font-game)', fontWeight: 700, fontSize: 'clamp(16px, 4vw, 24px)', textAlign: 'center', textTransform: 'uppercase' }}>
+        {isEn ? 'SCAN TO JOIN' : 'SCANNEN ZUM BEITRETEN'}
+      </div>
+    );
+
     return (
       <div className="cozyLobbyShell">
         <div className="cozyLobbyHeader">
           <div className="cozyLobbyHeaderText">
-            <BilingualLabel
-              en="WELCOME TO COZY WOLF QUIZ"
-              de="Willkommen zum Cozy Wolf Quiz"
-              variant="heading"
-              primaryColor="#f05fb2"
-              secondaryColor="rgba(255, 255, 255, 0.6)"
-              align="center"
-              style={{ gap: 2 }}
-            />
+            {lobbyTitle}
           </div>
         </div>
         <div className="cozyLobbyMain">
@@ -1880,15 +1922,7 @@ useEffect(() => {
             <div className="cozyLobbyTeamsList">
               {sortedTeams.length === 0 ? (
                 <div className="cozyLobbyTeamsEmpty">
-                  <BilingualLabel
-                    en="WAITING FOR TEAMS TO JOIN"
-                    de="Warten auf Teams"
-                    variant="label"
-                    primaryColor="#f1f5f9"
-                    secondaryColor="rgba(255, 255, 255, 0.6)"
-                    align="center"
-                    style={{ gap: 6 }}
-                  />
+                  {waitingLabel}
                   <div className="cozyLoadingDots" aria-hidden="true">
                     <span />
                     <span />
@@ -1903,6 +1937,7 @@ useEffect(() => {
                   const statusClass = isConnected ? (isReady ? 'ready' : 'online') : 'offline';
                   const statusEn = isConnected ? (isReady ? 'READY' : 'CONNECTED') : 'OFFLINE';
                   const statusDe = isConnected ? (isReady ? 'Bereit' : 'Verbunden') : 'Offline';
+                  const statusText = isBoth ? undefined : (isEn ? statusEn : statusDe);
                   const avatar = getAvatarById(team.avatarId);
                   return (
                     <div className="cozyLobbyTeamRow" key={team.id}>
@@ -1915,15 +1950,21 @@ useEffect(() => {
                       )}
                       <span className="cozyLobbyTeamName">{team.name || 'Team'}</span>
                       <div className="cozyLobbyTeamStatus">
-                        <BilingualLabel
-                          en={statusEn}
-                          de={statusDe}
-                          variant="badge"
-                          primaryColor={isConnected ? '#22c55e' : '#ef4444'}
-                          secondaryColor="rgba(255, 255, 255, 0.6)"
-                          align="right"
-                          style={{ gap: 1 }}
-                        />
+                        {isBoth ? (
+                          <BilingualLabel
+                            en={statusEn}
+                            de={statusDe}
+                            variant="badge"
+                            primaryColor={isConnected ? '#22c55e' : '#ef4444'}
+                            secondaryColor="rgba(255, 255, 255, 0.6)"
+                            align="right"
+                            style={{ gap: 1 }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 'clamp(11px, 2vw, 14px)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isConnected ? '#22c55e' : '#ef4444' }}>
+                            {statusText}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -1934,14 +1975,7 @@ useEffect(() => {
           {showQr && teamJoinQr && (
             <div className="cozyLobbyQrPane" style={{ position: 'relative', overflow: 'visible' }}>
               <div className="cozyLobbyQrTitleWrap">
-                <BilingualLabel
-                  en="SCAN TO JOIN"
-                  de="Scannen zum Beitreten"
-                  variant="label"
-                  primaryColor="#f05fb2"
-                  secondaryColor="rgba(255, 255, 255, 0.6)"
-                  align="center"
-                />
+                {scanToJoinLabel}
               </div>
               {joinDisplay && <div className="cozyLobbyQrLink">{joinDisplay}</div>}
               <img src={teamJoinQr} alt="Team QR" />

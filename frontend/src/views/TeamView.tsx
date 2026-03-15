@@ -64,6 +64,22 @@ import {
   timerPill,
   questionStyleTeam
 } from './teamStyles';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -112,6 +128,94 @@ function BunteMapPicker({
         </div>
       )}
     </div>
+  );
+}
+
+// ── Drag & Drop für Ordnen ───────────────────────────────────────────────────
+function SortableItem({ id, label, index, disabled }: { id: string; label: string; index: number; disabled: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '13px 16px',
+        borderRadius: 14,
+        background: isDragging ? 'rgba(148,45,89,0.18)' : 'rgba(26,32,53,0.92)',
+        border: isDragging ? '2px solid rgba(148,45,89,0.5)' : '2px solid rgba(148,163,184,0.18)',
+        boxShadow: isDragging ? '0 8px 28px rgba(0,0,0,0.55)' : '0 2px 8px rgba(0,0,0,0.3)',
+        cursor: disabled ? 'not-allowed' : 'grab',
+        opacity: disabled ? 0.5 : 1,
+        touchAction: 'none',
+        userSelect: 'none',
+        zIndex: isDragging ? 50 : 'auto',
+      }}
+    >
+      <span style={{
+        minWidth: 28, height: 28, borderRadius: 8,
+        background: 'rgba(148,45,89,0.2)', border: '1.5px solid rgba(148,45,89,0.4)',
+        color: '#f9a8d4', fontWeight: 900, fontSize: 14,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>{index + 1}</span>
+      <span style={{ flex: 1, color: '#f1f5f9', fontWeight: 700, fontSize: 'clamp(14px, 4vw, 17px)', lineHeight: 1.3 }}>{label}</span>
+      <span style={{ color: '#475569', fontSize: 18, flexShrink: 0 }}>⠿</span>
+    </div>
+  );
+}
+
+function BunteOrderDnD({
+  items,
+  order,
+  onChange,
+  disabled,
+}: {
+  items: Array<{ id: string; label: string }>;
+  order: string[];
+  onChange: (newOrder: string[]) => void;
+  disabled: boolean;
+}) {
+  // Build sorted list: ordered items first, then remaining unplaced at bottom
+  const sorted = order.length === items.length
+    ? order
+    : items.map((i) => i.id); // fallback: original order
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = sorted.indexOf(String(active.id));
+    const newIdx = sorted.indexOf(String(over.id));
+    onChange(arrayMove(sorted, oldIdx, newIdx));
+  };
+
+  const labelById = new Map(items.map((i) => [i.id, i.label]));
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={sorted} strategy={verticalListSortingStrategy}>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {sorted.map((id, idx) => (
+            <SortableItem
+              key={id}
+              id={id}
+              label={labelById.get(id) ?? id}
+              index={idx}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
 
@@ -2117,11 +2221,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       return { kind: 'oneOfEight', choiceId: bunteOneChoice };
     }
     if (payload.kind === 'order') {
-      const values = bunteOrderSelection;
-      if (values.length !== payload.items.length || values.some((val) => !val)) {
-        showError(language === 'de' ? 'Bitte jede Position belegen.' : 'Please fill every position.');
-        return null;
-      }
+      // DnD provides a full ordered list; fall back to original order if not yet dragged
+      const values = bunteOrderSelection.length === payload.items.length
+        ? bunteOrderSelection
+        : payload.items.map((i) => i.id);
       return {
         kind: 'order',
         order: values,
@@ -2210,6 +2313,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       );
     }
     if (payload.kind === 'order') {
+      const currentOrder = bunteOrderSelection.length === payload.items.length
+        ? bunteOrderSelection
+        : payload.items.map((i) => i.id);
       return (
         <div style={{ display: 'grid', gap: 12 }}>
           {payload.criteriaOptions?.length > 1 && (
@@ -2231,28 +2337,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               ))}
             </div>
           )}
-          {payload.items.map((item, idx) => (
-            <div key={item.id} style={{ display: 'grid', gap: 4 }}>
-              <label style={{ fontSize: 12, color: '#94a3b8' }}>
-                {language === 'de' ? 'Position' : 'Position'} {idx + 1}
-              </label>
-              <select
-                value={bunteOrderSelection[idx] ?? ''}
-                onChange={(e) =>
-                  setBunteOrderSelection((prev) => applyRankingSelection(prev, idx, e.target.value))
-                }
-                disabled={!canAnswer}
-                style={{ ...inputStyle }}
-              >
-                <option value="">{language === 'de' ? 'Wählen...' : 'Select...'}</option>
-                {payload.items.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+          <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+            {language === 'de' ? 'Ziehen zum Sortieren' : 'Drag to reorder'}
+          </div>
+          <BunteOrderDnD
+            items={payload.items}
+            order={currentOrder}
+            onChange={setBunteOrderSelection}
+            disabled={!canAnswer}
+          />
         </div>
       );
     }

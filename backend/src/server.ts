@@ -4424,9 +4424,31 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     results,
     liveAnswers,
     warnings: warnings.length ? warnings : undefined,
-    supportsBingo: Boolean(room.bingoEnabled)
+    supportsBingo: Boolean(room.bingoEnabled),
+    top5FoundSlots: (() => {
+      if (includeResults) return undefined; // only during active phase
+      const bunte = (activeQuestion as any)?.bunteTuete;
+      if (!bunte || bunte.kind !== 'top5') return undefined;
+      const target: string[] = Array.isArray(bunte.correctOrder) ? bunte.correctOrder : [];
+      const targetLabels: string[] = (bunte.items ?? []).map((i: any) => i.label?.trim().toLowerCase()).filter(Boolean);
+      const targetNormalized = Array.from(new Set([
+        ...target.map((t: string) => t?.trim().toLowerCase()).filter(Boolean),
+        ...targetLabels
+      ]));
+      return target.map((_: string, slotIdx: number) => {
+        const slotNorm = targetNormalized[slotIdx];
+        if (!slotNorm) return false;
+        return Object.values(room.answers).some((ans) => {
+          const submission = ans.value as any;
+          if (!Array.isArray(submission?.order)) return false;
+          return submission.order.some((val: string) =>
+            typeof val === 'string' && normalizeText(val) === slotNorm
+          );
+        });
+      });
+    })()
   };
-  
+
   return payload;
 };
 
@@ -4533,20 +4555,23 @@ const evaluateCurrentQuestion = (room: RoomState): boolean => {
       evaluations[teamId] = evaluation;
     });
 
-    // Winner-takes-all for TOP5: most hits gets full basePoints (or 2 in later rounds). Ties share full points each.
+    // TOP5: team with most hits wins. Points depend on round (segmentIndex 0-9 = 1pt, 10-19 = 2pt). Ties get full points each.
     if ((question as any).bunteTuete?.kind === 'top5') {
+      const segIdx = typeof (question as any).segmentIndex === 'number' ? (question as any).segmentIndex : 0;
+      const top5Points = segIdx >= 10 ? 2 : 1;
       const hitsPerTeam = Object.entries(evaluations).map(([teamId, ev]) => ({ teamId, hits: ev.tieBreaker?.primary ?? 0 }));
       const bestHits = hitsPerTeam.reduce((max, { hits }) => Math.max(max, hits), 0);
       const winners = hitsPerTeam.filter(({ hits }) => hits === bestHits && hits > 0).map(({ teamId }) => teamId);
 
       Object.entries(room.answers).forEach(([teamId, ans]) => {
         const ev = evaluations[teamId];
+        const hits = ev.tieBreaker?.primary ?? 0;
         const isWinner = winners.includes(teamId);
         room.answers[teamId] = {
           ...ans,
           isCorrect: isWinner,
-          awardedPoints: isWinner ? basePoints : 0,
-          awardedDetail: `${ev.tieBreaker?.primary ?? 0} Treffer${isWinner ? ' (Bestwert)' : ''}`,
+          awardedPoints: isWinner ? top5Points : 0,
+          awardedDetail: `${hits} Treffer${isWinner ? ` (+${top5Points}P)` : ''}`,
           autoGraded: true,
           tieBreaker: ev.tieBreaker ?? null
         };

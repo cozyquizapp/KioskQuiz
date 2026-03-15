@@ -631,6 +631,7 @@ export type StateUpdatePayload = {
   liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;
   warnings?: string[];
   supportsBingo?: boolean;
+  top5FoundSlots?: boolean[]; // During Q_ACTIVE: which of the 5 slots have been found by ≥1 team
 };
 
 export interface AnswerAwardSnapshot {

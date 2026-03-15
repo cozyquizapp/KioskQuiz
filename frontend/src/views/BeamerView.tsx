@@ -389,6 +389,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [rundlaufTick, setRundlaufTick] = useState(0);
   const [answerResults, setAnswerResults] = useState<StateUpdatePayload['results'] | null>(null);
   const [top5RevealStep, setTop5RevealStep] = useState(0); // how many top5 answers are revealed so far
+  const [top5FoundSlots, setTop5FoundSlots] = useState<boolean[] | null>(null);
   const [mediaIsPortrait, setMediaIsPortrait] = useState<boolean | null>(null);
   const [blitzImageIsPortrait, setBlitzImageIsPortrait] = useState<boolean | null>(null);
 
@@ -1153,6 +1154,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.oneOfEight !== undefined) {
         setOneOfEight(payload.oneOfEight ?? null);
+      }
+      if (payload.top5FoundSlots !== undefined) {
+        setTop5FoundSlots(payload.top5FoundSlots ?? null);
       }
       if (payload.results !== undefined) {
         setAnswerResults(payload.results ?? null);
@@ -2179,6 +2183,49 @@ useEffect(() => {
       );
     }
     const bunte = q.bunteTuete;
+    if (bunte?.kind === 'top5' && top5FoundSlots && gameState === 'Q_ACTIVE') {
+      const foundCount = top5FoundSlots.filter(Boolean).length;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '12px 0' }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            {top5FoundSlots.map((found, idx) => (
+              <div
+                key={idx}
+                style={{
+                  width: 52, height: 52,
+                  borderRadius: '50%',
+                  border: found ? '3px solid rgba(240,95,178,0.8)' : '3px solid rgba(148,163,184,0.2)',
+                  background: found
+                    ? 'linear-gradient(135deg, rgba(177,10,108,0.3), rgba(240,95,178,0.15))'
+                    : 'rgba(20,28,50,0.6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-game)', fontWeight: 900,
+                  fontSize: 20,
+                  color: found ? '#ffd1e8' : '#334155',
+                  boxShadow: found ? '0 0 16px rgba(240,95,178,0.4)' : 'none',
+                  transition: 'all 0.4s ease',
+                  animation: found ? 'popSoft 0.4s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+                }}
+              >
+                {found ? idx + 1 : '?'}
+              </div>
+            ))}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-game)', fontWeight: 700,
+            fontSize: 'clamp(14px, 1.8vw, 20px)',
+            color: foundCount > 0 ? '#f9a8d4' : '#475569',
+            letterSpacing: '0.04em'
+          }}>
+            {foundCount === 0
+              ? (language === 'de' ? 'Noch keine Antwort gefunden' : 'No answers found yet')
+              : language === 'de'
+              ? `${foundCount} von 5 gefunden`
+              : `${foundCount} of 5 found`}
+          </div>
+        </div>
+      );
+    }
     if (bunte?.items?.length && bunte.kind !== 'top5') {
       return (
         <div className="beamer-grid">

@@ -471,6 +471,21 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [pwaPrompt, setPwaPrompt] = useState<any>(null);
   const [showPwaBanner, setShowPwaBanner] = useState(false);
   const pwaPromptRef = useRef<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (localStorage.getItem('pwa-install-dismissed')) return;
@@ -2138,7 +2153,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
               >
-                {displayOpt}
+                <span style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minWidth: 0 }}>{displayOpt}</span>
               </button>
               );
             })}
@@ -2164,56 +2179,69 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           setBettingPoints(next);
         };
         const letters = ['A', 'B', 'C'];
+        const betColors = ['#3B82F6', '#22C55E', '#EF4444'];
         return (
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ color: 'var(--muted)', fontWeight: 700 }}>{t('betHint')(pool)}</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              {opts.slice(0, 3).map((opt: string, idx: number) => (
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--muted)', fontWeight: 700, fontSize: 14 }}>{t('betHint')(pool)}</span>
+              <span style={{
+                fontWeight: 800, fontSize: 14, borderRadius: 999, padding: '4px 12px',
+                background: remaining === 0 ? 'rgba(34,197,94,0.15)' : remaining < 0 ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.12)',
+                color: remaining === 0 ? '#4ade80' : remaining < 0 ? '#f87171' : '#fde047',
+                border: `1px solid ${remaining === 0 ? 'rgba(74,222,128,0.3)' : remaining < 0 ? 'rgba(248,113,113,0.3)' : 'rgba(253,224,71,0.3)'}`
+              }}>
+                {t('betRemaining')(remaining)}
+              </span>
+            </div>
+            {opts.slice(0, 3).map((opt: string, idx: number) => {
+              const pts = bettingPoints[idx] ?? 0;
+              const color = betColors[idx] ?? accent;
+              return (
                 <div
                   key={idx}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'auto 1fr auto',
+                    gridTemplateColumns: '1fr auto auto auto',
                     alignItems: 'center',
-                    gap: 10,
+                    gap: 8,
                     padding: '10px 12px',
                     borderRadius: 16,
-                    border: `1px solid ${accent}55`,
-                    background: 'var(--ui-card-bg)'
+                    border: `2px solid ${pts > 0 ? color + '66' : 'rgba(255,255,255,0.08)'}`,
+                    borderLeft: `4px solid ${color}`,
+                    background: pts > 0 ? color + '14' : 'var(--ui-card-bg)',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                    <div style={{ color: 'var(--text)', fontWeight: 700 }}>{opt}</div>
-                  <input
-                    type="number"
-                    min={0}
-                    max={pool}
-                    value={bettingPoints[idx] ?? 0}
-                    onChange={(e) => updateBet(idx, Number(e.target.value))}
-                    disabled={!canAnswer}
-                    className="team-answer-input"
+                  <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: 15, overflowWrap: 'anywhere', minWidth: 0 }}>
+                    <span style={{ color, fontWeight: 900, marginRight: 6 }}>{letters[idx]}</span>{opt}
+                  </div>
+                  <button
+                    onClick={() => updateBet(idx, pts - 1)}
+                    disabled={!canAnswer || pts <= 0}
                     style={{
-                      width: 70,
-                      padding: '8px 10px',
-                      borderRadius: 12,
-                      border: `2px solid rgba(240,95,178,0.3)`,
-                      background: 'var(--ui-input-bg)',
-                      color: 'var(--text)',
-                      fontWeight: 800,
-                      textAlign: 'center'
+                      width: 44, height: 44, borderRadius: 12, border: `2px solid rgba(255,255,255,0.12)`,
+                      background: 'rgba(255,255,255,0.06)', color: pts <= 0 ? 'rgba(255,255,255,0.25)' : 'var(--text)',
+                      fontWeight: 900, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: pts <= 0 ? 'default' : 'pointer', touchAction: 'manipulation', flexShrink: 0
                     }}
-                  />
+                  >−</button>
+                  <span style={{
+                    width: 36, textAlign: 'center', fontWeight: 900, fontSize: 20,
+                    color: pts > 0 ? color : 'var(--muted)', fontVariantNumeric: 'tabular-nums'
+                  }}>{pts}</span>
+                  <button
+                    onClick={() => updateBet(idx, pts + 1)}
+                    disabled={!canAnswer || remaining <= 0}
+                    style={{
+                      width: 44, height: 44, borderRadius: 12, border: `2px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
+                      background: remaining > 0 ? color + '22' : 'rgba(255,255,255,0.04)', color: remaining <= 0 ? 'rgba(255,255,255,0.25)' : color,
+                      fontWeight: 900, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: remaining <= 0 ? 'default' : 'pointer', touchAction: 'manipulation', flexShrink: 0
+                    }}
+                  >+</button>
                 </div>
-              ))}
-            </div>
-            <div
-              style={{
-                color: remaining === 0 ? '#16a34a' : remaining < 0 ? '#dc2626' : '#d97706',
-                fontWeight: 800,
-                textAlign: 'right'
-              }}
-            >
-              {t('betRemaining')(remaining)}
-            </div>
+              );
+            })}
           </div>
         );
       }
@@ -4318,6 +4346,31 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             >
               {language === 'de' ? '🇩🇪' : '🇬🇧'}
             </button>
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? (language === 'de' ? 'Vollbild beenden' : 'Exit fullscreen') : (language === 'de' ? 'Vollbild' : 'Fullscreen')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '2px',
+                cursor: 'pointer',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                color: 'rgba(255,255,255,0.85)',
+                opacity: 0.85
+              }}
+            >
+              {isFullscreen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              )}
+            </button>
           </div>
         </header>
 
@@ -4361,15 +4414,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             paddingBottom: 8
           }}
         >
-          <div style={{ 
+          <div style={{
             width: '100%',
-            maxHeight: '100%',
-            overflowY: 'auto',
-            overflowX: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            WebkitOverflowScrolling: 'touch'
           }}>
             {mainContent}
           </div>

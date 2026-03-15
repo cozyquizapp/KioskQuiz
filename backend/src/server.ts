@@ -4321,6 +4321,8 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
         awardedPoints: entry.awardedPoints ?? null,
         awardedDetail: entry.awardedDetail ?? null,
         tieBreaker: entry.tieBreaker ?? null,
+        deviation: entry.deviation ?? null,
+        bestDeviation: entry.bestDeviation ?? null,
         betPoints: entry.betPoints,
         betPool: entry.betPool
       }))

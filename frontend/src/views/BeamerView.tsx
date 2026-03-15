@@ -57,6 +57,7 @@ const mapStateToScreenState = (state: CozyGameState): BaseScreen => {
   switch (state) {
     case 'INTRO':
       return 'intro';
+    case 'QUESTION_INTRO':
     case 'Q_ACTIVE':
     case 'Q_LOCKED':
     case 'Q_REVEAL':

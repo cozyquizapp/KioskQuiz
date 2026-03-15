@@ -1550,7 +1550,14 @@
 
 .cozyQuestionGridSolo {
   grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  align-items: stretch;
   flex: 1;
+}
+
+.cozyQuestionGridSolo .cozyQuestionHero {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Reveal: vertical split — question left, answers right */
@@ -2000,17 +2007,18 @@
 }
 
 .cozyQuestionBody {
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .cozyOptionList {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .cozyOptionList.cozyOptionList-4 {
@@ -2022,7 +2030,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 28px 22px;
+  padding: 20px 22px;
   border-radius: 20px;
   border: none;
   border-left: 5px solid transparent;
@@ -2032,7 +2040,7 @@
   font-weight: 700;
   font-size: clamp(24px, 2.8vw, 46px);
   transition: all 0.3s var(--ease-elastic);
-  min-height: 132px;
+  min-height: 108px;
   cursor: pointer;
   position: relative;
   animation: staggerFadeIn 0.5s var(--ease-elastic) both;
@@ -3285,21 +3293,26 @@
 
 .cozyQuestionHero {
   border-radius: 24px;
-  padding: 30px 34px 26px;
-  border: 1px solid rgba(240, 95, 178, 0.24);
+  padding: 28px 36px 24px;
+  border: 1px solid rgba(240, 95, 178, 0.32);
+  background: linear-gradient(170deg, rgba(177, 10, 108, 0.07) 0%, rgba(14, 22, 44, 0.0) 55%);
+  box-shadow: 0 0 0 1px rgba(240, 95, 178, 0.08), 0 16px 48px rgba(0,0,0,0.45);
 }
 
 .cozyQuestionText {
-  font-size: clamp(52px, 5.8vw, 100px);
-  line-height: 1.12;
+  font-size: clamp(46px, 5.2vw, 92px);
+  line-height: 1.1;
   letter-spacing: 0.005em;
-  color: var(--beamer-text);
-  -webkit-text-fill-color: var(--beamer-text);
+  color: #f8edf5;
+  -webkit-text-fill-color: #f8edf5;
 }
 
 .cozyQuestionHint {
-  font-size: clamp(18px, 1.5vw, 26px);
-  color: var(--beamer-muted);
+  font-size: clamp(16px, 1.4vw, 24px);
+  color: rgba(148, 163, 184, 0.75);
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  margin-top: 4px;
 }
 
 .cozyRevealAnswerTeam {
@@ -3485,15 +3498,21 @@ body.projector-mode .cozyQuestionMedia {
   justify-content: center;
 }
 
-/* Larger question text when options are present */
+/* Base question text size override */
 .cozyQuestionText {
-  font-size: clamp(46px, 5.4vw, 92px);
+  font-size: clamp(44px, 5.1vw, 88px);
   line-height: 1.12;
 }
 
-/* Even larger when no options (solo/estimate) — whole frame available */
+/* Slightly larger question text in solo mode (no reveal answers yet) */
 .cozyQuestionGridSolo .cozyQuestionText {
-  font-size: clamp(56px, 7.5vw, 128px);
+  font-size: clamp(50px, 5.6vw, 100px);
+  line-height: 1.1;
+}
+
+/* Estimate/open questions: no body options, use full space */
+.cozyQuestionGridSolo .cozyQuestionHero:not(:has(.cozyOptionList)) .cozyQuestionText {
+  font-size: clamp(56px, 7vw, 120px);
   line-height: 1.08;
 }
 

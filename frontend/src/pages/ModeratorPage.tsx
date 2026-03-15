@@ -3090,6 +3090,22 @@ const renderCozyStagePanel = () => {
     );
 
     // Q_ACTIVE content
+    const liveAnswerRows = Object.entries(socketAnswers || {}).map(([teamId, entry]) => {
+      const value = (entry as any)?.value;
+      const teamName = teamLookup[teamId]?.name || socketTeamStatus?.find((t) => t.id === teamId)?.name || teamId;
+      const q = question as any;
+      let displayValue = formatAnswerValue(value);
+      let autoCorrect: boolean | null = null;
+      if ((q?.mechanic === 'multipleChoice' || q?.type === 'MU_CHO') && value !== null && value !== undefined) {
+        const idx = parseInt(String(value), 10);
+        const letter = ['A', 'B', 'C', 'D', 'E'][idx] ?? String(idx);
+        const optText = q.options?.[idx];
+        displayValue = optText ? `${letter}: ${optText}` : letter;
+        if (typeof q.correctIndex === 'number') autoCorrect = idx === q.correctIndex;
+      }
+      return { teamId, teamName, displayValue, autoCorrect };
+    }).sort((a, b) => a.teamName.localeCompare(b.teamName));
+
     const renderActiveContent = () => (
       <div className="space-y-3">
         <div className="rounded-2xl bg-[#0b2343]/90 border border-[#f05fb233] p-3">
@@ -3106,6 +3122,24 @@ const renderCozyStagePanel = () => {
             </span>
           )}
         </div>
+        {liveAnswerRows.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Eingehende Antworten</p>
+            {liveAnswerRows.map((row) => (
+              <div key={row.teamId} className="grid gap-2 items-center rounded-xl px-2 py-1.5" style={{ gridTemplateColumns: '1fr auto auto auto', background: 'rgba(11,35,67,0.8)', border: '1px solid rgba(240,95,178,0.15)' }}>
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold text-[#ffe4f2] truncate">{row.teamName}</p>
+                  <p className="text-[11px] text-[#ffd1e8]/70 truncate">{row.displayValue}</p>
+                </div>
+                <span className="text-base leading-none" title={row.autoCorrect === true ? 'Richtig' : row.autoCorrect === false ? 'Falsch' : 'Offen'}>
+                  {row.autoCorrect === true ? '✅' : row.autoCorrect === false ? '❌' : '⏳'}
+                </span>
+                <button className="min-h-[36px] min-w-[36px] rounded-lg border border-[#67b58f] bg-[#1f6b50]/65 text-sm font-black text-[#d6ffe8] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, '✓')} title="Als richtig markieren">✓</button>
+                <button className="min-h-[36px] min-w-[36px] rounded-lg border border-[#d68598] bg-[#7e2e46]/65 text-sm font-black text-[#ffd6df] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, '✕')} title="Als falsch markieren">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
         {hasFunFact && (
           <details className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] overflow-hidden">
             <summary className="px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[#f05fb2] cursor-pointer select-none">Moderationsinfo</summary>
@@ -3133,29 +3167,53 @@ const renderCozyStagePanel = () => {
             <p className="text-2xl font-black text-[#d6ffe8]">{solutionText}</p>
           </div>
         )}
-        {unreviewedRowsMob.length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Bitte prüfen ({unreviewedRowsMob.length})</p>
-            {unreviewedRowsMob.map((row) => (
-              <div key={row.teamId} className="grid grid-cols-[1fr_auto] gap-2 items-center rounded-xl p-2" style={{ background: 'rgba(11,35,67,0.8)', border: '1px solid rgba(240,95,178,0.18)' }}>
-                <div>
-                  <p className="text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
-                  <p className="text-xs text-[#ffd1e8]/80">{row.answer}</p>
-                </div>
-                <div className="flex gap-1">
-                  <button className="min-h-[44px] min-w-[44px] rounded-lg border border-[#67b58f] bg-[#1f6b50]/65 text-sm font-black text-[#d6ffe8] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, 'Richtig')}>✓</button>
-                  <button className="min-h-[44px] min-w-[44px] rounded-lg border border-[#d68598] bg-[#7e2e46]/65 text-sm font-black text-[#ffd6df] touch-manipulation" onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, 'Falsch')}>✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          answerRowsMob.length > 0 && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(20,83,45,0.3)', border: '1px solid rgba(74,222,128,0.25)' }}>
-              <p className="text-sm font-black text-[#4ade80]">Alle Antworten ausgewertet</p>
-              <p className="text-xs text-[#94a3b8] mt-0.5">{reviewedCorrect} richtig · {reviewedWrong} falsch</p>
+        {answerRowsMob.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">
+                Antworten ({answerRowsMob.length})
+              </p>
+              <span className="text-[10px] font-bold text-[#94a3b8]">
+                {reviewedCorrect}✓ {reviewedWrong}✕{unreviewedRowsMob.length > 0 ? ` ${unreviewedRowsMob.length}⏳` : ''}
+              </span>
             </div>
-          )
+            {answerRowsMob.map((row) => {
+              const isCorrect = row.isCorrect === true;
+              const isWrong = row.isCorrect === false;
+              const isPending = row.isCorrect === undefined;
+              return (
+                <div
+                  key={row.teamId}
+                  className="grid gap-2 items-center rounded-xl px-2 py-1.5"
+                  style={{
+                    gridTemplateColumns: '1fr auto auto auto',
+                    background: isCorrect ? 'rgba(20,83,45,0.5)' : isWrong ? 'rgba(126,46,70,0.4)' : 'rgba(11,35,67,0.8)',
+                    border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.3)' : isWrong ? 'rgba(248,113,113,0.3)' : 'rgba(240,95,178,0.15)'}`
+                  }}
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold text-[#ffe4f2] truncate">{row.teamName}</p>
+                    <p className="text-[11px] text-[#ffd1e8]/70 truncate">{row.answer || '—'}</p>
+                  </div>
+                  <span className="text-base leading-none" title={isCorrect ? 'Richtig' : isWrong ? 'Falsch' : 'Ausstehend'}>
+                    {isCorrect ? '✅' : isWrong ? '❌' : '⏳'}
+                  </span>
+                  <button
+                    className="min-h-[36px] min-w-[36px] rounded-lg border border-[#67b58f] bg-[#1f6b50]/65 text-sm font-black text-[#d6ffe8] touch-manipulation"
+                    style={{ opacity: isCorrect ? 0.45 : 1 }}
+                    onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, '✓')}
+                    title="Als richtig markieren"
+                  >✓</button>
+                  <button
+                    className="min-h-[36px] min-w-[36px] rounded-lg border border-[#d68598] bg-[#7e2e46]/65 text-sm font-black text-[#ffd6df] touch-manipulation"
+                    style={{ opacity: isWrong ? 0.45 : 1 }}
+                    onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, '✕')}
+                    title="Als falsch markieren"
+                  >✕</button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     );

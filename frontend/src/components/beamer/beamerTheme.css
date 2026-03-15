@@ -3504,6 +3504,23 @@ body.projector-mode .cozyQuestionMedia {
 
 /* Plain text (DE-only / EN-only) already handled by cozyQuestionIntroTitle clamp */
 
+/* Countdown number on QUESTION_INTRO screen */
+@keyframes countdownPulse {
+  0% { transform: scale(1.25); opacity: 0.6; }
+  60% { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
+.cozyQuestionIntroCountdown {
+  font-size: clamp(80px, 12vw, 180px);
+  font-weight: 900;
+  color: #f05fb2;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  animation: countdownPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  text-shadow: 0 0 40px rgba(240, 95, 178, 0.5);
+}
+
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */
 
 /* Header bar pills */

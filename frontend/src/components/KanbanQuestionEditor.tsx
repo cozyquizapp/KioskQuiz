@@ -60,7 +60,7 @@ export function KanbanQuestionEditor({
   const [isUploading, setIsUploading] = useState(false);
   const [isTranslatingFunFact, setIsTranslatingFunFact] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<'basic' | 'mechanic' | 'media' | 'points'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'mechanic' | 'media' | 'points' | 'preview'>('basic');
 
   const slot = COZY_SLOT_TEMPLATE[slotIndex];
   const mechanic = slot?.type || question.type;
@@ -321,6 +321,86 @@ export function KanbanQuestionEditor({
     );
   };
 
+  const renderBeamerPreview = () => {
+    const isMC = mechanic === 'MU_CHO';
+    const questionText = (localQuestion as any).question || '';
+    const mcOptions: string[] = isMC ? ((localQuestion as MultipleChoiceQuestion).options || ['', '', '', '']) : [];
+    const tileColors = [
+      { bg: 'rgba(59,130,246,0.25)', border: '#3B82F6' },
+      { bg: 'rgba(34,197,94,0.25)', border: '#22C55E' },
+      { bg: 'rgba(239,68,68,0.25)', border: '#EF4444' },
+      { bg: 'rgba(249,115,22,0.25)', border: '#F97316' },
+    ];
+    const letters = ['A', 'B', 'C', 'D'];
+
+    return (
+      <div style={{ padding: '8px 0' }}>
+        <div
+          style={{
+            borderRadius: 12,
+            background: '#0f0f1a',
+            padding: 16,
+            marginTop: 8,
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}
+        >
+          <div
+            style={{
+              color: '#f05fb2',
+              fontWeight: 900,
+              fontSize: 16,
+              textAlign: 'center',
+              marginBottom: isMC ? 12 : 0,
+              lineHeight: 1.3,
+              minHeight: 24
+            }}
+          >
+            {questionText || <span style={{ opacity: 0.35, fontWeight: 400 }}>Fragetext...</span>}
+          </div>
+
+          {isMC && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8
+              }}
+            >
+              {mcOptions.slice(0, 4).map((opt, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: tileColors[i].bg,
+                    border: `2px solid ${tileColors[i].border}`,
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    color: 'white',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 6
+                  }}
+                >
+                  <span style={{ opacity: 0.7, flexShrink: 0 }}>{letters[i]}</span>
+                  <span style={{ wordBreak: 'break-word' }}>
+                    {opt || <span style={{ opacity: 0.35, fontWeight: 400 }}>Option {letters[i]}...</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isMC && (
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 8 }}>
+              {mechanic === 'SCHAETZCHEN' ? '— Schätzfrage —' : `— ${mechanic} —`}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Notification */}
@@ -351,7 +431,8 @@ export function KanbanQuestionEditor({
             { key: 'basic', label: 'Basis' },
             { key: 'mechanic', label: 'Mechanik' },
             { key: 'media', label: 'Medien & Deko' },
-            { key: 'points', label: 'Punkte' }
+            { key: 'points', label: 'Punkte' },
+            { key: 'preview', label: '👁 Vorschau' }
           ].map(tab => (
             <button
               key={tab.key}
@@ -533,6 +614,8 @@ export function KanbanQuestionEditor({
               </div>
             </>
           )}
+
+          {activeTab === 'preview' && renderBeamerPreview()}
         </div>
 
         {/* Footer */}

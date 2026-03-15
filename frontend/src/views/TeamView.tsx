@@ -466,7 +466,44 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [igelState, setIgelState] = useState<AvatarState>('walking');
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
-  
+
+  // PWA install prompt
+  const [pwaPrompt, setPwaPrompt] = useState<any>(null);
+  const [showPwaBanner, setShowPwaBanner] = useState(false);
+  const pwaPromptRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (localStorage.getItem('pwa-install-dismissed')) return;
+    const handler = (e: Event) => {
+      e.preventDefault();
+      pwaPromptRef.current = e;
+      setPwaPrompt(e);
+      setShowPwaBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handlePwaInstall = async () => {
+    const prompt = pwaPromptRef.current;
+    if (!prompt) return;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted' || outcome === 'dismissed') {
+      localStorage.setItem('pwa-install-dismissed', '1');
+      setShowPwaBanner(false);
+      setPwaPrompt(null);
+      pwaPromptRef.current = null;
+    }
+  };
+
+  const handlePwaDismiss = () => {
+    localStorage.setItem('pwa-install-dismissed', '1');
+    setShowPwaBanner(false);
+    setPwaPrompt(null);
+    pwaPromptRef.current = null;
+  };
+
   // Derived turn-state — declared early so effects below can reference them
   const isOneOfEightQuestion = question?.type === 'BUNTE_TUETE' && (question as any)?.bunteTuete?.kind === 'oneOfEight';
   const isOneOfEightActiveTurn = isOneOfEightQuestion && oneOfEightState?.activeTeamId === teamId && !oneOfEightState?.finished;
@@ -4109,6 +4146,63 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         TEAMVIEW LIVE | phase={phase} | state={gameState} | room={roomCode} | team={teamId ?? '--'}
       </span>
       <OfflineBar disconnected={connectionStatus === 'disconnected'} language={language} onReconnect={handleReconnect} />
+      {showPwaBanner && pwaPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(16px + env(safe-area-inset-bottom))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '10px 14px',
+            borderRadius: 14,
+            background: 'rgba(15, 23, 42, 0.92)',
+            border: '1px solid rgba(99, 102, 241, 0.4)',
+            color: '#e2e8f0',
+            fontWeight: 600,
+            fontSize: 14,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span>📲 {language === 'en' ? 'Install app' : 'App installieren'}</span>
+          <button
+            onClick={handlePwaInstall}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 10,
+              border: 'none',
+              background: 'rgba(99, 102, 241, 0.8)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            {language === 'en' ? 'Install' : 'Installieren'}
+          </button>
+          <button
+            onClick={handlePwaDismiss}
+            style={{
+              padding: '4px 8px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'transparent',
+              color: '#94a3b8',
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div style={contentShell}>
         <header
           className="team-header"

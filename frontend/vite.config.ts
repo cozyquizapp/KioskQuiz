@@ -1,9 +1,54 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'logo.ico', 'logo.png', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'Cozy Quiz Team',
+        short_name: 'CozyQuiz',
+        description: 'Cozy Kiosk Quiz — Team View',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/team',
+        icons: [
+          { src: '/logo.png', sizes: '192x192', type: 'image/png' },
+          { src: '/logo.png', sizes: '512x512', type: 'image/png' },
+          { src: '/logo.png', sizes: '1500x1500', type: 'image/png', purpose: 'any maskable' }
+        ]
+      },
+      workbox: {
+        // Cache app shell (JS/CSS/HTML/fonts/images)
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Fall back to index.html for SPA navigation, but not for API/socket routes
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-stylesheets' }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 }
+            }
+          }
+        ]
+      }
+    })
+  ],
   server: {
     port: 5173,
     proxy: {

@@ -1837,10 +1837,12 @@ app.put('/api/studio/cozy60/:id', async (req, res) => {
       const translatedQuestions = await Promise.all(draft.questions.map(async (q) => {
         const any = q as any;
         const prev = prevMap.get(q.id) as any;
-        // Re-translate if question text changed or translations are missing
+        // Re-translate if question text changed or translations are missing/empty
         const questionChanged = !prev || prev.question !== any.question;
         const optionsChanged = !prev || JSON.stringify(prev.options) !== JSON.stringify(any.options);
-        const needsTranslation = !any.questionEn || questionChanged || optionsChanged || !any.optionsEn;
+        const hasEmptyOptionTranslations = Array.isArray(any.options) && any.options.length > 0 &&
+          (!Array.isArray(any.optionsEn) || any.optionsEn.some((o: unknown) => !String(o ?? '').trim()));
+        const needsTranslation = !any.questionEn || questionChanged || optionsChanged || !any.optionsEn || hasEmptyOptionTranslations;
         if (!needsTranslation) return q;
         const translated = await autoTranslateQuestion(q);
         if (translated !== q) changed = true;

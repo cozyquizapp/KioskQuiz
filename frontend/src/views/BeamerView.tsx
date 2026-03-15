@@ -1403,7 +1403,9 @@ useEffect(() => {
       const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
       const enOpt: string | undefined = Array.isArray(q.optionsEn) ? q.optionsEn[idx] : undefined;
       const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
-      if (language === 'en') return dePart !== enPart ? `${enPart} / ${dePart}` : enPart;
+      const same = dePart.toLowerCase() === enPart.toLowerCase();
+      if (language === 'en') return enPart;
+      if (language === 'both') return same ? dePart : `${dePart} / ${enPart}`;
       return dePart;
     });
   }, [question?.id, language]);
@@ -2091,7 +2093,9 @@ useEffect(() => {
       const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
       const enOpt: string | undefined = Array.isArray(q.optionsEn) ? q.optionsEn[idx] : undefined;
       const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
-      if (language === 'en') return dePart !== enPart ? `${enPart} / ${dePart}` : enPart;
+      const same = dePart.toLowerCase() === enPart.toLowerCase();
+      if (language === 'en') return enPart;
+      if (language === 'both') return same ? dePart : `${dePart} / ${enPart}`;
       return dePart;
     }) : q.options;
     if (Array.isArray(mcOptions) && mcOptions.length) {

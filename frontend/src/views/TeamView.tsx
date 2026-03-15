@@ -2103,8 +2103,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
               const enOpt: string | undefined = (q as any).optionsEn?.[idx];
               const enPart = enOpt?.trim() || (slashIdx >= 0 ? opt.slice(slashIdx + 1).trim() : opt);
+              const same = dePart.toLowerCase() === enPart.toLowerCase();
               const displayOpt = language === 'en'
-                ? (dePart !== enPart ? `${enPart} / ${dePart}` : enPart)
+                ? enPart
+                : language === 'both'
+                ? (same ? dePart : `${dePart} / ${enPart}`)
                 : dePart;
               return (
               <button

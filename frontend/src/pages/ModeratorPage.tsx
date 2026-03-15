@@ -2669,38 +2669,61 @@ function ModeratorPage(): React.ReactElement {
               {answerRows.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[#f05fb244] p-4 text-center text-sm text-[#ffc1e3]">Noch keine Antworten</div>
               ) : (
-                answerRows.map((row) => (
-                  <div key={row.teamId} className="moderator-answer-row grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-[#f05fb22e] bg-[#0b2343]/80 p-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
-                      <p className="truncate text-xs text-[#ffd1e8]/85">{row.answer}</p>
+                answerRows.map((row) => {
+                  const autoCorrect = row.isCorrect === true;
+                  const autoWrong = row.isCorrect === false;
+                  const needsReview = row.isCorrect === undefined;
+                  return (
+                    <div
+                      key={row.teamId}
+                      className="moderator-answer-row grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl p-2"
+                      style={{
+                        background: autoCorrect ? 'rgba(20,83,45,0.7)' : autoWrong ? 'rgba(80,20,30,0.7)' : 'rgba(11,35,67,0.8)',
+                        border: autoCorrect ? '1px solid rgba(74,222,128,0.35)' : autoWrong ? '1px solid rgba(248,113,113,0.35)' : '1px solid rgba(240,95,178,0.18)',
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold text-[#ffe4f2]">{row.teamName}</p>
+                        <p className="truncate text-xs" style={{ color: autoCorrect ? '#86efac' : autoWrong ? '#fca5a5' : 'rgba(255,209,232,0.85)' }}>{row.answer}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {needsReview ? (
+                          <>
+                            <button
+                              className="min-h-[42px] min-w-[42px] rounded-md border border-[#67b58f] bg-[#1f6b50]/65 px-2.5 py-1 text-xs font-black text-[#d6ffe8] hover:bg-[#24805e] touch-manipulation"
+                              onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, 'Als richtig markiert')}
+                              title="Richtig"
+                            >✓</button>
+                            <button
+                              className="min-h-[42px] min-w-[42px] rounded-md border border-[#d68598] bg-[#7e2e46]/65 px-2.5 py-1 text-xs font-black text-[#ffd6df] hover:bg-[#9d3858] touch-manipulation"
+                              onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, 'Als falsch markiert')}
+                              title="Falsch"
+                            >✕</button>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className="rounded-md px-2.5 py-1 text-sm font-black"
+                              style={{ background: autoCorrect ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)', color: autoCorrect ? '#4ade80' : '#f87171' }}
+                            >{autoCorrect ? '✓ Richtig' : '✕ Falsch'}</span>
+                            <div className="flex gap-1">
+                              <button
+                                className="rounded px-1.5 py-0.5 text-[10px] font-bold text-[#86efac]/60 hover:text-[#86efac] touch-manipulation"
+                                onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, true); }, 'Als richtig markiert')}
+                                title="Override: Richtig"
+                              >✓</button>
+                              <button
+                                className="rounded px-1.5 py-0.5 text-[10px] font-bold text-[#fca5a5]/60 hover:text-[#fca5a5] touch-manipulation"
+                                onClick={() => doAction(async () => { await hookOverrideAnswer(row.teamId, false); }, 'Als falsch markiert')}
+                                title="Override: Falsch"
+                              >✕</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="min-h-[42px] min-w-[42px] rounded-md border border-[#67b58f] bg-[#1f6b50]/65 px-2.5 py-1 text-xs font-black text-[#d6ffe8] hover:bg-[#24805e] touch-manipulation"
-                        onClick={() =>
-                          doAction(async () => {
-                            await hookOverrideAnswer(row.teamId, true);
-                          }, 'Als richtig markiert')
-                        }
-                        title="Richtig"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        className="min-h-[42px] min-w-[42px] rounded-md border border-[#d68598] bg-[#7e2e46]/65 px-2.5 py-1 text-xs font-black text-[#ffd6df] hover:bg-[#9d3858] touch-manipulation"
-                        onClick={() =>
-                          doAction(async () => {
-                            await hookOverrideAnswer(row.teamId, false);
-                          }, 'Als falsch markiert')
-                        }
-                        title="Falsch"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

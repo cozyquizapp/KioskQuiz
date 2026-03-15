@@ -3379,9 +3379,12 @@ useEffect(() => {
             (question as any)?.answer ||
             (question as any)?.solution ||
             (question as any)?.answerText;
-          const fallbackSolutionEn = (question as any)?.answerEn || fallbackSolution;
-          const revealDe = fallbackSolution ? String(fallbackSolution).split('/')[0].trim() : null;
-          const revealEn = fallbackSolutionEn ? String(fallbackSolutionEn).split('/')[0].trim() : revealDe;
+          // The localized question has answer pre-combined as "DE / EN" (combineText format).
+          // Split on " / " (with spaces) to recover individual parts.
+          const combinedStr = fallbackSolution ? String(fallbackSolution) : null;
+          const combinedParts = combinedStr ? combinedStr.split(' / ') : [];
+          const revealDe = combinedParts[0]?.trim() ?? null;
+          const revealEn = combinedParts.length > 1 ? combinedParts[1].trim() : revealDe;
           return (
             <div className="cozyRevealGeneric">
               {revealDe ? (

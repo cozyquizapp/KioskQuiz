@@ -3221,6 +3221,11 @@ const renderCozyStagePanel = () => {
           ))}
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setShowSessionSetup(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#93c5fd' }}>
+            {currentQuizName ? `Quiz: ${currentQuizName}` : '⚠ Kein Quiz — auswählen'}
+          </button>
+        </div>
+        <div className="flex gap-2 flex-wrap">
           <button onClick={handleToggleMute} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>{globalMuted ? '🔇 Ton an' : '🔊 Ton aus'}</button>
           <button onClick={handleOpenBeamerLink} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>Beamer öffnen</button>
           <button onClick={() => setShowReconnectModal(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>Neustart</button>
@@ -3273,24 +3278,56 @@ const renderCozyStagePanel = () => {
           {/* Settings panel */}
           {showSettingsPanel && renderSettings()}
 
+          {/* Quiz setup overlay */}
+          {showSessionSetup && (
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Quiz auswählen</p>
+              <select
+                value={selectedQuiz}
+                onChange={e => { setSelectedQuiz(e.target.value); localStorage.setItem('moderatorSelectedQuiz', e.target.value); }}
+                className="w-full rounded-xl px-3 py-3 text-sm font-bold bg-[#0b2343] border border-[#f05fb244] text-[#ffe4f2] touch-manipulation"
+              >
+                <option value="">— Quiz wählen —</option>
+                {quizzesSorted.map(q => <option key={q.id} value={q.id}>{q.name}</option>)}
+              </select>
+              <button
+                disabled={!selectedQuiz || creatingSession}
+                onClick={handleCreateSession}
+                className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white touch-manipulation disabled:opacity-50"
+                style={{ background: '#16a34a', boxShadow: '0 6px 0 rgba(0,0,0,0.4)' }}
+              >
+                {creatingSession ? 'Erstelle Session…' : 'Session starten'}
+              </button>
+              {roomCode && (
+                <button onClick={() => setShowSessionSetup(false)} className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] py-2 text-sm font-bold text-[#94a3b8] touch-manipulation">
+                  Abbrechen
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
-            {stateContent}
-            {renderWarningsPanel()}
-          </div>
+          {!showSessionSetup && (
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+              {stateContent}
+              {renderWarningsPanel()}
+            </div>
+          )}
 
           {/* Bottom action bar */}
-          <div className="border-t border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 pt-2 pb-3">
-            <button
-              disabled={nextAction.busy}
-              onClick={nextAction.busy ? undefined : nextAction.handler}
-              className="w-full min-h-[60px] rounded-2xl text-xl font-black text-white shadow-lg touch-manipulation disabled:opacity-50"
-              style={{ background: nextAction.color, boxShadow: `0 6px 0 rgba(0,0,0,0.4)` }}
-            >
-              {nextAction.busy ? '…' : nextAction.label}
-            </button>
-            {renderSecondaryActions()}
-          </div>
+          {!showSessionSetup && (
+            <div className="border-t border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 pt-2 pb-3">
+              <button
+                disabled={nextAction.busy}
+                onClick={nextAction.busy ? undefined : nextAction.handler}
+                className="w-full min-h-[60px] rounded-2xl text-xl font-black text-white shadow-lg touch-manipulation disabled:opacity-50"
+                style={{ background: nextAction.color, boxShadow: `0 6px 0 rgba(0,0,0,0.4)` }}
+              >
+                {nextAction.busy ? '…' : nextAction.label}
+              </button>
+              {renderSecondaryActions()}
+            </div>
+          )}
         </div>
       </>
     );

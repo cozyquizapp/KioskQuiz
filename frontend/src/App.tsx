@@ -18,6 +18,7 @@ const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 // ...existing code...
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 const CreatorCanvasPage = React.lazy(() => import('./pages/CreatorCanvasPage'));
+const QrCodePage = React.lazy(() => import('./pages/QrCodePage'));
 const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -139,6 +140,7 @@ function App() {
 // ...existing code...
           <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/stats" element={<StatsPage />} />
+          <Route path="/qrcode" element={<QrCodePage />} />
 // ...existing code...
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>

@@ -3264,7 +3264,7 @@ const renderCozyStagePanel = () => {
         </>)}
 
         {settingRow('Aktionen', <>
-          <button onClick={() => { setShowSettingsPanel(false); setShowJoinScreen(true); }} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>QR-Code</button>
+          <button onClick={() => window.open('/qrcode', '_blank', 'noopener,noreferrer')} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>QR-Code</button>
           <button onClick={handleToggleMute} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>{globalMuted ? '🔇 Ton an' : '🔊 Ton aus'}</button>
           <button onClick={handleOpenBeamerLink} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>Beamer</button>
           <button onClick={() => setShowReconnectModal(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>Neustart</button>

@@ -32,7 +32,7 @@
   flex-direction: column;
   gap: 4px;
   box-shadow: none;
-  animation: beamerFade 0.45s ease;
+  animation: beamerFade 0.65s var(--ease-elastic);
   font-family: var(--font-game);
 }
 
@@ -745,29 +745,16 @@
 }
 
 /* Staggered animation für Scoreboard Cards */
-.beamer-scoreboard-grid .beamer-score-card:nth-child(1) {
-  animation-delay: 0.05s;
-}
-
-.beamer-scoreboard-grid .beamer-score-card:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.beamer-scoreboard-grid .beamer-score-card:nth-child(3) {
-  animation-delay: 0.15s;
-}
-
-.beamer-scoreboard-grid .beamer-score-card:nth-child(4) {
-  animation-delay: 0.2s;
-}
-
-.beamer-scoreboard-grid .beamer-score-card:nth-child(5) {
-  animation-delay: 0.25s;
-}
-
-.beamer-scoreboard-grid .beamer-score-card:nth-child(6) {
-  animation-delay: 0.3s;
-}
+.beamer-scoreboard-grid .beamer-score-card:nth-child(1)  { animation-delay: 0.05s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(2)  { animation-delay: 0.10s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(3)  { animation-delay: 0.15s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(4)  { animation-delay: 0.20s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(5)  { animation-delay: 0.25s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(6)  { animation-delay: 0.30s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(7)  { animation-delay: 0.35s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(8)  { animation-delay: 0.40s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(9)  { animation-delay: 0.45s; }
+.beamer-scoreboard-grid .beamer-score-card:nth-child(10) { animation-delay: 0.50s; }
 
 .beamer-score-card {
   display: grid;
@@ -835,14 +822,10 @@
 }
 
 @keyframes scoreboardPop {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-  60% {
-    opacity: 1;
-    transform: translateY(0) scale(1.01);
-  }
+  0%   { opacity: 0; transform: translateX(-60px) scale(0.82); filter: blur(8px); }
+  55%  { opacity: 1; filter: blur(0); transform: translateX(8px) scale(1.03); }
+  78%  { transform: translateX(-3px) scale(0.99); }
+  100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -1820,6 +1803,13 @@
   transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
+  animation: heroEnter 0.7s var(--ease-elastic) both;
+}
+@keyframes heroEnter {
+  0%   { opacity: 0; transform: translateY(80px) scale(0.88); filter: blur(14px); }
+  55%  { opacity: 1; filter: blur(0); transform: translateY(-10px) scale(1.02); }
+  78%  { transform: translateY(4px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
 .cozyQuestionHero::before {
@@ -2207,7 +2197,13 @@
   font-size: clamp(24px, 3.5vw, 48px);
   color: #ffd1e8;
   box-shadow: 0 6px 0 rgba(177, 10, 108, 0.3), 0 12px 24px rgba(0, 0, 0, 0.3);
-  animation: popSoft 0.6s var(--ease-elastic) both;
+  animation: revealPop 0.75s var(--ease-elastic) both;
+}
+@keyframes revealPop {
+  0%   { opacity: 0; transform: scale(0.4) translateY(40px); filter: blur(16px); }
+  55%  { opacity: 1; filter: blur(0); transform: scale(1.1) translateY(-6px); }
+  78%  { transform: scale(0.96) translateY(2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
 }
 
 /* Solo reveal: no team answers panel — center everything, shrink question, enlarge answer */
@@ -2548,14 +2544,10 @@
 }
 
 @keyframes beamerFade {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0%   { opacity: 0; transform: translateY(55px) scale(0.93); filter: blur(10px); }
+  60%  { opacity: 1; filter: blur(0); }
+  75%  { transform: translateY(-6px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
 @keyframes cozyHop {
@@ -2672,14 +2664,10 @@
 }
 
 @keyframes staggerFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0%   { opacity: 0; transform: translateY(70px) scale(0.78); filter: blur(6px); }
+  55%  { opacity: 1; filter: blur(0); transform: translateY(-8px) scale(1.04); }
+  78%  { transform: translateY(3px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
 @keyframes smoothPulse {

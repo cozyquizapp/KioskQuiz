@@ -3493,7 +3493,9 @@ const translateText = async (text: string, src = 'de', tgt = 'en'): Promise<stri
     const res = await fetch(`https://api.mymemory.translated.net/get?${params}`);
     const data = await res.json() as any;
     const translated: string = data?.responseData?.translatedText?.trim();
-    return translated && translated !== text ? translated : text;
+    // Reject MyMemory rate-limit/error messages (they start with "MYMEMORY WARNING")
+    if (!translated || translated.toUpperCase().startsWith('MYMEMORY')) return text;
+    return translated !== text ? translated : text;
   } catch {
     return text;
   }
@@ -3503,10 +3505,11 @@ const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
   const updates: Record<string, any> = {};
   const any = q as any;
   if (any.question) {
-    // Always re-translate to fix stale/wrong cached values in MongoDB.
-    // Extract DE part only when the question uses "DE / EN" slash format.
-    const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
-    updates.questionEn = await translateText(qDe);
+    const isStale = !any.questionEn || String(any.questionEn).toUpperCase().startsWith('MYMEMORY');
+    if (isStale) {
+      const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
+      updates.questionEn = await translateText(qDe);
+    }
   }
   if (Array.isArray(any.options) && any.options.length > 0) {
     // If any option contains '/', the user stored bilingual text (DE / EN).

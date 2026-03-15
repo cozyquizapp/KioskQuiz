@@ -735,6 +735,18 @@ function ModeratorPage(): React.ReactElement {
     return () => window.clearInterval(id);
   }, []);
 
+  // Toast when all teams have answered during Q_ACTIVE
+  const allAnsweredToastShownRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (normalizedGameState !== 'Q_ACTIVE') { allAnsweredToastShownRef.current = null; return; }
+    if (!teamsCount || answersCount < teamsCount) return;
+    const key = `${question?.id}-${teamsCount}`;
+    if (allAnsweredToastShownRef.current === key) return;
+    allAnsweredToastShownRef.current = key;
+    setToast(`✅ Alle ${teamsCount} Teams haben geantwortet!`);
+    setTimeout(() => setToast(null), 3500);
+  }, [answersCount, teamsCount, normalizedGameState, question?.id]);
+
   // Keyboard shortcuts for moderator
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -3679,21 +3691,31 @@ const renderCozyStagePanel = () => {
                 <span style={statChip}>{answersCount}/{teamsCount} Antworten</span>
                 {topTexts.length > 0 && <span style={statChip}>Top: {topTexts.map(([k, v]) => `${k} (${v})`).join(', ')}</span>}
               </div>
-              {answerStats ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#374151', fontSize: 12 }}>
-                  <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
-                  {Object.keys(answerStats.perOption || {}).length > 0 && (
-                    <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
-                      {Object.entries(answerStats.perOption).map(([opt, count]) => (
-                        <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ padding: '2px 6px', borderRadius: 8, background: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
-                          <span>{count}</span>
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </div>
-              ) : (
+              {answerStats ? (() => {
+                const optColors = ['#3B82F6', '#22C55E', '#EF4444', '#F97316', '#8B5CF6', '#EC4899'];
+                const entries = Object.entries(answerStats.perOption || {});
+                const maxCount = Math.max(1, ...entries.map(([, v]) => v as number));
+                return (
+                  <div style={{ display: 'grid', gap: 4 }}>
+                    <span style={statChip}>✓ Richtig {answerStats.correct}/{answerStats.total}</span>
+                    {entries.map(([opt, count], i) => (
+                      <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                        <span style={{ minWidth: 22, fontWeight: 800, color: optColors[i % optColors.length] }}>{opt}</span>
+                        <div style={{ flex: 1, height: 14, borderRadius: 6, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${((count as number) / maxCount) * 100}%`,
+                            background: optColors[i % optColors.length],
+                            borderRadius: 6,
+                            transition: 'width 0.4s ease',
+                          }} />
+                        </div>
+                        <span style={{ minWidth: 20, textAlign: 'right', fontWeight: 700, color: '#94a3b8' }}>{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })() : (
                 <div style={{ color: '#6b7280', fontSize: 13 }}>Noch keine Antworten eingegangen.</div>
               )}
             </div>
@@ -3747,12 +3769,40 @@ const renderCozyStagePanel = () => {
           />
 
           <section style={{ ...card, marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div>
-                <div style={{ fontWeight: 800 }}>{question?.question ?? 'Keine Frage aktiv'}</div>
-                <div style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {question ? `${meta?.globalIndex}/${meta?.globalTotal ?? '?'} | ${question.category}` : 'Warten auf Frage'}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, lineHeight: 1.4 }}>{question?.question ?? 'Keine Frage aktiv'}</div>
+                <div style={{ color: 'var(--muted)', fontSize: 11, marginTop: 3 }}>
+                  {question ? `#${meta?.globalIndex}/${meta?.globalTotal ?? '?'} · ${question.category} · ${(question as any).mechanic ?? question.type}` : 'Warten auf Frage'}
                 </div>
+                {/* MC option preview with correct answer highlight */}
+                {question && (question as any).options && Array.isArray((question as any).options) && (() => {
+                  const opts: string[] = (question as any).options;
+                  const correctIdx: number | undefined = (question as any).correctIndex ?? (question as any).correct ?? (question as any).correctAnswer;
+                  const optColors = ['#3B82F6', '#22C55E', '#EF4444', '#F97316'];
+                  const letters = ['A','B','C','D','E'];
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8 }}>
+                      {opts.map((opt, i) => {
+                        const isCorrect = correctIdx === i;
+                        return (
+                          <div key={i} style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '4px 7px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                            background: isCorrect ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                          }}>
+                            <span style={{ fontWeight: 800, color: optColors[i % optColors.length], minWidth: 14 }}>{letters[i]}</span>
+                            <span style={{ color: isCorrect ? '#86efac' : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {opt.split('/')[0].trim()}
+                            </span>
+                            {isCorrect && <span style={{ marginLeft: 'auto', color: '#4ade80', fontSize: 10 }}>✓</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -3771,21 +3821,31 @@ const renderCozyStagePanel = () => {
                     </span>
                   )}
                 </div>
-                {answerStats && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: '#374151', fontSize: 12 }}>
-                    <span style={statChip}>Richtig {answerStats.correct}/{answerStats.total}</span>
-                    {Object.keys(answerStats.perOption || {}).length > 0 && (
-                      <span style={{ ...statChip, display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
-                        {Object.entries(answerStats.perOption).map(([opt, count]) => (
-                          <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ padding: '2px 6px', borderRadius: 8, background: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}>{opt}</span>
-                            <span>{count}</span>
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </div>
-                )}
+                {answerStats && Object.keys(answerStats.perOption || {}).length > 0 && (() => {
+                  const optColors = ['#3B82F6', '#22C55E', '#EF4444', '#F97316', '#8B5CF6', '#EC4899'];
+                  const entries = Object.entries(answerStats.perOption);
+                  const maxCount = Math.max(1, ...entries.map(([, v]) => v as number));
+                  return (
+                    <div style={{ marginTop: 4, display: 'grid', gap: 4 }}>
+                      {entries.map(([opt, count], i) => (
+                        <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                          <span style={{ minWidth: 22, fontWeight: 800, color: optColors[i % optColors.length] }}>{opt}</span>
+                          <div style={{ flex: 1, height: 14, borderRadius: 6, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${((count as number) / maxCount) * 100}%`,
+                              background: optColors[i % optColors.length],
+                              borderRadius: 6,
+                              transition: 'width 0.4s ease',
+                            }} />
+                          </div>
+                          <span style={{ minWidth: 20, textAlign: 'right', fontWeight: 700, color: '#94a3b8' }}>{count as number}</span>
+                        </div>
+                      ))}
+                      <span style={{ ...statChip, alignSelf: 'flex-start' }}>✓ {answerStats.correct}/{answerStats.total}</span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </section>
@@ -3925,12 +3985,36 @@ const renderCozyStagePanel = () => {
               </tbody>
             </table>
           </div>
-          <button
-            onClick={() => setQuizHistory(null)}
-            style={{ marginTop: 8, fontSize: 10, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-          >
-            Schließen
-          </button>
+          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => {
+                if (!quizHistory) return;
+                const header = ['Frage', ...quizHistory.teams.map(t => `${t.name} (${t.score} Pkt)`)].join(';');
+                const rows = quizHistory.questions.map((q, qIdx) => {
+                  const cells = quizHistory.teams.map(team => {
+                    const ans = team.answers[qIdx];
+                    return ans == null || ans.correct === null ? '-' : ans.correct ? '1' : '0';
+                  });
+                  return [`#${q.index}`, ...cells].join(';');
+                });
+                const csv = [header, ...rows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'quiz-ergebnis.csv'; a.click();
+                URL.revokeObjectURL(url);
+              }}
+              style={{ fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              ⬇ CSV exportieren
+            </button>
+            <button
+              onClick={() => setQuizHistory(null)}
+              style={{ fontSize: 10, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Schließen
+            </button>
+          </div>
         </div>
       )}
 

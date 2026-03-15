@@ -14,6 +14,7 @@ type Props = {
   badgeTone?: BeamerBadgeTone;
   progressText?: string;
   progressValue?: number | null;
+  progressWarning?: 'warning' | 'danger' | null;
   timerText?: string;
   footerMessage?: string | React.ReactNode;
   footerDetail?: string;
@@ -33,6 +34,7 @@ const BeamerFrame: React.FC<Props> = ({
   badgeTone,
   progressText,
   progressValue,
+  progressWarning,
   timerText,
   footerMessage,
   footerDetail,
@@ -49,7 +51,7 @@ const BeamerFrame: React.FC<Props> = ({
     <div className={`beamer-frame beamer-jackbox scene-${scene || 'default'}${normalizedProgress !== null ? ' has-progress' : ''}`}>
       <div className="beamer-frame-progress-wrap">
         <div className="beamer-frame-progress" style={{ visibility: normalizedProgress !== null ? 'visible' : 'hidden' }}>
-          <div className="beamer-frame-progress-inner" style={{ width: `${(normalizedProgress ?? 0) * 100}%` }} />
+          <div className={`beamer-frame-progress-inner${progressWarning ? ` timer-${progressWarning}` : ''}`} style={{ width: `${(normalizedProgress ?? 0) * 100}%` }} />
         </div>
         {timerText && <div className="beamer-header-timer beamer-progress-timer">{timerText}</div>}
       </div>

@@ -1795,16 +1795,37 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       }
     }
 
+    // Show "all answered" indicator
+    const connectedTeams = (teamStatus ?? []).filter(t => t.connected !== false);
+    const submittedTeams = connectedTeams.filter(t => t.submitted || t.answer !== undefined);
+    const allAnswered = connectedTeams.length > 1 && submittedTeams.length >= connectedTeams.length;
+    const allAnsweredBadge = allAnswered ? (
+      <div style={{
+        marginTop: 8,
+        fontSize: 13,
+        fontWeight: 700,
+        color: '#4ade80',
+        padding: '4px 12px',
+        borderRadius: 999,
+        background: 'rgba(34,197,94,0.1)',
+        border: '1px solid rgba(74,222,128,0.3)',
+        display: 'inline-block',
+      }}>
+        {language === 'de' ? '✓ Alle Teams haben geantwortet' : '✓ All teams answered'}
+      </div>
+    ) : null;
+
     const waitingCard = renderWaiting(
       answerSubmitted ? submittedTitle : t('waiting'),
       language === 'de' ? 'Wir prüfen alle Antworten ...' : t('evaluating')
     );
 
-    if (!rankBadge) return waitingCard;
+    if (!rankBadge && !allAnsweredBadge) return waitingCard;
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         {waitingCard}
+        {allAnsweredBadge}
         {rankBadge}
       </div>
     );

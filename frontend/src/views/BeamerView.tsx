@@ -35,6 +35,7 @@ import { AVATARS } from '../config/avatars';
 import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
 import { hasStateBasedRendering, getAvatarStatePath, type AvatarState } from '../config/avatarStates';
+import { resumeAudio, playFanfare, playReveal, playTimesUp, playTick, playUrgentTick, playScoreUp, setVolume, getVolume } from '../utils/sounds';
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -117,6 +118,7 @@ type FrameBaseProps = {
   leftHint?: string;
   progressText?: string;
   progressValue?: number | null;
+  progressWarning?: 'warning' | 'danger' | null;
   timerText?: string;
 };
 
@@ -430,9 +432,43 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
-  
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [volume, setVolumeState] = useState(() => getVolume());
+  const prevScoresRef = useRef<Record<string, number>>({});
+  const [scoreDeltas, setScoreDeltas] = useState<Record<string, number>>({});
+  const deltaClearTimerRef = useRef<number | null>(null);
+
   // Track avatar states for each team (for live emotion display)
   const [teamAvatarStates, setTeamAvatarStates] = useState<Record<string, AvatarState>>({});
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  useEffect(() => {
+    const onFirstInteraction = () => {
+      resumeAudio();
+      document.removeEventListener('click', onFirstInteraction);
+      document.removeEventListener('keydown', onFirstInteraction);
+    };
+    document.addEventListener('click', onFirstInteraction);
+    document.addEventListener('keydown', onFirstInteraction);
+    return () => {
+      document.removeEventListener('click', onFirstInteraction);
+      document.removeEventListener('keydown', onFirstInteraction);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    resumeAudio();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
   
   const debugMode = useMemo(
     () =>
@@ -466,6 +502,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   const timerRef = useRef<number | null>(null);
+  const gameStateRef = useRef<CozyGameState>('LOBBY');
   const slotTimeoutRef = useRef<number | null>(null);
   const reconnectTimeoutsRef = useRef<number[]>([]);
   const connectionStatusRef = useRef(connectionStatus);
@@ -550,9 +587,17 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       return;
     }
+    let lastTickSec = -1;
     const tick = () => {
       const diff = timerEndsAt - Date.now();
       setRemainingMs(Math.max(0, diff));
+      // Play tick sounds on whole-second boundaries (only during active question)
+      const secs = Math.ceil(diff / 1000);
+      if (secs !== lastTickSec && diff > 0 && gameStateRef.current === 'Q_ACTIVE') {
+        lastTickSec = secs;
+        if (secs <= 3 && secs > 0) playUrgentTick();
+        else if (secs <= 10 && secs > 0) playTick();
+      }
       if (diff <= 0 && timerRef.current) {
         window.clearInterval(timerRef.current);
         timerRef.current = null;
@@ -659,6 +704,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       window.setTimeout(() => setShowConfetti(false), 1600);
     }
     previousGameStateRef.current = gameState;
+    gameStateRef.current = gameState;
     if (gameState !== 'Q_REVEAL') {
       setEstimateDisplay(null);
       setMuChoHopIndex(null);
@@ -1021,10 +1067,30 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
     const onStateUpdate = (payload: StateUpdatePayload) => {
       console.log('📊 stateUpdate:', { state: payload.state, hasScores: !!payload.scores?.length, scoreCnt: payload.scores?.length });
+      const prevState = previousGameStateRef.current;
+      // Sound effects on state transitions
+      if (payload.state !== prevState) {
+        if (payload.state === 'QUESTION_INTRO') playFanfare();
+        else if (payload.state === 'Q_REVEAL') playReveal();
+        else if (payload.state === 'Q_LOCKED' && prevState === 'Q_ACTIVE') playTimesUp();
+      }
       setGameState(payload.state);
       setScreen(mapStateToScreenState(payload.state));
       if (payload.scores?.length) {
         console.log('📊 Updating teams from scores:', payload.scores);
+        const newDeltas: Record<string, number> = {};
+        payload.scores.forEach((entry) => {
+          const prev = prevScoresRef.current[entry.id] ?? entry.score ?? 0;
+          const delta = (entry.score ?? 0) - prev;
+          if (delta > 0) newDeltas[entry.id] = delta;
+        });
+        if (Object.keys(newDeltas).length) {
+          setScoreDeltas(newDeltas);
+          playScoreUp();
+          if (deltaClearTimerRef.current) window.clearTimeout(deltaClearTimerRef.current);
+          deltaClearTimerRef.current = window.setTimeout(() => setScoreDeltas({}), 2000);
+        }
+        payload.scores.forEach((entry) => { prevScoresRef.current[entry.id] = entry.score ?? 0; });
         setTeams(
           payload.scores.map((entry) => ({
             id: entry.id,
@@ -1340,7 +1406,7 @@ useEffect(() => {
     });
   }, [question?.id, language]);
 
-  const showChoiceAvatars = gameState === 'Q_REVEAL';
+  const showChoiceAvatars = gameState === 'Q_ACTIVE' || gameState === 'Q_LOCKED' || gameState === 'Q_REVEAL';
   const choiceAvatars = useMemo(() => {
     if (!question || !showChoiceAvatars) return [] as Array<string[]>;
     const q: any = question;
@@ -1531,6 +1597,10 @@ useEffect(() => {
     timerEndsAt && timerDurationMs
       ? Math.max(0, Math.min(1, remainingMs / timerDurationMs))
       : 0;
+  const progressWarning: 'warning' | 'danger' | null =
+    timerEndsAt && remainingMs > 0
+      ? remainingMs <= 3000 ? 'danger' : remainingMs <= 10000 ? 'warning' : null
+      : null;
 
   const pageStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -1845,6 +1915,7 @@ useEffect(() => {
             detail={options?.detailMap?.[entry.id] ?? null}
             highlight={Boolean(options?.highlightTop && idx < 3)}
             maxScore={maxScore}
+            scoreDelta={scoreDeltas[entry.id] ?? null}
           />
         );
         })}
@@ -2953,7 +3024,7 @@ useEffect(() => {
                   border: `2px solid ${color}`,
                   textAlign: 'center',
                   animation: `spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), pulse-depth 3s ease-in-out ${idx * 0.3}s infinite`,
-                  animationDelay: `${idx * 150}ms, ${idx * 0.3}s`,
+                  animationDelay: `${(2 - idx) * 400}ms, ${idx * 0.3}s`,
                   animationFillMode: 'backwards',
                   transform: idx === 0 ? 'scale(1.1)' : 'scale(1)',
                   boxShadow: `0 0 30px ${color}44, 0 8px 32px rgba(0,0,0,0.3)`,
@@ -3045,6 +3116,7 @@ useEffect(() => {
       leftHint: headerLeftHint,
       progressText,
       progressValue,
+      progressWarning,
       timerText: headerTimerText
     };
     const badgeInfo =
@@ -4115,6 +4187,57 @@ useEffect(() => {
     <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? `cozy-beamer-shell${gameState === 'LOBBY' ? ' cozy-beamer-lobby' : ''}` : undefined}>
       {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}
+      <div style={{
+        position: 'fixed',
+        bottom: 14,
+        right: 14,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        opacity: 0.4,
+        transition: 'opacity 0.2s',
+      }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}
+      >
+        <span style={{ fontSize: 14 }}>{volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volume}
+          onChange={e => {
+            const v = Number(e.target.value);
+            setVolumeState(v);
+            setVolume(v);
+            resumeAudio();
+          }}
+          style={{ width: 72, accentColor: '#942d59', cursor: 'pointer' }}
+          title="Lautstärke"
+        />
+        <button
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Vollbild beenden' : 'Vollbild'}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'rgba(13,17,23,0.72)',
+            color: '#e2e8f0',
+            fontSize: 16,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          {isFullscreen ? '✕' : '⛶'}
+        </button>
+      </div>
       
       {/* Walking Animals at Bottom of Screen */}
       {avatarsEnabled && teams.filter(t => t.id && t.avatarId).map((team, index) => {

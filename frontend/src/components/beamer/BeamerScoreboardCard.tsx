@@ -8,9 +8,10 @@ type Props = {
   detail?: string | null;
   highlight?: boolean;
   maxScore?: number;
+  scoreDelta?: number | null;
 };
 
-const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, detail, highlight, maxScore }) => {
+const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, detail, highlight, maxScore, scoreDelta }) => {
   const scoreLabel =
     score === null || score === undefined ? '—' : typeof score === 'number' ? score : String(score);
   const numScore = typeof score === 'number' ? score : 0;
@@ -63,7 +64,27 @@ const BeamerScoreboardCard: React.FC<Props> = ({ rank, name, avatarSrc, score, d
           </div>
         )}
       </div>
-      <div className="beamer-score-value">{scoreLabel}</div>
+      <div className="beamer-score-value" style={{ position: 'relative' }}>
+        {scoreLabel}
+        {scoreDelta != null && scoreDelta > 0 && (
+          <span
+            key={`delta-${scoreDelta}-${scoreLabel}`}
+            style={{
+              position: 'absolute',
+              top: -18,
+              right: 0,
+              fontSize: '0.7em',
+              fontWeight: 900,
+              color: '#22c55e',
+              animation: 'scoreDeltaPop 1.4s ease-out forwards',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            +{scoreDelta}
+          </span>
+        )}
+      </div>
     </div>
   );
 };

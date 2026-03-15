@@ -3212,24 +3212,64 @@ const renderCozyStagePanel = () => {
       : null;
 
     // Settings overlay
+    const settingRow = (label: string, children: React.ReactNode) => (
+      <div className="space-y-1.5">
+        <span className="text-[10px] font-black uppercase tracking-widest text-[#64748b]">{label}</span>
+        <div className="flex gap-2 flex-wrap items-center">{children}</div>
+      </div>
+    );
+    const stepBtn = (label: string, onClick: () => void) => (
+      <button onClick={onClick} className="w-10 h-10 rounded-lg text-lg font-black touch-manipulation" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffe4f2' }}>{label}</button>
+    );
     const renderSettings = () => (
-      <div className="border-b border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 py-3 space-y-3">
-        <div className="flex gap-2 flex-wrap">
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#64748b] w-full">Sprache</span>
-          {(['de', 'both', 'en'] as Language[]).map((lang) => (
-            <button key={lang} onClick={() => doAction(async () => { await setLanguage(roomCode, lang); setLang(lang); }, `Sprache: ${lang}`)} className="rounded-lg px-3 py-1.5 text-sm font-black touch-manipulation" style={{ background: language === lang ? '#942d59' : 'rgba(255,255,255,0.06)', color: language === lang ? '#fff' : '#94a3b8', border: `1px solid ${language === lang ? '#942d59' : 'rgba(255,255,255,0.1)'}` }}>{lang.toUpperCase()}</button>
-          ))}
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowSessionSetup(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#93c5fd' }}>
-            {currentQuizName ? `Quiz: ${currentQuizName}` : '⚠ Kein Quiz — auswählen'}
+      <div className="border-b border-[rgba(240,95,178,0.15)] bg-[#050a14] px-3 py-3 space-y-4 overflow-y-auto max-h-[60dvh]">
+
+        {settingRow('Sprache', (['de', 'both', 'en'] as Language[]).map(lang => (
+          <button key={lang} onClick={() => doAction(async () => { await setLanguage(roomCode, lang); setLang(lang); }, `Sprache: ${lang}`)}
+            className="rounded-lg px-3 py-1.5 text-sm font-black touch-manipulation"
+            style={{ background: language === lang ? '#942d59' : 'rgba(255,255,255,0.06)', color: language === lang ? '#fff' : '#94a3b8', border: `1px solid ${language === lang ? '#942d59' : 'rgba(255,255,255,0.1)'}` }}>
+            {lang.toUpperCase()}
           </button>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+        )))}
+
+        {settingRow('Quiz', (
+          <button onClick={() => setShowSessionSetup(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation flex-1"
+            style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#93c5fd' }}>
+            {currentQuizName || '⚠ Kein Quiz — auswählen'}
+          </button>
+        ))}
+
+        {settingRow('Timer (Sekunden)', <>
+          {stepBtn('−', () => { const v = Math.max(5, timerSeconds - 5); setTimerSeconds(v); localStorage.setItem('moderatorTimerSeconds', String(v)); })}
+          <span className="text-lg font-black text-[#ffe4f2] w-12 text-center">{timerSeconds}s</span>
+          {stepBtn('+', () => { const v = Math.min(300, timerSeconds + 5); setTimerSeconds(v); localStorage.setItem('moderatorTimerSeconds', String(v)); })}
+        </>)}
+
+        {settingRow('Avatare', (
+          <button onClick={handleToggleAvatars} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation"
+            style={{ background: avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${avatarsEnabled ? 'rgba(74,222,128,0.35)' : 'rgba(255,255,255,0.1)'}`, color: avatarsEnabled ? '#4ade80' : '#94a3b8' }}>
+            {avatarsEnabled ? '🐾 Avatare an' : '🐾 Avatare aus'}
+          </button>
+        ))}
+
+        {settingRow('Fotosprint-Timer', <>
+          <span className="text-xs text-[#64748b]">Anzeige</span>
+          {stepBtn('−', () => { const v = Math.max(5, blitzDisplayTimeSec - 5); setBlitzDisplayTimeSec(v); doAction(() => fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayTimeMs: v * 1000, answerTimeMs: blitzAnswerTimeSec * 1000 }) }), ''); })}
+          <span className="text-sm font-black text-[#ffe4f2] w-10 text-center">{blitzDisplayTimeSec}s</span>
+          {stepBtn('+', () => { const v = Math.min(120, blitzDisplayTimeSec + 5); setBlitzDisplayTimeSec(v); doAction(() => fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayTimeMs: v * 1000, answerTimeMs: blitzAnswerTimeSec * 1000 }) }), ''); })}
+          <span className="text-xs text-[#64748b] ml-2">Antwort</span>
+          {stepBtn('−', () => { const v = Math.max(5, blitzAnswerTimeSec - 5); setBlitzAnswerTimeSec(v); doAction(() => fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayTimeMs: blitzDisplayTimeSec * 1000, answerTimeMs: v * 1000 }) }), ''); })}
+          <span className="text-sm font-black text-[#ffe4f2] w-10 text-center">{blitzAnswerTimeSec}s</span>
+          {stepBtn('+', () => { const v = Math.min(120, blitzAnswerTimeSec + 5); setBlitzAnswerTimeSec(v); doAction(() => fetch(`${API_BASE}/rooms/${roomCode}/blitz-timers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayTimeMs: blitzDisplayTimeSec * 1000, answerTimeMs: v * 1000 }) }), ''); })}
+        </>)}
+
+        {settingRow('Aktionen', <>
+          <button onClick={() => { setShowSettingsPanel(false); setShowJoinScreen(true); }} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>QR-Code</button>
           <button onClick={handleToggleMute} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>{globalMuted ? '🔇 Ton an' : '🔊 Ton aus'}</button>
-          <button onClick={handleOpenBeamerLink} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>Beamer öffnen</button>
+          <button onClick={handleOpenBeamerLink} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>Beamer</button>
           <button onClick={() => setShowReconnectModal(true)} className="rounded-lg px-3 py-1.5 text-sm font-bold touch-manipulation" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>Neustart</button>
-        </div>
+        </>)}
+
       </div>
     );
 

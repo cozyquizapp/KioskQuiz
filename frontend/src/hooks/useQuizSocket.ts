@@ -22,6 +22,8 @@ type SocketEvents = {
   questionPhase?: QuestionPhase;
   timerEndsAt?: number | null;
   timerDurationMs?: number | null;
+  timerPaused?: boolean;
+  timerPausedRemainingMs?: number | null;
   answers?: Record<string, AnswerEntry & { answer?: unknown }>;
   teams?: Record<string, Team>;
   solution?: string;
@@ -162,8 +164,10 @@ export const useQuizSocket = (roomCode: string) => {
       setEvents((prev) => ({ ...prev, gameState: 'QUIZ_ENDED' as any }));
     };
     const onTimerStarted = ({ endsAt }: { endsAt: number }) =>
-      setEvents((prev) => ({ ...prev, timerEndsAt: endsAt }));
-    const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null }));
+      setEvents((prev) => ({ ...prev, timerEndsAt: endsAt, timerPaused: false, timerPausedRemainingMs: null }));
+    const onTimerStopped = () => setEvents((prev) => ({ ...prev, timerEndsAt: null, timerPaused: false, timerPausedRemainingMs: null }));
+    const onTimerPaused = ({ remainingMs }: { pausedAt: number; remainingMs: number }) =>
+      setEvents((prev) => ({ ...prev, timerEndsAt: null, timerPaused: true, timerPausedRemainingMs: remainingMs }));
     const onStateUpdate = (payload: StateUpdatePayload) => {
       // Only update answers if we have new data. 
       // If liveAnswers or results are provided, use them.
@@ -242,6 +246,7 @@ export const useQuizSocket = (roomCode: string) => {
     socket.on('quizEnded', onQuizEnded);
     socket.on('timerStarted', onTimerStarted);
     socket.on('timerStopped', onTimerStopped);
+    socket.on('timerPaused', onTimerPaused);
     socket.on('server:stateUpdate', onStateUpdate);
     socket.on('session:restarted', onSessionRestarted);
 
@@ -261,6 +266,7 @@ export const useQuizSocket = (roomCode: string) => {
       socket.off('quizEnded', onQuizEnded);
       socket.off('timerStarted', onTimerStarted);
       socket.off('timerStopped', onTimerStopped);
+      socket.off('timerPaused', onTimerPaused);
       socket.off('server:stateUpdate', onStateUpdate);
       socket.off('session:restarted', onSessionRestarted);
       socket.disconnect();

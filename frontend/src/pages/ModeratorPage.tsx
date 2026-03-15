@@ -221,6 +221,11 @@ function ModeratorPage(): React.ReactElement {
   const [showReconnectModal, setShowReconnectModal] = useState(false);
   const [globalMuted, setGlobalMuted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [timerIsPaused, setTimerIsPaused] = useState(false);
+  const [quizHistory, setQuizHistory] = useState<{
+    teams: Array<{ id: string; name: string; score: number; answers: Array<{ questionId: string; correct: boolean | null; answer: unknown }> }>;
+    questions: Array<{ questionId: string; index: number }>;
+  } | null>(null);
   const reconnectPromptedRef = React.useRef(false);
   const singleActionMode = featureFlags.isCozyMode;
   // TODO(LEGACY): Potato is retired in Cozy60; keep backend handlers hidden for now.
@@ -361,11 +366,25 @@ function ModeratorPage(): React.ReactElement {
     }
   }, [socketGameState]);
 
+  // Reset timer pause state when question ends
+  useEffect(() => {
+    if (normalizedGameState !== 'Q_ACTIVE') {
+      setTimerIsPaused(false);
+    }
+  }, [normalizedGameState]);
+
 
   useEffect(() => {
     const socket = connectControlSocket();
     controlSocketRef.current = socket;
+    const onQuizEndedHistory = (payload: { reason?: string; history?: typeof quizHistory }) => {
+      if (payload?.history) {
+        setQuizHistory(payload.history);
+      }
+    };
+    socket.on('quizEnded', onQuizEndedHistory);
     return () => {
+      socket.off('quizEnded', onQuizEndedHistory);
       socket.disconnect();
     };
   }, []);
@@ -1036,6 +1055,40 @@ function ModeratorPage(): React.ReactElement {
     const emitted = emitHost('host:skipQuestion', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
       if (!resp?.ok) {
         setToast(resp?.error || 'Überspringen fehlgeschlagen');
+      }
+    });
+    if (!emitted) setToast('Socket nicht verbunden');
+  }
+
+  function handlePauseTimer() {
+    if (!roomCode) return;
+    const emitted = emitHost('host:pauseTimer', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (resp?.ok) {
+        setTimerIsPaused(true);
+      } else {
+        setToast(resp?.error || 'Timer pausieren fehlgeschlagen');
+      }
+    });
+    if (!emitted) setToast('Socket nicht verbunden');
+  }
+
+  function handleResumeTimer() {
+    if (!roomCode) return;
+    const emitted = emitHost('host:resumeTimer', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (resp?.ok) {
+        setTimerIsPaused(false);
+      } else {
+        setToast(resp?.error || 'Timer fortsetzen fehlgeschlagen');
+      }
+    });
+    if (!emitted) setToast('Socket nicht verbunden');
+  }
+
+  function handleExtendTimer() {
+    if (!roomCode) return;
+    const emitted = emitHost('host:extendTimer', { roomCode, addSeconds: 30 }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Timer verlängern fehlgeschlagen');
       }
     });
     if (!emitted) setToast('Socket nicht verbunden');
@@ -2670,6 +2723,31 @@ function ModeratorPage(): React.ReactElement {
               ⏭ Überspringen
             </button>
           )}
+          {normalizedGameState === 'Q_ACTIVE' && (
+            <>
+              {timerIsPaused ? (
+                <button
+                  onClick={handleResumeTimer}
+                  className="min-h-[48px] rounded-xl border border-[#86efac] bg-[#14532d]/80 px-3 py-2 text-left text-sm font-extrabold text-[#bbf7d0] touch-manipulation"
+                >
+                  ▶ Weiter
+                </button>
+              ) : (
+                <button
+                  onClick={handlePauseTimer}
+                  className="min-h-[48px] rounded-xl border border-[#fde68a] bg-[#713f12]/80 px-3 py-2 text-left text-sm font-extrabold text-[#fef9c3] touch-manipulation"
+                >
+                  ⏸ Pause
+                </button>
+              )}
+              <button
+                onClick={handleExtendTimer}
+                className="min-h-[48px] rounded-xl border border-[#a5b4fc] bg-[#1e1b4b]/80 px-3 py-2 text-left text-sm font-extrabold text-[#e0e7ff] touch-manipulation"
+              >
+                +30s
+              </button>
+            </>
+          )}
           <button
             onClick={handleScoreboardAction}
             className="min-h-[48px] rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff] touch-manipulation"
@@ -3801,6 +3879,61 @@ const renderCozyStagePanel = () => {
         </button>
       </div>
       
+      {/* Post-Quiz Answer History */}
+      {quizHistory && quizHistory.questions.length > 0 && (
+        <div style={{ marginTop: 20, padding: 14, borderRadius: 12, background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(99,102,241,0.35)' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#a5b4fc', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            Spielhistorie — Antworten
+          </div>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 340 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: '#64748b', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap' }}>
+                    Frage
+                  </th>
+                  {quizHistory.teams.map((team) => (
+                    <th key={team.id} style={{ textAlign: 'center', padding: '4px 8px', color: '#e2e8f0', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap' }}>
+                      {team.name}<br />
+                      <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 10 }}>{team.score} Pkt</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {quizHistory.questions.map((q, qIdx) => (
+                  <tr key={q.questionId} style={{ background: qIdx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                    <td style={{ padding: '4px 8px', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      #{q.index}
+                    </td>
+                    {quizHistory.teams.map((team) => {
+                      const ans = team.answers[qIdx];
+                      const cell =
+                        ans == null || ans.correct === null
+                          ? <span style={{ color: '#475569' }}>—</span>
+                          : ans.correct
+                          ? <span style={{ color: '#4ade80' }}>✓</span>
+                          : <span style={{ color: '#f87171' }}>✗</span>;
+                      return (
+                        <td key={team.id} style={{ textAlign: 'center', padding: '4px 8px' }}>
+                          {cell}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            onClick={() => setQuizHistory(null)}
+            style={{ marginTop: 8, fontSize: 10, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Schließen
+          </button>
+        </div>
+      )}
+
       {/* Keyboard Shortcuts Help */}
       <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
         <div style={{ fontSize: 11, color: '#0369a1', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>

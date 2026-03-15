@@ -375,6 +375,9 @@ type RoomState = {
   statsAnswerTimings: Map<string, { teamName: string; timeMs: number; answer: unknown; isCorrect: boolean; questionId: string; timestamp: number }[]>;
   statsFunnyAnswers: Map<string, { teamName: string; answer: string; questionId: string; markedAt: number }[]>;
   statsWrongAnswerCounts: Map<string, Map<string, number>>;
+  timerPausedAt?: number | null;
+  timerRemainingMs?: number | null;
+  questionHistory: Array<{ questionId: string; answers: Record<string, AnswerEntry> }>;
 };
 
 type RoomUndoSnapshot = {
@@ -2124,7 +2127,10 @@ const ensureRoom = (roomCode: string): RoomState => {
       finalsTriggered: false,
       statsAnswerTimings: new Map(),
       statsFunnyAnswers: new Map(),
-      statsWrongAnswerCounts: new Map()
+      statsWrongAnswerCounts: new Map(),
+      timerPausedAt: null,
+      timerRemainingMs: null,
+      questionHistory: []
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -2240,6 +2246,8 @@ const startQuestionTimer = (room: RoomState, durationMs: number) => {
   const endsAt = Date.now() + durationMs;
   room.timerEndsAt = endsAt;
   room.questionTimerDurationMs = durationMs;
+  room.timerPausedAt = null;
+  room.timerRemainingMs = null;
   room.questionTimerTimeout = setTimeout(() => {
     if (room.gameState !== 'Q_ACTIVE') return;
     if (!room.timerEndsAt) return;
@@ -3617,6 +3625,9 @@ const configureRoomForQuiz = (room: RoomState, quizId: string) => {
   room.answers = {};
   room.timerEndsAt = null;
   room.questionTimerDurationMs = null;
+  room.timerPausedAt = null;
+  room.timerRemainingMs = null;
+  room.questionHistory = [];
   room.screen = 'lobby';
   room.questionPhase = 'answering';
   room.bingoEnabled = Boolean(template.enableBingo ?? template.meta?.useBingo);
@@ -4875,6 +4886,14 @@ const startQuestionWithSlot = (
   if (!questionWithImage) {
     if (res) res.status(400).json({ error: 'Ungueltige questionId' });
     return;
+  }
+
+  // Save previous question answers to history before clearing
+  if (room.currentQuestionId && Object.keys(room.answers).length > 0) {
+    room.questionHistory.push({
+      questionId: room.currentQuestionId,
+      answers: { ...room.answers }
+    });
   }
 
   room.currentQuestionId = questionId;
@@ -7106,6 +7125,74 @@ io.on('connection', (socket: Socket) => {
     });
   });
 
+  socket.on('host:pauseTimer', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (!room.timerEndsAt) throw new Error('Kein aktiver Timer');
+      const now = Date.now();
+      const remainingMs = Math.max(0, room.timerEndsAt - now);
+      room.timerPausedAt = now;
+      room.timerRemainingMs = remainingMs;
+      clearQuestionTimers(room);
+      room.timerEndsAt = null;
+      io.to(room.roomCode).emit('timerPaused', { pausedAt: now, remainingMs });
+      return { ok: true, remainingMs };
+    });
+  });
+
+  socket.on('host:resumeTimer', (payload: { roomCode?: string }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (!room.timerRemainingMs) throw new Error('Kein pausierter Timer');
+      const remainingMs = room.timerRemainingMs;
+      const endsAt = Date.now() + remainingMs;
+      room.timerEndsAt = endsAt;
+      room.questionTimerDurationMs = remainingMs;
+      room.timerPausedAt = null;
+      room.timerRemainingMs = null;
+      room.questionTimerTimeout = setTimeout(() => {
+        if (room.gameState !== 'Q_ACTIVE') return;
+        if (!room.timerEndsAt) return;
+        clearQuestionTimers(room);
+        evaluateCurrentQuestion(room);
+        const q = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+        if (q?.mechanic === 'estimate' && Object.keys(room.answers).length <= 1) {
+          revealAnswersForRoom(room);
+        }
+      }, remainingMs + 20);
+      io.to(room.roomCode).emit('timerStarted', { endsAt });
+      return { ok: true, endsAt };
+    });
+  });
+
+  socket.on('host:extendTimer', (payload: { roomCode?: string; addSeconds?: number }, ack?: AckFn) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      const addMs = Math.min(300, Math.max(1, Number(payload?.addSeconds ?? 30))) * 1000;
+      if (room.timerPausedAt != null && room.timerRemainingMs != null) {
+        // Timer is paused — extend remaining time
+        room.timerRemainingMs = room.timerRemainingMs + addMs;
+        io.to(room.roomCode).emit('timerPaused', { pausedAt: room.timerPausedAt, remainingMs: room.timerRemainingMs });
+      } else if (room.timerEndsAt) {
+        // Timer is running — extend endsAt
+        clearQuestionTimers(room);
+        room.timerEndsAt = room.timerEndsAt + addMs;
+        const remaining = room.timerEndsAt - Date.now();
+        room.questionTimerTimeout = setTimeout(() => {
+          if (room.gameState !== 'Q_ACTIVE') return;
+          if (!room.timerEndsAt) return;
+          clearQuestionTimers(room);
+          evaluateCurrentQuestion(room);
+          const q = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+          if (q?.mechanic === 'estimate' && Object.keys(room.answers).length <= 1) {
+            revealAnswersForRoom(room);
+          }
+        }, remaining + 20);
+        io.to(room.roomCode).emit('timerStarted', { endsAt: room.timerEndsAt });
+      } else {
+        throw new Error('Kein aktiver oder pausierter Timer');
+      }
+      return { ok: true };
+    });
+  });
+
   socket.on('host:endQuiz', (payload: { roomCode?: string }, ack?: AckFn) => {
     try {
       const code = payload?.roomCode;
@@ -7143,9 +7230,38 @@ io.on('connection', (socket: Socket) => {
         persistStats();
       }
       
+      // Save last question's answers to history if not already saved
+      if (room.currentQuestionId && Object.keys(room.answers).length > 0) {
+        room.questionHistory.push({
+          questionId: room.currentQuestionId,
+          answers: { ...room.answers }
+        });
+      }
+
+      // Build post-quiz answer history summary
+      const historySummary = {
+        teams: Object.values(room.teams).map((team) => ({
+          id: team.id,
+          name: team.name,
+          score: team.score ?? 0,
+          answers: room.questionHistory.map((entry) => {
+            const ans = entry.answers[team.id];
+            return {
+              questionId: entry.questionId,
+              correct: ans?.isCorrect ?? null,
+              answer: ans?.value ?? null
+            };
+          })
+        })),
+        questions: room.questionHistory.map((entry, idx) => ({
+          questionId: entry.questionId,
+          index: idx + 1
+        }))
+      };
+
       // Broadcast to all connected clients in this room that quiz has ended,
       // then disconnect after a short delay so the event is delivered first.
-      io.to(code).emit('quizEnded', { reason: 'moderator-ended' });
+      io.to(code).emit('quizEnded', { reason: 'moderator-ended', history: historySummary });
       setTimeout(() => io.to(code).disconnectSockets(true), 800);
       // Delete the room from server
       rooms.delete(code);
@@ -7300,6 +7416,16 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
 };
 
 listenWithFallback(PORT, 3);
+
+// Keep-alive self-ping to prevent Render free tier from sleeping
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => {
+    const pingUrl = `http://localhost:${PORT}/api/health`;
+    fetch(pingUrl).catch((err) => {
+      console.warn('[keepalive] Self-ping fehlgeschlagen:', err.message);
+    });
+  }, 600000); // every 10 minutes
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

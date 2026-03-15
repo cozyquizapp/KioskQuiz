@@ -4114,7 +4114,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
               <div style={{
                 fontFamily: "var(--font-game, 'Rajdhani', sans-serif)",
                 fontWeight: 700,
-                fontSize: 'clamp(16px, 4vw, 20px)',
+                fontSize: 'clamp(18px, 4vw, 28px)',
                 color: '#ffffff',
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',

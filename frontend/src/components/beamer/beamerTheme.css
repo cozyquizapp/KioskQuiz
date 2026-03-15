@@ -3491,3 +3491,104 @@ body.projector-mode .cozyQuestionMedia {
 .cozyQuestionSubText {
   font-size: clamp(20px, 2.2vw, 38px);
 }
+
+/* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */
+
+/* Header bar pills */
+.beamer-header-title {
+  font-size: clamp(18px, 1.6vw, 28px);
+}
+
+.beamer-header-subtitle {
+  font-size: clamp(14px, 1.2vw, 22px);
+}
+
+.beamer-header-progress,
+.beamer-header-timer {
+  font-size: clamp(14px, 1.2vw, 20px);
+  padding: clamp(5px, 0.5vw, 8px) clamp(12px, 1.2vw, 20px);
+}
+
+/* Lobby: team rows & names */
+.cozyLobbyTeamRow {
+  font-size: clamp(22px, 2.5vw, 42px);
+}
+
+.cozyLobbyTeamName {
+  font-size: clamp(22px, 2.5vw, 42px);
+}
+
+/* Lobby: QR pane title & link — bump min for readability at distance */
+.cozyLobbyQrTitle {
+  font-size: clamp(26px, 3vw, 48px);
+}
+
+.cozyLobbyQrLink {
+  font-size: clamp(22px, 2.6vw, 38px);
+}
+
+/* MC option tiles: larger for beamer distance */
+.cozyOption {
+  font-size: clamp(24px, 2.8vw, 46px);
+}
+
+/* Option prefix letter inherits cozyOption size (0.95em) — add explicit floor */
+.cozyOptionPrefix {
+  font-size: clamp(20px, 2.2vw, 38px);
+}
+
+/* Scoreboard */
+.beamer-score-rank {
+  font-size: clamp(22px, 2.2vw, 38px);
+}
+
+.beamer-score-name {
+  font-size: clamp(22px, 2.5vw, 40px);
+}
+
+.beamer-score-value {
+  font-size: clamp(28px, 3.2vw, 52px);
+}
+
+.beamer-score-detail {
+  font-size: clamp(13px, 1.1vw, 18px);
+}
+
+/* Category select / Blitz pool cards */
+.beamer-select-title {
+  font-size: clamp(20px, 2vw, 36px);
+}
+
+.beamer-select-badge {
+  font-size: clamp(12px, 1vw, 16px);
+}
+
+/* Reveal panels: bump answer team & text sizes */
+.cozyRevealAnswerTeam {
+  font-size: clamp(24px, 2.4vw, 42px);
+}
+
+.cozyRevealAnswerText {
+  font-size: clamp(20px, 1.8vw, 32px);
+}
+
+/* Reveal generic (correct answer reveal) — increase min for distance */
+.cozyRevealGeneric {
+  font-size: clamp(28px, 4vw, 64px);
+}
+
+/* Blitz chip: bump min */
+.blitz-chip {
+  font-size: clamp(22px, 1.8vw, 34px);
+  min-height: clamp(60px, 5vw, 88px);
+}
+
+/* Intro card: match target sizes */
+.beamer-intro-card h2 {
+  font-size: clamp(32px, 3vw, 52px);
+}
+
+.beamer-intro-card p,
+.beamer-list {
+  font-size: clamp(24px, 2vw, 38px);
+}

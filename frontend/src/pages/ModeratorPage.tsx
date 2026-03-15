@@ -1028,6 +1028,19 @@ function ModeratorPage(): React.ReactElement {
     });
   }
 
+  function handleSkipQuestion() {
+    if (!roomCode) {
+      setToast('Kein aktiver Roomcode');
+      return;
+    }
+    const emitted = emitHost('host:skipQuestion', { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
+      if (!resp?.ok) {
+        setToast(resp?.error || 'Überspringen fehlgeschlagen');
+      }
+    });
+    if (!emitted) setToast('Socket nicht verbunden');
+  }
+
   function handleToggleMute() {
     if (!roomCode) return;
     doAction(async () => {
@@ -2649,6 +2662,14 @@ function ModeratorPage(): React.ReactElement {
           >
             Aufdecken <span className="ml-2 rounded bg-black/25 px-2 py-0.5 font-mono text-[11px]">[3]</span>
           </button>
+          {(normalizedGameState === 'Q_ACTIVE' || normalizedGameState === 'Q_LOCKED') && (
+            <button
+              onClick={handleSkipQuestion}
+              className="min-h-[48px] rounded-xl border border-[#64748b] bg-[#1e293b]/80 px-3 py-2 text-left text-sm font-extrabold text-[#94a3b8] touch-manipulation"
+            >
+              ⏭ Überspringen
+            </button>
+          )}
           <button
             onClick={handleScoreboardAction}
             className="min-h-[48px] rounded-xl border border-[#5a93c7] bg-[#254a78]/80 px-3 py-2 text-left text-sm font-extrabold text-[#cfe8ff] touch-manipulation"

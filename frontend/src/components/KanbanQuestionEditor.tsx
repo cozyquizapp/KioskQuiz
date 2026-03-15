@@ -168,27 +168,49 @@ export function KanbanQuestionEditor({
   const renderMultipleChoice = () => {
     const q = localQuestion as MultipleChoiceQuestion;
     const options = q.options || ['', '', '', ''];
+    const optionsEn: string[] = (q as any).optionsEn || [];
 
     return (
       <div style={formSectionStyle}>
         <label style={labelStyle}>🅰️ Multiple Choice Optionen</label>
         {options.map((opt, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <input
-              type="radio"
-              checked={q.correctIndex === i}
-              onChange={() => setLocalQuestion(prev => ({ ...prev, correctIndex: i } as MultipleChoiceQuestion))}
-            />
+          <div key={i} style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="radio"
+                checked={q.correctIndex === i}
+                onChange={() => setLocalQuestion(prev => ({ ...prev, correctIndex: i } as MultipleChoiceQuestion))}
+              />
+              <input
+                type="text"
+                value={opt}
+                onChange={(e) => {
+                  const newOptions = [...options];
+                  newOptions[i] = e.target.value;
+                  setLocalQuestion(prev => ({ ...prev, options: newOptions } as MultipleChoiceQuestion));
+                }}
+                placeholder={`Option ${String.fromCharCode(65 + i)}`}
+                style={inputStyle}
+              />
+            </div>
             <input
               type="text"
-              value={opt}
+              value={optionsEn[i] || ''}
               onChange={(e) => {
-                const newOptions = [...options];
-                newOptions[i] = e.target.value;
-                setLocalQuestion(prev => ({ ...prev, options: newOptions } as MultipleChoiceQuestion));
+                const newOptionsEn = [...optionsEn];
+                newOptionsEn[i] = e.target.value;
+                setLocalQuestion(prev => ({ ...prev, optionsEn: newOptionsEn } as any));
               }}
-              placeholder={`Option ${String.fromCharCode(65 + i)}`}
-              style={inputStyle}
+              placeholder={`🇬🇧 Option ${String.fromCharCode(65 + i)} (EN, auto)`}
+              style={{
+                ...inputStyle,
+                marginTop: 4,
+                marginLeft: 24,
+                fontSize: 12,
+                color: '#94a3b8',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(148,163,184,0.2)'
+              }}
             />
           </div>
         ))}
@@ -281,6 +303,20 @@ export function KanbanQuestionEditor({
           style={inputStyle}
           placeholder="z.B. Eiffelturm"
         />
+        <input
+          type="text"
+          value={(q as any).answerEn || ''}
+          onChange={(e) => setLocalQuestion(prev => ({ ...prev, answerEn: e.target.value } as any))}
+          placeholder="🇬🇧 Answer (EN, auto)"
+          style={{
+            ...inputStyle,
+            marginTop: 6,
+            fontSize: 12,
+            color: '#94a3b8',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(148,163,184,0.2)'
+          }}
+        />
       </div>
     );
   };
@@ -348,6 +384,20 @@ export function KanbanQuestionEditor({
                   style={textareaStyle}
                   rows={3}
                   placeholder="Gib deine Frage ein..."
+                />
+                <input
+                  type="text"
+                  value={(localQuestion as any).questionEn || ''}
+                  onChange={(e) => setLocalQuestion(prev => ({ ...prev, questionEn: e.target.value } as any))}
+                  placeholder="🇬🇧 English (auto)"
+                  style={{
+                    ...inputStyle,
+                    marginTop: 6,
+                    fontSize: 12,
+                    color: '#94a3b8',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(148,163,184,0.2)'
+                  }}
                 />
               </div>
               <div style={formSectionStyle}>

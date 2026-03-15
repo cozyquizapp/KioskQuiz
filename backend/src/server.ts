@@ -6451,23 +6451,13 @@ io.on('connection', (socket: Socket) => {
           const draft = await getCozyDraftFromDB(quizId).catch(() => null);
           console.log(`[host:createSession] draft lookup for "${quizId}":`, draft ? 'found' : 'not found');
           if (draft) {
-            // Translations are now done at save-time (PUT /api/studio/cozy60/:id).
-            // Fallback: translate only questions still missing questionEn (pre-migration questions).
-            const needsMigration = draft.questions.some((q) => !(q as any).questionEn);
-            let sessionQuestions = draft.questions;
-            if (needsMigration && process.env.DEEPL_API_KEY) {
-              console.log(`[host:createSession] Fallback-Übersetzung für "${quizId}" (fehlende questionEn)`);
-              const migrated = await Promise.all(draft.questions.map(autoTranslateIfMissing));
-              // Persist translations back so next session start is fast
-              const migratedDraft: CozyQuizDraft = { ...draft, questions: migrated, updatedAt: Date.now() };
-              await saveCozyDraftToDB(migratedDraft).catch((e) => console.error('[host:createSession] Fehler beim Persistieren der Übersetzungen:', e));
-              sessionQuestions = migrated;
-            }
-            sessionQuestions.forEach((q) => upsertCustomQuestion(q));
+            // Translations are done at save-time (PUT /api/studio/cozy60/:id).
+            // Load questions as-is — no translation API calls at session start.
+            draft.questions.forEach((q) => upsertCustomQuestion(q));
             const draftPayload: PublishedQuiz = {
               id: quizId,
               name: draft.meta.title,
-              questionIds: sessionQuestions.map((q) => q.id),
+              questionIds: draft.questions.map((q) => q.id),
               language: draft.meta.language,
               meta: { description: draft.meta.description || undefined, date: draft.meta.date ?? Date.now(), language: draft.meta.language },
               blitz: draft.blitz,
@@ -6600,6 +6590,23 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('host:reveal', (payload: { roomCode?: string }, ack) => {
     withRoom(payload?.roomCode, ack, (room) => withUndoSnapshot(room, () => revealAnswersForRoom(room)));
+  });
+
+  socket.on('host:skipQuestion', (payload: { roomCode?: string }, ack) => {
+    withRoom(payload?.roomCode, ack, (room) => {
+      if (room.gameState !== 'Q_ACTIVE' && room.gameState !== 'Q_LOCKED') {
+        throw new Error('Keine aktive Frage zum Überspringen');
+      }
+      return withUndoSnapshot(room, () => {
+        // Lock (evaluate) if still active, then reveal without awarding points
+        if (room.gameState === 'Q_ACTIVE') {
+          evaluateCurrentQuestion(room);
+        }
+        const payload = revealAnswersForRoom(room);
+        console.log(`[host:skipQuestion] Frage übersprungen in Raum ${room.roomCode}`);
+        return { skipped: true, ...payload };
+      });
+    });
   });
 
   socket.on('host:back', (payload: { roomCode?: string }, ack) => {

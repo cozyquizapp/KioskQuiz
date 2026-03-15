@@ -3459,19 +3459,35 @@ body.projector-mode .cozyQuestionMedia {
   justify-content: center;
 }
 
-/* Much larger question text — beamer is viewed from a distance */
+/* Larger question text when options are present */
 .cozyQuestionText {
-  font-size: clamp(62px, 8vw, 140px);
+  font-size: clamp(46px, 5.4vw, 92px);
+  line-height: 1.12;
+}
+
+/* Even larger when no options (solo/estimate) — whole frame available */
+.cozyQuestionGridSolo .cozyQuestionText {
+  font-size: clamp(56px, 7.5vw, 128px);
+  line-height: 1.08;
+}
+
+/* Scale back when team submission indicators appear */
+.cozyQuestionGrid.has-submissions .cozyQuestionText {
+  font-size: clamp(36px, 4vw, 68px);
+}
+
+/* BilingualLabel (EN big / DE small) inside question text — scale up for beamer distance */
+.cozyQuestionText > div > div:first-child {
+  font-size: clamp(40px, 5vw, 84px) !important;
   line-height: 1.1;
 }
-
-/* Scale back slightly when team submission indicators appear */
-.cozyQuestionGrid.has-submissions .cozyQuestionText {
-  font-size: clamp(42px, 5vw, 80px);
+.cozyQuestionText > div > div:last-child {
+  font-size: clamp(20px, 2.5vw, 44px) !important;
+  line-height: 1.2;
 }
 
-/* Sub-text (bilingual secondary / hint) scales with the primary */
+/* Sub-text (hint) scales proportionally */
 .cozyQuestionHint,
 .cozyQuestionSubText {
-  font-size: clamp(22px, 2.4vw, 42px);
+  font-size: clamp(20px, 2.2vw, 38px);
 }

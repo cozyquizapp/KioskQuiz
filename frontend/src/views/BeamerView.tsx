@@ -358,7 +358,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [question, setQuestion] = useState<AnyQuestion | null>(null);
   const [questionMeta, setQuestionMeta] = useState<QuestionMeta | null>(null);
   const [language, setLanguage] = useState<Lang>('de');
-  const languageRef = React.useRef<Lang>('de');
+  const languageRef = useRef<Lang>('de');
   useEffect(() => { languageRef.current = language; }, [language]);
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
   const [timerDurationMs, setTimerDurationMs] = useState<number | null>(null);

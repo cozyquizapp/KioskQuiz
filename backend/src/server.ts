@@ -3511,17 +3511,14 @@ const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
   const updates: Record<string, any> = {};
   const any = q as any;
   if (any.question) {
-    const isStale = !any.questionEn || String(any.questionEn).toUpperCase().startsWith('MYMEMORY');
-    if (isStale) {
-      const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
-      updates.questionEn = await translateText(qDe);
-    }
+    // Always re-translate — DeepL has 500k chars/month so this is safe.
+    // Clears any stale/wrong values previously cached by MyMemory.
+    const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
+    updates.questionEn = await translateText(qDe);
   }
   if (Array.isArray(any.options) && any.options.length > 0) {
-    // If any option contains '/', the user stored bilingual text (DE / EN).
-    // Always re-derive optionsEn from the DE part (before '/') so we get correct translations.
-    const hasBilingual = (any.options as string[]).some((o: string) => o.includes('/'));
-    if (hasBilingual || !any.optionsEn) {
+    // Always re-derive optionsEn (clears stale MyMemory cache too).
+    {
       updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => {
         const slashIdx = o.indexOf('/');
         const dePart = slashIdx >= 0 ? o.slice(0, slashIdx).trim() : o;

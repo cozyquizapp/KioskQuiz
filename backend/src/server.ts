@@ -1825,26 +1825,49 @@ app.put('/api/studio/cozy60/:id', async (req, res) => {
   try {
     const draftId = req.params.id;
     const updates = (req.body as Partial<CozyQuizDraft>) || {};
-    
+
+    // Helper: translate newly saved/changed questions at save-time (if DEEPL_API_KEY set)
+    const translateDraftQuestions = async (draft: CozyQuizDraft, prevDraft: CozyQuizDraft | null): Promise<CozyQuizDraft> => {
+      if (!process.env.DEEPL_API_KEY || !updates.questions) return draft;
+      const prevMap = new Map<string, AnyQuestion>((prevDraft?.questions ?? []).map((q) => [q.id, q]));
+      let changed = false;
+      const translatedQuestions = await Promise.all(draft.questions.map(async (q) => {
+        const any = q as any;
+        const prev = prevMap.get(q.id) as any;
+        // Re-translate if question text changed or translations are missing
+        const questionChanged = !prev || prev.question !== any.question;
+        const optionsChanged = !prev || JSON.stringify(prev.options) !== JSON.stringify(any.options);
+        const needsTranslation = !any.questionEn || questionChanged || optionsChanged || !any.optionsEn;
+        if (!needsTranslation) return q;
+        const translated = await autoTranslateQuestion(q);
+        if (translated !== q) changed = true;
+        return translated;
+      }));
+      if (!changed) return draft;
+      return { ...draft, questions: translatedQuestions };
+    };
+
     if (await ensureDraftDbConnection()) {
       const existing = await getCozyDraftFromDB(draftId);
       if (!existing) {
         return res.status(404).json({ error: 'Draft nicht gefunden' });
       }
-      
-      const updated = applyDraftUpdate(existing, updates);
+
+      let updated = applyDraftUpdate(existing, updates);
       updated.updatedAt = Date.now();
+      updated = await translateDraftQuestions(updated, existing);
       await saveCozyDraftToDB(updated);
-      
+
       return res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
     }
     if (mongoUriConfigured) {
       return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht gespeichert werden' });
     }
-    
+
     // Fallback to in-memory
     const { draft, index } = getCozyDraftOrFail(draftId);
-    const updated = applyDraftUpdate(draft, updates);
+    let updated = applyDraftUpdate(draft, updates);
+    updated = await translateDraftQuestions(updated, draft);
     cozyDrafts[index] = updated;
     persistCozyDrafts();
     res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
@@ -3525,6 +3548,28 @@ const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
         return translateText(dePart);
       }));
     }
+  }
+  if (!any.answerEn && any.answer) updates.answerEn = await translateText(any.answer);
+  if (!any.correctOrderEn && Array.isArray(any.correctOrder) && any.correctOrder.length > 0)
+    updates.correctOrderEn = await Promise.all((any.correctOrder as string[]).map((o: string) => translateText(o)));
+  return Object.keys(updates).length ? { ...q, ...updates } : q;
+};
+
+// Translate only fields that are missing (used as fallback in createSession for old questions)
+const autoTranslateIfMissing = async (q: AnyQuestion): Promise<AnyQuestion> => {
+  if (!process.env.DEEPL_API_KEY) return q;
+  const updates: Record<string, any> = {};
+  const any = q as any;
+  if (any.question && !any.questionEn) {
+    const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
+    updates.questionEn = await translateText(qDe);
+  }
+  if (Array.isArray(any.options) && any.options.length > 0 && !any.optionsEn) {
+    updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => {
+      const slashIdx = o.indexOf('/');
+      const dePart = slashIdx >= 0 ? o.slice(0, slashIdx).trim() : o;
+      return translateText(dePart);
+    }));
   }
   if (!any.answerEn && any.answer) updates.answerEn = await translateText(any.answer);
   if (!any.correctOrderEn && Array.isArray(any.correctOrder) && any.correctOrder.length > 0)
@@ -6406,13 +6451,23 @@ io.on('connection', (socket: Socket) => {
           const draft = await getCozyDraftFromDB(quizId).catch(() => null);
           console.log(`[host:createSession] draft lookup for "${quizId}":`, draft ? 'found' : 'not found');
           if (draft) {
-            // Immer übersetzen damit questionEn verfügbar ist (Teams können individuell Englisch wählen)
-            const translatedQuestions = await Promise.all(draft.questions.map(autoTranslateQuestion));
-            translatedQuestions.forEach((q) => upsertCustomQuestion(q));
+            // Translations are now done at save-time (PUT /api/studio/cozy60/:id).
+            // Fallback: translate only questions still missing questionEn (pre-migration questions).
+            const needsMigration = draft.questions.some((q) => !(q as any).questionEn);
+            let sessionQuestions = draft.questions;
+            if (needsMigration && process.env.DEEPL_API_KEY) {
+              console.log(`[host:createSession] Fallback-Übersetzung für "${quizId}" (fehlende questionEn)`);
+              const migrated = await Promise.all(draft.questions.map(autoTranslateIfMissing));
+              // Persist translations back so next session start is fast
+              const migratedDraft: CozyQuizDraft = { ...draft, questions: migrated, updatedAt: Date.now() };
+              await saveCozyDraftToDB(migratedDraft).catch((e) => console.error('[host:createSession] Fehler beim Persistieren der Übersetzungen:', e));
+              sessionQuestions = migrated;
+            }
+            sessionQuestions.forEach((q) => upsertCustomQuestion(q));
             const draftPayload: PublishedQuiz = {
               id: quizId,
               name: draft.meta.title,
-              questionIds: translatedQuestions.map((q) => q.id),
+              questionIds: sessionQuestions.map((q) => q.id),
               language: draft.meta.language,
               meta: { description: draft.meta.description || undefined, date: draft.meta.date ?? Date.now(), language: draft.meta.language },
               blitz: draft.blitz,

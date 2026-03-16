@@ -1955,7 +1955,7 @@ useEffect(() => {
 
   const renderCozyIntroContent = (): JSX.Element => {
     const showQr = Boolean(teamJoinQr && ((gameState === 'LOBBY' && !lobbyQrLocked) || debugMode));
-    const joinDisplay = teamJoinLink ? teamJoinLink.replace(/^https?:\/\//i, '') : '';
+    const joinDisplay = teamJoinLink ? (() => { try { return new URL(teamJoinLink).hostname; } catch { return teamJoinLink.replace(/^https?:\/\//i, '').split('/')[0]; } })() : '';
     const sortedTeams = [...teams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     const isBoth = language === 'both';
     const isEn = language === 'en';

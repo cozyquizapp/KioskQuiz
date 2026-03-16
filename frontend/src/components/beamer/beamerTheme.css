@@ -1475,16 +1475,19 @@
 
 .cozyLobbyQrLink {
   font-family: var(--font-game);
-  font-size: clamp(18px, 2.2vw, 26px);
+  font-size: clamp(16px, 1.8vw, 22px);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #f1f5f9;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .cozyLobbyQrPane img {
-  width: min(300px, 30vh);
-  height: min(300px, 30vh);
+  width: min(400px, 42vh);
+  height: min(400px, 42vh);
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.14);
   background: #ffffff; /* keep white for QR code readability */
@@ -1551,13 +1554,14 @@
 .cozyQuestionGridSolo {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
-  align-items: stretch;
+  align-items: center;
+  justify-items: center;
   flex: 1;
 }
 
 .cozyQuestionGridSolo .cozyQuestionHero {
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  max-width: 1080px;
 }
 
 /* Reveal: vertical split — question left, answers right */
@@ -3568,28 +3572,21 @@ body.projector-mode .cozyQuestionMedia {
 
 /* Countdown number on QUESTION_INTRO screen */
 @keyframes countdownPulse {
-  0%   { transform: scale(2.2); opacity: 0; filter: blur(12px); }
-  50%  { transform: scale(0.92); opacity: 1; filter: blur(0); }
-  75%  { transform: scale(1.05); }
-  100% { transform: scale(1.0); opacity: 1; filter: blur(0); }
+  0%   { transform: scale(1.5); opacity: 0; filter: blur(6px); }
+  45%  { transform: scale(0.94); opacity: 1; filter: blur(0); }
+  70%  { transform: scale(1.03); }
+  85%  { transform: scale(0.99); }
+  100% { transform: scale(1.0); opacity: 1; }
 }
 
 .cozyQuestionIntroCountdown {
   font-size: clamp(80px, 12vw, 180px);
   font-weight: 900;
-  color: #22c55e;
+  color: #942d59;
   line-height: 1;
   letter-spacing: -0.02em;
-  animation: countdownPulse 0.65s var(--ease-elastic) both;
-  text-shadow: 0 0 60px rgba(34,197,94,0.7);
-}
-.cozyQuestionIntroCountdown[data-num="2"] {
-  color: #fbbf24;
-  text-shadow: 0 0 60px rgba(251,191,36,0.7);
-}
-.cozyQuestionIntroCountdown[data-num="1"] {
-  color: #ef4444;
-  text-shadow: 0 0 60px rgba(239,68,68,0.7);
+  animation: countdownPulse 0.9s ease-out both;
+  text-shadow: 0 0 60px rgba(148,45,89,0.7);
 }
 
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */

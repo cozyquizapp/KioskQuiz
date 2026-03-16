@@ -532,7 +532,9 @@ function ModeratorPage(): React.ReactElement {
 
       if (matchesHotkey(event, ['f13', 'digit1', 'numpad1', '1'])) {
         event.preventDefault();
-        handleNextQuestion();
+        if (socketGameState !== 'QUESTION_INTRO') {
+          handleNextQuestion();
+        }
         return;
       }
       if (matchesHotkey(event, ['f17', 'digit5', 'numpad5', '5'])) {

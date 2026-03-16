@@ -1552,17 +1552,16 @@
 }
 
 .cozyQuestionGridSolo {
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  display: flex;
   align-items: center;
-  justify-items: center;
+  justify-content: center;
   flex: 1;
+  min-height: 0;
 }
 
 .cozyQuestionGridSolo .cozyQuestionHero {
   width: 100%;
   max-width: 1080px;
-  margin: auto;
 }
 
 /* Reveal: vertical split — question left, answers right */

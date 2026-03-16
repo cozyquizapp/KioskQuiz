@@ -793,10 +793,12 @@ function ModeratorPage(): React.ReactElement {
         }
       }
       
-      // N: Next question (force skip)
+      // N: Next question (force skip) — not during intro countdown
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        handleNextQuestion();
+        if (socketGameState !== 'QUESTION_INTRO') {
+          handleNextQuestion();
+        }
       }
 
       // U: Undo / one step back

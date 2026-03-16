@@ -3019,7 +3019,7 @@ useEffect(() => {
 
         {(blitz.phase === 'PLAYING' || blitz.phase === 'DISPLAYING') ? (
           <>
-            <div className="beamer-card blitz-current-card">
+            <div key={`blitz-img-${activeIndex}`} className="beamer-card blitz-current-card">
               {activeItem?.mediaUrl && (
                 <img
                   src={activeItem.mediaUrl}
@@ -3075,7 +3075,8 @@ useEffect(() => {
                       background: 'linear-gradient(145deg, rgba(10,24,46,0.88), rgba(13,39,74,0.78))',
                       borderRadius: '10px',
                       padding: '8px',
-                      border: '1px solid rgba(240,95,178,0.24)'
+                      border: '1px solid rgba(240,95,178,0.24)',
+                      animation: `slideInUpWave 0.45s cubic-bezier(0.34,1.56,0.64,1) ${idx * 0.1}s both`,
                     }}>
                       {item.mediaUrl && (
                         <img
@@ -4157,6 +4158,7 @@ useEffect(() => {
         const lastAttemptName = lastAttempt
           ? teams.find((t) => t.id === lastAttempt.teamId)?.name || lastAttempt.teamId
           : null;
+        const usedAnswers = rundlauf?.usedAnswers ?? [];
         return (
           <BeamerFrame
             key={`${sceneKey}-rundlauf-play`}
@@ -4165,35 +4167,113 @@ useEffect(() => {
             subtitle={currentCategoryTitle || ''}
             badgeLabel={`RUNDE ${roundLabel}`}
             badgeTone="accent"
-            footerMessage={language === 'de' ? 'Reihum antworten' : 'Take turns'}
+            footerMessage={language === 'de' ? 'Reihum antworten — wer passt, fliegt raus' : 'Take turns — pass means eliminated'}
             status="active"
           >
-            <div className="beamer-stack">
-              <div className="beamer-intro-card">
-                <h2>{currentCategoryTitle || 'Kategorie'}</h2>
-                <p>{activeTeamName ? `Team dran: ${activeTeamName}` : 'Team dran: ?'}</p>
-                {lastAttempt && (
-                  <p style={{ marginTop: 8 }}>
-                    {lastAttemptName ? `${lastAttemptName}: ` : ''}
-                    {lastAttempt.text || (language === 'de' ? 'Keine Eingabe' : 'No answer')}
-                  </p>
-                )}
+            <div className="beamer-stack" style={{ gap: '12px' }}>
+              {/* Active team — big dramatic banner */}
+              <div
+                key={`active-team-${rundlauf?.activeTeamId ?? 'none'}`}
+                style={{
+                  borderRadius: '20px',
+                  background: 'linear-gradient(135deg, rgba(148,45,89,0.18), rgba(148,45,89,0.10))',
+                  border: '2px solid rgba(148,45,89,0.55)',
+                  boxShadow: '0 4px 0 rgba(148,45,89,0.35), 0 0 32px rgba(148,45,89,0.12)',
+                  padding: '22px 32px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  animation: 'scaleInCenter 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{
+                  fontSize: '13px', fontWeight: '800', letterSpacing: '0.18em',
+                  textTransform: 'uppercase', color: '#942d59',
+                }}>
+                  {language === 'de' ? '⚡ Team dran' : '⚡ Active team'}
+                </div>
+                <div style={{
+                  fontSize: 'clamp(32px, 4.5vw, 64px)',
+                  fontWeight: '900',
+                  color: 'var(--text)',
+                  lineHeight: 1.1,
+                  textAlign: 'center',
+                }}>
+                  {activeTeamName || '?'}
+                </div>
               </div>
-              {rundlauf?.usedAnswers?.length ? (
-                <div className="beamer-grid">
-                  {rundlauf.usedAnswers.slice(-12).map((answer, idx) => (
-                    <div className="beamer-card" key={`rundlauf-ans-${idx}`}>
-                      {answer}
+
+              {/* Last attempt */}
+              {lastAttempt && (
+                <div style={{
+                  borderRadius: '14px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  padding: '12px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  animation: 'slideInUp 0.4s ease-out',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: '20px' }}>💬</span>
+                  <div>
+                    {lastAttemptName && (
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '3px' }}>
+                        {lastAttemptName}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text)' }}>
+                      {lastAttempt.text || (language === 'de' ? 'Keine Eingabe' : 'No answer')}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Used answers — compact chip grid */}
+              {usedAnswers.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  justifyContent: 'center',
+                  padding: '4px 0',
+                }}>
+                  {usedAnswers.slice(-16).map((answer, idx) => (
+                    <span key={`used-${idx}`} style={{
+                      padding: '6px 14px',
+                      borderRadius: '999px',
+                      background: 'rgba(34,197,94,0.12)',
+                      border: '1px solid rgba(34,197,94,0.35)',
+                      color: '#4ade80',
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      animation: idx === usedAnswers.length - 1 ? 'fadeInScale 0.35s ease-out' : undefined,
+                    }}>
+                      ✓ {answer}
+                    </span>
                   ))}
                 </div>
-              ) : null}
+              )}
+
+              {/* Eliminated teams — muted strip */}
               {eliminatedNames.length > 0 && (
-                <div className="beamer-card" style={{ opacity: 0.8 }}>
-                  <div style={{ fontWeight: 700 }}>
-                    {language === 'de' ? 'Ausgeschieden:' : 'Eliminated:'}
-                  </div>
-                  <div style={{ marginTop: 6 }}>{eliminatedNames.join(', ')}</div>
+                <div style={{
+                  borderRadius: '10px',
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.2)',
+                  padding: '8px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: '16px' }}>💀</span>
+                  <span style={{ fontSize: '14px', color: '#f87171', fontWeight: '700' }}>
+                    {eliminatedNames.join('  ·  ')}
+                  </span>
                 </div>
               )}
             </div>

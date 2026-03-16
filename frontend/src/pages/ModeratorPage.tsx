@@ -2878,8 +2878,6 @@ const renderCozyStagePanel = () => {
       <section style={{ ...card, marginTop: 12 }}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))' }}>
           <div style={{ display: 'grid', gap: 10 }}>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>Roomcode</div>
-            <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: '0.3em' }}>{roomCode}</div>
             <div style={{ fontSize: 13, color: '#374151' }}>
               {connected} {connected === 1 ? 'Team verbunden' : 'Teams verbunden'}
             </div>
@@ -2904,22 +2902,7 @@ const renderCozyStagePanel = () => {
               </button>
             </div>
           </div>
-          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))' }}>
-            {teamQr && (
-              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Team</div>
-                <img src={teamQr} alt="Team QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid #e5e7eb' }} />
-                {teamDisplay && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{teamDisplay}</div>}
-              </div>
-            )}
-            {beamerQr && (
-              <div style={{ textAlign: 'center', padding: 12, borderRadius: 14, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Beamer</div>
-                <img src={beamerQr} alt="Beamer QR" style={{ width: 160, height: 160, borderRadius: 16, border: '1px solid #e5e7eb' }} />
-                {beamerDisplay && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{beamerDisplay}</div>}
-              </div>
-            )}
-          </div>
+          <div />
         </div>
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 800, marginBottom: 8 }}>Teams im Raum</div>
@@ -3059,18 +3042,9 @@ const renderCozyStagePanel = () => {
     // Lobby content
     const renderLobbyContent = () => (
       <div className="space-y-3">
-        <div className="rounded-2xl bg-[#0b2343]/90 border border-[#f05fb233] p-4 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2] mb-1">Raumcode</p>
-          <p className="text-6xl font-black tracking-[0.25em] text-[#ffe4f2]">{roomCode}</p>
-          <p className="text-sm text-[#94a3b8] mt-2">
-            {joinScreenTeams.length === 0 ? 'Warte auf Teams…' : `${joinScreenTeams.length} ${joinScreenTeams.length === 1 ? 'Team' : 'Teams'} verbunden`}
-          </p>
-        </div>
-        {teamQr && (
-          <div className="flex justify-center">
-            <img src={teamQr} alt="Team QR" className="w-48 h-48 rounded-2xl border border-[#f05fb244] bg-white p-1" />
-          </div>
-        )}
+        <p className="text-sm text-[#94a3b8]">
+          {joinScreenTeams.length === 0 ? 'Warte auf Teams…' : `${joinScreenTeams.length} ${joinScreenTeams.length === 1 ? 'Team' : 'Teams'} verbunden`}
+        </p>
         {joinScreenTeams.length > 0 && (
           <div className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] p-3">
             <div className="flex flex-wrap gap-2">

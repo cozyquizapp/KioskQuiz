@@ -2318,6 +2318,12 @@
   grid-column: 1;
   grid-row: 1 / -1;
   z-index: 1;
+  animation: blitzImageFadeIn 0.4s ease-out;
+}
+
+@keyframes blitzImageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .blitz-text-overlay {
@@ -2448,10 +2454,16 @@
 }
 
 .blitz-chip.current {
-  border-color: rgba(148, 45, 89, 0.6);
-  background: rgba(148, 45, 89, 0.12);
-  color: #942d59;
-  box-shadow: 0 12px 28px rgba(148, 45, 89, 0.2);
+  border-color: rgba(148, 45, 89, 0.7);
+  background: rgba(148, 45, 89, 0.18);
+  color: #c2547a;
+  box-shadow: 0 0 18px rgba(148, 45, 89, 0.35);
+  animation: chipCurrentPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes chipCurrentPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(148, 45, 89, 0.3); transform: scale(1); }
+  50%       { box-shadow: 0 0 28px rgba(148, 45, 89, 0.6); transform: scale(1.08); }
 }
 
 .blitz-chip.done {
@@ -2885,7 +2897,12 @@
 }
 
 .blitz-current-card {
-  animation: scaleReveal 0.7s var(--ease-elastic);
+  animation: blitzCardIn 0.55s var(--ease-elastic);
+}
+
+@keyframes blitzCardIn {
+  0%   { opacity: 0; transform: scale(0.96) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .blitz-timeline {

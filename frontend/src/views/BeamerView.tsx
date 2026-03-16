@@ -3633,7 +3633,7 @@ useEffect(() => {
               <img src={mediaUrl} alt="" onLoad={onMediaLoad} />
             </div>
           )}
-          <div className="cozyQuestionBody">{renderHeroBody()}</div>
+          {(() => { const body = renderHeroBody(); return body ? <div className="cozyQuestionBody">{body}</div> : null; })()}
         </div>
       );
 

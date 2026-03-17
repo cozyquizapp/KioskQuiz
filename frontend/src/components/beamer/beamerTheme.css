@@ -2568,10 +2568,10 @@
 }
 
 @keyframes beamerFade {
-  0%   { opacity: 0; transform: translateY(55px) scale(0.93); filter: blur(10px); }
-  60%  { opacity: 1; filter: blur(0); }
-  75%  { transform: translateY(-6px) scale(1.01); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  0%   { opacity: 0.2; transform: translateY(10px) scale(0.97); filter: blur(3px); }
+  60%  { opacity: 1;   filter: blur(0); }
+  80%  { transform: translateY(-2px) scale(1.004); }
+  100% { opacity: 1;   transform: translateY(0) scale(1); filter: blur(0); }
 }
 
 @keyframes cozyHop {
@@ -3594,7 +3594,21 @@ body.projector-mode .cozyQuestionMedia {
   justify-content: center;
 }
 
-/* Each number: stacked absolutely, hidden by default, animated in sequence */
+/* 3 and 2: fade IN then fade OUT so they don't overlap the next number */
+@keyframes countdownNumGo {
+  0%   { opacity: 0; transform: scale(1.45); filter: blur(5px); }
+  18%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
+  75%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
+  100% { opacity: 0; transform: scale(0.88); filter: blur(0);   }
+}
+/* 1: fade IN and stay visible */
+@keyframes countdownNumLast {
+  0%   { opacity: 0; transform: scale(1.45); filter: blur(5px); }
+  30%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
+  100% { opacity: 1; transform: scale(1);    filter: blur(0);   }
+}
+
+/* Each number: stacked absolutely, invisible by default */
 .cozyCountdownNum {
   position: absolute;
   font-size: clamp(80px, 12vw, 180px);
@@ -3604,11 +3618,17 @@ body.projector-mode .cozyQuestionMedia {
   letter-spacing: -0.02em;
   text-shadow: 0 0 60px rgba(148,45,89,0.7);
   opacity: 0;
-  animation: countdownPulse 0.9s ease-out forwards;
+  animation: countdownNumGo 1s ease-out backwards;
 }
 .cozyCountdownNum:nth-child(1) { animation-delay: 0s; }
 .cozyCountdownNum:nth-child(2) { animation-delay: 1s; }
-.cozyCountdownNum:nth-child(3) { animation-delay: 2s; }
+/* "1": different animation — fades in and stays visible */
+.cozyCountdownNum:nth-child(3) {
+  animation-name: countdownNumLast;
+  animation-duration: 0.7s;
+  animation-delay: 2s;
+  animation-fill-mode: both;
+}
 
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */
 

@@ -36,9 +36,21 @@ import { getAvatarSize } from '../config/avatarSizes';
 import type { AvatarOption } from '../config/avatars';
 import { hasStateBasedRendering, getAvatarStatePath, type AvatarState } from '../config/avatarStates';
 import { resumeAudio, playFanfare, playReveal, playTimesUp, playTick, playUrgentTick, playScoreUp, setVolume, getVolume } from '../utils/sounds';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Fits map to all markers on mount (must be rendered inside MapContainer)
+const FitBoundsOnMount: React.FC<{ bounds: L.LatLngBounds }> = ({ bounds }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+};
 
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -2327,76 +2339,145 @@ useEffect(() => {
     }
     if (bunte?.kind === 'map' && bunte?.target) {
       const isReveal = gameState === 'Q_REVEAL';
-      const teamPins: Array<{ teamId: string; name: string; lat: number; lng: number; detail: string }> = [];
+      type TeamPin = { teamId: string; name: string; lat: number; lng: number; detail: string; distKm: number | null };
+      const teamPins: TeamPin[] = [];
       if (isReveal) {
-        const detailByTeam: Record<string, string> = {};
-        (answerResults ?? []).forEach((r) => {
-          if (r.awardedDetail) detailByTeam[r.teamId] = r.awardedDetail;
-        });
+        const resultByTeam: Record<string, { awardedDetail?: string | null; tieBreaker?: { primary: number } | null }> = {};
+        (answerResults ?? []).forEach((r) => { resultByTeam[r.teamId] = r; });
         (teamStatus ?? []).forEach((t) => {
           const ans = t.answer as any;
           if (ans?.kind === 'map' && typeof ans.lat === 'number' && typeof ans.lng === 'number') {
-            teamPins.push({
-              teamId: t.id,
-              name: t.name ?? t.id,
-              lat: ans.lat,
-              lng: ans.lng,
-              detail: detailByTeam[t.id] ?? ''
-            });
+            const res = resultByTeam[t.id];
+            const distKm = res?.tieBreaker?.primary != null ? -res.tieBreaker.primary : null;
+            teamPins.push({ teamId: t.id, name: t.name ?? t.id, lat: ans.lat, lng: ans.lng, detail: res?.awardedDetail ?? '', distKm });
           }
         });
       }
       const target = bunte.target as { lat: number; lng: number };
+
+      const formatDist = (km: number): string => {
+        if (km < 10) return `${Math.round(km * 10) / 10} km`;
+        if (km < 1000) return `${Math.round(km)} km`;
+        return `${(km / 1000).toFixed(1).replace('.', ',')} Tsd. km`;
+      };
+      const tierColor = (detail: string): string => {
+        const d = detail.toLowerCase();
+        if (d.includes('perfekt')) return '#22c55e';
+        if (d.includes('sehr nah')) return '#3b82f6';
+        if (d.includes('nah dran')) return '#f97316';
+        if (d.includes('weit weg')) return '#ef4444';
+        return '#6b7280';
+      };
+
+      // Sort by distance ascending (closest first)
+      const sortedPins = [...teamPins].sort((a, b) => (a.distKm ?? Infinity) - (b.distKm ?? Infinity));
+      const medals = ['🥇', '🥈', '🥉'];
+
       const targetIcon = L.divIcon({
         className: '',
-        html: `<div style="background:#942d59;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 3px #942d59"></div>`,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
+        html: `<div style="background:#942d59;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 5px rgba(148,45,89,0.35),0 0 24px rgba(148,45,89,0.7)"></div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
       });
-      const teamIcon = (name: string) => L.divIcon({
-        className: '',
-        html: `<div style="background:#1a2035;color:#f1f5f9;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;border:2px solid #942d59;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${name}</div>`,
-        iconSize: [undefined as any, undefined as any],
-        iconAnchor: [0, 10]
-      });
+      const teamPinIcon = (pin: TeamPin) => {
+        const color = pin.detail ? tierColor(pin.detail) : '#94a3b8';
+        const distLabel = pin.distKm != null ? formatDist(pin.distKm) : '';
+        return L.divIcon({
+          className: '',
+          html: `<div style="background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;border:2px solid ${color};white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.6);text-align:center;line-height:1.3">${pin.name}${distLabel ? `<br><span style="font-size:10px;font-weight:700;color:${color}">${distLabel}</span>` : ''}</div>`,
+          iconSize: [undefined as any, undefined as any],
+          iconAnchor: [0, 10]
+        });
+      };
+
       const allLats = [target.lat, ...teamPins.map(p => p.lat)];
       const allLngs = [target.lng, ...teamPins.map(p => p.lng)];
+      const bounds = L.latLngBounds(
+        [Math.min(...allLats), Math.min(...allLngs)],
+        [Math.max(...allLats), Math.max(...allLngs)]
+      );
       const centerLat = (Math.min(...allLats) + Math.max(...allLats)) / 2;
       const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
+
       return (
-        <div style={{ borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <MapContainer
-            key={isReveal ? 'reveal' : 'active'}
-            center={[centerLat, centerLng]}
-            zoom={isReveal && teamPins.length ? 3 : 2}
-            style={{ flex: 1, minHeight: 340, width: '100%' }}
-            zoomControl={false}
-            scrollWheelZoom={false}
-            attributionControl={false}
-          >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
-            {isReveal && (
-              <Marker position={[target.lat, target.lng]} icon={targetIcon}>
-                <Popup>{bunte.targetLabel || `${target.lat.toFixed(3)}, ${target.lng.toFixed(3)}`}</Popup>
-              </Marker>
+        <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
+          {/* Map */}
+          <div style={{ flex: '1 1 60%', borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <MapContainer
+              key={isReveal ? 'reveal' : 'active'}
+              center={[centerLat, centerLng]}
+              zoom={isReveal && teamPins.length ? 3 : 2}
+              style={{ flex: 1, minHeight: 280, width: '100%' }}
+              zoomControl={false}
+              scrollWheelZoom={false}
+              attributionControl={false}
+            >
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              {isReveal && teamPins.length > 0 && <FitBoundsOnMount bounds={bounds} />}
+              {isReveal && (
+                <Marker position={[target.lat, target.lng]} icon={targetIcon}>
+                  <Popup>{bunte.targetLabel || `${target.lat.toFixed(3)}, ${target.lng.toFixed(3)}`}</Popup>
+                </Marker>
+              )}
+              {isReveal && sortedPins.map((p) => (
+                <Marker key={p.teamId} position={[p.lat, p.lng]} icon={teamPinIcon(p)}>
+                  <Popup>{p.name}{p.distKm != null ? `: ${formatDist(p.distKm)}` : ''}</Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+            {isReveal && bunte.targetLabel && (
+              <div style={{ padding: '8px 14px', background: 'rgba(14,22,44,0.95)', color: '#f1f5f9', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#942d59', display: 'inline-block', border: '2px solid #fff', flexShrink: 0 }} />
+                {bunte.targetLabel}
+              </div>
             )}
-            {isReveal && teamPins.map((p) => (
-              <Marker key={p.teamId} position={[p.lat, p.lng]} icon={teamIcon(p.name)}>
-                <Popup>{p.name}: {p.detail}</Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-          {isReveal && bunte.targetLabel && (
-            <div style={{ padding: '8px 14px', background: 'rgba(14,22,44,0.95)', color: '#f1f5f9', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#942d59', display: 'inline-block', border: '2px solid #fff', flexShrink: 0 }} />
-              {bunte.targetLabel}
-            </div>
-          )}
-          {!isReveal && (
-            <div style={{ padding: '6px 14px', background: 'rgba(14,22,44,0.95)', color: '#64748b', fontSize: 13, textAlign: 'center' }}>
-              {language === 'de' ? 'Teams setzen ihre Pins …' : 'Teams are placing their pins …'}
+            {!isReveal && (
+              <div style={{ padding: '6px 14px', background: 'rgba(14,22,44,0.95)', color: '#64748b', fontSize: 13, textAlign: 'center', flexShrink: 0 }}>
+                {language === 'de' ? 'Teams setzen ihre Pins …' : 'Teams are placing their pins …'}
+              </div>
+            )}
+          </div>
+
+          {/* Ranking panel */}
+          {isReveal && sortedPins.length > 0 && (
+            <div style={{ flex: '0 0 36%', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center', minWidth: 0 }}>
+              <div style={{ color: '#94a3b8', fontWeight: 800, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
+                {language === 'de' ? '📍 Abstände zur Lösung' : '📍 Distance to answer'}
+              </div>
+              {sortedPins.map((p, i) => {
+                const color = p.detail ? tierColor(p.detail) : '#6b7280';
+                const tierLabel = p.detail ? p.detail.replace(/\s*\(.*?\)/, '').trim() : '';
+                const isWinner = i === 0;
+                return (
+                  <div key={p.teamId} style={{
+                    background: isWinner ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
+                    border: `2px solid ${isWinner ? color : 'rgba(255,255,255,0.07)'}`,
+                    borderRadius: 14,
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10
+                  }}>
+                    <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{medals[i] ?? `${i + 1}.`}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.name}
+                      </div>
+                      {isWinner && (
+                        <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 2 }}>
+                          {language === 'de' ? 'Am nächsten dran! 🎯' : 'Closest! 🎯'}
+                        </div>
+                      )}
+                      {!isWinner && tierLabel && (
+                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{tierLabel}</div>
+                      )}
+                    </div>
+                    <div style={{ fontWeight: 900, fontSize: 15, color, flexShrink: 0, textAlign: 'right' }}>
+                      {p.distKm != null ? formatDist(p.distKm) : '—'}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

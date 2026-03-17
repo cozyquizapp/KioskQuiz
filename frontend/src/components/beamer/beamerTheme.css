@@ -2689,10 +2689,10 @@
 }
 
 @keyframes staggerFadeIn {
-  0%   { opacity: 0; transform: translateY(70px) scale(0.78); filter: blur(6px); }
-  55%  { opacity: 1; filter: blur(0); transform: translateY(-8px) scale(1.04); }
-  78%  { transform: translateY(3px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  0%   { opacity: 0; transform: scale(0.82); filter: blur(4px); }
+  60%  { opacity: 1; filter: blur(0); transform: scale(1.03); }
+  80%  { transform: scale(0.99); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 
 @keyframes smoothPulse {

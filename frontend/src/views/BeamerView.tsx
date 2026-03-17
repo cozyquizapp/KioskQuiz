@@ -433,7 +433,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
 
   // Countdown state for QUESTION_INTRO screen
-  const [introCountdown, setIntroCountdown] = useState(3);
+  const [introCountdown, setIntroCountdown] = useState(4);
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
@@ -748,11 +748,11 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => window.clearInterval(id);
   }, [gameState, featureFlags.isCozyMode]);
 
-  // Countdown 3-2-1 for QUESTION_INTRO screen
+  // Countdown 4-3-2-1 for QUESTION_INTRO screen
   useEffect(() => {
     if (gameState !== 'QUESTION_INTRO') return undefined;
-    setIntroCountdown(3);
-    let current = 3;
+    setIntroCountdown(4);
+    let current = 4;
     const id = window.setInterval(() => {
       current -= 1;
       if (current < 1) {

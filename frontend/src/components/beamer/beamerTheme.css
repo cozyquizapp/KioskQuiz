@@ -1562,6 +1562,7 @@
 .cozyQuestionGridSolo .cozyQuestionHero {
   width: 100%;
   max-width: 1080px;
+  margin: auto;
 }
 
 /* Reveal: vertical split — question left, answers right */

@@ -1032,6 +1032,7 @@ function ModeratorPage(): React.ReactElement {
   };
 
   function handleNextQuestion() {
+    if (socketGameState === 'QUESTION_INTRO') return;
     sendHostCommand('host:next', async () => {
       await loadCurrentQuestion();
       // Answers will be updated by useLiveAnswers polling

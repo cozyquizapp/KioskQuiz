@@ -434,6 +434,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
   // Countdown display is now pure-CSS — no state needed
   const [introIndex, setIntroIndex] = useState(0);
+  // Stable key for QUESTION_INTRO frame — increments only when entering the phase,
+  // so question?.id arriving mid-phase does NOT remount the frame and reset animations.
+  const [introFrameKey, setIntroFrameKey] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
@@ -453,6 +456,14 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
+
+  // Increment introFrameKey each time we enter QUESTION_INTRO so the frame
+  // gets a fresh mount (and CSS animations restart) without depending on question?.id.
+  useEffect(() => {
+    if (gameState === 'QUESTION_INTRO') {
+      setIntroFrameKey(k => k + 1);
+    }
+  }, [gameState]);
 
   useEffect(() => {
     const onFirstInteraction = () => {
@@ -3657,7 +3668,7 @@ useEffect(() => {
 
     const renderQuestionIntroFrame = () => (
       <BeamerFrame
-        key={`${sceneKey}-question-intro`}
+        key={`question-intro-${introFrameKey}`}
         {...baseFrameProps}
         title=""
         subtitle=""

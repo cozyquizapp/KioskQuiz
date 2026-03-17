@@ -3617,6 +3617,11 @@ useEffect(() => {
               </div>
             );
           }
+          // Map question: show the world map with team pins + ranking panel
+          if ((question as any)?.bunteTuete?.kind === 'map') {
+            const mapEl = renderQuestionCardGrid();
+            if (mapEl) return mapEl;
+          }
           // Generic reveal: extract solution from question object if not provided by event.
           // Prefer separate answerEn/answer fields; fallback to combined "DE / EN" format.
           const q = question as any;

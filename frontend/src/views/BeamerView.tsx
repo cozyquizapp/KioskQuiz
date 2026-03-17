@@ -432,8 +432,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionFlyIn, setQuestionFlyIn] = useState(false);
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
 
-  // Countdown state for QUESTION_INTRO screen
-  const [introCountdown, setIntroCountdown] = useState(3);
+  // Countdown display is now pure-CSS — no state needed
   const [introIndex, setIntroIndex] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
@@ -748,22 +747,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => window.clearInterval(id);
   }, [gameState, featureFlags.isCozyMode]);
 
-  // Countdown 3-2-1 for QUESTION_INTRO screen
-  useEffect(() => {
-    if (gameState !== 'QUESTION_INTRO') return undefined;
-    setIntroCountdown(3);
-    let current = 3;
-    const id = window.setInterval(() => {
-      current -= 1;
-      if (current < 1) {
-        setIntroCountdown(1);
-        window.clearInterval(id);
-      } else {
-        setIntroCountdown(current);
-      }
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [gameState]);
 
   // Blitz CATEGORY_SHOWCASE animation effect
   useEffect(() => {
@@ -3694,12 +3677,10 @@ useEffect(() => {
               'New question'
             )}
           </div>
-          <div
-            key={introCountdown}
-            className="cozyQuestionIntroCountdown"
-            data-num={introCountdown}
-          >
-            {introCountdown}
+          <div className="cozyQuestionIntroCountdown">
+            <span className="cozyCountdownNum">3</span>
+            <span className="cozyCountdownNum">2</span>
+            <span className="cozyCountdownNum">1</span>
           </div>
         </div>
       </BeamerFrame>

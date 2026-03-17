@@ -5218,9 +5218,8 @@ const shouldShowSegmentScoreboard = (room: RoomState) => {
 const handleHostNextAdvance = (room: RoomState) => {
   // LOBBY: No ready check - moderator decides when to start
   // Teams don't need to confirm ready status anymore
-  if (room.gameState === 'QUESTION_INTRO' && room.currentQuestionId) {
-    clearQuestionTimers(room);
-    enterQuestionActive(room, room.currentQuestionId, room.remainingQuestionIds.length);
+  // QUESTION_INTRO is not skippable — the 5s timer handles the transition automatically
+  if (room.gameState === 'QUESTION_INTRO') {
     return { stage: room.gameState };
   }
   if (room.gameState === 'Q_ACTIVE') {

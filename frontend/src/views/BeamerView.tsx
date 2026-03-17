@@ -2131,7 +2131,7 @@ useEffect(() => {
       return dePart;
     }) : q.options;
     if (Array.isArray(mcOptions) && mcOptions.length) {
-      const optionsGridClassName = `beamer-grid beamer-grid-options${mcOptions.length === 4 ? ' beamer-grid-options-4' : ''}`;
+      const optionsGridClassName = `beamer-grid beamer-grid-options${mcOptions.length === 4 ? ' beamer-grid-options-4' : mcOptions.length === 8 ? ' beamer-grid-options-8' : ''}`;
       return (
         <div className={optionsGridClassName}>
           {mcOptions.map((opt: string, idx: number) => {

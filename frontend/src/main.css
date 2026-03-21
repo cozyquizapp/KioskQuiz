@@ -2778,6 +2778,18 @@ body {
 .stagger-container > *:nth-child(7) { animation-delay: 0.35s; }
 .stagger-container > *:nth-child(8) { animation-delay: 0.4s; }
 
+/* Submit success pop + waiting pulse */
+@keyframes submitSuccess {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.06); box-shadow: 0 6px 0 #15803d, 0 0 0 8px rgba(22,163,74,0.25); }
+  60%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+@keyframes submitWaitPulse {
+  0%, 100% { box-shadow: 0 4px 0 #15803d; }
+  50%       { box-shadow: 0 4px 0 #15803d, 0 0 0 6px rgba(22,163,74,0.2); }
+}
+
 /* ── Intro-style vertical stagger (matches beamer + intro.html) ── */
 @keyframes fadeUpTeam {
   from { opacity: 0; transform: translateY(22px); }

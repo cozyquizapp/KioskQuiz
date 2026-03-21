@@ -445,7 +445,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionFlyIn, setQuestionFlyIn] = useState(false);
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
 
-  // Countdown display is now pure-CSS — no state needed
+  const [introCountdown, setIntroCountdown] = useState<number>(3);
   const [introIndex, setIntroIndex] = useState(0);
   // Stable key for QUESTION_INTRO frame — increments only when entering the phase,
   // so question?.id arriving mid-phase does NOT remount the frame and reset animations.
@@ -476,6 +476,15 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     if (gameState === 'QUESTION_INTRO') {
       setIntroFrameKey(k => k + 1);
     }
+  }, [gameState]);
+
+  // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly
+  useEffect(() => {
+    if (gameState !== 'QUESTION_INTRO') return;
+    setIntroCountdown(3);
+    const t1 = window.setTimeout(() => setIntroCountdown(2), 1000);
+    const t2 = window.setTimeout(() => setIntroCountdown(1), 2000);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
   }, [gameState]);
 
   useEffect(() => {
@@ -3776,9 +3785,9 @@ useEffect(() => {
             )}
           </div>
           <div className="cozyQuestionIntroCountdown">
-            <span className="cozyCountdownNum">3</span>
-            <span className="cozyCountdownNum">2</span>
-            <span className="cozyCountdownNum">1</span>
+            <span key={introCountdown} className={`cozyCountdownNum${introCountdown === 1 ? ' is-last' : ''}`}>
+              {introCountdown}
+            </span>
           </div>
         </div>
       </BeamerFrame>

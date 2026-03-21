@@ -2042,7 +2042,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             ? '0 4px 0 #15803d'
             : canAnswer ? '0 4px 0 rgba(177, 10, 108, 0.6)' : '0 4px 0 #b0b8c1',
           backdropFilter: 'none',
-          animation: canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+          animation: answerSubmitted
+            ? 'submitSuccess 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both, submitWaitPulse 2.5s 0.5s ease-in-out infinite'
+            : canAnswer ? 'popSoft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
           cursor: canAnswer ? 'pointer' : 'not-allowed',
           opacity: canAnswer || answerSubmitted ? 1 : 0.7,
           position: 'relative',

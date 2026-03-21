@@ -3731,7 +3731,7 @@ useEffect(() => {
         >
           {showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
-            <div className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
+            <div key={phase} className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
               {heroEl}
               <div className="cozyExternalMedia">
                 <img src={mediaUrl!} alt="" ref={onMediaRef} onLoad={onMediaLoad} />
@@ -3739,7 +3739,7 @@ useEffect(() => {
             </div>
           ) : (
             /* No image or reveal: original grid layout */
-            <div className={`cozyQuestionGrid ${submissionFlags.hasRevealAnswers ? 'phase-reveal' : `cozyQuestionGridSolo${submissionFlags.hasSubmissions ? ' has-submissions' : ''}`}`}>
+            <div key={phase} className={`cozyQuestionGrid ${submissionFlags.hasRevealAnswers ? 'phase-reveal' : `cozyQuestionGridSolo${submissionFlags.hasSubmissions ? ' has-submissions' : ''}`}`}>
               {heroEl}
               {submissionFlags.hasRevealAnswers && (
                 <div className="cozyRevealAnswersPanel">

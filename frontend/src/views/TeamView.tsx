@@ -2612,7 +2612,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         );
       }
       default: {
-        const unit = typeof (question as any)?.unit === 'string' ? (question as any).unit : undefined;
+        const rawUnit = typeof (question as any)?.unit === 'string' ? (question as any).unit : undefined;
+        const unit = (() => {
+          if (!rawUnit) return undefined;
+          const slash = rawUnit.indexOf('/');
+          if (slash < 0) return rawUnit;
+          const de = rawUnit.slice(0, slash).trim();
+          const en = rawUnit.slice(slash + 1).trim();
+          return language === 'en' ? en : language === 'both' ? rawUnit : de;
+        })();
         return (
           <input
             className="team-answer-input"
@@ -4311,15 +4319,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         )}
         {!teamId && <p style={mutedText}>{t('joinTitle')}</p>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', width: '100%', marginTop: 18 }}>
-          <div style={{ width: '100%', maxWidth: 240, height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ 
-              height: '100%', 
-              background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))', 
-              animation: 'progress-fill 3.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite', 
-              width: '30%', 
+          <div style={{ width: '100%', maxWidth: 260, height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 999, overflow: 'hidden', position: 'relative' }}>
+            <div style={{
+              position: 'absolute',
+              top: 0, bottom: 0,
+              width: '38%',
               borderRadius: 999,
-              boxShadow: '0 0 12px rgba(177, 10, 108, 0.4)',
-              filter: 'blur(0.5px)'
+              background: 'linear-gradient(90deg, transparent, rgba(240,95,178,0.9) 40%, #ffd1e8 60%, transparent)',
+              boxShadow: '0 0 10px rgba(240,95,178,0.7)',
+              animation: 'comet-sweep 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }} />
           </div>
         </div>

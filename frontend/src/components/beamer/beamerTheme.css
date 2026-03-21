@@ -3588,19 +3588,14 @@ body.projector-mode .cozyQuestionMedia {
   justify-content: center;
 }
 
-/* 3 and 2: fade in, hold, fade out over exactly 1s */
-@keyframes countdownNumGo {
-  0%   { opacity: 0; transform: scale(1.45); filter: blur(5px); }
-  18%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
-  72%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
-  100% { opacity: 0; transform: scale(0.88); filter: blur(0);   }
-}
-
-/* 1: fade in and stay visible */
-@keyframes countdownNumLast {
-  0%   { opacity: 0; transform: scale(1.45); filter: blur(5px); }
-  40%  { opacity: 1; transform: scale(1);    filter: blur(0);   }
-  100% { opacity: 1; transform: scale(1);    filter: blur(0);   }
+/* All numbers: bounce in and STAY visible.
+   React removes the span when the next number comes — no CSS timing dependency. */
+@keyframes countdownBounceIn {
+  0%   { opacity: 0; transform: scale(1.8);  filter: blur(10px); }
+  55%  { opacity: 1; transform: scale(0.92); filter: blur(0);    }
+  75%  { transform: scale(1.06); }
+  90%  { transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1);    filter: blur(0);    }
 }
 
 .cozyCountdownNum {
@@ -3610,11 +3605,7 @@ body.projector-mode .cozyQuestionMedia {
   line-height: 1;
   letter-spacing: -0.02em;
   text-shadow: 0 0 60px rgba(148,45,89,0.7);
-  animation: countdownNumGo 1s ease-out both;
-}
-
-.cozyCountdownNum.is-last {
-  animation: countdownNumLast 0.8s ease-out both;
+  animation: countdownBounceIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */

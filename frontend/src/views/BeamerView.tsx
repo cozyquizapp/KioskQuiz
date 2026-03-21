@@ -932,7 +932,15 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       return;
     }
     const q: any = question;
-    const unit = q.unit || q.answerUnit;
+    const rawUnit: string | undefined = q.unit || q.answerUnit;
+    const unit = (() => {
+      if (!rawUnit) return undefined;
+      const slash = rawUnit.indexOf('/');
+      if (slash < 0) return rawUnit;
+      const de = rawUnit.slice(0, slash).trim();
+      const en = rawUnit.slice(slash + 1).trim();
+      return language === 'en' ? en : language === 'both' ? rawUnit : de;
+    })();
     const numericTargetRaw =
       typeof q.correctValue === 'number'
         ? q.correctValue

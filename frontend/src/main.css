@@ -4004,6 +4004,14 @@ button:active:not(:disabled),
   }
 }
 
+/* Comet sweep — matches particle background aesthetic */
+@keyframes comet-sweep {
+  0%   { transform: translateX(-100%) scaleX(0.4); opacity: 0; }
+  8%   { opacity: 1; scaleX: 1; }
+  80%  { opacity: 0.9; }
+  100% { transform: translateX(420%) scaleX(0.6); opacity: 0; }
+}
+
 /* Mascot/Logo Pulsing Animation */
 @keyframes mascot-pulse {
   0%, 100% {

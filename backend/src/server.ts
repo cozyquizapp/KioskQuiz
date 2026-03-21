@@ -7228,7 +7228,8 @@ io.on('connection', (socket: Socket) => {
       const remainingMs = room.timerRemainingMs;
       const endsAt = Date.now() + remainingMs;
       room.timerEndsAt = endsAt;
-      room.questionTimerDurationMs = remainingMs;
+      // questionTimerDurationMs bleibt auf der Originaldauer — nicht auf remainingMs setzen,
+      // sonst springt der Fortschrittsbalken nach dem Resume auf 0% zurück.
       room.timerPausedAt = null;
       room.timerRemainingMs = null;
       room.questionTimerTimeout = setTimeout(() => {
@@ -7415,6 +7416,22 @@ io.on('connection', (socket: Socket) => {
     }
     if (room.gameState === 'RUNDLAUF_PLAY' && room.rundlaufActiveTeamId === teamId) {
       advanceRundlaufTurn(room);
+    }
+    // oneOfEight: disconnected team aus Turn-Order entfernen, ggf. Zug weiterreichen
+    if (room.gameState === 'Q_ACTIVE' && room.oneOfEightActiveTeamId !== null) {
+      room.oneOfEightTurnOrder = room.oneOfEightTurnOrder.filter((id) => id !== teamId);
+      if (room.oneOfEightActiveTeamId === teamId) {
+        // Nächstes Team aktivieren oder Runde beenden wenn nur noch eines übrig
+        if (room.oneOfEightTurnOrder.length <= 1) {
+          const q = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
+          if (q) {
+            concludeOneOfEight(room, q, null, room.oneOfEightTurnOrder, 'Gewonnen', 'Disconnected', 'Disconnected');
+          }
+        } else {
+          room.oneOfEightTurnIndex = room.oneOfEightTurnIndex % room.oneOfEightTurnOrder.length;
+          room.oneOfEightActiveTeamId = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
+        }
+      }
     }
     broadcastState(room);
   });

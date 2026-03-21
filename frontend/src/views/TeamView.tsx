@@ -4581,7 +4581,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             gap: 10,
             padding: '8px 16px',
             minHeight: 56,
-            background: 'var(--color-primary)',
+            background: 'linear-gradient(270deg, #f05fb2, #b10a6c, #e0308a, #d62f93, #f05fb2)',
+            backgroundSize: '300% 100%',
+            animation: 'teamHeaderLiquid 8s ease infinite',
             borderRadius: '0 0 16px 16px',
             boxShadow: '0 4px 0 rgba(177, 10, 108, 0.6)',
             position: 'relative',
@@ -4622,12 +4624,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
             {teamId && (
               <div style={{
                 fontFamily: "var(--font-game, 'Rajdhani', sans-serif)",
-                fontWeight: 700,
+                fontWeight: 800,
                 fontSize: 'clamp(18px, 4vw, 28px)',
                 color: '#ffffff',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                textShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                textShadow: '0 0 20px rgba(255,209,232,0.6), 0 1px 3px rgba(0,0,0,0.3)',
               }}>
                 {teamName || 'Team'}
               </div>
@@ -4644,7 +4646,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                 : connectionStatus === 'connecting' ? '#fbbf24'
                 : '#f87171',
               border: '2px solid rgba(255,255,255,0.5)',
-              flexShrink: 0
+              flexShrink: 0,
+              animation: connectionStatus === 'connected' ? 'connectedPulse 2.5s ease-in-out infinite' : undefined,
             }} />
             <button
               onClick={() => updateLanguage(language === 'de' ? 'en' : 'de')}

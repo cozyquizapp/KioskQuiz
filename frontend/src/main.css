@@ -2778,6 +2778,19 @@ body {
 .stagger-container > *:nth-child(7) { animation-delay: 0.35s; }
 .stagger-container > *:nth-child(8) { animation-delay: 0.4s; }
 
+/* Team header: moving liquid gradient */
+@keyframes teamHeaderLiquid {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Connection dot pulse when online */
+@keyframes connectedPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+  60%       { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
+}
+
 /* Submit success pop + waiting pulse */
 @keyframes submitSuccess {
   0%   { transform: scale(1); }

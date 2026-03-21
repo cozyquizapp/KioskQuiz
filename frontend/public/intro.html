@@ -505,34 +505,37 @@ function goTo(idx, dir = 1) {
   if (transitioning || idx === current || idx < 0 || idx >= TOTAL) return;
   transitioning = true;
   const old = slides[current];
-  const next = slides[idx];
+  const nxt = slides[idx];
 
-  old.classList.add('exit-left');
-  next.classList.remove('active', 'exit-left');
-  next.style.transform = dir > 0 ? 'translateX(60px)' : 'translateX(-60px)';
-  next.style.opacity = '0';
-  next.style.pointerEvents = 'none';
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      next.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
-      next.style.transform = 'translateX(0)';
-      next.style.opacity = '1';
-      next.style.pointerEvents = 'auto';
-    });
-  });
+  // Phase 1: fade OUT old (180ms) — no overlap
+  old.style.transition = 'opacity 0.18s ease';
+  old.style.opacity = '0';
 
   setTimeout(() => {
-    old.classList.remove('active', 'exit-left');
-    old.style.transform = '';
+    old.classList.remove('active');
     old.style.opacity = '';
     old.style.transition = '';
-    next.style.transition = '';
-    next.classList.add('active');
-    current = idx;
-    updateHud();
-    transitioning = false;
-  }, 480);
+
+    // Phase 2: position new off-screen, then slide IN (340ms)
+    nxt.style.transition = 'none';
+    nxt.style.opacity = '0';
+    nxt.style.transform = dir >= 0 ? 'translateX(56px)' : 'translateX(-56px)';
+    nxt.classList.add('active');
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      nxt.style.transition = 'opacity 0.34s ease, transform 0.34s cubic-bezier(0.25,0.46,0.45,0.94)';
+      nxt.style.opacity = '1';
+      nxt.style.transform = 'translateX(0)';
+    }));
+
+    setTimeout(() => {
+      nxt.style.transition = '';
+      nxt.style.transform = '';
+      current = idx;
+      updateHud();
+      transitioning = false;
+    }, 360);
+  }, 200);
 }
 
 function next() { goTo(current + 1, 1); }

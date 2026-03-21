@@ -2425,7 +2425,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           { base: 'rgba(88, 96, 120, 0.14)', border: '#a6acc2', text: '#ebeffa' }
         ] as const;
         return (
-          <div style={{ display: 'grid', gap: 10 }} className="stagger-container">
+          <div style={{ display: 'grid', gap: 10 }} className="team-answer-stagger">
             {q.options.map((opt: string, idx: number) => {
               const slashIdx = opt.indexOf('/');
               const dePart = slashIdx >= 0 ? opt.slice(0, slashIdx).trim() : opt;
@@ -2719,7 +2719,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 12, fontWeight: 600 }}>
             {language === 'de' ? 'Andere Teams' : 'Other teams'}
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="stagger-container">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="team-answer-stagger">
             {teamStatus
               .filter(t => t.id !== teamId && t.answer !== undefined)
               .map((team, idx) => {

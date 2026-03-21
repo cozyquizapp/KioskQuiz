@@ -4508,6 +4508,12 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       style={{
         ...pageStyleTeam,
         position: 'relative',
+        ...(windowWidth >= 768 && {
+          maxWidth: 430,
+          margin: '0 auto',
+          minHeight: '100vh',
+          height: 'auto',
+        }),
       }}
       data-timer={timerTick}
       data-team-ui="1"

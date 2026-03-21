@@ -48,7 +48,13 @@ export default function ParticleCanvas({ count = 100, opacity = 1, zIndex = 0 }:
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const p of particles) {
         p.x += p.vx; p.y += p.vy; p.life++;
-        if (p.life > p.maxLife || p.y < 0) Object.assign(p, spawn(), { x: Math.random() * canvas.width, y: canvas.height + 10, life: 0 });
+        if (p.life > p.maxLife) {
+          // Natural end of life → respawn anywhere on screen
+          Object.assign(p, spawn(), { life: 0 });
+        } else if (p.y < 0) {
+          // Floated off the top → re-enter from the bottom
+          Object.assign(p, spawn(), { x: Math.random() * canvas.width, y: canvas.height + 10, life: 0 });
+        }
         const prog = p.life / p.maxLife;
         const fade = prog < 0.2 ? prog / 0.2 : prog > 0.8 ? (1 - prog) / 0.2 : 1;
         ctx.beginPath();

@@ -1203,6 +1203,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     if (qAny?.bunteTuete?.kind === 'top5') {
       return isCorrect ? t('top5Win') : t('top5Lose');
     }
+    if (qAny?.bunteTuete?.kind === 'map') {
+      return isCorrect
+        ? inlineCopy('Ihr wart am nächsten dran! 🥇', 'You were the closest! 🥇')
+        : inlineCopy('Ihr wart leider etwas weiter weg.', 'Another team was a bit closer.');
+    }
     return isCorrect ? t('answerCorrect') : t('answerWrong');
   };
   const scoreboardLookup = useMemo(() => {
@@ -2675,7 +2680,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   function renderShowResult() {
     const isCorrect = resultCorrect === true;
     const isIncorrect = resultCorrect === false;
-    const isEstimateQ = isClosenessQuestion(question);
+    const isMapQ = (question as any)?.bunteTuete?.kind === 'map';
+    const isEstimateQ = isClosenessQuestion(question) || isMapQ;
     return (
       <div 
         className={`card-tilt ${feedbackAnimation ? (feedbackAnimation === 'success' ? 'success-animation' : 'shake-animation') : ''}`}

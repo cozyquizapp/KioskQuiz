@@ -31,18 +31,32 @@ export default function ParticleCanvas({ count = 100, opacity = 1, zIndex = 0 }:
     };
 
     const particles: Particle[] = [];
-    const spawn = (): Particle => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.8 + 0.3,
-      a: Math.random() * 0.5 + 0.1,
-      vy: -(Math.random() * 0.4 + 0.1),
-      vx: (Math.random() - 0.5) * 0.3,
-      life: 0,
-      maxLife: Math.random() * 200 + 100,
-      hue: Math.random() > 0.5 ? 320 : 200,
-    });
-    for (let i = 0; i < count; i++) particles.push(spawn());
+    const spawn = (): Particle => {
+      const maxLife = Math.random() * 200 + 100;
+      return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.3,
+        a: Math.random() * 0.5 + 0.1,
+        vy: -(Math.random() * 0.4 + 0.1),
+        vx: (Math.random() - 0.5) * 0.3,
+        life: 0,
+        maxLife,
+        hue: Math.random() > 0.5 ? 320 : 200,
+      };
+    };
+    // Initial spawn: randomize life stage so particles are staggered
+    // across the full screen immediately, without all fading in at once.
+    for (let i = 0; i < count; i++) {
+      const p = spawn();
+      p.life = Math.floor(Math.random() * p.maxLife * 0.8); // 0–80% of lifespan
+      // Advance position to match life stage
+      p.x += p.vx * p.life;
+      p.y += p.vy * p.life;
+      // If already off-screen top, wrap to bottom
+      if (p.y < 0) p.y = Math.random() * canvas.height;
+      particles.push(p);
+    }
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

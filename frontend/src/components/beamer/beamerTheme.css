@@ -1576,9 +1576,20 @@
 
 .cozyQuestionGrid.phase-reveal .cozyQuestionHero {
   padding: 20px 24px;
-  gap: 14px;
+  gap: 10px;
   flex: 1; /* fill height in reveal two-column layout */
+  justify-content: flex-start;
+  overflow-y: auto;
   animation: revealSlideLeft 0.55s var(--ease-elastic) both;
+}
+
+.cozyQuestionGrid.phase-reveal .cozyOptionList {
+  gap: 6px;
+}
+
+.cozyQuestionGrid.phase-reveal .cozyOption {
+  padding: 10px 14px;
+  font-size: clamp(14px, 1.6vw, 20px);
 }
 
 .cozyQuestionGrid.phase-reveal .cozyQuestionText {

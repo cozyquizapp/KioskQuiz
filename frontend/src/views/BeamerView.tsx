@@ -478,14 +478,20 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     }
   }, [gameState]);
 
-  // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly
+  // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly.
+  // Timers are NOT cancelled on gameState change — QUESTION_INTRO can transition
+  // to Q_ACTIVE in <2s, which would cancel the "1" timer via cleanup. Instead,
+  // store timers in a ref and only cancel on unmount.
+  const countdownTimersRef = useRef<ReturnType<typeof window.setTimeout>[]>([]);
   useEffect(() => {
     if (gameState !== 'QUESTION_INTRO') return;
+    countdownTimersRef.current.forEach(t => window.clearTimeout(t));
+    countdownTimersRef.current = [];
     setIntroCountdown(3);
-    const t1 = window.setTimeout(() => setIntroCountdown(2), 1000);
-    const t2 = window.setTimeout(() => setIntroCountdown(1), 2000);
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+    countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(2), 1000));
+    countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(1), 2000));
   }, [gameState]);
+  useEffect(() => () => { countdownTimersRef.current.forEach(t => window.clearTimeout(t)); }, []);
 
   useEffect(() => {
     const onFirstInteraction = () => {

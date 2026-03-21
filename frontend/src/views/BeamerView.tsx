@@ -2405,10 +2405,9 @@ useEffect(() => {
       });
       const teamPinIcon = (pin: TeamPin) => {
         const color = pin.detail ? tierColor(pin.detail) : '#94a3b8';
-        const distLabel = pin.distKm != null ? formatDist(pin.distKm) : '';
         return L.divIcon({
           className: '',
-          html: `<div style="background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;border:2px solid ${color};white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.6);text-align:center;line-height:1.3">${pin.name}${distLabel ? `<br><span style="font-size:10px;font-weight:700;color:${color}">${distLabel}</span>` : ''}</div>`,
+          html: `<div style="background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;border:2px solid ${color};white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.6)">${pin.name}</div>`,
           iconSize: [undefined as any, undefined as any],
           iconAnchor: [0, 10]
         });
@@ -2470,8 +2469,10 @@ useEffect(() => {
               </div>
               {sortedPins.map((p, i) => {
                 const color = p.detail ? tierColor(p.detail) : '#6b7280';
-                const tierLabel = p.detail ? p.detail.replace(/\s*\(.*?\)/, '').trim() : '';
                 const isWinner = i === 0;
+                const subLabel = isWinner
+                  ? (language === 'en' ? 'Closest! 🎯' : 'Am nächsten! 🎯')
+                  : (language === 'en' ? 'Too far' : 'Zu weit');
                 return (
                   <div key={p.teamId} style={{
                     background: isWinner ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
@@ -2487,14 +2488,9 @@ useEffect(() => {
                       <div style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.name}
                       </div>
-                      {isWinner && (
-                        <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 2 }}>
-                          {language === 'de' ? 'Am nächsten dran! 🎯' : 'Closest! 🎯'}
-                        </div>
-                      )}
-                      {!isWinner && tierLabel && (
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{tierLabel}</div>
-                      )}
+                      <div style={{ fontSize: 11, fontWeight: isWinner ? 700 : 400, color: isWinner ? color : '#64748b', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 2 }}>
+                        {subLabel}
+                      </div>
                     </div>
                     <div style={{ fontWeight: 900, fontSize: 15, color, flexShrink: 0, textAlign: 'right' }}>
                       {p.distKm != null ? formatDist(p.distKm) : '—'}
@@ -3429,20 +3425,24 @@ useEffect(() => {
       const teamColorMap = Object.fromEntries((teamStatus ?? []).map(t => [t.id, t.color]));
       const isEstimate = question?.type === 'SCHAETZCHEN' || (question as any)?.mechanic === 'estimate';
       const isBetting = (question as any)?.mechanic === 'betting';
-      const formatAnswer = (answer: any): string => {
-        if (answer === null || answer === undefined) return '–';
-        if (typeof answer === 'string') return answer;
-        if (typeof answer === 'number') return String(answer);
-        if (Array.isArray(answer)) return answer.join(', ');
-        if (typeof answer === 'object' && 'order' in answer && Array.isArray(answer.order)) return answer.order.join(' → ');
-        return JSON.stringify(answer);
+      const isMapQuestion = (question as any)?.bunteTuete?.kind === 'map';
+      const formatDistLocal = (km: number): string => {
+        if (km < 10) return `${Math.round(km * 10) / 10} km`;
+        if (km < 1000) return `${Math.round(km)} km`;
+        return `${(km / 1000).toFixed(1).replace('.', ',')} Tsd. km`;
       };
       if (answerResults?.length) {
-        // For estimate questions: sort by deviation ascending (closest first)
+        // Sort: estimate by deviation, map by distance, others keep order
         const sorted = isEstimate
           ? [...answerResults].sort((a, b) => {
               const da = a.tieBreaker?.primary ?? Infinity;
               const db = b.tieBreaker?.primary ?? Infinity;
+              return da - db;
+            })
+          : isMapQuestion
+          ? [...answerResults].sort((a, b) => {
+              const da = a.tieBreaker?.primary != null ? -a.tieBreaker.primary : Infinity;
+              const db = b.tieBreaker?.primary != null ? -b.tieBreaker.primary : Infinity;
               return da - db;
             })
           : answerResults;
@@ -3464,29 +3464,35 @@ useEffect(() => {
               const resultColor = isCorrect ? '#16a34a' : isWrong ? '#dc2626' : teamColor;
               const deviation = entry.tieBreaker?.primary;
               const devLabel = isEstimate && deviation !== undefined && Number.isFinite(deviation)
-                ? (language === 'de' ? `±${Math.round(deviation * 100) / 100}` : `±${Math.round(deviation * 100) / 100}`)
+                ? `±${Math.round(deviation * 100) / 100}`
                 : null;
-              const isTopRank = isEstimate && idx === 0;
+              const mapDistKm = isMapQuestion && entry.tieBreaker?.primary != null ? -entry.tieBreaker.primary : null;
+              const isTopRank = (isEstimate || isMapQuestion) && idx === 0;
+              const rowColor = isMapQuestion
+                ? (isTopRank ? '#22c55e' : '#6b7280')
+                : isEstimate ? resultColor : teamColor;
               return (
                 <div
                   key={`reveal-ans-${entry.teamId}-${idx}`}
                   className={`cozyRevealAnswerRow${isTopRank ? ' estimate-winner' : ''}`}
                   style={{
-                    borderLeftColor: isEstimate ? resultColor : teamColor,
+                    borderLeftColor: rowColor,
                     borderLeftWidth: isTopRank ? 6 : 4,
-                    background: isTopRank ? `${resultColor}20` : isCorrect ? '#f0fdf420' : isWrong ? '#fef2f220' : `${teamColor}12`,
+                    background: isTopRank ? `${rowColor}20` : isCorrect ? '#f0fdf420' : isWrong ? '#fef2f220' : `${teamColor}12`,
                     animationDelay: `${idx * 90}ms`
                   }}
                 >
                   <div className="cozyRevealAnswerTop">
                     <span className="cozyRevealAnswerRank" style={{ color: '#6b7280' }}>
-                      {isEstimate ? `#${idx + 1}` : ''}
+                      {(isEstimate || isMapQuestion) ? `#${idx + 1}` : ''}
                     </span>
-                    <span className="cozyRevealAnswerTeam" style={{ color: isEstimate ? resultColor : teamColor, fontWeight: 800 }}>
+                    <span className="cozyRevealAnswerTeam" style={{ color: rowColor, fontWeight: 800 }}>
                       {entry.teamName || entry.teamId}
                     </span>
-                    <span className="cozyRevealAnswerResult" style={{ color: resultColor, fontWeight: 900 }}>
-                      {isEstimate
+                    <span className="cozyRevealAnswerResult" style={{ color: rowColor, fontWeight: 900 }}>
+                      {isMapQuestion
+                        ? (isTopRank ? '🥇' : ['🥈', '🥉'][idx - 1] ?? `${idx + 1}.`)
+                        : isEstimate
                         ? (isCorrect && devLabel ? `🏆 ${devLabel}` : devLabel ?? '–')
                         : isBetting
                         ? (isCorrect ? '✓' : isWrong ? '✗' : '–')
@@ -3494,7 +3500,11 @@ useEffect(() => {
                     </span>
                   </div>
                   <div className="cozyRevealAnswerText" style={{ fontWeight: 400 }}>
-                    {isBetting
+                    {isMapQuestion
+                      ? <span style={{ fontWeight: 700, color: rowColor }}>
+                          {mapDistKm != null ? formatDistLocal(mapDistKm) : '–'}
+                        </span>
+                      : isBetting
                       ? <span style={{ fontWeight: 700, color: isCorrect ? '#16a34a' : isWrong ? '#dc2626' : '#374151' }}>
                           {entry.betPoints ?? 0} / {entry.betPool ?? 10} Pkt. auf richtiger Antwort
                         </span>

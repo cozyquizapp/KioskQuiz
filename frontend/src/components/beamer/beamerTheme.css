@@ -2825,7 +2825,7 @@
 }
 
 .beamer-grid.beamer-grid-options-8 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   justify-items: stretch;
 }
 
@@ -2833,6 +2833,8 @@
   min-height: 136px;
   font-size: clamp(28px, 2.6vw, 40px);
   padding: 30px 30px;
+  text-align: center;
+  justify-content: center;
 }
 
 .beamer-grid.beamer-grid-options .beamer-card:nth-child(4n+1) {

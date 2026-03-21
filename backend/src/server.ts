@@ -2843,11 +2843,11 @@ const computeBlitzResults = (room: RoomState) => {
       if (second && room.teams[second.teamId])
         room.teams[second.teamId].score = (room.teams[second.teamId].score ?? 0) + 1;
     } else if (first.correct > second.correct) {
-      provisional[first.teamId].pointsAwarded = 2;
-      if (room.teams[first.teamId]) room.teams[first.teamId].score = (room.teams[first.teamId].score ?? 0) + 2;
+      provisional[first.teamId].pointsAwarded = 3;
+      if (room.teams[first.teamId]) room.teams[first.teamId].score = (room.teams[first.teamId].score ?? 0) + 3;
     } else {
-      provisional[second.teamId].pointsAwarded = 2;
-      if (room.teams[second.teamId]) room.teams[second.teamId].score = (room.teams[second.teamId].score ?? 0) + 2;
+      provisional[second.teamId].pointsAwarded = 3;
+      if (room.teams[second.teamId]) room.teams[second.teamId].score = (room.teams[second.teamId].score ?? 0) + 3;
     }
     room.blitzResultsByTeam = provisional;
     room.blitzPhase = 'SET_END';
@@ -2863,7 +2863,7 @@ const computeBlitzResults = (room: RoomState) => {
   let currentPlace = 1;
   for (let i = 0; i < activeTeams.length; ) {
     const same = activeTeams.filter((entry) => entry.correct === activeTeams[i].correct);
-    const points = bestCorrect === 0 ? 0 : currentPlace === 1 ? 2 : currentPlace === 2 ? 1 : 0;
+    const points = bestCorrect === 0 ? 0 : currentPlace === 1 ? 3 : currentPlace === 2 ? 1 : 0;
     same.forEach((entry) => {
       provisional[entry.teamId].pointsAwarded = points;
       if (points > 0 && room.teams[entry.teamId]) {

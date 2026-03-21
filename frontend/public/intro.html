@@ -3,557 +3,507 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=1920, initial-scale=1"/>
-<title>Cozy Wolf – Regelerklärvideo</title>
+<title>Cozy Wolf – Intro</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --pink:#f05fb2;--pink-dark:#b10a6c;
-  --bg:#0a0e1a;--surface:#111827;
-  --gold:#f3c367;--blue:#9fbfd3;--green:#72ac78;--purple:#e2a9f1;--red:#d85f58;
-  --teal:#2dd4bf;
-}
+:root{--pink:#f05fb2;--pink-dark:#b10a6c;--bg:#0a0e1a;--gold:#f3c367;--blue:#9fbfd3;--green:#72ac78;--purple:#e2a9f1;--red:#d85f58;--teal:#2dd4bf}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:#f1f5f9}
 canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-/* ── SLIDE SYSTEM ────────────────────────────────────────────── */
-.slide{
-  position:fixed;inset:0;z-index:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:60px 80px;
-  opacity:0;pointer-events:none;
-  transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
-  transform:translateX(60px);
-}
-.slide.active{opacity:1;pointer-events:auto;transform:translateX(0)}
-.slide.exit-left{opacity:0;transform:translateX(-60px);transition:opacity 0.35s ease,transform 0.35s ease}
-.slide.enter-right{opacity:0;transform:translateX(60px)}
+/* ── SLIDES ──────────────────────────────────────────────────── */
+.slide{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 80px;opacity:0;pointer-events:none}
+.slide.active{opacity:1;pointer-events:auto}
 
-/* ── NAV HUD ─────────────────────────────────────────────────── */
-#hud{
-  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
-  z-index:99;display:flex;align-items:center;gap:16px;
-}
-#slide-dots{display:flex;gap:8px}
-.dot{width:8px;height:8px;border-radius:50%;background:rgba(241,245,249,0.2);transition:all 0.3s ease;cursor:pointer}
-.dot.active{background:var(--pink);width:24px;border-radius:4px}
-#slide-num{font-size:13px;font-weight:800;color:rgba(241,245,249,0.3);letter-spacing:2px;min-width:48px;text-align:center}
-#nav-hint{font-size:12px;font-weight:700;color:rgba(241,245,249,0.2);letter-spacing:1px}
+/* ── HUD ─────────────────────────────────────────────────────── */
+#hud{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99;display:flex;align-items:center;gap:16px}
+#slide-dots{display:flex;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(241,245,249,0.18);transition:all 0.3s;cursor:pointer}
+.dot.active{background:var(--pink);width:22px;border-radius:4px}
+#slide-num{font-size:12px;font-weight:800;color:rgba(241,245,249,0.28);letter-spacing:2px;min-width:44px;text-align:center}
+#nav-hint{font-size:11px;font-weight:700;color:rgba(241,245,249,0.18);letter-spacing:1px}
 
-/* ── PROGRESS BAR ────────────────────────────────────────────── */
+/* ── LANG SWITCHER ───────────────────────────────────────────── */
+#lang-bar{position:fixed;top:20px;right:28px;z-index:99;display:flex;gap:6px}
+.lang-btn{
+  padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:2px;cursor:pointer;border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06);color:rgba(241,245,249,0.5);transition:all 0.2s
+}
+.lang-btn.active{background:rgba(240,95,178,0.2);border-color:rgba(240,95,178,0.5);color:var(--pink)}
+
+/* ── PROGRESS ────────────────────────────────────────────────── */
 #progress{position:fixed;top:0;left:0;height:3px;background:var(--pink);width:0%;transition:width 0.4s ease;z-index:99;box-shadow:0 0 10px var(--pink)}
 
-/* ── HEADER STRIP (on rule slides) ──────────────────────────── */
-.slide-header{
-  position:fixed;top:0;left:0;right:0;
-  padding:18px 48px;
-  display:flex;align-items:center;gap:14px;
-  background:linear-gradient(to bottom,rgba(10,14,26,0.95),transparent);
-  z-index:10;
-}
-.slide-header img{width:36px;height:36px;object-fit:contain}
-.slide-header-brand{font-size:13px;font-weight:800;color:rgba(241,245,249,0.35);letter-spacing:3px;text-transform:uppercase}
-.slide-header-copy{margin-left:auto;font-size:12px;font-weight:700;color:rgba(241,245,249,0.2);letter-spacing:2px}
+/* ── HEADER STRIP ────────────────────────────────────────────── */
+.slide-header{position:fixed;top:0;left:0;right:0;padding:16px 48px;display:flex;align-items:center;gap:14px;background:linear-gradient(to bottom,rgba(10,14,26,0.95),transparent);z-index:10}
+.slide-header img{width:34px;height:34px;object-fit:contain}
+.slide-header-brand{font-size:12px;font-weight:800;color:rgba(241,245,249,0.3);letter-spacing:3px;text-transform:uppercase}
+.slide-header-copy{margin-left:auto;font-size:11px;font-weight:700;color:rgba(241,245,249,0.18);letter-spacing:2px}
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────────── */
 .eyebrow{font-size:13px;font-weight:800;letter-spacing:5px;text-transform:uppercase;color:var(--pink);margin-bottom:16px}
-.hero{font-size:clamp(52px,7vw,96px);font-weight:900;line-height:1;letter-spacing:-2px;margin-bottom:0}
-.hero-sub{font-size:clamp(18px,2.2vw,28px);font-weight:700;color:rgba(241,245,249,0.45);margin-top:18px;line-height:1.4}
-.section-title{font-size:clamp(38px,5vw,68px);font-weight:900;line-height:1.05;margin-bottom:24px}
-.label-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(240,95,178,0.12);border:1px solid rgba(240,95,178,0.3);
-  border-radius:999px;padding:6px 16px;
-  font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--pink);
-  margin-bottom:20px;
-}
+.hero{font-size:clamp(52px,7vw,96px);font-weight:900;line-height:1;letter-spacing:-2px}
+.hero-sub{font-size:clamp(17px,2vw,26px);font-weight:700;color:rgba(241,245,249,0.45);margin-top:18px;line-height:1.4;text-align:center}
+.section-title{font-size:clamp(36px,5vw,66px);font-weight:900;line-height:1.05;margin-bottom:24px;text-align:center}
+.label-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(240,95,178,0.12);border:1px solid rgba(240,95,178,0.3);border-radius:999px;padding:6px 16px;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--pink);margin-bottom:20px}
 
 /* ── CARDS ───────────────────────────────────────────────────── */
-.card-grid{display:grid;gap:16px;width:100%;max-width:1100px}
+.card-grid{display:grid;gap:14px;width:100%;max-width:1100px}
 .card-grid.cols2{grid-template-columns:1fr 1fr}
 .card-grid.cols3{grid-template-columns:1fr 1fr 1fr}
-.card{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:20px;padding:28px 32px;
-}
-.card-icon{font-size:40px;margin-bottom:14px;line-height:1}
-.card-title{font-size:22px;font-weight:900;margin-bottom:8px}
-.card-body{font-size:16px;font-weight:600;color:rgba(226,232,240,0.7);line-height:1.5}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:26px 28px}
+.card-icon{font-size:38px;margin-bottom:12px;line-height:1}
+.card-title{font-size:21px;font-weight:900;margin-bottom:6px}
+.card-body{font-size:15px;font-weight:600;color:rgba(226,232,240,0.65);line-height:1.5}
 
 /* ── RULE ROWS ───────────────────────────────────────────────── */
-.rules-list{display:flex;flex-direction:column;gap:12px;width:100%;max-width:960px}
-.rule{
-  display:flex;align-items:flex-start;gap:18px;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
-  border-radius:16px;padding:18px 24px;
-}
-.rule-icon{font-size:28px;flex-shrink:0;line-height:1.3}
-.rule-text{font-size:clamp(17px,2vw,22px);font-weight:700;line-height:1.4;color:#e2e8f0}
-.rule-sub{font-size:15px;font-weight:600;color:rgba(226,232,240,0.45);margin-top:4px}
+.rules-list{display:flex;flex-direction:column;gap:11px;width:100%;max-width:940px}
+.rule{display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:17px 22px}
+.rule-icon{font-size:26px;flex-shrink:0;line-height:1.3}
+.rule-text{font-size:clamp(16px,2vw,21px);font-weight:700;line-height:1.4;color:#e2e8f0}
+.rule-sub{font-size:14px;font-weight:600;color:rgba(226,232,240,0.4);margin-top:4px}
 
-/* ── TIMELINE (Aufbau-Slide) ─────────────────────────────────── */
+/* ── BILINGUAL ───────────────────────────────────────────────── */
+.bi-wrap{display:flex;flex-direction:column;gap:2px}
+.bi-de{font-size:inherit;font-weight:inherit;color:inherit}
+.bi-en{font-size:0.82em;font-weight:700;color:rgba(241,245,249,0.38);font-style:italic}
+
+/* ── TIMELINE ────────────────────────────────────────────────── */
 .timeline{display:flex;align-items:center;gap:0;width:100%;max-width:1100px}
-.tl-block{
-  flex:1;border-radius:20px;padding:28px 24px;text-align:center;
-  border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);
-}
-.tl-block.highlight{
-  background:linear-gradient(135deg,rgba(240,95,178,0.15),rgba(177,10,108,0.08));
-  border-color:rgba(240,95,178,0.35);
-}
-.tl-arrow{font-size:28px;color:rgba(241,245,249,0.2);flex-shrink:0;margin:0 8px}
-.tl-label{font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;opacity:0.5}
-.tl-title{font-size:22px;font-weight:900;margin-bottom:6px}
-.tl-pts{font-size:15px;font-weight:700;color:var(--pink)}
-.tl-sub{font-size:13px;color:rgba(241,245,249,0.4);margin-top:6px}
+.tl-block{flex:1;border-radius:20px;padding:26px 20px;text-align:center;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04)}
+.tl-block.highlight{background:linear-gradient(135deg,rgba(240,95,178,0.15),rgba(177,10,108,0.08));border-color:rgba(240,95,178,0.35)}
+.tl-arrow{font-size:26px;color:rgba(241,245,249,0.2);flex-shrink:0;margin:0 6px}
+.tl-label{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;opacity:0.45}
+.tl-title{font-size:21px;font-weight:900;margin-bottom:5px}
+.tl-pts{font-size:14px;font-weight:700;color:var(--pink)}
+.tl-sub{font-size:12px;color:rgba(241,245,249,0.35);margin-top:5px}
 
-/* ── LOGO INTRO ──────────────────────────────────────────────── */
-#slide-logo .inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
-#logo-img{width:180px;height:180px;object-fit:contain;
-  animation:logoFlyIn 1.1s cubic-bezier(0.34,1.56,0.64,1) 0.3s both}
-#shockwave{position:absolute;border-radius:50%;border:4px solid rgba(240,95,178,0.7);
-  opacity:0;animation:shockwave 0.7s ease-out 1.3s both;top:50%;left:50%;margin:-5px 0 0 -5px}
-#brand-name{font-size:clamp(48px,6vw,80px);font-weight:900;letter-spacing:6px;
-  background:linear-gradient(135deg,#f05fb2,#ffd1e8,#f05fb2);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:fadeUp 0.8s ease 1.5s both}
-#brand-copy{font-size:14px;font-weight:700;color:rgba(241,245,249,0.35);letter-spacing:3px;
-  animation:fadeUp 0.8s ease 1.7s both}
-#brand-tagline{font-size:clamp(16px,2vw,24px);font-weight:800;color:rgba(241,245,249,0.55);
-  animation:fadeUp 0.8s ease 2.0s both}
-
-@keyframes logoFlyIn{
-  0%{transform:translateY(-500px) scale(0.3) rotate(-10deg);opacity:0;filter:blur(20px)}
-  60%{filter:blur(0)}80%{transform:translateY(16px) scale(1.06) rotate(1deg)}
-  100%{transform:translateY(0) scale(1) rotate(0deg);opacity:1}
-}
-@keyframes shockwave{
-  0%{width:10px;height:10px;opacity:0.9;border-width:6px}
-  100%{width:400px;height:400px;opacity:0;border-width:1px;margin:-200px 0 0 -200px}
-}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{filter:drop-shadow(0 0 16px rgba(240,95,178,0.5))}50%{filter:drop-shadow(0 0 40px rgba(240,95,178,0.9))}}
-
-/* ── SCORING BADGE ───────────────────────────────────────────── */
-.score-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  border-radius:999px;padding:6px 18px;font-size:15px;font-weight:800;
-}
+/* ── SCORE BADGES ────────────────────────────────────────────── */
+.score-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 18px;font-size:15px;font-weight:800}
 .score-badge.gold{background:rgba(243,195,103,0.15);border:1px solid rgba(243,195,103,0.4);color:var(--gold)}
 .score-badge.silver{background:rgba(148,163,184,0.12);border:1px solid rgba(148,163,184,0.3);color:#94a3b8}
 .score-badge.bronze{background:rgba(180,120,60,0.12);border:1px solid rgba(180,120,60,0.3);color:#cd7f32}
+.score-badge.red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171}
 
-/* ── COLORS ──────────────────────────────────────────────────── */
-.c-pink{color:var(--pink)}.c-gold{color:var(--gold)}.c-green{color:var(--green)}
-.c-blue{color:var(--blue)}.c-red{color:var(--red)}.c-teal{color:var(--teal)}
+/* ── LOGO SLIDE ──────────────────────────────────────────────── */
+#slide-logo .inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;position:relative}
+#logo-img{width:180px;height:180px;object-fit:contain;animation:logoFlyIn 1.1s cubic-bezier(0.34,1.56,0.64,1) 0.3s both}
+#shockwave{position:absolute;border-radius:50%;border:4px solid rgba(240,95,178,0.7);opacity:0;animation:shockwave 0.7s ease-out 1.3s both;top:90px;left:50%;margin-left:-5px}
+#brand-name{font-size:clamp(48px,6vw,80px);font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#f05fb2,#ffd1e8,#f05fb2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fadeUp 0.8s ease 1.5s both}
+#brand-copy{font-size:13px;font-weight:700;color:rgba(241,245,249,0.3);letter-spacing:3px;animation:fadeUp 0.8s ease 1.7s both}
+#brand-tagline{font-size:clamp(15px,2vw,22px);font-weight:800;color:rgba(241,245,249,0.5);animation:fadeUp 0.8s ease 2s both}
 
-/* ── OUTRO ────────────────────────────────────────────────────── */
-#slide-outro .inner{display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center}
-#outro-logo{width:140px;animation:pulse 2s ease infinite}
+@keyframes logoFlyIn{0%{transform:translateY(-500px) scale(0.3) rotate(-10deg);opacity:0;filter:blur(20px)}60%{filter:blur(0)}80%{transform:translateY(16px) scale(1.06) rotate(1deg)}100%{transform:translateY(0) scale(1) rotate(0);opacity:1}}
+@keyframes shockwave{0%{width:10px;height:10px;opacity:.9;border-width:6px;margin-left:-5px}100%{width:400px;height:400px;opacity:0;border-width:1px;margin-left:-200px;margin-top:-200px}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 16px rgba(240,95,178,.5))}50%{filter:drop-shadow(0 0 40px rgba(240,95,178,.9))}}
+.c-pink{color:var(--pink)}.c-gold{color:var(--gold)}.c-green{color:var(--green)}.c-red{color:var(--red)}
 </style>
 </head>
 <body>
 <canvas id="particles"></canvas>
 
-<!-- ══════════════ SLIDES ══════════════ -->
+<!-- Lang switcher -->
+<div id="lang-bar">
+  <button class="lang-btn active" onclick="setLang('de')">DE</button>
+  <button class="lang-btn" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" onclick="setLang('both')">DE+EN</button>
+</div>
 
-<!-- 0: LOGO -->
+<!-- Progress + HUD -->
+<div id="progress"></div>
+<div id="hud">
+  <div id="slide-dots"></div>
+  <div id="slide-num"></div>
+  <div id="nav-hint">← → Space</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDES
+══════════════════════════════════════════ -->
+
+<!-- 0 LOGO -->
 <div class="slide active" id="slide-logo">
-  <div class="inner" style="position:relative">
+  <div class="inner">
     <div id="shockwave"></div>
     <img id="logo-img" src="logo.png" alt="Cozy Wolf"/>
     <div>
       <div id="brand-name">COZY WOLF</div>
-      <div id="brand-copy">© Cozy Wolf — Alle Rechte vorbehalten</div>
+      <div id="brand-copy">© Cozy Wolf</div>
     </div>
-    <div id="brand-tagline">Das ultimative Quiz-Erlebnis</div>
+    <div id="brand-tagline" data-de="Das ultimative Quiz-Erlebnis" data-en="The Ultimate Quiz Experience"></div>
   </div>
 </div>
 
-<!-- 1: WIE MITMACHEN -->
+<!-- 1 JOIN -->
 <div class="slide" id="slide-join">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Bevor es losgeht</div>
-  <div class="section-title">Wie nehme ich teil?</div>
+  <div class="eyebrow" data-de="Bevor es losgeht" data-en="Before we start"></div>
+  <div class="section-title" data-de="Wie nehme ich teil?" data-en="How do I join?"></div>
   <div class="card-grid cols3" style="max-width:1000px">
     <div class="card">
       <div class="card-icon">📱</div>
-      <div class="card-title">Smartphone</div>
-      <div class="card-body">Eine Person pro Team braucht ein Smartphone und scannt den QR-Code auf dem Beamer.</div>
+      <div class="card-title" data-de="Smartphone" data-en="Smartphone"></div>
+      <div class="card-body" data-de="Eine Person pro Team scannt den QR-Code auf dem Beamer und loggt sich ein." data-en="One person per team scans the QR code on the screen and logs in."></div>
     </div>
     <div class="card">
       <div class="card-icon">👥</div>
-      <div class="card-title">Teamname &amp; Avatar</div>
-      <div class="card-body">Ihr wählt einen Teamnamen und (je nach Quiz) einen Avatar für euer Team.</div>
+      <div class="card-title" data-de="Teamname & Avatar" data-en="Team Name & Avatar"></div>
+      <div class="card-body" data-de="Ihr wählt einen Teamnamen und je nach Quiz einen Avatar für euer Team." data-en="Choose a team name and (depending on the quiz) an avatar for your team."></div>
     </div>
     <div class="card">
       <div class="card-icon">🚫</div>
-      <div class="card-title">Kein Google!</div>
-      <div class="card-body">Googeln ist nicht erlaubt. Nur euer Wissen zählt — Teamarbeit ist erlaubt und erwünscht.</div>
+      <div class="card-title" data-de="Kein Google!" data-en="No Google!"></div>
+      <div class="card-body" data-de="Googeln ist nicht erlaubt — nur euer Wissen zählt. Teamarbeit ist erwünscht." data-en="No googling — only your knowledge counts. Teamwork is encouraged."></div>
     </div>
   </div>
-  <div style="margin-top:20px;font-size:16px;font-weight:700;color:rgba(241,245,249,0.4)">Ihr habt meistens <span class="c-pink" style="font-size:20px;font-weight:900">60 Sekunden</span> Zeit zum Eintippen.</div>
+  <div style="margin-top:20px;font-size:15px;font-weight:700;color:rgba(241,245,249,0.4)">
+    <span data-de="Ihr habt meistens" data-en="You usually have"></span>
+    <span class="c-pink" style="font-size:20px;font-weight:900"> 60 </span>
+    <span data-de="Sekunden Zeit zum Eintippen." data-en="seconds to type your answer."></span>
+  </div>
 </div>
 
-<!-- 2: AUFBAU -->
+<!-- 2 AUFBAU -->
 <div class="slide" id="slide-aufbau">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Überblick</div>
-  <div class="section-title">Aufbau des Abends</div>
+  <div class="eyebrow" data-de="Überblick" data-en="Overview"></div>
+  <div class="section-title" data-de="Aufbau des Abends" data-en="How the Evening Works"></div>
   <div class="timeline">
     <div class="tl-block">
-      <div class="tl-label">Teil 1</div>
-      <div class="tl-title">Fragen 1–10</div>
-      <div class="tl-pts">je 1 Punkt</div>
-      <div class="tl-sub">max. 10 Punkte</div>
+      <div class="tl-label" data-de="Teil 1" data-en="Part 1"></div>
+      <div class="tl-title" data-de="Fragen 1–10" data-en="Questions 1–10"></div>
+      <div class="tl-pts" data-de="je 1 Punkt" data-en="1 point each"></div>
+      <div class="tl-sub" data-de="max. 10 Punkte" data-en="max. 10 points"></div>
     </div>
     <div class="tl-arrow">→</div>
     <div class="tl-block highlight">
-      <div class="tl-label">Kleines Finale</div>
+      <div class="tl-label" data-de="Kleines Finale" data-en="First Final"></div>
       <div class="tl-title c-pink">Fotosprint</div>
-      <div class="tl-pts">bis zu 9 Punkte</div>
-      <div class="tl-sub">3 Runden</div>
+      <div class="tl-pts" data-de="bis zu 9 Punkte" data-en="up to 9 points"></div>
+      <div class="tl-sub" data-de="3 Runden" data-en="3 rounds"></div>
     </div>
     <div class="tl-arrow">→</div>
     <div class="tl-block">
-      <div class="tl-label">Teil 2</div>
-      <div class="tl-title">Fragen 11–20</div>
-      <div class="tl-pts">je 2 Punkte</div>
-      <div class="tl-sub">max. 20 Punkte</div>
+      <div class="tl-label" data-de="Teil 2" data-en="Part 2"></div>
+      <div class="tl-title" data-de="Fragen 11–20" data-en="Questions 11–20"></div>
+      <div class="tl-pts" data-de="je 2 Punkte" data-en="2 points each"></div>
+      <div class="tl-sub" data-de="max. 20 Punkte" data-en="max. 20 points"></div>
     </div>
     <div class="tl-arrow">→</div>
     <div class="tl-block highlight">
-      <div class="tl-label">Großes Finale</div>
+      <div class="tl-label" data-de="Großes Finale" data-en="Grand Final"></div>
       <div class="tl-title c-pink">KO Rallye</div>
-      <div class="tl-pts">bis zu 9 Punkte</div>
-      <div class="tl-sub">3 Runden</div>
+      <div class="tl-pts" data-de="bis zu 9 Punkte" data-en="up to 9 points"></div>
+      <div class="tl-sub" data-de="3 Runden" data-en="3 rounds"></div>
     </div>
   </div>
-  <div style="margin-top:24px;font-size:15px;font-weight:700;color:rgba(241,245,249,0.3)">Gesamt: bis zu <span class="c-pink">48 Punkte</span> möglich</div>
-</div>
-
-<!-- 3: FRAGETYPEN ÜBERSICHT -->
-<div class="slide" id="slide-types-intro">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Fragen 1–20</div>
-  <div class="section-title">Welche Fragetypen<br/>gibt es?</div>
-  <div class="card-grid cols3" style="max-width:1100px">
-    <div class="card"><div class="card-icon">🅰️</div><div class="card-title">Multiple Choice</div><div class="card-body">4 Antworten, eine ist richtig</div></div>
-    <div class="card"><div class="card-icon">🔢</div><div class="card-title">Schätzfrage</div><div class="card-body">Eine Zahl schätzen — wer am nächsten liegt</div></div>
-    <div class="card"><div class="card-icon">🖼️</div><div class="card-title">Bildfrage</div><div class="card-body">Bild ansehen, Antwort frei eintippen</div></div>
-    <div class="card"><div class="card-icon">🎰</div><div class="card-title">Wettfrage</div><div class="card-body">10 Punkte auf A, B oder C verteilen</div></div>
-    <div class="card" style="grid-column:span 2"><div class="card-icon">🎁</div><div class="card-title">Bunte Tüte</div><div class="card-body">Überraschungsformat — jede Runde anders (nächste Folien)</div></div>
+  <div style="margin-top:22px;font-size:14px;font-weight:700;color:rgba(241,245,249,0.28)">
+    <span data-de="Gesamt: bis zu" data-en="Total: up to"></span>
+    <span class="c-pink"> 48 </span>
+    <span data-de="Punkte möglich" data-en="points possible"></span>
   </div>
 </div>
 
-<!-- 4: MULTIPLE CHOICE -->
+<!-- 3 FRAGETYPEN -->
+<div class="slide" id="slide-types">
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="eyebrow" data-de="Fragen 1–20" data-en="Questions 1–20"></div>
+  <div class="section-title" data-de="Welche Fragetypen gibt es?" data-en="What question types are there?"></div>
+  <div class="card-grid cols3" style="max-width:1100px">
+    <div class="card"><div class="card-icon">🅰️</div><div class="card-title" data-de="Multiple Choice" data-en="Multiple Choice"></div><div class="card-body" data-de="4 Antworten, eine ist richtig" data-en="4 answers, one is correct"></div></div>
+    <div class="card"><div class="card-icon">🔢</div><div class="card-title" data-de="Schätzfrage" data-en="Estimation"></div><div class="card-body" data-de="Eine Zahl schätzen – wer am nächsten liegt" data-en="Guess a number – closest wins"></div></div>
+    <div class="card"><div class="card-icon">🖼️</div><div class="card-title" data-de="Bildfrage" data-en="Image Question"></div><div class="card-body" data-de="Bild ansehen, Antwort frei eintippen" data-en="Look at an image, type your answer freely"></div></div>
+    <div class="card"><div class="card-icon">🎰</div><div class="card-title" data-de="Wettfrage" data-en="Betting Question"></div><div class="card-body" data-de="10 Punkte auf A, B oder C verteilen" data-en="Distribute 10 points across A, B or C"></div></div>
+    <div class="card" style="grid-column:span 2"><div class="card-icon">🎁</div><div class="card-title" data-de="Bunte Tüte" data-en="Mixed Bag"></div><div class="card-body" data-de="Überraschungsformat – jede Runde anders (nächste Folien)" data-en="Surprise format – different every round (next slides)"></div></div>
+  </div>
+</div>
+
+<!-- 4 MULTIPLE CHOICE -->
 <div class="slide" id="slide-mc">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🅰️ Fragetyp</div>
+  <div class="label-pill">🅰️ <span data-de="Fragetyp" data-en="Question Type"></span></div>
   <div class="section-title">Multiple Choice</div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">📺</span><div><div class="rule-text">4 Antwortmöglichkeiten erscheinen auf dem Beamer</div></div></div>
-    <div class="rule"><span class="rule-icon">📱</span><div><div class="rule-text">Alle Teams wählen gleichzeitig A, B, C oder D auf ihrem Smartphone</div></div></div>
-    <div class="rule"><span class="rule-icon">✅</span><div><div class="rule-text">Richtige Antwort = volle Punkte &nbsp;·&nbsp; Falsch = 0 Punkte</div></div></div>
+    <div class="rule"><span class="rule-icon">📺</span><div><div class="rule-text" data-de="4 Antwortmöglichkeiten erscheinen auf dem Beamer" data-en="4 answer options appear on the screen"></div></div></div>
+    <div class="rule"><span class="rule-icon">📱</span><div><div class="rule-text" data-de="Alle Teams wählen gleichzeitig A, B, C oder D" data-en="All teams simultaneously choose A, B, C or D"></div></div></div>
+    <div class="rule"><span class="rule-icon">✅</span><div><div class="rule-text" data-de="Richtige Antwort = volle Punkte · Falsch = 0 Punkte" data-en="Correct answer = full points · Wrong = 0 points"></div></div></div>
   </div>
 </div>
 
-<!-- 5: SCHÄTZFRAGE -->
+<!-- 5 SCHÄTZFRAGE -->
 <div class="slide" id="slide-schaetz">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🔢 Fragetyp</div>
-  <div class="section-title">Schätzfrage</div>
+  <div class="label-pill">🔢 <span data-de="Fragetyp" data-en="Question Type"></span></div>
+  <div class="section-title" data-de="Schätzfrage" data-en="Estimation Question"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text">Gesucht ist eine Zahl — Jahr, Höhe, Gewicht, Anzahl …</div></div></div>
-    <div class="rule"><span class="rule-icon">📱</span><div><div class="rule-text">Alle Teams tippen gleichzeitig ihre Schätzung ein</div></div></div>
-    <div class="rule"><span class="rule-icon">🏆</span><div><div class="rule-text">Wer am nächsten an der richtigen Zahl liegt, gewinnt die vollen Punkte</div><div class="rule-sub">Bei Gleichstand teilen beide Teams</div></div></div>
+    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text" data-de="Gesucht ist eine Zahl – Jahr, Höhe, Gewicht, Anzahl …" data-en="A number is sought – year, height, weight, quantity …"></div></div></div>
+    <div class="rule"><span class="rule-icon">📱</span><div><div class="rule-text" data-de="Alle Teams tippen gleichzeitig ihre Schätzung ein" data-en="All teams type their estimate simultaneously"></div></div></div>
+    <div class="rule"><span class="rule-icon">🏆</span><div>
+      <div class="rule-text" data-de="Wer am nächsten dran ist, gewinnt die vollen Punkte" data-en="Closest to the correct number wins full points"></div>
+      <div class="rule-sub" data-de="Bei Gleichstand teilen beide Teams" data-en="In case of a tie, both teams share the points"></div>
+    </div></div>
   </div>
 </div>
 
-<!-- 6: BILDFRAGE -->
+<!-- 6 BILDFRAGE -->
 <div class="slide" id="slide-bild">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🖼️ Fragetyp</div>
-  <div class="section-title">Bildfrage</div>
+  <div class="label-pill">🖼️ <span data-de="Fragetyp" data-en="Question Type"></span></div>
+  <div class="section-title" data-de="Bildfrage" data-en="Image Question"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🔍</span><div><div class="rule-text">Ein Bild wird auf dem Beamer gezeigt</div></div></div>
-    <div class="rule"><span class="rule-icon">✍️</span><div><div class="rule-text">Teams tippen ihre Antwort frei ein — Rechtschreibung muss nicht perfekt sein</div></div></div>
-    <div class="rule"><span class="rule-icon">👨‍⚖️</span><div><div class="rule-text">Der Moderator oder das System wertet die Antworten aus</div></div></div>
+    <div class="rule"><span class="rule-icon">🔍</span><div><div class="rule-text" data-de="Ein Bild wird auf dem Beamer gezeigt" data-en="An image is shown on screen"></div></div></div>
+    <div class="rule"><span class="rule-icon">✍️</span><div><div class="rule-text" data-de="Teams tippen ihre Antwort frei ein – Rechtschreibung muss nicht perfekt sein" data-en="Teams type their answer freely – spelling doesn't have to be perfect"></div></div></div>
+    <div class="rule"><span class="rule-icon">👨‍⚖️</span><div><div class="rule-text" data-de="Der Moderator oder das System wertet die Antworten aus" data-en="The host or the system evaluates the answers"></div></div></div>
   </div>
 </div>
 
-<!-- 7: WETTFRAGE -->
+<!-- 7 WETTFRAGE -->
 <div class="slide" id="slide-wette">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎰 Fragetyp</div>
-  <div class="section-title">Wettfrage</div>
+  <div class="label-pill">🎰 <span data-de="Fragetyp" data-en="Question Type"></span></div>
+  <div class="section-title" data-de="Wettfrage" data-en="Betting Question"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">💰</span><div><div class="rule-text">Ihr habt <strong>10 Punkte</strong> zum Verteilen auf A, B oder C</div><div class="rule-sub">Beispiel: A=7, B=3, C=0 — oder alles auf eine Karte</div></div></div>
-    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text">Nur die Punkte auf der richtigen Antwort zählen</div></div></div>
-    <div class="rule"><span class="rule-icon">💡</span><div><div class="rule-text">Risikofreudig oder vorsichtig — ihr entscheidet die Strategie</div></div></div>
+    <div class="rule"><span class="rule-icon">💰</span><div>
+      <div class="rule-text" data-de="Ihr habt 10 Punkte zum Verteilen auf A, B oder C" data-en="You have 10 points to distribute across A, B or C"></div>
+      <div class="rule-sub" data-de="Beispiel: A=7, B=3, C=0 – oder alles auf eine Karte" data-en="Example: A=7, B=3, C=0 – or go all in on one"></div>
+    </div></div>
+    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text" data-de="Nur die Punkte auf der richtigen Antwort zählen" data-en="Only points placed on the correct answer count"></div></div></div>
+    <div class="rule"><span class="rule-icon">💡</span><div><div class="rule-text" data-de="Risikofreudig oder vorsichtig – ihr entscheidet die Strategie" data-en="Bold or careful – your team decides the strategy"></div></div></div>
   </div>
 </div>
 
-<!-- 8: BUNTE TÜTE INTRO -->
+<!-- 8 BUNTE TÜTE INTRO -->
 <div class="slide" id="slide-bt-intro">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Überraschungsformat</div>
-  <div class="hero c-red">Bunte Tüte</div>
-  <div class="hero-sub">Jede Bunte-Tüte-Frage hat ein anderes Format.<br/>Die Regeln werden vorher immer erklärt.</div>
-  <div class="card-grid cols3" style="max-width:1000px;margin-top:32px">
-    <div class="card" style="text-align:center"><div class="card-icon">8️⃣</div><div class="card-title" style="font-size:16px">8 Dinge, 1 falsch</div></div>
-    <div class="card" style="text-align:center"><div class="card-icon">🗺️</div><div class="card-title" style="font-size:16px">Weltkarte</div></div>
-    <div class="card" style="text-align:center"><div class="card-icon">🏅</div><div class="card-title" style="font-size:16px">Top 5</div></div>
-    <div class="card" style="text-align:center"><div class="card-icon">🎯</div><div class="card-title" style="font-size:16px">Präzise Antwort</div></div>
-    <div class="card" style="text-align:center;grid-column:span 2"><div class="card-icon">🔀</div><div class="card-title" style="font-size:16px">Sortieren</div></div>
+  <div class="eyebrow" data-de="Überraschungsformat" data-en="Surprise Format"></div>
+  <div class="hero c-red" data-de="Bunte Tüte" data-en="Mixed Bag"></div>
+  <div class="hero-sub" data-de="Jede Bunte-Tüte-Frage hat ein anderes Format.<br/>Die Regeln werden vorher immer erklärt." data-en="Every Mixed Bag question has a different format.<br/>The rules are always explained beforehand."></div>
+  <div class="card-grid cols3" style="max-width:1000px;margin-top:28px">
+    <div class="card" style="text-align:center"><div class="card-icon">💣</div><div class="card-title" style="font-size:15px" data-de="8 Dinge, 1 falsch" data-en="8 Things, 1 Wrong"></div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🗺️</div><div class="card-title" style="font-size:15px" data-de="Weltkarte" data-en="World Map"></div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏅</div><div class="card-title" style="font-size:15px" data-de="Top 5" data-en="Top 5"></div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🎯</div><div class="card-title" style="font-size:15px" data-de="Präzise Antwort" data-en="Precision Answer"></div></div>
+    <div class="card" style="text-align:center;grid-column:span 2"><div class="card-icon">🔀</div><div class="card-title" style="font-size:15px" data-de="Sortieren" data-en="Sorting"></div></div>
   </div>
 </div>
 
-<!-- 9: BUNTE TÜTE: 8 DINGE -->
+<!-- 9 BT 8 DINGE -->
 <div class="slide" id="slide-bt-8">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎁 Bunte Tüte</div>
-  <div class="section-title">8 Dinge, 1 falsch</div>
+  <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
+  <div class="section-title" data-de="8 Dinge, 1 falsch" data-en="8 Things, 1 Wrong"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">📋</span><div><div class="rule-text">8 Aussagen werden gezeigt — <strong class="c-green">7 stimmen</strong>, <strong class="c-red">1 ist gelogen</strong></div></div></div>
-    <div class="rule"><span class="rule-icon">🔄</span><div><div class="rule-text">Teams wählen reihum eine Aussage — sie hoffen, eine <strong class="c-green">wahre</strong> zu erwischen</div></div></div>
-    <div class="rule"><span class="rule-icon">💣</span><div><div class="rule-text">Wer die <strong class="c-red">falsche Aussage</strong> erwischt, verliert — alle anderen gewinnen sofort</div><div class="rule-sub">Wie eine Bombe im Stapel — du weißt nie, welche es ist</div></div></div>
-    <div class="rule"><span class="rule-icon">🤝</span><div><div class="rule-text">Werden alle 7 wahren Aussagen gewählt ohne die Falsche zu treffen → alle gewinnen</div></div></div>
+    <div class="rule"><span class="rule-icon">📋</span><div><div class="rule-text"><span data-de="8 Aussagen werden gezeigt –" data-en="8 statements are shown –"></span> <strong class="c-green" data-de="7 stimmen" data-en="7 are true"></strong>, <strong class="c-red" data-de="1 ist gelogen" data-en="1 is false"></strong></div></div></div>
+    <div class="rule"><span class="rule-icon">🔄</span><div><div class="rule-text" data-de="Teams wählen reihum eine Aussage – sie hoffen, eine wahre zu erwischen" data-en="Teams take turns picking a statement – hoping to pick a true one"></div></div></div>
+    <div class="rule"><span class="rule-icon">💣</span><div>
+      <div class="rule-text" data-de="Wer die falsche Aussage erwischt, verliert – alle anderen gewinnen sofort" data-en="Whoever picks the false statement loses – all others win immediately"></div>
+      <div class="rule-sub" data-de="Wie eine Bombe im Stapel – du weißt nie, welche es ist" data-en="Like a bomb in the pile – you never know which one it is"></div>
+    </div></div>
+    <div class="rule"><span class="rule-icon">🤝</span><div><div class="rule-text" data-de="Werden alle 7 wahren Aussagen gewählt ohne die Falsche zu treffen → alle gewinnen" data-en="If all 7 true statements are picked without hitting the false one → everyone wins"></div></div></div>
   </div>
 </div>
 
-<!-- 10: BUNTE TÜTE: WELTKARTE -->
+<!-- 10 BT WELTKARTE -->
 <div class="slide" id="slide-bt-map">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎁 Bunte Tüte</div>
-  <div class="section-title">Weltkarte</div>
+  <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
+  <div class="section-title" data-de="Weltkarte" data-en="World Map"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🗺️</span><div><div class="rule-text">Eine Weltkarte erscheint auf dem Smartphone — alle Teams setzen einen Pin</div></div></div>
-    <div class="rule"><span class="rule-icon">📍</span><div><div class="rule-text">Wer am nächsten am gesuchten Ort liegt, gewinnt die meisten Punkte</div></div></div>
-    <div class="rule"><span class="rule-icon">🌍</span><div><div class="rule-text">Nach der Auflösung: alle Team-Pins auf der Karte sichtbar + Rangliste nach Distanz</div></div></div>
+    <div class="rule"><span class="rule-icon">🗺️</span><div><div class="rule-text" data-de="Eine Weltkarte erscheint auf dem Smartphone – alle Teams setzen einen Pin" data-en="A world map appears on the smartphone – all teams place a pin"></div></div></div>
+    <div class="rule"><span class="rule-icon">📍</span><div><div class="rule-text" data-de="Wer am nächsten am gesuchten Ort liegt, gewinnt die meisten Punkte" data-en="Whoever is closest to the target location wins the most points"></div></div></div>
+    <div class="rule"><span class="rule-icon">🌍</span><div><div class="rule-text" data-de="Nach der Auflösung: alle Team-Pins auf der Karte + Rangliste nach Distanz" data-en="After reveal: all team pins visible on map + ranking by distance"></div></div></div>
   </div>
 </div>
 
-<!-- 11: BUNTE TÜTE: TOP 5 -->
+<!-- 11 BT TOP 5 -->
 <div class="slide" id="slide-bt-top5">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎁 Bunte Tüte</div>
+  <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
   <div class="section-title">Top 5</div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🏅</span><div><div class="rule-text">Gesucht sind die <strong>5 richtigen Antworten</strong> zu einem Oberbegriff</div></div></div>
-    <div class="rule"><span class="rule-icon">✍️</span><div><div class="rule-text">Teams tippen ein, was sie für die Top 5 halten</div></div></div>
-    <div class="rule"><span class="rule-icon">⭐</span><div><div class="rule-text">Jede richtig gefundene Antwort bringt Punkte — je mehr, desto besser</div></div></div>
+    <div class="rule"><span class="rule-icon">🏅</span><div><div class="rule-text" data-de="Gesucht sind die 5 richtigen Antworten zu einem Oberbegriff" data-en="Find the 5 correct answers for a given category"></div></div></div>
+    <div class="rule"><span class="rule-icon">✍️</span><div><div class="rule-text" data-de="Teams tippen ein, was sie für die Top 5 halten" data-en="Teams type what they think belongs in the Top 5"></div></div></div>
+    <div class="rule"><span class="rule-icon">⭐</span><div><div class="rule-text" data-de="Jede richtig gefundene Antwort bringt Punkte – je mehr, desto besser" data-en="Every correctly found answer earns points – the more, the better"></div></div></div>
   </div>
 </div>
 
-<!-- 12: BUNTE TÜTE: PRÄZISE -->
+<!-- 12 BT PRÄZISE -->
 <div class="slide" id="slide-bt-pra">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎁 Bunte Tüte</div>
-  <div class="section-title">Präzise Antwort</div>
+  <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
+  <div class="section-title" data-de="Präzise Antwort" data-en="Precision Answer"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text">Alle Teams geben eine Freitextantwort ein</div></div></div>
-    <div class="rule"><span class="rule-icon">📊</span><div><div class="rule-text">Bewertet wird die Genauigkeit der Antwort in Stufen:</div></div></div>
+    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text" data-de="Alle Teams geben eine Freitextantwort ein" data-en="All teams enter a free-text answer"></div></div></div>
+    <div class="rule"><span class="rule-icon">📊</span><div><div class="rule-text" data-de="Bewertet wird die Genauigkeit der Antwort in Stufen:" data-en="Answers are scored by accuracy level:"></div></div></div>
   </div>
-  <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;justify-content:center">
-    <span class="score-badge gold">🥇 Perfekt</span>
-    <span style="color:rgba(241,245,249,0.3);align-self:center">›</span>
-    <span class="score-badge silver">🥈 Sehr nah</span>
-    <span style="color:rgba(241,245,249,0.3);align-self:center">›</span>
-    <span class="score-badge bronze">🥉 Nah dran</span>
-    <span style="color:rgba(241,245,249,0.3);align-self:center">›</span>
-    <span class="score-badge" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171">Weit weg</span>
+  <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+    <span class="score-badge gold">🥇 <span data-de="Perfekt" data-en="Perfect"></span></span>
+    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
+    <span class="score-badge silver">🥈 <span data-de="Sehr nah" data-en="Very close"></span></span>
+    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
+    <span class="score-badge bronze">🥉 <span data-de="Nah dran" data-en="Close"></span></span>
+    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
+    <span class="score-badge red">❌ <span data-de="Weit weg" data-en="Far off"></span></span>
   </div>
 </div>
 
-<!-- 13: FOTOSPRINT INTRO -->
+<!-- 13 FOTOSPRINT INTRO -->
 <div class="slide" id="slide-foto-intro">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Kleines Finale · Nach Frage 10</div>
+  <div class="eyebrow" data-de="Kleines Finale · Nach Frage 10" data-en="First Final · After Question 10"></div>
   <div class="hero c-gold">Fotosprint</div>
-  <div class="hero-sub">3 Runden · bis zu 9 Punkte</div>
+  <div class="hero-sub" data-de="3 Runden · bis zu 9 Punkte" data-en="3 rounds · up to 9 points"></div>
 </div>
 
-<!-- 14: FOTOSPRINT BAN/PICK -->
+<!-- 14 FOTOSPRINT BAN/PICK -->
 <div class="slide" id="slide-foto-ban">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill c-gold">⚡ Fotosprint — Auswahl</div>
-  <div class="section-title">Ban &amp; Pick</div>
+  <div class="label-pill c-gold">⚡ <span data-de="Fotosprint – Auswahl" data-en="Fotosprint – Selection"></span></div>
+  <div class="section-title" data-de="Ban & Pick" data-en="Ban & Pick"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🚫</span><div><div class="rule-text"><strong>Platz 1</strong> darf <strong>2 Themen bannen</strong> — die fallen weg</div></div></div>
-    <div class="rule"><span class="rule-icon">✋</span><div><div class="rule-text"><strong>Letzter Platz</strong> darf <strong>1 Thema sicher spielen</strong></div></div></div>
-    <div class="rule"><span class="rule-icon">🎲</span><div><div class="rule-text">Dazu kommen <strong>2 zufällige Themen</strong> aus dem restlichen Pool</div><div class="rule-sub">Ergibt 3 Runden insgesamt</div></div></div>
+    <div class="rule"><span class="rule-icon">🚫</span><div><div class="rule-text"><strong data-de="Platz 1" data-en="1st place"></strong> <span data-de="darf 2 Themen bannen – die fallen weg" data-en="may ban 2 themes – they are removed"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">✋</span><div><div class="rule-text"><strong data-de="Letzter Platz" data-en="Last place"></strong> <span data-de="darf 1 Thema sicher spielen" data-en="may pick 1 theme to play for sure"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">🎲</span><div>
+      <div class="rule-text" data-de="Dazu kommen 2 zufällige Themen aus dem restlichen Pool" data-en="2 random themes are added from the remaining pool"></div>
+      <div class="rule-sub" data-de="Ergibt 3 Runden insgesamt" data-en="Results in 3 rounds total"></div>
+    </div></div>
   </div>
 </div>
 
-<!-- 15: FOTOSPRINT ABLAUF -->
+<!-- 15 FOTOSPRINT ABLAUF -->
 <div class="slide" id="slide-foto-play">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill c-gold">⚡ Fotosprint — Ablauf</div>
-  <div class="section-title">Wie wird gespielt?</div>
+  <div class="label-pill c-gold">⚡ <span data-de="Fotosprint – Ablauf" data-en="Fotosprint – Gameplay"></span></div>
+  <div class="section-title" data-de="Wie wird gespielt?" data-en="How is it played?"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">👀</span><div><div class="rule-text"><strong>30 Sekunden:</strong> 5 Bilder werden nacheinander gezeigt — einprägen!</div></div></div>
-    <div class="rule"><span class="rule-icon">✍️</span><div><div class="rule-text"><strong>30 Sekunden:</strong> Alles eintippen, was ihr gesehen habt</div><div class="rule-sub">Je mehr richtige Antworten, desto besser euer Platz</div></div></div>
-    <div class="rule"><span class="rule-icon">🏆</span><div><div class="rule-text">Wertung pro Runde: <strong class="c-gold">1. Platz +3</strong> · 2. Platz +1 · Gleichstand je +1</div></div></div>
+    <div class="rule"><span class="rule-icon">👀</span><div><div class="rule-text"><strong>30 <span data-de="Sekunden" data-en="seconds"></span>:</strong> <span data-de="5 Bilder werden nacheinander gezeigt – einprägen!" data-en="5 images are shown one by one – memorise them!"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">✍️</span><div>
+      <div class="rule-text"><strong>30 <span data-de="Sekunden" data-en="seconds"></span>:</strong> <span data-de="Alles eintippen, was ihr gesehen habt" data-en="Type everything you remember seeing"></span></div>
+      <div class="rule-sub" data-de="Je mehr richtige Antworten, desto besser euer Platz" data-en="The more correct answers, the better your rank"></div>
+    </div></div>
+    <div class="rule"><span class="rule-icon">🏆</span><div><div class="rule-text"><span data-de="Wertung pro Runde:" data-en="Points per round:"></span> <strong class="c-gold" data-de="1. Platz +3" data-en="1st place +3"></strong> · <span data-de="2. Platz +1 · Gleichstand je +1" data-en="2nd place +1 · Tie: +1 each"></span></div></div></div>
   </div>
 </div>
 
-<!-- 16: KO RALLYE INTRO -->
+<!-- 16 KO RALLYE INTRO -->
 <div class="slide" id="slide-ko-intro">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="eyebrow">Großes Finale · Nach Frage 20</div>
+  <div class="eyebrow" data-de="Großes Finale · Nach Frage 20" data-en="Grand Final · After Question 20"></div>
   <div class="hero c-red">KO Rallye</div>
-  <div class="hero-sub">3 Runden · bis zu 9 Punkte · Teams fliegen raus</div>
+  <div class="hero-sub" data-de="3 Runden · bis zu 9 Punkte · Teams fliegen raus" data-en="3 rounds · up to 9 points · teams get eliminated"></div>
 </div>
 
-<!-- 17: KO RALLYE BAN/PICK -->
+<!-- 17 KO RALLYE BAN/PICK -->
 <div class="slide" id="slide-ko-ban">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill c-red">🔴 KO Rallye — Auswahl</div>
-  <div class="section-title">Ban &amp; Pick</div>
+  <div class="label-pill c-red">🔴 <span data-de="KO Rallye – Auswahl" data-en="KO Rally – Selection"></span></div>
+  <div class="section-title" data-de="Ban & Pick" data-en="Ban & Pick"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🚫</span><div><div class="rule-text"><strong>Platz 1</strong> darf <strong>2 Kategorien bannen</strong></div></div></div>
-    <div class="rule"><span class="rule-icon">✋</span><div><div class="rule-text"><strong>Letzter Platz</strong> darf <strong>1 Kategorie sicher spielen</strong></div></div></div>
-    <div class="rule"><span class="rule-icon">🎲</span><div><div class="rule-text"><strong>2 weitere Kategorien</strong> werden zufällig aus dem Pool gezogen</div><div class="rule-sub">Beispiele: Länder mit S · Hauptstädte Europa · Disney-Filme …</div></div></div>
+    <div class="rule"><span class="rule-icon">🚫</span><div><div class="rule-text"><strong data-de="Platz 1" data-en="1st place"></strong> <span data-de="darf 2 Kategorien bannen" data-en="may ban 2 categories"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">✋</span><div><div class="rule-text"><strong data-de="Letzter Platz" data-en="Last place"></strong> <span data-de="darf 1 Kategorie sicher spielen" data-en="may pick 1 category to play for sure"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">🎲</span><div>
+      <div class="rule-text" data-de="2 weitere Kategorien werden zufällig aus dem Pool gezogen" data-en="2 more categories are drawn randomly from the pool"></div>
+      <div class="rule-sub" data-de="Beispiele: Länder mit S · Hauptstädte Europa · Disney-Filme …" data-en="Examples: Countries with S · European Capitals · Disney Movies …"></div>
+    </div></div>
   </div>
 </div>
 
-<!-- 18: KO RALLYE ABLAUF -->
+<!-- 18 KO RALLYE ABLAUF -->
 <div class="slide" id="slide-ko-play">
   <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill c-red">🔴 KO Rallye — Ablauf</div>
-  <div class="section-title">Wie wird gespielt?</div>
+  <div class="label-pill c-red">🔴 <span data-de="KO Rallye – Ablauf" data-en="KO Rally – Gameplay"></span></div>
+  <div class="section-title" data-de="Wie wird gespielt?" data-en="How is it played?"></div>
   <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text">Ein Thema, z. B. <em>„Länder mit S"</em> — Teams nennen reihum gültige Antworten</div></div></div>
-    <div class="rule"><span class="rule-icon">⏱️</span><div><div class="rule-text"><strong>25 Sekunden</strong> pro Zug — ein zufälliges Team beginnt</div></div></div>
-    <div class="rule"><span class="rule-icon">💥</span><div><div class="rule-text">Falsche, doppelte Antwort oder Timeout → <strong class="c-red">Team scheidet aus</strong></div></div></div>
-    <div class="rule"><span class="rule-icon">🏆</span><div><div class="rule-text">Letztes Team übrig oder alle Antworten erschöpft → verbleibende Teams <strong class="c-green">+3 Punkte</strong></div></div></div>
+    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text" data-de="Ein Thema, z. B. „Länder mit S" – Teams nennen reihum gültige Antworten" data-en="A topic, e.g. &quot;Countries starting with S&quot; – teams take turns naming valid answers"></div></div></div>
+    <div class="rule"><span class="rule-icon">⏱️</span><div><div class="rule-text"><strong>25 <span data-de="Sekunden" data-en="seconds"></span></strong> <span data-de="pro Zug – ein zufälliges Team beginnt" data-en="per turn – a random team starts"></span></div></div></div>
+    <div class="rule"><span class="rule-icon">💥</span><div><div class="rule-text" data-de="Falsche, doppelte Antwort oder Timeout → Team scheidet aus" data-en="Wrong, duplicate answer or timeout → team is eliminated"></div></div></div>
+    <div class="rule"><span class="rule-icon">🏆</span><div><div class="rule-text" data-de="Letztes Team übrig oder alle Antworten erschöpft → verbleibende Teams +3 Punkte" data-en="Last team standing or all answers used → remaining teams +3 points"></div></div></div>
   </div>
 </div>
 
-<!-- 19: OUTRO -->
+<!-- 19 OUTRO -->
 <div class="slide" id="slide-outro">
-  <div class="inner">
-    <img id="outro-logo" src="logo.png" alt="Cozy Wolf"/>
-    <div style="font-size:clamp(40px,6vw,72px);font-weight:900;text-align:center;
-      background:linear-gradient(135deg,#f05fb2,#ffd1e8);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
-      Viel Spaß beim Spielen!
-    </div>
-    <div style="font-size:16px;font-weight:700;color:rgba(241,245,249,0.3);letter-spacing:3px">© Cozy Wolf — play.cozyquiz.app</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center">
+    <img src="logo.png" style="width:140px;animation:pulse 2s ease infinite" alt="Cozy Wolf"/>
+    <div style="font-size:clamp(40px,6vw,70px);font-weight:900;background:linear-gradient(135deg,#f05fb2,#ffd1e8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" data-de="Viel Spaß beim Spielen!" data-en="Have fun playing!"></div>
+    <div style="font-size:15px;font-weight:700;color:rgba(241,245,249,0.28);letter-spacing:3px">© Cozy Wolf — play.cozyquiz.app</div>
   </div>
-</div>
-
-<!-- ══════════════ HUD ══════════════ -->
-<div id="progress"></div>
-<div id="hud">
-  <div id="slide-dots"></div>
-  <div id="slide-num">1 / 20</div>
-  <div id="nav-hint">← → Leertaste</div>
 </div>
 
 <script>
 // ── PARTICLES ──────────────────────────────────────────────────
 const canvas = document.getElementById('particles');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-const PARTICLES = [];
-const spawn = () => ({
-  x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-  r: Math.random() * 1.8 + 0.3, a: Math.random() * 0.5 + 0.1,
-  vy: -(Math.random() * 0.4 + 0.1), vx: (Math.random() - 0.5) * 0.3,
-  life: 0, maxLife: Math.random() * 200 + 100,
-  hue: Math.random() > 0.5 ? 320 : 200,
-});
-for (let i = 0; i < 110; i++) PARTICLES.push(spawn());
-(function animParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const p of PARTICLES) {
-    p.x += p.vx; p.y += p.vy; p.life++;
-    if (p.life > p.maxLife || p.y < 0) Object.assign(p, spawn(), { x: Math.random() * canvas.width, y: canvas.height + 10, life: 0 });
-    const prog = p.life / p.maxLife;
-    const fade = prog < 0.2 ? prog / 0.2 : prog > 0.8 ? (1 - prog) / 0.2 : 1;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${p.hue},80%,75%,${p.a * fade})`; ctx.fill();
-  }
-  requestAnimationFrame(animParticles);
-})();
+const resize = () => { canvas.width = innerWidth; canvas.height = innerHeight; };
+resize(); window.addEventListener('resize', resize);
+const pts = Array.from({length:110}, () => spawnPt());
+function spawnPt(){ return { x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*1.8+0.3, a:Math.random()*0.5+0.1, vx:(Math.random()-.5)*0.3, vy:-(Math.random()*0.4+0.1), life:0, maxLife:Math.random()*200+100, hue:Math.random()>.5?320:200 }; }
+(function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); for(const p of pts){ p.x+=p.vx;p.y+=p.vy;p.life++; if(p.life>p.maxLife||p.y<0){Object.assign(p,spawnPt(),{x:Math.random()*canvas.width,y:canvas.height+10,life:0});} const prog=p.life/p.maxLife,fade=prog<.2?prog/.2:prog>.8?(1-prog)/.2:1; ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},80%,75%,${p.a*fade})`;ctx.fill(); } requestAnimationFrame(draw); })();
 
-// ── SLIDE ENGINE ───────────────────────────────────────────────
+// ── LANGUAGE ───────────────────────────────────────────────────
+let currentLang = new URLSearchParams(location.search).get('lang') || 'de';
+if (!['de','en','both'].includes(currentLang)) currentLang = 'de';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === (lang==='both'?'DE+EN':lang.toUpperCase())));
+  document.querySelectorAll('[data-de]').forEach(el => {
+    const de = el.getAttribute('data-de');
+    const en = el.getAttribute('data-en') || de;
+    if (lang === 'de') { el.innerHTML = de; }
+    else if (lang === 'en') { el.innerHTML = en; }
+    else { // both
+      if (de === en) { el.innerHTML = de; }
+      else { el.innerHTML = `<span class="bi-de">${de}</span><span class="bi-en">${en}</span>`; }
+    }
+  });
+}
+setLang(currentLang);
+
+// ── SLIDES ─────────────────────────────────────────────────────
 const slides = Array.from(document.querySelectorAll('.slide'));
 const TOTAL = slides.length;
-let current = 0;
-let transitioning = false;
+let current = 0, transitioning = false;
 
-// Build dots
 const dotsEl = document.getElementById('slide-dots');
 slides.forEach((_, i) => {
-  const d = document.createElement('div');
-  d.className = 'dot' + (i === 0 ? ' active' : '');
-  d.addEventListener('click', () => goTo(i));
-  dotsEl.appendChild(d);
+  const d = document.createElement('div'); d.className = 'dot' + (i===0?' active':'');
+  d.addEventListener('click', () => goTo(i)); dotsEl.appendChild(d);
 });
 
 function updateHud() {
-  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
-  document.getElementById('slide-num').textContent = `${current + 1} / ${TOTAL}`;
-  document.getElementById('progress').style.width = `${((current) / (TOTAL - 1)) * 100}%`;
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===current));
+  document.getElementById('slide-num').textContent = `${current+1} / ${TOTAL}`;
+  document.getElementById('progress').style.width = `${(current/(TOTAL-1))*100}%`;
 }
 
-function goTo(idx, dir = 1) {
-  if (transitioning || idx === current || idx < 0 || idx >= TOTAL) return;
+function goTo(idx, dir=1) {
+  if (transitioning || idx===current || idx<0 || idx>=TOTAL) return;
   transitioning = true;
-  const old = slides[current];
-  const nxt = slides[idx];
-
-  // Phase 1: fade OUT old (180ms) — no overlap
-  old.style.transition = 'opacity 0.18s ease';
-  old.style.opacity = '0';
-
+  const old = slides[current], nxt = slides[idx];
+  old.style.transition = 'opacity 0.18s ease'; old.style.opacity = '0';
   setTimeout(() => {
-    old.classList.remove('active');
-    old.style.opacity = '';
-    old.style.transition = '';
-
-    // Phase 2: position new off-screen, then slide IN (340ms)
-    nxt.style.transition = 'none';
-    nxt.style.opacity = '0';
-    nxt.style.transform = dir >= 0 ? 'translateX(56px)' : 'translateX(-56px)';
+    old.classList.remove('active'); old.style.opacity=''; old.style.transition='';
+    nxt.style.transition='none'; nxt.style.opacity='0';
+    nxt.style.transform = dir>=0 ? 'translateX(56px)' : 'translateX(-56px)';
     nxt.classList.add('active');
-
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      nxt.style.transition = 'opacity 0.34s ease, transform 0.34s cubic-bezier(0.25,0.46,0.45,0.94)';
-      nxt.style.opacity = '1';
-      nxt.style.transform = 'translateX(0)';
+      nxt.style.transition='opacity 0.34s ease,transform 0.34s cubic-bezier(0.25,0.46,0.45,0.94)';
+      nxt.style.opacity='1'; nxt.style.transform='translateX(0)';
     }));
-
-    setTimeout(() => {
-      nxt.style.transition = '';
-      nxt.style.transform = '';
-      current = idx;
-      updateHud();
-      transitioning = false;
-    }, 360);
+    setTimeout(() => { nxt.style.transition=''; nxt.style.transform=''; current=idx; updateHud(); transitioning=false; }, 360);
   }, 200);
 }
 
-function next() { goTo(current + 1, 1); }
-function prev() { goTo(current - 1, -1); }
-
-// ── KEYBOARD / STREAM DECK ──────────────────────────────────────
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter') { e.preventDefault(); next(); }
-  if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') { e.preventDefault(); prev(); }
-  // Number keys 1-9 jump to slide
-  const num = parseInt(e.key);
-  if (!isNaN(num) && num >= 1 && num <= 9) goTo(num - 1);
+document.addEventListener('keydown', e => {
+  if(['ArrowRight',' ','PageDown','Enter'].includes(e.key)){ e.preventDefault(); goTo(current+1,1); }
+  if(['ArrowLeft','Backspace','PageUp'].includes(e.key)){ e.preventDefault(); goTo(current-1,-1); }
+  const n=parseInt(e.key); if(n>=1&&n<=9) goTo(n-1);
 });
-
-// Touch/click anywhere to advance (except dots)
-document.getElementById('hud').addEventListener('click', e => e.stopPropagation());
-document.addEventListener('click', () => next());
-
+document.getElementById('hud').addEventListener('click', e=>e.stopPropagation());
+document.getElementById('lang-bar').addEventListener('click', e=>e.stopPropagation());
+document.addEventListener('click', ()=>goTo(current+1,1));
 updateHud();
 </script>
 </body>

@@ -2116,42 +2116,9 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         ? 'Answer sent ✅'
         : 'Antwort gesendet ✅';
 
-    // Compute current rank from scoreboard
-    let rankBadge: React.ReactNode = null;
-    if (teamId && sortedScoreboard.length > 0) {
-      const hasAnyScore = sortedScoreboard.some((e) => (e.score ?? 0) > 0);
-      if (hasAnyScore) {
-        const rankIndex = sortedScoreboard.findIndex((e) => e.id === teamId);
-        if (rankIndex !== -1) {
-          const rank = rankIndex + 1;
-          const total = sortedScoreboard.length;
-          const rankLabel =
-            language === 'en'
-              ? `🏆 Rank ${rank} / ${total}`
-              : `🏆 Platz ${rank} / ${total}`;
-          rankBadge = (
-            <div
-              style={{
-                marginTop: 16,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'rgba(255,215,0,0.12)',
-                border: '2px solid rgba(255,215,0,0.35)',
-                borderRadius: 999,
-                padding: '6px 18px',
-                fontSize: 'clamp(15px, 4vw, 18px)',
-                fontWeight: 800,
-                color: '#fde68a',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {rankLabel}
-            </div>
-          );
-        }
-      }
-    }
+    // Ranking hidden during normal gameplay — only revealed at official
+    // scoreboard states (after round 10 / round 20 / finals).
+    const rankBadge: React.ReactNode = null;
 
     // Show "all answered" indicator
     const connectedTeams = (teamStatus ?? []).filter(t => t.connected !== false);

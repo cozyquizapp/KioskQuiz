@@ -83,6 +83,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import ParticleCanvas from '../components/ParticleCanvas';
 
 // Fix Leaflet default marker icon (webpack asset issue)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -4502,6 +4503,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       data-team-ui="1"
       data-team-marker={teamMarker}
     >
+      <ParticleCanvas count={60} opacity={0.6} zIndex={0} />
       {/* Liquid blob backgrounds */}
       <div className="liquid-bg" style={{ top: 100, left: -150, opacity: 0.6 }} />
       <div className="liquid-bg" style={{ bottom: 100, right: -150, animationDelay: '7s', opacity: 0.6 }} />

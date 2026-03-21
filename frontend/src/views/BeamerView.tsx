@@ -39,6 +39,7 @@ import { resumeAudio, playFanfare, playReveal, playTimesUp, playTick, playUrgent
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import ParticleCanvas from '../components/ParticleCanvas';
 
 // Fits map to all markers on mount (must be rendered inside MapContainer)
 const FitBoundsOnMount: React.FC<{ bounds: L.LatLngBounds }> = ({ bounds }) => {
@@ -4524,6 +4525,7 @@ useEffect(() => {
 
   return (
     <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? `cozy-beamer-shell${gameState === 'LOBBY' ? ' cozy-beamer-lobby' : ''}` : undefined}>
+      <ParticleCanvas count={110} opacity={0.85} zIndex={0} />
       {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}
       <div style={{

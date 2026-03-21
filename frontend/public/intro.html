@@ -65,8 +65,8 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 /* ── BILINGUAL (EN groß oben, DE klein darunter — wie Beamer) ── */
 .bi-wrap{display:flex;flex-direction:column;gap:2px}
-.bi-en{font-size:inherit;font-weight:inherit;color:inherit}
-.bi-de{font-size:0.72em;font-weight:600;color:rgba(241,245,249,0.38);font-style:normal}
+.bi-en{display:block;font-size:inherit;font-weight:inherit;color:inherit}
+.bi-de{display:block;font-size:0.72em;font-weight:600;color:rgba(241,245,249,0.38);font-style:normal;margin-top:2px}
 
 /* ── TIMELINE ────────────────────────────────────────────────── */
 .timeline{display:flex;align-items:center;gap:0;width:100%;max-width:1100px}
@@ -115,7 +115,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 <div id="hud">
   <div id="slide-dots"></div>
   <div id="slide-num"></div>
-  <div id="nav-hint">← → Space</div>
+  <div id="nav-hint">→ / F13 / Taste 1 &nbsp;·&nbsp; ← / F17 / Taste 5</div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -283,8 +283,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
     <div class="card" style="text-align:center"><div class="card-icon">💣</div><div class="card-title" style="font-size:15px" data-de="8 Dinge, 1 falsch" data-en="8 Things, 1 Wrong"></div></div>
     <div class="card" style="text-align:center"><div class="card-icon">🗺️</div><div class="card-title" style="font-size:15px" data-de="Weltkarte" data-en="World Map"></div></div>
     <div class="card" style="text-align:center"><div class="card-icon">🏅</div><div class="card-title" style="font-size:15px" data-de="Top 5" data-en="Top 5"></div></div>
-    <div class="card" style="text-align:center"><div class="card-icon">🎯</div><div class="card-title" style="font-size:15px" data-de="Präzise Antwort" data-en="Precision Answer"></div></div>
-    <div class="card" style="text-align:center;grid-column:span 2"><div class="card-icon">🔀</div><div class="card-title" style="font-size:15px" data-de="Sortieren" data-en="Sorting"></div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🔀</div><div class="card-title" style="font-size:15px" data-de="Sortieren" data-en="Sorting"></div></div>
   </div>
 </div>
 
@@ -328,25 +327,6 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
   </div>
 </div>
 
-<!-- 12 BT PRÄZISE -->
-<div class="slide" id="slide-bt-pra">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
-  <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
-  <div class="section-title" data-de="Präzise Antwort" data-en="Precision Answer"></div>
-  <div class="rules-list">
-    <div class="rule"><span class="rule-icon">🎯</span><div><div class="rule-text" data-de="Alle Teams geben eine Freitextantwort ein" data-en="All teams enter a free-text answer"></div></div></div>
-    <div class="rule"><span class="rule-icon">📊</span><div><div class="rule-text" data-de="Bewertet wird die Genauigkeit der Antwort in Stufen:" data-en="Answers are scored by accuracy level:"></div></div></div>
-  </div>
-  <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
-    <span class="score-badge gold">🥇 <span data-de="Perfekt" data-en="Perfect"></span></span>
-    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
-    <span class="score-badge silver">🥈 <span data-de="Sehr nah" data-en="Very close"></span></span>
-    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
-    <span class="score-badge bronze">🥉 <span data-de="Nah dran" data-en="Close"></span></span>
-    <span style="color:rgba(241,245,249,.25);align-self:center">›</span>
-    <span class="score-badge red">❌ <span data-de="Weit weg" data-en="Far off"></span></span>
-  </div>
-</div>
 
 <!-- 13 FOTOSPRINT INTRO -->
 <div class="slide" id="slide-foto-intro">
@@ -497,9 +477,16 @@ function goTo(idx, dir=1) {
 }
 
 document.addEventListener('keydown', e => {
-  if(['ArrowRight',' ','PageDown','Enter'].includes(e.key)){ e.preventDefault(); goTo(current+1,1); }
-  if(['ArrowLeft','Backspace','PageUp'].includes(e.key)){ e.preventDefault(); goTo(current-1,-1); }
-  const n=parseInt(e.key); if(n>=1&&n<=9) goTo(n-1);
+  const k = e.key.toLowerCase();
+  const c = (e.code || '').toLowerCase();
+  // Vorwärts: F13, Taste 1, Numpad1, Pfeil rechts, Space, Enter, PageDown
+  if(['f13','digit1','numpad1'].includes(c) || ['arrowright',' ','enter','pagedown'].includes(k)){
+    e.preventDefault(); goTo(current+1,1);
+  }
+  // Zurück: F17, Taste 5, Numpad5, Pfeil links, Backspace, PageUp
+  else if(['f17','digit5','numpad5'].includes(c) || ['arrowleft','backspace','pageup'].includes(k)){
+    e.preventDefault(); goTo(current-1,-1);
+  }
 });
 document.getElementById('hud').addEventListener('click', e=>e.stopPropagation());
 document.getElementById('lang-bar').addEventListener('click', e=>e.stopPropagation());

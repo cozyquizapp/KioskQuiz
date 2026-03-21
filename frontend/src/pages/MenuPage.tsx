@@ -8,7 +8,9 @@ type LinkItem = { path: string; label: string; note?: string };
 const liveLinks: LinkItem[] = [
   { path: '/moderator', label: 'Moderator', note: 'Stage wechseln, Session steuern' },
   { path: '/beamer', label: 'Beamer', note: 'Praesentation / Slides anzeigen' },
-  { path: 'https://play.cozyquiz.app/team', label: 'Team', note: 'Mitspielen & Antworten eingeben' }
+  { path: 'https://play.cozyquiz.app/team', label: 'Team', note: 'Mitspielen & Antworten eingeben' },
+  { path: '/qrcode', label: 'QR-Code', note: 'Beitritts-QR-Code für Teams anzeigen' },
+  { path: '/intro.html', label: 'Regelerklärvideo', note: 'Animiertes Intro mit allen Spielregeln' }
 ];
 
 const builderLinks: LinkItem[] = [
@@ -25,7 +27,7 @@ const toolsLinks: LinkItem[] = [
 ];
 
 const LinkWrapper = ({ link, children }: { link: LinkItem; children: React.ReactNode }) => {
-  const isExternal = /^https?:\/\//i.test(link.path);
+  const isExternal = /^https?:\/\//i.test(link.path) || link.path.endsWith('.html');
   if (isExternal) {
     return (
       <a href={link.path} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>

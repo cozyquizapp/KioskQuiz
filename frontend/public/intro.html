@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1920, initial-scale=1"/>
+<title>Cozy Wolf – Regelerklärvideo</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#f05fb2;--pink-dark:#b10a6c;
+  --bg:#0a0e1a;--surface:#111827;
+  --gold:#f3c367;--blue:#9fbfd3;--green:#72ac78;--purple:#e2a9f1;--red:#d85f58;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:#f1f5f9}
+canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+#stage{position:fixed;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;flex-direction:column}
+
+/* ── LOGO INTRO ─────────────────────────────────────────────── */
+#intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:1;transition:opacity 0.8s ease}
+#logo-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:24px}
+#logo-img{width:220px;height:220px;object-fit:contain;
+  animation:logoFlyIn 1.1s cubic-bezier(0.34,1.56,0.64,1) 0.4s both}
+#shockwave{position:absolute;top:110px;left:50%;transform:translate(-50%,-50%);
+  width:10px;height:10px;border-radius:50%;border:4px solid rgba(240,95,178,0.7);
+  opacity:0;animation:shockwave 0.7s ease-out 1.4s both}
+#brand{text-align:center;animation:fadeUp 0.8s ease 1.6s both}
+#brand-name{font-size:72px;font-weight:900;letter-spacing:6px;
+  background:linear-gradient(135deg,#f05fb2,#ffd1e8,#f05fb2);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 30px rgba(240,95,178,0.5))}
+#brand-copy{font-size:16px;font-weight:700;color:rgba(241,245,249,0.5);letter-spacing:3px;margin-top:6px}
+#tagline{font-size:26px;font-weight:800;color:rgba(241,245,249,0.75);letter-spacing:2px;
+  animation:fadeUp 0.8s ease 2.4s both;text-align:center}
+
+@keyframes logoFlyIn{
+  0%{transform:translateY(-400px) scale(0.4) rotate(-8deg);opacity:0;filter:blur(20px)}
+  60%{filter:blur(0)}
+  80%{transform:translateY(18px) scale(1.08) rotate(1deg)}
+  100%{transform:translateY(0) scale(1) rotate(0deg);opacity:1}
+}
+@keyframes shockwave{
+  0%{width:10px;height:10px;opacity:0.9;border-width:6px}
+  100%{width:360px;height:360px;opacity:0;border-width:1px}
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── PROGRESS BAR ────────────────────────────────────────────── */
+#progress{position:fixed;bottom:0;left:0;height:4px;background:var(--pink);width:0%;transition:width 0.3s linear;z-index:99;box-shadow:0 0 12px var(--pink)}
+
+/* ── RULES SCREEN ────────────────────────────────────────────── */
+#rules{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.6s ease}
+#rules-header{
+  background:linear-gradient(135deg,rgba(177,10,108,0.25),rgba(10,14,26,0));
+  border-bottom:1px solid rgba(240,95,178,0.2);
+  padding:22px 60px;display:flex;align-items:center;gap:20px;flex-shrink:0}
+#rules-header img{width:52px;height:52px;object-fit:contain}
+#rules-header-text{font-size:18px;font-weight:800;color:rgba(241,245,249,0.5);letter-spacing:4px;text-transform:uppercase}
+#rules-header-brand{margin-left:auto;font-size:15px;font-weight:700;color:rgba(241,245,249,0.3);letter-spacing:2px}
+#rules-body{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 80px;min-height:0}
+
+/* ── CARD ────────────────────────────────────────────────────── */
+.card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:24px;
+  max-width:1200px;width:100%;
+  opacity:0;transform:translateX(80px);
+  transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  position:absolute
+}
+.card.active{opacity:1;transform:translateX(0)}
+.card.exit{opacity:0;transform:translateX(-80px);transition:opacity 0.4s ease,transform 0.4s ease}
+.card-header{display:flex;align-items:center;gap:28px}
+.card-icon{width:100px;height:100px;object-fit:contain;
+  filter:drop-shadow(0 0 20px currentColor);flex-shrink:0}
+.card-title-wrap{display:flex;flex-direction:column;gap:4px}
+.card-label{font-size:13px;font-weight:800;letter-spacing:4px;text-transform:uppercase;opacity:0.5}
+.card-title{font-size:62px;font-weight:900;line-height:1;letter-spacing:-1px}
+.card-rules{display:flex;flex-direction:column;gap:14px;width:100%}
+.rule-row{
+  display:flex;align-items:flex-start;gap:18px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
+  border-radius:16px;padding:18px 26px;
+  opacity:0;transform:translateY(16px);
+  transition:opacity 0.4s ease,transform 0.4s ease
+}
+.rule-row.show{opacity:1;transform:translateY(0)}
+.rule-icon{font-size:26px;flex-shrink:0;line-height:1.4}
+.rule-text{font-size:24px;font-weight:700;line-height:1.4;color:#e2e8f0}
+.rule-sub{font-size:18px;font-weight:600;color:rgba(226,232,240,0.5);margin-top:4px}
+
+/* ── SECTION TITLE CARD ──────────────────────────────────────── */
+.section-card{
+  align-items:center;justify-content:center;text-align:center;min-height:400px
+}
+.section-eyebrow{font-size:15px;font-weight:800;letter-spacing:6px;text-transform:uppercase;color:var(--pink);margin-bottom:12px;opacity:0;animation:none}
+.section-heading{font-size:82px;font-weight:900;line-height:1;
+  background:linear-gradient(135deg,#f1f5f9,rgba(241,245,249,0.6));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-sub{font-size:24px;font-weight:700;color:rgba(241,245,249,0.4);margin-top:16px}
+
+/* ── COLOR ACCENTS ───────────────────────────────────────────── */
+.c-gold{color:var(--gold)}.c-blue{color:var(--blue)}.c-green{color:var(--green)}
+.c-purple{color:var(--purple)}.c-red{color:var(--red)}.c-pink{color:var(--pink)}
+
+/* ── OUTRO ────────────────────────────────────────────────────── */
+#outro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;opacity:0;pointer-events:none;transition:opacity 0.8s ease}
+#outro-logo{width:160px;animation:pulse 2s ease infinite}
+#outro-text{font-size:52px;font-weight:900;text-align:center;
+  background:linear-gradient(135deg,#f05fb2,#ffd1e8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#outro-copy{font-size:18px;font-weight:700;color:rgba(241,245,249,0.35);letter-spacing:3px}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 16px rgba(240,95,178,0.5))}50%{filter:drop-shadow(0 0 40px rgba(240,95,178,0.9))}}
+
+/* ── PARTICLES ───────────────────────────────────────────────── */
+.sparkle{position:fixed;pointer-events:none;border-radius:50%;animation:sparkle-life 1.2s ease-out forwards}
+@keyframes sparkle-life{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0) translateY(-40px)}}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div id="stage">
+
+  <!-- INTRO -->
+  <div id="intro">
+    <div id="logo-wrap">
+      <img id="logo-img" src="logo.png" alt="Cozy Wolf Logo"/>
+      <div id="shockwave"></div>
+      <div id="brand">
+        <div id="brand-name">COZY WOLF</div>
+        <div id="brand-copy">© COZY WOLF — ALLE RECHTE VORBEHALTEN</div>
+      </div>
+    </div>
+    <div id="tagline">Das ultimative Quiz-Erlebnis</div>
+  </div>
+
+  <!-- RULES -->
+  <div id="rules">
+    <div id="rules-header">
+      <img src="logo.png" alt="logo"/>
+      <div id="rules-header-text">Spielregeln</div>
+      <div id="rules-header-brand">© Cozy Wolf</div>
+    </div>
+    <div id="rules-body">
+
+      <!-- OPENER -->
+      <div class="card section-card" id="card-opener">
+        <div class="section-eyebrow">Cozy Wolf Quiznight</div>
+        <div class="section-heading">Wie wird<br/>gespielt?</div>
+        <div class="section-sub">5 Kategorien · Bonusrunden · Jede Menge Spaß</div>
+      </div>
+
+      <!-- SCHÄTZCHEN -->
+      <div class="card" id="card-sz">
+        <div class="card-header">
+          <img class="card-icon" src="categories/schaetzchen_logo.png" alt="Schätzchen" style="filter:drop-shadow(0 0 24px #f3c367)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-gold">Kategorie 1</div>
+            <div class="card-title c-gold">Schätzchen</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🔢</span><div><div class="rule-text">Eine Zahl wird gesucht — Jahr, Höhe, Anzahl, Gewicht …</div></div></div>
+          <div class="rule-row"><span class="rule-icon">📱</span><div><div class="rule-text">Alle Teams tippen gleichzeitig ihre Schätzung ein</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🏆</span><div><div class="rule-text">Wer am nächsten dran ist, gewinnt die vollen Punkte</div><div class="rule-sub">Bei Gleichstand teilen beide Teams</div></div></div>
+        </div>
+      </div>
+
+      <!-- MU-CHO -->
+      <div class="card" id="card-mc">
+        <div class="card-header">
+          <img class="card-icon" src="categories/mucho_logo.png" alt="Mu-Cho" style="filter:drop-shadow(0 0 24px #9fbfd3)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-blue">Kategorie 2</div>
+            <div class="card-title c-blue">Mu-Cho</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🅰️</span><div><div class="rule-text">4 Antwortmöglichkeiten — A, B, C oder D</div></div></div>
+          <div class="rule-row"><span class="rule-icon">⚡</span><div><div class="rule-text">Alle Teams wählen gleichzeitig — schnell sein lohnt sich!</div></div></div>
+          <div class="rule-row"><span class="rule-icon">✅</span><div><div class="rule-text">Richtige Antwort = volle Punkte · Falsch = 0 Punkte</div></div></div>
+        </div>
+      </div>
+
+      <!-- BLUFF -->
+      <div class="card" id="card-bl">
+        <div class="card-header">
+          <img class="card-icon" src="categories/punktlandung_logo.png" alt="Bluff" style="filter:drop-shadow(0 0 24px #72ac78)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-green">Kategorie 3</div>
+            <div class="card-title c-green">Bluff</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">📜</span><div><div class="rule-text">Eine Aussage wird auf dem Beamer gezeigt</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🤔</span><div><div class="rule-text">Teams entscheiden: <strong>Wahr</strong> oder <strong>Falsch</strong>?</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🃏</span><div><div class="rule-text">Manchmal ist die Wahrheit seltsamer als die Lüge …</div></div></div>
+        </div>
+      </div>
+
+      <!-- CHEESE -->
+      <div class="card" id="card-ch">
+        <div class="card-header">
+          <img class="card-icon" src="categories/cheese_logo.png" alt="Cheese" style="filter:drop-shadow(0 0 24px #e2a9f1)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-purple">Kategorie 4</div>
+            <div class="card-title c-purple">Cheese</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🖼️</span><div><div class="rule-text">Bild oder Wissensfrage — Antwort frei eingeben</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🧀</span><div><div class="rule-text">Wissen, Kreativität und manchmal ein bisschen Glück zählen</div></div></div>
+          <div class="rule-row"><span class="rule-icon">👨‍⚖️</span><div><div class="rule-text">Der Moderator wertet die Antworten aus</div></div></div>
+        </div>
+      </div>
+
+      <!-- BUNTE TÜTE OPENER -->
+      <div class="card section-card" id="card-bt-intro">
+        <div class="section-eyebrow">Kategorie 5</div>
+        <div class="section-heading c-red">Bunte<br/>Tüte</div>
+        <div class="section-sub">Jede Runde eine andere Überraschung</div>
+      </div>
+
+      <!-- BUNTE TÜTE: 8 DINGE -->
+      <div class="card" id="card-bt-8">
+        <div class="card-header">
+          <img class="card-icon" src="categories/buntetuete_logo.png" alt="Bunte Tüte" style="filter:drop-shadow(0 0 24px #d85f58)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-red">Bunte Tüte</div>
+            <div class="card-title c-red">8 Dinge, 1 falsch</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">8️⃣</span><div><div class="rule-text">8 Aussagen auf dem Beamer — <strong>7 stimmen, 1 ist gelogen</strong></div></div></div>
+          <div class="rule-row"><span class="rule-icon">🔄</span><div><div class="rule-text">Teams sind reihum dran und wählen die falsche Aussage</div></div></div>
+          <div class="rule-row"><span class="rule-icon">💥</span><div><div class="rule-text">Wer die Lüge wählt, scheidet aus · Letztes Team gewinnt</div></div></div>
+        </div>
+      </div>
+
+      <!-- BUNTE TÜTE: WELTKARTE -->
+      <div class="card" id="card-bt-map">
+        <div class="card-header">
+          <img class="card-icon" src="categories/buntetuete_logo.png" alt="Bunte Tüte" style="filter:drop-shadow(0 0 24px #d85f58)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-red">Bunte Tüte</div>
+            <div class="card-title c-red">Weltkarte</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🗺️</span><div><div class="rule-text">Alle Teams setzen einen Pin auf der Weltkarte</div></div></div>
+          <div class="rule-row"><span class="rule-icon">📍</span><div><div class="rule-text">Wer am nächsten am Zielort ist, gewinnt</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🌍</span><div><div class="rule-text">Nach Auflösung: alle Pins sichtbar + Rangliste nach Distanz</div></div></div>
+        </div>
+      </div>
+
+      <!-- BUNTE TÜTE: TOP 5 -->
+      <div class="card" id="card-bt-top5">
+        <div class="card-header">
+          <img class="card-icon" src="categories/buntetuete_logo.png" alt="Bunte Tüte" style="filter:drop-shadow(0 0 24px #d85f58)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-red">Bunte Tüte</div>
+            <div class="card-title c-red">Top 5</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🏅</span><div><div class="rule-text">Eine Kategorie — <strong>5 richtige Antworten</strong> gesucht</div></div></div>
+          <div class="rule-row"><span class="rule-icon">✍️</span><div><div class="rule-text">Teams tippen ein, was sie kennen</div></div></div>
+          <div class="rule-row"><span class="rule-icon">⭐</span><div><div class="rule-text">Jede gefundene Antwort bringt Punkte</div></div></div>
+        </div>
+      </div>
+
+      <!-- BUNTE TÜTE: PRÄZISE -->
+      <div class="card" id="card-bt-pra">
+        <div class="card-header">
+          <img class="card-icon" src="categories/buntetuete_logo.png" alt="Bunte Tüte" style="filter:drop-shadow(0 0 24px #d85f58)"/>
+          <div class="card-title-wrap">
+            <div class="card-label c-red">Bunte Tüte</div>
+            <div class="card-title c-red">Präzise Antwort</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🎯</span><div><div class="rule-text">Alle Teams geben eine Freitextantwort ein</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🏆</span><div><div class="rule-text"><strong>Perfekt</strong> › Sehr nah › Nah dran › Weit weg</div><div class="rule-sub">Mehr Punkte für präzisere Antworten</div></div></div>
+        </div>
+      </div>
+
+      <!-- BLITZ -->
+      <div class="card" id="card-blitz">
+        <div class="card-header">
+          <div style="font-size:88px;filter:drop-shadow(0 0 24px #f3c367);flex-shrink:0;line-height:1">⚡</div>
+          <div class="card-title-wrap">
+            <div class="card-label c-gold">Bonusrunde</div>
+            <div class="card-title c-gold">Blitz</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🚫</span><div><div class="rule-text">Teams bannen Themen-Sets, die sie nicht mögen</div></div></div>
+          <div class="rule-row"><span class="rule-icon">💡</span><div><div class="rule-text">Ein Begriff erscheint — Team buzzert und nennt die Antwort</div></div></div>
+          <div class="rule-row"><span class="rule-icon">⏱️</span><div><div class="rule-text">Zeitlimit pro Set · Jede richtige Antwort = Punkte</div></div></div>
+        </div>
+      </div>
+
+      <!-- RUNDLAUF -->
+      <div class="card" id="card-rundlauf">
+        <div class="card-header">
+          <div style="font-size:88px;filter:drop-shadow(0 0 24px #72ac78);flex-shrink:0;line-height:1">🔄</div>
+          <div class="card-title-wrap">
+            <div class="card-label c-green">Bonusrunde</div>
+            <div class="card-title c-green">Rundlauf</div>
+          </div>
+        </div>
+        <div class="card-rules">
+          <div class="rule-row"><span class="rule-icon">🎯</span><div><div class="rule-text">Alle Teams nennen abwechselnd Antworten zu einem Oberbegriff</div></div></div>
+          <div class="rule-row"><span class="rule-icon">❌</span><div><div class="rule-text">Wer keine Antwort hat oder eine Wiederholung nennt, scheidet aus</div></div></div>
+          <div class="rule-row"><span class="rule-icon">🏆</span><div><div class="rule-text">Das letzte Team gewinnt die Runde</div></div></div>
+        </div>
+      </div>
+
+    </div><!-- /rules-body -->
+  </div><!-- /rules -->
+
+  <!-- OUTRO -->
+  <div id="outro">
+    <img id="outro-logo" src="logo.png" alt="Logo"/>
+    <div id="outro-text">Viel Spaß<br/>beim Spielen!</div>
+    <div id="outro-copy">© Cozy Wolf — play.cozyquiz.app</div>
+  </div>
+
+</div><!-- /stage -->
+
+<div id="progress"></div>
+
+<script>
+// ── PARTICLES ──────────────────────────────────────────────────
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+const PARTICLES = [];
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.r = Math.random() * 1.8 + 0.3;
+    this.a = Math.random() * 0.5 + 0.1;
+    this.vy = -(Math.random() * 0.4 + 0.1);
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.life = 0; this.maxLife = Math.random() * 200 + 100;
+    const h = Math.random() > 0.5 ? 320 : 200;
+    this.color = `hsla(${h},80%,75%,`;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy; this.life++;
+    if (this.life > this.maxLife || this.y < 0) this.reset();
+  }
+  draw() {
+    const prog = this.life / this.maxLife;
+    const fade = prog < 0.2 ? prog / 0.2 : prog > 0.8 ? (1 - prog) / 0.2 : 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = this.color + (this.a * fade) + ')';
+    ctx.fill();
+  }
+}
+for (let i = 0; i < 120; i++) PARTICLES.push(new Particle());
+function animParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  PARTICLES.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+// ── SEQUENCE ───────────────────────────────────────────────────
+const INTRO   = document.getElementById('intro');
+const RULES   = document.getElementById('rules');
+const OUTRO   = document.getElementById('outro');
+const PROG    = document.getElementById('progress');
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Show a card: unhide + stagger rules
+async function showCard(id, ruleDuration = 900) {
+  // Hide all cards
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.remove('active', 'exit');
+    c.style.display = 'none';
+  });
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.style.display = 'flex';
+  void card.offsetWidth; // reflow
+  card.classList.add('active');
+
+  // Stagger rule rows
+  const rows = card.querySelectorAll('.rule-row');
+  for (let i = 0; i < rows.length; i++) {
+    await delay(i === 0 ? 200 : 320);
+    rows[i].classList.add('show');
+  }
+  await delay(ruleDuration);
+}
+
+async function exitCard(id) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.classList.remove('active');
+  card.classList.add('exit');
+  await delay(450);
+  card.style.display = 'none';
+  card.classList.remove('exit');
+}
+
+// Progress tracking
+let progTimeout = null;
+function setProgress(pct, duration) {
+  PROG.style.transition = `width ${duration}ms linear`;
+  PROG.style.width = pct + '%';
+}
+
+async function runSequence() {
+  const TOTAL_MS = 62000; // ~62s total
+  let elapsed = 0;
+  function prog(ms) { elapsed += ms; setProgress(elapsed / TOTAL_MS * 100, ms); }
+
+  // INTRO
+  await delay(3200); prog(3200); // logo lands
+
+  // Transition to rules
+  INTRO.style.opacity = '0';
+  await delay(900); prog(900);
+  INTRO.style.display = 'none';
+  RULES.style.opacity = '1'; RULES.style.pointerEvents = 'auto';
+
+  // OPENER
+  await showCard('card-opener', 2200); prog(2200 + 200 + 200);
+  await exitCard('card-opener');
+
+  // SCHÄTZCHEN
+  await showCard('card-sz', 2800); prog(2800 + 900);
+  await exitCard('card-sz');
+
+  // MU-CHO
+  await showCard('card-mc', 2800); prog(2800 + 900);
+  await exitCard('card-mc');
+
+  // BLUFF
+  await showCard('card-bl', 2800); prog(2800 + 900);
+  await exitCard('card-bl');
+
+  // CHEESE
+  await showCard('card-ch', 2600); prog(2600 + 900);
+  await exitCard('card-ch');
+
+  // BUNTE TÜTE INTRO
+  await showCard('card-bt-intro', 2000); prog(2000 + 400);
+  await exitCard('card-bt-intro');
+
+  // BT: 8 DINGE
+  await showCard('card-bt-8', 2600); prog(2600 + 900);
+  await exitCard('card-bt-8');
+
+  // BT: WELTKARTE
+  await showCard('card-bt-map', 2600); prog(2600 + 900);
+  await exitCard('card-bt-map');
+
+  // BT: TOP 5
+  await showCard('card-bt-top5', 2400); prog(2400 + 900);
+  await exitCard('card-bt-top5');
+
+  // BT: PRÄZISE
+  await showCard('card-bt-pra', 2200); prog(2200 + 700);
+  await exitCard('card-bt-pra');
+
+  // BLITZ
+  await showCard('card-blitz', 2800); prog(2800 + 900);
+  await exitCard('card-blitz');
+
+  // RUNDLAUF
+  await showCard('card-rundlauf', 2800); prog(2800 + 900);
+  await exitCard('card-rundlauf');
+
+  // OUTRO
+  RULES.style.opacity = '0';
+  await delay(700);
+  RULES.style.display = 'none';
+  OUTRO.style.opacity = '1';
+  setProgress(100, 2000);
+
+  // Sparkles!
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => spawnSparkle(), i * 60);
+  }
+}
+
+function spawnSparkle() {
+  const el = document.createElement('div');
+  el.className = 'sparkle';
+  const size = Math.random() * 10 + 4;
+  const colors = ['#f05fb2','#ffd1e8','#f3c367','#9fbfd3','#72ac78','#e2a9f1'];
+  el.style.cssText = `
+    left:${Math.random()*100}vw;top:${Math.random()*100}vh;
+    width:${size}px;height:${size}px;
+    background:${colors[Math.floor(Math.random()*colors.length)]};
+    animation-duration:${Math.random()*0.8+0.7}s;
+    animation-delay:${Math.random()*0.3}s;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+// Kick it off
+runSequence();
+</script>
+</body>
+</html>

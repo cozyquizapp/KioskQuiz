@@ -17,7 +17,6 @@ const MECHANIC_LABELS: Record<string, string> = {
 
 const BUNTE_TUETE_LABELS: Record<string, string> = {
   top5: '🏆 Top 5',
-  precision: '🎯 Präzision',
   oneOfEight: '❌ 1 von 8 falsch',
   order: '🔢 Ordnen'
 };

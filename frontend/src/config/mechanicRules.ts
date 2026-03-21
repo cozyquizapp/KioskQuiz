@@ -99,25 +99,7 @@ export const MECHANIC_RULES = {
           correctOrder: ['Burger', 'Pizza', 'Pommes', 'Döner', 'Currywurst']
         }
       },
-      {
-        kind: 'precision',
-        label: '🎯 Präzisiere Antwort',
-        description: 'Teams geben eine Antwort, die immer präziser wird',
-        rules: [
-          'Mehrere Präzisionsstufen (ladder)',
-          'Jede Stufe hat acceptedAnswers und points',
-          'Je präziser, desto mehr Punkte',
-          'Braucht: ladder (Array mit Steps)'
-        ],
-        example: {
-          prompt: 'In welchem Land liegt der Eiffelturm?',
-          ladder: [
-            { label: 'Kontinent', acceptedAnswers: ['Europa'], points: 1 },
-            { label: 'Land', acceptedAnswers: ['Frankreich', 'France'], points: 2 },
-            { label: 'Stadt', acceptedAnswers: ['Paris'], points: 3 }
-          ]
-        }
-      },
+      // precision: hidden — durch Weltkarte ersetzt (bleibt im Backend für bestehende Fragen)
       {
         kind: 'oneOfEight',
         label: '❌ 1 von 8 falsch',

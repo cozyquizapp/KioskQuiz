@@ -575,7 +575,6 @@ const QuestionEditorPage: React.FC = () => {
                       >
                         <option value="none">Mechanik waehlen</option>
                         <option value="sortieren">Sortieren / Reihenfolge</option>
-                        <option value="praezise-antwort">Praezise Antwort</option>
                         <option value="wer-bietet-mehr">Wer bietet mehr?</option>
                         <option value="eine-falsch">Eine ist falsch</option>
                         <option value="three-clue-race">Drei Hinweise</option>

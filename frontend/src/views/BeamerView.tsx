@@ -3909,7 +3909,7 @@ useEffect(() => {
               'New question'
             )}
           </div>
-          <div key={sceneKey} className="cozyQuestionIntroCountdown">
+          <div key={introFrameKey} className="cozyQuestionIntroCountdown">
             <span className="cozyCountdownNum count-3">3</span>
             <span className="cozyCountdownNum count-2">2</span>
             <span className="cozyCountdownNum count-1">1</span>

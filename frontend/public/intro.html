@@ -35,10 +35,11 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 #progress{position:fixed;top:0;left:0;height:3px;background:var(--pink);width:0%;transition:width 0.4s ease;z-index:99;box-shadow:0 0 10px var(--pink)}
 
 /* ── HEADER STRIP ────────────────────────────────────────────── */
-.slide-header{position:fixed;top:0;left:0;right:0;padding:16px 48px;display:flex;align-items:center;gap:14px;background:linear-gradient(to bottom,rgba(10,14,26,0.95),transparent);z-index:10}
+.slide-header{position:fixed;top:0;left:0;right:0;padding:14px 48px;display:flex;align-items:center;gap:14px;background:linear-gradient(to bottom,rgba(10,14,26,0.95),transparent);z-index:10}
 .slide-header img{width:34px;height:34px;object-fit:contain}
+.slide-header-text{display:flex;flex-direction:column;gap:1px}
 .slide-header-brand{font-size:12px;font-weight:800;color:rgba(241,245,249,0.3);letter-spacing:3px;text-transform:uppercase}
-.slide-header-copy{margin-left:auto;font-size:11px;font-weight:700;color:rgba(241,245,249,0.18);letter-spacing:2px}
+.slide-header-copy{font-size:10px;font-weight:700;color:rgba(241,245,249,0.16);letter-spacing:2px}
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────────── */
 .eyebrow{font-size:13px;font-weight:800;letter-spacing:5px;text-transform:uppercase;color:var(--pink);margin-bottom:16px}
@@ -137,7 +138,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 1 JOIN -->
 <div class="slide" id="slide-join">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Bevor es losgeht" data-en="Before we start"></div>
   <div class="section-title" data-de="Wie nehme ich teil?" data-en="How do I join?"></div>
   <div class="card-grid cols3" style="max-width:1000px">
@@ -166,7 +167,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 2 AUFBAU -->
 <div class="slide" id="slide-aufbau">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Überblick" data-en="Overview"></div>
   <div class="section-title" data-de="Aufbau des Abends" data-en="How the Evening Works"></div>
   <div class="timeline">
@@ -207,7 +208,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 3 FRAGETYPEN -->
 <div class="slide" id="slide-types">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Fragen 1–20" data-en="Questions 1–20"></div>
   <div class="section-title" data-de="Welche Fragetypen gibt es?" data-en="What question types are there?"></div>
   <div class="card-grid cols3" style="max-width:1100px">
@@ -221,7 +222,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 4 MULTIPLE CHOICE -->
 <div class="slide" id="slide-mc">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🅰️ <span data-de="Fragetyp" data-en="Question Type"></span></div>
   <div class="section-title">Multiple Choice</div>
   <div class="rules-list">
@@ -233,7 +234,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 5 SCHÄTZFRAGE -->
 <div class="slide" id="slide-schaetz">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🔢 <span data-de="Fragetyp" data-en="Question Type"></span></div>
   <div class="section-title" data-de="Schätzfrage" data-en="Estimation Question"></div>
   <div class="rules-list">
@@ -248,7 +249,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 6 BILDFRAGE -->
 <div class="slide" id="slide-bild">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🖼️ <span data-de="Fragetyp" data-en="Question Type"></span></div>
   <div class="section-title" data-de="Bildfrage" data-en="Image Question"></div>
   <div class="rules-list">
@@ -260,7 +261,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 7 WETTFRAGE -->
 <div class="slide" id="slide-wette">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🎰 <span data-de="Fragetyp" data-en="Question Type"></span></div>
   <div class="section-title" data-de="Wettfrage" data-en="Betting Question"></div>
   <div class="rules-list">
@@ -275,7 +276,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 8 BUNTE TÜTE INTRO -->
 <div class="slide" id="slide-bt-intro">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Überraschungsformat" data-en="Surprise Format"></div>
   <div class="hero c-red" data-de="Bunte Tüte" data-en="Mixed Bag"></div>
   <div class="hero-sub" data-de="Jede Bunte-Tüte-Frage hat ein anderes Format.<br/>Die Regeln werden vorher immer erklärt." data-en="Every Mixed Bag question has a different format.<br/>The rules are always explained beforehand."></div>
@@ -289,7 +290,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 9 BT 8 DINGE -->
 <div class="slide" id="slide-bt-8">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
   <div class="section-title" data-de="8 Dinge, 1 falsch" data-en="8 Things, 1 Wrong"></div>
   <div class="rules-list">
@@ -305,7 +306,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 10 BT WELTKARTE -->
 <div class="slide" id="slide-bt-map">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
   <div class="section-title" data-de="Weltkarte" data-en="World Map"></div>
   <div class="rules-list">
@@ -317,7 +318,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 11 BT TOP 5 -->
 <div class="slide" id="slide-bt-top5">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill">🎁 <span data-de="Bunte Tüte" data-en="Mixed Bag"></span></div>
   <div class="section-title">Top 5</div>
   <div class="rules-list">
@@ -330,7 +331,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 13 FOTOSPRINT INTRO -->
 <div class="slide" id="slide-foto-intro">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Kleines Finale · Nach Frage 10" data-en="First Final · After Question 10"></div>
   <div class="hero c-gold">Fotosprint</div>
   <div class="hero-sub" data-de="3 Runden · bis zu 9 Punkte" data-en="3 rounds · up to 9 points"></div>
@@ -338,7 +339,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 14 FOTOSPRINT BAN/PICK -->
 <div class="slide" id="slide-foto-ban">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill c-gold">⚡ <span data-de="Fotosprint – Auswahl" data-en="Fotosprint – Selection"></span></div>
   <div class="section-title" data-de="Ban & Pick" data-en="Ban & Pick"></div>
   <div class="rules-list">
@@ -353,7 +354,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 15 FOTOSPRINT ABLAUF -->
 <div class="slide" id="slide-foto-play">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill c-gold">⚡ <span data-de="Fotosprint – Ablauf" data-en="Fotosprint – Gameplay"></span></div>
   <div class="section-title" data-de="Wie wird gespielt?" data-en="How is it played?"></div>
   <div class="rules-list">
@@ -368,7 +369,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 16 KO RALLYE INTRO -->
 <div class="slide" id="slide-ko-intro">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="eyebrow" data-de="Großes Finale · Nach Frage 20" data-en="Grand Final · After Question 20"></div>
   <div class="hero c-red">KO Rallye</div>
   <div class="hero-sub" data-de="3 Runden · bis zu 9 Punkte · Teams fliegen raus" data-en="3 rounds · up to 9 points · teams get eliminated"></div>
@@ -376,7 +377,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 17 KO RALLYE BAN/PICK -->
 <div class="slide" id="slide-ko-ban">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill c-red">🔴 <span data-de="KO Rallye – Auswahl" data-en="KO Rally – Selection"></span></div>
   <div class="section-title" data-de="Ban & Pick" data-en="Ban & Pick"></div>
   <div class="rules-list">
@@ -391,7 +392,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
 
 <!-- 18 KO RALLYE ABLAUF -->
 <div class="slide" id="slide-ko-play">
-  <div class="slide-header"><img src="logo.png"/><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div>
+  <div class="slide-header"><img src="logo.png"/><div class="slide-header-text"><div class="slide-header-brand">Cozy Wolf</div><div class="slide-header-copy">© Cozy Wolf</div></div></div>
   <div class="label-pill c-red">🔴 <span data-de="KO Rallye – Ablauf" data-en="KO Rally – Gameplay"></span></div>
   <div class="section-title" data-de="Wie wird gespielt?" data-en="How is it played?"></div>
   <div class="rules-list">

@@ -84,6 +84,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import ParticleCanvas from '../components/ParticleCanvas';
+import MapErrorBoundary from '../components/MapErrorBoundary';
 
 // Fix Leaflet default marker icon (webpack asset issue)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -107,6 +108,7 @@ function BunteMapPicker({
 }) {
   return (
     <div style={{ marginTop: 8, borderRadius: 14, overflow: 'hidden', border: '2px solid rgba(240,95,178,0.3)', boxShadow: '0 4px 0 rgba(0,0,0,0.4)' }}>
+      <MapErrorBoundary>
       <MapContainer
         center={[20, 0]}
         zoom={2}
@@ -115,10 +117,11 @@ function BunteMapPicker({
         scrollWheelZoom={false}
         attributionControl={false}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
         {!disabled && <MapClickHandler onPin={(lat, lng) => onChange({ lat, lng })} />}
         {pin && <Marker position={[pin.lat, pin.lng]} />}
       </MapContainer>
+      </MapErrorBoundary>
       {pin ? (
         <div style={{ padding: '6px 12px', background: 'rgba(20,30,60,0.9)', color: '#94a3b8', fontSize: 12, textAlign: 'center' }}>
           📍 {pin.lat.toFixed(3)}, {pin.lng.toFixed(3)}
@@ -652,18 +655,6 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
 
   const currentStatePath = hasStates ? getAvatarStatePath(avatar.id, currentIgelState, walkFrame) : null;
 
-  // Debug: log ALL state changes
-  useEffect(() => {
-    if (hasStates) {
-      console.log(`🎭 AvatarMedia state:`, { 
-        avatar: avatar.id, 
-        igelStateProp: igelState,
-        currentIgelState, 
-        path: currentStatePath,
-        walkFrame 
-      });
-    }
-  }, [hasStates, igelState, currentIgelState, currentStatePath, avatar.id, walkFrame]);
 
   // For SVG animals
   if (!avatar.isVideo) {
@@ -1013,7 +1004,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const handleJoin = useCallback(async (useSavedId = false) => {
     if (joinPending) return;
     const selectedAvatarId = availableAvatars[avatarCarouselIndex]?.id || avatarId;
-    console.log('🔗 handleJoin called:', { useSavedId, avatarId: selectedAvatarId, roomCode });
     setJoinPending(true);
     try {
       const cleanName = teamName.trim();
@@ -1127,11 +1117,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       const savedName = localStorage.getItem(storageKey('name'));
       const savedId = localStorage.getItem(storageKey('id'));
       if (savedId && savedName && roomCode) {
-        console.log('🔄 Rejoin trigger activated', { rejoinTrigger, savedId, savedName, phase, teamId });
-        // Force rejoin even if teamId exists (user explicitly clicked rejoin button)
         handleJoin(true);
-      } else {
-        console.log('⚠️ Rejoin conditions not met:', { savedId: !!savedId, savedName: !!savedName, roomCode: !!roomCode });
       }
     }
   }, [rejoinTrigger, roomCode, handleJoin, storageKey, phase, teamId]);
@@ -1141,15 +1127,6 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       setAvatarId(AVATARS[0]?.id || '');
     }
   }, [avatarId]);
-
-  // Cleanup avatar state timers on unmount
-  useEffect(
-    () => () => {
-      avatarStateTimersRef.current.forEach(clearTimeout);
-      avatarStateTimersRef.current = [];
-    },
-    []
-  );
 
   // Detect mobile vs desktop for responsive Blitz input
   useEffect(() => {
@@ -1204,9 +1181,16 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
       return isCorrect ? t('top5Win') : t('top5Lose');
     }
     if (qAny?.bunteTuete?.kind === 'map') {
+      const distKm = (typeof entry?.tieBreaker?.primary === 'number') ? -entry.tieBreaker.primary : null;
+      const fmtDist = distKm != null
+        ? (distKm < 10 ? `${Math.round(distKm * 10) / 10} km` : distKm < 1000 ? `${Math.round(distKm)} km` : `${(distKm / 1000).toFixed(1).replace('.', ',')} Tsd. km`)
+        : null;
       return isCorrect
         ? inlineCopy('Ihr wart am nächsten dran! 🥇', 'You were the closest! 🥇')
-        : inlineCopy('Ihr wart leider etwas weiter weg.', 'Another team was a bit closer.');
+        : inlineCopy(
+            fmtDist ? `Ihr wart leider ${fmtDist} entfernt.` : 'Ihr wart leider etwas weiter weg.',
+            fmtDist ? `You were ${fmtDist} away.` : 'Another team was a bit closer.'
+          );
     }
     return isCorrect ? t('answerCorrect') : t('answerWrong');
   };
@@ -1288,10 +1272,8 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   // Broadcast avatar state change to beamer
   const broadcastAvatarState = useCallback((state: AvatarState) => {
     if (!teamId || !socketRef.current) {
-      console.log('⚠️ Cannot broadcast avatar state:', { hasTeamId: !!teamId, hasSocket: !!socketRef.current });
       return;
     }
-    console.log('📡 Broadcasting avatar state:', { roomCode, teamId, state });
     socketRef.current.emit('team:avatarState', {
       roomCode,
       teamId,
@@ -1352,23 +1334,11 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     (steps: Array<{ state: AvatarState; duration: number }>, avatarOverrideId?: string) => {
       const activeAvatarId = avatarOverrideId || avatarId;
       if (!activeAvatarId || !hasStateBasedRendering(activeAvatarId)) {
-        console.log('⚠️ runAvatarSequence: Avatar not supported', { activeAvatarId, avatarId });
         return false;
       }
 
-      console.log('▶️ runAvatarSequence: Starting sequence', { 
-        steps, 
-        activeAvatarId,
-        hasIdleSchedulerRef: !!idleSchedulerRef.current,
-        hasAvatarSequenceRef: !!avatarSequenceRef.current,
-        refHasRunSequence: !!avatarSequenceRef.current?.runSequence
-      });
-      
-      // Clear idle timers and run sequence via refs
       idleSchedulerRef.current?.clearTimers();
       const result = avatarSequenceRef.current?.runSequence(steps);
-      
-      console.log('▶️ runAvatarSequence: Result', { result, igelState });
       return result;
     },
     [avatarId]
@@ -1631,28 +1601,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         } else if (typeof entry.isCorrect === 'boolean') {
           // Fallback: use isCorrect if no points
           isHappy = entry.isCorrect;
-        } else {
-          console.log('⚠️ No awardedPoints or isCorrect in result:', entry);
         }
-        
-        console.log('🎯 Result received:', { 
-          teamId, 
-          awardedPoints: entry.awardedPoints,
-          isCorrect: entry.isCorrect,
-          isHappy,
-          avatarId, 
-          hasStates: hasStateBasedRendering(avatarId || '')
-        });
-        
+
         // Trigger avatar animation
         if (avatarId && hasStateBasedRendering(avatarId)) {
-          const success = runAvatarSequence([
+          runAvatarSequence([
             { state: isHappy ? 'happy' : 'sad', duration: 1200 },
             { state: 'walking', duration: 0 }
           ]);
-          console.log('🎯 Avatar result animation:', success ? 'started' : 'failed');
         } else {
-          console.log('🎯 Fallback to mood animation');
           setAvatarMood(isHappy ? 'happy' : 'sad');
         }
         
@@ -1686,28 +1643,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
         } else if (typeof isCorrect === 'boolean') {
           // Fallback: use isCorrect if no points
           isHappy = isCorrect;
-        } else {
-          console.log('⚠️ No awardedPoints or isCorrect in final result');
         }
-        
-        console.log('🎯 Final result received:', { 
-          teamId, 
-          awardedPoints, 
-          isCorrect,
-          isHappy,
-          avatarId, 
-          hasStates: hasStateBasedRendering(avatarId || '')
-        });
-        
+
         // Trigger avatar animation
         if (avatarId && hasStateBasedRendering(avatarId)) {
-          const success = runAvatarSequence([
+          runAvatarSequence([
             { state: isHappy ? 'happy' : 'sad', duration: 1200 },
             { state: 'walking', duration: 0 }
           ]);
-          console.log('🎯 Avatar final result animation:', success ? 'started' : 'failed');
         } else {
-          console.log('🎯 Fallback to mood animation');
           setAvatarMood(isHappy ? 'happy' : 'sad');
         }
         
@@ -2000,10 +1944,10 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           style={{
             marginTop: 8,
             padding: '8px 12px',
-            borderRadius: 10,
-            border: '2px solid #fbbf24',
-            background: 'rgba(251, 191, 36, 0.1)',
-            color: '#fde047',
+            borderRadius: 999,
+            border: '1.5px solid rgba(240,95,178,0.45)',
+            background: 'rgba(240,95,178,0.1)',
+            color: '#f9a8d4',
             fontWeight: 700
           }}
         >
@@ -4610,7 +4554,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             {teamId && (
               <div style={{
-                fontFamily: "var(--font-game, 'Rajdhani', sans-serif)",
+                fontFamily: "var(--font-game)",
                 fontWeight: 800,
                 fontSize: 'clamp(18px, 4vw, 28px)',
                 color: '#ffffff',

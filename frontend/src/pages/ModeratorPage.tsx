@@ -923,7 +923,6 @@ function ModeratorPage(): React.ReactElement {
       setToast(`Socket nicht verbunden (${socket ? 'disconnected' : 'null'}) – Seite neu laden`);
       return;
     }
-    console.log('[handleCreateSession] emitting host:createSession', { quizId: selectedQuiz, socketId: socket.id, transport: (socket as any).io?.engine?.transport?.name });
     setCreatingSession(true);
     
         // Timeout nach 10 Sekunden falls keine Antwort kommt
@@ -3338,7 +3337,7 @@ const renderCozyStagePanel = () => {
             {toast}
           </div>
         )}
-        <div className="flex flex-col h-[100dvh] bg-[#050505] text-[#ffe4f2]" style={{ fontFamily: 'var(--font)' }}>
+        <div className="flex flex-col h-[100dvh] bg-[#050505] text-[#ffe4f2] w-full max-w-[480px] mx-auto" style={{ fontFamily: 'var(--font)' }}>
           {/* Header */}
           <header className="flex items-center gap-3 px-3 py-2.5 border-b border-[rgba(240,95,178,0.15)] bg-[#050a14]">
             <div className="flex-1 min-w-0">

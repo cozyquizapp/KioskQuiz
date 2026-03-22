@@ -48,30 +48,8 @@
   display: none;
 }
 
-@keyframes border-rotate {
-  to { --border-angle: 360deg; }
-}
-
-@property --border-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
 .beamer-frame.beamer-jackbox::after {
   display: none;
-}
-
-@keyframes jackbox-float {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate3d(2%, -2%, 0) rotate(1deg);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
 }
 
 .cozy-beamer-shell {
@@ -125,6 +103,7 @@
   height: 8px;
   border-radius: 2px;
   animation: confettiFall 1.6s ease-in forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes confettiFall {
@@ -521,7 +500,7 @@
 .beamer-question-category {
   font-family: var(--font-game);
   font-size: 13px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #94a3b8;
   font-weight: 700;
@@ -672,7 +651,7 @@
 
 .beamer-card {
   padding: 28px 32px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.1);
   background: var(--tile-a);
   box-shadow: 0 5px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.15);
@@ -695,7 +674,9 @@
 .beamer-grid .beamer-card:nth-child(4n+4) { background: var(--tile-d); box-shadow: 0 5px 0 #8a3100, 0 8px 20px rgba(0,0,0,0.15); }
 
 .beamer-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 0 rgba(0,0,0,0.45), 0 14px 32px rgba(0,0,0,0.3);
+  transition: transform 0.2s var(--ease-elastic), box-shadow 0.2s ease;
 }
 
 .beamer-card.highlight {
@@ -762,7 +743,7 @@
   gap: 14px;
   align-items: center;
   padding: 14px 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 2px solid rgba(255,255,255,0.08);
   border-left: 6px solid var(--team-color, #6366f1);
   background: #1a2035;
@@ -787,7 +768,7 @@
 .beamer-score-rank {
   font-family: var(--font-game);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 600;
   color: #94a3b8;
   min-width: 32px;
   text-align: center;
@@ -817,7 +798,7 @@
 .beamer-score-value {
   font-family: var(--font-game);
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 800;
   color: #60a5fa;
 }
 
@@ -1283,7 +1264,7 @@
   align-items: flex-start;
   font-family: var(--font-game);
   font-size: 14px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
   color: #94a3b8;
@@ -1293,7 +1274,7 @@
 .cozyLobbyTeamsHeaderLabel {
   font-family: var(--font-game);
   font-size: 14px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
   color: #f1f5f9;
@@ -1635,16 +1616,16 @@
 .cozyRevealAnswersLabel {
   font-size: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   color: #94a3b8;
-  font-weight: 800;
+  font-weight: 600;
   flex-shrink: 0;
   padding: 0 2px 6px;
 }
 
 .cozyRevealAnswerRow {
   padding: 14px 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #1a2035;
   border: 1px solid rgba(255,255,255,0.1);
   border-left: 4px solid transparent;
@@ -1652,15 +1633,17 @@
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   animation: revealAnswerRow 0.4s var(--ease-elastic) both;
 }
 
 .cozyRevealAnswerRow.estimate-winner {
-  padding: 18px 20px;
+  padding: 18px 22px;
   border-radius: 16px;
-  background: rgba(34,197,94,0.1) !important;
-  border: 1.5px solid rgba(34,197,94,0.3);
+  background: rgba(34,197,94,0.14) !important;
+  border: 1.5px solid rgba(34,197,94,0.45);
   border-left: 6px solid transparent;
+  box-shadow: 0 0 24px rgba(34,197,94,0.2), 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .cozyRevealAnswerTop {
@@ -1774,26 +1757,20 @@
 }
 
 .cozyQuestionHero {
-  border-radius: 20px;
-  padding: 20px 20px 16px;
-  border: none;
-  background: transparent;
-  backdrop-filter: none;
+  border-radius: 24px;
+  padding: 28px 36px 24px;
+  border: 1px solid rgba(240, 95, 178, 0.32);
+  background: linear-gradient(170deg, rgba(177, 10, 108, 0.07) 0%, rgba(14, 22, 44, 0.0) 55%);
+  box-shadow: 0 0 0 1px rgba(240, 95, 178, 0.08), 0 16px 48px rgba(0,0,0,0.45);
   display: flex;
   flex-direction: column;
   gap: 14px;
   justify-content: center;
-  box-shadow: none;
-  transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
-  animation: heroEnter 0.7s var(--ease-elastic) both;
-}
-@keyframes heroEnter {
-  0%   { opacity: 0; transform: translateY(80px) scale(0.88); filter: blur(14px); }
-  55%  { opacity: 1; filter: blur(0); transform: translateY(-10px) scale(1.02); }
-  78%  { transform: translateY(4px) scale(0.99); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  transition: all 0.35s ease;
+  animation: fadeUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
 }
 
 .cozyQuestionHero::before {
@@ -1932,7 +1909,7 @@
 }
 
 .cozyQuestionMedia {
-  border-radius: 26px;
+  border-radius: 24px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.08);
   max-height: 480px;
@@ -2096,6 +2073,7 @@
 .cozyOption.hopping {
   animation: cozyHop 320ms ease-in-out infinite;
   border-color: rgba(96, 165, 250, 0.5);
+  will-change: transform;
 }
 
 .cozyOptionPrefix {
@@ -2139,7 +2117,7 @@
 .cozyRevealNumber {
   text-align: center;
   padding: 28px 32px;
-  border-radius: 28px;
+  border-radius: 24px;
   border: 2px solid rgba(240, 95, 178, 0.4);
   background: linear-gradient(135deg, rgba(177, 10, 108, 0.18), rgba(240, 95, 178, 0.12));
   box-shadow: 0 6px 0 rgba(177, 10, 108, 0.35), 0 12px 24px rgba(0, 0, 0, 0.35), inset 0 0 32px rgba(240, 95, 178, 0.15);
@@ -2269,7 +2247,7 @@
 
 .blitz-current-card {
   padding: 0;
-  border-radius: 28px;
+  border-radius: 24px;
   background: rgba(59, 130, 246, 0.12);
   border: 1px solid rgba(59, 130, 246, 0.3);
   display: grid;
@@ -2376,7 +2354,7 @@
 
 .blitz-item-meta {
   font-size: 13px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(226, 232, 240, 0.9);
   position: relative;
@@ -2450,7 +2428,7 @@
 
 .blitz-results-card {
   padding: 18px;
-  border-radius: 26px;
+  border-radius: 24px;
   border: 2px solid rgba(255,255,255,0.08);
   background: #1a2035;
   box-shadow: 0 4px 0 rgba(0,0,0,0.5);
@@ -2896,6 +2874,7 @@
   animation: fadeInScale 0.4s var(--ease-elastic);
   animation-fill-mode: both;
   transition: all 0.3s var(--ease-elastic);
+  will-change: transform, opacity;
 }
 
 .blitz-chip:nth-child(1) { animation-delay: 0.1s; }
@@ -3288,14 +3267,6 @@
   font-size: clamp(22px, 1.8vw, 34px);
   line-height: 1.35;
   color: var(--beamer-muted);
-}
-
-.cozyQuestionHero {
-  border-radius: 24px;
-  padding: 28px 36px 24px;
-  border: 1px solid rgba(240, 95, 178, 0.32);
-  background: linear-gradient(170deg, rgba(177, 10, 108, 0.07) 0%, rgba(14, 22, 44, 0.0) 55%);
-  box-shadow: 0 0 0 1px rgba(240, 95, 178, 0.08), 0 16px 48px rgba(0,0,0,0.45);
 }
 
 .cozyQuestionText {
@@ -3697,11 +3668,6 @@ body.projector-mode .cozyQuestionMedia {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Question hero card — zuerst rein */
-.cozyQuestionHero {
-  animation: fadeUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
 /* Question text — leicht verzögert */
 .cozyQuestionText {
   animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
@@ -3712,7 +3678,7 @@ body.projector-mode .cozyQuestionMedia {
   animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
 }
 
-/* Option tiles — gestaffelt (only when not in reveal state) */
+/* Option tiles — gestaffelt (stagger: 0.08s base + 0.08s per tile, max 8 tiles) */
 .cozyOption:not(.correct):not(.wrong):nth-child(1) { animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both; }
 .cozyOption:not(.correct):not(.wrong):nth-child(2) { animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.16s both; }
 .cozyOption:not(.correct):not(.wrong):nth-child(3) { animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.24s both; }
@@ -3730,4 +3696,28 @@ body.projector-mode .cozyQuestionMedia {
 /* Supplement (z.B. Weltkarte) */
 .cozyQuestionSupplement {
   animation: fadeUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Reduce motion for users who prefer it
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece,
+  .cozyQuestionHero,
+  .cozyQuestionText,
+  .cozyQuestionHint,
+  .cozyOption,
+  .cozyRevealAnswersPanel,
+  .cozyQuestionSupplement,
+  .blitz-chip,
+  .beamer-select-card,
+  .beamer-score-row,
+  .beamer-solution-card {
+    animation: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+  .cozyOption.hopping {
+    animation: none !important;
+  }
 }

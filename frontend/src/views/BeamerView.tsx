@@ -40,6 +40,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import ParticleCanvas from '../components/ParticleCanvas';
+import MapErrorBoundary from '../components/MapErrorBoundary';
 
 // Fits map to all markers on mount (must be rendered inside MapContainer)
 const FitBoundsOnMount: React.FC<{ bounds: L.LatLngBounds }> = ({ bounds }) => {
@@ -354,7 +355,6 @@ const BeamerWalkingAvatar: React.FC<{
             e.currentTarget.src = avatar.dataUri;
           }
         }}
-        onLoad={() => console.log(`Avatar loaded: ${imageSrc}`)}
       />
     </div>
   );
@@ -479,17 +479,19 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, [gameState]);
 
   // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly.
-  // Timers are NOT cancelled on gameState change — QUESTION_INTRO can transition
-  // to Q_ACTIVE in <2s, which would cancel the "1" timer via cleanup. Instead,
-  // store timers in a ref and only cancel on unmount.
+  // showingIntroCountdown stays true for 3.1s so Q_ACTIVE doesn't unmount the
+  // intro frame before the countdown finishes (QUESTION_INTRO can be <2s on backend).
+  const [showingIntroCountdown, setShowingIntroCountdown] = useState(false);
   const countdownTimersRef = useRef<ReturnType<typeof window.setTimeout>[]>([]);
   useEffect(() => {
     if (gameState !== 'QUESTION_INTRO') return;
     countdownTimersRef.current.forEach(t => window.clearTimeout(t));
     countdownTimersRef.current = [];
     setIntroCountdown(3);
+    setShowingIntroCountdown(true);
     countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(2), 1000));
     countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(1), 2000));
+    countdownTimersRef.current.push(window.setTimeout(() => setShowingIntroCountdown(false), 3100));
   }, [gameState]);
   useEffect(() => () => { countdownTimersRef.current.forEach(t => window.clearTimeout(t)); }, []);
 
@@ -650,7 +652,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
     };
     tick();
-    timerRef.current = window.setInterval(tick, 250);
+    timerRef.current = window.setInterval(tick, 250); /* 250ms = 4fps for smooth countdown display */
     return () => {
       if (timerRef.current) {
         window.clearInterval(timerRef.current);
@@ -782,7 +784,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     if (gameState !== 'LOBBY' && gameState !== 'INTRO') {
       return undefined;
     }
-    const id = window.setInterval(() => setLobbyHighlightIndex((idx) => idx + 1), 5000);
+    const id = window.setInterval(() => setLobbyHighlightIndex((idx) => idx + 1), 5000); /* 5s per lobby highlight cycle */
     return () => window.clearInterval(id);
   }, [gameState, featureFlags.isCozyMode]);
 
@@ -1121,7 +1123,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setTimerDurationMs(null);
     });
     const onStateUpdate = (payload: StateUpdatePayload) => {
-      console.log('📊 stateUpdate:', { state: payload.state, hasScores: !!payload.scores?.length, scoreCnt: payload.scores?.length });
       const prevState = previousGameStateRef.current;
       // Sound effects on state transitions
       if (payload.state !== prevState) {
@@ -1132,7 +1133,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       setGameState(payload.state);
       setScreen(mapStateToScreenState(payload.state));
       if (payload.scores?.length) {
-        console.log('📊 Updating teams from scores:', payload.scores);
         const newDeltas: Record<string, number> = {};
         payload.scores.forEach((entry) => {
           const prev = prevScoresRef.current[entry.id] ?? entry.score ?? 0;
@@ -1213,12 +1213,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       
       // Auto-reset to walking after animation sequence completes
       if (state === 'gesture') {
-        console.log('🎨 Beamer: Avatar state changed', { teamId, state });
         // After happy state completes, return to walking
         setTimeout(() => {
           setTeamAvatarStates(prev => {
             if (prev[teamId] === 'happy' || prev[teamId] === 'gesture') {
-              console.log('🎨 Beamer: Resetting to walking', { teamId });
               return { ...prev, [teamId]: 'walking' };
             }
             return prev;
@@ -1262,7 +1260,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     });
 
     socket.on('teamsReady', ({ teams: tTeams }: { teams: Team[] }) => {
-      console.log('📍 teamsReady event received:', tTeams);
       setTeams(tTeams ?? []);
     });
 
@@ -2269,6 +2266,16 @@ useEffect(() => {
     }
     if (bunte?.statements?.length && bunte?.kind === 'oneOfEight') {
       const usedIds = new Set((oneOfEight?.usedChoiceIds ?? []).map((id: string) => id.toLowerCase()));
+      const isReveal = gameState === 'Q_REVEAL';
+      const finished = oneOfEight?.finished || isReveal;
+      const falseStatement = bunte.statements.find((s: any) => s.isFalse === true);
+      const falseId = falseStatement ? String(falseStatement.id).toLowerCase() : null;
+      const winnerNames = (oneOfEight?.winnerTeamIds ?? [])
+        .map((id: string) => teamStatus?.find(t => t.id === id)?.name ?? id);
+      const loserName = oneOfEight?.loserTeamId
+        ? (teamStatus?.find(t => t.id === oneOfEight!.loserTeamId)?.name ?? oneOfEight.loserTeamId)
+        : null;
+
       const displayTeamId = oneOfEightSpinDone ? oneOfEight?.activeTeamId : oneOfEightSpinTeamId;
       const displayTeamName = displayTeamId
         ? (teamStatus?.find((t) => t.id === displayTeamId)?.name ?? displayTeamId)
@@ -2276,34 +2283,53 @@ useEffect(() => {
       const spinning = !oneOfEightSpinDone && !!oneOfEightSpinTeamId;
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-          {/* Active team banner */}
-          {displayTeamName && !oneOfEight?.finished && (
+          {/* Reveal banner: winners + loser */}
+          {isReveal && finished && (winnerNames.length > 0 || loserName) && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {winnerNames.length > 0 && (
+                <div style={{
+                  padding: '8px 20px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.15)', border: '1.5px solid rgba(34,197,94,0.45)',
+                  color: '#86efac', fontWeight: 800, fontSize: 'clamp(14px, 1.6vw, 22px)',
+                  fontFamily: 'var(--font-game)'
+                }}>
+                  🏆 {winnerNames.join(', ')}
+                </div>
+              )}
+              {loserName && (
+                <div style={{
+                  padding: '8px 20px', borderRadius: 999,
+                  background: 'rgba(239,68,68,0.12)', border: '1.5px solid rgba(239,68,68,0.35)',
+                  color: '#fca5a5', fontWeight: 800, fontSize: 'clamp(14px, 1.6vw, 22px)',
+                  fontFamily: 'var(--font-game)'
+                }}>
+                  ✗ {loserName}
+                </div>
+              )}
+            </div>
+          )}
+          {/* Active team banner (during gameplay) */}
+          {displayTeamName && !finished && (
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              padding: '10px 20px',
-              borderRadius: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 10, padding: '10px 20px', borderRadius: 16,
               background: spinning ? '#374151' : '#111827',
-              color: '#f9fafb',
-              fontFamily: 'var(--font-game)',
-              fontWeight: 800,
-              fontSize: 'clamp(18px, 2.2vw, 28px)',
-              letterSpacing: '0.04em',
-              transition: 'background 0.2s',
+              color: '#f9fafb', fontFamily: 'var(--font-game)',
+              fontWeight: 800, fontSize: 'clamp(18px, 2.2vw, 28px)',
+              letterSpacing: '0.04em', transition: 'background 0.2s',
               boxShadow: '0 3px 0 #374151'
             }}>
               <span style={{ opacity: 0.6, fontSize: '0.75em' }}>{language === 'de' ? 'Am Zug:' : 'Up:'}</span>
-              <span style={{
-                animation: spinning ? 'beamerFade 0.15s ease' : 'none',
-                display: 'inline-block'
-              }}>{displayTeamName}</span>
+              <span style={{ animation: spinning ? 'beamerFade 0.15s ease' : 'none', display: 'inline-block' }}>
+                {displayTeamName}
+              </span>
             </div>
           )}
           <div className="beamer-grid">
             {bunte.statements.map((statement: any) => {
               const isUsed = usedIds.has(String(statement.id).toLowerCase());
+              const isFalse = falseId && String(statement.id).toLowerCase() === falseId;
+              const revealFalse = isReveal && isFalse;
               return (
                 <div
                   key={statement.id}
@@ -2311,12 +2337,26 @@ useEffect(() => {
                   style={{
                     position: 'relative',
                     paddingBottom: 34,
-                    opacity: isUsed ? 0.35 : 1,
-                    transition: 'opacity 0.4s ease',
-                    textDecoration: isUsed ? 'line-through' : 'none'
+                    opacity: isUsed && !revealFalse ? 0.35 : 1,
+                    transition: 'opacity 0.4s ease, box-shadow 0.4s ease',
+                    textDecoration: isUsed && !revealFalse ? 'line-through' : 'none',
+                    ...(revealFalse ? {
+                      background: 'rgba(239,68,68,0.2)',
+                      boxShadow: '0 0 28px rgba(239,68,68,0.5), 0 4px 0 rgba(180,0,0,0.5)',
+                      border: '2px solid rgba(239,68,68,0.6)',
+                    } : {})
                   }}
                 >
                   <strong>{statement.id}.</strong> {statement.text}
+                  {revealFalse && (
+                    <span style={{
+                      position: 'absolute', top: 8, right: 10,
+                      fontSize: 'clamp(12px, 1.2vw, 18px)', fontWeight: 800,
+                      color: '#fca5a5', letterSpacing: '0.06em'
+                    }}>
+                      ✗ {language === 'de' ? 'FALSCH' : 'FALSE'}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -2426,6 +2466,7 @@ useEffect(() => {
         <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
           {/* Map */}
           <div style={{ flex: '1 1 60%', borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <MapErrorBoundary>
             <MapContainer
               key={isReveal ? 'reveal' : 'active'}
               center={[centerLat, centerLng]}
@@ -2448,6 +2489,7 @@ useEffect(() => {
                 </Marker>
               ))}
             </MapContainer>
+            </MapErrorBoundary>
             {isReveal && bunte.targetLabel && (
               <div style={{ padding: '8px 14px', background: 'rgba(14,22,44,0.95)', color: '#f1f5f9', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#942d59', display: 'inline-block', border: '2px solid #fff', flexShrink: 0 }} />
@@ -2839,10 +2881,9 @@ useEffect(() => {
                     className={`${cardClasses}${(isSlot1 || isSlot2) ? ' slot-highlight' : ''}`}
                     style={{
                       position: 'relative',
-                      outline: (isSlot1 || isSlot2) ? '3px solid rgba(74, 222, 128, 0.9)' : undefined,
-                      outlineOffset: (isSlot1 || isSlot2) ? '2px' : undefined,
-                      background: (isSlot1 || isSlot2) ? 'rgba(74, 222, 128, 0.18)' : undefined,
-                      transition: 'outline 0.15s ease, background 0.15s ease',
+                      boxShadow: (isSlot1 || isSlot2) ? 'inset 0 0 0 3px rgba(240,95,178,0.8), 0 0 20px rgba(240,95,178,0.35)' : undefined,
+                      background: (isSlot1 || isSlot2) ? 'rgba(240,95,178,0.12)' : undefined,
+                      transition: 'box-shadow 0.15s ease, background 0.15s ease',
                       animation: `slideInUpWave 0.4s ${theme.id === pool[0].id ? 0 : Math.min(pool.indexOf(theme) * 0.05, 0.6)}s both`,
                     }}
                   >
@@ -2926,7 +2967,7 @@ useEffect(() => {
                   background: 'linear-gradient(135deg, rgba(177,10,108,0.14), rgba(240,95,178,0.08))',
                   border: '3px solid rgba(240,95,178,0.35)',
                   boxShadow: '0 4px 0 rgba(177,10,108,0.3), 0 8px 24px rgba(177,10,108,0.12)',
-                  animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`,
+                  animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`, /* stagger: 0.4s base + 0.2s per card */
                 }}
               >
                 <div style={{ ...badgeBase, background: 'rgba(177,10,108,0.7)', color: '#ffd1e8' }}>
@@ -3047,7 +3088,7 @@ useEffect(() => {
                   justifyContent: 'center',
                   gap: '12px',
                   minHeight: '140px',
-                  animationDelay: `${0.2 + idx * 0.15}s`
+                  animationDelay: `${0.2 + idx * 0.15}s` /* stagger: 0.2s base + 0.15s per card */
                 }}
               >
                 <div style={{ fontSize: '14px', color: 'var(--color-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
@@ -3372,7 +3413,7 @@ useEffect(() => {
         ? { label: `SET ${(blitz?.setIndex ?? -1) + 1}/3`, tone: 'accent' as const }
         : gameState === 'AWARDS'
         ? { label: 'FINAL', tone: 'success' as const }
-        : gameState === 'QUESTION'
+        : (gameState as string) === 'QUESTION'
         ? { label: `RUNDE ${normalizedRound}/${totalQuestions || 20}`, tone: 'muted' as const }
         : undefined;
     const questionTitle = undefined; // Round display moved to badge
@@ -3517,9 +3558,19 @@ useEffect(() => {
         );
       }
       const teamsWithAnswers = (teamStatus ?? []).filter(t => t.answer !== undefined);
+      if (teamsWithAnswers.length === 0) {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 10, color: '#475569', fontSize: 'clamp(14px, 1.2vw, 20px)' }}>
+            <span style={{ fontSize: 'clamp(28px, 3vw, 48px)' }}>🕐</span>
+            <span>{language === 'en' ? 'No answers yet' : 'Noch keine Antworten'}</span>
+          </div>
+        );
+      }
       return (
         <>
-          <div className="cozyRevealAnswersLabel">{label}</div>
+          <div className="cozyRevealAnswersLabel">
+            {language === 'both' ? <BilingualLabel en="TEAM ANSWERS" de="Team-Antworten" variant="badge" /> : language === 'de' ? 'Team-Antworten' : 'Team answers'}
+          </div>
           {teamsWithAnswers.map((team, idx) => {
             const teamColor = team.color || fallbackColors[idx % fallbackColors.length];
             return (
@@ -4084,7 +4135,7 @@ useEffect(() => {
               status="info"
             >
               <div className="blitz-stack">
-                <div className="blitz-pool-grid" style={{ position: 'relative' }}>
+                <div className="blitz-pool-grid">
                   {displayPool.map((entry, entryIdx) => {
                     const isBanned = bans.has(entry.id);
                     const isPicked = entry.id === pinnedId;
@@ -4105,10 +4156,9 @@ useEffect(() => {
                         className={cardClasses}
                         style={{
                           position: 'relative',
-                          outline: (isSlot1 || isSlot2) ? '3px solid rgba(74, 222, 128, 0.9)' : undefined,
-                          outlineOffset: (isSlot1 || isSlot2) ? '2px' : undefined,
-                          background: (isSlot1 || isSlot2) ? 'rgba(74, 222, 128, 0.18)' : undefined,
-                          transition: 'outline 0.15s ease, background 0.15s ease',
+                          boxShadow: (isSlot1 || isSlot2) ? 'inset 0 0 0 3px rgba(240,95,178,0.8), 0 0 20px rgba(240,95,178,0.35)' : undefined,
+                          background: (isSlot1 || isSlot2) ? 'rgba(240,95,178,0.12)' : undefined,
+                          transition: 'box-shadow 0.15s ease, background 0.15s ease',
                           animation: `slideInUpWave 0.4s ${entryIdx * 0.05}s both`,
                         }}
                       >
@@ -4191,7 +4241,7 @@ useEffect(() => {
                       background: 'linear-gradient(135deg, rgba(74,222,128,0.2), rgba(34,197,94,0.1))',
                       border: '3px solid rgba(74,222,128,0.6)',
                       boxShadow: '0 4px 0 rgba(34,197,94,0.35), 0 8px 24px rgba(34,197,94,0.15)',
-                      animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`,
+                      animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`, /* stagger: 0.4s base + 0.2s per card */
                     }}
                   >
                     <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>ZUFÄLLIG {idx + 1}</div>
@@ -4492,6 +4542,7 @@ useEffect(() => {
           </BeamerFrame>
         );
       case 'Q_ACTIVE':
+        if (showingIntroCountdown) return renderQuestionIntroFrame();
         return renderQuestionFrameCozy('active');
       case 'Q_LOCKED':
         return renderQuestionFrameCozy('locked');

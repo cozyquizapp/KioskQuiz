@@ -2762,16 +2762,18 @@ useEffect(() => {
         : null;
       return (
         <div className="blitz-stack">
-          {/* Compact rule hint — header already shows FOTOSPRINT / Kategorienwahl */}
+          {/* Rule hint */}
           <div style={{
-            fontSize: 13, fontWeight: 700, color: '#6b7280',
+            fontSize: 14, fontWeight: 700, color: '#94a3b8',
             textTransform: 'uppercase', letterSpacing: '0.1em',
-            padding: '7px 16px', background: '#e5e7eb',
+            padding: '6px 18px',
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 999, alignSelf: 'center'
           }}>
             {phase === 'READY'
-              ? 'Bereit — Auswahl startet gleich'
-              : 'Platz 1 streicht 2 · Letzter Platz wählt'}
+              ? (language === 'en' ? 'Ready — selection starts soon' : 'Bereit — Auswahl startet gleich')
+              : (language === 'en' ? 'Rank 1 bans 2 · Last place picks' : 'Platz 1 streicht 2 · Letzter Platz wählt')}
           </div>
           <div className="beamer-select-grid">
             {pool.length ? (
@@ -2779,7 +2781,7 @@ useEffect(() => {
                 const isBanned = bannedIds.has(theme.id);
                 const isPick = pinnedTheme?.id === theme.id;
                 const isRandom = randomIds.has(theme.id);
-                const badge = isPick ? 'PICK' : isRandom ? 'RANDOM' : isBanned ? 'BANNED' : '';
+                const badge = isPick ? 'PICK' : isRandom ? 'ZUFALL' : isBanned ? 'BANNED' : '';
                 const cardClasses = [
                   'beamer-select-card',
                   isBanned ? 'banned' : '',
@@ -2816,11 +2818,7 @@ useEffect(() => {
 
         return (
           <div className="blitz-stack">
-            <div className="beamer-intro-card">
-              <h2>🎰 KATEGORIE-AUSWAHL</h2>
-              <p>Die 3 Themen werden ausgewählt...</p>
-            </div>
-            <div className="blitz-pool-grid" style={{ position: 'relative' }}>
+            <div className="blitz-pool-grid">
               {(pool.length >= 12 ? pool.slice(0, 12) : pool.length >= 9 ? pool.slice(0, 9) : pool).map((theme) => {
                 const isPicked = theme.id === pickedTheme?.id;
                 const isBanned = bannedIds.has(theme.id);
@@ -3972,7 +3970,7 @@ useEffect(() => {
                   const isBanned = bans.has(entry.id);
                   const isPick = pinnedId === entry.id;
                   const isRandom = randomIds.has(entry.id);
-                  const badge = isPick ? 'PICK' : isRandom ? 'RANDOM' : isBanned ? 'BANNED' : '';
+                  const badge = isPick ? 'PICK' : isRandom ? 'ZUFALL' : isBanned ? 'BANNED' : '';
                   return (
                     <div
                       key={`rundlauf-cat-${entry.id}`}
@@ -4022,10 +4020,10 @@ useEffect(() => {
                     animation: 'scaleInCenter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
                   } as any}
                 >
-                  <div style={{ fontSize: '14px', color: '#1d4ed8', fontWeight: '700', textTransform: 'uppercase' }}>
-                    Letzter wählt
+                  <div style={{ fontSize: '14px', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {language === 'en' ? 'Last place picks' : 'Letzter wählt'}
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#f1f5f9' }}>
                     {pickedCategory.title}
                   </div>
                 </div>
@@ -4048,10 +4046,10 @@ useEffect(() => {
                     animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.2 + idx * 0.15}s both`
                   }}
                 >
-                  <div style={{ fontSize: '14px', color: '#15803d', fontWeight: '700', textTransform: 'uppercase' }}>
-                    Zufällig
+                  <div style={{ fontSize: '14px', color: '#86efac', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {language === 'en' ? 'Random' : 'Zufall'}
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#f1f5f9' }}>
                     {cat.title}
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { QuizTemplate } from '@shared/quizTypes';
+import { QuizTemplate, Language } from '@shared/quizTypes';
 import { startTimer, stopTimer, useQuiz, fetchTimer } from '../../api';
 import { ViewPhase } from './types';
 
@@ -55,6 +55,8 @@ type ActionButtonsProps = {
   onNext?: () => Promise<void> | void;
   onLock?: () => Promise<void> | void;
   onReveal?: () => Promise<void> | void;
+  language?: Language;
+  onSetLanguage?: (lang: Language) => Promise<void>;
 };
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -62,7 +64,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   changeViewPhase,
   actionWrap,
   inputStyle,
-  currentQuizName,
   selectedQuiz,
   setSelectedQuiz,
   quizzes,
@@ -75,21 +76,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   primaryColor,
   onNext,
   onLock,
-  onReveal
+  onReveal,
+  language = 'de',
+  onSetLanguage,
 }) => {
   if (viewPhase === 'pre') {
+    const langLabels: Record<Language, string> = { de: 'Deutsch', en: 'English', both: 'Beide' };
     return (
-      <section
-        style={{
-          marginTop: 10,
-          ...actionWrap,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 10
-        }}
-      >
-        <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontWeight: 800 }}>Quiz Auswahl</div>
+      <section style={{ marginTop: 10, ...actionWrap, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Step 1: Quiz */}
+        <div style={{ display: 'grid', gap: 6 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ui-chip-text)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>1 · Quiz wählen</div>
           <select
             value={selectedQuiz}
             onChange={(e) => {
@@ -109,62 +106,68 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               </option>
             ))}
           </select>
-          <button
-            style={{
-              ...inputStyle,
-              background: primaryColor
-                ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
-                : 'var(--ui-button-primary)',
-              color: 'var(--ui-button-on-light)',
-              cursor: 'pointer',
-              opacity: actionState.quiz ? 0.7 : 1,
-              border: primaryColor ? `1px solid ${primaryColor}88` : '1px solid rgba(99,229,255,0.5)',
-              boxShadow: 'none'
-            }}
-            onClick={() =>
-              doAction(async () => {
-                setActionState((s) => ({ ...s, quiz: true }));
-                if (!selectedQuiz) throw new Error('Bitte ein Quiz waehlen');
-                await ensureAdminSession(roomCode);
-                await useQuiz(roomCode, selectedQuiz);
-                localStorage.setItem('moderatorSelectedQuiz', selectedQuiz);
-              }, 'Quiz gesetzt').finally(() => setActionState((s) => ({ ...s, quiz: false })))
-            }
-            disabled={actionState.quiz}
-          >
-            {actionState.quiz ? 'Wird gesetzt ...' : 'Quiz setzen'}
-          </button>
         </div>
+        {/* Step 2: Language */}
+        <div style={{ display: 'grid', gap: 6 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ui-chip-text)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>2 · Sprache</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['de', 'en', 'both'] as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => onSetLanguage?.(lang)}
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                  height: 40,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  border: language === lang
+                    ? '2px solid rgba(99,229,255,0.8)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                  background: language === lang
+                    ? 'rgba(99,229,255,0.12)'
+                    : 'rgba(255,255,255,0.04)',
+                  color: language === lang ? '#63e5ff' : 'var(--ui-input-text)',
+                  boxShadow: 'none',
+                  padding: '0 8px',
+                }}
+              >
+                {langLabels[lang]}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Step 3: Start */}
         <button
           style={{
             ...inputStyle,
-            background: 'var(--ui-button-success)',
+            background: primaryColor
+              ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
+              : 'var(--ui-button-success)',
             color: 'var(--ui-button-on-light)',
             cursor: 'pointer',
             height: 56,
-            fontSize: 15,
+            fontSize: 16,
+            fontWeight: 800,
+            opacity: actionState.quiz ? 0.7 : 1,
             border: '1px solid rgba(52,211,153,0.55)',
-            boxShadow: 'none'
+            boxShadow: 'none',
           }}
-          onClick={() => changeViewPhase('lobby')}
+          onClick={() =>
+            doAction(async () => {
+              setActionState((s) => ({ ...s, quiz: true }));
+              if (!selectedQuiz) throw new Error('Bitte ein Quiz wählen');
+              await ensureAdminSession(roomCode);
+              await useQuiz(roomCode, selectedQuiz);
+              localStorage.setItem('moderatorSelectedQuiz', selectedQuiz);
+              if (onSetLanguage) await onSetLanguage(language);
+              changeViewPhase('lobby');
+            }, 'Quiz gestartet').finally(() => setActionState((s) => ({ ...s, quiz: false })))
+          }
+          disabled={actionState.quiz || !selectedQuiz}
         >
-          Zur Lobby wechseln
-        </button>
-        <div style={{ fontWeight: 700, color: 'var(--ui-chip-text)' }}>{currentQuizName ? `Gewählt: ${currentQuizName}` : 'Kein Quiz gewählt'}</div>
-        <button
-          style={{
-            ...inputStyle,
-            background: 'var(--ui-button-info)',
-            color: 'var(--ui-button-on-light)',
-            cursor: 'pointer',
-            height: 56,
-            fontSize: 15,
-            border: '1px solid rgba(99,229,255,0.5)',
-            boxShadow: 'none'
-          }}
-          onClick={() => doAction(() => fetch(`/api/rooms/${roomCode}/show-intro`, { method: 'POST', headers: { 'Content-Type': 'application/json' } }), 'Intro gestartet')}
-        >
-          Intro zeigen
+          {actionState.quiz ? 'Startet …' : '3 · Spiel starten →'}
         </button>
       </section>
     );

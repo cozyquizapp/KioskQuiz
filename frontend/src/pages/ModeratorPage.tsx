@@ -1125,6 +1125,15 @@ function ModeratorPage(): React.ReactElement {
 
   function handleReconnectSession() {
     setShowReconnectModal(false);
+    // Navigate directly to the active phase so the moderator lands in the right view
+    const gs = socketGameState;
+    if (!gs || gs === 'LOBBY') {
+      changeViewPhase('lobby');
+    } else if (gs === 'INTRO') {
+      changeViewPhase('intro');
+    } else {
+      changeViewPhase('quiz');
+    }
   }
 
   function handleRestartSession() {
@@ -1524,7 +1533,8 @@ function ModeratorPage(): React.ReactElement {
       onNext={handleNextQuestion}
       onLock={handleLockQuestion}
       onReveal={handleReveal}
-      ensureAdminSession={ensureAdminSession}
+      language={language}
+      onSetLanguage={async (lang) => { await setLanguage(roomCode, lang); setLang(lang); }}
     />
   );
 

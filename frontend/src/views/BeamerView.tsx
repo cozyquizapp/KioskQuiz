@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Socket } from 'socket.io-client';
 import {
   AnyQuestion,
@@ -505,18 +506,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => { if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current); };
   }, [gameState]);
 
-  // Pure-CSS countdown: all three spans (3/2/1) are always in DOM with staggered
-  // animation-delay. showingIntroCountdown keeps the intro frame alive for 3.1s
-  // so Q_ACTIVE doesn't unmount it before "1" finishes displaying.
-  const [showingIntroCountdown, setShowingIntroCountdown] = useState(false);
-  const countdownVisTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  useEffect(() => {
-    if (gameState !== 'QUESTION_INTRO') return;
-    if (countdownVisTimerRef.current) window.clearTimeout(countdownVisTimerRef.current);
-    setShowingIntroCountdown(true);
-    countdownVisTimerRef.current = window.setTimeout(() => setShowingIntroCountdown(false), 3100);
-  }, [gameState]);
-  useEffect(() => () => { if (countdownVisTimerRef.current) window.clearTimeout(countdownVisTimerRef.current); }, []);
 
   useEffect(() => {
     const onFirstInteraction = () => {
@@ -3877,36 +3866,6 @@ useEffect(() => {
       );
     };
 
-    const renderQuestionIntroFrame = () => (
-      <BeamerFrame
-        {...baseFrameProps}
-        title=""
-        subtitle=""
-        badgeLabel={undefined}
-        badgeTone={undefined}
-        footerMessage={undefined}
-        hideHeader
-        status="info"
-      >
-        <div className="cozyQuestionIntro">
-          <div className="cozyQuestionIntroTitle">
-            {language === 'both' ? (
-              <BilingualLabel en="NEW QUESTION" de="Neue Frage kommt" variant="heading" />
-            ) : language === 'de' ? (
-              'Neue Frage kommt'
-            ) : (
-              'New question'
-            )}
-          </div>
-          <div className="cozyQuestionIntroCountdown">
-            <span className="cozyCountdownNum count-3">3</span>
-            <span className="cozyCountdownNum count-2">2</span>
-            <span className="cozyCountdownNum count-1">1</span>
-          </div>
-        </div>
-      </BeamerFrame>
-    );
-
     const renderScoreboardFrame = (mode: 'scoreboard' | 'pause') => (
       <BeamerFrame
         key={`${sceneKey}-${mode}`}
@@ -4557,7 +4516,7 @@ useEffect(() => {
 
     switch (gameState) {
       case 'QUESTION_INTRO':
-        return renderQuestionIntroFrame();
+        return renderQuestionFrameCozy('active');
       case 'INTRO':
       case 'LOBBY':
         return (
@@ -4581,7 +4540,6 @@ useEffect(() => {
           </BeamerFrame>
         );
       case 'Q_ACTIVE':
-        if (showingIntroCountdown) return renderQuestionIntroFrame();
         return renderQuestionFrameCozy('active');
       case 'Q_LOCKED':
         return renderQuestionFrameCozy('locked');
@@ -4891,6 +4849,14 @@ useEffect(() => {
         >
           Letzte Frage anzeigen
         </button>
+      )}
+      {gameState === 'QUESTION_INTRO' && createPortal(
+        <div key={question?.id ?? 'countdown'} className="countdown-portal">
+          <span className="countdown-num n3">3</span>
+          <span className="countdown-num n2">2</span>
+          <span className="countdown-num n1">1</span>
+        </div>,
+        document.body
       )}
     </main>
   );

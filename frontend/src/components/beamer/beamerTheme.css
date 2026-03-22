@@ -2445,28 +2445,6 @@
   color: #92400e;
 }
 
-.cozyQuestionIntro {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-}
-
-.cozyQuestionIntroTitle {
-  font-size: clamp(46px, 6.2vw, 92px);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.cozyQuestionIntroSub {
-  font-size: 16px;
-  color: var(--beamer-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 
 
 
@@ -2945,9 +2923,6 @@
   animation: slideInRight 0.6s var(--ease-elastic) 0.1s both;
 }
 
-.cozyQuestionIntro {
-  animation: fadeInScaleUp 0.8s var(--ease-elastic);
-}
 
 /* Smooth transition between phases */
 .beamer-frame[class*="reveal"] {
@@ -3530,64 +3505,6 @@ body.projector-mode .cozyQuestionMedia {
   font-size: clamp(20px, 2.2vw, 38px);
 }
 
-/* "Neue Frage / New Question" intro screen — BilingualLabel same scale as question text */
-.cozyQuestionIntroTitle > div > div:first-child {
-  font-size: clamp(40px, 5vw, 84px) !important;
-  line-height: 1.1;
-}
-.cozyQuestionIntroTitle > div > div:last-child {
-  font-size: clamp(20px, 2.5vw, 44px) !important;
-  line-height: 1.2;
-}
-
-/* Plain text (DE-only / EN-only) already handled by cozyQuestionIntroTitle clamp */
-
-/* Countdown number on QUESTION_INTRO screen
-   Pure CSS: 3 spans always in DOM, staggered animation-delay.
-   No JS state changes mid-countdown — React key remounts the whole container. */
-
-/* Container */
-.cozyQuestionIntroCountdown {
-  position: relative;
-  width: 100%;
-  height: clamp(100px, 15vw, 220px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* "3" and "2" fade in, hold, fade out. "1" fades in and stays. */
-@keyframes countStep {
-  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
-  20%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
-  75%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
-  100% { opacity: 0; transform: scale(0.85); filter: blur(4px); }
-}
-@keyframes countStepLast {
-  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
-  30%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
-  100% { opacity: 1; transform: scale(1);   filter: blur(0);   }
-}
-
-.cozyCountdownNum {
-  position: absolute;
-  font-size: clamp(80px, 12vw, 180px);
-  font-weight: 900;
-  color: #942d59;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 60px rgba(148,45,89,0.7);
-  opacity: 0;
-}
-.cozyCountdownNum.count-3 {
-  animation: countStep 1s ease-in-out 0s 1 both;
-}
-.cozyCountdownNum.count-2 {
-  animation: countStep 1s ease-in-out 1s 1 both;
-}
-.cozyCountdownNum.count-1 {
-  animation: countStepLast 0.7s ease-out 2s 1 forwards;
-}
 
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */
 
@@ -3757,4 +3674,51 @@ body.projector-mode .cozyQuestionMedia {
   .cozyOption.hopping {
     animation: none !important;
   }
+  .countdown-num {
+    animation: none !important;
+    opacity: 0 !important;
+  }
 }
+
+/* ===== COUNTDOWN PORTAL ===== */
+/* Renders to document.body via createPortal — completely outside BeamerFrame tree.
+   Remounts on every new QUESTION_INTRO (key=question.id). Pure CSS, no JS timing. */
+
+@keyframes cdStep {
+  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
+  18%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  72%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  100% { opacity: 0; transform: scale(0.82); filter: blur(6px); }
+}
+@keyframes cdLast {
+  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
+  28%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  100% { opacity: 1; transform: scale(1);   filter: blur(0);   }
+}
+
+.countdown-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.82);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.countdown-num {
+  position: absolute;
+  font-family: var(--font-game, 'Nunito', system-ui, sans-serif);
+  font-size: clamp(120px, 18vw, 280px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 80px rgba(148, 45, 89, 0.9), 0 0 20px rgba(148, 45, 89, 0.5);
+  opacity: 0;
+}
+.countdown-num.n3 { animation: cdStep 1s ease-in-out 0s   1 both; }
+.countdown-num.n2 { animation: cdStep 1s ease-in-out 1s   1 both; }
+.countdown-num.n1 { animation: cdLast 0.7s ease-out   2s  1 both; }

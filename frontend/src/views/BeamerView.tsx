@@ -2889,11 +2889,11 @@ useEffect(() => {
         <div className="blitz-stack" style={{ padding: '20px 24px', animation: 'zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           {/* Header */}
           <div style={{
-            fontSize: '26px', fontWeight: '900', color: 'var(--text)',
-            textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em',
+            fontSize: '22px', fontWeight: '900', color: '#94a3b8',
+            textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.12em',
             flexShrink: 0, animation: 'slideInDown 0.5s ease-out'
           }}>
-            🎯 Die 3 Themen für diese Runde
+            {language === 'en' ? '🎯 The 3 themes for this round' : '🎯 Die 3 Themen für diese Runde'}
           </div>
 
           {/* Main Grid — fills remaining height */}
@@ -2909,29 +2909,31 @@ useEffect(() => {
               boxShadow: '0 4px 0 rgba(177,10,108,0.5), 0 8px 24px rgba(177,10,108,0.2)',
               animation: 'flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both',
             }}>
-              <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>GEWÄHLT</div>
-              <div style={{ fontSize: '52px' }}>{pickedTheme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎯'}</div>
-              <div style={{ fontSize: '30px', fontWeight: '900', color: 'var(--text)', lineHeight: 1.2 }}>
-                {pickedTheme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || 'Thema 1'}
+              <div style={{ ...badgeBase, background: '#942d59', color: '#ffffff' }}>
+                {language === 'en' ? 'PICKED' : 'GEWÄHLT'}
+              </div>
+              <div style={{ fontSize: '30px', fontWeight: '900', color: '#ffd1e8', lineHeight: 1.2 }}>
+                {pickedTheme?.title || (language === 'en' ? 'Theme 1' : 'Thema 1')}
               </div>
             </div>
 
-            {/* Random Picks — all appear almost simultaneously */}
+            {/* Random Picks */}
             {randomThemes.map((theme, idx) => (
               <div
                 key={`random-${theme.id}-${idx}`}
                 style={{
                   ...cardBase,
-                  background: 'linear-gradient(135deg, rgba(43,91,152,0.22), rgba(17,49,93,0.18))',
-                  border: '3px solid rgba(90,147,199,0.55)',
-                  boxShadow: '0 4px 0 rgba(27,63,112,0.45), 0 8px 24px rgba(17,49,93,0.2)',
+                  background: 'linear-gradient(135deg, rgba(177,10,108,0.14), rgba(240,95,178,0.08))',
+                  border: '3px solid rgba(240,95,178,0.35)',
+                  boxShadow: '0 4px 0 rgba(177,10,108,0.3), 0 8px 24px rgba(177,10,108,0.12)',
                   animation: `flip-in 0.8s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + idx * 0.2}s both`,
                 }}
               >
-                <div style={{ ...badgeBase, background: '#22c55e', color: '#ffffff' }}>RANDOM {idx + 1}</div>
-                <div style={{ fontSize: '52px' }}>{theme?.title.match(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/)?.[0] || '🎲'}</div>
-                <div style={{ fontSize: '30px', fontWeight: '900', color: 'var(--text)', lineHeight: 1.2 }}>
-                  {theme?.title.replace(/[🏗️🎬🎮🏀🏟️🏎️⛰️🎭🌍🎨🎵🍔]/g, '').trim() || `Thema ${idx + 2}`}
+                <div style={{ ...badgeBase, background: 'rgba(177,10,108,0.7)', color: '#ffd1e8' }}>
+                  {language === 'en' ? `RANDOM ${idx + 1}` : `ZUFALL ${idx + 1}`}
+                </div>
+                <div style={{ fontSize: '30px', fontWeight: '900', color: '#f1f5f9', lineHeight: 1.2 }}>
+                  {theme?.title || (language === 'en' ? `Theme ${idx + 2}` : `Thema ${idx + 2}`)}
                 </div>
               </div>
             ))}
@@ -2939,11 +2941,11 @@ useEffect(() => {
 
           {/* Footer */}
           <div style={{
-            flexShrink: 0, fontSize: '18px', fontWeight: '700', color: 'var(--muted)',
+            flexShrink: 0, fontSize: '16px', fontWeight: '700', color: '#64748b',
             textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.15em',
             animation: 'fadeIn 0.6s ease-in 0.6s both'
           }}>
-            ⏱️ Start in wenigen Sekunden...
+            {language === 'en' ? '⏱️ Starting in a moment...' : '⏱️ Start in wenigen Sekunden...'}
           </div>
         </div>
       );
@@ -4007,8 +4009,8 @@ useEffect(() => {
                 <div
                   className="rundlauf-theme-pop"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2))',
-                    border: '2px solid rgba(59, 130, 246, 0.6)',
+                    background: 'linear-gradient(135deg, rgba(214,47,147,0.22), rgba(177,10,108,0.18))',
+                    border: '2px solid rgba(240,95,178,0.6)',
                     borderRadius: '16px',
                     padding: '24px',
                     textAlign: 'center',
@@ -4033,8 +4035,8 @@ useEffect(() => {
                   key={`random-${idx}-${cat.id}`}
                   className="rundlauf-theme-pop"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.15))',
-                    border: '2px solid rgba(74, 222, 128, 0.5)',
+                    background: 'linear-gradient(135deg, rgba(177,10,108,0.14), rgba(240,95,178,0.08))',
+                    border: '2px solid rgba(240,95,178,0.35)',
                     borderRadius: '16px',
                     padding: '24px',
                     textAlign: 'center',

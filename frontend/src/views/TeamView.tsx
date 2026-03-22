@@ -223,7 +223,9 @@ function BunteOrderDnD({
   );
 }
 
-// ── Swipe-Karten UI für oneOfEight ──────────────────────────────────────────
+// ── Swipe-Karten UI für oneOfEight — Round-Robin ─────────────────────────────
+// Jedes Team sieht EINE Aussage und muss sofort entscheiden.
+// Kein Durchblättern: links → wählen (riskant), rechts → auch wählen.
 function OneOfEightSwipeCards({
   statements,
   usedIds,
@@ -238,18 +240,16 @@ function OneOfEightSwipeCards({
   canAnswer: boolean;
 }) {
   const remaining = statements.filter((s) => !usedIds.has(String(s.id).toLowerCase()));
-  const [idx, setIdx] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [flying, setFlying] = useState<'left' | 'right' | null>(null);
   const startXRef = useRef(0);
   const draggingRef = useRef(false);
 
-  // reset when remaining set changes
+  // Reset animation state when the card changes (remaining set shrinks)
   const prevRemaining = useRef(remaining.length);
   useEffect(() => {
     if (remaining.length !== prevRemaining.current) {
       prevRemaining.current = remaining.length;
-      setIdx(0);
       setDragX(0);
       setFlying(null);
     }
@@ -257,7 +257,8 @@ function OneOfEightSwipeCards({
 
   if (!remaining.length) return null;
 
-  const current = remaining[idx % remaining.length];
+  // Always show the FIRST remaining statement — no browsing
+  const current = remaining[0];
 
   const flyOff = (dir: 'left' | 'right') => {
     if (flying) return;
@@ -265,11 +266,7 @@ function OneOfEightSwipeCards({
     setTimeout(() => {
       setFlying(null);
       setDragX(0);
-      if (dir === 'left') {
-        onSelect(current.id);
-      } else {
-        setIdx((prev) => (prev + 1) % remaining.length);
-      }
+      onSelect(current.id); // both directions submit this statement
     }, 280);
   };
 
@@ -297,21 +294,19 @@ function OneOfEightSwipeCards({
 
   return (
     <div style={{ position: 'relative', userSelect: 'none' }}>
-      {/* stack cards behind */}
+      {/* stack cards behind to show there are more */}
       {remaining.length > 1 && (
         <div style={{
           position: 'absolute', inset: 0, top: 6, left: 6, right: -6,
           borderRadius: 18, background: 'rgba(30,42,70,0.7)',
-          border: '1.5px solid rgba(148,163,184,0.15)',
-          zIndex: 0,
+          border: '1.5px solid rgba(148,163,184,0.15)', zIndex: 0,
         }} />
       )}
       {remaining.length > 2 && (
         <div style={{
           position: 'absolute', inset: 0, top: 12, left: 12, right: -12,
           borderRadius: 18, background: 'rgba(22,32,55,0.5)',
-          border: '1.5px solid rgba(148,163,184,0.1)',
-          zIndex: 0,
+          border: '1.5px solid rgba(148,163,184,0.1)', zIndex: 0,
         }} />
       )}
 
@@ -335,34 +330,21 @@ function OneOfEightSwipeCards({
           boxShadow: isChosen
             ? '0 0 0 2px rgba(148,45,89,0.25), 0 8px 24px rgba(0,0,0,0.4)'
             : '0 8px 24px rgba(0,0,0,0.4)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
+          display: 'flex', flexDirection: 'column', gap: 10,
           cursor: canAnswer ? 'grab' : 'default',
           touchAction: 'pan-y',
         }}
       >
-        {/* ID badge */}
         <span style={{
-          alignSelf: 'flex-start',
-          background: 'rgba(148,163,184,0.15)',
-          color: '#94a3b8',
-          borderRadius: 8,
-          padding: '2px 10px',
-          fontSize: 12,
-          fontWeight: 700,
-          letterSpacing: '0.06em',
+          alignSelf: 'flex-start', background: 'rgba(148,163,184,0.15)', color: '#94a3b8',
+          borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
         }}>{current.id}</span>
 
-        <p style={{
-          margin: 0,
-          fontSize: 'clamp(16px, 4.5vw, 20px)',
-          fontWeight: 700,
-          color: '#f1f5f9',
-          lineHeight: 1.35,
-        }}>{current.text}</p>
+        <p style={{ margin: 0, fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#f1f5f9', lineHeight: 1.35 }}>
+          {current.text}
+        </p>
 
-        {/* swipe hint overlay */}
+        {/* swipe hint overlays */}
         {dragX < -30 && (
           <div style={{ position: 'absolute', top: 14, right: 16, fontSize: 13, fontWeight: 800, color: '#f87171', opacity: Math.min(1, (Math.abs(dragX) - 30) / 60) }}>
             ✗ FALSCH
@@ -370,12 +352,12 @@ function OneOfEightSwipeCards({
         )}
         {dragX > 30 && (
           <div style={{ position: 'absolute', top: 14, left: 16, fontSize: 13, fontWeight: 800, color: '#4ade80', opacity: Math.min(1, (dragX - 30) / 60) }}>
-            ✓ WEITER
+            ✓ WÄHLEN
           </div>
         )}
       </div>
 
-      {/* controls row */}
+      {/* single pick button + remaining counter */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
         <button
           disabled={!canAnswer}
@@ -385,23 +367,11 @@ function OneOfEightSwipeCards({
             background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.35)',
             color: '#f87171', fontWeight: 800, fontSize: 15, cursor: canAnswer ? 'pointer' : 'not-allowed',
           }}
-        >✗ Falsch</button>
+        >✗ Diese wählen</button>
 
-        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 700, textAlign: 'center', minWidth: 40 }}>
-          {(idx % remaining.length) + 1}/{remaining.length}
+        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 700, textAlign: 'center', minWidth: 48 }}>
+          noch {remaining.length}
         </div>
-
-        <button
-          disabled={!canAnswer || remaining.length <= 1}
-          onClick={() => flyOff('right')}
-          style={{
-            flex: 1, padding: '11px 0', borderRadius: 14,
-            background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)',
-            color: '#4ade80', fontWeight: 800, fontSize: 15,
-            cursor: (canAnswer && remaining.length > 1) ? 'pointer' : 'not-allowed',
-            opacity: remaining.length <= 1 ? 0.4 : 1,
-          }}
-        >Weiter →</button>
       </div>
 
       {selectedId && (

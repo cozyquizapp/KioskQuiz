@@ -469,9 +469,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
 
   const [introIndex, setIntroIndex] = useState(0);
-  // Stable key for QUESTION_INTRO frame — increments only when entering the phase,
-  // so question?.id arriving mid-phase does NOT remount the frame and reset animations.
-  const [introFrameKey, setIntroFrameKey] = useState(0);
   const introTimerRef = useRef<number | null>(null);
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
@@ -496,13 +493,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  // Increment introFrameKey each time we enter QUESTION_INTRO so the frame
-  // gets a fresh mount (and CSS animations restart) without depending on question?.id.
-  useEffect(() => {
-    if (gameState === 'QUESTION_INTRO') {
-      setIntroFrameKey(k => k + 1);
-    }
-  }, [gameState]);
 
   // Map reveal: on Q_REVEAL, advance step every 2s (worst→best→target)
   useEffect(() => {
@@ -3889,7 +3879,6 @@ useEffect(() => {
 
     const renderQuestionIntroFrame = () => (
       <BeamerFrame
-        key={`question-intro-${introFrameKey}`}
         {...baseFrameProps}
         title=""
         subtitle=""
@@ -3909,7 +3898,7 @@ useEffect(() => {
               'New question'
             )}
           </div>
-          <div key={introFrameKey} className="cozyQuestionIntroCountdown">
+          <div className="cozyQuestionIntroCountdown">
             <span className="cozyCountdownNum count-3">3</span>
             <span className="cozyCountdownNum count-2">2</span>
             <span className="cozyCountdownNum count-1">1</span>

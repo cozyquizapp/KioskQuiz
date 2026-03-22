@@ -2524,6 +2524,23 @@
   100% { opacity: 1;   transform: translateY(0) scale(1); filter: blur(0); }
 }
 
+/* Map fullscreen overlay during pin reveal:
+   covers the entire .beamer-frame.beamer-jackbox (which is position:relative).
+   When mapRevealDone, the class is removed and the div returns to normal flow. */
+.map-reveal-fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 5;
+  background: #0d1117;
+  gap: 0 !important;
+  border-radius: 0;
+  padding: 12px;
+}
+.map-reveal-fullscreen > div {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 /* Map reveal ranking panel slides in from the right */
 @keyframes mapRankSlideIn {
   from { opacity: 0; transform: translateX(60px) scale(0.95); }

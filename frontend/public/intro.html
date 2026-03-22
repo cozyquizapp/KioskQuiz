@@ -409,6 +409,7 @@ canvas#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
     <img src="logo.png" style="width:140px;animation:pulse 2s ease infinite" alt="Cozy Wolf"/>
     <div style="font-size:clamp(40px,6vw,70px);font-weight:900;background:linear-gradient(135deg,#f05fb2,#ffd1e8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" data-de="Viel Spaß beim Spielen!" data-en="Have fun playing!"></div>
     <div style="font-size:15px;font-weight:700;color:rgba(241,245,249,0.28);letter-spacing:3px">© Cozy Wolf — play.cozyquiz.app</div>
+    <button id="btn-start-lobby" onclick="startLobby()" style="margin-top:8px;padding:16px 40px;font-size:18px;font-weight:800;border-radius:16px;border:none;background:linear-gradient(135deg,#f05fb2,#c026d3);color:#fff;cursor:pointer;box-shadow:0 4px 24px rgba(240,95,178,0.4);letter-spacing:0.04em;font-family:inherit" data-de="Quiz starten →" data-en="Start quiz →"></button>
   </div>
 </div>
 
@@ -491,8 +492,19 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('hud').addEventListener('click', e=>e.stopPropagation());
 document.getElementById('lang-bar').addEventListener('click', e=>e.stopPropagation());
+document.getElementById('btn-start-lobby').addEventListener('click', e=>e.stopPropagation());
 document.addEventListener('click', ()=>goTo(current+1,1));
 updateHud();
+
+function startLobby() {
+  const room = new URLSearchParams(location.search).get('room') || 'MAIN';
+  const btn = document.getElementById('btn-start-lobby');
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  fetch(`/api/rooms/${room}/show-lobby`, { method: 'POST' })
+    .then(() => { btn.textContent = '✓'; btn.style.background = '#22c55e'; })
+    .catch(() => { btn.disabled = false; btn.style.opacity = '1'; });
+}
 </script>
 </body>
 </html>

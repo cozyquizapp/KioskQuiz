@@ -5565,6 +5565,17 @@ app.post('/api/rooms/:roomCode/slot-intro', (req, res) => {
 });
 
 // Intro-Slides auf Beamer schicken
+app.post('/api/rooms/:roomCode/show-lobby', (req, res) => {
+  const { roomCode } = req.params;
+  const room = ensureRoom(roomCode);
+  touchRoom(room);
+  room.screen = 'lobby' as ScreenState;
+  applyRoomState(room, { type: 'FORCE', next: 'LOBBY' });
+  broadcastState(room);
+  io.to(room.roomCode).emit('beamer:show-rules');
+  res.json({ ok: true });
+});
+
 app.post('/api/rooms/:roomCode/show-intro', (req, res) => {
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);

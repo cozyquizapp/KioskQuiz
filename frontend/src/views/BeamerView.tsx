@@ -2508,8 +2508,8 @@ useEffect(() => {
       const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
 
       return (
-        <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
-          {/* Map — full width during pin reveal, shrinks to ~60% once ranking panel appears */}
+        <div className={!mapRevealDone ? 'map-reveal-fullscreen' : undefined} style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
+          {/* Map — fullscreen overlay during pin reveal (map-reveal-fullscreen class), normal split after */}
           <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <MapErrorBoundary>
             <MapContainer

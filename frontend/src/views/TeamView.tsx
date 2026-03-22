@@ -223,166 +223,117 @@ function BunteOrderDnD({
   );
 }
 
-// ── Swipe-Karten UI für oneOfEight — Round-Robin ─────────────────────────────
-// Jedes Team sieht EINE Aussage und muss sofort entscheiden.
-// Kein Durchblättern: links → wählen (riskant), rechts → auch wählen.
-function OneOfEightSwipeCards({
+// ── Scroll-Rad UI für oneOfEight ─────────────────────────────────────────────
+// Alle verfügbaren Aussagen scrollbar — antippen zum Markieren, dann wählen.
+// onConfirm(id) wird aufgerufen wenn Team auf "Wählen" drückt → direkte Einreichung.
+function OneOfEightWheel({
   statements,
   usedIds,
-  selectedId,
-  onSelect,
+  onConfirm,
   canAnswer,
 }: {
-  statements: Array<{ id: string; text: string; isFalse?: boolean }>;
+  statements: Array<{ id: string; text: string }>;
   usedIds: Set<string>;
-  selectedId: string;
-  onSelect: (id: string) => void;
+  onConfirm: (id: string) => void;
   canAnswer: boolean;
 }) {
   const remaining = statements.filter((s) => !usedIds.has(String(s.id).toLowerCase()));
-  const [dragX, setDragX] = useState(0);
-  const [flying, setFlying] = useState<'left' | 'right' | null>(null);
-  const startXRef = useRef(0);
-  const draggingRef = useRef(false);
+  const [selectedId, setSelectedId] = useState('');
 
-  // Reset animation state when the card changes (remaining set shrinks)
-  const prevRemaining = useRef(remaining.length);
+  // Clear selection when available statements change (next turn)
+  const prevLen = useRef(remaining.length);
   useEffect(() => {
-    if (remaining.length !== prevRemaining.current) {
-      prevRemaining.current = remaining.length;
-      setDragX(0);
-      setFlying(null);
+    if (remaining.length !== prevLen.current) {
+      prevLen.current = remaining.length;
+      setSelectedId('');
     }
   }, [remaining.length]);
 
   if (!remaining.length) return null;
 
-  // Always show the FIRST remaining statement — no browsing
-  const current = remaining[0];
-
-  const flyOff = (dir: 'left' | 'right') => {
-    if (flying) return;
-    setFlying(dir);
-    setTimeout(() => {
-      setFlying(null);
-      setDragX(0);
-      onSelect(current.id); // both directions submit this statement
-    }, 280);
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!canAnswer) return;
-    startXRef.current = e.touches[0].clientX;
-    draggingRef.current = true;
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!draggingRef.current || flying) return;
-    setDragX(e.touches[0].clientX - startXRef.current);
-  };
-  const onTouchEnd = () => {
-    draggingRef.current = false;
-    if (Math.abs(dragX) > 70) {
-      flyOff(dragX < 0 ? 'left' : 'right');
-    } else {
-      setDragX(0);
-    }
-  };
-
-  const tx = flying === 'left' ? -420 : flying === 'right' ? 420 : dragX;
-  const rotate = (tx / 12).toFixed(1);
-  const isChosen = selectedId === current.id;
+  const selectedStatement = remaining.find(s => s.id === selectedId);
 
   return (
-    <div style={{ position: 'relative', userSelect: 'none' }}>
-      {/* stack cards behind to show there are more */}
-      {remaining.length > 1 && (
-        <div style={{
-          position: 'absolute', inset: 0, top: 6, left: 6, right: -6,
-          borderRadius: 18, background: 'rgba(30,42,70,0.7)',
-          border: '1.5px solid rgba(148,163,184,0.15)', zIndex: 0,
-        }} />
-      )}
-      {remaining.length > 2 && (
-        <div style={{
-          position: 'absolute', inset: 0, top: 12, left: 12, right: -12,
-          borderRadius: 18, background: 'rgba(22,32,55,0.5)',
-          border: '1.5px solid rgba(148,163,184,0.1)', zIndex: 0,
-        }} />
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Scrollable drum */}
+      <div style={{
+        maxHeight: 300,
+        overflowY: 'auto',
+        borderRadius: 16,
+        background: 'rgba(10,15,35,0.97)',
+        border: '1.5px solid rgba(148,163,184,0.18)',
+        WebkitOverflowScrolling: 'touch',
+      }}>
+        {remaining.map((s, i) => {
+          const isSelected = selectedId === s.id;
+          return (
+            <div
+              key={s.id}
+              onClick={() => canAnswer && setSelectedId(isSelected ? '' : s.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+                padding: '13px 16px',
+                borderBottom: i < remaining.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                background: isSelected ? 'rgba(148,45,89,0.18)' : 'transparent',
+                borderLeft: isSelected ? '3px solid #942d59' : '3px solid transparent',
+                cursor: canAnswer ? 'pointer' : 'default',
+                transition: 'background 0.15s, border-color 0.15s',
+                userSelect: 'none',
+              }}
+            >
+              <span style={{
+                flexShrink: 0,
+                marginTop: 2,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                color: isSelected ? '#f9a8d4' : '#475569',
+                minWidth: 20,
+              }}>{s.id}</span>
+              <span style={{
+                fontSize: 'clamp(14px, 3.8vw, 17px)',
+                fontWeight: isSelected ? 700 : 600,
+                color: isSelected ? '#ffe4f2' : '#cbd5e1',
+                lineHeight: 1.4,
+              }}>{s.text}</span>
+              {isSelected && (
+                <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 16 }}>✓</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* current card */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+      {/* Counter */}
+      <div style={{ textAlign: 'center', color: '#475569', fontSize: 12, fontWeight: 700 }}>
+        {remaining.length} von {statements.length} Aussagen verfügbar
+      </div>
+
+      {/* Confirm button */}
+      <button
+        disabled={!canAnswer || !selectedId}
+        onClick={() => selectedId && onConfirm(selectedId)}
         style={{
-          position: 'relative', zIndex: 1,
-          transform: `translateX(${tx}px) rotate(${rotate}deg)`,
-          transition: flying ? 'transform 0.28s cubic-bezier(0.4,0,0.6,1), opacity 0.28s' : dragX ? 'none' : 'transform 0.2s ease',
-          opacity: flying ? 0 : 1,
-          borderRadius: 18,
-          padding: '22px 20px',
-          minHeight: 120,
-          background: isChosen
-            ? 'linear-gradient(135deg, rgba(148,45,89,0.22), rgba(30,42,70,0.9))'
-            : 'rgba(26,32,53,0.95)',
-          border: isChosen ? '2px solid rgba(148,45,89,0.6)' : '2px solid rgba(148,163,184,0.18)',
-          boxShadow: isChosen
-            ? '0 0 0 2px rgba(148,45,89,0.25), 0 8px 24px rgba(0,0,0,0.4)'
-            : '0 8px 24px rgba(0,0,0,0.4)',
-          display: 'flex', flexDirection: 'column', gap: 10,
-          cursor: canAnswer ? 'grab' : 'default',
-          touchAction: 'pan-y',
+          padding: '14px',
+          borderRadius: 16,
+          background: selectedStatement
+            ? 'linear-gradient(135deg, rgba(148,45,89,0.85), rgba(177,10,108,0.75))'
+            : 'rgba(148,163,184,0.07)',
+          border: `2px solid ${selectedStatement ? 'rgba(148,45,89,0.6)' : 'rgba(148,163,184,0.15)'}`,
+          color: selectedStatement ? '#fff' : '#475569',
+          fontWeight: 800,
+          fontSize: 16,
+          cursor: (canAnswer && selectedId) ? 'pointer' : 'not-allowed',
+          transition: 'all 0.2s',
+          boxShadow: selectedStatement ? '0 4px 0 rgba(0,0,0,0.35)' : 'none',
         }}
       >
-        <span style={{
-          alignSelf: 'flex-start', background: 'rgba(148,163,184,0.15)', color: '#94a3b8',
-          borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
-        }}>{current.id}</span>
-
-        <p style={{ margin: 0, fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#f1f5f9', lineHeight: 1.35 }}>
-          {current.text}
-        </p>
-
-        {/* swipe hint overlays */}
-        {dragX < -30 && (
-          <div style={{ position: 'absolute', top: 14, right: 16, fontSize: 13, fontWeight: 800, color: '#f87171', opacity: Math.min(1, (Math.abs(dragX) - 30) / 60) }}>
-            ✗ FALSCH
-          </div>
-        )}
-        {dragX > 30 && (
-          <div style={{ position: 'absolute', top: 14, left: 16, fontSize: 13, fontWeight: 800, color: '#4ade80', opacity: Math.min(1, (dragX - 30) / 60) }}>
-            ✓ WÄHLEN
-          </div>
-        )}
-      </div>
-
-      {/* single pick button + remaining counter */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
-        <button
-          disabled={!canAnswer}
-          onClick={() => flyOff('left')}
-          style={{
-            flex: 1, padding: '11px 0', borderRadius: 14,
-            background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.35)',
-            color: '#f87171', fontWeight: 800, fontSize: 15, cursor: canAnswer ? 'pointer' : 'not-allowed',
-          }}
-        >✗ Diese wählen</button>
-
-        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 700, textAlign: 'center', minWidth: 48 }}>
-          noch {remaining.length}
-        </div>
-      </div>
-
-      {selectedId && (
-        <div style={{
-          marginTop: 10, padding: '8px 14px', borderRadius: 12,
-          background: 'rgba(148,45,89,0.15)', border: '1px solid rgba(148,45,89,0.4)',
-          color: '#f9a8d4', fontWeight: 700, fontSize: 13,
-        }}>
-          Gewählt: {statements.find(s => s.id === selectedId)?.text ?? selectedId}
-        </div>
-      )}
+        {selectedStatement
+          ? `"${selectedStatement.text}" wählen`
+          : 'Aussage antippen …'}
+      </button>
     </div>
   );
 }
@@ -2173,14 +2124,26 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
           {language === 'de' ? `${activeTeamName} ist dran` : `${activeTeamName} is up`}
         </div>
       );
+      const handleWheelConfirm = async (choiceId: string) => {
+        if (!teamId || !canAnswer || !isOneOfEightActiveTurn) return;
+        if ('vibrate' in navigator) navigator.vibrate(40);
+        try {
+          await submitAnswer(roomCode, teamId, { kind: 'oneOfEight', choiceId });
+          setBunteOneChoice(choiceId);
+          setAnswerSubmitted(true);
+          setPhase('waitingForResult');
+          clearMessage();
+        } catch (error) {
+          showError(error instanceof Error ? error.message : (language === 'de' ? 'Fehler beim Senden.' : 'Submit error.'));
+        }
+      };
       return (
         <div style={{ display: 'grid', gap: 8 }}>
           {waitingBanner}
-          <OneOfEightSwipeCards
+          <OneOfEightWheel
             statements={payload.statements}
             usedIds={usedIds}
-            selectedId={bunteOneChoice}
-            onSelect={setBunteOneChoice}
+            onConfirm={handleWheelConfirm}
             canAnswer={canAnswer && isOneOfEightActiveTurn}
           />
         </div>

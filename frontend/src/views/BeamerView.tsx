@@ -54,6 +54,18 @@ const FitBoundsOnMount: React.FC<{ bounds: L.LatLngBounds }> = ({ bounds }) => {
   return null;
 };
 
+// Fits map when `trigger` changes (used for the final step of the map reveal)
+const FitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }> = ({ bounds, trigger }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
+  return null;
+};
+
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
   useEffect(() => {
@@ -454,6 +466,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [scoreboardOverlayForced, setScoreboardOverlayForced] = useState(false);
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
 
+  // Map reveal: step 0 = nothing, 1..N = team pins (worst→best), N+1 = target shown
+  const [mapRevealStep, setMapRevealStep] = useState(0);
+  const mapRevealTimerRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [volume, setVolumeState] = useState(() => getVolume());
@@ -476,6 +492,17 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     if (gameState === 'QUESTION_INTRO') {
       setIntroFrameKey(k => k + 1);
     }
+  }, [gameState]);
+
+  // Map reveal: on Q_REVEAL, advance step every 2s (worst→best→target)
+  useEffect(() => {
+    if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current);
+    if (gameState !== 'Q_REVEAL') { setMapRevealStep(0); return; }
+    setMapRevealStep(1); // show first (worst) pin immediately
+    mapRevealTimerRef.current = window.setInterval(() => {
+      setMapRevealStep(s => s + 1);
+    }, 2000); /* 2s per team pin */
+    return () => { if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current); };
   }, [gameState]);
 
   // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly.
@@ -2433,8 +2460,17 @@ useEffect(() => {
         return '#6b7280';
       };
 
-      // Sort by distance ascending (closest first)
-      const sortedPins = [...teamPins].sort((a, b) => (a.distKm ?? Infinity) - (b.distKm ?? Infinity));
+      // Reveal order: furthest first → closest last → target
+      const worstFirst = [...teamPins].sort((a, b) => (b.distKm ?? -Infinity) - (a.distKm ?? -Infinity));
+      const revealedPins = worstFirst.slice(0, mapRevealStep);
+      const showTarget = mapRevealStep > worstFirst.length;
+      // Stop the interval once all pins + target are shown
+      if (showTarget && mapRevealTimerRef.current) {
+        window.clearInterval(mapRevealTimerRef.current);
+        mapRevealTimerRef.current = null;
+      }
+      // Ranking panel shows revealed pins sorted best→worst (closest first = top)
+      const sortedPins = [...revealedPins].sort((a, b) => (a.distKm ?? Infinity) - (b.distKm ?? Infinity));
       const medals = ['🥇', '🥈', '🥉'];
 
       const targetIcon = L.divIcon({
@@ -2453,9 +2489,10 @@ useEffect(() => {
         });
       };
 
+      // Bounds update only when target is revealed (final fit)
       const allLats = [target.lat, ...teamPins.map(p => p.lat)];
       const allLngs = [target.lng, ...teamPins.map(p => p.lng)];
-      const bounds = L.latLngBounds(
+      const finalBounds = L.latLngBounds(
         [Math.min(...allLats), Math.min(...allLngs)],
         [Math.max(...allLats), Math.max(...allLngs)]
       );
@@ -2477,20 +2514,23 @@ useEffect(() => {
               attributionControl={false}
             >
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              {isReveal && teamPins.length > 0 && <FitBoundsOnMount bounds={bounds} />}
-              {isReveal && (
+              {/* Fit to all once target is shown */}
+              {showTarget && <FitBoundsOnTrigger bounds={finalBounds} trigger={mapRevealStep} />}
+              {/* Target pin — shown last */}
+              {showTarget && (
                 <Marker position={[target.lat, target.lng]} icon={targetIcon}>
                   <Popup>{bunte.targetLabel || `${target.lat.toFixed(3)}, ${target.lng.toFixed(3)}`}</Popup>
                 </Marker>
               )}
-              {isReveal && sortedPins.map((p) => (
+              {/* Team pins revealed worst→best */}
+              {revealedPins.map((p) => (
                 <Marker key={p.teamId} position={[p.lat, p.lng]} icon={teamPinIcon(p)}>
                   <Popup>{p.name}{p.distKm != null ? `: ${formatDist(p.distKm)}` : ''}</Popup>
                 </Marker>
               ))}
             </MapContainer>
             </MapErrorBoundary>
-            {isReveal && bunte.targetLabel && (
+            {showTarget && bunte.targetLabel && (
               <div style={{ padding: '8px 14px', background: 'rgba(14,22,44,0.95)', color: '#f1f5f9', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#942d59', display: 'inline-block', border: '2px solid #fff', flexShrink: 0 }} />
                 {bunte.targetLabel}
@@ -2507,13 +2547,17 @@ useEffect(() => {
           {isReveal && sortedPins.length > 0 && (
             <div style={{ flex: '0 0 36%', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center', minWidth: 0 }}>
               <div style={{ color: '#94a3b8', fontWeight: 800, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
-                {language === 'de' ? '📍 Abstände zur Lösung' : '📍 Distance to answer'}
+                {showTarget
+                  ? (language === 'de' ? '📍 Abstände zur Lösung' : '📍 Distance to answer')
+                  : (language === 'de' ? `📍 ${revealedPins.length}/${worstFirst.length} Teams …` : `📍 ${revealedPins.length}/${worstFirst.length} teams …`)}
               </div>
               {sortedPins.map((p, i) => {
                 const color = p.detail ? tierColor(p.detail) : '#6b7280';
                 const isWinner = i === 0;
                 const subLabel = isWinner
-                  ? (language === 'en' ? 'Closest! 🎯' : 'Am nächsten! 🎯')
+                  ? (showTarget
+                      ? (language === 'en' ? 'Closest! 🎯' : 'Am nächsten! 🎯')
+                      : (language === 'en' ? 'Leading so far…' : 'Führt bisher…'))
                   : (language === 'en' ? 'Too far' : 'Zu weit');
                 return (
                   <div key={p.teamId} style={{

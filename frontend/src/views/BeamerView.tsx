@@ -66,6 +66,17 @@ const FitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }> 
   return null;
 };
 
+// Invalidates Leaflet tile size after layout changes (e.g. ranking panel appears)
+const MapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
+  const map = useMap();
+  useEffect(() => {
+    const t = window.setTimeout(() => map.invalidateSize(), 50);
+    return () => window.clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
+  return null;
+};
+
 const usePrefersReducedMotion = () => {
   const [prefersReduced, setPrefersReduced] = useState(false);
   useEffect(() => {
@@ -457,7 +468,6 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [questionFlyIn, setQuestionFlyIn] = useState(false);
   const [introSlides, setIntroSlides] = useState<IntroSlide[]>(slidesForLanguage(language));
 
-  const [introCountdown, setIntroCountdown] = useState<number>(3);
   const [introIndex, setIntroIndex] = useState(0);
   // Stable key for QUESTION_INTRO frame — increments only when entering the phase,
   // so question?.id arriving mid-phase does NOT remount the frame and reset animations.
@@ -505,22 +515,18 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
     return () => { if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current); };
   }, [gameState]);
 
-  // React-driven countdown: 3→2→1 via JS timers so each number remounts cleanly.
-  // showingIntroCountdown stays true for 3.1s so Q_ACTIVE doesn't unmount the
-  // intro frame before the countdown finishes (QUESTION_INTRO can be <2s on backend).
+  // Pure-CSS countdown: all three spans (3/2/1) are always in DOM with staggered
+  // animation-delay. showingIntroCountdown keeps the intro frame alive for 3.1s
+  // so Q_ACTIVE doesn't unmount it before "1" finishes displaying.
   const [showingIntroCountdown, setShowingIntroCountdown] = useState(false);
-  const countdownTimersRef = useRef<ReturnType<typeof window.setTimeout>[]>([]);
+  const countdownVisTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   useEffect(() => {
     if (gameState !== 'QUESTION_INTRO') return;
-    countdownTimersRef.current.forEach(t => window.clearTimeout(t));
-    countdownTimersRef.current = [];
-    setIntroCountdown(3);
+    if (countdownVisTimerRef.current) window.clearTimeout(countdownVisTimerRef.current);
     setShowingIntroCountdown(true);
-    countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(2), 1000));
-    countdownTimersRef.current.push(window.setTimeout(() => setIntroCountdown(1), 2000));
-    countdownTimersRef.current.push(window.setTimeout(() => setShowingIntroCountdown(false), 3100));
+    countdownVisTimerRef.current = window.setTimeout(() => setShowingIntroCountdown(false), 3100);
   }, [gameState]);
-  useEffect(() => () => { countdownTimersRef.current.forEach(t => window.clearTimeout(t)); }, []);
+  useEffect(() => () => { if (countdownVisTimerRef.current) window.clearTimeout(countdownVisTimerRef.current); }, []);
 
   useEffect(() => {
     const onFirstInteraction = () => {
@@ -2469,7 +2475,9 @@ useEffect(() => {
         window.clearInterval(mapRevealTimerRef.current);
         mapRevealTimerRef.current = null;
       }
-      // Ranking panel shows revealed pins sorted best→worst (closest first = top)
+      // Phase 1: full-width map while revealing pins; Phase 2: split layout after all shown
+      const mapRevealDone = showTarget;
+      // Ranking panel shows all pins sorted best→worst (closest first = top)
       const sortedPins = [...revealedPins].sort((a, b) => (a.distKm ?? Infinity) - (b.distKm ?? Infinity));
       const medals = ['🥇', '🥈', '🥉'];
 
@@ -2501,21 +2509,23 @@ useEffect(() => {
 
       return (
         <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
-          {/* Map */}
-          <div style={{ flex: '1 1 60%', borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Map — full width during pin reveal, shrinks to ~60% once ranking panel appears */}
+          <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', border: '2px solid rgba(148,163,184,0.15)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <MapErrorBoundary>
             <MapContainer
               key={isReveal ? 'reveal' : 'active'}
               center={[centerLat, centerLng]}
-              zoom={isReveal && teamPins.length ? 3 : 2}
+              zoom={2}
               style={{ flex: 1, minHeight: 280, width: '100%' }}
               zoomControl={false}
               scrollWheelZoom={false}
               attributionControl={false}
             >
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              {/* Fit to all once target is shown */}
+              {/* Fit to all pins+target once all are revealed */}
               {showTarget && <FitBoundsOnTrigger bounds={finalBounds} trigger={mapRevealStep} />}
+              {/* Invalidate size when ranking panel appears and map shrinks */}
+              <MapResizer trigger={mapRevealDone} />
               {/* Target pin — shown last */}
               {showTarget && (
                 <Marker position={[target.lat, target.lng]} icon={targetIcon}>
@@ -2543,21 +2553,17 @@ useEffect(() => {
             )}
           </div>
 
-          {/* Ranking panel */}
-          {isReveal && sortedPins.length > 0 && (
-            <div style={{ flex: '0 0 36%', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center', minWidth: 0 }}>
+          {/* Ranking panel — slides in only after all pins + target are revealed */}
+          {isReveal && mapRevealDone && sortedPins.length > 0 && (
+            <div style={{ flex: '0 0 36%', display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center', minWidth: 0, animation: 'mapRankSlideIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both' }}>
               <div style={{ color: '#94a3b8', fontWeight: 800, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
-                {showTarget
-                  ? (language === 'de' ? '📍 Abstände zur Lösung' : '📍 Distance to answer')
-                  : (language === 'de' ? `📍 ${revealedPins.length}/${worstFirst.length} Teams …` : `📍 ${revealedPins.length}/${worstFirst.length} teams …`)}
+                {language === 'de' ? '📍 Abstände zur Lösung' : '📍 Distance to answer'}
               </div>
               {sortedPins.map((p, i) => {
                 const color = p.detail ? tierColor(p.detail) : '#6b7280';
                 const isWinner = i === 0;
                 const subLabel = isWinner
-                  ? (showTarget
-                      ? (language === 'en' ? 'Closest! 🎯' : 'Am nächsten! 🎯')
-                      : (language === 'en' ? 'Leading so far…' : 'Führt bisher…'))
+                  ? (language === 'en' ? 'Closest! 🎯' : 'Am nächsten! 🎯')
                   : (language === 'en' ? 'Too far' : 'Zu weit');
                 return (
                   <div key={p.teamId} style={{
@@ -3903,10 +3909,10 @@ useEffect(() => {
               'New question'
             )}
           </div>
-          <div className="cozyQuestionIntroCountdown">
-            <span key={introCountdown} className={`cozyCountdownNum${introCountdown === 1 ? ' is-last' : ''}`}>
-              {introCountdown}
-            </span>
+          <div key={sceneKey} className="cozyQuestionIntroCountdown">
+            <span className="cozyCountdownNum count-3">3</span>
+            <span className="cozyCountdownNum count-2">2</span>
+            <span className="cozyCountdownNum count-1">1</span>
           </div>
         </div>
       </BeamerFrame>

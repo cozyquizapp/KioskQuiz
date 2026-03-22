@@ -2524,6 +2524,12 @@
   100% { opacity: 1;   transform: translateY(0) scale(1); filter: blur(0); }
 }
 
+/* Map reveal ranking panel slides in from the right */
+@keyframes mapRankSlideIn {
+  from { opacity: 0; transform: translateX(60px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 @keyframes cozyHop {
   0% {
     transform: translateY(0);
@@ -3520,7 +3526,8 @@ body.projector-mode .cozyQuestionMedia {
 /* Plain text (DE-only / EN-only) already handled by cozyQuestionIntroTitle clamp */
 
 /* Countdown number on QUESTION_INTRO screen
-   React renders ONE number at a time with key={n} so animation restarts fresh */
+   Pure CSS: 3 spans always in DOM, staggered animation-delay.
+   No JS state changes mid-countdown — React key remounts the whole container. */
 
 /* Container */
 .cozyQuestionIntroCountdown {
@@ -3532,24 +3539,37 @@ body.projector-mode .cozyQuestionMedia {
   justify-content: center;
 }
 
-/* All numbers: bounce in and STAY visible.
-   React removes the span when the next number comes — no CSS timing dependency. */
-@keyframes countdownBounceIn {
-  0%   { opacity: 0; transform: scale(1.8);  filter: blur(10px); }
-  55%  { opacity: 1; transform: scale(0.92); filter: blur(0);    }
-  75%  { transform: scale(1.06); }
-  90%  { transform: scale(0.97); }
-  100% { opacity: 1; transform: scale(1);    filter: blur(0);    }
+/* "3" and "2" fade in, hold, fade out. "1" fades in and stays. */
+@keyframes countStep {
+  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
+  20%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  75%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  100% { opacity: 0; transform: scale(0.85); filter: blur(4px); }
+}
+@keyframes countStepLast {
+  0%   { opacity: 0; transform: scale(1.8); filter: blur(8px); }
+  30%  { opacity: 1; transform: scale(1);   filter: blur(0);   }
+  100% { opacity: 1; transform: scale(1);   filter: blur(0);   }
 }
 
 .cozyCountdownNum {
+  position: absolute;
   font-size: clamp(80px, 12vw, 180px);
   font-weight: 900;
   color: #942d59;
   line-height: 1;
   letter-spacing: -0.02em;
   text-shadow: 0 0 60px rgba(148,45,89,0.7);
-  animation: countdownBounceIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  opacity: 0;
+}
+.cozyCountdownNum.count-3 {
+  animation: countStep 1s ease-in-out 0s 1 both;
+}
+.cozyCountdownNum.count-2 {
+  animation: countStep 1s ease-in-out 1s 1 both;
+}
+.cozyCountdownNum.count-1 {
+  animation: countStepLast 0.7s ease-out 2s 1 forwards;
 }
 
 /* ===== COMPREHENSIVE FONT SCALING — ALL BEAMER SCREENS ===== */

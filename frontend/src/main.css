@@ -962,6 +962,9 @@ button:active:not(:disabled) {
 .team-choice:not([data-choice-letter])::before {
   display: none;
 }
+.team-choice[data-choice-letter] {
+  padding-left: calc(44px + 12px) !important;
+}
 .team-choice[data-choice-letter]::before {
   content: attr(data-choice-letter);
   position: absolute;

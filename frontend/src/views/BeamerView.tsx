@@ -1568,24 +1568,9 @@ useEffect(() => {
         ? q.correctAnswers[0]
         : null;
     if (correctIndex === null) return;
-    if (prefersReducedMotion || totalOptions === 0) {
-      setMuChoHopIndex(correctIndex);
-      setMuChoLockedIndex(correctIndex);
-      return;
-    }
-    const hops = Array.from({ length: 6 }, () => Math.floor(Math.random() * totalOptions));
-    hops.push(correctIndex);
-    let hopIdx = 0;
-    const hopTimer = window.setInterval(() => {
-      const nextIdx = hops[Math.min(hopIdx, hops.length - 1)];
-      setMuChoHopIndex(nextIdx);
-      if (hopIdx >= hops.length - 1) {
-        setMuChoLockedIndex(correctIndex);
-        window.clearInterval(hopTimer);
-      }
-      hopIdx += 1;
-    }, 110);
-    return () => window.clearInterval(hopTimer);
+    // Show correct answer directly — no hopping animation
+    setMuChoHopIndex(correctIndex);
+    setMuChoLockedIndex(correctIndex);
   }, [question?.id, question?.type, mcOptions?.length, gameState, revealStamp, prefersReducedMotion]);
   const mcCorrectIndex = useMemo(() => {
     if (!question || question.type !== 'MU_CHO') return null;
@@ -2841,19 +2826,19 @@ useEffect(() => {
         : null;
       return (
         <div className="blitz-stack">
-          {/* Rule hint */}
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: '#94a3b8',
-            textTransform: 'uppercase', letterSpacing: '0.1em',
-            padding: '6px 18px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 999, alignSelf: 'center'
-          }}>
-            {phase === 'READY'
-              ? (language === 'en' ? 'Ready — selection starts soon' : 'Bereit — Auswahl startet gleich')
-              : (language === 'en' ? 'Rank 1 bans 2 · Last place picks' : 'Platz 1 streicht 2 · Letzter Platz wählt')}
-          </div>
+          {/* Rule hint — only during banning, not during ready */}
+          {phase === 'BANNING' && (
+            <div style={{
+              fontSize: 14, fontWeight: 700, color: '#94a3b8',
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              padding: '6px 18px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 999, alignSelf: 'center'
+            }}>
+              {language === 'en' ? 'Rank 1 bans 2 · Last place picks' : 'Platz 1 streicht 2 · Letzter Platz wählt'}
+            </div>
+          )}
           <div className="beamer-select-grid">
             {pool.length ? (
               pool.map((theme) => {

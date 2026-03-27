@@ -858,12 +858,13 @@
 .beamer-select-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 20px;
   padding: 0;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  align-self: center;
+  align-self: stretch;
+  flex: 1;
 }
 
 /* Pool animation: always 4 columns for clean grid */
@@ -879,7 +880,7 @@
 }
 
 .beamer-select-card {
-  padding: 20px 18px;
+  padding: 24px 20px;
   border-radius: 20px;
   border: 2px solid rgba(255,255,255,0.08);
   background: #1a2035;
@@ -893,7 +894,7 @@
   position: relative;
   overflow: visible;
   box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 16px rgba(0, 0, 0, 0.3);
-  min-height: 100px;
+  min-height: 120px;
 }
 
 /* Luxurious glow effect on hover */
@@ -1539,8 +1540,9 @@
 }
 
 .cozyQuestionGrid.phase-reveal .cozyQuestionText {
-  font-size: clamp(22px, 3vw, 40px);
+  font-size: clamp(16px, 1.9vw, 26px);
   text-align: left;
+  line-height: 1.25;
 }
 
 /* MC reveal: solution label above the tiles */
@@ -1784,6 +1786,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
+  min-height: 0;
   transition: all 0.35s ease;
   animation: fadeUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   will-change: transform, opacity;
@@ -2257,8 +2260,9 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
+  width: 100%;
 }
 
 .blitz-current-card {
@@ -3715,7 +3719,7 @@ body.projector-mode .cozyQuestionMedia {
 }
 
 @keyframes cdBackdropOut {
-  0%, 86% { background: rgba(13, 17, 23, 0.82); backdrop-filter: blur(4px); }
+  0%, 72% { background: rgba(13, 17, 23, 0.97); backdrop-filter: blur(6px); }
   100%    { background: rgba(13, 17, 23, 0);    backdrop-filter: blur(0);   }
 }
 
@@ -3741,6 +3745,6 @@ body.projector-mode .cozyQuestionMedia {
   text-shadow: 0 0 80px rgba(148, 45, 89, 0.9), 0 0 20px rgba(148, 45, 89, 0.5);
   opacity: 0;
 }
-.countdown-num.n3 { animation: cdStep 1s ease-in-out 0s   1 both; }
-.countdown-num.n2 { animation: cdStep 1s ease-in-out 1s   1 both; }
-.countdown-num.n1 { animation: cdLast 3s ease-in-out  2s  1 both; }
+.countdown-num.n3 { animation: cdStep  1s ease-in-out 0s    1 both; }
+.countdown-num.n2 { animation: cdStep  1s ease-in-out 1s    1 both; }
+.countdown-num.n1 { animation: cdLast 1.4s ease-in-out 2s   1 both; }

@@ -1210,6 +1210,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       if (payload.scoreboardOverlayForced !== undefined) {
         setScoreboardOverlayForced(Boolean(payload.scoreboardOverlayForced));
       }
+      if (payload.mapSplitShown) {
+        setMapSplitUnlocked(true);
+      }
       if (payload.avatarsEnabled !== undefined) {
         setAvatarsEnabled(payload.avatarsEnabled !== false);
       }

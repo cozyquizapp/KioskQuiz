@@ -369,6 +369,7 @@ type RoomState = {
   validationWarnings: string[];
   nextStage: NextStageHint | null;
   scoreboardOverlayForced: boolean;
+  mapSplitShown: boolean;
   avatarsEnabled: boolean;
   halftimeTriggered?: boolean;
   finalsTriggered?: boolean;
@@ -2125,6 +2126,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       validationWarnings: [],
       nextStage: null,
       scoreboardOverlayForced: false,
+      mapSplitShown: false,
       avatarsEnabled: false,
       halftimeTriggered: false,
       finalsTriggered: false,
@@ -4428,6 +4430,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     oneOfEight,
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
+    mapSplitShown: room.mapSplitShown,
     avatarsEnabled: room.avatarsEnabled,
     results,
     liveAnswers,
@@ -4954,6 +4957,7 @@ const enterQuestionActive = (room: RoomState, questionId: string, remainingOverr
   if (buntePayload && buntePayload.kind === 'oneOfEight') {
     startOneOfEightTurnState(room, questionWithImage);
   }
+  room.mapSplitShown = false;
   applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
   startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
   io.to(room.roomCode).emit('questionStarted', {
@@ -7416,6 +7420,8 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('map:showSplit', (roomCode: string) => {
+    const room = rooms.get(roomCode);
+    if (room) room.mapSplitShown = true;
     io.to(roomCode).emit('map:showSplit');
   });
 

@@ -626,6 +626,7 @@ export type StateUpdatePayload = {
   oneOfEight?: OneOfEightState | null;
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
+  mapSplitShown?: boolean;
   avatarsEnabled?: boolean;
   results?: AnswerAwardSnapshot[];
   liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;

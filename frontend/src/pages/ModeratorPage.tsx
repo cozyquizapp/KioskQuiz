@@ -369,6 +369,13 @@ function ModeratorPage(): React.ReactElement {
     }
   }, [normalizedGameState]);
 
+  // Reset mapSplitSent when leaving Q_REVEAL (new question or game state change)
+  useEffect(() => {
+    if (normalizedGameState !== 'Q_REVEAL') {
+      setMapSplitSent(false);
+    }
+  }, [normalizedGameState]);
+
 
   useEffect(() => {
     const socket = connectControlSocket();

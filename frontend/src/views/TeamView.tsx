@@ -302,7 +302,7 @@ function OneOfEightWheel({
         {/* Prev (top, blurred) */}
         <div style={slotStyle(true, canUp)} onClick={() => canUp && setIdx((i) => i - 1)}>
           {prev && (
-            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600 }}>
+            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               {prev.text}
             </span>
           )}
@@ -326,7 +326,7 @@ function OneOfEightWheel({
         {/* Next (bottom, blurred) */}
         <div style={slotStyle(true, canDown)} onClick={() => canDown && setIdx((i) => i + 1)}>
           {next && (
-            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600 }}>
+            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               {next.text}
             </span>
           )}

@@ -547,7 +547,7 @@
 }
 
 .beamer-grid.beamer-grid-4col {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr) !important;
 }
 
 .beamer-lobby-slide {

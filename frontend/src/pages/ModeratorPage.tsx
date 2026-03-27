@@ -2590,14 +2590,28 @@ function ModeratorPage(): React.ReactElement {
       return String(value);
     };
 
+    const haversineKmPrimary = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
     const answerRows = Object.entries(answers?.answers || {})
       .map(([teamId, answerEntry]) => {
         const entry = answerEntry as any;
         const raw = entry?.answer ?? entry?.value;
+        const q = question as any;
+        let displayAnswer = formatAnswerValue(raw);
+        if (q?.bunteTuete?.kind === 'map' && raw && typeof raw === 'object' && typeof raw.lat === 'number') {
+          const target = q.bunteTuete.target as { lat: number; lng: number } | undefined;
+          if (target) {
+            const km = haversineKmPrimary(raw.lat, raw.lng, target.lat, target.lng);
+            displayAnswer = `${Math.round(km).toLocaleString('de')} km`;
+          }
+        }
         return {
           teamId,
           teamName: teamLookup[teamId]?.name || answers?.teams?.[teamId]?.name || teamId,
-          answer: formatAnswerValue(raw),
+          answer: displayAnswer,
           isCorrect: entry?.isCorrect as boolean | undefined
         };
       })

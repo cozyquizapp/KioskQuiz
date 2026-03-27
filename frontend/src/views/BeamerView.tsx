@@ -475,8 +475,8 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const [avatarsEnabled, setAvatarsEnabled] = useState(false);
 
   // Map reveal: step 0 = nothing, 1..N = team pins (worst→best), N+1 = target shown
+  // Driven by moderator via map:nextPin events (no auto-advance)
   const [mapRevealStep, setMapRevealStep] = useState(0);
-  const mapRevealTimerRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
   const [mapSplitUnlocked, setMapSplitUnlocked] = useState(false);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
@@ -496,15 +496,12 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   }, []);
 
 
-  // Map reveal: on Q_REVEAL, advance step every 2s (worst→best→target)
+  // Map reveal: step driven by moderator (map:nextPin events), reset on leaving Q_REVEAL
   useEffect(() => {
-    if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current);
-    if (gameState !== 'Q_REVEAL') { setMapRevealStep(0); setMapSplitUnlocked(false); return; }
-    setMapRevealStep(1); // show first (worst) pin immediately
-    mapRevealTimerRef.current = window.setInterval(() => {
-      setMapRevealStep(s => s + 1);
-    }, 2000); /* 2s per team pin */
-    return () => { if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current); };
+    if (gameState !== 'Q_REVEAL') {
+      setMapRevealStep(0);
+      setMapSplitUnlocked(false);
+    }
   }, [gameState]);
 
 
@@ -1212,6 +1209,9 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
       }
       if (payload.mapSplitShown) {
         setMapSplitUnlocked(true);
+      }
+      if (typeof payload.mapPinStep === 'number') {
+        setMapRevealStep(payload.mapPinStep);
       }
       if (payload.avatarsEnabled !== undefined) {
         setAvatarsEnabled(payload.avatarsEnabled !== false);

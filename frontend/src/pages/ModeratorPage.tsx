@@ -267,8 +267,10 @@ function ModeratorPage(): React.ReactElement {
     config: socketConfig,
     nextStage: socketNextStage,
     scoreboardOverlayForced: socketScoreboardOverlayForced,
-    avatarsEnabled: socketAvatarsEnabled
+    avatarsEnabled: socketAvatarsEnabled,
+    mapPinStep: socketMapPinStep
   } = useQuizSocket(roomCode);
+  const mapPinStep = socketMapPinStep ?? 0;
   const rundlauf: RundlaufState | null = socketRundlauf ?? null;
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
   const nextStage = socketNextStage ?? null;
@@ -1066,6 +1068,13 @@ function ModeratorPage(): React.ReactElement {
     setMapSplitSent(true);
   }
 
+  function handleMapNextPin() {
+    const ctrl = controlSocketRef.current;
+    if (ctrl?.connected && roomCode) {
+      ctrl.emit('map:nextPin', roomCode);
+    }
+  }
+
   function handleStepBack() {
     sendHostCommand('host:back', async () => {
       await loadCurrentQuestion();
@@ -1406,8 +1415,15 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Auflösung zeigen', context: 'Antworten geprüft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
-        if ((question as any)?.bunteTuete?.kind === 'map' && !mapSplitSent)
-          return { hotkey: '1', label: 'AUSWERTUNG', detail: 'Kartenauswertung einblenden', context: 'Pins aufgedeckt' };
+        if ((question as any)?.bunteTuete?.kind === 'map') {
+          if (mapSplitSent)
+            return { hotkey: '[SPACE]', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Auswertung gezeigt' };
+          if (mapPinStep > answersCount)
+            return { hotkey: '[SPACE]', label: 'AUSWERTUNG', detail: 'Kartenauswertung einblenden', context: 'Ziel aufgedeckt' };
+          if (mapPinStep === answersCount)
+            return { hotkey: '[SPACE]', label: 'ZIEL AUFDECKEN', detail: 'Zielort zeigen', context: `Alle ${answersCount} Pins gezeigt` };
+          return { hotkey: '[SPACE]', label: 'PIN AUFDECKEN', detail: 'Nächsten Pin aufdecken', context: `Pin ${mapPinStep + 1} von ${answersCount}` };
+        }
         return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
@@ -1440,6 +1456,8 @@ function ModeratorPage(): React.ReactElement {
     submissionStatus.total,
     blitz?.phase,
     mapSplitSent,
+    mapPinStep,
+    answersCount,
     question
   ]);
 
@@ -2627,7 +2645,12 @@ function ModeratorPage(): React.ReactElement {
         return { onClick: handleReveal, busy: actionState.reveal, hotkey: '[3]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
       }
       if (isMapReveal && !mapSplitSent) {
-        return { onClick: handleMapSplit, busy: false, hotkey: '[SPACE]', style: 'bg-[#0e4d91] ring-[#3b82f6]/40' };
+        if (mapPinStep > answersCount) {
+          // Target revealed — show split/Auswertung
+          return { onClick: handleMapSplit, busy: false, hotkey: '[SPACE]', style: 'bg-[#0e4d91] ring-[#3b82f6]/40' };
+        }
+        // Still revealing pins (or target)
+        return { onClick: handleMapNextPin, busy: false, hotkey: '[SPACE]', style: 'bg-[#064e3b] ring-[#10b981]/40' };
       }
       return { onClick: handleNextQuestion, busy: actionState.next, hotkey: '[SPACE]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
     })();

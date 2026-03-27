@@ -370,6 +370,7 @@ type RoomState = {
   nextStage: NextStageHint | null;
   scoreboardOverlayForced: boolean;
   mapSplitShown: boolean;
+  mapPinStep: number;
   avatarsEnabled: boolean;
   halftimeTriggered?: boolean;
   finalsTriggered?: boolean;
@@ -2127,6 +2128,7 @@ const ensureRoom = (roomCode: string): RoomState => {
       nextStage: null,
       scoreboardOverlayForced: false,
       mapSplitShown: false,
+      mapPinStep: 0,
       avatarsEnabled: false,
       halftimeTriggered: false,
       finalsTriggered: false,
@@ -4431,6 +4433,7 @@ const buildStateUpdatePayload = (room: RoomState): StateUpdatePayload => {
     nextStage: room.nextStage ?? undefined,
     scoreboardOverlayForced: room.scoreboardOverlayForced,
     mapSplitShown: room.mapSplitShown,
+    mapPinStep: room.mapPinStep,
     avatarsEnabled: room.avatarsEnabled,
     results,
     liveAnswers,
@@ -4958,6 +4961,7 @@ const enterQuestionActive = (room: RoomState, questionId: string, remainingOverr
     startOneOfEightTurnState(room, questionWithImage);
   }
   room.mapSplitShown = false;
+  room.mapPinStep = 0;
   applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
   startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
   io.to(room.roomCode).emit('questionStarted', {
@@ -7423,6 +7427,13 @@ io.on('connection', (socket: Socket) => {
     const room = rooms.get(roomCode);
     if (room) room.mapSplitShown = true;
     io.to(roomCode).emit('map:showSplit');
+  });
+
+  socket.on('map:nextPin', (roomCode: string) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    room.mapPinStep += 1;
+    broadcastState(room);
   });
 
   // Removed: teamReady event - teams don't need to signal ready status anymore

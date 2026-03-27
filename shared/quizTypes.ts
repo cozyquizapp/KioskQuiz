@@ -627,6 +627,7 @@ export type StateUpdatePayload = {
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
   mapSplitShown?: boolean;
+  mapPinStep?: number;
   avatarsEnabled?: boolean;
   results?: AnswerAwardSnapshot[];
   liveAnswers?: Array<{ teamId: string; teamName: string; answer: unknown }>;

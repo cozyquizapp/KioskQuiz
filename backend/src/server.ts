@@ -607,7 +607,7 @@ const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_DISPLAY_TIME_MS = 30000; // Image display phase
 const BLITZ_ANSWER_TIME_MS = 30000;  // Answer input phase
 const BLITZ_ITEM_INTERVAL_MS = Math.floor(BLITZ_DISPLAY_TIME_MS / BLITZ_ITEMS_PER_SET);
-const BLITZ_CATEGORY_COUNT = 10; // 2 bans + 1 pick + 2 random (min 5 total) → 10 gives good buffer
+const BLITZ_CATEGORY_COUNT = 9; // 3×3 grid: 2 bans + 1 pick + 2 random = 5 min, 9 gives comfortable buffer
 const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_ROUNDS = 3;
 const RUNDLAUF_CATEGORY_COUNT = 6; // 2 bans + 1 pick + 3 remaining (2 random) = 6
@@ -4173,8 +4173,16 @@ const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
 const formatSolution = (question: AnyQuestion, language: Language): string | undefined => {
   if (!question) return undefined;
   if (question.mechanic === 'estimate') {
-    const unit = (question as any).unit ? ` ${(question as any).unit}` : '';
-    return `${(question as any).targetValue ?? ''}${unit}`.trim();
+    const rawUnit: string | undefined = (question as any).unit;
+    const resolvedUnit = (() => {
+      if (!rawUnit) return '';
+      const slash = rawUnit.indexOf('/');
+      if (slash < 0) return ` ${rawUnit}`;
+      const de = rawUnit.slice(0, slash).trim();
+      const en = rawUnit.slice(slash + 1).trim();
+      return ` ${language === 'en' ? en : de}`;
+    })();
+    return `${(question as any).targetValue ?? ''}${resolvedUnit}`.trim();
   }
   if (question.mechanic === 'multipleChoice') {
     const idx = (question as any).correctIndex;
@@ -7405,6 +7413,10 @@ io.on('connection', (socket: Socket) => {
     room.screen = 'lobby';
     room.questionPhase = 'idle';
     io.to(roomCode).emit('beamer:show-rules');
+  });
+
+  socket.on('map:showSplit', (roomCode: string) => {
+    io.to(roomCode).emit('map:showSplit');
   });
 
   // Removed: teamReady event - teams don't need to signal ready status anymore

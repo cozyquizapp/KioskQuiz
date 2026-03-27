@@ -223,9 +223,12 @@ function BunteOrderDnD({
   );
 }
 
-// ── Scroll-Rad UI für oneOfEight ─────────────────────────────────────────────
-// Alle verfügbaren Aussagen scrollbar — antippen zum Markieren, dann wählen.
-// onConfirm(id) wird aufgerufen wenn Team auf "Wählen" drückt → direkte Einreichung.
+// ── Drum-Wheel UI für oneOfEight ──────────────────────────────────────────────
+// Zeigt nur noch verfügbare Aussagen. Aktuelle Aussage zentriert + voll sichtbar,
+// Vorgänger/Nachfolger oben/unten geblurrt als Vorschau. Wischen oder Pfeil-Tippen
+// zum Navigieren. "Wählen" bestätigt die mittlere Aussage direkt.
+const SLOT_H = 90; // px pro Drum-Slot
+
 function OneOfEightWheel({
   statements,
   usedIds,
@@ -238,101 +241,139 @@ function OneOfEightWheel({
   canAnswer: boolean;
 }) {
   const remaining = statements.filter((s) => !usedIds.has(String(s.id).toLowerCase()));
-  const [selectedId, setSelectedId] = useState('');
+  const [idx, setIdx] = useState(0);
+  const touchStartY = useRef<number | null>(null);
 
-  // Clear selection when available statements change (next turn)
+  // Clamp idx when remaining shrinks (after a pick)
   const prevLen = useRef(remaining.length);
   useEffect(() => {
     if (remaining.length !== prevLen.current) {
       prevLen.current = remaining.length;
-      setSelectedId('');
+      setIdx((i) => Math.min(i, Math.max(0, remaining.length - 1)));
     }
   }, [remaining.length]);
 
   if (!remaining.length) return null;
 
-  const selectedStatement = remaining.find(s => s.id === selectedId);
+  const canUp = idx > 0;
+  const canDown = idx < remaining.length - 1;
+  const current = remaining[idx];
+  const prev = remaining[idx - 1] ?? null;
+  const next = remaining[idx + 1] ?? null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const delta = touchStartY.current - e.changedTouches[0].clientY;
+    touchStartY.current = null;
+    if (delta > 30 && canDown) setIdx((i) => i + 1);
+    else if (delta < -30 && canUp) setIdx((i) => i - 1);
+  };
+
+  const slotStyle = (blurred: boolean, clickable: boolean): React.CSSProperties => ({
+    height: SLOT_H,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 16px',
+    cursor: clickable ? 'pointer' : 'default',
+    userSelect: 'none',
+    filter: blurred ? 'blur(2.5px)' : 'none',
+    opacity: blurred ? 0.35 : 1,
+    transition: 'opacity 0.2s, filter 0.2s',
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {/* Scrollable drum */}
-      <div style={{
-        maxHeight: 300,
-        overflowY: 'auto',
-        borderRadius: 16,
-        background: 'rgba(10,15,35,0.97)',
-        border: '1.5px solid rgba(148,163,184,0.18)',
-        WebkitOverflowScrolling: 'touch',
-      }}>
-        {remaining.map((s, i) => {
-          const isSelected = selectedId === s.id;
-          return (
-            <div
-              key={s.id}
-              onClick={() => canAnswer && setSelectedId(isSelected ? '' : s.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 12,
-                padding: '13px 16px',
-                borderBottom: i < remaining.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                background: isSelected ? 'rgba(148,45,89,0.18)' : 'transparent',
-                borderLeft: isSelected ? '3px solid #942d59' : '3px solid transparent',
-                cursor: canAnswer ? 'pointer' : 'default',
-                transition: 'background 0.15s, border-color 0.15s',
-                userSelect: 'none',
-              }}
-            >
-              <span style={{
-                flexShrink: 0,
-                marginTop: 2,
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                color: isSelected ? '#f9a8d4' : '#475569',
-                minWidth: 20,
-              }}>{s.id}</span>
-              <span style={{
-                fontSize: 'clamp(14px, 3.8vw, 17px)',
-                fontWeight: isSelected ? 700 : 600,
-                color: isSelected ? '#ffe4f2' : '#cbd5e1',
-                lineHeight: 1.4,
-              }}>{s.text}</span>
-              {isSelected && (
-                <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 16 }}>✓</span>
-              )}
-            </div>
-          );
-        })}
+      {/* Drum */}
+      <div
+        style={{
+          position: 'relative',
+          height: SLOT_H * 3,
+          borderRadius: 16,
+          background: 'rgba(10,15,35,0.97)',
+          border: '1.5px solid rgba(148,163,184,0.18)',
+          overflow: 'hidden',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Prev (top, blurred) */}
+        <div style={slotStyle(true, canUp)} onClick={() => canUp && setIdx((i) => i - 1)}>
+          {prev && (
+            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600 }}>
+              {prev.text}
+            </span>
+          )}
+        </div>
+
+        {/* Center (selected) */}
+        <div style={{
+          height: SLOT_H,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 40px 0 16px',
+          background: 'rgba(148,45,89,0.18)',
+          borderTop: '1.5px solid rgba(148,45,89,0.5)',
+          borderBottom: '1.5px solid rgba(148,45,89,0.5)',
+        }}>
+          <span style={{ fontSize: 'clamp(15px,4.2vw,19px)', fontWeight: 800, color: '#ffe4f2', lineHeight: 1.35 }}>
+            {current.text}
+          </span>
+        </div>
+
+        {/* Next (bottom, blurred) */}
+        <div style={slotStyle(true, canDown)} onClick={() => canDown && setIdx((i) => i + 1)}>
+          {next && (
+            <span style={{ fontSize: 'clamp(13px,3.5vw,16px)', color: '#cbd5e1', lineHeight: 1.35, fontWeight: 600 }}>
+              {next.text}
+            </span>
+          )}
+        </div>
+
+        {/* Arrow buttons */}
+        {canUp && (
+          <button
+            onClick={() => setIdx((i) => i - 1)}
+            style={{ position: 'absolute', top: 6, right: 10, background: 'none', border: 'none', color: '#64748b', fontSize: 18, cursor: 'pointer', padding: 4, lineHeight: 1 }}
+            aria-label="Vorherige"
+          >▲</button>
+        )}
+        {canDown && (
+          <button
+            onClick={() => setIdx((i) => i + 1)}
+            style={{ position: 'absolute', bottom: 6, right: 10, background: 'none', border: 'none', color: '#64748b', fontSize: 18, cursor: 'pointer', padding: 4, lineHeight: 1 }}
+            aria-label="Nächste"
+          >▼</button>
+        )}
       </div>
 
       {/* Counter */}
       <div style={{ textAlign: 'center', color: '#475569', fontSize: 12, fontWeight: 700 }}>
-        {remaining.length} von {statements.length} Aussagen verfügbar
+        {idx + 1} / {remaining.length}
       </div>
 
-      {/* Confirm button */}
+      {/* Confirm */}
       <button
-        disabled={!canAnswer || !selectedId}
-        onClick={() => selectedId && onConfirm(selectedId)}
+        disabled={!canAnswer}
+        onClick={() => canAnswer && onConfirm(current.id)}
         style={{
           padding: '14px',
           borderRadius: 16,
-          background: selectedStatement
+          background: canAnswer
             ? 'linear-gradient(135deg, rgba(148,45,89,0.85), rgba(177,10,108,0.75))'
             : 'rgba(148,163,184,0.07)',
-          border: `2px solid ${selectedStatement ? 'rgba(148,45,89,0.6)' : 'rgba(148,163,184,0.15)'}`,
-          color: selectedStatement ? '#fff' : '#475569',
+          border: `2px solid ${canAnswer ? 'rgba(148,45,89,0.6)' : 'rgba(148,163,184,0.15)'}`,
+          color: canAnswer ? '#fff' : '#475569',
           fontWeight: 800,
           fontSize: 16,
-          cursor: (canAnswer && selectedId) ? 'pointer' : 'not-allowed',
+          cursor: canAnswer ? 'pointer' : 'not-allowed',
           transition: 'all 0.2s',
-          boxShadow: selectedStatement ? '0 4px 0 rgba(0,0,0,0.35)' : 'none',
+          boxShadow: canAnswer ? '0 4px 0 rgba(0,0,0,0.35)' : 'none',
         }}
       >
-        {selectedStatement
-          ? `"${selectedStatement.text}" wählen`
-          : 'Aussage antippen …'}
+        Wählen
       </button>
     </div>
   );
@@ -2198,17 +2239,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     }
     const payload = question.bunteTuete as BunteTuetePayload;
     if (payload.kind === 'order') {
-      return (
-        <div style={{ marginTop: 12 }}>
-          <ol style={{ margin: '6px 0 0', paddingInlineStart: 18, color: '#cbd5e1' }}>
-            {payload.items.map((item) => (
-              <li key={item.id} style={{ marginBottom: 4 }}>
-                {item.label}
-              </li>
-            ))}
-          </ol>
-        </div>
-      );
+      return null; // items already shown in DnD drag list
     }
     if (payload.kind === 'oneOfEight') {
       return null; // statements already shown as buttons in renderBunteInput

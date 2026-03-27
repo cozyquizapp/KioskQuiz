@@ -227,6 +227,7 @@ function ModeratorPage(): React.ReactElement {
   } | null>(null);
   const reconnectPromptedRef = React.useRef(false);
   const singleActionMode = featureFlags.isCozyMode;
+  const [mapSplitSent, setMapSplitSent] = useState(false);
 
   const controlSocketRef = React.useRef<ReturnType<typeof connectControlSocket> | null>(null);
   const emitHost = (
@@ -1050,6 +1051,14 @@ function ModeratorPage(): React.ReactElement {
     });
   }
 
+  function handleMapSplit() {
+    const ctrl = controlSocketRef.current;
+    if (ctrl?.connected && roomCode) {
+      ctrl.emit('map:showSplit', roomCode);
+    }
+    setMapSplitSent(true);
+  }
+
   function handleStepBack() {
     sendHostCommand('host:back', async () => {
       await loadCurrentQuestion();
@@ -1390,6 +1399,8 @@ function ModeratorPage(): React.ReactElement {
         return { hotkey: '3', label: 'AUFDECKEN', detail: 'Auflösung zeigen', context: 'Antworten geprüft' };
       case 'Q_REVEAL':
         if (nextStage === 'BLITZ') return { hotkey: '1', label: 'WEITER', detail: 'Zu Fotosprint wechseln', context: 'Segment 1 beendet' };
+        if ((question as any)?.bunteTuete?.kind === 'map' && !mapSplitSent)
+          return { hotkey: '1', label: 'AUSWERTUNG', detail: 'Kartenauswertung einblenden', context: 'Pins aufgedeckt' };
         return { hotkey: '1', label: 'WEITER', detail: 'Zur nächsten Frage', context: 'Reveal beendet' };
       case 'SCOREBOARD_PRE_BLITZ':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint starten', context: 'Standings vor Fotosprint' };
@@ -1420,7 +1431,9 @@ function ModeratorPage(): React.ReactElement {
     nextStage,
     submissionStatus.submittedCount,
     submissionStatus.total,
-    blitz?.phase
+    blitz?.phase,
+    mapSplitSent,
+    question
   ]);
 
   const catKey = (question as any)?.category as keyof typeof categoryColors;
@@ -2583,6 +2596,7 @@ function ModeratorPage(): React.ReactElement {
       })
       .sort((a, b) => a.teamName.localeCompare(b.teamName));
 
+    const isMapReveal = normalizedGameState === 'Q_REVEAL' && (question as any)?.bunteTuete?.kind === 'map';
     const nextAction = (() => {
       const label = nextActionHint?.label ?? 'WEITER';
       if (label === 'SPERREN') {
@@ -2590,6 +2604,9 @@ function ModeratorPage(): React.ReactElement {
       }
       if (label === 'AUFDECKEN') {
         return { onClick: handleReveal, busy: actionState.reveal, hotkey: '[3]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
+      }
+      if (isMapReveal && !mapSplitSent) {
+        return { onClick: handleMapSplit, busy: false, hotkey: '[SPACE]', style: 'bg-[#0e4d91] ring-[#3b82f6]/40' };
       }
       return { onClick: handleNextQuestion, busy: actionState.next, hotkey: '[SPACE]', style: 'bg-[#b10a6c] ring-[#f05fb2]/40' };
     })();
@@ -3240,20 +3257,6 @@ const renderCozyStagePanel = () => {
         )}
         {reviewedCorrect > 0 && (
           <p className="text-center text-sm text-[#94a3b8]">{reviewedCorrect}/{answerRowsMob.length} Teams richtig</p>
-        )}
-        {scoreboard.length > 0 && (
-          <div className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] overflow-hidden">
-            <p className="px-3 pt-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#f05fb2]">Aktueller Stand</p>
-            <div className="px-3 pb-2 mt-1 space-y-1">
-              {scoreboard.slice(0, 5).map((team, i) => (
-                <div key={team.id} className="flex items-center justify-between text-sm">
-                  <span className="text-[#94a3b8] font-bold w-5">{i + 1}.</span>
-                  <span className="flex-1 font-bold text-[#ffd1e8] truncate">{team.name}</span>
-                  <span className="font-black text-[#ffe4f2]">{team.score ?? 0}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
       </div>
     );

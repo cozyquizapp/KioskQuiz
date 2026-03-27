@@ -477,6 +477,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   // Map reveal: step 0 = nothing, 1..N = team pins (worst→best), N+1 = target shown
   const [mapRevealStep, setMapRevealStep] = useState(0);
   const mapRevealTimerRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+  const [mapSplitUnlocked, setMapSplitUnlocked] = useState(false);
 
   const [lobbyQrLocked, setLobbyQrLocked] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -498,7 +499,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   // Map reveal: on Q_REVEAL, advance step every 2s (worst→best→target)
   useEffect(() => {
     if (mapRevealTimerRef.current) window.clearInterval(mapRevealTimerRef.current);
-    if (gameState !== 'Q_REVEAL') { setMapRevealStep(0); return; }
+    if (gameState !== 'Q_REVEAL') { setMapRevealStep(0); setMapSplitUnlocked(false); return; }
     setMapRevealStep(1); // show first (worst) pin immediately
     mapRevealTimerRef.current = window.setInterval(() => {
       setMapRevealStep(s => s + 1);
@@ -1273,6 +1274,10 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
 
     socket.on('teamsReady', ({ teams: tTeams }: { teams: Team[] }) => {
       setTeams(tTeams ?? []);
+    });
+
+    socket.on('map:showSplit', () => {
+      setMapSplitUnlocked(true);
     });
 
     return () => {
@@ -2265,7 +2270,7 @@ useEffect(() => {
         </div>
       );
     }
-    if (bunte?.items?.length && bunte.kind !== 'top5') {
+    if (bunte?.items?.length && bunte.kind === 'order') {
       return (
         <div className="beamer-grid">
           {bunte.items.map((item: any) => (
@@ -2454,8 +2459,8 @@ useEffect(() => {
         window.clearInterval(mapRevealTimerRef.current);
         mapRevealTimerRef.current = null;
       }
-      // Phase 1: full-width map while revealing pins; Phase 2: split layout after all shown
-      const mapRevealDone = showTarget;
+      // Phase 1: full-width map while revealing pins; Phase 2: split layout after moderator presses Weiter
+      const mapRevealDone = showTarget && mapSplitUnlocked;
       // Ranking panel shows all pins sorted best→worst (closest first = top)
       const sortedPins = [...revealedPins].sort((a, b) => (a.distKm ?? Infinity) - (b.distKm ?? Infinity));
       const medals = ['🥇', '🥈', '🥉'];

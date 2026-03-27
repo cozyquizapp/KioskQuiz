@@ -2305,19 +2305,20 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                     : {}),
                   display: 'flex',
                   alignItems: 'center',
+                  gap: 0,
                   background:
                     answer === String(idx)
                       ? `linear-gradient(135deg, ${cozyChoicePalette[idx]?.base ?? `${accent}24`}, rgba(240,95,178,0.22))`
                       : cozyChoicePalette[idx]?.base ?? 'var(--ui-card-bg)',
                   boxShadow: answer === String(idx) ? `0 10px 24px ${accent}3d, 0 0 0 1px rgba(240,95,178,0.36)` : 'none',
                   overflow: 'hidden',
-                  position: 'relative',
-                  paddingLeft: 'calc(44px + 14px)'
+                  padding: 0,
                 }}
                 onClick={() => setAnswer(String(idx))}
                 disabled={!canAnswer}
               >
-                <span style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minWidth: 0 }}>{displayOpt}</span>
+                <span className="team-choice-letter" aria-hidden="true">{['A','B','C','D','E'][idx]}</span>
+                <span style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minWidth: 0, padding: 'clamp(20px,5vw,24px) clamp(16px,4.5vw,20px)' }}>{displayOpt}</span>
               </button>
               );
             })}

@@ -3061,11 +3061,21 @@ const renderCozyStagePanel = () => {
         </p>
         {joinScreenTeams.length > 0 && (
           <div className="rounded-2xl bg-[#0b2343]/70 border border-[#f05fb222] p-3">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1.5">
               {joinScreenTeams.map((team) => (
-                <span key={team.id || team.name} className="rounded-full px-3 py-1 text-sm font-bold text-[#ffd1e8]" style={{ background: 'rgba(240,95,178,0.12)', border: '1px solid rgba(240,95,178,0.25)' }}>
-                  {team.name || 'Team'}{team.isReady && <span className="ml-1 text-[10px] text-[#4ade80]">✓</span>}
-                </span>
+                <div key={team.id || team.name} className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl" style={{ background: 'rgba(240,95,178,0.08)', border: '1px solid rgba(240,95,178,0.2)' }}>
+                  <span className="text-sm font-bold text-[#ffd1e8]">
+                    {team.name || 'Team'}{team.isReady && <span className="ml-1 text-[10px] text-[#4ade80]">✓</span>}
+                  </span>
+                  {team.id && (
+                    <button
+                      className="text-[10px] font-black text-[#f87171] touch-manipulation"
+                      style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, padding: '2px 7px', minHeight: 28 }}
+                      onClick={() => doAction(async () => { await kickTeam(roomCode, team.id!); }, 'Team entfernt')}
+                      title="Team entfernen"
+                    >✕</button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -3078,6 +3088,11 @@ const renderCozyStagePanel = () => {
     );
 
     // Q_ACTIVE content
+    const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
     const liveAnswerRows = Object.entries(socketAnswers || {}).map(([teamId, entry]) => {
       const value = (entry as any)?.value;
       const teamName = teamLookup[teamId]?.name || socketTeamStatus?.find((t) => t.id === teamId)?.name || teamId;
@@ -3090,6 +3105,14 @@ const renderCozyStagePanel = () => {
         const optText = q.options?.[idx];
         displayValue = optText ? `${letter}: ${optText}` : letter;
         if (typeof q.correctIndex === 'number') autoCorrect = idx === q.correctIndex;
+      } else if (q?.bunteTuete?.kind === 'map' && value && typeof value === 'object' && typeof value.lat === 'number') {
+        const target = q.bunteTuete.target as { lat: number; lng: number } | undefined;
+        if (target) {
+          const km = haversineKm(value.lat, value.lng, target.lat, target.lng);
+          displayValue = `${Math.round(km).toLocaleString('de')} km`;
+        } else {
+          displayValue = `${value.lat.toFixed(2)}, ${value.lng.toFixed(2)}`;
+        }
       }
       return { teamId, teamName, displayValue, autoCorrect };
     }).sort((a, b) => a.teamName.localeCompare(b.teamName));

@@ -2337,7 +2337,7 @@ useEffect(() => {
               </span>
             </div>
           )}
-          <div className="beamer-grid">
+          <div className="beamer-grid beamer-grid-4col">
             {bunte.statements.map((statement: any) => {
               const isUsed = usedIds.has(String(statement.id).toLowerCase());
               const isFalse = falseId && String(statement.id).toLowerCase() === falseId;
@@ -3672,7 +3672,19 @@ useEffect(() => {
             );
           }
           if (question.type === 'MU_CHO') {
-            return renderMultipleChoiceList(true);
+            const correctIdx = muChoLockedIndex ?? mcCorrectIndex;
+            const correctLetter = typeof correctIdx === 'number' ? String.fromCharCode(65 + correctIdx) : null;
+            const correctText = typeof correctIdx === 'number' ? mcOptions?.[correctIdx] : null;
+            return (
+              <>
+                {correctLetter && correctText && (
+                  <div className="cozyMCSolutionLabel">
+                    {language === 'en' ? 'Solution' : 'Lösung'}: {correctLetter} – {correctText}
+                  </div>
+                )}
+                {renderMultipleChoiceList(true)}
+              </>
+            );
           }
           if ((question as any)?.bunteTuete?.kind === 'top5') {
             const top5 = Array.isArray((question as any).bunteTuete.correctOrder) ? (question as any).bunteTuete.correctOrder : [];
@@ -4623,22 +4635,6 @@ useEffect(() => {
         onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}
       >
-        <span style={{ fontSize: 14 }}>{volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={volume}
-          onChange={e => {
-            const v = Number(e.target.value);
-            setVolumeState(v);
-            setVolume(v);
-            resumeAudio();
-          }}
-          style={{ width: 72, accentColor: '#942d59', cursor: 'pointer' }}
-          title="Lautstärke"
-        />
         <button
           onClick={toggleFullscreen}
           title={isFullscreen ? 'Vollbild beenden' : 'Vollbild'}

@@ -257,8 +257,33 @@ function fieldCounts() {
   return c;
 }
 function totalCells()  { return S.gridSize*S.gridSize; }
+
+// Largest connected territory per team (BFS)
+function connectedScores() {
+  const scores = Array(S.teamCount).fill(0);
+  const visited = Array.from({length:S.gridSize}, ()=>Array(S.gridSize).fill(false));
+  for(let r=0;r<S.gridSize;r++) {
+    for(let c=0;c<S.gridSize;c++) {
+      if(visited[r][c]||S.grid[r][c]===null) continue;
+      const team=S.grid[r][c];
+      // BFS
+      const queue=[[r,c]]; visited[r][c]=true; let size=0;
+      while(queue.length) {
+        const [cr,cc]=queue.shift(); size++;
+        [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]].forEach(([nr,nc])=>{
+          if(nr>=0&&nr<S.gridSize&&nc>=0&&nc<S.gridSize&&!visited[nr][nc]&&S.grid[nr][nc]===team) {
+            visited[nr][nc]=true; queue.push([nr,nc]);
+          }
+        });
+      }
+      if(size>scores[team]) scores[team]=size;
+    }
+  }
+  return scores;
+}
+
 function lastPlaceIdx() {
-  const c=fieldCounts(); let min=Infinity,idx=0;
+  const c=connectedScores(); let min=Infinity,idx=0;
   c.forEach((v,i)=>{ if(v<min){min=v;idx=i;} }); return idx;
 }
 function addLog(e) { S.log.unshift(e); if(S.log.length>60) S.log.pop(); }
@@ -561,9 +586,13 @@ function renderCenter() {
 
   if(S.flowState==='done') {
     const banner=el('div','phase-banner');
+    const conn=connectedScores();
     const counts=fieldCounts();
-    const winner=counts.indexOf(Math.max(...counts));
-    banner.innerHTML='<h2>Spiel vorbei!</h2><p>'+NAMES.slice(0,S.teamCount).map((n,i)=>n+': '+counts[i]+' Felder').join(' · ')+'</p><p style="margin-top:8px;color:#4ade80;font-weight:800">→ '+NAMES[winner]+' führt</p>';
+    const winner=conn.indexOf(Math.max(...conn));
+    const scoreStr=NAMES.slice(0,S.teamCount).map((n,i)=>
+      '<span style="color:'+COLORS[i]+'">'+n+'</span>: '+conn[i]+' verbunden ('+counts[i]+' total)'
+    ).join(' · ');
+    banner.innerHTML='<h2>Spiel vorbei!</h2><p style="margin-bottom:6px">Größtes zusammenhängendes Gebiet:</p><p style="font-size:12px">'+scoreStr+'</p><p style="margin-top:8px;color:#4ade80;font-weight:800">🏆 '+NAMES[winner]+' gewinnt!</p>';
     const btn=el('button','btn danger');
     btn.textContent='↺ Neu starten';
     btn.onclick=resetGame;
@@ -747,19 +776,23 @@ function renderTeams() {
   leftEl.innerHTML='<div class="panel-lbl">Teams</div>';
   rightEl.innerHTML='<div class="panel-lbl">&nbsp;</div>';
 
+  const conn=connectedScores();
+  const maxConn=Math.max(...conn,1);
+
   for(let i=0;i<S.teamCount;i++) {
     const acting=S.flowState==='placing'&&S.actingTeam===i;
     const card=el('div','team-card'+(acting?' acting':''));
     card.style.borderColor=acting?COLORS[i]:'rgba(255,255,255,0.07)';
     const pct=total>0?Math.round(counts[i]/total*100):0;
+    const connPct=Math.round(conn[i]/maxConn*100);
     const jb=S.teams[i].jokers>0?'<span class="badge badge-j">🃏'+S.teams[i].jokers+'</span> ':'';
     const sb=S.phase===2&&S.teams[i].stealsInP2>0?'<span class="badge badge-s">⚡'+S.teams[i].stealsInP2+'/2</span> ':'';
     const last=i===lastIdx&&S.teamCount>1?'<span style="font-size:10px;color:#64748b"> letzter</span>':'';
     card.innerHTML=
       '<div class="tc-row"><div class="tc-dot" style="background:'+COLORS[i]+'"></div>'+
       '<div class="tc-name" style="color:'+COLORS[i]+'">'+NAMES[i]+last+'</div>'+jb+sb+'</div>'+
-      '<div class="tc-stat">'+counts[i]+' Felder ('+pct+'%)</div>'+
-      '<div class="fbar"><div class="fbar-fill" style="width:'+pct+'%;background:'+COLORS[i]+'"></div></div>';
+      '<div class="tc-stat">'+conn[i]+' verbunden · '+counts[i]+' total ('+pct+'%)</div>'+
+      '<div class="fbar"><div class="fbar-fill" style="width:'+connPct+'%;background:'+COLORS[i]+'"></div></div>';
     (i%2===0?leftEl:rightEl).appendChild(card);
   }
 }

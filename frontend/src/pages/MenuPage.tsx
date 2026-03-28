@@ -19,6 +19,7 @@ const revierLiveLinks: LinkItem[] = [
   { path: '/quarterquiz-moderator', label: 'Moderator', note: 'Fragen steuern, Gewinner bestätigen' },
   { path: '/quarterquiz-beamer', label: 'Beamer', note: 'Grid live anzeigen' },
   { path: '/quarterquiz-team', label: 'Team', note: 'Antworten & Felder wählen' },
+  { path: '/qq-builder', label: 'QQ Builder', note: 'Fragensätze erstellen & verwalten' },
 ];
 
 const revierDevLinks: LinkItem[] = [

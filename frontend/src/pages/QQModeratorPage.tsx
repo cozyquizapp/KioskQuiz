@@ -11,11 +11,22 @@ function getRoomCode(): string {
   return params.get('room') || localStorage.getItem('qq-moderatorRoom') || 'qq-test';
 }
 
+interface DraftSummary {
+  id: string;
+  title: string;
+  date: string | null;
+  updatedAt: number;
+  questionCount: number;
+}
+
 export default function QQModeratorPage() {
   const [roomCode]  = useState(getRoomCode);
   const [language, setLanguage] = useState<QQLanguage>('both');
+  const [phases, setPhases] = useState<3 | 4>(3);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
+  const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
+  const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
   const { state, connected, emit } = useQQSocket(roomCode);
 
   // Auto-join
@@ -35,10 +46,33 @@ export default function QQModeratorPage() {
     if (state) setTimerInput(state.timerDurationSec);
   }, [state?.timerDurationSec]);
 
+  // Load available drafts once
+  useEffect(() => {
+    fetch('/api/studio/cozy60')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.drafts)) {
+          setDrafts(data.drafts.sort((a: DraftSummary, b: DraftSummary) => b.updatedAt - a.updatedAt));
+        }
+      })
+      .catch(() => {}); // silent fail — default questions still available
+  }, []);
+
   async function startGame() {
-    const res = await fetch(`/api/qq/questions/default`);
-    const questions: QQQuestion[] = await res.json();
-    await emit('qq:startGame', { roomCode, questions, language });
+    let questions: QQQuestion[];
+    if (selectedDraftId === '__default__') {
+      const res = await fetch('/api/qq/questions/default');
+      questions = await res.json();
+    } else {
+      const res = await fetch(`/api/qq/questions/from-draft/${encodeURIComponent(selectedDraftId)}?phases=${phases}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        alert(`Fehler: ${err.error}`);
+        return;
+      }
+      questions = await res.json();
+    }
+    await emit('qq:startGame', { roomCode, questions, language, phases });
   }
 
   function applyTimer() {
@@ -195,9 +229,9 @@ export default function QQModeratorPage() {
 
             {/* Status + timer */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Pill label={`Phase ${s.gamePhaseIndex}/3`} color="#3B82F6" />
+              <Pill label={`Phase ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
               <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
-              <Pill label={`Global ${s.questionIndex + 1}/15`} color="#475569" />
+              <Pill label={`Global ${s.questionIndex + 1}/${s.totalPhases * 5}`} color="#475569" />
               {s.pendingFor && (
                 <Pill label={`⏳ ${teamList.find(t => t.id === s.pendingFor)?.name ?? s.pendingFor}`} color="#F59E0B" />
               )}
@@ -211,13 +245,33 @@ export default function QQModeratorPage() {
 
                 {s.phase === 'LOBBY' && (
                   <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Runden:</span>
+                      {([3, 4] as const).map(n => (
+                        <button key={n} onClick={() => setPhases(n)} style={{
+                          padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                          fontWeight: 800, fontSize: 12,
+                          background: phases === n ? '#3B82F6' : 'rgba(255,255,255,0.05)',
+                          color: phases === n ? '#fff' : '#64748b',
+                        }}>{n}</button>
+                      ))}
+                    </div>
                     <select value={language} onChange={e => setLanguage(e.target.value as QQLanguage)} style={selectStyle}>
                       <option value="both">DE + EN</option>
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
                     </select>
-                    <select style={{ ...selectStyle, color: '#94a3b8' }} disabled title="Fragensätze folgen bald">
-                      <option>📋 Standard-Testfragen (15)</option>
+                    <select
+                      value={selectedDraftId}
+                      onChange={e => setSelectedDraftId(e.target.value)}
+                      style={selectStyle}
+                    >
+                      <option value="__default__">📋 Standard-Testfragen</option>
+                      {drafts.map(d => (
+                        <option key={d.id} value={d.id}>
+                          📄 {d.title}{d.date ? ` (${d.date})` : ''}
+                        </option>
+                      ))}
                     </select>
                     <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
                   </>

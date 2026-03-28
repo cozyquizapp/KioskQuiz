@@ -81,7 +81,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:startGame', (payload: QQStartGamePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartGame(room, payload.questions, payload.language);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

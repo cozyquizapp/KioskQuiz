@@ -7602,6 +7602,199 @@ app.get('/api/qq/questions/default', (_req, res) => {
   }
 });
 
+// Convert a CozyQuiz draft (20 questions) → 15 QQ questions
+// Mapping: CozyQuiz slot indices → QQ category / phase
+const QQ_DRAFT_MAPPING: Array<[number, string, number, number]> = [
+  // [draftSlotIndex, qqCategory, phaseIndex, questionIndexInPhase]
+  // ── Phase 1 ──
+  [1,  'SCHAETZCHEN',   1, 0],
+  [0,  'MUCHO',         1, 1],
+  [4,  'BUNTE_TUETE',   1, 2],
+  [2,  'ZEHN_VON_ZEHN', 1, 3],
+  [3,  'CHEESE',        1, 4],
+  // ── Phase 2 ──
+  [9,  'SCHAETZCHEN',   2, 0],
+  [8,  'MUCHO',         2, 1],
+  [5,  'BUNTE_TUETE',   2, 2],
+  [10, 'ZEHN_VON_ZEHN', 2, 3],
+  [7,  'CHEESE',        2, 4],
+  // ── Phase 3 ──
+  [14, 'SCHAETZCHEN',   3, 0],
+  [13, 'MUCHO',         3, 1],
+  [6,  'BUNTE_TUETE',   3, 2],
+  [15, 'ZEHN_VON_ZEHN', 3, 3], // slot 15 = BUNTE_TUETE in Cozy, repurposed
+  [11, 'CHEESE',        3, 4],
+];
+
+const QQ_DRAFT_MAPPING_4: Array<[number, string, number, number]> = [
+  // Phase 1
+  [1,  'SCHAETZCHEN',   1, 0],
+  [0,  'MUCHO',         1, 1],
+  [4,  'BUNTE_TUETE',   1, 2],
+  [2,  'ZEHN_VON_ZEHN', 1, 3],
+  [3,  'CHEESE',        1, 4],
+  // Phase 2
+  [9,  'SCHAETZCHEN',   2, 0],
+  [8,  'MUCHO',         2, 1],
+  [5,  'BUNTE_TUETE',   2, 2],
+  [10, 'ZEHN_VON_ZEHN', 2, 3],
+  [7,  'CHEESE',        2, 4],
+  // Phase 3
+  [14, 'SCHAETZCHEN',   3, 0],
+  [13, 'MUCHO',         3, 1],
+  [6,  'BUNTE_TUETE',   3, 2],
+  [15, 'ZEHN_VON_ZEHN', 3, 3],
+  [11, 'CHEESE',        3, 4],
+  // Phase 4
+  [18, 'SCHAETZCHEN',   4, 0],
+  [17, 'MUCHO',         4, 1],
+  [19, 'BUNTE_TUETE',   4, 2],
+  [12, 'ZEHN_VON_ZEHN', 4, 3],
+  [16, 'CHEESE',        4, 4],
+];
+
+function qqExtractAnswer(q: AnyQuestion): string {
+  if (q.mechanic === 'multipleChoice') {
+    const mc = q as MultipleChoiceQuestion;
+    return mc.options?.[mc.correctIndex] ?? '?';
+  }
+  if (q.mechanic === 'estimate') {
+    const eq = q as EstimateQuestion;
+    return `${eq.targetValue}${eq.unit ? ' ' + eq.unit : ''}`;
+  }
+  if (q.mechanic === 'trueFalse') {
+    return (q as TrueFalseQuestion).isTrue ? 'Stimmt' : 'Stimmt nicht';
+  }
+  if (q.mechanic === 'imageQuestion') {
+    return (q as ImageQuestion).answer || '?';
+  }
+  if (q.mechanic === 'betting') {
+    const bq = q as BettingQuestion;
+    return bq.options?.[bq.correctIndex] ?? '?';
+  }
+  // BunteTüte / custom — extract best available answer text
+  const bt = (q as any).bunteTuete;
+  if (bt) {
+    if (bt.kind === 'top5' && Array.isArray(bt.correctOrder))
+      return bt.correctOrder.join(', ');
+    if (bt.kind === 'oneOfEight' && Array.isArray(bt.statements)) {
+      const wrong = bt.statements.find((s: any) => s.isFalse);
+      return wrong ? `Falsch: ${wrong.text}` : '?';
+    }
+    if (bt.kind === 'order' && Array.isArray(bt.items))
+      return bt.items.map((i: any) => i.label ?? i).join(' → ');
+    if (bt.kind === 'precision' && Array.isArray(bt.ladder) && bt.ladder[0])
+      return bt.ladder[0].acceptedAnswers?.[0] ?? bt.ladder[0].label ?? '?';
+  }
+  return '?';
+}
+
+function qqExtractAnswerEn(q: AnyQuestion): string | undefined {
+  if (q.mechanic === 'multipleChoice') {
+    const mc = q as MultipleChoiceQuestion;
+    return mc.optionsEn?.[mc.correctIndex];
+  }
+  if (q.mechanic === 'imageQuestion') {
+    return (q as ImageQuestion).answerEn;
+  }
+  return undefined;
+}
+
+app.get('/api/qq/questions/from-draft/:draftId', async (req, res) => {
+  try {
+    const draftId = req.params.draftId;
+    let draft: CozyQuizDraft | null = null;
+
+    if (await ensureDraftDbConnection()) {
+      draft = await getCozyDraftFromDB(draftId);
+    } else {
+      draft = cozyDrafts.find(d => d.id === draftId) ?? null;
+    }
+    if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
+
+    const qs = draft.questions;
+    const phases = req.query.phases === '4' ? 4 : 3;
+    const mapping = phases === 4 ? QQ_DRAFT_MAPPING_4 : QQ_DRAFT_MAPPING;
+    const minSlots = phases === 4 ? 20 : 16;
+    if (!Array.isArray(qs) || qs.length < minSlots) {
+      return res.status(400).json({ error: `Draft hat zu wenige Fragen (${qs?.length ?? 0}, benötigt ${minSlots})` });
+    }
+
+    const result = mapping.map(([slotIdx, category, phaseIndex, questionIndexInPhase]) => {
+      const q = qs[slotIdx];
+      return {
+        id: `${draftId}-qq-p${phaseIndex}-q${questionIndexInPhase}`,
+        category,
+        phaseIndex,
+        questionIndexInPhase,
+        text:     q?.question || `Frage ${slotIdx + 1}`,
+        textEn:   q?.questionEn ?? undefined,
+        answer:   q ? qqExtractAnswer(q) : '?',
+        answerEn: q ? qqExtractAnswerEn(q) : undefined,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[QQ] Draft-Konvertierung fehlgeschlagen:', err);
+    res.status(500).json({ error: 'Konvertierungsfehler' });
+  }
+});
+
+// ── Quarter Quiz Builder — Draft CRUD ──────────────────────────────────────────
+let qqDrafts: Array<{
+  id: string; title: string; phases: 3 | 4; language: string;
+  questions: any[]; createdAt: number; updatedAt: number;
+}> = [];
+
+app.get('/api/qq/drafts', (_req, res) => {
+  res.json([...qqDrafts].sort((a, b) => b.updatedAt - a.updatedAt));
+});
+
+app.post('/api/qq/drafts', (req, res) => {
+  const draft = { ...req.body, id: req.body.id || `qq-draft-${Date.now().toString(36)}`, createdAt: Date.now(), updatedAt: Date.now() };
+  qqDrafts.unshift(draft);
+  res.json(draft);
+});
+
+app.get('/api/qq/drafts/:id', (req, res) => {
+  const draft = qqDrafts.find(d => d.id === req.params.id);
+  if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
+  res.json(draft);
+});
+
+app.put('/api/qq/drafts/:id', (req, res) => {
+  const idx = qqDrafts.findIndex(d => d.id === req.params.id);
+  if (idx === -1) {
+    // Create if not found
+    const draft = { ...req.body, updatedAt: Date.now() };
+    qqDrafts.unshift(draft);
+    return res.json(draft);
+  }
+  qqDrafts[idx] = { ...qqDrafts[idx], ...req.body, updatedAt: Date.now() };
+  res.json(qqDrafts[idx]);
+});
+
+app.delete('/api/qq/drafts/:id', (req, res) => {
+  qqDrafts = qqDrafts.filter(d => d.id !== req.params.id);
+  res.json({ ok: true });
+});
+
+// Background removal via Cloudinary e_background_removal
+app.post('/api/qq/remove-bg', (req, res) => {
+  const { imageUrl } = req.body as { imageUrl?: string };
+  if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
+  try {
+    // Apply Cloudinary bg removal transformation (requires AI add-on)
+    const bgRemovedUrl = imageUrl.includes('/upload/')
+      ? imageUrl.replace('/upload/', '/upload/e_background_removal/')
+      : imageUrl;
+    res.json({ bgRemovedUrl });
+  } catch {
+    res.status(500).json({ error: 'Fehler bei Hintergrundentfernung' });
+  }
+});
+
 // ── Quarter Quiz handlers ─────────────────────────────────────────────────────
 registerQQHandlers(io);
 

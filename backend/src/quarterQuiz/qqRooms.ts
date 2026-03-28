@@ -51,6 +51,7 @@ export interface QQRoomState {
   buzzQueue: QQBuzzEntry[];
   // Settings
   avatarsEnabled: boolean;
+  totalPhases: 3 | 4;
   lastActivityAt: number;
 }
 
@@ -90,6 +91,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       answers: [],
       buzzQueue: [],
       avatarsEnabled: true,
+      totalPhases: 3,
       lastActivityAt: Date.now(),
     };
     qqRooms.set(roomCode, room);
@@ -164,20 +166,22 @@ function emptyPhaseStats(): QQTeamPhaseStats {
 export function qqStartGame(
   room: QQRoomState,
   questions: QQQuestion[],
-  language: QQLanguage
+  language: QQLanguage,
+  phases: 3 | 4 = 3
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 2) {
     throw new QQError('NOT_ENOUGH_TEAMS', 'Mindestens 2 Teams erforderlich.');
   }
-  if (questions.length !== 15) {
-    throw new QQError('WRONG_QUESTION_COUNT', `15 Fragen erwartet, ${questions.length} erhalten.`);
+  if (questions.length !== phases * 5) {
+    throw new QQError('WRONG_QUESTION_COUNT', `${phases * 5} Fragen erwartet, ${questions.length} erhalten.`);
   }
 
   const gs = qqGridSize(teamCount);
   room.gridSize = gs;
   room.grid     = buildEmptyGrid(gs);
   room.questions = questions;
+  room.totalPhases = phases;
   room.language  = language;
   room.questionIndex  = 0;
   room.gamePhaseIndex = 1;
@@ -499,10 +503,11 @@ export function qqSwapCells(
 export function qqTriggerComeback(room: QQRoomState): void {
   const territories = computeTerritories(room.grid, room.gridSize);
   const lastTeamId  = findLastPlace(territories, room.joinOrder);
+  const finalPhase  = room.totalPhases as QQGamePhaseIndex;
 
   if (!lastTeamId) {
     // No cells placed yet, skip comeback
-    qqBeginPhase(room, 3);
+    qqBeginPhase(room, finalPhase);
     return;
   }
 
@@ -511,7 +516,7 @@ export function qqTriggerComeback(room: QQRoomState): void {
   const allResults  = room.joinOrder.map(id => territories[id]?.largest ?? 0);
   const maxLargest  = Math.max(...allResults);
   if (lastResult && lastResult.largest >= maxLargest) {
-    qqBeginPhase(room, 3);
+    qqBeginPhase(room, finalPhase);
     return;
   }
 
@@ -583,12 +588,14 @@ export function qqNextQuestion(room: QQRoomState): void {
 
   // End of phase?
   if (nextIndex >= room.gamePhaseIndex * QQ_QUESTIONS_PER_PHASE) {
-    if (room.gamePhaseIndex === 1) {
-      qqBeginPhase(room, 2);
-    } else if (room.gamePhaseIndex === 2) {
+    const next = (room.gamePhaseIndex + 1) as QQGamePhaseIndex;
+    if (room.gamePhaseIndex >= room.totalPhases) {
+      room.phase = 'GAME_OVER';
+    } else if (next === room.totalPhases) {
+      // Before final phase → comeback
       qqTriggerComeback(room);
     } else {
-      room.phase = 'GAME_OVER';
+      qqBeginPhase(room, next);
     }
     return;
   }
@@ -632,11 +639,11 @@ function updateTerritories(room: QQRoomState): void {
 
 // ── Finish placement & advance ────────────────────────────────────────────────
 function finishPlacement(room: QQRoomState): void {
-  // If this was a comeback action, begin Phase 3 now
+  // If this was a comeback action, begin final phase now
   if (room.pendingAction === 'COMEBACK' || room.phase === 'COMEBACK_CHOICE') {
     room.pendingFor    = null;
     room.pendingAction = null;
-    qqBeginPhase(room, 3);
+    qqBeginPhase(room, room.totalPhases as QQGamePhaseIndex);
     return;
   }
 
@@ -673,6 +680,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     answers:          room.answers,
     buzzQueue:        room.buzzQueue,
     avatarsEnabled:   room.avatarsEnabled,
+    totalPhases:      room.totalPhases,
   };
 }
 
@@ -699,6 +707,7 @@ export function qqResetRoom(room: QQRoomState): void {
     room.teams[id].totalCells     = 0;
     room.teams[id].largestConnected = 0;
   }
+  room.totalPhases = 3;
   room.lastActivityAt = Date.now();
 }
 

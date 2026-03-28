@@ -67,7 +67,7 @@ export type QQPhase =
   | 'COMEBACK_CHOICE'   // Last-place team picks comeback action before Phase 3
   | 'GAME_OVER';        // Final state, territory winner shown
 
-export type QQGamePhaseIndex = 1 | 2 | 3;
+export type QQGamePhaseIndex = 1 | 2 | 3 | 4;
 
 // ── Grid ──────────────────────────────────────────────────────────────────────
 export interface QQCell {
@@ -89,6 +89,7 @@ export interface QQQuestion {
   textEn?: string;
   answer: string;
   answerEn?: string;
+  image?: QQQuestionImage;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────
@@ -125,6 +126,29 @@ export interface QQBuzzEntry {
   buzzedAt: number;
 }
 
+// ── Image support ──────────────────────────────────────────────────────────────
+export type QQImageLayout    = 'none' | 'fullscreen' | 'window-left' | 'window-right' | 'cutout';
+export type QQImageAnimation = 'none' | 'float' | 'zoom-in' | 'reveal' | 'slide-in';
+
+export interface QQQuestionImage {
+  url: string;
+  publicId?: string;
+  layout: QQImageLayout;
+  animation: QQImageAnimation;
+  bgRemovedUrl?: string;
+}
+
+// ── QQ Draft (builder) ────────────────────────────────────────────────────────
+export interface QQDraft {
+  id: string;
+  title: string;
+  phases: 3 | 4;
+  language: QQLanguage;
+  questions: QQQuestion[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 // ── State broadcast (server → all clients) ────────────────────────────────────
 export interface QQStateUpdate {
   roomCode: string;
@@ -153,6 +177,7 @@ export interface QQStateUpdate {
   buzzQueue: QQBuzzEntry[];
   // Settings
   avatarsEnabled: boolean;
+  totalPhases: 3 | 4;
 }
 
 export type QQPendingAction =
@@ -167,7 +192,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }

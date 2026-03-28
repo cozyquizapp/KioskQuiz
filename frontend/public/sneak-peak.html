@@ -2,728 +2,440 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CozyQuiz — Sneak Peak</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Nunito', sans-serif; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0D0A06; font-family: 'Nunito', sans-serif; }
 
-  /* ── SLIDE CONTAINER ─────────────────────────────── */
-  .slides { width: 100%; height: 100%; position: relative; }
-  .slide {
-    position: absolute; inset: 0;
-    opacity: 0; transform: scale(1.04);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .slide.active {
-    opacity: 1; transform: scale(1);
-    pointer-events: all;
-  }
-  .slide.out {
-    opacity: 0; transform: scale(0.96);
-  }
+/* Grain texture */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.042;
+}
 
-  /* ── NAVIGATION ──────────────────────────────────── */
-  .nav {
-    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 16px; z-index: 999;
-  }
-  .nav-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: rgba(255,255,255,0.3); border: 2px solid rgba(255,255,255,0.5);
-    cursor: pointer; transition: all 0.3s;
-  }
-  .nav-dot.active { background: #fff; transform: scale(1.3); }
-  .nav-btn {
-    padding: 12px 28px; border-radius: 50px;
-    background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.4);
-    color: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 14px;
-    cursor: pointer; backdrop-filter: blur(8px); letter-spacing: 0.08em;
-    transition: all 0.2s;
-  }
-  .nav-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
-  .slide-counter {
-    color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
-  }
+/* Slides */
+.slides { width: 100%; height: 100%; position: relative; }
+.slide {
+  position: absolute; inset: 0; opacity: 0; transform: scale(1.03);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none; overflow: hidden;
+}
+.slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+.slide.out    { opacity: 0; transform: scale(0.97); }
 
-  /* ═══════════════════════════════════════════════════
-     SLIDE 1 — QUESTION INTRO / LOBBY
-     ═══════════════════════════════════════════════════ */
-  #s1 {
-    background: radial-gradient(ellipse at 30% 40%, #1a0533 0%, #0d0022 60%, #000 100%);
-  }
-  #s1 .bg-stars {
-    position: absolute; inset: 0;
-    background-image:
-      radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
-      radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
-      radial-gradient(2px 2px at 80% 55%, rgba(255,255,255,0.6) 0%, transparent 100%),
-      radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 10% 80%, rgba(255,255,255,0.6) 0%, transparent 100%),
-      radial-gradient(1px 1px at 90% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
-      radial-gradient(2px 2px at 55% 85%, rgba(255,255,255,0.7) 0%, transparent 100%),
-      radial-gradient(1px 1px at 75% 40%, rgba(255,255,255,0.4) 0%, transparent 100%);
-    animation: twinkle 4s ease-in-out infinite alternate;
-  }
-  @keyframes twinkle {
-    0% { opacity: 0.7; }
-    100% { opacity: 1; }
-  }
-  #s1 .content {
-    position: relative; z-index: 2;
-    height: 100%; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 32px;
-    padding: 60px;
-    text-align: center;
-  }
-  #s1 .category-badge {
-    background: linear-gradient(135deg, #7c3aed, #db2777);
-    border-radius: 50px; padding: 8px 24px;
-    font-size: 13px; font-weight: 900; letter-spacing: 0.2em;
-    color: #fff; text-transform: uppercase;
-    box-shadow: 0 0 30px rgba(124,58,237,0.6);
-    animation: badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;
-  }
-  @keyframes badgePop {
-    from { opacity: 0; transform: scale(0.5) translateY(20px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  #s1 .big-number {
-    font-size: clamp(100px, 20vw, 200px);
-    font-weight: 900;
-    background: linear-gradient(135deg, #a78bfa, #f472b6, #818cf8);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-    filter: drop-shadow(0 0 40px rgba(167,139,250,0.5));
-    animation: numberPulse 2s ease-in-out infinite;
-  }
-  @keyframes numberPulse {
-    0%, 100% { filter: drop-shadow(0 0 40px rgba(167,139,250,0.5)); }
-    50% { filter: drop-shadow(0 0 70px rgba(244,114,182,0.8)); }
-  }
-  #s1 .question-preview {
-    font-size: clamp(18px, 2.5vw, 32px); font-weight: 800;
-    color: rgba(255,255,255,0.9);
-    max-width: 700px; line-height: 1.3;
-    animation: slideUp 0.6s ease 0.6s both;
-  }
-  #s1 .teams-row {
-    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
-    animation: slideUp 0.6s ease 0.9s both;
-  }
-  #s1 .team-chip {
-    padding: 10px 20px; border-radius: 50px;
-    border: 1.5px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(10px);
-    color: #fff; font-weight: 800; font-size: 15px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  #s1 .team-avatar {
-    width: 28px; height: 28px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center; font-size: 16px;
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* Nav */
+.nav {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px; z-index: 9999;
+  background: rgba(13,10,6,0.82); backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.10); border-radius: 50px;
+  padding: 10px 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+}
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; cursor: pointer; transition: all 0.3s; opacity: 0.35; }
+.nav-dot.active { opacity: 1; transform: scale(1.5); }
+.nav-btn {
+  padding: 7px 18px; border-radius: 50px; color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+.slide-counter { color: rgba(255,255,255,0.3); font-size: 12px; font-weight: 700; min-width: 34px; text-align: center; }
 
-  /* ═══════════════════════════════════════════════════
-     SLIDE 2 — TRUE / FALSE WITH IMAGE
-     ═══════════════════════════════════════════════════ */
-  #s2 {
-    background: #0a0f1e;
-  }
-  #s2 .bg-gradient {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 70% 50%, rgba(6,182,212,0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 20% 80%, rgba(99,102,241,0.12) 0%, transparent 50%);
-  }
-  #s2 .layout {
-    position: relative; z-index: 2;
-    height: 100%; display: grid; grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-  }
-  #s2 .image-side {
-    position: relative; overflow: hidden;
-    background: linear-gradient(135deg, #0e4f6b 0%, #0a3347 100%);
-    display: flex; align-items: center; justify-content: center;
-  }
-  #s2 .image-side::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent 70%, #0a0f1e 100%);
-    pointer-events: none;
-  }
-  #s2 .emoji-bg {
-    font-size: 220px; opacity: 0.25; user-select: none;
-    filter: blur(2px);
-  }
-  #s2 .image-label {
-    position: absolute; bottom: 28px; left: 28px; right: 60px;
-    font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.5);
-    letter-spacing: 0.12em; text-transform: uppercase;
-  }
-  #s2 .question-side {
-    padding: 60px 56px; display: flex; flex-direction: column;
-    justify-content: center; gap: 36px;
-  }
-  #s2 .q-label {
-    font-size: 11px; font-weight: 900; letter-spacing: 0.25em;
-    color: #06b6d4; text-transform: uppercase;
-  }
-  #s2 .q-text {
-    font-size: clamp(22px, 3vw, 42px); font-weight: 800;
-    color: #fff; line-height: 1.25;
-    animation: revealText 0.8s ease 0.2s both;
-  }
-  @keyframes revealText {
-    from { opacity: 0; transform: translateX(40px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  #s2 .q-translation {
-    font-size: clamp(14px, 1.8vw, 24px); font-weight: 600;
-    color: rgba(255,255,255,0.45); line-height: 1.3;
-  }
-  #s2 .tf-options {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-    animation: revealText 0.8s ease 0.5s both;
-  }
-  #s2 .tf-btn {
-    padding: 24px 20px; border-radius: 20px; cursor: pointer;
-    display: flex; align-items: center; gap: 16px;
-    font-weight: 900; font-size: clamp(18px, 2vw, 26px);
-    transition: transform 0.2s; border: none;
-    font-family: 'Nunito', sans-serif;
-  }
-  #s2 .tf-btn.true {
-    background: linear-gradient(135deg, #065f46, #10b981);
-    color: #fff;
-    box-shadow: 0 8px 0 #064e3b, 0 12px 30px rgba(16,185,129,0.3);
-  }
-  #s2 .tf-btn.false {
-    background: linear-gradient(135deg, #7f1d1d, #ef4444);
-    color: #fff;
-    box-shadow: 0 8px 0 #991b1b, 0 12px 30px rgba(239,68,68,0.3);
-  }
-  #s2 .tf-icon { font-size: 28px; }
-  #s2 .answer-panel {
-    padding: 16px 20px; border-radius: 16px;
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    animation: revealText 0.8s ease 0.8s both;
-  }
-  #s2 .answer-row {
-    display: flex; justify-content: space-between; align-items: center;
-    font-weight: 700; color: rgba(255,255,255,0.8); font-size: 15px;
-    padding: 6px 0;
-  }
-  #s2 .answer-row + .answer-row { border-top: 1px solid rgba(255,255,255,0.08); }
+/* Shared */
+.cat-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 50px; padding: 7px 22px;
+  font-size: 13px; font-weight: 900; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #fff;
+}
+.cozy-card {
+  background: #1B1510; border: 1px solid rgba(255,255,255,0.07); border-radius: 22px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.team-chip {
+  padding: 7px 17px; border-radius: 50px; font-weight: 800; font-size: 14px; border: 2px solid;
+}
 
-  /* ═══════════════════════════════════════════════════
-     SLIDE 3 — MULTIPLE CHOICE
-     ═══════════════════════════════════════════════════ */
-  #s3 {
-    background: #0c0c1d;
-  }
-  #s3 .bg {
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse at 15% 20%, rgba(245,158,11,0.18) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 80%, rgba(139,92,246,0.15) 0%, transparent 50%);
-  }
-  #s3 .content {
-    position: relative; z-index: 2;
-    height: 100%; display: flex; flex-direction: column;
-    padding: 40px 56px; gap: 28px;
-  }
-  #s3 .header {
-    display: flex; align-items: center; gap: 14px;
-  }
-  #s3 .cat-pill {
-    background: rgba(245,158,11,0.2); border: 1.5px solid rgba(245,158,11,0.5);
-    color: #fbbf24; font-size: 12px; font-weight: 900; letter-spacing: 0.18em;
-    padding: 6px 16px; border-radius: 50px; text-transform: uppercase;
-  }
-  #s3 .timer-ring {
-    margin-left: auto; width: 52px; height: 52px;
-    border-radius: 50%; background: conic-gradient(#f59e0b 65%, rgba(255,255,255,0.1) 0%);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 0 3px #0c0c1d;
-    position: relative;
-  }
-  #s3 .timer-inner {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: #0c0c1d;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 16px; color: #fbbf24;
-  }
-  #s3 .q-text {
-    font-size: clamp(26px, 3.5vw, 54px); font-weight: 900;
-    color: #fff; line-height: 1.15; flex-shrink: 0;
-    animation: slideUp 0.5s ease 0.1s both;
-  }
-  #s3 .q-sub {
-    font-size: clamp(14px, 1.8vw, 24px); color: rgba(255,255,255,0.4);
-    font-weight: 600; margin-top: -18px;
-  }
-  #s3 .options-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 14px; flex: 1;
-  }
-  #s3 .opt {
-    border-radius: 20px; padding: 0 28px;
-    display: flex; align-items: center; gap: 20px;
-    font-weight: 800; font-size: clamp(16px, 2vw, 26px);
-    cursor: pointer; transition: transform 0.2s; border: none;
-    font-family: 'Nunito', sans-serif;
-    animation: optIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-  }
-  #s3 .opt:nth-child(1) { animation-delay: 0.35s; background: linear-gradient(135deg, #1e40af, #3b82f6); color: #fff; box-shadow: 0 6px 0 #1d4ed8, 0 10px 24px rgba(59,130,246,0.25); }
-  #s3 .opt:nth-child(2) { animation-delay: 0.45s; background: linear-gradient(135deg, #14532d, #22c55e); color: #fff; box-shadow: 0 6px 0 #15803d, 0 10px 24px rgba(34,197,94,0.25); }
-  #s3 .opt:nth-child(3) { animation-delay: 0.55s; background: linear-gradient(135deg, #7f1d1d, #ef4444); color: #fff; box-shadow: 0 6px 0 #991b1b, 0 10px 24px rgba(239,68,68,0.25); }
-  #s3 .opt:nth-child(4) { animation-delay: 0.65s; background: linear-gradient(135deg, #7c2d12, #f97316); color: #fff; box-shadow: 0 6px 0 #c2410c, 0 10px 24px rgba(249,115,22,0.25); }
-  @keyframes optIn {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  #s3 .opt-letter {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center;
-    font-size: 20px; font-weight: 900; flex-shrink: 0;
-  }
-  #s3 .opt:hover { transform: translateY(-3px); }
-  #s3 .team-answers {
-    display: flex; gap: 10px; flex-wrap: wrap;
-  }
-  #s3 .ta-chip {
-    padding: 7px 16px; border-radius: 50px; font-size: 13px; font-weight: 800;
-    border: 1.5px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7);
-  }
-  #s3 .ta-chip.voted-a { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.15); color: #93c5fd; }
-  #s3 .ta-chip.voted-b { border-color: rgba(34,197,94,0.5); background: rgba(34,197,94,0.15); color: #86efac; }
+/* ═══════════════════════════════════════════════════
+   SLIDE 1 — SCHÄTZCHEN  🍯  warm gelb / Honig
+   ═══════════════════════════════════════════════════ */
+#s1 {
+  background:
+    radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.14) 0%, transparent 52%),
+    #0D0A06;
+}
+.badge-schaetzchen {
+  background: linear-gradient(135deg, #A16207, #EAB308);
+  box-shadow: 0 0 38px rgba(234,179,8,0.42), 0 4px 14px rgba(0,0,0,0.5);
+}
+#s1 .dot-color { background: #EAB308; }
+#s1 .content {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  padding: 48px; text-align: center;
+}
+#s1 .round-label { font-family: 'Caveat', cursive; font-size: 21px; color: rgba(234,179,8,0.5); }
+#s1 .big-number {
+  font-size: clamp(110px, 20vw, 200px); font-weight: 900; line-height: 1;
+  color: #EAB308;
+  text-shadow: 0 0 70px rgba(234,179,8,0.3), 0 10px 0 rgba(113,63,18,0.85);
+  animation: floatNum 3.5s ease-in-out infinite;
+}
+@keyframes floatNum { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+#s1 .question-text {
+  font-size: clamp(20px, 3.2vw, 40px); font-weight: 800;
+  color: #FEF9C3; line-height: 1.35; max-width: 820px;
+}
+#s1 .teams-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-  /* ═══════════════════════════════════════════════════
-     SLIDE 4 — WELTKARTE / MAP
-     ═══════════════════════════════════════════════════ */
-  #s4 {
-    background: #060e1a;
-  }
-  #s4 .bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 40%, rgba(14,116,144,0.2) 0%, transparent 65%);
-  }
-  #s4 .content {
-    position: relative; z-index: 2;
-    height: 100%; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 32px;
-    padding: 40px 60px;
-    text-align: center;
-  }
-  #s4 .q-label {
-    font-size: 11px; font-weight: 900; letter-spacing: 0.25em;
-    color: #22d3ee; text-transform: uppercase;
-    background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3);
-    padding: 6px 20px; border-radius: 50px;
-  }
-  #s4 .q-text {
-    font-size: clamp(28px, 4vw, 60px); font-weight: 900;
-    color: #fff; line-height: 1.1; max-width: 900px;
-    animation: slideUp 0.6s ease 0.2s both;
-  }
-  #s4 .q-sub {
-    font-size: clamp(16px, 2vw, 28px); color: rgba(255,255,255,0.45);
-    font-weight: 600; margin-top: -22px;
-  }
-  #s4 .map-frame {
-    width: 100%; max-width: 920px; height: 340px;
-    border-radius: 24px; overflow: hidden;
-    border: 2px solid rgba(34,211,238,0.2);
-    box-shadow: 0 0 60px rgba(6,182,212,0.2), 0 20px 60px rgba(0,0,0,0.5);
-    background: linear-gradient(135deg, #0c2340 0%, #0e3a5f 40%, #083344 70%, #0a1f35 100%);
-    position: relative;
-    animation: slideUp 0.7s ease 0.4s both;
-  }
-  #s4 .map-grid {
-    position: absolute; inset: 0; opacity: 0.08;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-  #s4 .map-continent {
-    position: absolute; border-radius: 40%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  /* Rough continent shapes */
-  #s4 .c1 { width: 18%; height: 40%; top: 18%; left: 15%; transform: rotate(-8deg); border-radius: 30% 40% 50% 30%; }
-  #s4 .c2 { width: 12%; height: 30%; top: 15%; left: 38%; border-radius: 40% 30% 40% 50%; }
-  #s4 .c3 { width: 22%; height: 45%; top: 12%; left: 52%; border-radius: 30% 50% 30% 40%; }
-  #s4 .c4 { width: 10%; height: 25%; top: 55%; left: 22%; border-radius: 50% 40% 60% 30%; }
-  #s4 .c5 { width: 8%; height: 20%; top: 60%; left: 75%; border-radius: 40% 60% 40% 50%; }
-  #s4 .map-pin {
-    position: absolute; transform: translate(-50%, -100%);
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-  }
-  #s4 .pin-label {
-    background: rgba(0,0,0,0.85); color: #fff; font-size: 12px; font-weight: 800;
-    padding: 4px 10px; border-radius: 8px; white-space: nowrap;
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  #s4 .pin-dot {
-    width: 14px; height: 14px; border-radius: 50%;
-    border: 2.5px solid #fff;
-  }
-  #s4 .pin-line {
-    width: 2px; height: 16px; background: rgba(255,255,255,0.4);
-  }
-  #s4 .pins-row {
-    display: flex; gap: 16px; animation: slideUp 0.6s ease 0.7s both;
-  }
-  #s4 .team-pin {
-    padding: 12px 20px; border-radius: 16px;
-    background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12);
-    font-size: 14px; font-weight: 800; color: rgba(255,255,255,0.8);
-    display: flex; align-items: center; gap: 10px;
-  }
-  #s4 .pin-indicator {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
+/* ═══════════════════════════════════════════════════
+   SLIDE 2 — MU-CHO  🎯  warm blau / Cobalt
+   ═══════════════════════════════════════════════════ */
+#s2 {
+  background:
+    radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.30) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.11) 0%, transparent 50%),
+    #0D0A06;
+}
+.badge-mucho {
+  background: linear-gradient(135deg, #1E3A8A, #2563EB);
+  box-shadow: 0 0 38px rgba(37,99,235,0.45), 0 4px 14px rgba(0,0,0,0.5);
+}
+#s2 .dot-color { background: #3B82F6; }
+#s2 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 44px; gap: 20px; }
+#s2 .header { display: flex; align-items: center; justify-content: space-between; }
+.timer-ring { width: 62px; height: 62px; position: relative; }
+.timer-ring svg { transform: rotate(-90deg); width: 62px; height: 62px; }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 5; }
+.ring-fg-blue {
+  fill: none; stroke: #3B82F6; stroke-width: 5; stroke-linecap: round;
+  stroke-dasharray: 157; stroke-dashoffset: 48;
+  filter: drop-shadow(0 0 6px rgba(59,130,246,0.7));
+}
+.timer-ring .ring-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 19px; color: #fff;
+}
+#s2 .question-card { padding: 24px 36px; text-align: center; }
+#s2 .q-text { font-size: clamp(24px, 3.5vw, 50px); font-weight: 800; color: #EFF6FF; line-height: 1.3; }
+#s2 .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; flex: 1; }
+.mc-option {
+  border-radius: 20px; padding: 20px 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  border: 1.5px solid rgba(255,255,255,0.07);
+  box-shadow: 0 8px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.mc-option .letter {
+  width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 15px; color: rgba(255,255,255,0.9);
+}
+.mc-option .opt-text { font-weight: 800; font-size: clamp(14px, 1.8vw, 22px); color: #fff; text-align: center; line-height: 1.25; }
+.opt-a { background: linear-gradient(160deg, #1E3A8A, #2563EB); }
+.opt-b { background: linear-gradient(160deg, #14532D, #16A34A); }
+.opt-c { background: linear-gradient(160deg, #7F1D1D, #DC2626); }
+.opt-d { background: linear-gradient(160deg, #7C2D12, #EA580C); }
 
-  /* ═══════════════════════════════════════════════════
-     SLIDE 5 — REVEAL / AUFLÖSUNG
-     ═══════════════════════════════════════════════════ */
-  #s5 {
-    background: #0a0014;
-  }
-  #s5 .bg {
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.2) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 30%, rgba(236,72,153,0.15) 0%, transparent 50%);
-  }
-  #s5 .confetti-ring {
-    position: absolute; width: 600px; height: 600px;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: conic-gradient(
-      rgba(167,139,250,0.08) 0deg,
-      transparent 40deg,
-      rgba(236,72,153,0.08) 80deg,
-      transparent 120deg,
-      rgba(99,102,241,0.08) 160deg,
-      transparent 200deg,
-      rgba(167,139,250,0.08) 240deg,
-      transparent 280deg,
-      rgba(236,72,153,0.08) 320deg,
-      transparent 360deg
-    );
-    animation: spin 20s linear infinite;
-  }
-  @keyframes spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
-  #s5 .content {
-    position: relative; z-index: 2;
-    height: 100%; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 28px;
-    padding: 40px 80px; text-align: center;
-  }
-  #s5 .reveal-label {
-    font-size: 12px; font-weight: 900; letter-spacing: 0.3em;
-    color: #a78bfa; text-transform: uppercase;
-    animation: fadeIn 0.4s ease both;
-  }
-  #s5 .question-small {
-    font-size: clamp(14px, 1.8vw, 22px); color: rgba(255,255,255,0.4);
-    font-weight: 700; max-width: 700px;
-  }
-  #s5 .answer-reveal {
-    font-size: clamp(40px, 7vw, 100px); font-weight: 900;
-    background: linear-gradient(135deg, #c084fc, #f472b6, #818cf8);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    filter: drop-shadow(0 0 40px rgba(192,132,252,0.5));
-    animation: revealAnswer 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
-    line-height: 1.1;
-  }
-  @keyframes revealAnswer {
-    from { opacity: 0; transform: scale(0.6) translateY(30px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  #s5 .answer-sub {
-    font-size: clamp(16px, 2vw, 28px); color: rgba(255,255,255,0.5);
-    font-weight: 700; margin-top: -14px;
-  }
-  #s5 .scores-row {
-    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
-    animation: slideUp 0.6s ease 0.6s both;
-  }
-  #s5 .score-card {
-    padding: 16px 22px; border-radius: 18px;
-    display: flex; align-items: center; gap: 12px;
-    min-width: 160px; justify-content: center;
-  }
-  #s5 .score-card.correct {
-    background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.08));
-    border: 1.5px solid rgba(34,197,94,0.4);
-  }
-  #s5 .score-card.wrong {
-    background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.05));
-    border: 1.5px solid rgba(239,68,68,0.25);
-  }
-  #s5 .score-name { font-weight: 800; font-size: 16px; color: #fff; }
-  #s5 .score-pts {
-    font-size: 13px; font-weight: 700;
-    padding: 4px 10px; border-radius: 50px;
-    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
-  }
-  #s5 .score-mark { font-size: 22px; }
-  #s5 .fun-fact {
-    padding: 18px 28px; border-radius: 18px;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-    max-width: 700px;
-    animation: slideUp 0.6s ease 1s both;
-  }
-  #s5 .fun-fact-label {
-    font-size: 10px; font-weight: 900; letter-spacing: 0.2em;
-    color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;
-  }
-  #s5 .fun-fact-text {
-    font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.7); line-height: 1.5;
-  }
+/* ═══════════════════════════════════════════════════
+   SLIDE 3 — BUNTE TÜTE  🛍️  warm rot / Rost
+   ═══════════════════════════════════════════════════ */
+#s3 {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%),
+    radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%),
+    #0D0A06;
+}
+.badge-buntetuete {
+  background: linear-gradient(135deg, #991B1B, #DC2626);
+  box-shadow: 0 0 38px rgba(220,38,38,0.45), 0 4px 14px rgba(0,0,0,0.5);
+}
+#s3 .dot-color { background: #EF4444; }
+#s3 .content {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 28px;
+  padding: 56px; text-align: center;
+}
+#s3 .bag-icon {
+  font-size: 88px; line-height: 1;
+  animation: bagWobble 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 28px rgba(220,38,38,0.45));
+}
+@keyframes bagWobble { 0%,100%{transform:rotate(-6deg) scale(1)} 50%{transform:rotate(6deg) scale(1.06)} }
+#s3 .mystery-text {
+  font-family: 'Caveat', cursive;
+  font-size: clamp(36px, 5.2vw, 74px); font-weight: 700;
+  color: #FEE2E2; letter-spacing: 0.01em;
+}
+#s3 .sub-text { font-size: clamp(14px, 1.8vw, 23px); color: rgba(254,202,202,0.52); font-weight: 700; max-width: 580px; }
+#s3 .color-pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.color-pill {
+  padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 800; border: 1.5px solid;
+}
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
+/* ═══════════════════════════════════════════════════
+   SLIDE 4 — 10 VON 10  ✅  warm grün / Wald
+   ═══════════════════════════════════════════════════ */
+#s4 {
+  background:
+    radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 70%, rgba(16,185,129,0.11) 0%, transparent 50%),
+    #0D0A06;
+}
+.badge-10von10 {
+  background: linear-gradient(135deg, #065F46, #059669);
+  box-shadow: 0 0 38px rgba(5,150,105,0.42), 0 4px 14px rgba(0,0,0,0.5);
+}
+#s4 .dot-color { background: #10B981; }
+#s4 .content {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 28px;
+  padding: 56px; text-align: center;
+}
+#s4 .big-label {
+  font-size: clamp(70px, 14vw, 150px); font-weight: 900; line-height: 1;
+  color: #10B981;
+  text-shadow: 0 0 70px rgba(16,185,129,0.3), 0 10px 0 rgba(6,78,59,0.9);
+  animation: floatNum 3.5s ease-in-out infinite;
+}
+#s4 .question-text {
+  font-size: clamp(20px, 3.2vw, 42px); font-weight: 800;
+  color: #D1FAE5; line-height: 1.35; max-width: 820px;
+}
+#s4 .points-hint {
+  font-family: 'Caveat', cursive; font-size: clamp(18px, 2.5vw, 32px);
+  color: rgba(52,211,153,0.55);
+}
+#s4 .answer-tiles {
+  display: flex; gap: 16px; justify-content: center; margin-top: 8px;
+}
+.answer-tile {
+  padding: 14px 28px; border-radius: 16px; font-weight: 800; font-size: 18px;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07);
+}
 
-  /* ── SLIDE LABELS ─── */
-  .slide-label {
-    position: absolute; top: 20px; right: 24px; z-index: 10;
-    font-size: 11px; font-weight: 900; letter-spacing: 0.18em;
-    color: rgba(255,255,255,0.3); text-transform: uppercase;
-  }
+/* ═══════════════════════════════════════════════════
+   SLIDE 5 — CHEESE (BILDFRAGEN)  📸  warm lila / Violett
+   ═══════════════════════════════════════════════════ */
+#s5 {
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%),
+    #0D0A06;
+}
+.badge-cheese {
+  background: linear-gradient(135deg, #4C1D95, #7C3AED);
+  box-shadow: 0 0 38px rgba(124,58,237,0.45), 0 4px 14px rgba(0,0,0,0.5);
+}
+#s5 .dot-color { background: #8B5CF6; }
+#s5 .layout {
+  height: 100%; display: flex;
+  padding: 28px 44px; gap: 36px; align-items: center;
+}
+#s5 .img-panel { flex: 0 0 44%; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+#s5 .img-frame {
+  width: 100%; aspect-ratio: 4/3; border-radius: 22px; overflow: hidden;
+  border: 2.5px solid rgba(124,58,237,0.35);
+  box-shadow: 0 12px 50px rgba(0,0,0,0.65), 0 0 55px rgba(124,58,237,0.12);
+  background: #160f2a;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+#s5 .img-placeholder { font-size: 80px; opacity: 0.38; }
+#s5 .img-stamp {
+  position: absolute; bottom: 10px; right: 12px;
+  background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 8px;
+  font-size: 11px; color: rgba(167,139,250,0.75); font-weight: 700; letter-spacing: 0.08em;
+}
+#s5 .img-caption {
+  font-family: 'Caveat', cursive; font-size: 17px; color: rgba(167,139,250,0.6); padding-left: 4px;
+}
+#s5 .question-panel { flex: 1; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
+#s5 .q-text { font-size: clamp(22px, 3.3vw, 46px); font-weight: 800; color: #EDE9FE; line-height: 1.3; }
+#s5 .answer-hint { font-family: 'Caveat', cursive; font-size: clamp(18px, 2.2vw, 30px); color: rgba(167,139,250,0.55); }
+#s5 .team-answers { display: flex; flex-direction: column; gap: 8px; }
+.answer-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 18px; border-radius: 14px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+}
+.answer-row .team-name { font-weight: 800; font-size: 14px; }
+.answer-row .answer-text { font-size: 14px; color: rgba(255,255,255,0.5); font-style: italic; }
+.answer-row .a-status { margin-left: auto; font-size: 16px; }
+
 </style>
 </head>
 <body>
 
 <div class="slides">
 
-  <!-- ══ SLIDE 1: FRAGE-INTRO ══════════════════════════════════ -->
+  <!-- ─── SLIDE 1: SCHÄTZCHEN 🍯 ─── -->
   <div class="slide active" id="s1">
-    <div class="bg-stars"></div>
-    <div class="slide-label">Frage-Intro</div>
     <div class="content">
-      <div class="category-badge">🌍 Wissenschaft & Natur</div>
-      <div class="big-number">7</div>
-      <div class="question-preview">Gleich kommt Frage 7 von 20 — bereit?</div>
+      <div class="cat-badge badge-schaetzchen">🍯 Schätzchen</div>
+      <div class="round-label">Frage 3 von 12</div>
+      <div class="big-number">3</div>
+      <div class="question-text">
+        Wie viele Liter Bier wurden beim Oktoberfest 2023 ausgeschenkt?
+      </div>
       <div class="teams-row">
-        <div class="team-chip"><div class="team-avatar" style="background:#3b82f633">🦊</div> Team Fuchs</div>
-        <div class="team-chip"><div class="team-avatar" style="background:#22c55e33">🐸</div> Team Frosch</div>
-        <div class="team-chip"><div class="team-avatar" style="background:#f9731633">🐯</div> Team Tiger</div>
-        <div class="team-chip"><div class="team-avatar" style="background:#a855f733">🦁</div> Team Löwe</div>
+        <div class="team-chip" style="border-color:#EAB308;color:#EAB308;background:rgba(234,179,8,0.10)">🦁 Löwen</div>
+        <div class="team-chip" style="border-color:#3B82F6;color:#93C5FD;background:rgba(59,130,246,0.10)">🌊 Wellen</div>
+        <div class="team-chip" style="border-color:#8B5CF6;color:#C4B5FD;background:rgba(139,92,246,0.10)">⚡ Blitze</div>
+        <div class="team-chip" style="border-color:#10B981;color:#6EE7B7;background:rgba(16,185,129,0.10)">🌿 Eulen</div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SLIDE 2: WAHR/FALSCH MIT BILD ═══════════════════════ -->
+  <!-- ─── SLIDE 2: MU-CHO 🎯 ─── -->
   <div class="slide" id="s2">
-    <div class="bg-gradient"></div>
-    <div class="slide-label">Wahr / Falsch</div>
     <div class="layout">
-      <div class="image-side">
-        <div class="emoji-bg">🌌</div>
-        <div class="image-label">Weltraum · Astronomie</div>
-      </div>
-      <div class="question-side">
-        <div>
-          <div class="q-label">✦ Wahr oder Falsch?</div>
-        </div>
-        <div>
-          <div class="q-text">There are more stars in the universe than grains of sand on all Earth's beaches.</div>
-          <div class="q-translation" style="margin-top:10px">Es gibt mehr Sterne im Universum als Sandkörner auf allen Stränden der Erde.</div>
-        </div>
-        <div class="tf-options">
-          <button class="tf-btn true"><span class="tf-icon">✓</span> Wahr</button>
-          <button class="tf-btn false"><span class="tf-icon">✗</span> Falsch</button>
-        </div>
-        <div class="answer-panel">
-          <div class="answer-row">
-            <span>🦊 Team Fuchs</span><span style="color:#86efac;font-size:13px">Wahr</span>
-          </div>
-          <div class="answer-row">
-            <span>🐸 Team Frosch</span><span style="color:#fca5a5;font-size:13px">Falsch</span>
-          </div>
-          <div class="answer-row">
-            <span>🐯 Team Tiger</span><span style="color:#86efac;font-size:13px">Wahr</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ SLIDE 3: MULTIPLE CHOICE ════════════════════════════ -->
-  <div class="slide" id="s3">
-    <div class="bg"></div>
-    <div class="slide-label">Multiple Choice</div>
-    <div class="content">
       <div class="header">
-        <div class="cat-pill">🎬 Film & Kino</div>
+        <div class="cat-badge badge-mucho">🎯 Mu-cho</div>
         <div class="timer-ring">
-          <div class="timer-inner">32</div>
+          <svg viewBox="0 0 62 62">
+            <circle class="ring-bg" cx="31" cy="31" r="25"/>
+            <circle class="ring-fg-blue" cx="31" cy="31" r="25"/>
+          </svg>
+          <div class="ring-text">23</div>
         </div>
       </div>
-      <div>
-        <div class="q-text">Which of these films was released FIRST?</div>
-        <div class="q-sub">Welcher dieser Filme kam ZUERST ins Kino?</div>
+      <div class="cozy-card question-card">
+        <div class="q-text">Welche Stadt ist die Hauptstadt von Australien?</div>
       </div>
       <div class="options-grid">
-        <button class="opt"><span class="opt-letter">A</span> The Godfather (1972)</button>
-        <button class="opt"><span class="opt-letter">B</span> Star Wars (1977)</button>
-        <button class="opt"><span class="opt-letter">C</span> Jurassic Park (1993)</button>
-        <button class="opt"><span class="opt-letter">D</span> Pulp Fiction (1994)</button>
-      </div>
-      <div class="team-answers">
-        <div class="ta-chip voted-a">🦊 A</div>
-        <div class="ta-chip voted-b">🐸 B</div>
-        <div class="ta-chip voted-a">🐯 A</div>
-        <div class="ta-chip" style="border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.12);color:#fca5a5">🦁 C</div>
+        <div class="mc-option opt-a"><div class="letter">A</div><div class="opt-text">Sydney</div></div>
+        <div class="mc-option opt-b"><div class="letter">B</div><div class="opt-text">Melbourne</div></div>
+        <div class="mc-option opt-c"><div class="letter">C</div><div class="opt-text">Canberra</div></div>
+        <div class="mc-option opt-d"><div class="letter">D</div><div class="opt-text">Brisbane</div></div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SLIDE 4: WELTKARTE ═══════════════════════════════════ -->
+  <!-- ─── SLIDE 3: BUNTE TÜTE 🛍️ ─── -->
+  <div class="slide" id="s3">
+    <div class="content">
+      <div class="cat-badge badge-buntetuete">🛍️ Bunte Tüte</div>
+      <div class="bag-icon">🎲</div>
+      <div class="mystery-text">Was kommt als Nächstes?</div>
+      <div class="sub-text">Weltkarte · Ordnen · 8‑aus‑1 · Blitz · Fotosprint...</div>
+      <div class="color-pills">
+        <div class="color-pill" style="background:rgba(234,179,8,0.13);color:#FDE68A;border-color:rgba(234,179,8,0.28)">🗺️ Weltkarte</div>
+        <div class="color-pill" style="background:rgba(139,92,246,0.13);color:#DDD6FE;border-color:rgba(139,92,246,0.28)">🔢 Ordnen</div>
+        <div class="color-pill" style="background:rgba(59,130,246,0.13);color:#BFDBFE;border-color:rgba(59,130,246,0.28)">⚡ Blitz</div>
+        <div class="color-pill" style="background:rgba(16,185,129,0.13);color:#A7F3D0;border-color:rgba(16,185,129,0.28)">✔️ 8‑1‑Falsch</div>
+        <div class="color-pill" style="background:rgba(220,38,38,0.13);color:#FECACA;border-color:rgba(220,38,38,0.28)">📷 Fotosprint</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 4: 10 VON 10 ✅ ─── -->
   <div class="slide" id="s4">
-    <div class="bg"></div>
-    <div class="slide-label">Weltkarte</div>
     <div class="content">
-      <div class="q-label">📍 Weltkarte-Frage</div>
-      <div>
-        <div class="q-text">Where is the Taj Mahal located?</div>
-        <div class="q-sub">Wo liegt das Taj Mahal?</div>
+      <div class="cat-badge badge-10von10">✅ 10 von 10</div>
+      <div class="big-label">10/10</div>
+      <div class="question-text">
+        Nenne 10 Länder, deren Name mit einem Vokal beginnt.
       </div>
-      <div class="map-frame">
-        <div class="map-grid"></div>
-        <div class="map-continent c1"></div>
-        <div class="map-continent c2"></div>
-        <div class="map-continent c3"></div>
-        <div class="map-continent c4"></div>
-        <div class="map-continent c5"></div>
-        <!-- Team pins -->
-        <div class="map-pin" style="left:62%;top:45%">
-          <div class="pin-label">🦊 Team Fuchs</div>
-          <div class="pin-line"></div>
-          <div class="pin-dot" style="background:#3b82f6"></div>
-        </div>
-        <div class="map-pin" style="left:65%;top:38%">
-          <div class="pin-label">🐸 Team Frosch</div>
-          <div class="pin-line"></div>
-          <div class="pin-dot" style="background:#22c55e"></div>
-        </div>
-        <!-- Target -->
-        <div class="map-pin" style="left:64%;top:42%">
-          <div class="pin-label" style="background:rgba(148,45,89,0.9);border-color:rgba(240,95,178,0.5);color:#ffd1e8">📍 Taj Mahal, Agra</div>
-          <div class="pin-line" style="background:rgba(240,95,178,0.6)"></div>
-          <div class="pin-dot" style="background:#f05fb2;box-shadow:0 0 12px rgba(240,95,178,0.8)"></div>
-        </div>
-      </div>
-      <div class="pins-row">
-        <div class="team-pin"><div class="pin-indicator" style="background:#3b82f6"></div>🦊 Fuchs — 180 km</div>
-        <div class="team-pin"><div class="pin-indicator" style="background:#22c55e"></div>🐸 Frosch — 420 km</div>
-        <div class="team-pin"><div class="pin-indicator" style="background:#f97316"></div>🐯 Tiger — 1.200 km</div>
+      <div class="points-hint">Jede richtige Antwort = 1 Punkt · insgesamt 10 möglich</div>
+      <div class="answer-tiles">
+        <div class="answer-tile" style="background:rgba(16,185,129,0.18);color:#6EE7B7;border-color:rgba(16,185,129,0.25)">🦁 Löwen: 7 / 10</div>
+        <div class="answer-tile" style="background:rgba(59,130,246,0.18);color:#93C5FD;border-color:rgba(59,130,246,0.25)">🌊 Wellen: 9 / 10</div>
+        <div class="answer-tile" style="background:rgba(139,92,246,0.18);color:#C4B5FD;border-color:rgba(139,92,246,0.25)">⚡ Blitze: 5 / 10</div>
+        <div class="answer-tile" style="background:rgba(234,179,8,0.18);color:#FDE68A;border-color:rgba(234,179,8,0.25)">🌿 Eulen: 8 / 10</div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SLIDE 5: AUFLÖSUNG / REVEAL ═════════════════════════ -->
+  <!-- ─── SLIDE 5: CHEESE 📸 ─── -->
   <div class="slide" id="s5">
-    <div class="bg"></div>
-    <div class="confetti-ring"></div>
-    <div class="slide-label">Auflösung</div>
-    <div class="content">
-      <div class="reveal-label">✦ Auflösung</div>
-      <div class="question-small">Which of these films was released first? · Welcher Film kam zuerst?</div>
-      <div class="answer-reveal">The Godfather</div>
-      <div class="answer-sub">1972 · Francis Ford Coppola</div>
-      <div class="scores-row">
-        <div class="score-card correct">
-          <span class="score-mark">🏆</span>
-          <span class="score-name">🦊 Fuchs</span>
-          <span class="score-pts">+10 Pts</span>
+    <div class="layout">
+      <div class="img-panel">
+        <div class="cat-badge badge-cheese">📸 Cheese</div>
+        <div class="img-frame">
+          <div class="img-placeholder">🏛️</div>
+          <div class="img-stamp">Frage 7</div>
         </div>
-        <div class="score-card wrong">
-          <span class="score-mark">✗</span>
-          <span class="score-name">🐸 Frosch</span>
-          <span class="score-pts">+0 Pts</span>
-        </div>
-        <div class="score-card correct">
-          <span class="score-mark">✓</span>
-          <span class="score-name">🐯 Tiger</span>
-          <span class="score-pts">+10 Pts</span>
-        </div>
-        <div class="score-card wrong">
-          <span class="score-mark">✗</span>
-          <span class="score-name">🦁 Löwe</span>
-          <span class="score-pts">+0 Pts</span>
-        </div>
+        <div class="img-caption">Erkennst du das Gebäude?</div>
       </div>
-      <div class="fun-fact">
-        <div class="fun-fact-label">💡 Fun Fact</div>
-        <div class="fun-fact-text">The Godfather's opening scene with Marlon Brando took only one day to shoot. The famous cat was a stray Coppola found on set moments before filming.</div>
+      <div class="question-panel">
+        <div class="q-text">In welcher Stadt steht dieses berühmte Wahrzeichen?</div>
+        <div class="answer-hint">Teams tippen ihre Antwort...</div>
+        <div class="team-answers">
+          <div class="answer-row">
+            <div class="team-name" style="color:#EAB308">🦁 Löwen</div>
+            <div class="answer-text">Paris</div>
+            <div class="a-status">⏳</div>
+          </div>
+          <div class="answer-row">
+            <div class="team-name" style="color:#93C5FD">🌊 Wellen</div>
+            <div class="answer-text">Rom</div>
+            <div class="a-status">✅</div>
+          </div>
+          <div class="answer-row">
+            <div class="team-name" style="color:#C4B5FD">⚡ Blitze</div>
+            <div class="answer-text">Athen</div>
+            <div class="a-status">✅</div>
+          </div>
+          <div class="answer-row">
+            <div class="team-name" style="color:#6EE7B7">🌿 Eulen</div>
+            <div class="answer-text">—</div>
+            <div class="a-status">⏳</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- NAVIGATION -->
+<!-- Navigation -->
 <div class="nav">
-  <button class="nav-btn" id="prevBtn" onclick="go(-1)">← Zurück</button>
-  <div style="display:flex;gap:8px;align-items:center" id="dots"></div>
+  <button class="nav-btn" id="prevBtn">← zurück</button>
+  <div style="display:flex;gap:8px;align-items:center" id="dotContainer">
+    <div class="nav-dot active" data-slide="0" style="background:#EAB308"></div>
+    <div class="nav-dot" data-slide="1" style="background:#3B82F6"></div>
+    <div class="nav-dot" data-slide="2" style="background:#EF4444"></div>
+    <div class="nav-dot" data-slide="3" style="background:#10B981"></div>
+    <div class="nav-dot" data-slide="4" style="background:#8B5CF6"></div>
+  </div>
   <span class="slide-counter" id="counter">1 / 5</span>
-  <button class="nav-btn" id="nextBtn" onclick="go(1)">Weiter →</button>
+  <button class="nav-btn" id="nextBtn">weiter →</button>
 </div>
 
 <script>
-  const slides = document.querySelectorAll('.slide');
-  const dotsContainer = document.getElementById('dots');
-  let current = 0;
-
-  // Create dots
-  slides.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
-    d.onclick = () => goTo(i);
-    dotsContainer.appendChild(d);
-  });
-
-  function updateDots() {
-    document.querySelectorAll('.nav-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === current);
-    });
-    document.getElementById('counter').textContent = `${current + 1} / ${slides.length}`;
-  }
+  const slides  = document.querySelectorAll('.slide');
+  const dots    = document.querySelectorAll('.nav-dot');
+  const counter = document.getElementById('counter');
+  let current   = 0;
 
   function goTo(n) {
     slides[current].classList.remove('active');
     slides[current].classList.add('out');
-    setTimeout(() => slides[current].classList.remove('out'), 700);
-    current = n;
+    dots[current].classList.remove('active');
+    const prev = current;
+    setTimeout(() => slides[prev].classList.remove('out'), 700);
+    current = (n + slides.length) % slides.length;
     slides[current].classList.add('active');
-    updateDots();
+    dots[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${slides.length}`;
   }
 
-  function go(dir) {
-    const next = (current + dir + slides.length) % slides.length;
-    goTo(next);
-  }
-
+  document.getElementById('nextBtn').onclick = () => goTo(current + 1);
+  document.getElementById('prevBtn').onclick = () => goTo(current - 1);
+  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.slide)));
   document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === ' ') go(1);
-    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
   });
 </script>
+
 </body>
 </html>

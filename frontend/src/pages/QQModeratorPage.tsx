@@ -216,6 +216,9 @@ export default function QQModeratorPage() {
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
                     </select>
+                    <select style={{ ...selectStyle, color: '#94a3b8' }} disabled title="Fragensätze folgen bald">
+                      <option>📋 Standard-Testfragen (15)</option>
+                    </select>
                     <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
                   </>
                 )}
@@ -326,6 +329,30 @@ export default function QQModeratorPage() {
                     ✓ {s.revealedAnswer}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Team join info */}
+            {s.phase === 'LOBBY' && (
+              <div style={card}>
+                <div style={sectionLabel}>Teams einladen</div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${window.location.origin}/quarterquiz-team?room=${roomCode}`)}&bgcolor=1B1510&color=e2e8f0&margin=4`}
+                    alt="QR Code"
+                    style={{ borderRadius: 8, width: 90, height: 90 }}
+                  />
+                  <div>
+                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>Team-URL:</div>
+                    <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e2e8f0', background: 'rgba(255,255,255,0.06)', padding: '4px 8px', borderRadius: 6, marginBottom: 8 }}>
+                      /quarterquiz-team?room={roomCode}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#475569' }}>
+                      Teams öffnen diese URL auf ihrem Handy.<br />
+                      Beamer: <span style={{ fontFamily: 'monospace' }}>/quarterquiz-beamer?room={roomCode}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

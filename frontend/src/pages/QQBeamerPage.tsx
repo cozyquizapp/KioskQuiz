@@ -5,34 +5,27 @@ import {
   QQ_TEAM_PALETTE, qqGetAvatar
 } from '../../../shared/quarterQuizTypes';
 
-const DEFAULT_ROOM = 'qq-test';
+function getRoomCode(): string {
+  if (typeof window === 'undefined') return 'qq-test';
+  const params = new URLSearchParams(window.location.search);
+  return params.get('room') || localStorage.getItem('qq-moderatorRoom') || 'qq-test';
+}
 
 export default function QQBeamerPage() {
-  const [roomCode, setRoomCode] = useState(DEFAULT_ROOM);
-  const [joined, setJoined]     = useState(false);
-  const { state, connected, emit } = useQQSocket(joined ? roomCode : '');
+  const [roomCode] = useState(getRoomCode);
+  const [joined, setJoined] = useState(false);
+  const { state, connected, emit } = useQQSocket(roomCode);
 
   async function join() {
     const ack = await emit('qq:joinBeamer', { roomCode });
     if (ack.ok) setJoined(true);
   }
 
-  if (!joined) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0D0A06', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', system-ui, sans-serif" }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
-          <div style={{ fontSize: 32, fontWeight: 900, marginBottom: 8 }}>Quarter Quiz</div>
-          <div style={{ color: '#64748b', marginBottom: 20 }}>Beamer-Ansicht</div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <input value={roomCode} onChange={e => setRoomCode(e.target.value)}
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 14 }} />
-            <button onClick={join} style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #3B82F6', background: 'rgba(59,130,246,0.15)', color: '#3B82F6', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>Verbinden</button>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 12, color: connected ? '#22C55E' : '#EF4444' }}>{connected ? '● Verbunden' : '○ Getrennt'}</div>
-        </div>
-      </div>
-    );
-  }
+  // Auto-join as beamer once connected
+  useEffect(() => {
+    if (!connected || joined) return;
+    join();
+  }, [connected]);
 
   if (!state) {
     return <LoadingScreen roomCode={roomCode} connected={connected} />;

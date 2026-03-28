@@ -5,13 +5,19 @@ import {
   QQTeam, qqGetAvatar,
 } from '../../../shared/quarterQuizTypes';
 
-const DEFAULT_ROOM = 'qq-test';
+function getRoomCode(): string {
+  if (typeof window === 'undefined') return 'qq-test';
+  const params = new URLSearchParams(window.location.search);
+  return params.get('room') || localStorage.getItem('qq-moderatorRoom') || 'qq-test';
+}
 
 type SetupStep = 'ROOM' | 'AVATAR' | 'NAME';
 
 export default function QQTeamPage() {
-  const [roomCode, setRoomCode]   = useState(DEFAULT_ROOM);
-  const [step, setStep]           = useState<SetupStep>('ROOM');
+  const [roomCode, setRoomCode]   = useState(getRoomCode);
+  // Skip ROOM step if room code came from URL
+  const hasRoomFromUrl = typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('room');
+  const [step, setStep]           = useState<SetupStep>(hasRoomFromUrl ? 'AVATAR' : 'ROOM');
   const [avatarId, setAvatarId]   = useState('fox');
   const [teamName, setTeamName]   = useState('');
   const [teamId, setTeamId]       = useState<string | null>(null);

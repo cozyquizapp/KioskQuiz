@@ -78,7 +78,8 @@ import {
   MultipleChoiceQuestion,
   TrueFalseQuestion,
   ImageQuestion,
-  SortItemsQuestion
+  SortItemsQuestion,
+  BettingQuestion
 } from '../../shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';

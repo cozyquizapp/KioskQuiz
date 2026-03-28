@@ -176,6 +176,12 @@
   <button class="btn" id="btn-t4" onclick="setTeamCount(4)">4</button>
   <div class="sep"></div>
   <button class="btn danger" onclick="resetGame()">↺ Reset</button>
+  <div class="sep"></div>
+  <span class="setup-label">Speed</span>
+  <button class="btn" id="spd-slow"  onclick="setSpeed(1200)">🐢</button>
+  <button class="btn active" id="spd-mid" onclick="setSpeed(500)">▶</button>
+  <button class="btn" id="spd-fast"  onclick="setSpeed(120)">⚡</button>
+  <button class="btn go" id="sim-btn" onclick="toggleSim()">▶ Auto-Sim</button>
 </div>
 
 <div class="layout">
@@ -234,8 +240,13 @@ function initGame(tc) {
   render();
 }
 
-function setTeamCount(n) { initGame(n); }
-function resetGame()      { initGame(S.teamCount); }
+function setTeamCount(n) { stopSim(); initGame(n); }
+function resetGame()      { stopSim(); initGame(S.teamCount); }
+function stopSim() {
+  if(simTimer){clearTimeout(simTimer);simTimer=null;}
+  const btn=document.getElementById('sim-btn');
+  if(btn){btn.textContent='▶ Auto-Sim';btn.classList.remove('danger');btn.classList.add('go');}
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fieldCounts() {
@@ -764,6 +775,175 @@ function hexAlpha(hex,a) {
   return 'rgba('+r+','+g+','+b+','+a+')';
 }
 
+// ── Simulation ───────────────────────────────────────────────────────────────
+let simSpeed = 500;
+let simTimer = null;
+
+function setSpeed(ms) {
+  simSpeed = ms;
+  ['slow','mid','fast'].forEach(k => document.getElementById('spd-'+k).classList.remove('active'));
+  if(ms>=1000) document.getElementById('spd-slow').classList.add('active');
+  else if(ms<=150) document.getElementById('spd-fast').classList.add('active');
+  else document.getElementById('spd-mid').classList.add('active');
+}
+
+function toggleSim() {
+  const btn = document.getElementById('sim-btn');
+  if(simTimer) {
+    clearTimeout(simTimer); simTimer=null;
+    btn.textContent='▶ Auto-Sim'; btn.classList.remove('danger'); btn.classList.add('go');
+  } else {
+    btn.textContent='⏹ Stop'; btn.classList.remove('go'); btn.classList.add('danger');
+    simStep();
+  }
+}
+
+function simStep() {
+  const btn = document.getElementById('sim-btn');
+  if(!btn || !btn.textContent.includes('Stop')) return;
+
+  if(S.flowState==='done') { toggleSim(); return; }
+
+  // Execute one logical step
+  if(S.flowState==='phase-transition') {
+    nextPhase();
+  } else if(S.flowState==='phase3-bonus') {
+    if(!S.bonusAction) {
+      // Pick random action
+      const actions=['place','steal','swap'];
+      // Only steal/swap if opponent cells exist
+      const hasOpponent = S.grid.some(row=>row.some(c=>c!==null&&c!==S.bonusTeam));
+      const choices = hasOpponent ? actions : ['place'];
+      setBonusAction(choices[Math.floor(Math.random()*choices.length)]);
+    } else {
+      simExecuteBonus();
+    }
+  } else if(S.flowState==='select-winner') {
+    // Randomly pick winners: each team 65% chance, at least sometimes nobody
+    const winners=[];
+    for(let i=0;i<S.teamCount;i++) if(Math.random()<0.65) winners.push(i);
+    if(winners.length===0) {
+      skipQuestion();
+    } else {
+      S.selectedWinners=winners;
+      confirmWinners();
+    }
+  } else if(S.flowState==='placing') {
+    simExecutePlacing();
+    return; // placing may need multiple steps, don't schedule next yet
+  }
+
+  simTimer = setTimeout(()=>{ simTimer=null; simStep(); }, simSpeed);
+}
+
+function simExecuteBonus() {
+  const team=S.bonusTeam;
+  const a=S.bonusAction;
+  if(a==='place') {
+    const cell=simRandomEmpty();
+    if(cell) { S.grid[cell[0]][cell[1]]=team; S.bonusCount++; checkJoker(team); addLog(NAMES[team]+' Bonus-Feld ('+S.bonusCount+'/2)'); }
+    if(S.bonusCount>=2||!cell) finishBonus();
+    else { render(); simTimer=setTimeout(()=>{ simTimer=null; simStep(); },simSpeed); return; }
+  } else if(a==='steal') {
+    const cell=simRandomOpponent(team);
+    if(cell) { addLog(NAMES[team]+' klaut Bonus von '+NAMES[S.grid[cell[0]][cell[1]]]); S.grid[cell[0]][cell[1]]=team; checkJoker(team); }
+    finishBonus();
+  } else if(a==='swap') {
+    // Find two cells from different opponent teams
+    const opp=simAllOpponentCells(team);
+    const teams=[...new Set(opp.map(c=>S.grid[c[0]][c[1]]))];
+    if(teams.length>=2) {
+      const cellsA=opp.filter(c=>S.grid[c[0]][c[1]]===teams[0]);
+      const cellsB=opp.filter(c=>S.grid[c[0]][c[1]]===teams[1]);
+      const a0=cellsA[Math.floor(Math.random()*cellsA.length)];
+      const b0=cellsB[Math.floor(Math.random()*cellsB.length)];
+      const tmp=S.grid[a0[0]][a0[1]];
+      S.grid[a0[0]][a0[1]]=S.grid[b0[0]][b0[1]];
+      S.grid[b0[0]][b0[1]]=tmp;
+      addLog(NAMES[team]+' tauscht Felder zwischen '+NAMES[S.grid[b0[0]][b0[1]]]+' und '+NAMES[S.grid[a0[0]][a0[1]]]);
+    }
+    finishBonus();
+  }
+  render();
+  simTimer=setTimeout(()=>{ simTimer=null; simStep(); },simSpeed);
+}
+
+function simExecutePlacing() {
+  const team=S.actingTeam;
+  const p=S.phase;
+
+  if(p===1) {
+    const cell=simSmartEmpty(team);
+    if(cell) { S.grid[cell[0]][cell[1]]=team; checkJoker(team); addLog(NAMES[team]+' setzt'); }
+    startNextPendingWinner();
+  } else if(p===2) {
+    // Decide: steal or place 2?
+    const canSteal=S.teams[team].stealsInP2<2&&simRandomOpponent(team);
+    const doSteal=canSteal&&Math.random()<0.4&&S.placedThisTurn===0;
+    if(doSteal) {
+      const cell=simRandomOpponent(team);
+      if(cell) { addLog(NAMES[team]+' klaut von '+NAMES[S.grid[cell[0]][cell[1]]]); S.grid[cell[0]][cell[1]]=team; S.teams[team].stealsInP2++; S.mode='steal'; checkJoker(team); }
+      startNextPendingWinner();
+    } else {
+      const cell=simSmartEmpty(team);
+      if(cell) { S.grid[cell[0]][cell[1]]=team; S.placedThisTurn++; addLog(NAMES[team]+' setzt ['+S.placedThisTurn+'/2]'); checkJoker(team); }
+      if(S.placedThisTurn>=2||!cell) startNextPendingWinner();
+      else { render(); simTimer=setTimeout(()=>{ simTimer=null; simStep(); },simSpeed/2); return; }
+    }
+  } else { // phase 3
+    const doSteal=Math.random()<0.55&&simRandomOpponent(team);
+    if(doSteal) {
+      const cell=simRandomOpponent(team);
+      if(cell) { addLog(NAMES[team]+' klaut von '+NAMES[S.grid[cell[0]][cell[1]]]); S.grid[cell[0]][cell[1]]=team; checkJoker(team); }
+    } else {
+      const cell=simSmartEmpty(team);
+      if(cell) { S.grid[cell[0]][cell[1]]=team; addLog(NAMES[team]+' setzt'); checkJoker(team); }
+      else {
+        // board full, must steal
+        const sc=simRandomOpponent(team);
+        if(sc) { addLog(NAMES[team]+' klaut (Board voll) von '+NAMES[S.grid[sc[0]][sc[1]]]); S.grid[sc[0]][sc[1]]=team; checkJoker(team); }
+      }
+    }
+    startNextPendingWinner();
+  }
+  render();
+  simTimer=setTimeout(()=>{ simTimer=null; simStep(); },simSpeed);
+}
+
+// Prefer cells adjacent to own territory
+function simSmartEmpty(team) {
+  const adj=[];
+  const free=[];
+  for(let r=0;r<S.gridSize;r++)
+    for(let c=0;c<S.gridSize;c++)
+      if(S.grid[r][c]===null) {
+        free.push([r,c]);
+        const neighbors=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+        if(neighbors.some(([nr,nc])=>nr>=0&&nr<S.gridSize&&nc>=0&&nc<S.gridSize&&S.grid[nr][nc]===team))
+          adj.push([r,c]);
+      }
+  const pool=adj.length?adj:free;
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
+
+function simRandomEmpty() {
+  const free=[];
+  for(let r=0;r<S.gridSize;r++) for(let c=0;c<S.gridSize;c++) if(S.grid[r][c]===null) free.push([r,c]);
+  return free.length?free[Math.floor(Math.random()*free.length)]:null;
+}
+
+function simRandomOpponent(team) {
+  const opp=simAllOpponentCells(team);
+  return opp.length?opp[Math.floor(Math.random()*opp.length)]:null;
+}
+
+function simAllOpponentCells(team) {
+  const opp=[];
+  for(let r=0;r<S.gridSize;r++) for(let c=0;c<S.gridSize;c++) if(S.grid[r][c]!==null&&S.grid[r][c]!==team) opp.push([r,c]);
+  return opp;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 // Init
 initGame(3);
 </script>

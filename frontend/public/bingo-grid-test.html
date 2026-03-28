@@ -226,7 +226,7 @@ function initGame(tc) {
     actingTeam: null,
     mode: 'place',         // 'place' | 'steal' (phase 2)
     placedThisTurn: 0,     // how many placed this action (phase 2: max 2)
-    teams: Array.from({length:tc}, () => ({ jokers:0, stealsInP2:0 })),
+    teams: Array.from({length:tc}, () => ({ jokers:0, stealsInP2:0, jokersThisPhase:0 })),
     known2x2: new Set(),
     log: [],
   };
@@ -266,9 +266,14 @@ function checkJoker(team) {
       if(S.grid[r][c]===team&&S.grid[r][c+1]===team&&
          S.grid[r+1][c]===team&&S.grid[r+1][c+1]===team) {
         S.known2x2.add(key);
-        S.teams[team].jokers++;
-        got=true;
-        addLog('🃏 2×2! '+NAMES[team]+' bekommt Joker ('+S.teams[team].jokers+' total)');
+        if(S.teams[team].jokersThisPhase>=2) {
+          addLog('🃏 2×2 erkannt — Joker-Limit (2/Phase) erreicht für '+NAMES[team]);
+        } else {
+          S.teams[team].jokers++;
+          S.teams[team].jokersThisPhase++;
+          got=true;
+          addLog('🃏 2×2! '+NAMES[team]+' bekommt Joker ('+S.teams[team].jokersThisPhase+'/2 diese Phase)');
+        }
       }
     }
   if(got) { const el=document.getElementById('joker-flash'); if(el){el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',2500);} }
@@ -342,7 +347,8 @@ function nextPhase() {
   S.flowState='select-winner';
   S.selectedWinners=[];
   // reset per-phase steal counters
-  S.teams.forEach(t=>t.stealsInP2=0);
+  S.teams.forEach(t=>{ t.stealsInP2=0; t.jokersThisPhase=0; });
+  S.known2x2=new Set(); // reset so formations can give jokers again in new phase
   if(S.phase===3) applyPhase3Bonus();
   addLog('════ Phase '+S.phase+' beginnt ════');
   render();
@@ -373,12 +379,13 @@ function handleCell(r,c) {
 
   } else if(p===2) {
     if(S.mode==='place') {
-      // Clicking an opponent field in place-mode → auto-switch to steal if possible
+      // Clicking an opponent field in place-mode: only allow steal if no field placed yet (entweder-oder!)
       if(owner!==null && owner!==team) {
-        if(S.teams[team].stealsInP2>=2){addLog('⚠ Bereits 2× geklaut — kein Klauen mehr möglich');return;}
+        if(S.placedThisTurn>0){addLog('⚠ Bereits angefangen zu setzen — kein Klauen mehr diese Aktion');return;}
+        if(S.teams[team].stealsInP2>=2){addLog('⚠ Bereits 2× geklaut diese Phase');return;}
         addLog(NAMES[team]+' klaut von '+NAMES[owner]+' ('+r+','+c+')');
         S.grid[r][c]=team; S.teams[team].stealsInP2++;
-        S.mode='steal'; // switch mode so UI reflects it
+        S.mode='steal';
         checkJoker(team);
         startNextPendingWinner();
         return;
@@ -524,7 +531,9 @@ function renderCenter() {
     const sb=el('button','btn'+(S.mode==='steal'?' active':''));
     sb.textContent='⚡ 1 Klauen';
     const t2=S.teams[S.actingTeam];
-    if(t2.stealsInP2>=2){sb.disabled=true;sb.title='Bereits 2× geklaut';}
+    // Lock both buttons once an action has started (entweder-oder)
+    if(S.placedThisTurn>0){ pb.disabled=true; sb.disabled=true; pb.title='Bereits Feld gesetzt'; }
+    else if(t2.stealsInP2>=2){sb.disabled=true;sb.title='Bereits 2× geklaut diese Phase';}
     sb.onclick=()=>setMode('steal');
     row.appendChild(pb); row.appendChild(sb);
     box.appendChild(row);

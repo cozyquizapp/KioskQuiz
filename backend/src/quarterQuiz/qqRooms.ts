@@ -170,8 +170,8 @@ export function qqStartGame(
   phases: 3 | 4 = 3
 ): void {
   const teamCount = Object.keys(room.teams).length;
-  if (teamCount < 2) {
-    throw new QQError('NOT_ENOUGH_TEAMS', 'Mindestens 2 Teams erforderlich.');
+  if (teamCount < 1) {
+    throw new QQError('NOT_ENOUGH_TEAMS', 'Mindestens 1 Team erforderlich.');
   }
   if (questions.length !== phases * 5) {
     throw new QQError('WRONG_QUESTION_COUNT', `${phases * 5} Fragen erwartet, ${questions.length} erhalten.`);

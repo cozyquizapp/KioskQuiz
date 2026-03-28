@@ -16,29 +16,20 @@ const TEAM_CSS = `
   @keyframes tcwobble { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
 `;
 
-function getRoomCode(): string {
-  if (typeof window === 'undefined') return '';
-  const p = new URLSearchParams(window.location.search);
-  return p.get('room') || localStorage.getItem('qq-teamRoom') || '';
-}
+const QQ_ROOM = 'default';
 
-type SetupStep = 'ROOM' | 'AVATAR' | 'NAME';
+type SetupStep = 'AVATAR' | 'NAME';
 
 export default function QQTeamPage() {
-  const [roomCode, setRoomCode] = useState(getRoomCode);
-  const hasUrl = typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('room');
-  const [step, setStep]         = useState<SetupStep>(hasUrl || getRoomCode() ? 'AVATAR' : 'ROOM');
+  const roomCode = QQ_ROOM;
+  const [step, setStep]         = useState<SetupStep>('AVATAR');
   const [avatarId, setAvatarId] = useState('fox');
   const [teamName, setTeamName] = useState('');
   const [teamId]                = useState(`team-${Math.random().toString(36).slice(2, 8)}`);
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const { state, connected, emit } = useQQSocket(joined ? roomCode : '');
-
-  useEffect(() => {
-    if (roomCode) localStorage.setItem('qq-teamRoom', roomCode);
-  }, [roomCode]);
+  const { state, connected, emit } = useQQSocket(roomCode);
 
   async function joinRoom() {
     if (!teamName.trim()) return;
@@ -49,7 +40,7 @@ export default function QQTeamPage() {
   }
 
   if (!joined) {
-    return <SetupFlow step={step} setStep={setStep} roomCode={roomCode} setRoomCode={setRoomCode}
+    return <SetupFlow step={step} setStep={setStep}
       avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
       connected={connected} error={error} onJoin={joinRoom} />;
   }
@@ -65,7 +56,7 @@ export default function QQTeamPage() {
 // SETUP FLOW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function SetupFlow({ step, setStep, roomCode, setRoomCode, avatarId, setAvatarId,
+function SetupFlow({ step, setStep, avatarId, setAvatarId,
   teamName, setTeamName, connected, error, onJoin }: any) {
   return (
     <div style={darkPage}>
@@ -83,28 +74,6 @@ function SetupFlow({ step, setStep, roomCode, setRoomCode, avatarId, setAvatarId
             Quarter Quiz
           </div>
         </div>
-
-        {/* ROOM step */}
-        {step === 'ROOM' && (
-          <CozyCard anim>
-            <StepLabel>Raum-Code eingeben</StepLabel>
-            <input
-              value={roomCode}
-              onChange={e => setRoomCode(e.target.value.toLowerCase().trim())}
-              placeholder="z.B. qq-test"
-              style={cozyInput}
-              autoFocus
-              onKeyDown={e => e.key === 'Enter' && roomCode && setStep('AVATAR')}
-            />
-            <CozyBtn color="#3B82F6" onClick={() => roomCode && setStep('AVATAR')} disabled={!roomCode}>
-              Weiter →
-            </CozyBtn>
-            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12,
-              color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
-              {connected ? '● Verbunden' : '○ Getrennt'}
-            </div>
-          </CozyCard>
-        )}
 
         {/* AVATAR step */}
         {step === 'AVATAR' && (

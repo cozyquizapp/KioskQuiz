@@ -78,11 +78,7 @@ const FF = [
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function getRoomCode(): string {
-  if (typeof window === 'undefined') return '';
-  const p = new URLSearchParams(window.location.search);
-  return p.get('room') || localStorage.getItem('qq-moderatorRoom') || '';
-}
+const QQ_ROOM = 'default';
 function actionVerb(a: string | null) {
   if (a === 'STEAL_1') return '⚡ Klauen';
   if (a === 'COMEBACK') return '⚡ Comeback';
@@ -101,15 +97,14 @@ function actionDesc(a: string | null, stats: any) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function QQBeamerPage() {
-  const [roomCode, setRoomCode] = useState(getRoomCode);
-  const [inputVal, setInputVal] = useState('');
+  const roomCode = QQ_ROOM;
   const [joined, setJoined] = useState(false);
   const { state, connected, emit } = useQQSocket(roomCode);
 
   useEffect(() => {
-    if (!connected || !roomCode || joined) return;
+    if (!connected || joined) return;
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
-  }, [connected, roomCode]);
+  }, [connected]);
 
   // Inject Caveat font
   useEffect(() => {
@@ -120,28 +115,6 @@ export default function QQBeamerPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap';
     document.head.appendChild(link);
   }, []);
-
-  if (!roomCode) {
-    return (
-      <div style={{ minHeight:'100vh', background:'#0D0A06', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', fontFamily:"'Nunito',system-ui,sans-serif", gap:24 }}>
-        <style>{BEAMER_CSS}</style>
-        <div style={{ fontSize:48 }}>📡</div>
-        <div style={{ color:'#E2E8F0', fontSize:22, fontWeight:800 }}>Beamer-Code eingeben</div>
-        <input
-          autoFocus
-          value={inputVal}
-          onChange={e => setInputVal(e.target.value.toUpperCase())}
-          onKeyDown={e => { if (e.key === 'Enter' && inputVal.trim()) { localStorage.setItem('qq-moderatorRoom', inputVal.trim()); setRoomCode(inputVal.trim()); } }}
-          placeholder="z.B. QUIZ42"
-          style={{ padding:'14px 22px', borderRadius:12, border:'2px solid #374151', background:'#1B1510', color:'#F9FAFB', fontSize:22, fontWeight:700, textAlign:'center', outline:'none', letterSpacing:3, width:240 }}
-        />
-        <button
-          onClick={() => { if (inputVal.trim()) { localStorage.setItem('qq-moderatorRoom', inputVal.trim()); setRoomCode(inputVal.trim()); } }}
-          style={{ padding:'12px 32px', borderRadius:12, background:'#3B82F6', color:'#fff', fontWeight:800, fontSize:17, border:'none', cursor:'pointer' }}
-        >Verbinden</button>
-      </div>
-    );
-  }
 
   if (!state) return <LoadingScreen roomCode={roomCode} connected={connected} />;
   return <BeamerView state={state} />;

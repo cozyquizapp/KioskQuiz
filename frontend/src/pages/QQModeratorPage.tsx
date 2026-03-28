@@ -5,11 +5,7 @@ import {
   qqGetAvatar, QQStateUpdate,
 } from '../../../shared/quarterQuizTypes';
 
-function getRoomCode(): string {
-  if (typeof window === 'undefined') return 'qq-test';
-  const params = new URLSearchParams(window.location.search);
-  return params.get('room') || localStorage.getItem('qq-moderatorRoom') || 'qq-test';
-}
+const QQ_ROOM = 'default';
 
 interface DraftSummary {
   id: string;
@@ -20,7 +16,7 @@ interface DraftSummary {
 }
 
 export default function QQModeratorPage() {
-  const [roomCode]  = useState(getRoomCode);
+  const roomCode = QQ_ROOM;
   const [language, setLanguage] = useState<QQLanguage>('both');
   const [phases, setPhases] = useState<3 | 4>(3);
   const [joined, setJoined]     = useState(false);
@@ -36,10 +32,6 @@ export default function QQModeratorPage() {
       if (ack.ok) setJoined(true);
     });
   }, [connected]);
-
-  useEffect(() => {
-    localStorage.setItem('qq-moderatorRoom', roomCode);
-  }, [roomCode]);
 
   // Sync timer input from state
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
+  QQQuestionImage,
 } from '../../../shared/quarterQuizTypes';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
@@ -25,6 +26,11 @@ const BEAMER_CSS = `
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+  @keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  @keyframes imgZoomIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+  @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
+  @keyframes imgSlideL { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes imgSlideR { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
 `;
 
 // ── Category themes ───────────────────────────────────────────────────────────
@@ -90,6 +96,14 @@ function actionDesc(a: string | null, stats: any) {
   if (a === 'STEAL_1') return '1 fremdes Feld klauen';
   if (a === 'FREE')    return 'Setzen oder Klauen';
   return '';
+}
+
+function imgAnim(anim: string, layout?: string): string | undefined {
+  if (anim === 'float')    return 'imgFloat 4s ease-in-out infinite';
+  if (anim === 'zoom-in')  return 'imgZoomIn 0.8s ease both';
+  if (anim === 'reveal')   return 'imgReveal 1s ease both';
+  if (anim === 'slide-in') return layout === 'window-left' ? 'imgSlideL 0.7s ease both' : 'imgSlideR 0.7s ease both';
+  return undefined;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -328,12 +342,45 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
   const cutouts = CAT_CUTOUTS[cat] ?? [];
+  const img = q.image;
+  const hasImg = img && img.layout !== 'none' && img.url;
 
   // Intro overlay only during QUESTION_ACTIVE (first mount via key=q.id)
   const showIntro = !revealed;
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+      {/* Fullscreen background image */}
+      {hasImg && img.layout === 'fullscreen' && (
+        <>
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1,
+            backgroundImage: `url(${img.url})`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            animation: imgAnim(img.animation),
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 2,
+            background: 'linear-gradient(90deg, rgba(13,10,6,0.88) 0%, rgba(13,10,6,0.6) 50%, rgba(13,10,6,0.3) 100%)',
+          }} />
+        </>
+      )}
+
+      {/* Cutout floating image (bg-removed) */}
+      {hasImg && img.layout === 'cutout' && (
+        <img
+          src={img.bgRemovedUrl || img.url}
+          alt=""
+          style={{
+            position: 'absolute', zIndex: 3, pointerEvents: 'none',
+            right: '8%', top: '15%',
+            maxWidth: '35%', maxHeight: '70%',
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.6))',
+            animation: imgAnim(img.animation, 'cutout'),
+          }}
+        />
+      )}
       {/* Cutout emojis */}
       {cutouts.map((c, i) => (
         <div key={i} style={{
@@ -382,6 +429,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
       {/* Main content — revealed after intro */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
+        flexDirection: hasImg && img.layout === 'window-left' ? 'row-reverse' : 'row',
         animation: showIntro ? 'contentReveal 0.6s ease 2.2s both' : 'contentReveal 0.35s ease both',
       }}>
         {/* ── Left: question ── */}
@@ -453,6 +501,37 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             </div>
           )}
 
+          {/* Schätzchen: ranked answers by distance */}
+          {revealed && q.category === 'SCHAETZCHEN' && q.targetValue != null && s.answers.length > 0 && (
+            <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+              {[...s.answers]
+                .map(a => {
+                  const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+                  const team = s.teams.find(t => t.id === a.teamId);
+                  return { ...a, num, distance: Number.isNaN(num) ? Infinity : Math.abs(num - q.targetValue!), team };
+                })
+                .sort((a, b) => a.distance - b.distance)
+                .map((a, i) => (
+                  <div key={a.teamId} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '8px 16px', borderRadius: 12, marginBottom: 4,
+                    background: i === 0 ? 'rgba(234,179,8,0.12)' : 'rgba(255,255,255,0.03)',
+                    border: i === 0 ? '1px solid rgba(234,179,8,0.3)' : '1px solid rgba(255,255,255,0.05)',
+                    animation: `contentReveal 0.4s ease ${0.15 + i * 0.1}s both`,
+                  }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: 24 }}>#{i + 1}</span>
+                    {a.team && <span style={{ fontSize: 22, lineHeight: 1 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1 }}>{a.team?.name ?? a.teamId}</span>
+                    <span style={{ fontSize: 'clamp(16px, 2vw, 24px)', fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
+                    <span style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: '#64748b' }}>
+                      {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
+                    </span>
+                  </div>
+                ))
+              }
+            </div>
+          )}
+
           {/* Correct team */}
           {revealed && s.correctTeamId && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
@@ -467,12 +546,55 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
           })()}
         </div>
 
+        {/* ── Image window panel (window-left / window-right) ── */}
+        {hasImg && (img.layout === 'window-left' || img.layout === 'window-right') && (
+          <div style={{
+            width: '42%', flexShrink: 0, position: 'relative', zIndex: 5,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 28,
+          }}>
+            <img
+              src={img.url}
+              alt=""
+              style={{
+                maxWidth: '100%', maxHeight: '80vh',
+                borderRadius: 22, objectFit: 'contain',
+                boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
+                animation: imgAnim(img.animation, img.layout),
+              }}
+            />
+          </div>
+        )}
+
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: 400, flexShrink: 0, padding: '28px 28px 28px 16px',
+          width: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : 400,
+          overflow: 'hidden',
+          flexShrink: 0, padding: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
+          transition: 'width 0.3s',
         }}>
+          {/* Hot Potato: active team highlight */}
+          {!revealed && s.hotPotatoActiveTeamId && (() => {
+            const activeTeam = s.teams.find(t => t.id === s.hotPotatoActiveTeamId);
+            if (!activeTeam) return null;
+            return (
+              <div style={{
+                background: activeTeam.color, borderRadius: 16,
+                padding: '14px 24px', textAlign: 'center',
+                boxShadow: `0 0 32px ${activeTeam.color}88`,
+                animation: 'imgFloat 2s ease-in-out infinite',
+              }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>🥔 {activeTeam.name}</div>
+                {s.hotPotatoEliminated.length > 0 && (
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
+                    Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Live answer count */}
           {!revealed && s.answers.length > 0 && (
             <div style={{

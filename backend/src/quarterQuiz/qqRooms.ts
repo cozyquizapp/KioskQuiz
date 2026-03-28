@@ -49,6 +49,9 @@ export interface QQRoomState {
   answers: QQAnswerEntry[];
   // Buzz (Hot Potato)
   buzzQueue: QQBuzzEntry[];
+  // Hot Potato state
+  hotPotatoActiveTeamId: string | null;
+  hotPotatoEliminated: string[];
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
@@ -90,6 +93,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       timerHandle: null,
       answers: [],
       buzzQueue: [],
+      hotPotatoActiveTeamId: null,
+      hotPotatoEliminated: [],
       avatarsEnabled: true,
       totalPhases: 3,
       lastActivityAt: Date.now(),
@@ -288,6 +293,8 @@ export function qqActivateQuestion(
   room.pendingAction  = null;
   room.answers        = [];
   room.buzzQueue      = [];
+  room.hotPotatoActiveTeamId = null;
+  room.hotPotatoEliminated   = [];
   room.lastActivityAt = Date.now();
   qqStartTimer(room, onTimerExpire);
 }
@@ -299,6 +306,58 @@ export function qqRevealAnswer(room: QQRoomState): void {
   room.phase          = 'QUESTION_REVEAL';
   room.revealedAnswer = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
   room.lastActivityAt = Date.now();
+}
+
+/**
+ * Auto-evaluate Schätzchen: find the team whose numeric answer is closest
+ * to the targetValue. Returns the winning teamId or null if no valid answers.
+ */
+export function qqAutoEvaluateEstimate(room: QQRoomState): string | null {
+  const q = room.currentQuestion;
+  if (!q || q.category !== 'SCHAETZCHEN' || q.targetValue == null) return null;
+  if (room.phase !== 'QUESTION_REVEAL') return null;
+
+  let best: { teamId: string; distance: number } | null = null;
+  for (const ans of room.answers) {
+    const parsed = Number(ans.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+    if (Number.isNaN(parsed)) continue;
+    const distance = Math.abs(parsed - q.targetValue);
+    if (!best || distance < best.distance || (distance === best.distance && ans.submittedAt < (room.answers.find(a => a.teamId === best!.teamId)?.submittedAt ?? Infinity))) {
+      best = { teamId: ans.teamId, distance };
+    }
+  }
+  return best?.teamId ?? null;
+}
+
+// ── Hot Potato (Bunte Tüte) ───────────────────────────────────────────────────
+
+/** Pick a random non-eliminated connected team for Hot Potato. */
+export function qqHotPotatoStart(room: QQRoomState): void {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  room.hotPotatoEliminated = [];
+  room.hotPotatoActiveTeamId = pickRandomAliveTeam(room);
+  room.lastActivityAt = Date.now();
+}
+
+/** Eliminate the active team (wrong / too slow), draw next or end round. */
+export function qqHotPotatoEliminate(room: QQRoomState): string | null {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  if (!room.hotPotatoActiveTeamId) {
+    throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
+  }
+  room.hotPotatoEliminated.push(room.hotPotatoActiveTeamId);
+  const next = pickRandomAliveTeam(room);
+  room.hotPotatoActiveTeamId = next;
+  room.lastActivityAt = Date.now();
+  return next; // null when all eliminated
+}
+
+function pickRandomAliveTeam(room: QQRoomState): string | null {
+  const alive = room.joinOrder.filter(
+    id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected
+  );
+  if (alive.length === 0) return null;
+  return alive[Math.floor(Math.random() * alive.length)];
 }
 
 export function qqMarkCorrect(room: QQRoomState, teamId: string): void {
@@ -679,6 +738,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     timerEndsAt:      room.timerEndsAt,
     answers:          room.answers,
     buzzQueue:        room.buzzQueue,
+    hotPotatoActiveTeamId: room.hotPotatoActiveTeamId,
+    hotPotatoEliminated:   room.hotPotatoEliminated,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
   };
@@ -702,6 +763,8 @@ export function qqResetRoom(room: QQRoomState): void {
   room.comebackTeamId  = null;
   room.comebackAction  = null;
   room.swapFirstCell   = null;
+  room.hotPotatoActiveTeamId = null;
+  room.hotPotatoEliminated   = [];
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

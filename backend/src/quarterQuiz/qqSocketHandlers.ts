@@ -18,6 +18,8 @@ import {
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
+  qqAutoEvaluateEstimate,
+  qqHotPotatoStart, qqHotPotatoEliminate,
 } from './qqRooms';
 
 type AckFn = (payload: QQAck) => void;
@@ -94,6 +96,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // Timer expired — reveal answer automatically and broadcast
           try {
             qqRevealAnswer(room);
+            const estWinner = qqAutoEvaluateEstimate(room);
+            if (estWinner) {
+              qqClearBuzz(room);
+              qqMarkCorrect(room, estWinner);
+            }
           } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
         });
@@ -106,6 +113,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqRevealAnswer(room);
+        // Schätzchen auto-eval: closest numeric answer wins
+        const estWinner = qqAutoEvaluateEstimate(room);
+        if (estWinner) {
+          qqClearBuzz(room);
+          qqMarkCorrect(room, estWinner);
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -159,7 +172,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
         broadcast(io, payload.roomCode);
         // Auto-reveal when all connected teams have answered
         if (allAnswered) {
-          try { qqRevealAnswer(room); } catch { /* already revealed */ }
+          try {
+            qqRevealAnswer(room);
+            const estWinner = qqAutoEvaluateEstimate(room);
+            if (estWinner) {
+              qqClearBuzz(room);
+              qqMarkCorrect(room, estWinner);
+            }
+          } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
         }
         ok(ack);
@@ -171,6 +191,43 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqBuzzIn(room, payload.teamId);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Hot Potato (moderator) ──────────────────────────────────────────────
+    socket.on('qq:hotPotatoStart', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqHotPotatoStart(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:hotPotatoWrong', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const next = qqHotPotatoEliminate(room);
+        if (!next) {
+          // All eliminated — no winner, proceed via markWrong
+          qqRevealAnswer(room);
+          qqMarkWrong(room);
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:hotPotatoCorrect', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const teamId = room.hotPotatoActiveTeamId;
+        if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
+        qqRevealAnswer(room);
+        qqClearBuzz(room);
+        qqMarkCorrect(room, teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

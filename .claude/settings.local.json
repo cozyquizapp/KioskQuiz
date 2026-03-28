@@ -31,7 +31,27 @@
       "Bash(git -C /c/Users/hornu/Desktop/kioskquiz push)",
       "Bash(DEEPL_API_KEY=a88cd73b-4f21-4429-88dd-3d693188fdd5:fx node backend/scripts/auto-translate-questions.js)",
       "Bash(npm install:*)",
-      "Bash(grep -c \"^//\" /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/ModeratorPage.tsx)"
+      "Bash(grep -c \"^//\" /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/ModeratorPage.tsx)",
+      "Bash(npx --yes tsc --noEmit)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "WebFetch(domain:assets3.lottiefiles.com)",
+      "WebFetch(domain:assets1.lottiefiles.com)",
+      "WebFetch(domain:assets7.lottiefiles.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:assets2.lottiefiles.com)",
+      "WebFetch(domain:assets6.lottiefiles.com)",
+      "WebFetch(domain:lottiefiles.com)",
+      "WebFetch(domain:assets4.lottiefiles.com)",
+      "WebFetch(domain:assets9.lottiefiles.com)",
+      "WebFetch(domain:assets5.lottiefiles.com)",
+      "WebFetch(domain:codepen.io)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(wc -l /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/*.tsx)",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(xargs -I {} basename {})",
+      "Bash(wc -l /c/Users/hornu/Desktop/kioskquiz/frontend/src/views/*.tsx)",
+      "Bash(head -20 /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/*.tsx)"
     ]
   }
 }

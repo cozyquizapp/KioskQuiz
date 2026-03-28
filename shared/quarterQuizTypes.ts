@@ -90,6 +90,7 @@ export interface QQQuestion {
   answer: string;
   answerEn?: string;
   image?: QQQuestionImage;
+  targetValue?: number;  // Schätzchen: the correct number to estimate
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────
@@ -175,6 +176,9 @@ export interface QQStateUpdate {
   answers: QQAnswerEntry[];
   // Buzz queue (ordered by speed, for Hot Potato)
   buzzQueue: QQBuzzEntry[];
+  // Hot Potato
+  hotPotatoActiveTeamId: string | null;
+  hotPotatoEliminated: string[];
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;

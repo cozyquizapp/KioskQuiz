@@ -313,6 +313,34 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
       )}
 
       {/* Answer input (active only) */}
+      {!isRevealed && s.hotPotatoActiveTeamId === myTeamId && (
+        <div style={{
+          padding: '12px 16px', borderRadius: 14, textAlign: 'center',
+          background: 'rgba(239,68,68,0.15)', border: '2px solid rgba(239,68,68,0.4)',
+          fontSize: 18, fontWeight: 900, color: '#f87171',
+          animation: 'tcpulse 1.5s ease-in-out infinite',
+          marginBottom: 8,
+        }}>
+          🥔 Du bist dran!
+        </div>
+      )}
+      {!isRevealed && s.hotPotatoActiveTeamId && s.hotPotatoActiveTeamId !== myTeamId && (
+        <div style={{
+          padding: '8px 14px', borderRadius: 12, textAlign: 'center',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          fontSize: 14, color: '#64748b', marginBottom: 8,
+        }}>
+          🥔 {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'} ist dran
+        </div>
+      )}
+      {!isRevealed && s.hotPotatoEliminated.includes(myTeamId) && (
+        <div style={{
+          padding: '8px 14px', borderRadius: 12, textAlign: 'center',
+          background: 'rgba(239,68,68,0.1)', fontSize: 14, color: '#f87171', marginBottom: 8,
+        }}>
+          ❌ Du bist raus
+        </div>
+      )}
       {!isRevealed && (
         <AnswerInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} />
       )}

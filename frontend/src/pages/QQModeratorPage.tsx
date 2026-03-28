@@ -281,6 +281,36 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
+                {/* Hot Potato controls (Bunte Tüte) */}
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'BUNTE_TUETE' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {!s.hotPotatoActiveTeamId ? (
+                      <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoStart', { roomCode })}>
+                        🎁 Hot Potato starten
+                      </Btn>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
+                          🥔 {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
+                            ✓ Richtig
+                          </Btn>
+                          <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
+                            ✗ Falsch / Zu langsam
+                          </Btn>
+                        </div>
+                        {s.hotPotatoEliminated.length > 0 && (
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                            Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
                   <span style={{ fontSize: 12, color: '#475569' }}>↓ Antwort bestätigen in Team-Liste</span>
                 )}

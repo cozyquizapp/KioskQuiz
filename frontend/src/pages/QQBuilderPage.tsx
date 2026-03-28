@@ -435,6 +435,23 @@ function QuestionEditor({
         />
       </div>
 
+      {/* Target value (Schätzchen only) */}
+      {q.category === 'SCHAETZCHEN' && (
+        <div>
+          <label style={labelStyle}>🍯 Zielwert <span style={{ color: '#EAB308' }}>Schätzchen</span></label>
+          <input
+            type="number"
+            value={q.targetValue ?? ''}
+            onChange={e => onChange({ ...q, targetValue: e.target.value === '' ? undefined : Number(e.target.value) })}
+            style={{ ...inputStyle, borderColor: 'rgba(234,179,8,0.4)' }}
+            placeholder="z.B. 42"
+          />
+          <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+            Team mit nächster Antwort gewinnt automatisch
+          </div>
+        </div>
+      )}
+
       {/* Divider */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 4 }}>
         <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 12 }}>

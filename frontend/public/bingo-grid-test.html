@@ -199,7 +199,7 @@
 // ── Constants ────────────────────────────────────────────────────────────────
 const COLORS = ['#3B82F6','#EF4444','#F97316','#22C55E'];
 const NAMES  = ['Blau','Rot','Orange','Grün'];
-const GRID_SIZES = {2:5, 3:6, 4:7};
+const GRID_SIZES = {2:4, 3:5, 4:6};
 const CATS = [
   { name:'Schätzchen', emoji:'🍯', color:'#F59E0B' },
   { name:'Mu-cho',     emoji:'🎵', color:'#3B82F6' },
@@ -373,13 +373,23 @@ function handleCell(r,c) {
 
   } else if(p===2) {
     if(S.mode==='place') {
+      // Clicking an opponent field in place-mode → auto-switch to steal if possible
+      if(owner!==null && owner!==team) {
+        if(S.teams[team].stealsInP2>=2){addLog('⚠ Bereits 2× geklaut — kein Klauen mehr möglich');return;}
+        addLog(NAMES[team]+' klaut von '+NAMES[owner]+' ('+r+','+c+')');
+        S.grid[r][c]=team; S.teams[team].stealsInP2++;
+        S.mode='steal'; // switch mode so UI reflects it
+        checkJoker(team);
+        startNextPendingWinner();
+        return;
+      }
       if(owner!==null){addLog('Feld belegt!');return;}
       S.grid[r][c]=team; S.placedThisTurn++;
       addLog(NAMES[team]+' setzt ('+r+','+c+') ['+S.placedThisTurn+'/2]');
       checkJoker(team);
       if(S.placedThisTurn>=2) startNextPendingWinner();
       else render();
-    } else { // steal
+    } else { // steal mode explicitly chosen
       if(owner===null){addLog('Kein Gegnerfeld!');return;}
       if(owner===team){addLog('Eigenes Feld!');return;}
       if(S.teams[team].stealsInP2>=2){addLog('Bereits 2× geklaut!');return;}
@@ -537,8 +547,8 @@ function renderCenter() {
 
 function buildGrid() {
   const gridEl=el('div','grid');
-  const maxPx=Math.min(window.innerWidth-380,400);
-  const cellPx=Math.max(34,Math.floor((maxPx-(S.gridSize-1)*5)/S.gridSize));
+  const maxPx=Math.min(window.innerWidth-380,300);
+  const cellPx=Math.max(32,Math.floor((maxPx-(S.gridSize-1)*5)/S.gridSize));
   gridEl.style.gridTemplateColumns='repeat('+S.gridSize+','+cellPx+'px)';
 
   const p=S.phase;
@@ -565,7 +575,7 @@ function buildGrid() {
           const canPlace=p===1||(p===2&&S.mode==='place')||p===3;
           if(canPlace) cell.classList.add('placeable');
         } else if(owner!==team) {
-          const canSteal=(p===2&&S.mode==='steal'&&S.teams[team].stealsInP2<2)||p===3;
+          const canSteal=(p===2&&S.teams[team].stealsInP2<2)||p===3;
           if(canSteal) cell.classList.add('stealable');
         }
         cell.onclick=()=>handleCell(r,c);

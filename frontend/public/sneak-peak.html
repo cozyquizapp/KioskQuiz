@@ -273,30 +273,29 @@ body::after {
    SLIDE 4 — 10 VON 10: NOTIZBUCH-STIL
    ═══════════════════════════════════════════════════ */
 #s4 {
-  /* Notizbuch-Papier: dunkle Linien */
   background:
-    repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.07) 39px, rgba(52,211,153,0.07) 40px),
-    radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.35) 0%, transparent 55%),
-    #0E0B08;
+    repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.035) 39px, rgba(52,211,153,0.035) 40px),
+    radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%),
+    #0D0A06;
 }
-/* Seitenrand-Linie */
 #s4::before {
-  content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 2px;
-  background: rgba(52,211,153,0.12); pointer-events: none; z-index: 1;
+  content: ''; position: absolute; left: 68px; top: 0; bottom: 0; width: 1px;
+  background: rgba(52,211,153,0.07); pointer-events: none; z-index: 1;
 }
 .badge-10von10 {
   background: linear-gradient(135deg, #065F46, #059669);
   box-shadow: 0 0 38px rgba(5,150,105,0.42), 0 4px 14px rgba(0,0,0,0.5);
 }
-#s4 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 48px 28px 100px; gap: 20px; position: relative; z-index: 2; }
+#s4 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 44px 28px 90px; gap: 20px; position: relative; z-index: 2; }
 #s4 .header { display: flex; align-items: center; justify-content: space-between; }
 /* Spiralbindung links */
 #s4 .spiral {
   position: absolute; left: 16px; top: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 28px; align-items: center; z-index: 5;
 }
 .spiral-ring {
-  width: 24px; height: 24px; border-radius: 50%; border: 3px solid rgba(52,211,153,0.22);
-  background: rgba(52,211,153,0.06);
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
 }
 #s4 .q-text {
   font-family: 'Caveat', cursive; font-size: clamp(22px, 3.2vw, 44px);
@@ -309,7 +308,8 @@ body::after {
 #s4 .options-col { display: flex; flex-direction: column; gap: 12px; flex: 1; justify-content: center; }
 .ten-option {
   display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px;
-  background: rgba(16,185,129,0.06); border: 1.5px solid rgba(16,185,129,0.16);
+  background: #1B1510; border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 .ten-letter {
   width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
@@ -401,19 +401,19 @@ body::after {
    ═══════════════════════════════════════════════════ */
 #s6 {
   background:
-    repeating-linear-gradient(transparent, transparent 39px, rgba(147,197,253,0.08) 39px, rgba(147,197,253,0.08) 40px),
-    radial-gradient(ellipse at 50% 0%, rgba(180,83,9,0.15) 0%, transparent 50%),
-    #0E0B08;
+    repeating-linear-gradient(transparent, transparent 39px, rgba(234,179,8,0.03) 39px, rgba(234,179,8,0.03) 40px),
+    radial-gradient(ellipse at 50% 0%, rgba(180,83,9,0.18) 0%, transparent 50%),
+    #0D0A06;
 }
 #s6::before {
-  content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 2px;
-  background: rgba(234,179,8,0.15); pointer-events: none; z-index: 1;
+  content: ''; position: absolute; left: 68px; top: 0; bottom: 0; width: 1px;
+  background: rgba(234,179,8,0.07); pointer-events: none; z-index: 1;
 }
 #s6 .spiral {
   position: absolute; left: 16px; top: 20px; bottom: 20px;
   display: flex; flex-direction: column; gap: 28px; align-items: center; z-index: 5;
 }
-#s6 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 56px 28px 110px; gap: 20px; position: relative; z-index: 2; }
+#s6 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 44px 28px 90px; gap: 20px; position: relative; z-index: 2; }
 #s6 .page-title {
   font-family: 'Caveat', cursive; font-size: clamp(38px, 6vw, 72px);
   color: #FEF3C7; font-weight: 700; border-bottom: 3px solid rgba(234,179,8,0.25); padding-bottom: 10px;

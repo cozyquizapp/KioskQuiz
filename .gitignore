@@ -4,3 +4,8 @@ dist/
 uploads/
 
 node_modules/
+
+# Secrets & local config
+.env
+.env.local
+.env.*.local

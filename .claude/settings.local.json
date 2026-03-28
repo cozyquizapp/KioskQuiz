@@ -29,7 +29,7 @@
       "Bash(git -C /c/Users/hornu/Desktop/kioskquiz add frontend/src/views/TeamView.tsx backend/src/server.ts)",
       "Bash(git -C:*)",
       "Bash(git -C /c/Users/hornu/Desktop/kioskquiz push)",
-      "Bash(DEEPL_API_KEY=a88cd73b-4f21-4429-88dd-3d693188fdd5:fx node backend/scripts/auto-translate-questions.js)",
+      "Bash(DEEPL_API_KEY=*** node backend/scripts/auto-translate-questions.js)",
       "Bash(npm install:*)",
       "Bash(grep -c \"^//\" /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/ModeratorPage.tsx)",
       "Bash(npx --yes tsc --noEmit)",

@@ -193,7 +193,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
         {s.phase === 'PHASE_INTRO' && <PhaseIntroCard state={s} />}
 
         {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-          <QuestionCard state={s} myTeamId={myTeamId} />
+          <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />
         )}
 
         {s.phase === 'PLACEMENT' && (
@@ -278,13 +278,18 @@ function PhaseIntroCard({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
-function QuestionCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: string }) {
+function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
+  state: QQStateUpdate; myTeamId: string;
+  emit: any; roomCode: string;
+}) {
   const q = s.currentQuestion;
   if (!q) return null;
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const isRevealed = s.phase === 'QUESTION_REVEAL';
   const iWonThis = s.correctTeamId === myTeamId;
+  const myBuzzPos = s.buzzQueue.findIndex(b => b.teamId === myTeamId);
+  const hasBuzzed = myBuzzPos >= 0;
 
   return (
     <Card>
@@ -298,6 +303,11 @@ function QuestionCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: 
         {catLabel.emoji} {s.language === 'en' ? catLabel.en : catLabel.de}
       </div>
 
+      {/* Timer */}
+      {s.timerEndsAt && !isRevealed && (
+        <TeamTimerBar endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} />
+      )}
+
       {/* Question text */}
       <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.3, color: '#e2e8f0', marginBottom: 10 }}>
         {q.text}
@@ -306,9 +316,32 @@ function QuestionCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: 
         <div style={{ fontSize: 14, color: '#64748b', fontStyle: 'italic', marginBottom: 10 }}>{q.textEn}</div>
       )}
 
+      {/* Buzz-in button */}
       {!isRevealed && (
-        <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', marginTop: 8 }}>
-          💬 Antwortet dem Moderator
+        <div style={{ marginTop: 8 }}>
+          {!hasBuzzed ? (
+            <button
+              onClick={() => emit('qq:buzzIn', { roomCode, teamId: myTeamId })}
+              style={{
+                width: '100%', padding: '18px', borderRadius: 14,
+                border: '2px solid #FBBF24', background: 'rgba(251,191,36,0.15)',
+                color: '#FBBF24', cursor: 'pointer', fontFamily: 'inherit',
+                fontWeight: 900, fontSize: 20, letterSpacing: '0.02em',
+                transition: 'all 0.1s',
+              }}>
+              ⚡ Buzz!
+            </button>
+          ) : (
+            <div style={{
+              padding: '12px', borderRadius: 12, textAlign: 'center',
+              background: myBuzzPos === 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${myBuzzPos === 0 ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              fontSize: 15, fontWeight: 800,
+              color: myBuzzPos === 0 ? '#4ade80' : '#64748b',
+            }}>
+              {myBuzzPos === 0 ? '⚡ Erste! Moderator wertet aus…' : `⚡ Gebuzzt (Platz #${myBuzzPos + 1})`}
+            </div>
+          )}
         </div>
       )}
 
@@ -333,6 +366,40 @@ function QuestionCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: 
         </>
       )}
     </Card>
+  );
+}
+
+function TeamTimerBar({ endsAt, durationSec }: { endsAt: number; durationSec: number }) {
+  const [remaining, setRemaining] = useState(Math.max(0, (endsAt - Date.now()) / 1000));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      setRemaining(r);
+      if (r === 0) clearInterval(interval);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [endsAt]);
+
+  const pct = Math.min(100, (remaining / durationSec) * 100);
+  const urgent = remaining <= 5;
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Timer</span>
+        <span style={{ fontSize: 13, fontWeight: 900, color: urgent ? '#EF4444' : '#FBBF24' }}>
+          {Math.ceil(remaining)}s
+        </span>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 3,
+          background: urgent ? '#EF4444' : '#FBBF24',
+          width: `${pct}%`, transition: 'width 0.1s linear',
+        }} />
+      </div>
+    </div>
   );
 }
 

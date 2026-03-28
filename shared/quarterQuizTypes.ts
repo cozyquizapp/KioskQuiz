@@ -112,6 +112,12 @@ export interface QQTeam {
 // ── Comeback action ───────────────────────────────────────────────────────────
 export type QQComebackAction = 'PLACE_2' | 'STEAL_1' | 'SWAP_2';
 
+// ── Buzz entry ────────────────────────────────────────────────────────────────
+export interface QQBuzzEntry {
+  teamId: string;
+  buzzedAt: number;  // ms timestamp
+}
+
 // ── State broadcast (server → all clients) ────────────────────────────────────
 export interface QQStateUpdate {
   roomCode: string;
@@ -131,6 +137,13 @@ export interface QQStateUpdate {
   comebackAction: QQComebackAction | null;
   swapFirstCell: { row: number; col: number } | null;  // for SWAP_2 mid-action
   language: QQLanguage;
+  // Timer
+  timerDurationSec: number;
+  timerEndsAt: number | null;        // ms timestamp, null = not running
+  // Buzz queue (ordered by speed)
+  buzzQueue: QQBuzzEntry[];
+  // Settings
+  avatarsEnabled: boolean;
 }
 
 export type QQPendingAction =
@@ -157,6 +170,9 @@ export interface QQSwapCellsPayload      { roomCode: string; teamId: string; row
 export interface QQNextQuestionPayload   { roomCode: string; }
 export interface QQSetLanguagePayload    { roomCode: string; language: QQLanguage; }
 export interface QQResetRoomPayload      { roomCode: string; }
+export interface QQBuzzInPayload         { roomCode: string; teamId: string; }
+export interface QQSetTimerPayload       { roomCode: string; durationSec: number; }
+export interface QQSetAvatarsPayload     { roomCode: string; enabled: boolean; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
-  QQ_AVATARS, QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
+  QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   qqGetAvatar, QQStateUpdate,
 } from '../../../shared/quarterQuizTypes';
 
@@ -12,12 +12,13 @@ function getRoomCode(): string {
 }
 
 export default function QQModeratorPage() {
-  const [roomCode] = useState(getRoomCode);
+  const [roomCode]  = useState(getRoomCode);
   const [language, setLanguage] = useState<QQLanguage>('both');
   const [joined, setJoined]     = useState(false);
+  const [timerInput, setTimerInput] = useState(30);
   const { state, connected, emit } = useQQSocket(roomCode);
 
-  // Auto-join as moderator once connected
+  // Auto-join
   useEffect(() => {
     if (!connected || joined) return;
     emit('qq:joinModerator', { roomCode }).then(ack => {
@@ -25,16 +26,71 @@ export default function QQModeratorPage() {
     });
   }, [connected]);
 
-  // Persist room code
   useEffect(() => {
     localStorage.setItem('qq-moderatorRoom', roomCode);
   }, [roomCode]);
+
+  // Sync timer input from state
+  useEffect(() => {
+    if (state) setTimerInput(state.timerDurationSec);
+  }, [state?.timerDurationSec]);
 
   async function startGame() {
     const res = await fetch(`/api/qq/questions/default`);
     const questions: QQQuestion[] = await res.json();
     await emit('qq:startGame', { roomCode, questions, language });
   }
+
+  function applyTimer() {
+    emit('qq:setTimer', { roomCode, durationSec: timerInput });
+  }
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  const emitRef = useRef(emit);
+  emitRef.current = emit;
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const handleKey = useCallback((e: KeyboardEvent) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+    const s = stateRef.current;
+    if (!s) return;
+
+    switch (e.key) {
+      case ' ':
+      case 'Enter':
+        e.preventDefault();
+        if (s.phase === 'LOBBY') startGame();
+        else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
+        else if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
+        else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+          emitRef.current('qq:nextQuestion', { roomCode });
+        break;
+      case 'ArrowRight':
+        if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+          emitRef.current('qq:nextQuestion', { roomCode });
+        break;
+      case 'Escape':
+      case 'Backspace':
+        if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
+          emitRef.current('qq:markWrong', { roomCode });
+        break;
+      // Number keys 1-5 → mark team correct
+      case '1': case '2': case '3': case '4': case '5': {
+        if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
+          const idx = parseInt(e.key) - 1;
+          const team = s.teams[idx];
+          if (team) emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
+        }
+        break;
+      }
+    }
+  }, [roomCode]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handleKey]);
 
   const s = state;
   const teamList = s?.teams ?? [];
@@ -44,16 +100,17 @@ export default function QQModeratorPage() {
       {/* ── Header ── */}
       <div style={header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={badge('#3B82F6')}>Quartier Quiz</span>
+          <span style={badgeStyle('#3B82F6')}>Quartier Quiz</span>
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
-          {s?.phase && <span style={phasePill(s.phase)}>{s.phase}</span>}
+          {s?.phase && <span style={phasePillStyle(s.phase)}>{s.phase}</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {s && (
-            <span style={{ fontSize: 12, color: '#64748b' }}>
-              Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
-            </span>
-          )}
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>
+            [Space/Enter] nächster Schritt · [1-5] Team korrekt · [Esc] falsch
+          </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
           </span>
@@ -61,31 +118,30 @@ export default function QQModeratorPage() {
       </div>
 
       {!joined && connected && (
-        <div style={card}>
-          <div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div>
-        </div>
+        <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
       )}
 
       {joined && s && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14 }}>
 
           {/* ── Left column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Status pills */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {/* Status + timer */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <Pill label={`Phase ${s.gamePhaseIndex}/3`} color="#3B82F6" />
               <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
               <Pill label={`Global ${s.questionIndex + 1}/15`} color="#475569" />
               {s.pendingFor && (
                 <Pill label={`⏳ ${teamList.find(t => t.id === s.pendingFor)?.name ?? s.pendingFor}`} color="#F59E0B" />
               )}
+              {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
             </div>
 
-            {/* Action controls */}
+            {/* Main action controls */}
             <div style={card}>
               <div style={sectionLabel}>Spielsteuerung</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
 
                 {s.phase === 'LOBBY' && (
                   <>
@@ -94,32 +150,32 @@ export default function QQModeratorPage() {
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
                     </select>
-                    <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
+                    <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten [Space]</Btn>
                   </>
                 )}
 
                 {s.phase === 'PHASE_INTRO' && (
                   <Btn color="#22C55E" onClick={() => emit('qq:activateQuestion', { roomCode })}>
-                    ▶ Frage aktivieren
+                    ▶ Frage aktivieren [Space]
                   </Btn>
                 )}
 
                 {s.phase === 'QUESTION_ACTIVE' && (
                   <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
-                    Antwort aufdecken
+                    Antwort aufdecken [Space]
                   </Btn>
                 )}
 
                 {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
                   <>
-                    {teamList.map(t => (
+                    {teamList.map((t, i) => (
                       <Btn key={t.id} color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
-                        <span style={{ marginRight: 4 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-                        ✓ {t.name}
+                        <span>{qqGetAvatar(t.avatarId).emoji}</span>
+                        <span>✓ {t.name} [{i + 1}]</span>
                       </Btn>
                     ))}
                     <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
-                      ✗ Niemand
+                      ✗ Niemand [Esc]
                     </Btn>
                   </>
                 )}
@@ -130,7 +186,7 @@ export default function QQModeratorPage() {
 
                 {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor && (
                   <Btn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })}>
-                    → Nächste Frage
+                    → Nächste Frage [Space]
                   </Btn>
                 )}
 
@@ -147,6 +203,31 @@ export default function QQModeratorPage() {
                 </Btn>
               </div>
             </div>
+
+            {/* Buzz queue */}
+            {s.buzzQueue.length > 0 && (
+              <div style={{ ...card, borderColor: 'rgba(251,191,36,0.3)' }}>
+                <div style={sectionLabel}>⚡ Buzz-Reihenfolge</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {s.buzzQueue.map((b, i) => {
+                    const team = teamList.find(t => t.id === b.teamId);
+                    if (!team) return null;
+                    return (
+                      <div key={b.teamId} style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '6px 14px', borderRadius: 10,
+                        background: i === 0 ? `${team.color}30` : 'rgba(255,255,255,0.04)',
+                        border: `2px solid ${i === 0 ? team.color : 'rgba(255,255,255,0.1)'}`,
+                      }}>
+                        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 800 }}>#{i + 1}</span>
+                        <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                        <span style={{ fontWeight: 800, color: team.color, fontSize: 14 }}>{team.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Current question */}
             {s.currentQuestion && (
@@ -168,9 +249,7 @@ export default function QQModeratorPage() {
                   {s.currentQuestion.text}
                 </div>
                 {s.currentQuestion.textEn && (
-                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 8 }}>
-                    {s.currentQuestion.textEn}
-                  </div>
+                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 8 }}>{s.currentQuestion.textEn}</div>
                 )}
                 {s.revealedAnswer && (
                   <div style={{
@@ -191,8 +270,9 @@ export default function QQModeratorPage() {
                 <div style={{ color: '#475569', fontSize: 13 }}>Noch keine Teams beigetreten</div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {teamList.map(t => {
+                {teamList.map((t, i) => {
                   const stats = s.teamPhaseStats[t.id];
+                  const buzzPos = s.buzzQueue.findIndex(b => b.teamId === t.id);
                   return (
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 10,
@@ -200,6 +280,7 @@ export default function QQModeratorPage() {
                       background: s.correctTeamId === t.id ? `${t.color}18` : 'rgba(255,255,255,0.03)',
                       display: 'flex', alignItems: 'center', gap: 10,
                     }}>
+                      <span style={{ fontSize: 11, color: '#475569', fontWeight: 800, width: 16 }}>{i + 1}</span>
                       <span style={{ fontSize: 22 }}>{qqGetAvatar(t.avatarId).emoji}</span>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -207,9 +288,9 @@ export default function QQModeratorPage() {
                           <span style={{ fontSize: 11, color: t.connected ? '#22C55E' : '#EF4444' }}>
                             {t.connected ? '●' : '○'}
                           </span>
-                          {s.correctTeamId === t.id && (
-                            <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>
-                          )}
+                          {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
+                          {buzzPos === 0 && <span style={{ fontSize: 11, color: '#FBBF24' }}>⚡ erste</span>}
+                          {buzzPos > 0 && <span style={{ fontSize: 11, color: '#64748b' }}>⚡ #{buzzPos + 1}</span>}
                         </div>
                         <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                           {t.largestConnected} verbunden · {t.totalCells} Felder
@@ -217,9 +298,7 @@ export default function QQModeratorPage() {
                           {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
                         </div>
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>
-                        {t.largestConnected}
-                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
                     </div>
                   );
                 })}
@@ -227,8 +306,71 @@ export default function QQModeratorPage() {
             </div>
           </div>
 
-          {/* ── Right column: Grid ── */}
+          {/* ── Right column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Settings */}
+            <div style={card}>
+              <div style={sectionLabel}>Einstellungen</div>
+
+              {/* Timer */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>⏱ Timer (Sekunden)</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    type="number" min={5} max={120}
+                    value={timerInput}
+                    onChange={e => setTimerInput(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 70 }}
+                  />
+                  <Btn small color="#3B82F6" onClick={applyTimer}>Setzen</Btn>
+                  {[15, 20, 30, 45, 60].map(t => (
+                    <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
+                      style={{
+                        padding: '4px 8px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
+                        background: s.timerDurationSec === t ? 'rgba(59,130,246,0.2)' : 'transparent',
+                        color: s.timerDurationSec === t ? '#3B82F6' : '#64748b',
+                        cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                      }}>{t}s</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Language */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🌐 Sprache</div>
+                <select value={s.language}
+                  onChange={e => emit('qq:setLanguage', { roomCode, language: e.target.value as QQLanguage })}
+                  style={selectStyle}>
+                  <option value="both">DE + EN</option>
+                  <option value="de">Deutsch</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+
+              {/* Avatars */}
+              <div>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🐾 Avatar-Auswahl</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    onClick={() => emit('qq:setAvatars', { roomCode, enabled: !s.avatarsEnabled })}
+                    style={{
+                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 800, fontSize: 13,
+                      border: `1px solid ${s.avatarsEnabled ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+                      background: s.avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+                      color: s.avatarsEnabled ? '#22C55E' : '#64748b',
+                    }}>
+                    {s.avatarsEnabled ? '✓ Avatare aktiviert' : '○ Avatare deaktiviert'}
+                  </button>
+                  <span style={{ fontSize: 11, color: '#475569' }}>
+                    {s.avatarsEnabled ? 'Teams wählen selbst' : 'Zufällig zugewiesen'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid */}
             {s.grid && (
               <div style={card}>
                 <div style={sectionLabel}>Grid {s.gridSize}×{s.gridSize}</div>
@@ -236,7 +378,7 @@ export default function QQModeratorPage() {
               </div>
             )}
 
-            {/* Phase stats summary */}
+            {/* Rangliste */}
             <div style={card}>
               <div style={sectionLabel}>Rangliste</div>
               {[...teamList].sort((a, b) => b.largestConnected - a.largestConnected).map((t, i) => (
@@ -244,7 +386,7 @@ export default function QQModeratorPage() {
                   <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
                   <span>{qqGetAvatar(t.avatarId).emoji}</span>
                   <span style={{ flex: 1, fontWeight: 800, color: t.color, fontSize: 13 }}>{t.name}</span>
-                  <span style={{ fontSize: 12, color: '#94a3b8' }}>{t.largestConnected}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#94a3b8' }}>{t.largestConnected}</span>
                 </div>
               ))}
             </div>
@@ -255,7 +397,36 @@ export default function QQModeratorPage() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Timer pill (live countdown) ──────────────────────────────────────────────
+
+function TimerPill({ endsAt }: { endsAt: number }) {
+  const [remaining, setRemaining] = useState(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const r = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setRemaining(r);
+      if (r === 0) clearInterval(interval);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [endsAt]);
+
+  const urgent = remaining <= 5;
+  return (
+    <div style={{
+      padding: '4px 14px', borderRadius: 999, fontWeight: 900, fontSize: 14,
+      background: urgent ? 'rgba(239,68,68,0.2)' : 'rgba(251,191,36,0.15)',
+      border: `1px solid ${urgent ? '#EF4444' : '#FBBF24'}`,
+      color: urgent ? '#EF4444' : '#FBBF24',
+      minWidth: 52, textAlign: 'center',
+      animation: urgent ? 'pulse 0.5s ease infinite alternate' : 'none',
+    }}>
+      ⏱ {remaining}s
+    </div>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function PlacementControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.pendingFor);
@@ -298,7 +469,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
 }
 
 function MiniGrid({ state: s }: { state: QQStateUpdate }) {
-  const cellSize = Math.min(44, Math.floor(296 / s.gridSize));
+  const cellSize = Math.min(44, Math.floor(316 / s.gridSize));
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`, gap: 3 }}>
       {s.grid.flatMap((row, r) =>
@@ -342,22 +513,18 @@ function Btn({ children, color, onClick, outline = false, small = false }: {
   return (
     <button onClick={onClick} style={{
       padding: small ? '5px 12px' : '8px 18px',
-      borderRadius: 8,
-      border: `1px solid ${color}`,
+      borderRadius: 8, border: `1px solid ${color}`,
       background: outline ? 'transparent' : `${color}22`,
-      color,
-      cursor: 'pointer',
-      fontFamily: 'inherit',
-      fontWeight: 800,
+      color, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800,
       fontSize: small ? 12 : 13,
-      display: 'inline-flex', alignItems: 'center', gap: 4,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
       {children}
     </button>
   );
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function actionLabel(action: string, stats: any): string {
   if (action === 'PLACE_1') return '1 Feld setzen';
@@ -367,11 +534,11 @@ function actionLabel(action: string, stats: any): string {
   return action;
 }
 
-function phasePill(phase: string): React.CSSProperties {
+function phasePillStyle(phase: string): React.CSSProperties {
   const colors: Record<string, string> = {
     LOBBY: '#475569', PHASE_INTRO: '#3B82F6', QUESTION_ACTIVE: '#22C55E',
-    QUESTION_REVEAL: '#F59E0B', PLACEMENT: '#EF4444', COMEBACK_CHOICE: '#8B5CF6',
-    GAME_OVER: '#64748b',
+    QUESTION_REVEAL: '#F59E0B', PLACEMENT: '#EF4444',
+    COMEBACK_CHOICE: '#8B5CF6', GAME_OVER: '#64748b',
   };
   const c = colors[phase] ?? '#475569';
   return {
@@ -382,7 +549,7 @@ function phasePill(phase: string): React.CSSProperties {
   };
 }
 
-function badge(color: string): React.CSSProperties {
+function badgeStyle(color: string): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 999,
     background: `${color}18`, border: `1px solid ${color}44`,
@@ -391,17 +558,15 @@ function badge(color: string): React.CSSProperties {
   };
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const page: React.CSSProperties = {
   minHeight: '100vh', background: '#0D0A06', color: '#e2e8f0',
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  padding: 20,
+  fontFamily: "'Nunito', system-ui, sans-serif", padding: 20,
 };
 
 const header: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  marginBottom: 18,
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
 };
 
 const card: React.CSSProperties = {
@@ -412,8 +577,7 @@ const card: React.CSSProperties = {
 
 const sectionLabel: React.CSSProperties = {
   fontSize: 11, fontWeight: 800, color: '#475569',
-  textTransform: 'uppercase', letterSpacing: '0.07em',
-  marginBottom: 10,
+  textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10,
 };
 
 const selectStyle: React.CSSProperties = {
@@ -421,4 +585,11 @@ const selectStyle: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.15)',
   background: '#1a1a2e', color: '#e2e8f0',
   fontFamily: 'inherit', fontSize: 13,
+};
+
+const inputStyle: React.CSSProperties = {
+  padding: '6px 10px', borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.15)',
+  background: 'rgba(255,255,255,0.06)', color: '#e2e8f0',
+  fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
 };

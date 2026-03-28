@@ -7,6 +7,7 @@ import {
   QQMarkWrongPayload, QQPlaceCellPayload, QQStealCellPayload,
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
+  QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
   QQAck,
 } from '../../../shared/quarterQuizTypes';
 import {
@@ -15,6 +16,7 @@ import {
   qqRevealAnswer, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
+  qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
 } from './qqRooms';
 
 type AckFn = (payload: QQAck) => void;
@@ -87,7 +89,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:activateQuestion', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqActivateQuestion(room);
+        qqActivateQuestion(room, () => {
+          // Timer expired — reveal answer automatically and broadcast
+          try {
+            qqRevealAnswer(room);
+          } catch { /* already revealed */ }
+          broadcast(io, payload.roomCode);
+        });
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -105,6 +113,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:markCorrect', (payload: QQMarkCorrectPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        qqClearBuzz(room);
         qqMarkCorrect(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -114,6 +123,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:markWrong', (payload: QQMarkWrongPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        qqClearBuzz(room);
         qqMarkWrong(room);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -133,6 +143,35 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqTriggerComeback(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Buzz in (teams) ────────────────────────────────────────────────────
+    socket.on('qq:buzzIn', (payload: QQBuzzInPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqBuzzIn(room, payload.teamId);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Settings ───────────────────────────────────────────────────────────
+    socket.on('qq:setTimer', (payload: QQSetTimerPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqSetTimerDuration(room, payload.durationSec);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setAvatars', (payload: QQSetAvatarsPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.avatarsEnabled = payload.enabled;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

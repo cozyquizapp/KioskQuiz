@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
@@ -172,9 +172,14 @@ function QuestionView({ state: s, revealed = false }: { state: QQStateUpdate; re
           )}
         </div>
 
-        {/* Phase + question counter */}
-        <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 16 }}>
-          Phase {s.gamePhaseIndex} · Frage {(s.questionIndex % 5) + 1}/5
+        {/* Phase + question counter + timer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, color: '#475569', fontWeight: 700 }}>
+            Phase {s.gamePhaseIndex} · Frage {(s.questionIndex % 5) + 1}/5
+          </span>
+          {s.timerEndsAt && !revealed && (
+            <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} />
+          )}
         </div>
 
         {/* Question text */}
@@ -369,6 +374,44 @@ function GameOverView({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       <GridDisplay state={s} />
+    </div>
+  );
+}
+
+// ── BEAMER TIMER ─────────────────────────────────────────────────────────────
+
+function BeamerTimer({ endsAt, durationSec }: { endsAt: number; durationSec: number }) {
+  const [remaining, setRemaining] = useState(Math.max(0, (endsAt - Date.now()) / 1000));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      setRemaining(r);
+      if (r === 0) clearInterval(interval);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [endsAt]);
+
+  const pct = Math.min(100, (remaining / durationSec) * 100);
+  const urgent = remaining <= 5;
+  const secs = Math.ceil(remaining);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        fontWeight: 900, fontSize: 28, minWidth: 52, textAlign: 'center',
+        color: urgent ? '#EF4444' : '#FBBF24',
+        textShadow: urgent ? '0 0 20px rgba(239,68,68,0.5)' : 'none',
+      }}>
+        {secs}
+      </div>
+      <div style={{ width: 120, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 4,
+          background: urgent ? '#EF4444' : '#FBBF24',
+          width: `${pct}%`, transition: 'width 0.1s linear',
+        }} />
+      </div>
     </div>
   );
 }

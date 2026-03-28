@@ -5,7 +5,7 @@ import {
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_PHASE,
-  qqGridSize,
+  qqGridSize, QQBuzzEntry,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -41,6 +41,14 @@ export interface QQRoomState {
   comebackAction: QQComebackAction | null;
   swapFirstCell: { row: number; col: number; ownerId: string } | null;
   language: QQLanguage;
+  // Timer
+  timerDurationSec: number;
+  timerEndsAt: number | null;
+  timerHandle: ReturnType<typeof setTimeout> | null;
+  // Buzz
+  buzzQueue: QQBuzzEntry[];
+  // Settings
+  avatarsEnabled: boolean;
   lastActivityAt: number;
 }
 
@@ -74,6 +82,11 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       comebackAction: null,
       swapFirstCell: null,
       language: 'both',
+      timerDurationSec: 30,
+      timerEndsAt: null,
+      timerHandle: null,
+      buzzQueue: [],
+      avatarsEnabled: true,
       lastActivityAt: Date.now(),
     };
     qqRooms.set(roomCode, room);
@@ -168,19 +181,69 @@ export function qqStartGame(
   room.lastActivityAt = Date.now();
 }
 
+// ── Timer helpers ─────────────────────────────────────────────────────────────
+export function qqStopTimer(room: QQRoomState): void {
+  if (room.timerHandle) {
+    clearTimeout(room.timerHandle);
+    room.timerHandle = null;
+  }
+  room.timerEndsAt = null;
+}
+
+// onExpire is called by the socket handler to broadcast when timer ends
+export function qqStartTimer(
+  room: QQRoomState,
+  onExpire: () => void
+): void {
+  qqStopTimer(room);
+  const durationMs   = room.timerDurationSec * 1000;
+  room.timerEndsAt   = Date.now() + durationMs;
+  room.timerHandle   = setTimeout(() => {
+    room.timerHandle = null;
+    room.timerEndsAt = null;
+    onExpire();
+  }, durationMs);
+}
+
+export function qqSetTimerDuration(room: QQRoomState, durationSec: number): void {
+  room.timerDurationSec = Math.max(5, Math.min(120, durationSec));
+}
+
+// ── Buzz in ───────────────────────────────────────────────────────────────────
+export function qqBuzzIn(room: QQRoomState, teamId: string): void {
+  if (room.phase !== 'QUESTION_ACTIVE') {
+    throw new QQError('WRONG_PHASE', 'Buzzen nur bei aktiver Frage möglich.');
+  }
+  assertTeam(room, teamId);
+  // Prevent double-buzz from same team
+  if (room.buzzQueue.some(b => b.teamId === teamId)) return;
+  room.buzzQueue.push({ teamId, buzzedAt: Date.now() });
+  room.lastActivityAt = Date.now();
+}
+
+export function qqClearBuzz(room: QQRoomState): void {
+  room.buzzQueue = [];
+}
+
 // ── Question flow ─────────────────────────────────────────────────────────────
-export function qqActivateQuestion(room: QQRoomState): void {
+export function qqActivateQuestion(
+  room: QQRoomState,
+  onTimerExpire: () => void
+): void {
   assertPhase(room, ['PHASE_INTRO', 'PLACEMENT', 'COMEBACK_CHOICE']);
   room.phase          = 'QUESTION_ACTIVE';
   room.revealedAnswer = null;
   room.correctTeamId  = null;
   room.pendingFor     = null;
   room.pendingAction  = null;
+  room.buzzQueue      = [];
   room.lastActivityAt = Date.now();
+  qqStartTimer(room, onTimerExpire);
 }
 
 export function qqRevealAnswer(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
+  qqStopTimer(room);
   const q = room.currentQuestion;
   room.phase          = 'QUESTION_REVEAL';
   room.revealedAnswer = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
@@ -558,11 +621,17 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
       : null,
     language:         room.language,
+    timerDurationSec: room.timerDurationSec,
+    timerEndsAt:      room.timerEndsAt,
+    buzzQueue:        room.buzzQueue,
+    avatarsEnabled:   room.avatarsEnabled,
   };
 }
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 export function qqResetRoom(room: QQRoomState): void {
+  qqStopTimer(room);
+  room.buzzQueue       = [];
   const gs = room.gridSize;
   room.phase           = 'LOBBY';
   room.gamePhaseIndex  = 1;

@@ -1540,9 +1540,16 @@
 }
 
 .cozyQuestionGrid.phase-reveal .cozyQuestionText {
-  font-size: clamp(16px, 1.9vw, 26px);
+  font-size: clamp(16px, 1.9vw, 26px) !important;
   text-align: left;
   line-height: 1.25;
+}
+/* BilingualLabel inner divs also capped in reveal layout */
+.cozyQuestionGrid.phase-reveal .cozyQuestionText > div > div:first-child {
+  font-size: clamp(18px, 2.2vw, 32px) !important;
+}
+.cozyQuestionGrid.phase-reveal .cozyQuestionText > div > div:last-child {
+  font-size: clamp(12px, 1.5vw, 20px) !important;
 }
 
 /* MC reveal: solution label above the tiles */

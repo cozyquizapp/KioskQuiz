@@ -3445,8 +3445,11 @@ useEffect(() => {
     // Bilingual prompt rendering
     const promptDeRaw = (question as any)?.prompt || (question as any)?.bunteTuete?.prompt || '';
     const promptEnRaw = (question as any)?.promptEn || (question as any)?.bunteTuete?.promptEn || '';
-    const promptTextElement =
-      language === 'both' && promptDeRaw && promptEnRaw
+    // oneOfEight: don't show bunteTuete.prompt on beamer (instructions are for /team only)
+    const isOneOfEightQuestion = (question as any)?.bunteTuete?.kind === 'oneOfEight';
+    const promptTextElement = isOneOfEightQuestion
+      ? null
+      : language === 'both' && promptDeRaw && promptEnRaw
         ? <BilingualLabel en={promptEnRaw} de={promptDeRaw} variant="badge" />
         : promptText;
     
@@ -3646,13 +3649,7 @@ useEffect(() => {
       };
 
       const renderHeroBody = () => {
-        if (!question) {
-          return (
-            <div className="cozyQuestionEmpty">
-              <p>{language === 'de' ? 'Keine Frage aktiv' : 'No active question'}</p>
-            </div>
-          );
-        }
+        if (!question) return null;
         if (phase === 'reveal') {
           if (question.type === 'SCHAETZCHEN') {
             return (
@@ -3801,6 +3798,7 @@ useEffect(() => {
       };
 
       const isTop5 = (question as any)?.bunteTuete?.kind === 'top5';
+      const isMapReveal = phase === 'reveal' && (question as any)?.bunteTuete?.kind === 'map';
       // Split layout: image takes half the screen, question card takes the other half
       const showSplitLayout = !!mediaUrl && phase !== 'reveal';
       const submissionFlags = (() => {
@@ -3847,7 +3845,12 @@ useEffect(() => {
           footerMessage={undefined}
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
-          {showSplitLayout ? (
+          {isMapReveal ? (
+            /* Map reveal: full-area map (its own pin→target→split layout) */
+            <div key={phase} style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              {renderQuestionCardGrid()}
+            </div>
+          ) : showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */
             <div key={phase} className={`cozyMediaLayout ${mediaIsPortrait === false ? 'landscape-split' : 'portrait-split'}`}>
               {heroEl}

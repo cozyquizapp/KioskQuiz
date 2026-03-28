@@ -16,9 +16,9 @@ const cozyLiveLinks: LinkItem[] = [
 
 // ── Neues Spiel (Name TBD) ────────────────────────────────────────────────────
 const revierLiveLinks: LinkItem[] = [
-  { path: '/revier-moderator', label: 'Moderator', note: 'Fragen steuern, Gewinner bestätigen' },
-  { path: '/revier-beamer', label: 'Beamer', note: 'Grid live anzeigen' },
-  { path: '/revier-team', label: 'Team', note: 'Antworten & Felder wählen' },
+  { path: '/quarterquiz-moderator', label: 'Moderator', note: 'Fragen steuern, Gewinner bestätigen' },
+  { path: '/quarterquiz-beamer', label: 'Beamer', note: 'Grid live anzeigen' },
+  { path: '/quarterquiz-team', label: 'Team', note: 'Antworten & Felder wählen' },
 ];
 
 const revierDevLinks: LinkItem[] = [

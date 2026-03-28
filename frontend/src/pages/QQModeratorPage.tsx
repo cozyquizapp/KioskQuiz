@@ -108,7 +108,49 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // F16 / F20 — reserved for future (mute/pause in CozyQuiz, no equivalent yet in QQ)
+    // F13 — Nächste Aktion (= Space)
+    if (e.code === 'F13') {
+      e.preventDefault();
+      if (s.phase === 'LOBBY')                                                    startGame();
+      else if (s.phase === 'PHASE_INTRO')                                         emitRef.current('qq:activateQuestion', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE')                                     emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
+      return;
+    }
+
+    // F14 — Team 1 korrekt (schnellster Buzz-Winner bestätigen)
+    if (e.code === 'F14') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.teams[0])
+        emitRef.current('qq:markCorrect', { roomCode, teamId: s.teams[0].id });
+      return;
+    }
+
+    // F15 — Antwort aufdecken (= R)
+    if (e.code === 'F15') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
+      return;
+    }
+
+    // F16 — Niemand korrekt (= Esc)
+    if (e.code === 'F16') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
+        emitRef.current('qq:markWrong', { roomCode });
+      return;
+    }
+
+    // F17 — Nächste Frage (= N)
+    if (e.code === 'F17') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      return;
+    }
+
+    // F18 — Reset (Notfall)
+    // F20 — reserviert
   }, [roomCode]);
 
   useEffect(() => {
@@ -133,7 +175,7 @@ export default function QQModeratorPage() {
             Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
-            Space · R · N · 1–5 · Esc
+            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc
           </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}

@@ -1204,8 +1204,15 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
     setBlitzSubmitted(Boolean(blitzState?.submissions?.includes(teamId)));
     if (!isBlitzPlaying) {
       setBlitzAnswers(['', '', '', '', '']);
+      setExpandedBlitzItem(0);
     }
   }, [teamId, blitzState, isBlitzPlaying]);
+
+  // Clamp expandedBlitzItem when totalItems changes (server sends fewer items than expected)
+  const blitzTotalItemsForClamp = (blitzState?.items ?? []).length || 5;
+  useEffect(() => {
+    setExpandedBlitzItem((prev) => Math.min(prev, Math.max(0, blitzTotalItemsForClamp - 1)));
+  }, [blitzTotalItemsForClamp]);
 
   useEffect(() => {
     if (blitzState?.phase !== 'BANNING') {

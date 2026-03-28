@@ -227,7 +227,7 @@ function BunteOrderDnD({
 // Zeigt nur noch verfügbare Aussagen. Aktuelle Aussage zentriert + voll sichtbar,
 // Vorgänger/Nachfolger oben/unten geblurrt als Vorschau. Wischen oder Pfeil-Tippen
 // zum Navigieren. "Wählen" bestätigt die mittlere Aussage direkt.
-const SLOT_H = 90; // px pro Drum-Slot
+const SLOT_H = 110; // px pro Drum-Slot
 
 function OneOfEightWheel({
   statements,
@@ -264,6 +264,9 @@ function OneOfEightWheel({
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault(); // prevent page scroll while swiping wheel
+  };
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const delta = touchStartY.current - e.changedTouches[0].clientY;
@@ -297,6 +300,7 @@ function OneOfEightWheel({
           overflow: 'hidden',
         }}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {/* Prev (top, blurred) */}
@@ -758,7 +762,7 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
   const [blitzAnswers, setBlitzAnswers] = useState<string[]>(['', '', '', '', '']);
   const [blitzSubmitted, setBlitzSubmitted] = useState(false);
   const [blitzSelectionBusy, setBlitzSelectionBusy] = useState(false);
-  const [expandedBlitzItem, setExpandedBlitzItem] = useState<number | null>(0); // Start with first item expanded
+  const [expandedBlitzItem, setExpandedBlitzItem] = useState<number>(0); // current item index on mobile
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [rundlaufInput, setRundlaufInput] = useState('');
   const [rundlaufSubmitting, setRundlaufSubmitting] = useState(false);
@@ -3523,128 +3527,105 @@ function TeamView({ roomCode, rejoinTrigger, suppressAutoRejoin }: TeamViewProps
                   : `What do you see in the images?`}
               </div>
             </div>
-            {/* Item Buttons - Click to expand (Mobile only) */}
+            {/* Mobile: single item at a time — no scrolling */}
             {isMobile && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-              {Array.from({ length: totalItems }).map((_, idx) => {
-                const hasAnswer = blitzAnswers[idx] && blitzAnswers[idx].trim().length > 0;
-                const isExpanded = expandedBlitzItem === idx;
-                const palette = hasAnswer
-                  ? { bg: '#dcfce7', border: '#86efac', color: '#16a34a' }
-                  : isExpanded
-                  ? { bg: '#dbeafe', border: '#93c5fd', color: '#1d4ed8' }
-                  : { bg: '#f3f4f6', border: '#d1d5db', color: '#374151' };
-                return (
-                  <button
-                    key={`blitz-item-btn-${idx}`}
-                    onClick={() => {
-                      setExpandedBlitzItem(isExpanded ? null : idx);
-                      if (!isExpanded) {
-                        setTimeout(() => blitzInputsRef.current[idx]?.focus(), 100);
-                      }
-                    }}
-                    style={{
-                      flex: '1 1 auto',
-                      minWidth: '80px',
-                      padding: '12px 16px',
-                      background: palette.bg,
-                      border: `2px solid ${palette.border}`,
-                      borderRadius: '12px',
-                      color: palette.color,
-                      fontSize: '14px',
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      position: 'relative'
-                    }}
-                  >
-                    ITEM {idx + 1}
-                    {hasAnswer && (
-                      <span style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        right: '-6px',
-                        width: '16px',
-                        height: '16px',
+              <div style={{ display: 'grid', gap: 12 }}>
+                {/* Progress dots */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginBottom: 2 }}>
+                  {Array.from({ length: totalItems }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setExpandedBlitzItem(i)}
+                      style={{
+                        width: blitzAnswers[i]?.trim() ? 10 : 8,
+                        height: blitzAnswers[i]?.trim() ? 10 : 8,
                         borderRadius: '50%',
-                        background: 'rgba(34,197,94,0.9)',
-                        color: '#0f172a',
-                        fontSize: '11px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            )}
-            <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>
-              {language === 'de'
-                ? `Antworten: ${submissionCount}/${totalTeamsLabel}`
-                : `Submissions: ${submissionCount}/${totalTeamsLabel}`}
-            </div>
-            {/* Expanded Input Field - Mobile: Single expanded item, Desktop: All items */}
-            {isMobile && expandedBlitzItem !== null && expandedBlitzItem < blitzAnswers.length && (
-              <div
-                style={{
-                  display: 'grid',
-                  gap: 12,
-                  padding: '16px',
-                  borderRadius: '16px',
-                  border: '2px solid rgba(96,165,250,0.6)',
-                  background: 'rgba(96,165,250,0.1)',
-                  marginBottom: 12,
-                  animation: 'fadeIn 0.3s ease-in'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: 14, fontWeight: '700', color: '#dbeafe' }}>
-                    ITEM {expandedBlitzItem + 1}
-                  </label>
-                  <button
-                    onClick={() => setExpandedBlitzItem(null)}
-                    style={{
-                      background: '#f3f4f6',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      padding: '4px 12px',
-                      color: '#374151',
-                      fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {language === 'de' ? 'Schließen' : 'Close'}
-                  </button>
+                        background: blitzAnswers[i]?.trim() ? '#22c55e' : i === expandedBlitzItem ? '#93c5fd' : 'rgba(148,163,184,0.3)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        transition: 'all 0.2s',
+                        flexShrink: 0
+                      }}
+                    />
+                  ))}
                 </div>
+                {/* Current item label */}
+                <div style={{ textAlign: 'center', fontSize: 12, color: '#64748b', fontWeight: 700, letterSpacing: '0.1em' }}>
+                  FOTO {expandedBlitzItem + 1} / {totalItems}
+                </div>
+                {/* Input */}
                 <input
+                  key={expandedBlitzItem}
                   ref={(el) => (blitzInputsRef.current[expandedBlitzItem] = el)}
                   className="team-answer-input is-active"
+                  autoFocus
                   style={{
                     ...inputStyle,
-                    fontSize: '16px',
-                    padding: '14px',
-                    border: '2px solid #93c5fd',
-                    background: 'rgba(15, 30, 57, 0.88)',
+                    fontSize: '17px',
+                    padding: '16px 14px',
+                    border: `2px solid ${blitzAnswers[expandedBlitzItem]?.trim() ? 'rgba(34,197,94,0.6)' : 'rgba(96,165,250,0.5)'}`,
+                    background: 'rgba(15,30,57,0.88)',
                     color: '#e2e8f0',
-                    minHeight: '50px'
+                    borderRadius: 16,
                   }}
                   value={blitzAnswers[expandedBlitzItem] || ''}
                   disabled={!canAnswer}
-                  placeholder={`${language === 'de' ? 'Deine Antwort hier...' : 'Your answer here...'}`}
+                  placeholder={language === 'de' ? 'Antwort eingeben...' : 'Enter answer...'}
                   onChange={(e) =>
                     setBlitzAnswers((prev) => {
                       const next = [...prev];
-                      next[expandedBlitzItem!] = e.target.value;
+                      next[expandedBlitzItem] = e.target.value;
                       return next;
                     })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && expandedBlitzItem < totalItems - 1) {
+                      e.preventDefault();
+                      setExpandedBlitzItem((i) => i + 1);
+                    }
+                  }}
                 />
+                {/* Prev / Next navigation */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    disabled={expandedBlitzItem === 0}
+                    onClick={() => setExpandedBlitzItem((i) => i - 1)}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: 14,
+                      border: '1.5px solid rgba(148,163,184,0.2)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: expandedBlitzItem === 0 ? '#334155' : '#94a3b8',
+                      fontWeight: 700,
+                      fontSize: 18,
+                      cursor: expandedBlitzItem === 0 ? 'not-allowed' : 'pointer',
+                    }}
+                  >◀</button>
+                  <button
+                    disabled={expandedBlitzItem === totalItems - 1}
+                    onClick={() => setExpandedBlitzItem((i) => i + 1)}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: 14,
+                      border: '1.5px solid rgba(148,163,184,0.2)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: expandedBlitzItem === totalItems - 1 ? '#334155' : '#94a3b8',
+                      fontWeight: 700,
+                      fontSize: 18,
+                      cursor: expandedBlitzItem === totalItems - 1 ? 'not-allowed' : 'pointer',
+                    }}
+                  >▶</button>
+                </div>
               </div>
             )}
+            <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 4 }}>
+              {language === 'de'
+                ? `Abgegeben: ${submissionCount}/${totalTeamsLabel}`
+                : `Submitted: ${submissionCount}/${totalTeamsLabel}`}
+            </div>
             {/* Desktop: Show all items in compact grid */}
             {!isMobile && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 12 }}>

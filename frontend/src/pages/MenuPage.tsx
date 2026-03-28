@@ -201,11 +201,11 @@ const MenuPage = () => {
             sections={[{ links: cozyLiveLinks }]}
           />
 
-          {/* Neues Spiel */}
+          {/* Quarter Quiz / Quartier Quiz */}
           <AppSection
-            badge="Neues Spiel"
+            badge="Quarter Quiz"
             badgeColor="#3B82F6"
-            title="Grid-Spiel"
+            title="Quartier Quiz"
             subtitle="Territorium-Quiz — in Entwicklung"
             sections={[
               { label: 'Live spielen', links: revierLiveLinks },

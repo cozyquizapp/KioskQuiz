@@ -236,17 +236,7 @@ export default function QQModeratorPage() {
                 )}
 
                 {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
-                  <>
-                    {teamList.map((t, i) => (
-                      <Btn key={t.id} color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
-                        <span>{qqGetAvatar(t.avatarId).emoji}</span>
-                        <span>✓ {t.name}</span>
-                      </Btn>
-                    ))}
-                    <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
-                      ✗ Niemand
-                    </Btn>
-                  </>
+                  <span style={{ fontSize: 12, color: '#475569' }}>↓ Antwort bestätigen in Team-Liste</span>
                 )}
 
                 {s.phase === 'PLACEMENT' && s.pendingAction && (
@@ -356,7 +346,7 @@ export default function QQModeratorPage() {
               </div>
             )}
 
-            {/* Teams */}
+            {/* Teams + live answers */}
             <div style={card}>
               <div style={sectionLabel}>Teams ({teamList.length})</div>
               {teamList.length === 0 && (
@@ -365,37 +355,72 @@ export default function QQModeratorPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {teamList.map((t, i) => {
                   const stats = s.teamPhaseStats[t.id];
-                  const buzzPos = s.buzzQueue.findIndex(b => b.teamId === t.id);
+                  const answer = s.answers.find(a => a.teamId === t.id);
+                  const isActive = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
                   return (
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 10,
-                      border: `2px solid ${s.pendingFor === t.id ? t.color : 'rgba(255,255,255,0.07)'}`,
+                      border: `2px solid ${s.pendingFor === t.id ? t.color : s.correctTeamId === t.id ? `${t.color}88` : 'rgba(255,255,255,0.07)'}`,
                       background: s.correctTeamId === t.id ? `${t.color}18` : 'rgba(255,255,255,0.03)',
-                      display: 'flex', alignItems: 'center', gap: 10,
                     }}>
-                      <span style={{ fontSize: 11, color: '#475569', fontWeight: 800, width: 16 }}>{i + 1}</span>
-                      <span style={{ fontSize: 22 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontWeight: 800, color: t.color }}>{t.name}</span>
-                          <span style={{ fontSize: 11, color: t.connected ? '#22C55E' : '#EF4444' }}>
-                            {t.connected ? '●' : '○'}
-                          </span>
-                          {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
-                          {buzzPos === 0 && <span style={{ fontSize: 11, color: '#FBBF24' }}>⚡ erste</span>}
-                          {buzzPos > 0 && <span style={{ fontSize: 11, color: '#64748b' }}>⚡ #{buzzPos + 1}</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#475569', fontWeight: 800, width: 16 }}>{i + 1}</span>
+                        <span style={{ fontSize: 20 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontWeight: 800, color: t.color }}>{t.name}</span>
+                            <span style={{ fontSize: 11, color: t.connected ? '#22C55E' : '#EF4444' }}>
+                              {t.connected ? '●' : '○'}
+                            </span>
+                            {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
+                            {answer && <span style={{ fontSize: 11, color: '#FBBF24' }}>✎ abgegeben</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+                            {t.largestConnected} verbunden · {t.totalCells} Felder
+                            {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
+                            {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                          {t.largestConnected} verbunden · {t.totalCells} Felder
-                          {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
-                          {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
-                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
+                        {/* Kick button */}
+                        <button
+                          onClick={() => emit('qq:kickTeam', { roomCode, teamId: t.id })}
+                          title="Kick"
+                          style={{
+                            padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
+                            border: '1px solid rgba(239,68,68,0.3)', background: 'transparent',
+                            color: '#64748b', fontSize: 11, fontFamily: 'inherit',
+                          }}>✕</button>
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
+                      {/* Live answer */}
+                      {isActive && answer && (
+                        <div style={{
+                          marginTop: 8, padding: '6px 10px', borderRadius: 8,
+                          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                          fontSize: 14, fontWeight: 700, color: '#e2e8f0',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                        }}>
+                          <span>„{answer.text}"</span>
+                          {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
+                            <Btn small color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
+                              ✓ Richtig
+                            </Btn>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
+
+              {/* Niemand-Button wenn alle geantwortet haben */}
+              {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
+                <div style={{ marginTop: 8 }}>
+                  <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
+                    ✗ Niemand korrekt
+                  </Btn>
+                </div>
+              )}
             </div>
           </div>
 

@@ -5,7 +5,7 @@ import {
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_PHASE,
-  qqGridSize, QQBuzzEntry,
+  qqGridSize, QQBuzzEntry, QQAnswerEntry,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -45,7 +45,9 @@ export interface QQRoomState {
   timerDurationSec: number;
   timerEndsAt: number | null;
   timerHandle: ReturnType<typeof setTimeout> | null;
-  // Buzz
+  // Answers
+  answers: QQAnswerEntry[];
+  // Buzz (Hot Potato)
   buzzQueue: QQBuzzEntry[];
   // Settings
   avatarsEnabled: boolean;
@@ -85,6 +87,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       timerDurationSec: 30,
       timerEndsAt: null,
       timerHandle: null,
+      answers: [],
       buzzQueue: [],
       avatarsEnabled: true,
       lastActivityAt: Date.now(),
@@ -137,6 +140,20 @@ export function qqSetTeamConnected(
   if (room.teams[teamId]) {
     room.teams[teamId].connected = connected;
   }
+}
+
+export function qqKickTeam(room: QQRoomState, teamId: string): void {
+  if (!room.teams[teamId]) return;
+  // Only kick in LOBBY — during game just disconnect
+  if (room.phase === 'LOBBY') {
+    delete room.teams[teamId];
+    room.joinOrder = room.joinOrder.filter(id => id !== teamId);
+    delete room.teamPhaseStats[teamId];
+  } else {
+    room.teams[teamId].connected = false;
+  }
+  room.answers  = room.answers.filter(a => a.teamId !== teamId);
+  room.buzzQueue = room.buzzQueue.filter(b => b.teamId !== teamId);
 }
 
 function emptyPhaseStats(): QQTeamPhaseStats {
@@ -209,6 +226,35 @@ export function qqSetTimerDuration(room: QQRoomState, durationSec: number): void
   room.timerDurationSec = Math.max(5, Math.min(120, durationSec));
 }
 
+// ── Answer submission ─────────────────────────────────────────────────────────
+export function qqSubmitAnswer(
+  room: QQRoomState,
+  teamId: string,
+  answer: string
+): { allAnswered: boolean } {
+  if (room.phase !== 'QUESTION_ACTIVE') {
+    throw new QQError('WRONG_PHASE', 'Antworten nur bei aktiver Frage möglich.');
+  }
+  assertTeam(room, teamId);
+  // Only one answer per team per question
+  if (room.answers.some(a => a.teamId === teamId)) {
+    // Update existing answer
+    const existing = room.answers.find(a => a.teamId === teamId)!;
+    existing.text = answer.trim();
+    existing.submittedAt = Date.now();
+  } else {
+    room.answers.push({ teamId, text: answer.trim(), submittedAt: Date.now() });
+  }
+  room.lastActivityAt = Date.now();
+  const connectedTeams = room.joinOrder.filter(id => room.teams[id]?.connected);
+  const allAnswered = connectedTeams.every(id => room.answers.some(a => a.teamId === id));
+  return { allAnswered };
+}
+
+export function qqClearAnswers(room: QQRoomState): void {
+  room.answers = [];
+}
+
 // ── Buzz in ───────────────────────────────────────────────────────────────────
 export function qqBuzzIn(room: QQRoomState, teamId: string): void {
   if (room.phase !== 'QUESTION_ACTIVE') {
@@ -236,6 +282,7 @@ export function qqActivateQuestion(
   room.correctTeamId  = null;
   room.pendingFor     = null;
   room.pendingAction  = null;
+  room.answers        = [];
   room.buzzQueue      = [];
   room.lastActivityAt = Date.now();
   qqStartTimer(room, onTimerExpire);
@@ -623,6 +670,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     language:         room.language,
     timerDurationSec: room.timerDurationSec,
     timerEndsAt:      room.timerEndsAt,
+    answers:          room.answers,
     buzzQueue:        room.buzzQueue,
     avatarsEnabled:   room.avatarsEnabled,
   };
@@ -631,6 +679,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
 // ── Reset ─────────────────────────────────────────────────────────────────────
 export function qqResetRoom(room: QQRoomState): void {
   qqStopTimer(room);
+  room.answers         = [];
   room.buzzQueue       = [];
   const gs = room.gridSize;
   room.phase           = 'LOBBY';

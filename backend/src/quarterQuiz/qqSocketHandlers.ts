@@ -8,7 +8,7 @@ import {
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
-  QQAck,
+  QQSubmitAnswerPayload, QQAck,
 } from '../../../shared/quarterQuizTypes';
 import {
   ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
@@ -17,6 +17,7 @@ import {
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
+  qqSubmitAnswer, qqClearAnswers, qqKickTeam,
 } from './qqRooms';
 
 type AckFn = (payload: QQAck) => void;
@@ -114,6 +115,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqClearBuzz(room);
+        qqClearAnswers(room);
         qqMarkCorrect(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -124,6 +126,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqClearBuzz(room);
+        qqClearAnswers(room);
         qqMarkWrong(room);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -148,11 +151,36 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // ── Buzz in (teams) ────────────────────────────────────────────────────
+    // ── Answer submission (teams) ──────────────────────────────────────────
+    socket.on('qq:submitAnswer', (payload: QQSubmitAnswerPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const { allAnswered } = qqSubmitAnswer(room, payload.teamId, payload.answer);
+        broadcast(io, payload.roomCode);
+        // Auto-reveal when all connected teams have answered
+        if (allAnswered) {
+          try { qqRevealAnswer(room); } catch { /* already revealed */ }
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Buzz in (teams, for Hot Potato) ───────────────────────────────────
     socket.on('qq:buzzIn', (payload: QQBuzzInPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqBuzzIn(room, payload.teamId);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Kick team (moderator) ──────────────────────────────────────────────
+    socket.on('qq:kickTeam', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqKickTeam(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

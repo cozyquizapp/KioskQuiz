@@ -294,8 +294,6 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const isRevealed = s.phase === 'QUESTION_REVEAL';
   const iWonThis = s.correctTeamId === myTeamId;
-  const myBuzzPos = s.buzzQueue.findIndex(b => b.teamId === myTeamId);
-  const hasBuzzed = myBuzzPos >= 0;
 
   return (
     <Card>
@@ -322,33 +320,12 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
         <div style={{ fontSize: 14, color: '#64748b', fontStyle: 'italic', marginBottom: 10 }}>{q.textEn}</div>
       )}
 
-      {/* Buzz-in button */}
+      {/* Answer input */}
       {!isRevealed && (
-        <div style={{ marginTop: 8 }}>
-          {!hasBuzzed ? (
-            <button
-              onClick={() => emit('qq:buzzIn', { roomCode, teamId: myTeamId })}
-              style={{
-                width: '100%', padding: '18px', borderRadius: 14,
-                border: '2px solid #FBBF24', background: 'rgba(251,191,36,0.15)',
-                color: '#FBBF24', cursor: 'pointer', fontFamily: 'inherit',
-                fontWeight: 900, fontSize: 20, letterSpacing: '0.02em',
-                transition: 'all 0.1s',
-              }}>
-              ⚡ Buzz!
-            </button>
-          ) : (
-            <div style={{
-              padding: '12px', borderRadius: 12, textAlign: 'center',
-              background: myBuzzPos === 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${myBuzzPos === 0 ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
-              fontSize: 15, fontWeight: 800,
-              color: myBuzzPos === 0 ? '#4ade80' : '#64748b',
-            }}>
-              {myBuzzPos === 0 ? '⚡ Erste! Moderator wertet aus…' : `⚡ Gebuzzt (Platz #${myBuzzPos + 1})`}
-            </div>
-          )}
-        </div>
+        <AnswerInput
+          state={s} myTeamId={myTeamId}
+          emit={emit} roomCode={roomCode}
+        />
       )}
 
       {isRevealed && s.revealedAnswer && (
@@ -372,6 +349,69 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
         </>
       )}
     </Card>
+  );
+}
+
+function AnswerInput({ state: s, myTeamId, emit, roomCode }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string;
+}) {
+  const [answer, setAnswer] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const myAnswer = s.answers.find(a => a.teamId === myTeamId);
+
+  // Reset when new question starts
+  useEffect(() => {
+    setAnswer('');
+    setSubmitted(false);
+  }, [s.currentQuestion?.id]);
+
+  async function submit() {
+    if (!answer.trim()) return;
+    await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: answer.trim() });
+    setSubmitted(true);
+  }
+
+  if (myAnswer) {
+    return (
+      <div style={{
+        marginTop: 10, padding: '12px 14px', borderRadius: 12, textAlign: 'center',
+        background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+        fontSize: 15, fontWeight: 800, color: '#4ade80',
+      }}>
+        ✓ Abgegeben: „{myAnswer.text}"
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <input
+        value={answer}
+        onChange={e => setAnswer(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        placeholder="Antwort eingeben…"
+        style={{
+          width: '100%', padding: '14px', borderRadius: 12, boxSizing: 'border-box',
+          border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)',
+          color: '#e2e8f0', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
+          marginBottom: 8,
+        }}
+        autoFocus
+      />
+      <button
+        onClick={submit}
+        disabled={!answer.trim()}
+        style={{
+          width: '100%', padding: '14px', borderRadius: 12,
+          border: `2px solid ${answer.trim() ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+          background: answer.trim() ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.04)',
+          color: answer.trim() ? '#22C55E' : '#475569',
+          cursor: answer.trim() ? 'pointer' : 'default',
+          fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+        }}>
+        ✓ Abschicken
+      </button>
+    </div>
   );
 }
 

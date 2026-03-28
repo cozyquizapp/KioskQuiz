@@ -112,10 +112,17 @@ export interface QQTeam {
 // ── Comeback action ───────────────────────────────────────────────────────────
 export type QQComebackAction = 'PLACE_2' | 'STEAL_1' | 'SWAP_2';
 
-// ── Buzz entry ────────────────────────────────────────────────────────────────
+// ── Answer entry ─────────────────────────────────────────────────────────────
+export interface QQAnswerEntry {
+  teamId: string;
+  text: string;
+  submittedAt: number;  // ms timestamp — used for fastest-correct ranking
+}
+
+// ── Buzz entry (kept for Hot Potato) ─────────────────────────────────────────
 export interface QQBuzzEntry {
   teamId: string;
-  buzzedAt: number;  // ms timestamp
+  buzzedAt: number;
 }
 
 // ── State broadcast (server → all clients) ────────────────────────────────────
@@ -140,7 +147,9 @@ export interface QQStateUpdate {
   // Timer
   timerDurationSec: number;
   timerEndsAt: number | null;        // ms timestamp, null = not running
-  // Buzz queue (ordered by speed)
+  // Answers (all submissions this question)
+  answers: QQAnswerEntry[];
+  // Buzz queue (ordered by speed, for Hot Potato)
   buzzQueue: QQBuzzEntry[];
   // Settings
   avatarsEnabled: boolean;
@@ -170,6 +179,7 @@ export interface QQSwapCellsPayload      { roomCode: string; teamId: string; row
 export interface QQNextQuestionPayload   { roomCode: string; }
 export interface QQSetLanguagePayload    { roomCode: string; language: QQLanguage; }
 export interface QQResetRoomPayload      { roomCode: string; }
+export interface QQSubmitAnswerPayload   { roomCode: string; teamId: string; answer: string; }
 export interface QQBuzzInPayload         { roomCode: string; teamId: string; }
 export interface QQSetTimerPayload       { roomCode: string; durationSec: number; }
 export interface QQSetAvatarsPayload     { roomCode: string; enabled: boolean; }

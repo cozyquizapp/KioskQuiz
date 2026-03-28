@@ -3,148 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bingo Grid — Tester</title>
+  <title>Grid Tester</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background: #0D0A06;
       color: #e2e8f0;
       font-family: 'Nunito', system-ui, sans-serif;
       min-height: 100vh;
-      padding: 20px 16px 40px;
+      padding: 16px;
     }
-
-    h1 { text-align: center; font-size: 22px; font-weight: 900; margin-bottom: 4px; }
-    .subtitle { text-align: center; color: #64748b; font-size: 12px; margin-bottom: 18px; }
-
-    /* Setup bar */
-    .setup-bar {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-      padding: 10px 14px;
-      background: rgba(255,255,255,0.03);
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.07);
-      max-width: 860px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .setup-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
-    .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.08); }
 
     .btn {
-      padding: 7px 14px;
+      padding: 8px 16px;
       border-radius: 8px;
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(255,255,255,0.05);
       color: #cbd5e1;
       cursor: pointer;
       font-family: inherit;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
       transition: all 0.12s;
       user-select: none;
     }
-    .btn:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
-    .btn.active { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.4); color: #fff; }
-    .btn.danger { border-color: rgba(239,68,68,0.5); color: #f87171; }
-    .btn.danger:hover { background: rgba(239,68,68,0.1); }
-    .btn.go { border-color: rgba(34,197,94,0.5); color: #4ade80; }
-    .btn.go:hover { background: rgba(34,197,94,0.1); }
+    .btn:hover  { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
+    .btn.active { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.45); color: #fff; }
+    .btn.go     { border-color: rgba(34,197,94,0.5); color: #4ade80; }
+    .btn.go:hover { background: rgba(34,197,94,0.08); }
+    .btn.danger { border-color: rgba(239,68,68,0.4); color: #f87171; }
+    .btn.danger:hover { background: rgba(239,68,68,0.08); }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+
+    /* Top bar */
+    .topbar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .sep { width: 1px; height: 18px; background: rgba(255,255,255,0.08); }
 
     /* Layout */
     .layout {
       display: grid;
-      grid-template-columns: 190px 1fr 190px;
-      gap: 16px;
-      max-width: 860px;
+      grid-template-columns: 170px 1fr 170px;
+      gap: 14px;
+      max-width: 820px;
       margin: 0 auto;
       align-items: start;
     }
-    @media (max-width: 680px) {
-      .layout { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 650px) { .layout { grid-template-columns: 1fr; } }
 
-    /* Team panels */
-    .team-panel { display: flex; flex-direction: column; gap: 8px; }
-    .panel-label { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
-
-    .team-card {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 2px solid rgba(255,255,255,0.07);
-      background: rgba(255,255,255,0.03);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .team-card:hover { background: rgba(255,255,255,0.06); }
-    .team-card.is-active { background: rgba(255,255,255,0.07); }
-
-    .team-row { display: flex; align-items: center; gap: 6px; }
-    .team-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-    .team-name { font-weight: 800; font-size: 14px; }
-    .team-stats { font-size: 11px; color: #64748b; margin-top: 3px; }
-    .fields-bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); margin-top: 6px; overflow: hidden; }
-    .fields-fill { height: 100%; border-radius: 3px; transition: width 0.25s; }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 1px 7px;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-    }
-    .badge-last { background: rgba(148,163,184,0.12); color: #94a3b8; }
-    .badge-joker { background: rgba(251,191,36,0.15); color: #fbbf24; }
-
-    /* Center */
-    .center-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-
-    /* Message */
-    .msg-bar {
+    /* Question card */
+    .q-card {
       width: 100%;
-      text-align: center;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.05);
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
-      font-size: 13px;
-      font-weight: 700;
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin-bottom: 4px;
     }
+    .q-meta { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .q-cat {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      font-weight: 800; font-size: 15px;
+    }
+    .q-instruction { font-size: 12px; color: #94a3b8; margin-top: 8px; }
 
-    /* Round bar */
-    .round-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      justify-content: center;
-      flex-wrap: wrap;
+    /* Winner selector */
+    .winner-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+    .winner-btn {
+      padding: 7px 14px; border-radius: 8px;
+      border: 2px solid transparent;
+      font-weight: 800; font-size: 13px;
+      cursor: pointer; transition: all 0.12s;
+      font-family: inherit;
     }
-    .round-pill {
-      padding: 6px 14px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      text-align: center;
-    }
-    .round-big { font-size: 20px; font-weight: 900; line-height: 1; }
-    .round-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .winner-btn.sel { border-color: #fff !important; color: #fff !important; filter: brightness(1.1); }
 
-    /* Phase 2 action chooser */
+    /* Action chooser (phase 2) */
     .action-box {
       width: 100%;
       padding: 10px 12px;
@@ -152,518 +95,544 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
     }
-    .action-box-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-    .action-hint { font-size: 11px; color: #64748b; margin-top: 7px; }
+    .action-title { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .action-hint  { font-size: 11px; color: #64748b; margin-top: 7px; }
+
+    /* Joker flash */
+    .joker-flash {
+      width: 100%; text-align: center; padding: 7px;
+      border-radius: 8px;
+      background: rgba(251,191,36,0.10);
+      border: 1px solid rgba(251,191,36,0.22);
+      color: #fbbf24; font-size: 12px; font-weight: 700;
+      display: none;
+    }
+
+    /* Phase banner */
+    .phase-banner {
+      width: 100%; text-align: center; padding: 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .phase-banner h2 { font-size: 20px; margin-bottom: 6px; }
+    .phase-banner p  { font-size: 13px; color: #94a3b8; margin-bottom: 12px; }
 
     /* Grid */
     .grid { display: grid; gap: 5px; }
-
     .cell {
       border-radius: 7px;
       border: 2px solid rgba(255,255,255,0.07);
       background: rgba(255,255,255,0.03);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 14px;
-      transition: transform 0.10s, border-color 0.12s, background 0.15s;
-      user-select: none;
-      aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 13px;
+      transition: transform 0.10s, border-color 0.12s;
+      user-select: none; aspect-ratio: 1;
     }
-    .cell:hover { transform: scale(1.08); }
-    .cell.empty-hover:hover { border-color: rgba(255,255,255,0.28); }
-    .cell.steal-hover:hover { border-color: #ef4444 !important; box-shadow: 0 0 0 1px rgba(239,68,68,0.3); }
-    .cell.own { opacity: 0.7; cursor: default; transform: none !important; }
+    .cell.interactive { cursor: pointer; }
+    .cell.interactive:hover { transform: scale(1.08); }
+    .cell.placeable:hover  { border-color: rgba(255,255,255,0.35) !important; }
+    .cell.stealable:hover  { border-color: #ef4444 !important; box-shadow: 0 0 0 1px rgba(239,68,68,0.3); }
 
-    /* Joker flash */
-    .joker-flash {
-      width: 100%;
-      padding: 7px;
-      border-radius: 8px;
-      background: rgba(251,191,36,0.10);
-      border: 1px solid rgba(251,191,36,0.25);
-      color: #fbbf24;
-      font-size: 12px;
-      font-weight: 700;
-      text-align: center;
-      display: none;
+    /* Team panel */
+    .team-panel { display: flex; flex-direction: column; gap: 7px; }
+    .panel-lbl  { font-size: 10px; color: #475569; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+    .team-card  {
+      padding: 9px 11px; border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+      cursor: pointer; transition: all 0.12s;
     }
+    .team-card.acting { background: rgba(255,255,255,0.08); }
+    .tc-row  { display: flex; align-items: center; gap: 5px; }
+    .tc-dot  { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+    .tc-name { font-weight: 800; font-size: 13px; }
+    .tc-stat { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .fbar    { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); margin-top: 5px; overflow: hidden; }
+    .fbar-fill { height: 100%; border-radius: 2px; transition: width 0.25s; }
+    .badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+    .badge-j { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-s { background: rgba(239,68,68,0.12); color: #f87171; }
 
     /* Log */
-    .log-wrap { width: 100%; }
-    .log-label { font-size: 10px; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .log { max-height: 110px; overflow-y: auto; border-radius: 8px; background: rgba(0,0,0,0.2); padding: 6px 8px; }
+    .log-wrap  { width: 100%; }
+    .log-lbl   { font-size: 10px; color: #334155; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .log       { max-height: 100px; overflow-y: auto; border-radius: 7px; background: rgba(0,0,0,0.2); padding: 5px 8px; }
     .log-entry { font-size: 11px; color: #475569; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .log-entry:first-child { color: #94a3b8; }
 
-    /* Occupation bar */
-    .occ-bar {
-      width: 100%;
-      font-size: 11px;
-      color: #475569;
-      text-align: center;
-    }
+    .occ { font-size: 11px; color: #334155; text-align: center; }
+
+    .center-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
   </style>
 </head>
 <body>
 
-<h1>Bingo Grid — Tester</h1>
-<p class="subtitle">Simuliere das Spielfeld. Klick auf leere Zelle = setzen · Klick auf Gegnerfeld = klauen (je nach Phase)</p>
-
-<div class="setup-bar">
-  <span class="setup-label">Teams</span>
+<!-- Top bar -->
+<div class="topbar">
+  <span style="font-size:12px;font-weight:700;color:#64748b">Teams:</span>
   <button class="btn" id="btn-t2" onclick="setTeamCount(2)">2</button>
   <button class="btn active" id="btn-t3" onclick="setTeamCount(3)">3</button>
   <button class="btn" id="btn-t4" onclick="setTeamCount(4)">4</button>
-  <div class="divider"></div>
-  <span class="setup-label">Team wechseln</span>
-  <button class="btn" onclick="cycleTeam()">→ nächstes Team</button>
-  <div class="divider"></div>
-  <button class="btn go" onclick="nextRound()">Nächste Runde ▶</button>
-  <button class="btn" onclick="prevRound()">◀ Zurück</button>
-  <div class="divider"></div>
+  <div class="sep"></div>
   <button class="btn danger" onclick="resetGame()">↺ Reset</button>
 </div>
 
 <div class="layout">
-  <!-- Left panel -->
+  <!-- Left -->
   <div class="team-panel" id="panel-left">
-    <div class="panel-label">Teams</div>
+    <div class="panel-lbl">Teams</div>
   </div>
 
   <!-- Center -->
-  <div class="center-col">
-    <div class="msg-bar" id="msg-bar">—</div>
-
-    <div class="round-bar">
-      <button class="btn" onclick="prevRound()">◀</button>
-      <div class="round-pill">
-        <div class="round-big">R<span id="round-display">1</span></div>
-        <div class="round-sub" id="phase-label">Phase 1 — Setzen</div>
-      </div>
-      <button class="btn go" onclick="nextRound()">▶</button>
-    </div>
-
-    <!-- Phase 2 chooser -->
-    <div class="action-box" id="phase2-box" style="display:none">
-      <div class="action-box-title">Runde 2 — Aktion wählen</div>
-      <div class="action-btns">
-        <button class="btn active" id="mode-place" onclick="setMode('place')">✦ 2 Felder setzen</button>
-        <button class="btn" id="mode-steal" onclick="setMode('steal')">⚡ 1 Klauen</button>
-      </div>
-      <div class="action-hint" id="action-hint">Klick auf 2 leere Felder</div>
-    </div>
-
-    <div class="joker-flash" id="joker-flash">🃏 2×2-Formation! Joker vergeben.</div>
-
-    <div class="grid" id="grid"></div>
-
-    <div class="occ-bar" id="occ-bar">0 / 0 Felder belegt</div>
-
-    <div class="log-wrap">
-      <div class="log-label">Log</div>
-      <div class="log" id="log"></div>
-    </div>
+  <div class="center-col" id="center-col">
+    <!-- filled by JS -->
   </div>
 
-  <!-- Right panel -->
+  <!-- Right -->
   <div class="team-panel" id="panel-right">
-    <div class="panel-label">&nbsp;</div>
+    <div class="panel-lbl">&nbsp;</div>
   </div>
 </div>
 
 <script>
-  const COLORS  = ['#3B82F6', '#EF4444', '#F97316', '#22C55E'];
-  const NAMES   = ['Blau', 'Rot', 'Orange', 'Grün'];
-  const GRID_SIZES = { 2: 5, 3: 6, 4: 7 };
+// ── Constants ────────────────────────────────────────────────────────────────
+const COLORS = ['#3B82F6','#EF4444','#F97316','#22C55E'];
+const NAMES  = ['Blau','Rot','Orange','Grün'];
+const GRID_SIZES = {2:5, 3:6, 4:7};
+const CATS = [
+  { name:'Schätzchen', emoji:'🍯', color:'#F59E0B' },
+  { name:'Mu-cho',     emoji:'🎵', color:'#3B82F6' },
+  { name:'Bunte Tüte', emoji:'🎁', color:'#EF4444' },
+  { name:'10 von 10',  emoji:'🔟', color:'#22C55E' },
+  { name:'Cheese',     emoji:'🧀', color:'#8B5CF6' },
+];
 
-  let S = {}; // state
+// ── State ────────────────────────────────────────────────────────────────────
+let S = {};
 
-  function initGame(teamCount) {
-    const gs = GRID_SIZES[teamCount];
-    S = {
-      teamCount,
-      gridSize: gs,
-      grid: Array.from({ length: gs }, () => Array(gs).fill(null)),
-      round: 1,
-      activeTeam: 0,
-      mode: 'place',       // 'place' | 'steal'
-      placedThisTurn: 0,   // phase 2: how many placed so far
-      teams: Array.from({ length: teamCount }, () => ({
-        jokers: 0,
-        stealsInP2: 0,
-      })),
-      known2x2: new Set(), // "r,c,team" to avoid double-joker
-      log: [],
-    };
-    [2, 3, 4].forEach(n => {
-      const btn = document.getElementById('btn-t' + n);
-      if (btn) btn.classList.toggle('active', n === teamCount);
-    });
+function initGame(tc) {
+  const gs = GRID_SIZES[tc];
+  S = {
+    teamCount: tc,
+    gridSize:  gs,
+    grid: Array.from({length:gs}, () => Array(gs).fill(null)),
+    phase:    1,   // 1-3
+    question: 1,   // 1-5 within phase
+    // flowState: 'select-winner' | 'placing' | 'phase-transition' | 'done'
+    flowState: 'select-winner',
+    selectedWinners: [],   // teams clicked as winners
+    pendingWinners:  [],   // queue still to place
+    actingTeam: null,
+    mode: 'place',         // 'place' | 'steal' (phase 2)
+    placedThisTurn: 0,     // how many placed this action (phase 2: max 2)
+    teams: Array.from({length:tc}, () => ({ jokers:0, stealsInP2:0 })),
+    known2x2: new Set(),
+    log: [],
+  };
+  [2,3,4].forEach(n => document.getElementById('btn-t'+n).classList.toggle('active', n===tc));
+  render();
+}
+
+function setTeamCount(n) { initGame(n); }
+function resetGame()      { initGame(S.teamCount); }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function fieldCounts() {
+  const c = Array(S.teamCount).fill(0);
+  for (let r=0;r<S.gridSize;r++)
+    for (let cc=0;cc<S.gridSize;cc++)
+      if (S.grid[r][cc]!==null) c[S.grid[r][cc]]++;
+  return c;
+}
+function totalCells()  { return S.gridSize*S.gridSize; }
+function lastPlaceIdx() {
+  const c=fieldCounts(); let min=Infinity,idx=0;
+  c.forEach((v,i)=>{ if(v<min){min=v;idx=i;} }); return idx;
+}
+function addLog(e) { S.log.unshift(e); if(S.log.length>60) S.log.pop(); }
+function cat() { return CATS[S.question-1]; }
+function phaseLabel() {
+  return ['','Phase 1 — 1 Feld setzen','Phase 2 — 2 setzen oder 1 klauen (max 2×)','Phase 3 — Freies Klauen'][S.phase];
+}
+
+// ── 2×2 joker check ──────────────────────────────────────────────────────────
+function checkJoker(team) {
+  let got=false;
+  for(let r=0;r<S.gridSize-1;r++)
+    for(let c=0;c<S.gridSize-1;c++) {
+      const key=r+','+c+','+team;
+      if(S.known2x2.has(key)) continue;
+      if(S.grid[r][c]===team&&S.grid[r][c+1]===team&&
+         S.grid[r+1][c]===team&&S.grid[r+1][c+1]===team) {
+        S.known2x2.add(key);
+        S.teams[team].jokers++;
+        got=true;
+        addLog('🃏 2×2! '+NAMES[team]+' bekommt Joker ('+S.teams[team].jokers+' total)');
+      }
+    }
+  if(got) { const el=document.getElementById('joker-flash'); if(el){el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',2500);} }
+}
+
+// ── Phase 3 bonus ─────────────────────────────────────────────────────────────
+function applyPhase3Bonus() {
+  const counts=fieldCounts();
+  const avg=counts.reduce((a,b)=>a+b,0)/S.teamCount;
+  const last=lastPlaceIdx();
+  const target=Math.round(avg*0.75);
+  const bonus=Math.max(0,target-counts[last]);
+  if(!bonus){addLog('🎁 Kein Bonus nötig');return;}
+  const empties=[];
+  for(let r=0;r<S.gridSize;r++)
+    for(let c=0;c<S.gridSize;c++)
+      if(S.grid[r][c]===null) empties.push([r,c]);
+  for(let i=empties.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[empties[i],empties[j]]=[empties[j],empties[i]];}
+  let placed=0;
+  for(let i=0;i<Math.min(bonus,empties.length);i++){S.grid[empties[i][0]][empties[i][1]]=last;placed++;}
+  addLog('🎁 '+NAMES[last]+' bekommt '+placed+' Bonus-Felder (Letzter → 75% Ø)');
+}
+
+// ── Flow control ─────────────────────────────────────────────────────────────
+function toggleWinner(i) {
+  if(S.flowState!=='select-winner') return;
+  const idx=S.selectedWinners.indexOf(i);
+  if(idx>=0) S.selectedWinners.splice(idx,1); else S.selectedWinners.push(i);
+  render();
+}
+
+function confirmWinners() {
+  if(!S.selectedWinners.length) { addLog('Niemand hat gewonnen — Frage überspringen?'); return; }
+  S.pendingWinners=[...S.selectedWinners];
+  S.selectedWinners=[];
+  startNextPendingWinner();
+}
+
+function skipQuestion() {
+  addLog('— Frage '+S.question+' übersprungen (niemand richtig)');
+  advanceQuestion();
+}
+
+function startNextPendingWinner() {
+  if(!S.pendingWinners.length){ advanceQuestion(); return; }
+  S.actingTeam=S.pendingWinners.shift();
+  S.placedThisTurn=0;
+  S.mode='place';
+  S.flowState='placing';
+  addLog('→ '+NAMES[S.actingTeam]+' ist dran (Phase '+S.phase+')');
+  render();
+}
+
+function advanceQuestion() {
+  if(S.question>=5) {
+    // End of phase
+    if(S.phase>=3){ S.flowState='done'; render(); return; }
+    S.flowState='phase-transition';
     render();
+    return;
   }
+  S.question++;
+  S.flowState='select-winner';
+  S.selectedWinners=[];
+  render();
+}
 
-  function setTeamCount(n) { initGame(n); }
-  function resetGame()      { initGame(S.teamCount); }
+function nextPhase() {
+  S.phase++;
+  S.question=1;
+  S.flowState='select-winner';
+  S.selectedWinners=[];
+  // reset per-phase steal counters
+  S.teams.forEach(t=>t.stealsInP2=0);
+  if(S.phase===3) applyPhase3Bonus();
+  addLog('════ Phase '+S.phase+' beginnt ════');
+  render();
+}
 
-  function phase() {
-    if (S.round <= 5)  return 1;
-    if (S.round <= 10) return 2;
-    return 3;
-  }
+// ── Mode setter (phase 2) ─────────────────────────────────────────────────────
+function setMode(mode) {
+  if(S.phase!==2) return;
+  const team=S.actingTeam;
+  if(mode==='steal'&&S.teams[team].stealsInP2>=2){addLog('⚠ Bereits 2× geklaut');return;}
+  S.mode=mode; S.placedThisTurn=0;
+  render();
+}
 
-  function phaseLabel() {
-    const p = phase();
-    if (p === 1) return 'Phase 1 — Nur setzen (1 Feld)';
-    if (p === 2) return 'Phase 2 — 2 setzen oder 1 klauen (max 2×)';
-    return 'Phase 3 — Freies Klauen';
-  }
+// ── Cell click ───────────────────────────────────────────────────────────────
+function handleCell(r,c) {
+  if(S.flowState!=='placing') return;
+  const owner=S.grid[r][c];
+  const team=S.actingTeam;
+  const p=S.phase;
 
-  function nextRound() {
-    if (S.round >= 15) { setMsg('Maximale Runde erreicht (15)'); return; }
-    const wasPhase = phase();
-    S.round++;
-    S.placedThisTurn = 0;
-    S.mode = 'place';
-    if (wasPhase < 3 && phase() === 3) {
-      applyPhase3Bonus();
-    }
-    addLog('── Runde ' + S.round + ' (Phase ' + phase() + ')');
-    render();
-  }
+  if(p===1) {
+    if(owner!==null){addLog('Feld belegt!');return;}
+    S.grid[r][c]=team;
+    addLog(NAMES[team]+' setzt ('+r+','+c+')');
+    checkJoker(team);
+    startNextPendingWinner();
 
-  function prevRound() {
-    if (S.round <= 1) return;
-    S.round--;
-    S.placedThisTurn = 0;
-    S.mode = 'place';
-    addLog('← Runde ' + S.round);
-    render();
-  }
-
-  function cycleTeam() {
-    S.activeTeam = (S.activeTeam + 1) % S.teamCount;
-    S.placedThisTurn = 0;
-    S.mode = 'place';
-    render();
-  }
-
-  function fieldCounts() {
-    const counts = Array(S.teamCount).fill(0);
-    for (let r = 0; r < S.gridSize; r++)
-      for (let c = 0; c < S.gridSize; c++)
-        if (S.grid[r][c] !== null) counts[S.grid[r][c]]++;
-    return counts;
-  }
-
-  function lastPlaceIdx() {
-    const counts = fieldCounts();
-    let min = Infinity, idx = 0;
-    counts.forEach((c, i) => { if (c < min) { min = c; idx = i; } });
-    return idx;
-  }
-
-  function applyPhase3Bonus() {
-    const counts = fieldCounts();
-    const avg = counts.reduce((a, b) => a + b, 0) / S.teamCount;
-    const last = lastPlaceIdx();
-    const target = Math.round(avg * 0.75);
-    const bonus = Math.max(0, target - counts[last]);
-    if (bonus === 0) { addLog('🎁 Kein Bonus nötig — Teams relativ ausgeglichen'); return; }
-
-    const empties = [];
-    for (let r = 0; r < S.gridSize; r++)
-      for (let c = 0; c < S.gridSize; c++)
-        if (S.grid[r][c] === null) empties.push([r, c]);
-
-    // Shuffle
-    for (let i = empties.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [empties[i], empties[j]] = [empties[j], empties[i]];
-    }
-
-    let placed = 0;
-    for (let i = 0; i < Math.min(bonus, empties.length); i++) {
-      S.grid[empties[i][0]][empties[i][1]] = last;
-      placed++;
-    }
-    addLog('🎁 ' + NAMES[last] + ' bekommt ' + placed + ' Bonus-Felder (Letzter → 75% des Ø)');
-  }
-
-  function setMode(mode) {
-    if (phase() !== 2) return;
-    if (mode === 'steal' && S.teams[S.activeTeam].stealsInP2 >= 2) {
-      setMsg('⚠ ' + NAMES[S.activeTeam] + ' hat schon 2× geklaut in Phase 2');
-      return;
-    }
-    S.mode = mode;
-    S.placedThisTurn = 0;
-    document.getElementById('mode-place').classList.toggle('active', mode === 'place');
-    document.getElementById('mode-steal').classList.toggle('active', mode === 'steal');
-    updateActionHint();
-    setMsg(mode === 'place' ? 'Modus: 2 Felder setzen' : 'Modus: 1 Feld klauen');
-  }
-
-  function updateActionHint() {
-    const el = document.getElementById('action-hint');
-    if (!el) return;
-    if (S.mode === 'place') {
-      const left = 2 - S.placedThisTurn;
-      el.textContent = 'Klick auf ' + left + ' leere' + (left === 1 ? 's' : '') + ' Feld' + (left === 1 ? '' : 'er');
-    } else {
-      const left = 2 - S.teams[S.activeTeam].stealsInP2;
-      el.textContent = 'Klick auf ein Gegner-Feld (' + left + ' Klau-Aktionen übrig)';
-    }
-  }
-
-  function handleCellClick(r, c) {
-    const p = phase();
-    const cell = S.grid[r][c];
-    const team = S.activeTeam;
-
-    if (p === 1) {
-      if (cell !== null) { setMsg('Feld belegt!'); return; }
-      S.grid[r][c] = team;
-      addLog(NAMES[team] + ' setzt (' + (r+1) + ',' + (c+1) + ')');
+  } else if(p===2) {
+    if(S.mode==='place') {
+      if(owner!==null){addLog('Feld belegt!');return;}
+      S.grid[r][c]=team; S.placedThisTurn++;
+      addLog(NAMES[team]+' setzt ('+r+','+c+') ['+S.placedThisTurn+'/2]');
       checkJoker(team);
+      if(S.placedThisTurn>=2) startNextPendingWinner();
+      else render();
+    } else { // steal
+      if(owner===null){addLog('Kein Gegnerfeld!');return;}
+      if(owner===team){addLog('Eigenes Feld!');return;}
+      if(S.teams[team].stealsInP2>=2){addLog('Bereits 2× geklaut!');return;}
+      addLog(NAMES[team]+' klaut von '+NAMES[owner]+' ('+r+','+c+')');
+      S.grid[r][c]=team; S.teams[team].stealsInP2++;
+      checkJoker(team);
+      startNextPendingWinner();
+    }
 
-    } else if (p === 2) {
-      if (S.mode === 'place') {
-        if (cell !== null) { setMsg('Feld belegt!'); return; }
-        S.grid[r][c] = team;
-        S.placedThisTurn++;
-        addLog(NAMES[team] + ' setzt (' + (r+1) + ',' + (c+1) + ') [' + S.placedThisTurn + '/2]');
-        checkJoker(team);
-        if (S.placedThisTurn >= 2) {
-          S.placedThisTurn = 0;
-          setMsg(NAMES[team] + ' hat 2 Felder gesetzt ✓');
+  } else { // phase 3
+    if(owner===team){addLog('Eigenes Feld!');return;}
+    if(owner===null) {
+      S.grid[r][c]=team;
+      addLog(NAMES[team]+' setzt ('+r+','+c+')');
+      checkJoker(team);
+    } else {
+      addLog(NAMES[team]+' klaut von '+NAMES[owner]+' ('+r+','+c+')');
+      S.grid[r][c]=team;
+      checkJoker(team);
+    }
+    startNextPendingWinner();
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  renderCenter();
+  renderTeams();
+  renderLog();
+}
+
+function renderCenter() {
+  const col=document.getElementById('center-col');
+  col.innerHTML='';
+
+  // Phase transition screen
+  if(S.flowState==='phase-transition') {
+    const banner=el('div','phase-banner');
+    const labels=['','Runde 2 beginnt','Phase 3 beginnt'];
+    const descs=['',
+      'Pro Frage: 2 Felder setzen ODER 1 Feld klauen (max 2× pro Team)',
+      'Freies Klauen! Außerdem: Bonus-Felder für das letzte Team wurden vergeben.'
+    ];
+    banner.innerHTML='<h2>'+labels[S.phase]+'</h2><p>'+descs[S.phase]+'</p>';
+    const btn=el('button','btn go');
+    btn.textContent=S.phase<3?'Phase '+(S.phase+1)+' starten ▶':'Spiel beenden';
+    btn.onclick=()=>{ if(S.phase<3)nextPhase(); else{S.flowState='done';render();} };
+    banner.appendChild(btn);
+    col.appendChild(banner);
+    return;
+  }
+
+  if(S.flowState==='done') {
+    const banner=el('div','phase-banner');
+    const counts=fieldCounts();
+    const winner=counts.indexOf(Math.max(...counts));
+    banner.innerHTML='<h2>Spiel vorbei!</h2><p>'+NAMES.slice(0,S.teamCount).map((n,i)=>n+': '+counts[i]+' Felder').join(' · ')+'</p><p style="margin-top:8px;color:#4ade80;font-weight:800">→ '+NAMES[winner]+' führt</p>';
+    const btn=el('button','btn danger');
+    btn.textContent='↺ Neu starten';
+    btn.onclick=resetGame;
+    banner.style.marginBottom='4px';
+    banner.appendChild(btn);
+    col.appendChild(banner);
+    col.appendChild(buildGrid());
+    col.appendChild(buildOcc());
+    col.appendChild(buildLog());
+    return;
+  }
+
+  // Question card
+  const qcard=el('div','q-card');
+  const meta=el('div','q-meta');
+  meta.textContent='Phase '+S.phase+' · Frage '+S.question+'/5 · '+phaseLabel();
+  qcard.appendChild(meta);
+
+  const catEl=el('div','q-cat');
+  catEl.style.background=hexAlpha(cat().color,0.15);
+  catEl.style.color=cat().color;
+  catEl.style.border='1px solid '+hexAlpha(cat().color,0.3);
+  catEl.textContent=cat().emoji+' '+cat().name;
+  qcard.appendChild(catEl);
+
+  if(S.flowState==='select-winner') {
+    const instr=el('div','q-instruction');
+    instr.textContent='Wer hat diese Frage richtig beantwortet?';
+    qcard.appendChild(instr);
+
+    const row=el('div','winner-row');
+    for(let i=0;i<S.teamCount;i++) {
+      const wb=document.createElement('button');
+      wb.className='winner-btn'+(S.selectedWinners.includes(i)?' sel':'');
+      wb.style.background=hexAlpha(COLORS[i],0.15);
+      wb.style.color=COLORS[i];
+      wb.style.borderColor=hexAlpha(COLORS[i],0.4);
+      wb.textContent=NAMES[i];
+      wb.onclick=()=>toggleWinner(i);
+      row.appendChild(wb);
+    }
+    qcard.appendChild(row);
+
+    const actions=el('div');
+    actions.style.cssText='display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
+    const confirmBtn=el('button','btn go');
+    confirmBtn.textContent='Weiter →';
+    confirmBtn.onclick=confirmWinners;
+    confirmBtn.disabled=S.selectedWinners.length===0;
+    const skipBtn=el('button','btn');
+    skipBtn.textContent='Niemand / Überspringen';
+    skipBtn.onclick=skipQuestion;
+    actions.appendChild(confirmBtn);
+    actions.appendChild(skipBtn);
+    qcard.appendChild(actions);
+
+  } else if(S.flowState==='placing') {
+    const instr=el('div','q-instruction');
+    const team=S.actingTeam;
+    const remaining=S.pendingWinners.length;
+    instr.innerHTML='<span style="color:'+COLORS[team]+';font-weight:800">'+NAMES[team]+'</span> setzt'+(remaining?' (danach noch '+remaining+' Team'+( remaining>1?'s':'')+')':'');
+    qcard.appendChild(instr);
+  }
+
+  col.appendChild(qcard);
+
+  // Phase 2 action chooser
+  if(S.flowState==='placing'&&S.phase===2) {
+    const box=el('div','action-box');
+    const t=el('div','action-title'); t.textContent='Aktion wählen';
+    box.appendChild(t);
+    const row=el('div'); row.style.cssText='display:flex;gap:7px';
+    const pb=el('button','btn'+(S.mode==='place'?' active':''));
+    pb.textContent='✦ 2 Felder setzen'; pb.onclick=()=>setMode('place');
+    const sb=el('button','btn'+(S.mode==='steal'?' active':''));
+    sb.textContent='⚡ 1 Klauen';
+    const t2=S.teams[S.actingTeam];
+    if(t2.stealsInP2>=2){sb.disabled=true;sb.title='Bereits 2× geklaut';}
+    sb.onclick=()=>setMode('steal');
+    row.appendChild(pb); row.appendChild(sb);
+    box.appendChild(row);
+    const hint=el('div','action-hint');
+    if(S.mode==='place') hint.textContent='Klick auf '+(2-S.placedThisTurn)+' leere Felder';
+    else hint.textContent='Klick auf ein Gegner-Feld';
+    box.appendChild(hint);
+    col.appendChild(box);
+  }
+
+  // Joker flash
+  const jf=el('div','joker-flash'); jf.id='joker-flash'; jf.textContent='🃏 2×2-Formation! Joker vergeben.';
+  col.appendChild(jf);
+
+  // Grid
+  col.appendChild(buildGrid());
+  col.appendChild(buildOcc());
+  col.appendChild(buildLog());
+}
+
+function buildGrid() {
+  const gridEl=el('div','grid');
+  const maxPx=Math.min(window.innerWidth-380,400);
+  const cellPx=Math.max(34,Math.floor((maxPx-(S.gridSize-1)*5)/S.gridSize));
+  gridEl.style.gridTemplateColumns='repeat('+S.gridSize+','+cellPx+'px)';
+
+  const p=S.phase;
+  const placing=S.flowState==='placing';
+  const team=S.actingTeam;
+
+  for(let r=0;r<S.gridSize;r++) {
+    for(let c=0;c<S.gridSize;c++) {
+      const owner=S.grid[r][c];
+      const cell=el('div','cell');
+      cell.style.width=cellPx+'px'; cell.style.height=cellPx+'px';
+      cell.style.fontSize=Math.max(10,cellPx*0.24)+'px';
+
+      if(owner!==null) {
+        cell.style.background=COLORS[owner];
+        cell.style.borderColor=hexAlpha(COLORS[owner],0.6);
+        cell.style.color='rgba(0,0,0,0.4)';
+        cell.textContent=NAMES[owner][0];
+      }
+
+      if(placing) {
+        cell.classList.add('interactive');
+        if(owner===null) {
+          const canPlace=p===1||(p===2&&S.mode==='place')||p===3;
+          if(canPlace) cell.classList.add('placeable');
+        } else if(owner!==team) {
+          const canSteal=(p===2&&S.mode==='steal'&&S.teams[team].stealsInP2<2)||p===3;
+          if(canSteal) cell.classList.add('stealable');
         }
-      } else { // steal
-        if (cell === null)  { setMsg('Kein Gegnerfeld!'); return; }
-        if (cell === team)  { setMsg('Eigenes Feld!'); return; }
-        if (S.teams[team].stealsInP2 >= 2) { setMsg('Bereits 2× geklaut!'); return; }
-        const from = NAMES[cell];
-        S.grid[r][c] = team;
-        S.teams[team].stealsInP2++;
-        addLog(NAMES[team] + ' klaut von ' + from + ' (' + (r+1) + ',' + (c+1) + ') [' + S.teams[team].stealsInP2 + '/2]');
-        checkJoker(team);
-        S.mode = 'place';
-        setMsg('Geklaut von ' + from + '! (' + S.teams[team].stealsInP2 + '/2 verbraucht)');
+        cell.onclick=()=>handleCell(r,c);
       }
-
-    } else { // phase 3 — free
-      if (cell === team) { setMsg('Eigenes Feld!'); return; }
-      if (cell === null) {
-        S.grid[r][c] = team;
-        addLog(NAMES[team] + ' setzt (' + (r+1) + ',' + (c+1) + ')');
-        checkJoker(team);
-      } else {
-        const from = NAMES[cell];
-        S.grid[r][c] = team;
-        addLog(NAMES[team] + ' klaut von ' + from + ' (' + (r+1) + ',' + (c+1) + ')');
-        checkJoker(team);
-        setMsg('Geklaut von ' + from + '!');
-      }
-    }
-
-    render();
-  }
-
-  function checkJoker(team) {
-    let got = false;
-    for (let r = 0; r < S.gridSize - 1; r++) {
-      for (let c = 0; c < S.gridSize - 1; c++) {
-        const key = r + ',' + c + ',' + team;
-        if (S.known2x2.has(key)) continue;
-        if (
-          S.grid[r][c]   === team && S.grid[r][c+1]   === team &&
-          S.grid[r+1][c] === team && S.grid[r+1][c+1] === team
-        ) {
-          S.known2x2.add(key);
-          S.teams[team].jokers++;
-          got = true;
-          addLog('🃏 2×2-Formation! ' + NAMES[team] + ' bekommt Joker (' + S.teams[team].jokers + ' total)');
-        }
-      }
-    }
-    if (got) flashJoker();
-  }
-
-  function flashJoker() {
-    const el = document.getElementById('joker-flash');
-    el.style.display = 'block';
-    clearTimeout(el._t);
-    el._t = setTimeout(() => { el.style.display = 'none'; }, 2500);
-  }
-
-  function setMsg(msg) {
-    const el = document.getElementById('msg-bar');
-    if (el) el.textContent = msg;
-  }
-
-  function addLog(entry) {
-    S.log.unshift(entry);
-    if (S.log.length > 60) S.log.pop();
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  function render() {
-    renderGrid();
-    renderTeams();
-    renderMeta();
-    renderLog();
-  }
-
-  function renderGrid() {
-    const gridEl = document.getElementById('grid');
-    const p = phase();
-    // Cell size: fit in available space
-    const maxGridPx = Math.min(window.innerWidth - 440, 420);
-    const cellPx = Math.max(36, Math.floor((maxGridPx - (S.gridSize - 1) * 5) / S.gridSize));
-
-    gridEl.style.gridTemplateColumns = 'repeat(' + S.gridSize + ', ' + cellPx + 'px)';
-    gridEl.innerHTML = '';
-
-    for (let r = 0; r < S.gridSize; r++) {
-      for (let c = 0; c < S.gridSize; c++) {
-        const owner = S.grid[r][c];
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.style.width  = cellPx + 'px';
-        cell.style.height = cellPx + 'px';
-        cell.style.fontSize = Math.max(10, cellPx * 0.26) + 'px';
-
-        if (owner !== null) {
-          cell.style.background   = COLORS[owner];
-          cell.style.borderColor  = COLORS[owner];
-          cell.style.color        = 'rgba(0,0,0,0.45)';
-          cell.textContent        = NAMES[owner][0];
-
-          if (owner === S.activeTeam) {
-            cell.classList.add('own');
-          } else {
-            const canSteal =
-              (p === 2 && S.mode === 'steal' && S.teams[S.activeTeam].stealsInP2 < 2) ||
-              (p === 3);
-            if (canSteal) cell.classList.add('steal-hover');
-          }
-        } else {
-          const canPlace = p === 1 || (p === 2 && S.mode === 'place') || p === 3;
-          if (canPlace) cell.classList.add('empty-hover');
-        }
-
-        cell.onclick = () => handleCellClick(r, c);
-        gridEl.appendChild(cell);
-      }
-    }
-
-    // Occupation bar
-    const counts = fieldCounts();
-    const filled = counts.reduce((a, b) => a + b, 0);
-    const total  = S.gridSize * S.gridSize;
-    document.getElementById('occ-bar').textContent =
-      filled + ' / ' + total + ' Felder belegt (' + Math.round(filled / total * 100) + '%)';
-  }
-
-  function renderTeams() {
-    const counts  = fieldCounts();
-    const total   = S.gridSize * S.gridSize;
-    const filled  = counts.reduce((a, b) => a + b, 0);
-    const lastIdx = lastPlaceIdx();
-    const p       = phase();
-
-    const leftEl  = document.getElementById('panel-left');
-    const rightEl = document.getElementById('panel-right');
-
-    // Keep labels
-    leftEl.innerHTML  = '<div class="panel-label">Teams (klick = aktiv)</div>';
-    rightEl.innerHTML = '<div class="panel-label">&nbsp;</div>';
-
-    for (let i = 0; i < S.teamCount; i++) {
-      const isActive = i === S.activeTeam;
-      const isLast   = i === lastIdx && S.teamCount > 1;
-      const card     = document.createElement('div');
-      card.className = 'team-card' + (isActive ? ' is-active' : '');
-      card.style.borderColor = isActive ? COLORS[i] : 'rgba(255,255,255,0.07)';
-
-      const pct     = total > 0 ? Math.round(counts[i] / total * 100) : 0;
-      const jokerBadge = S.teams[i].jokers > 0
-        ? '<span class="badge badge-joker">🃏 ' + S.teams[i].jokers + '</span> ' : '';
-      const lastBadge  = isLast
-        ? '<span class="badge badge-last">Letzter</span>' : '';
-      const stealInfo  = p === 2
-        ? ' · Klauen ' + S.teams[i].stealsInP2 + '/2' : '';
-
-      card.innerHTML = `
-        <div class="team-row">
-          <div class="team-dot" style="background:${COLORS[i]}"></div>
-          <div class="team-name" style="color:${COLORS[i]}">${NAMES[i]}</div>
-          ${jokerBadge}${lastBadge}
-        </div>
-        <div class="team-stats">${counts[i]} Felder (${pct}%)${stealInfo}</div>
-        <div class="fields-bar">
-          <div class="fields-fill" style="width:${pct}%;background:${COLORS[i]}"></div>
-        </div>
-      `;
-
-      card.onclick = () => {
-        S.activeTeam = i;
-        S.placedThisTurn = 0;
-        S.mode = 'place';
-        render();
-      };
-
-      (i % 2 === 0 ? leftEl : rightEl).appendChild(card);
+      gridEl.appendChild(cell);
     }
   }
+  return gridEl;
+}
 
-  function renderMeta() {
-    const p = phase();
-    document.getElementById('round-display').textContent = S.round;
-    document.getElementById('phase-label').textContent   = phaseLabel();
+function buildOcc() {
+  const d=el('div','occ');
+  const counts=fieldCounts();
+  const filled=counts.reduce((a,b)=>a+b,0);
+  const total=totalCells();
+  d.textContent=filled+' / '+total+' Felder belegt ('+Math.round(filled/total*100)+'%)';
+  return d;
+}
 
-    const p2box = document.getElementById('phase2-box');
-    p2box.style.display = p === 2 ? 'block' : 'none';
+function buildLog() {
+  const w=el('div','log-wrap');
+  const lbl=el('div','log-lbl'); lbl.textContent='Log';
+  const log=el('div','log');
+  log.innerHTML=S.log.map(e=>'<div class="log-entry">'+e+'</div>').join('');
+  w.appendChild(lbl); w.appendChild(log);
+  return w;
+}
 
-    if (p === 2) {
-      document.getElementById('mode-place').classList.toggle('active', S.mode === 'place');
-      document.getElementById('mode-steal').classList.toggle('active', S.mode === 'steal');
-      updateActionHint();
-    }
+function renderTeams() {
+  const counts=fieldCounts();
+  const total=totalCells();
+  const lastIdx=lastPlaceIdx();
+  const leftEl=document.getElementById('panel-left');
+  const rightEl=document.getElementById('panel-right');
+  leftEl.innerHTML='<div class="panel-lbl">Teams</div>';
+  rightEl.innerHTML='<div class="panel-lbl">&nbsp;</div>';
 
-    // Default message
-    const team = NAMES[S.activeTeam];
-    const msgs = {
-      1: team + ' ist dran — 1 Feld setzen',
-      2: team + ' ist dran — ' + (S.mode === 'place' ? '2 Felder setzen' : '1 Feld klauen'),
-      3: team + ' ist dran — frei setzen oder klauen',
-    };
-    // Only set default if current message is old-format
-    const msgEl = document.getElementById('msg-bar');
-    if (!msgEl._custom) msgEl.textContent = msgs[p];
-    msgEl._custom = false;
+  for(let i=0;i<S.teamCount;i++) {
+    const acting=S.flowState==='placing'&&S.actingTeam===i;
+    const card=el('div','team-card'+(acting?' acting':''));
+    card.style.borderColor=acting?COLORS[i]:'rgba(255,255,255,0.07)';
+    const pct=total>0?Math.round(counts[i]/total*100):0;
+    const jb=S.teams[i].jokers>0?'<span class="badge badge-j">🃏'+S.teams[i].jokers+'</span> ':'';
+    const sb=S.phase===2&&S.teams[i].stealsInP2>0?'<span class="badge badge-s">⚡'+S.teams[i].stealsInP2+'/2</span> ':'';
+    const last=i===lastIdx&&S.teamCount>1?'<span style="font-size:10px;color:#64748b"> letzter</span>':'';
+    card.innerHTML=
+      '<div class="tc-row"><div class="tc-dot" style="background:'+COLORS[i]+'"></div>'+
+      '<div class="tc-name" style="color:'+COLORS[i]+'">'+NAMES[i]+last+'</div>'+jb+sb+'</div>'+
+      '<div class="tc-stat">'+counts[i]+' Felder ('+pct+'%)</div>'+
+      '<div class="fbar"><div class="fbar-fill" style="width:'+pct+'%;background:'+COLORS[i]+'"></div></div>';
+    (i%2===0?leftEl:rightEl).appendChild(card);
   }
+}
 
-  function renderLog() {
-    const logEl = document.getElementById('log');
-    logEl.innerHTML = S.log
-      .map(e => '<div class="log-entry">' + e + '</div>')
-      .join('');
-  }
+function renderLog() {
+  // Log is now part of center-col, rebuilt on each render
+}
 
-  // Override setMsg to mark as custom so renderMeta doesn't overwrite
-  const _setMsg = setMsg;
-  function setMsg(msg) {
-    const el = document.getElementById('msg-bar');
-    if (el) { el.textContent = msg; el._custom = true; }
-  }
+// ── Utils ────────────────────────────────────────────────────────────────────
+function el(tag,cls) { const e=document.createElement(tag); if(cls)e.className=cls; return e; }
+function hexAlpha(hex,a) {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
 
-  // Init
-  initGame(3);
+// Init
+initGame(3);
 </script>
 </body>
 </html>

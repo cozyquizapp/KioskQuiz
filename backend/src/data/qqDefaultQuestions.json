@@ -1,0 +1,152 @@
+[
+  {
+    "id": "qq-s1-1",
+    "category": "SCHAETZCHEN",
+    "phaseIndex": 1,
+    "questionIndexInPhase": 0,
+    "text": "Wie viele Einwohner hat Wien?",
+    "textEn": "How many inhabitants does Vienna have?",
+    "answer": "ca. 2 Millionen",
+    "answerEn": "approx. 2 million"
+  },
+  {
+    "id": "qq-m1-1",
+    "category": "MUCHO",
+    "phaseIndex": 1,
+    "questionIndexInPhase": 1,
+    "text": "Von welcher Band ist der Song 'Bohemian Rhapsody'?",
+    "textEn": "Which band recorded 'Bohemian Rhapsody'?",
+    "answer": "Queen",
+    "answerEn": "Queen"
+  },
+  {
+    "id": "qq-b1-1",
+    "category": "BUNTE_TUETE",
+    "phaseIndex": 1,
+    "questionIndexInPhase": 2,
+    "text": "Welches Land hat die meisten Pyramiden der Welt?",
+    "textEn": "Which country has the most pyramids in the world?",
+    "answer": "Sudan",
+    "answerEn": "Sudan"
+  },
+  {
+    "id": "qq-z1-1",
+    "category": "ZEHN_VON_ZEHN",
+    "phaseIndex": 1,
+    "questionIndexInPhase": 3,
+    "text": "Wer hat die Relativitätstheorie entwickelt?",
+    "textEn": "Who developed the theory of relativity?",
+    "answer": "Albert Einstein",
+    "answerEn": "Albert Einstein"
+  },
+  {
+    "id": "qq-c1-1",
+    "category": "CHEESE",
+    "phaseIndex": 1,
+    "questionIndexInPhase": 4,
+    "text": "Aus welchem Land stammt der Käse Gouda?",
+    "textEn": "Which country does Gouda cheese come from?",
+    "answer": "Niederlande",
+    "answerEn": "Netherlands"
+  },
+  {
+    "id": "qq-s2-1",
+    "category": "SCHAETZCHEN",
+    "phaseIndex": 2,
+    "questionIndexInPhase": 0,
+    "text": "Wie viele Knochen hat ein erwachsener Mensch?",
+    "textEn": "How many bones does an adult human have?",
+    "answer": "206",
+    "answerEn": "206"
+  },
+  {
+    "id": "qq-m2-1",
+    "category": "MUCHO",
+    "phaseIndex": 2,
+    "questionIndexInPhase": 1,
+    "text": "In welchem Jahr erschien 'Thriller' von Michael Jackson?",
+    "textEn": "In what year was Michael Jackson's 'Thriller' released?",
+    "answer": "1982",
+    "answerEn": "1982"
+  },
+  {
+    "id": "qq-b2-1",
+    "category": "BUNTE_TUETE",
+    "phaseIndex": 2,
+    "questionIndexInPhase": 2,
+    "text": "Wie heißt die Hauptfigur in 'Breaking Bad'?",
+    "textEn": "What is the main character's name in 'Breaking Bad'?",
+    "answer": "Walter White",
+    "answerEn": "Walter White"
+  },
+  {
+    "id": "qq-z2-1",
+    "category": "ZEHN_VON_ZEHN",
+    "phaseIndex": 2,
+    "questionIndexInPhase": 3,
+    "text": "Was ist die Hauptstadt von Australien?",
+    "textEn": "What is the capital of Australia?",
+    "answer": "Canberra",
+    "answerEn": "Canberra"
+  },
+  {
+    "id": "qq-c2-1",
+    "category": "CHEESE",
+    "phaseIndex": 2,
+    "questionIndexInPhase": 4,
+    "text": "Welcher Käse wird traditionell auf einer Neapolitanischen Pizza verwendet?",
+    "textEn": "Which cheese is traditionally used on a Neapolitan pizza?",
+    "answer": "Mozzarella",
+    "answerEn": "Mozzarella"
+  },
+  {
+    "id": "qq-s3-1",
+    "category": "SCHAETZCHEN",
+    "phaseIndex": 3,
+    "questionIndexInPhase": 0,
+    "text": "Wie hoch ist der Eiffelturm in Metern?",
+    "textEn": "How tall is the Eiffel Tower in meters?",
+    "answer": "330 Meter",
+    "answerEn": "330 meters"
+  },
+  {
+    "id": "qq-m3-1",
+    "category": "MUCHO",
+    "phaseIndex": 3,
+    "questionIndexInPhase": 1,
+    "text": "Wie heißt das Debütalbum der Beatles?",
+    "textEn": "What is the Beatles' debut album called?",
+    "answer": "Please Please Me",
+    "answerEn": "Please Please Me"
+  },
+  {
+    "id": "qq-b3-1",
+    "category": "BUNTE_TUETE",
+    "phaseIndex": 3,
+    "questionIndexInPhase": 2,
+    "text": "Welches Tier ist das schnellste Landtier der Welt?",
+    "textEn": "Which animal is the fastest land animal in the world?",
+    "answer": "Gepard",
+    "answerEn": "Cheetah"
+  },
+  {
+    "id": "qq-z3-1",
+    "category": "ZEHN_VON_ZEHN",
+    "phaseIndex": 3,
+    "questionIndexInPhase": 3,
+    "text": "Wie viele Planeten hat unser Sonnensystem?",
+    "textEn": "How many planets does our solar system have?",
+    "answer": "8",
+    "answerEn": "8"
+  },
+  {
+    "id": "qq-c3-1",
+    "category": "CHEESE",
+    "phaseIndex": 3,
+    "questionIndexInPhase": 4,
+    "text": "Welcher Käse hat Löcher und kommt aus der Schweiz?",
+    "textEn": "Which Swiss cheese is known for its holes?",
+    "answer": "Emmentaler",
+    "answerEn": "Emmental"
+  }
+]

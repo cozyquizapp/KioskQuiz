@@ -1,0 +1,50 @@
+import { useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { QQStateUpdate, QQAck } from '../../../shared/quarterQuizTypes';
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+
+export function useQQSocket(roomCode: string) {
+  const [state, setState]       = useState<QQStateUpdate | null>(null);
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    if (!roomCode) return;
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
+    });
+    socketRef.current = socket;
+
+    socket.on('connect',    () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+
+    socket.on('qq:stateUpdate', (payload: QQStateUpdate) => {
+      setState(payload);
+    });
+
+    return () => {
+      socket.off('qq:stateUpdate');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [roomCode]);
+
+  function emit(event: string, payload?: unknown): Promise<QQAck> {
+    return new Promise((resolve) => {
+      if (!socketRef.current) {
+        resolve({ ok: false, error: 'Nicht verbunden', code: 'NOT_CONNECTED' });
+        return;
+      }
+      socketRef.current.emit(event, payload, (ack: QQAck) => {
+        resolve(ack ?? { ok: true });
+      });
+    });
+  }
+
+  return { state, connected, emit };
+}

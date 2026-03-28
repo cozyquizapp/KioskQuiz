@@ -86,6 +86,7 @@ import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
+import { registerQQHandlers } from './quarterQuiz/qqSocketHandlers';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -7590,6 +7591,19 @@ const respond = <T>(ack: unknown, payload: T) => {
     (ack as AckFn<T>)(payload);
   }
 };
+
+// ── Quarter Quiz REST ─────────────────────────────────────────────────────────
+app.get('/api/qq/questions/default', (_req, res) => {
+  try {
+    const data = fs.readFileSync(path.join(__dirname, 'data', 'qqDefaultQuestions.json'), 'utf-8');
+    res.json(JSON.parse(data));
+  } catch {
+    res.status(500).json({ error: 'Could not load default questions' });
+  }
+});
+
+// ── Quarter Quiz handlers ─────────────────────────────────────────────────────
+registerQQHandlers(io);
 
 // End of server module
 

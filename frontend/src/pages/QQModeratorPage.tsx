@@ -64,6 +64,7 @@ export default function QQModeratorPage() {
     let questions: QQQuestion[];
     if (selectedDraftId === '__default__') {
       const res = await fetch('/api/qq/questions/default');
+      if (!res.ok) { alert('Standard-Fragen konnten nicht geladen werden'); return; }
       questions = await res.json();
     } else if (selectedDraftId.startsWith('qq:')) {
       // QQ Builder draft — questions already in QQ format

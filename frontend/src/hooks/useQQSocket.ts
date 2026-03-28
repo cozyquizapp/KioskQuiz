@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { QQStateUpdate, QQAck } from '../../../shared/quarterQuizTypes';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (() => {
+  const { protocol, hostname } = window.location;
+  const isLocal = hostname === 'localhost' || hostname.startsWith('127.');
+  return isLocal ? `${protocol}//${hostname}:4000` : window.location.origin;
+})();
 
 export function useQQSocket(roomCode: string) {
   const [state, setState]       = useState<QQStateUpdate | null>(null);

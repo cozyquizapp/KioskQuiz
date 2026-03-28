@@ -665,7 +665,11 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.correctTeamId   = null;
   room.pendingFor      = null;
   room.pendingAction   = null;
-  room.phase           = 'QUESTION_ACTIVE';
+  room.answers         = [];
+  room.buzzQueue       = [];
+  room.hotPotatoActiveTeamId = null;
+  room.hotPotatoEliminated   = [];
+  room.phase           = 'PHASE_INTRO';
   room.lastActivityAt  = Date.now();
 }
 

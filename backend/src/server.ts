@@ -120,7 +120,11 @@ import {
   getCozyDraftFromDB,
   getAllCozyDraftsFromDB,
   saveCozyDraftToDB,
-  deleteCozyDraftFromDB
+  deleteCozyDraftFromDB,
+  getAllQQDraftsFromDB,
+  getQQDraftFromDB,
+  saveQQDraftToDB,
+  deleteQQDraftFromDB,
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -7748,35 +7752,57 @@ let qqDrafts: Array<{
   questions: any[]; createdAt: number; updatedAt: number;
 }> = [];
 
-app.get('/api/qq/drafts', (_req, res) => {
+app.get('/api/qq/drafts', async (_req, res) => {
+  if (await ensureDraftDbConnection()) {
+    const dbDrafts = await getAllQQDraftsFromDB();
+    return res.json(dbDrafts);
+  }
   res.json([...qqDrafts].sort((a, b) => b.updatedAt - a.updatedAt));
 });
 
-app.post('/api/qq/drafts', (req, res) => {
+app.post('/api/qq/drafts', async (req, res) => {
   const draft = { ...req.body, id: req.body.id || `qq-draft-${Date.now().toString(36)}`, createdAt: Date.now(), updatedAt: Date.now() };
+  if (await ensureDraftDbConnection()) {
+    try {
+      const saved = await saveQQDraftToDB(draft);
+      return res.json(saved);
+    } catch { /* fall through to in-memory */ }
+  }
   qqDrafts.unshift(draft);
   res.json(draft);
 });
 
-app.get('/api/qq/drafts/:id', (req, res) => {
+app.get('/api/qq/drafts/:id', async (req, res) => {
+  if (await ensureDraftDbConnection()) {
+    const draft = await getQQDraftFromDB(req.params.id);
+    if (draft) return res.json(draft);
+  }
   const draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
   res.json(draft);
 });
 
-app.put('/api/qq/drafts/:id', (req, res) => {
+app.put('/api/qq/drafts/:id', async (req, res) => {
+  const updated = { ...req.body, id: req.params.id, updatedAt: Date.now() };
+  if (await ensureDraftDbConnection()) {
+    try {
+      const saved = await saveQQDraftToDB(updated);
+      return res.json(saved);
+    } catch { /* fall through */ }
+  }
   const idx = qqDrafts.findIndex(d => d.id === req.params.id);
   if (idx === -1) {
-    // Create if not found
-    const draft = { ...req.body, updatedAt: Date.now() };
-    qqDrafts.unshift(draft);
-    return res.json(draft);
+    qqDrafts.unshift(updated);
+    return res.json(updated);
   }
   qqDrafts[idx] = { ...qqDrafts[idx], ...req.body, updatedAt: Date.now() };
   res.json(qqDrafts[idx]);
 });
 
-app.delete('/api/qq/drafts/:id', (req, res) => {
+app.delete('/api/qq/drafts/:id', async (req, res) => {
+  if (await ensureDraftDbConnection()) {
+    await deleteQQDraftFromDB(req.params.id);
+  }
   qqDrafts = qqDrafts.filter(d => d.id !== req.params.id);
   res.json({ ok: true });
 });

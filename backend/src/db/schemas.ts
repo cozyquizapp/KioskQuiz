@@ -195,3 +195,66 @@ export async function deleteCozyDraftFromDB(draftId: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============= QUARTER QUIZ DRAFTS =============
+
+const QQDraftSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true, index: true },
+  title: { type: String, default: 'Untitled' },
+  phases: { type: Number, default: 3 },
+  language: { type: String, default: 'both' },
+  questions: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Number, default: Date.now },
+  updatedAt: { type: Number, default: Date.now },
+}, { strict: false });
+
+export const QQDraftModel = mongoose.model('QQDraft', QQDraftSchema);
+
+export async function getAllQQDraftsFromDB(): Promise<any[]> {
+  try {
+    return await QQDraftModel.find({}).lean().sort({ updatedAt: -1 });
+  } catch (err) {
+    console.error('Fehler beim Laden aller QQ Drafts:', err);
+    return [];
+  }
+}
+
+export async function getQQDraftFromDB(draftId: string): Promise<any | null> {
+  try {
+    return await QQDraftModel.findOne({ id: draftId }).lean();
+  } catch (err) {
+    console.error('Fehler beim Laden von QQ Draft:', err);
+    return null;
+  }
+}
+
+export async function saveQQDraftToDB(draft: any): Promise<any> {
+  try {
+    const existing = await QQDraftModel.findOne({ id: draft.id });
+    if (existing) {
+      const updated = await QQDraftModel.findOneAndUpdate(
+        { id: draft.id },
+        { ...draft, updatedAt: Date.now() },
+        { new: true }
+      );
+      return updated;
+    } else {
+      const newDraft = new QQDraftModel({ ...draft, createdAt: Date.now(), updatedAt: Date.now() });
+      await newDraft.save();
+      return draft;
+    }
+  } catch (err) {
+    console.error('Fehler beim Speichern von QQ Draft:', err);
+    throw err;
+  }
+}
+
+export async function deleteQQDraftFromDB(draftId: string): Promise<boolean> {
+  try {
+    const result = await QQDraftModel.deleteOne({ id: draftId });
+    return result.deletedCount > 0;
+  } catch (err) {
+    console.error('Fehler beim Löschen von QQ Draft:', err);
+    return false;
+  }
+}

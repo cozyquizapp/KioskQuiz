@@ -474,15 +474,39 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string;
 }) {
   const [selecting, setSelecting] = useState(false);
+  const [freeMode, setFreeMode] = useState<'PLACE' | 'STEAL' | null>(null);
+  const [swapFirst, setSwapFirst] = useState<{ r: number; c: number } | null>(null);
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
-  const isSteal = s.pendingAction === 'STEAL_1';
+  const isFree = s.pendingAction === 'FREE';
+  const isSwap = s.comebackAction === 'SWAP_2' && s.pendingAction === 'COMEBACK';
+  const isSteal = s.pendingAction === 'STEAL_1' || (isFree && freeMode === 'STEAL');
   const cellSize = Math.min(52, Math.floor(300 / s.gridSize));
 
-  useEffect(() => { if (!isMyTurn) setSelecting(false); }, [isMyTurn]);
+  useEffect(() => { if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); } }, [isMyTurn]);
+
+  async function chooseFree(action: 'PLACE' | 'STEAL') {
+    setFreeMode(action);
+    await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+  }
 
   async function handleCell(r: number, c: number) {
     if (!isMyTurn || !selecting) return;
     const cell = s.grid[r][c];
+    if (isSwap) {
+      // SWAP_2: select two opponent cells from different teams
+      if (!cell.ownerId || cell.ownerId === myTeamId) return;
+      if (!swapFirst) {
+        setSwapFirst({ r, c });
+        return;
+      }
+      if (r === swapFirst.r && c === swapFirst.c) return;
+      const firstCell = s.grid[swapFirst.r][swapFirst.c];
+      if (firstCell.ownerId === cell.ownerId) return; // must be different teams
+      await emit('qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
+      setSelecting(false);
+      setSwapFirst(null);
+      return;
+    }
     if (isSteal) {
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
       await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
@@ -513,39 +537,52 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
     );
   }
 
-  const actionColor = isSteal ? '#EF4444' : '#22C55E';
+  const actionColor = isSwap ? '#8B5CF6' : isSteal ? '#EF4444' : '#22C55E';
 
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
-        {isSteal ? '⚡ Klau ein fremdes Feld!' : '📍 Wähle ein Feld!'}
+        {isSwap ? '🔄 Tausche 2 gegnerische Felder!' : isSteal ? '⚡ Klau ein fremdes Feld!' : '📍 Wähle ein Feld!'}
       </div>
 
-      {!selecting ? (
+      {/* Phase 3 FREE action choice */}
+      {isFree && !freeMode && !selecting && (
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>📍 Setzen</CozyBtn>
+          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>⚡ Klauen</CozyBtn>
+        </div>
+      )}
+
+      {(!isFree || freeMode) && !selecting ? (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
-          {isSteal ? '⚡ Klauen' : '📍 Feld wählen'}
+          {isSwap ? '🔄 Felder wählen' : isSteal ? '⚡ Klauen' : '📍 Feld wählen'}
         </CozyBtn>
       ) : (
         <>
           <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12 }}>
-            {isSteal ? 'Tippe auf ein fremdes Feld' : 'Tippe auf ein freies Feld'}
+            {isSwap
+              ? (swapFirst ? 'Jetzt das 2. Feld (anderes Team) wählen' : 'Tippe auf ein gegnerisches Feld (1/2)')
+              : isSteal ? 'Tippe auf ein fremdes Feld' : 'Tippe auf ein freies Feld'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`, gap: 4, justifyContent: 'center' }}>
             {s.grid.flatMap((row, r) =>
               row.map((cell, c) => {
                 const team = s.teams.find(t => t.id === cell.ownerId);
-                const clickable = isSteal ? (!!cell.ownerId && cell.ownerId !== myTeamId) : !cell.ownerId;
+                const isSwapFirst = swapFirst && swapFirst.r === r && swapFirst.c === c;
+                const clickable = isSwap
+                  ? (!!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || (cell.ownerId !== s.grid[swapFirst.r][swapFirst.c].ownerId)))
+                  : isSteal ? (!!cell.ownerId && cell.ownerId !== myTeamId) : !cell.ownerId;
                 return (
                   <div key={`${r}-${c}`} onClick={() => handleCell(r, c)} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
-                    background: team ? `${team.color}88` : 'rgba(255,255,255,0.05)',
-                    border: clickable ? `2px solid ${actionColor}` : '1px solid rgba(255,255,255,0.07)',
+                    background: isSwapFirst ? `${actionColor}66` : team ? `${team.color}88` : 'rgba(255,255,255,0.05)',
+                    border: isSwapFirst ? `3px solid ${actionColor}` : clickable ? `2px solid ${actionColor}` : '1px solid rgba(255,255,255,0.07)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
-                    cursor: clickable ? 'pointer' : 'default',
-                    opacity: clickable ? 1 : 0.35,
+                    cursor: clickable || isSwapFirst ? 'pointer' : 'default',
+                    opacity: clickable || isSwapFirst ? 1 : 0.35,
                     transition: 'all 0.15s',
-                    boxShadow: clickable ? `0 0 8px ${actionColor}44` : 'none',
+                    boxShadow: isSwapFirst ? `0 0 14px ${actionColor}88` : clickable ? `0 0 8px ${actionColor}44` : 'none',
                   }}>
                     {team ? qqGetAvatar(team.avatarId).emoji : ''}
                   </div>
@@ -553,7 +590,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
               })
             )}
           </div>
-          <button onClick={() => setSelecting(false)} style={{
+          <button onClick={() => { setSelecting(false); setSwapFirst(null); }} style={{
             marginTop: 12, width: '100%', padding: '8px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
             color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
@@ -588,12 +625,24 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
   }
 
   if (s.comebackAction) {
+    // After choosing comeback action, the game transitions to PLACEMENT phase
+    // PLACE_2 and STEAL_1 are handled by PlacementCard
+    // SWAP_2 needs its own interactive grid here
+    if (s.comebackAction === 'SWAP_2' && s.phase === 'COMEBACK_CHOICE') {
+      return (
+        <CozyCard borderColor="#8B5CF6">
+          <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
+            🔄 Tausch wird vorbereitet…
+          </div>
+        </CozyCard>
+      );
+    }
     return (
       <CozyCard borderColor="#F59E0B">
         <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
           {s.comebackAction === 'PLACE_2' && '📍 Wähle 2 freie Felder'}
           {s.comebackAction === 'STEAL_1' && '⚡ Klau ein fremdes Feld'}
-          {s.comebackAction === 'SWAP_2'  && '🔄 Felder werden getauscht'}
+          {s.comebackAction === 'SWAP_2'  && '🔄 Wähle 2 gegnerische Felder zum Tauschen'}
         </div>
       </CozyCard>
     );

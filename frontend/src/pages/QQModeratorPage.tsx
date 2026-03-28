@@ -38,16 +38,26 @@ export default function QQModeratorPage() {
     if (state) setTimerInput(state.timerDurationSec);
   }, [state?.timerDurationSec]);
 
-  // Load available drafts once
+  // Load available drafts once (Cozy60 + QQ Builder)
   useEffect(() => {
-    fetch('/api/studio/cozy60')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data.drafts)) {
-          setDrafts(data.drafts.sort((a: DraftSummary, b: DraftSummary) => b.updatedAt - a.updatedAt));
-        }
-      })
-      .catch(() => {}); // silent fail — default questions still available
+    Promise.all([
+      fetch('/api/studio/cozy60').then(r => r.json()).catch(() => ({ drafts: [] })),
+      fetch('/api/qq/drafts').then(r => r.json()).catch(() => []),
+    ]).then(([cozyData, qqDrafts]) => {
+      const cozy: DraftSummary[] = Array.isArray(cozyData.drafts)
+        ? cozyData.drafts.map((d: any) => ({ ...d, id: d.id, source: 'cozy' }))
+        : [];
+      const qq: DraftSummary[] = Array.isArray(qqDrafts)
+        ? qqDrafts.map((d: any) => ({
+            id: `qq:${d.id}`,
+            title: `🎯 ${d.title}`,
+            date: null,
+            updatedAt: d.updatedAt ?? 0,
+            questionCount: d.questions?.length ?? 0,
+          }))
+        : [];
+      setDrafts([...qq, ...cozy].sort((a, b) => b.updatedAt - a.updatedAt));
+    });
   }, []);
 
   async function startGame() {
@@ -55,6 +65,14 @@ export default function QQModeratorPage() {
     if (selectedDraftId === '__default__') {
       const res = await fetch('/api/qq/questions/default');
       questions = await res.json();
+    } else if (selectedDraftId.startsWith('qq:')) {
+      // QQ Builder draft — questions already in QQ format
+      const qqId = selectedDraftId.slice(3);
+      const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
+      if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
+      const draft = await res.json();
+      questions = draft.questions ?? [];
+      if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     } else {
       const res = await fetch(`/api/qq/questions/from-draft/${encodeURIComponent(selectedDraftId)}?phases=${phases}`);
       if (!res.ok) {
@@ -634,6 +652,16 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>
       <span style={{ fontWeight: 800, color: team.color }}>{team.name}</span>
       <span style={{ fontSize: 12, color: '#94a3b8' }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
+      {s.pendingAction === 'FREE' && (
+        <>
+          <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
+            📍 Setzen
+          </Btn>
+          <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
+            ⚡ Klauen
+          </Btn>
+        </>
+      )}
       {s.gamePhaseIndex === 2 && s.pendingAction === 'PLACE_2' && (
         <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
           → Klauen

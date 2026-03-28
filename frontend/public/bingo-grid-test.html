@@ -281,20 +281,18 @@ function checkJoker(team) {
 
 // ── Phase 3 bonus ─────────────────────────────────────────────────────────────
 function applyPhase3Bonus() {
-  const counts=fieldCounts();
-  const avg=counts.reduce((a,b)=>a+b,0)/S.teamCount;
+  // Instead of automatic fields: last-place team chooses their comeback action
   const last=lastPlaceIdx();
-  const target=Math.round(avg*0.75);
-  const bonus=Math.max(0,target-counts[last]);
-  if(!bonus){addLog('🎁 Kein Bonus nötig');return;}
-  const empties=[];
-  for(let r=0;r<S.gridSize;r++)
-    for(let c=0;c<S.gridSize;c++)
-      if(S.grid[r][c]===null) empties.push([r,c]);
-  for(let i=empties.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[empties[i],empties[j]]=[empties[j],empties[i]];}
-  let placed=0;
-  for(let i=0;i<Math.min(bonus,empties.length);i++){S.grid[empties[i][0]][empties[i][1]]=last;placed++;}
-  addLog('🎁 '+NAMES[last]+' bekommt '+placed+' Bonus-Felder (Letzter → 75% Ø)');
+  const counts=fieldCounts();
+  const maxCount=Math.max(...counts);
+  // Only trigger if last team is meaningfully behind
+  if(counts[last]>=maxCount){ addLog('🎁 Kein Bonus nötig — Teams ausgeglichen'); return; }
+  S.bonusTeam=last;
+  S.bonusAction=null;   // 'place' | 'steal' | 'swap'
+  S.bonusCount=0;       // progress within chosen action
+  S.swapFirst=null;     // first cell selected for swap
+  S.flowState='phase3-bonus';
+  addLog('🎁 '+NAMES[last]+' (Letzter) darf Comeback-Aktion wählen');
 }
 
 // ── Flow control ─────────────────────────────────────────────────────────────
@@ -349,8 +347,8 @@ function nextPhase() {
   // reset per-phase steal counters
   S.teams.forEach(t=>{ t.stealsInP2=0; t.jokersThisPhase=0; });
   S.known2x2=new Set(); // reset so formations can give jokers again in new phase
-  if(S.phase===3) applyPhase3Bonus();
   addLog('════ Phase '+S.phase+' beginnt ════');
+  if(S.phase===3) applyPhase3Bonus();
   render();
 }
 
@@ -364,7 +362,57 @@ function setMode(mode) {
 }
 
 // ── Cell click ───────────────────────────────────────────────────────────────
+function handleBonusCell(r,c) {
+  const owner=S.grid[r][c];
+  const team=S.bonusTeam;
+
+  if(S.bonusAction==='place') {
+    if(owner!==null){addLog('Feld belegt!');return;}
+    S.grid[r][c]=team; S.bonusCount++;
+    addLog(NAMES[team]+' setzt Bonus-Feld ('+S.bonusCount+'/2)');
+    checkJoker(team);
+    if(S.bonusCount>=2) finishBonus();
+    else render();
+
+  } else if(S.bonusAction==='steal') {
+    if(owner===null||owner===team){addLog('Gegnerfeld wählen!');return;}
+    addLog(NAMES[team]+' klaut Bonus von '+NAMES[owner]);
+    S.grid[r][c]=team; S.bonusCount++;
+    checkJoker(team);
+    finishBonus();
+
+  } else if(S.bonusAction==='swap') {
+    if(owner===null||owner===team){addLog('Feld eines anderen Teams wählen!');return;}
+    if(!S.swapFirst) {
+      S.swapFirst={r,c,team:owner};
+      addLog('Tausch: erstes Feld gewählt ('+NAMES[owner]+' auf '+r+','+c+') — jetzt zweites Feld eines anderen Teams');
+      render();
+    } else {
+      if(owner===S.swapFirst.team){addLog('Zweites Feld muss von einem anderen Team sein!');return;}
+      // Swap the two cells
+      const a=S.swapFirst;
+      S.grid[a.r][a.c]=owner;
+      S.grid[r][c]=a.team;
+      addLog('Tausch: '+NAMES[a.team]+'↔'+NAMES[owner]+' — Felder getauscht');
+      S.bonusCount++;
+      finishBonus();
+    }
+  }
+}
+
+function finishBonus() {
+  S.flowState='select-winner';
+  S.bonusAction=null; S.bonusCount=0; S.swapFirst=null; S.bonusTeam=null;
+  render();
+}
+
+function setBonusAction(action) {
+  S.bonusAction=action; S.bonusCount=0; S.swapFirst=null;
+  render();
+}
+
 function handleCell(r,c) {
+  if(S.flowState==='phase3-bonus') { handleBonusCell(r,c); return; }
   if(S.flowState!=='placing') return;
   const owner=S.grid[r][c];
   const team=S.actingTeam;
@@ -433,12 +481,63 @@ function renderCenter() {
   col.innerHTML='';
 
   // Phase transition screen
+  if(S.flowState==='phase3-bonus') {
+    const team=S.bonusTeam;
+    const card=el('div','q-card');
+    card.style.borderColor=hexAlpha(COLORS[team],0.4);
+    const meta=el('div','q-meta'); meta.textContent='Comeback-Aktion — vor Phase 3';
+    card.appendChild(meta);
+    const title=el('div'); title.style.cssText='font-weight:800;font-size:16px;margin-bottom:4px';
+    title.innerHTML='<span style="color:'+COLORS[team]+'">'+NAMES[team]+'</span> wählt eine Aktion:';
+    card.appendChild(title);
+
+    if(!S.bonusAction) {
+      // Choice screen
+      const desc=el('div'); desc.style.cssText='font-size:12px;color:#94a3b8;margin-bottom:10px';
+      desc.textContent='Als letztes Team darf '+NAMES[team]+' eine Comeback-Aktion wählen:';
+      card.appendChild(desc);
+      const row=el('div'); row.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+      const opts=[
+        {action:'place', label:'✦ 2 freie Felder', desc:'2 leere Felder frei wählen'},
+        {action:'steal', label:'⚡ 1 Feld klauen', desc:'1 beliebiges Gegnerfeld nehmen'},
+        {action:'swap',  label:'⇄ 2 Felder tauschen', desc:'Feld von Team A mit Feld von Team B tauschen'},
+      ];
+      opts.forEach(o=>{
+        const btn=document.createElement('button');
+        btn.className='btn';
+        btn.style.cssText='display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px';
+        btn.innerHTML='<span style="font-size:13px">'+o.label+'</span><span style="font-size:11px;color:#64748b;font-weight:400">'+o.desc+'</span>';
+        btn.onclick=()=>setBonusAction(o.action);
+        row.appendChild(btn);
+      });
+      card.appendChild(row);
+    } else {
+      // Action in progress
+      const hints={
+        place: 'Klick auf '+( 2-S.bonusCount)+' leere Felder',
+        steal: 'Klick auf ein beliebiges Gegnerfeld',
+        swap:  S.swapFirst ? 'Erstes Feld: '+NAMES[S.swapFirst.team]+' ('+S.swapFirst.r+','+S.swapFirst.c+') — jetzt Feld eines anderen Teams klicken' : 'Klick auf Feld von Team A (wird getauscht)',
+      };
+      const hint=el('div'); hint.style.cssText='font-size:13px;color:#94a3b8;margin-bottom:8px';
+      hint.textContent=hints[S.bonusAction];
+      card.appendChild(hint);
+      const back=el('button','btn'); back.textContent='← Zurück';
+      back.onclick=()=>{ S.bonusAction=null; S.swapFirst=null; render(); };
+      card.appendChild(back);
+    }
+    col.appendChild(card);
+    col.appendChild(buildGrid());
+    col.appendChild(buildOcc());
+    col.appendChild(buildLog());
+    return;
+  }
+
   if(S.flowState==='phase-transition') {
     const banner=el('div','phase-banner');
     const labels=['','Runde 2 beginnt','Phase 3 beginnt'];
     const descs=['',
       'Pro Frage: 2 Felder setzen ODER 1 Feld klauen (max 2× pro Team)',
-      'Freies Klauen! Außerdem: Bonus-Felder für das letzte Team wurden vergeben.'
+      'Freies Klauen! Das letzte Team wählt zuerst seine Comeback-Aktion.'
     ];
     banner.innerHTML='<h2>'+labels[S.phase]+'</h2><p>'+descs[S.phase]+'</p>';
     const btn=el('button','btn go');
@@ -562,7 +661,9 @@ function buildGrid() {
 
   const p=S.phase;
   const placing=S.flowState==='placing';
+  const inBonus=S.flowState==='phase3-bonus' && S.bonusAction;
   const team=S.actingTeam;
+  const bonusTeam=S.bonusTeam;
 
   for(let r=0;r<S.gridSize;r++) {
     for(let c=0;c<S.gridSize;c++) {
@@ -576,9 +677,22 @@ function buildGrid() {
         cell.style.borderColor=hexAlpha(COLORS[owner],0.6);
         cell.style.color='rgba(0,0,0,0.4)';
         cell.textContent=NAMES[owner][0];
+        // Highlight first swap selection
+        if(inBonus && S.bonusAction==='swap' && S.swapFirst && S.swapFirst.r===r && S.swapFirst.c===c) {
+          cell.style.outline='3px solid #fff';
+        }
       }
 
-      if(placing) {
+      if(inBonus) {
+        const a=S.bonusAction;
+        if(a==='place' && owner===null) { cell.classList.add('interactive','placeable'); }
+        else if(a==='steal' && owner!==null && owner!==bonusTeam) { cell.classList.add('interactive','stealable'); }
+        else if(a==='swap' && owner!==null && owner!==bonusTeam) {
+          // For second swap pick: must be different team than first
+          if(!S.swapFirst || owner!==S.swapFirst.team) cell.classList.add('interactive','stealable');
+        }
+        if(cell.classList.contains('interactive')) cell.onclick=()=>handleCell(r,c);
+      } else if(placing) {
         cell.classList.add('interactive');
         if(owner===null) {
           const canPlace=p===1||(p===2&&S.mode==='place')||p===3;

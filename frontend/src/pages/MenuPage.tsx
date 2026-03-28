@@ -19,7 +19,8 @@ const builderLinks: LinkItem[] = [
 ];
 
 const designLinks: LinkItem[] = [
-  { path: '/sneak-peak.html', label: 'Design Sneak Peak', note: 'Mockup: Wie CozyQuiz mit Canva-Look aussehen könnte' }
+  { path: '/sneak-peak.html', label: 'Design Sneak Peak', note: 'Mockup: Wie CozyQuiz mit Canva-Look aussehen könnte' },
+  { path: '/bingo-grid-test.html', label: 'Bingo Grid Tester', note: 'Spielfeld simulieren: Teams, Phasen, Klauen, Joker' }
 ];
 
 const toolsLinks: LinkItem[] = [

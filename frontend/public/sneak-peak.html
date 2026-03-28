@@ -6,19 +6,22 @@
 <title>CozyQuiz — Sneak Peak</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
+/* ── RESET ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #0D0A06; font-family: 'Nunito', sans-serif; }
 
+/* Grain */
 body::after {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9997;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.038;
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9990;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.04; mix-blend-mode: overlay;
 }
 
+/* ── SLIDES ─────────────────────────────────────── */
 .slides { width: 100%; height: 100%; position: relative; }
 .slide {
   position: absolute; inset: 0; opacity: 0; transform: scale(1.03);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.55s ease, transform 0.55s ease;
   pointer-events: none; overflow: hidden;
 }
 .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
@@ -26,85 +29,132 @@ body::after {
 
 /* ── NAV ─────────────────────────────────────────── */
 .nav {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 14px; z-index: 9999;
-  background: rgba(13,10,6,0.85); backdrop-filter: blur(16px);
+  background: rgba(13,10,6,0.88); backdrop-filter: blur(18px);
   border: 1px solid rgba(255,255,255,0.10); border-radius: 50px;
-  padding: 10px 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  padding: 9px 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
 }
-.nav-dot { width: 8px; height: 8px; border-radius: 50%; cursor: pointer; transition: all 0.3s; opacity: 0.35; }
-.nav-dot.active { opacity: 1; transform: scale(1.5); }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; cursor: pointer; transition: all 0.3s; opacity: 0.30; }
+.nav-dot.active { opacity: 1; transform: scale(1.55); }
 .nav-btn {
-  padding: 7px 18px; border-radius: 50px; color: rgba(255,255,255,0.65);
-  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13);
-  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px;
+  padding: 6px 16px; border-radius: 50px; color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 12px;
   cursor: pointer; transition: all 0.2s;
 }
-.nav-btn:hover { background: rgba(255,255,255,0.13); transform: translateY(-1px); }
-.slide-counter { color: rgba(255,255,255,0.28); font-size: 12px; font-weight: 700; min-width: 34px; text-align: center; }
+.nav-btn:hover { background: rgba(255,255,255,0.13); }
+.slide-counter { color: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700; min-width: 32px; text-align: center; }
+.hint { color: rgba(255,255,255,0.2); font-size: 11px; font-weight: 600; font-style: italic; }
 
 /* ── SHARED ──────────────────────────────────────── */
 .cat-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  border-radius: 50px; padding: 7px 22px;
-  font-size: 13px; font-weight: 900; letter-spacing: 0.14em;
-  text-transform: uppercase; color: #fff;
+  border-radius: 50px; padding: 7px 22px; font-size: 13px; font-weight: 900;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
 }
 .cozy-card {
   background: #1B1510; border: 1px solid rgba(255,255,255,0.07); border-radius: 22px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.team-chip {
-  padding: 7px 17px; border-radius: 50px; font-weight: 800; font-size: 14px; border: 2px solid;
-}
-
-/* ── CUTOUT ELEMENTS (Canva-Stil) ────────────────── */
-/* Große, freigestellte Dekoelemente am Rand */
+.team-chip { padding: 7px 17px; border-radius: 50px; font-weight: 800; font-size: 14px; border: 2px solid; }
+/* Cutout deco */
 .cutout {
   position: absolute; pointer-events: none; z-index: 3;
-  filter: drop-shadow(0 12px 28px rgba(0,0,0,0.55));
+  filter: drop-shadow(0 12px 28px rgba(0,0,0,0.5));
   line-height: 1; user-select: none;
 }
-.cutout-float { animation: cutoutFloat 4s ease-in-out infinite; }
-.cutout-float-slow { animation: cutoutFloat 6s ease-in-out infinite; }
-.cutout-float-alt { animation: cutoutFloatAlt 5s ease-in-out infinite; }
-@keyframes cutoutFloat    { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))}  50%{transform:translateY(-10px) rotate(var(--r,0deg))} }
-@keyframes cutoutFloatAlt { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))}  50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
+.cf  { animation: cfloat 4s ease-in-out infinite; }
+.cfs { animation: cfloat 6s ease-in-out infinite; }
+.cfa { animation: cfloata 5s ease-in-out infinite; }
+@keyframes cfloat  { 0%,100%{transform:translateY(0)   rotate(var(--r,0deg))} 50%{transform:translateY(-10px) rotate(var(--r,0deg))} }
+@keyframes cfloata { 0%,100%{transform:translateY(0)   rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
+
+/* ── FIREFLIES ───────────────────────────────────── */
+.firefly {
+  position: absolute; pointer-events: none; z-index: 2;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #FEF08A;
+  box-shadow: 0 0 6px 2px rgba(254,240,138,0.7);
+  animation: ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite;
+}
+@keyframes ffmove {
+  0%   { transform: translate(0,0) scale(1); opacity: 0; }
+  10%  { opacity: 0.9; }
+  45%  { transform: translate(var(--dx,40px), var(--dy,-40px)) scale(1.2); opacity: 0.7; }
+  90%  { opacity: 0.5; }
+  100% { transform: translate(calc(var(--dx,40px)*1.5), calc(var(--dy,-40px)*1.5)) scale(0.8); opacity: 0; }
+}
+
+/* ── HANDDRAWN SVG ───────────────────────────────── */
+.draw-line {
+  stroke-dasharray: 500; stroke-dashoffset: 500;
+  animation: drawLine 1.2s ease forwards;
+}
+.draw-line-delay { animation-delay: 0.6s; }
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+.doodle-wrap { position: absolute; pointer-events: none; }
 
 /* ═══════════════════════════════════════════════════
-   SLIDE 1 — SCHÄTZCHEN  🍯  warm gelb
+   SLIDE 1 — SCHÄTZCHEN: KATEGORIE-EINSTIEGS-MOMENT
    ═══════════════════════════════════════════════════ */
 #s1 {
   background:
     radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.14) 0%, transparent 52%),
+    radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%),
     #0D0A06;
 }
 .badge-schaetzchen {
   background: linear-gradient(135deg, #A16207, #EAB308);
-  box-shadow: 0 0 38px rgba(234,179,8,0.42), 0 4px 14px rgba(0,0,0,0.5);
+  box-shadow: 0 0 38px rgba(234,179,8,0.45), 0 4px 14px rgba(0,0,0,0.5);
 }
+
+/* Intro-Overlay: Kategorie wird angekündigt, dann slidet weg */
+#s1 .intro-overlay {
+  position: absolute; inset: 0; z-index: 20;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  background: radial-gradient(ellipse at center, rgba(133,77,14,0.6) 0%, #0D0A06 70%);
+  animation: introFadeOut 0.5s ease 2s forwards;
+}
+#s1 .intro-badge-big {
+  font-size: clamp(28px, 6vw, 72px); font-weight: 900; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #EAB308;
+  text-shadow: 0 0 60px rgba(234,179,8,0.5);
+  animation: introBadgePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+}
+#s1 .intro-line {
+  font-family: 'Caveat', cursive; font-size: clamp(20px, 3vw, 38px);
+  color: rgba(234,179,8,0.55);
+  animation: introBadgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.4s both;
+}
+@keyframes introBadgePop { from{opacity:0;transform:scale(0.6) translateY(30px)} to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes introFadeOut  { to{opacity:0;pointer-events:none} }
+
 #s1 .content {
-  position: relative; z-index: 2; height: 100%;
+  position: relative; z-index: 5; height: 100%;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 22px;
+  align-items: center; justify-content: center; gap: 20px;
   padding: 48px; text-align: center;
+  animation: contentReveal 0.6s ease 2.2s both;
 }
+@keyframes contentReveal { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 #s1 .round-label { font-family: 'Caveat', cursive; font-size: 21px; color: rgba(234,179,8,0.5); }
 #s1 .big-number {
-  font-size: clamp(110px, 20vw, 200px); font-weight: 900; line-height: 1; color: #EAB308;
+  font-size: clamp(100px, 18vw, 180px); font-weight: 900; line-height: 1; color: #EAB308;
   text-shadow: 0 0 70px rgba(234,179,8,0.3), 0 10px 0 rgba(113,63,18,0.85);
-  animation: floatNum 3.5s ease-in-out infinite; position: relative; z-index: 4;
+  animation: floatNum 3.5s ease-in-out infinite;
 }
 @keyframes floatNum { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
-#s1 .question-text {
-  font-size: clamp(20px, 3.2vw, 40px); font-weight: 800;
-  color: #FEF9C3; line-height: 1.35; max-width: 820px; position: relative; z-index: 4;
+#s1 .q-text {
+  font-size: clamp(20px, 3vw, 40px); font-weight: 800;
+  color: #FEF9C3; line-height: 1.35; max-width: 800px; position: relative;
 }
-#s1 .teams-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 4; }
+/* Handdrawn underline */
+#s1 .q-text svg { position: absolute; bottom: -12px; left: 0; width: 100%; }
+#s1 .teams-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
 /* ═══════════════════════════════════════════════════
-   SLIDE 2 — MU-CHO  🎯  warm blau — MIT BILDERN
+   SLIDE 2 — MU-CHO: KARTEN-FLIP + KERZEN-TIMER
    ═══════════════════════════════════════════════════ */
 #s2 {
   background:
@@ -116,51 +166,72 @@ body::after {
   background: linear-gradient(135deg, #1E3A8A, #2563EB);
   box-shadow: 0 0 38px rgba(37,99,235,0.45), 0 4px 14px rgba(0,0,0,0.5);
 }
-#s2 .layout { height: 100%; display: flex; flex-direction: column; padding: 24px 40px; gap: 18px; }
+#s2 .layout { height: 100%; display: flex; flex-direction: column; padding: 22px 38px; gap: 16px; }
 #s2 .header { display: flex; align-items: center; justify-content: space-between; }
-.timer-ring { width: 58px; height: 58px; position: relative; }
-.timer-ring svg { transform: rotate(-90deg); width: 58px; height: 58px; }
-.ring-bg { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 5; }
-.ring-fg-blue { fill: none; stroke: #3B82F6; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 145; stroke-dashoffset: 45; filter: drop-shadow(0 0 6px rgba(59,130,246,0.7)); }
-.timer-ring .ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #fff; }
-#s2 .question-card { padding: 20px 32px; text-align: center; }
-#s2 .q-text { font-size: clamp(22px, 3.2vw, 46px); font-weight: 800; color: #EFF6FF; line-height: 1.3; }
+
+/* Kerzen-Timer */
+.candle-wrap { display: flex; align-items: center; gap: 14px; }
+.candle-label { font-family: 'Caveat', cursive; font-size: 22px; color: rgba(255,255,255,0.45); }
+.candle-svg { width: 44px; height: 80px; overflow: visible; }
+.candle-body { fill: #FDE68A; }
+.candle-body-shade { fill: rgba(0,0,0,0.12); }
+.candle-wick { stroke: #374151; stroke-width: 2; stroke-linecap: round; }
+.flame-outer { fill: #F97316; animation: flicker 0.3s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.flame-mid   { fill: #FCD34D; animation: flicker 0.25s ease-in-out infinite alternate-reverse; transform-origin: 50% 100%; }
+.flame-core  { fill: #FEF9C3; animation: flicker 0.2s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.wax-drip    { fill: #FDE68A; animation: drip 3s ease-in-out infinite; }
+@keyframes flicker { 0%{transform:scaleX(1) scaleY(1)} 100%{transform:scaleX(0.88) scaleY(0.94)} }
+@keyframes drip { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
+.candle-glow { fill: rgba(249,115,22,0.12); animation: glowPulse 1.5s ease-in-out infinite; }
+@keyframes glowPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+#s2 .question-card { padding: 18px 28px; text-align: center; }
+#s2 .q-text { font-size: clamp(22px, 3.2vw, 44px); font-weight: 800; color: #EFF6FF; line-height: 1.3; }
 #s2 .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; flex: 1; }
 
-/* MC tile mit Bild */
-.mc-option {
-  border-radius: 20px; overflow: hidden;
+/* Karten-Flip */
+.card-wrap { perspective: 900px; }
+.mc-card {
+  width: 100%; height: 100%; transform-style: preserve-3d; position: relative;
+  transform: rotateY(180deg);
+  transition: transform 0s;
+}
+.slide.active .mc-card {
+  animation: cardFlip 0.65s cubic-bezier(0.4,0,0.2,1) var(--delay,0s) forwards;
+}
+@keyframes cardFlip { from{transform:rotateY(180deg)} to{transform:rotateY(0deg)} }
+.card-front, .card-back {
+  position: absolute; inset: 0; border-radius: 20px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
   display: flex; flex-direction: column;
+}
+.card-back {
+  background: linear-gradient(135deg, #1a1410, #242020);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  align-items: center; justify-content: center; font-size: 36px;
+  transform: rotateY(180deg);
+  box-shadow: 0 8px 0 rgba(0,0,0,0.4);
+}
+.card-back::before {
+  content: '?'; font-size: 48px; font-weight: 900;
+  color: rgba(255,255,255,0.10);
+}
+.card-front {
   border: 1.5px solid rgba(255,255,255,0.07);
-  box-shadow: 0 8px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  overflow: hidden;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
 }
-.mc-img {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 52px; background: rgba(0,0,0,0.25); position: relative;
-  min-height: 0;
-}
-/* Farbige Überlagerung je Option */
-.opt-a .mc-img { background: linear-gradient(160deg, rgba(30,58,138,0.6), rgba(37,99,235,0.4)); }
-.opt-b .mc-img { background: linear-gradient(160deg, rgba(20,83,45,0.6), rgba(22,163,74,0.4)); }
-.opt-c .mc-img { background: linear-gradient(160deg, rgba(127,29,29,0.6), rgba(220,38,38,0.4)); }
-.opt-d .mc-img { background: linear-gradient(160deg, rgba(124,45,18,0.6), rgba(234,88,12,0.4)); }
-.mc-label {
-  padding: 10px 14px; display: flex; align-items: center; gap: 8px;
-  background: rgba(0,0,0,0.35);
-}
-.mc-letter {
-  width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.35); flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 900; font-size: 13px; color: rgba(255,255,255,0.9);
-}
-.mc-text { font-weight: 800; font-size: clamp(13px, 1.6vw, 19px); color: #fff; line-height: 1.2; }
-.opt-a { background: linear-gradient(180deg, #1E3A8A 0%, #1d4ed8 100%); }
-.opt-b { background: linear-gradient(180deg, #14532D 0%, #15803d 100%); }
-.opt-c { background: linear-gradient(180deg, #7F1D1D 0%, #b91c1c 100%); }
-.opt-d { background: linear-gradient(180deg, #7C2D12 0%, #c2410c 100%); }
+.opt-a .card-front { background: linear-gradient(180deg,#1E3A8A,#1d4ed8); }
+.opt-b .card-front { background: linear-gradient(180deg,#14532D,#15803d); }
+.opt-c .card-front { background: linear-gradient(180deg,#7F1D1D,#b91c1c); }
+.opt-d .card-front { background: linear-gradient(180deg,#7C2D12,#c2410c); }
+.mc-img { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 48px; background: rgba(0,0,0,0.2); min-height: 0; }
+.mc-label { padding: 10px 14px; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); }
+.mc-letter { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.35); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: rgba(255,255,255,0.9); }
+.mc-text { font-weight: 800; font-size: clamp(13px,1.6vw,19px); color: #fff; line-height: 1.2; }
 
 /* ═══════════════════════════════════════════════════
-   SLIDE 3 — BUNTE TÜTE  🛍️  warm rot
+   SLIDE 3 — BUNTE TÜTE: GLÜHWÜRMCHEN + DOODLE-FRAME
    ═══════════════════════════════════════════════════ */
 #s3 {
   background:
@@ -173,80 +244,89 @@ body::after {
   box-shadow: 0 0 38px rgba(220,38,38,0.45), 0 4px 14px rgba(0,0,0,0.5);
 }
 #s3 .content {
-  position: relative; z-index: 2; height: 100%;
+  position: relative; z-index: 5; height: 100%;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 26px;
+  align-items: center; justify-content: center; gap: 24px;
   padding: 56px; text-align: center;
 }
+/* Doodle-Rahmen */
+#s3 .doodle-frame {
+  position: absolute; inset: 24px; pointer-events: none; z-index: 1;
+}
+#s3 .doodle-frame path { animation: drawDoodle 2s ease forwards; stroke-dasharray: 2000; stroke-dashoffset: 2000; }
+@keyframes drawDoodle { to{ stroke-dashoffset: 0; } }
 #s3 .bag-icon {
-  font-size: 92px; line-height: 1; position: relative; z-index: 4;
+  font-size: 88px; line-height: 1; position: relative; z-index: 6;
   animation: bagWobble 2.5s ease-in-out infinite;
   filter: drop-shadow(0 0 28px rgba(220,38,38,0.45));
 }
 @keyframes bagWobble { 0%,100%{transform:rotate(-6deg) scale(1)} 50%{transform:rotate(6deg) scale(1.06)} }
 #s3 .mystery-text {
-  font-family: 'Caveat', cursive; font-size: clamp(36px, 5.2vw, 74px); font-weight: 700;
-  color: #FEE2E2; position: relative; z-index: 4;
+  font-family: 'Caveat', cursive; font-size: clamp(36px,5.2vw,72px); font-weight: 700;
+  color: #FEE2E2; position: relative; z-index: 6;
 }
-#s3 .sub-text { font-size: clamp(14px, 1.8vw, 22px); color: rgba(254,202,202,0.50); font-weight: 700; max-width: 580px; position: relative; z-index: 4; }
-#s3 .color-pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 4; }
+#s3 .sub-text { font-size: clamp(14px,1.8vw,22px); color: rgba(254,202,202,0.50); font-weight: 700; max-width: 560px; position: relative; z-index: 6; }
+#s3 .color-pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 6; }
 .color-pill { padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 800; border: 1.5px solid; }
 
 /* ═══════════════════════════════════════════════════
-   SLIDE 4 — 10 VON 10  ✅  warm grün
-   10 Punkte auf A / B / C verteilen
+   SLIDE 4 — 10 VON 10: NOTIZBUCH-STIL
    ═══════════════════════════════════════════════════ */
 #s4 {
+  /* Notizbuch-Papier: dunkle Linien */
   background:
+    repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.07) 39px, rgba(52,211,153,0.07) 40px),
     radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.35) 0%, transparent 55%),
-    radial-gradient(ellipse at 82% 70%, rgba(16,185,129,0.10) 0%, transparent 50%),
-    #0D0A06;
+    #0E0B08;
+}
+/* Seitenrand-Linie */
+#s4::before {
+  content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 2px;
+  background: rgba(52,211,153,0.12); pointer-events: none; z-index: 1;
 }
 .badge-10von10 {
   background: linear-gradient(135deg, #065F46, #059669);
   box-shadow: 0 0 38px rgba(5,150,105,0.42), 0 4px 14px rgba(0,0,0,0.5);
 }
-#s4 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 48px; gap: 22px; }
+#s4 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 48px 28px 100px; gap: 20px; position: relative; z-index: 2; }
 #s4 .header { display: flex; align-items: center; justify-content: space-between; }
+/* Spiralbindung links */
+#s4 .spiral {
+  position: absolute; left: 16px; top: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 28px; align-items: center; z-index: 5;
+}
+.spiral-ring {
+  width: 24px; height: 24px; border-radius: 50%; border: 3px solid rgba(52,211,153,0.22);
+  background: rgba(52,211,153,0.06);
+}
 #s4 .q-text {
-  font-size: clamp(22px, 3.2vw, 46px); font-weight: 800;
-  color: #D1FAE5; line-height: 1.3;
+  font-family: 'Caveat', cursive; font-size: clamp(22px, 3.2vw, 44px);
+  color: #D1FAE5; line-height: 1.5;
 }
 #s4 .points-hint {
   font-family: 'Caveat', cursive; font-size: clamp(16px, 2vw, 26px);
-  color: rgba(52,211,153,0.55); margin-top: -8px;
+  color: rgba(52,211,153,0.50); margin-top: -8px;
 }
-#s4 .options-col { display: flex; flex-direction: column; gap: 14px; flex: 1; justify-content: center; }
+#s4 .options-col { display: flex; flex-direction: column; gap: 12px; flex: 1; justify-content: center; }
 .ten-option {
-  display: flex; align-items: center; gap: 18px;
-  padding: 16px 22px; border-radius: 18px;
-  background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.18);
+  display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: 16px;
+  background: rgba(16,185,129,0.06); border: 1.5px solid rgba(16,185,129,0.16);
 }
 .ten-letter {
   width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-weight: 900; font-size: 20px; color: #fff;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.3); font-family: 'Caveat', cursive;
 }
-.ten-option-text { font-weight: 800; font-size: clamp(16px, 2vw, 24px); color: #D1FAE5; flex: 1; }
-/* Punkt-Balken: zeigt wie Teams ihre Punkte verteilt haben */
-.ten-bars { display: flex; gap: 6px; align-items: center; }
+.ten-option-text { font-family: 'Caveat', cursive; font-weight: 700; font-size: clamp(18px,2.2vw,28px); color: #D1FAE5; flex: 1; }
+.ten-bars { display: flex; gap: 6px; align-items: flex-end; }
 .ten-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.ten-bar-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); }
-.ten-bar {
-  width: 32px; border-radius: 6px;
-  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
-  height: 48px; display: flex; align-items: flex-end;
-}
-.ten-bar-fill { width: 100%; border-radius: 6px; transition: height 1s ease; }
-.ten-bar-pts {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  font-weight: 900; font-size: 13px; color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
+.ten-bar-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); }
+.ten-bar { width: 30px; height: 52px; border-radius: 6px; background: rgba(255,255,255,0.07); position: relative; display: flex; align-items: flex-end; overflow: hidden; }
+.ten-bar-fill { width: 100%; border-radius: 6px; }
+.ten-pts { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
 /* ═══════════════════════════════════════════════════
-   SLIDE 5 — CHEESE  📸  warm lila
+   SLIDE 5 — CHEESE: RUBBELLOS-REVEAL + AVATAR-REAKTIONEN
    ═══════════════════════════════════════════════════ */
 #s5 {
   background:
@@ -258,314 +338,457 @@ body::after {
   background: linear-gradient(135deg, #4C1D95, #7C3AED);
   box-shadow: 0 0 38px rgba(124,58,237,0.45), 0 4px 14px rgba(0,0,0,0.5);
 }
-#s5 .layout { height: 100%; display: flex; padding: 28px 44px; gap: 36px; align-items: center; }
-#s5 .img-panel { flex: 0 0 44%; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+#s5 .layout { height: 100%; display: flex; flex-direction: column; padding: 22px 44px; gap: 16px; }
+#s5 .top-row { display: flex; gap: 32px; flex: 1; min-height: 0; }
+#s5 .img-panel { flex: 0 0 38%; display: flex; flex-direction: column; gap: 12px; }
 #s5 .img-frame {
-  width: 100%; aspect-ratio: 4/3; border-radius: 22px; overflow: hidden;
+  flex: 1; border-radius: 22px; overflow: hidden;
   border: 2.5px solid rgba(124,58,237,0.35);
   box-shadow: 0 12px 50px rgba(0,0,0,0.65), 0 0 55px rgba(124,58,237,0.12);
   background: linear-gradient(135deg, #1a0f2e, #160d27);
-  display: flex; align-items: center; justify-content: center; position: relative; font-size: 80px;
+  display: flex; align-items: center; justify-content: center; position: relative; font-size: 72px;
 }
 #s5 .img-stamp {
   position: absolute; bottom: 10px; right: 12px;
   background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 8px;
-  font-size: 11px; color: rgba(167,139,250,0.75); font-weight: 700; letter-spacing: 0.08em;
+  font-size: 11px; color: rgba(167,139,250,0.75); font-weight: 700;
 }
-#s5 .img-caption { font-family: 'Caveat', cursive; font-size: 17px; color: rgba(167,139,250,0.6); padding-left: 4px; }
-#s5 .question-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; justify-content: center; }
-#s5 .q-text { font-size: clamp(22px, 3.3vw, 46px); font-weight: 800; color: #EDE9FE; line-height: 1.3; }
-#s5 .answer-hint { font-family: 'Caveat', cursive; font-size: clamp(18px, 2.2vw, 30px); color: rgba(167,139,250,0.50); }
-#s5 .team-answers { display: flex; flex-direction: column; gap: 8px; }
-.answer-row {
-  display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-radius: 14px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+#s5 .img-caption { font-family: 'Caveat', cursive; font-size: 16px; color: rgba(167,139,250,0.6); }
+#s5 .answer-panel { flex: 1; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+#s5 .q-text { font-size: clamp(20px,3vw,42px); font-weight: 800; color: #EDE9FE; line-height: 1.3; }
+
+/* Rubbellos */
+.rubbellos-wrap { position: relative; border-radius: 18px; overflow: hidden; }
+.rubbellos-answer {
+  padding: 20px 28px; border-radius: 18px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(167,139,250,0.15));
+  border: 2px solid rgba(124,58,237,0.4);
 }
-.a-name { font-weight: 800; font-size: 14px; }
-.a-text { font-size: 14px; color: rgba(255,255,255,0.5); font-style: italic; }
-.a-status { margin-left: auto; font-size: 16px; }
+.rubbellos-answer .answer-label { font-family: 'Caveat', cursive; font-size: 18px; color: rgba(196,181,253,0.6); }
+.rubbellos-answer .answer-text { font-size: clamp(24px,3.5vw,48px); font-weight: 900; color: #fff; }
+/* Die graue Rubbel-Schicht */
+.rubbellos-overlay {
+  position: absolute; inset: 0; border-radius: 18px;
+  background: repeating-linear-gradient(-55deg, #374151 0,#374151 6px, #4B5563 6px, #4B5563 12px);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Caveat', cursive; font-size: 22px; color: rgba(255,255,255,0.5);
+  animation: rubbelAway 1s ease-out 1.5s forwards;
+}
+@keyframes rubbelAway {
+  0%  { clip-path: inset(0 0 0 0 round 18px); opacity: 1; }
+  100%{ clip-path: inset(0 100% 0 0 round 18px); opacity: 1; }
+}
+
+/* Team-Avatare */
+#s5 .avatars-row { display: flex; gap: 16px; justify-content: center; padding-top: 4px; }
+.avatar-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 16px;
+  background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.07);
+}
+.avatar-emoji { font-size: 32px; }
+.avatar-name  { font-weight: 800; font-size: 13px; }
+.avatar-pts   { font-family: 'Caveat', cursive; font-size: 16px; color: rgba(255,255,255,0.5); }
+/* Reaktions-Animationen */
+.react-bounce { animation: avBounce 0.55s cubic-bezier(0.34,1.56,0.64,1) 2.3s infinite alternate; }
+.react-wrong  { animation: avShake 0.5s ease 2.3s 2; }
+.react-neutral{ opacity: 0.6; }
+@keyframes avBounce { to{transform:translateY(-10px)} }
+@keyframes avShake  { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+/* ═══════════════════════════════════════════════════
+   SLIDE 6 — NOTIZBUCH PUNKTESTAND
+   ═══════════════════════════════════════════════════ */
+#s6 {
+  background:
+    repeating-linear-gradient(transparent, transparent 39px, rgba(147,197,253,0.08) 39px, rgba(147,197,253,0.08) 40px),
+    radial-gradient(ellipse at 50% 0%, rgba(180,83,9,0.15) 0%, transparent 50%),
+    #0E0B08;
+}
+#s6::before {
+  content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 2px;
+  background: rgba(234,179,8,0.15); pointer-events: none; z-index: 1;
+}
+#s6 .spiral {
+  position: absolute; left: 16px; top: 20px; bottom: 20px;
+  display: flex; flex-direction: column; gap: 28px; align-items: center; z-index: 5;
+}
+#s6 .layout { height: 100%; display: flex; flex-direction: column; padding: 28px 56px 28px 110px; gap: 20px; position: relative; z-index: 2; }
+#s6 .page-title {
+  font-family: 'Caveat', cursive; font-size: clamp(38px, 6vw, 72px);
+  color: #FEF3C7; font-weight: 700; border-bottom: 3px solid rgba(234,179,8,0.25); padding-bottom: 10px;
+  animation: writein 1.2s ease forwards; overflow: hidden; white-space: nowrap;
+}
+@keyframes writein { from{width:0} to{width:100%} }
+#s6 .score-list { display: flex; flex-direction: column; gap: 0; flex: 1; justify-content: center; }
+.nb-row {
+  display: flex; align-items: center; gap: 20px;
+  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  animation: nbSlide 0.5s cubic-bezier(0.34,1.2,0.64,1) var(--del,0s) both;
+}
+@keyframes nbSlide { from{opacity:0;transform:translateX(-24px)} to{opacity:1;transform:translateX(0)} }
+.nb-rank { font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; width: 42px; color: rgba(255,255,255,0.2); }
+.nb-row.first .nb-rank { color: #EAB308; }
+.nb-color { width: 14px; height: 38px; border-radius: 7px; flex-shrink: 0; }
+.nb-name { font-family: 'Caveat', cursive; font-size: clamp(24px,3vw,38px); font-weight: 700; color: #fff; flex: 1; }
+/* Tally-Striche als Punkte-Visualisierung */
+.nb-tally { display: flex; gap: 3px; align-items: center; }
+.tally-mark { width: 3px; height: 22px; border-radius: 2px; background: rgba(255,255,255,0.25); }
+.tally-mark.cross { transform: rotate(15deg); background: rgba(255,255,255,0.5); }
+.nb-pts { font-family: 'Caveat', cursive; font-size: 26px; font-weight: 700; color: rgba(255,255,255,0.6); min-width: 70px; text-align: right; }
+.nb-row.first .nb-pts { color: #EAB308; }
+.nb-delta { font-family: 'Caveat', cursive; font-size: 20px; color: #34D399; min-width: 55px; text-align: right; }
+/* Goldener Stern neben Platz 1 */
+.nb-row.first .nb-name::after { content: ' ⭐'; }
 
 </style>
 </head>
 <body>
 <div class="slides">
 
-  <!-- ══════════════════════════════════════════════
-       SLIDE 1 — SCHÄTZCHEN
-  ══════════════════════════════════════════════════ -->
-  <div class="slide active" id="s1">
+<!-- ══════════════════════════════════════════
+     SLIDE 1 — SCHÄTZCHEN: INTRO-MOMENT
+══════════════════════════════════════════════ -->
+<div class="slide active" id="s1">
 
-    <!-- Cutout: Waage links unten -->
-    <div class="cutout cutout-float" style="font-size:160px;bottom:-20px;left:-28px;--r:-8deg;opacity:0.72">⚖️</div>
-    <!-- Cutout: Glühbirne rechts oben -->
-    <div class="cutout cutout-float-alt" style="font-size:110px;top:-10px;right:40px;--r:10deg;opacity:0.60">💡</div>
-    <!-- Cutout: Sternchen -->
-    <div class="cutout cutout-float-slow" style="font-size:60px;top:22%;left:8%;--r:15deg;opacity:0.45">✨</div>
-    <div class="cutout cutout-float-slow" style="font-size:44px;bottom:22%;right:12%;--r:-12deg;opacity:0.40">🌟</div>
+  <!-- Fireflies (JS fills these) -->
+  <div id="ff1" style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden"></div>
 
-    <div class="content">
-      <div class="cat-badge badge-schaetzchen">🍯 Schätzchen</div>
-      <div class="round-label">Frage 3 von 12</div>
-      <div class="big-number">3</div>
-      <div class="question-text">
-        Wie viele Liter Bier wurden beim Oktoberfest 2023 ausgeschenkt?
-      </div>
-      <div class="teams-row">
-        <div class="team-chip" style="border-color:#EAB308;color:#EAB308;background:rgba(234,179,8,0.10)">🦁 Löwen</div>
-        <div class="team-chip" style="border-color:#3B82F6;color:#93C5FD;background:rgba(59,130,246,0.10)">🌊 Wellen</div>
-        <div class="team-chip" style="border-color:#8B5CF6;color:#C4B5FD;background:rgba(139,92,246,0.10)">⚡ Blitze</div>
-        <div class="team-chip" style="border-color:#10B981;color:#6EE7B7;background:rgba(16,185,129,0.10)">🌿 Eulen</div>
-      </div>
-    </div>
+  <!-- Cutouts -->
+  <div class="cutout cf"  style="font-size:160px;bottom:-24px;left:-30px;--r:-8deg;opacity:0.70">⚖️</div>
+  <div class="cutout cfa" style="font-size:104px;top:-12px;right:36px;--r:10deg;opacity:0.58">💡</div>
+  <div class="cutout cfs" style="font-size:52px;top:22%;left:8%;--r:15deg;opacity:0.40">✨</div>
+
+  <!-- Intro-Overlay (flieht nach 2s) -->
+  <div class="intro-overlay">
+    <div style="font-size:clamp(16px,3vw,22px);letter-spacing:0.2em;color:rgba(234,179,8,0.55);font-weight:700;text-transform:uppercase;font-family:'Caveat',cursive">Runde 1 · Kategorie</div>
+    <div class="intro-badge-big">🍯 Schätzchen</div>
+    <div class="intro-line">Wie gut kannst du schätzen?</div>
   </div>
 
-  <!-- ══════════════════════════════════════════════
-       SLIDE 2 — MU-CHO (mit Bilder in Tiles)
-  ══════════════════════════════════════════════════ -->
-  <div class="slide" id="s2">
-
-    <!-- Cutout: Mikrofon links oben außen -->
-    <div class="cutout cutout-float" style="font-size:130px;top:-15px;left:-20px;--r:-12deg;opacity:0.65">🎤</div>
-    <!-- Cutout: Trophäe rechts unten -->
-    <div class="cutout cutout-float-alt" style="font-size:100px;bottom:-10px;right:30px;--r:8deg;opacity:0.58">🏆</div>
-
-    <div class="layout">
-      <div class="header">
-        <div class="cat-badge badge-mucho">🎯 Mu-cho</div>
-        <div class="timer-ring">
-          <svg viewBox="0 0 58 58"><circle class="ring-bg" cx="29" cy="29" r="23"/><circle class="ring-fg-blue" cx="29" cy="29" r="23"/></svg>
-          <div class="ring-text">23</div>
-        </div>
-      </div>
-      <div class="cozy-card question-card">
-        <div class="q-text">Welche Stadt ist die Hauptstadt von Australien?</div>
-      </div>
-      <div class="options-grid">
-        <div class="mc-option opt-a">
-          <div class="mc-img">🦘</div>
-          <div class="mc-label"><div class="mc-letter">A</div><div class="mc-text">Sydney</div></div>
-        </div>
-        <div class="mc-option opt-b">
-          <div class="mc-img">🏙️</div>
-          <div class="mc-label"><div class="mc-letter">B</div><div class="mc-text">Melbourne</div></div>
-        </div>
-        <div class="mc-option opt-c">
-          <div class="mc-img">🏛️</div>
-          <div class="mc-label"><div class="mc-letter">C</div><div class="mc-text">Canberra</div></div>
-        </div>
-        <div class="mc-option opt-d">
-          <div class="mc-img">🌊</div>
-          <div class="mc-label"><div class="mc-letter">D</div><div class="mc-text">Brisbane</div></div>
-        </div>
-      </div>
+  <!-- Fragen-Inhalt (erscheint nach Intro) -->
+  <div class="content">
+    <div class="cat-badge badge-schaetzchen">🍯 Schätzchen</div>
+    <div class="round-label">Frage 3 von 12</div>
+    <div class="big-number">3</div>
+    <div class="q-text">
+      Wie viele Liter Bier wurden beim Oktoberfest 2023 ausgeschenkt?
+      <!-- Handgezeichnete Unterlinie -->
+      <svg height="16" style="position:absolute;bottom:-14px;left:0;width:100%;overflow:visible" preserveAspectRatio="none">
+        <path d="M0 10 Q25% 4 50% 11 Q75% 17 100% 7"
+          stroke="#EAB308" stroke-width="3" fill="none" stroke-linecap="round"
+          class="draw-line draw-line-delay"/>
+      </svg>
+    </div>
+    <div class="teams-row">
+      <div class="team-chip" style="border-color:#EAB308;color:#EAB308;background:rgba(234,179,8,0.10)">🦁 Löwen</div>
+      <div class="team-chip" style="border-color:#3B82F6;color:#93C5FD;background:rgba(59,130,246,0.10)">🌊 Wellen</div>
+      <div class="team-chip" style="border-color:#8B5CF6;color:#C4B5FD;background:rgba(139,92,246,0.10)">⚡ Blitze</div>
+      <div class="team-chip" style="border-color:#10B981;color:#6EE7B7;background:rgba(16,185,129,0.10)">🌿 Eulen</div>
     </div>
   </div>
+</div>
 
-  <!-- ══════════════════════════════════════════════
-       SLIDE 3 — BUNTE TÜTE
-  ══════════════════════════════════════════════════ -->
-  <div class="slide" id="s3">
+<!-- ══════════════════════════════════════════
+     SLIDE 2 — MU-CHO: KARTEN-FLIP + KERZE
+══════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="cutout cf"  style="font-size:120px;top:-14px;left:-18px;--r:-10deg;opacity:0.62">🎤</div>
+  <div class="cutout cfa" style="font-size:90px;bottom:-8px;right:28px;--r:8deg;opacity:0.52">🏆</div>
 
-    <!-- Cutouts: bunte Elemente streuen -->
-    <div class="cutout cutout-float"      style="font-size:140px;bottom:-25px;left:-22px;--r:-10deg;opacity:0.65">🎲</div>
-    <div class="cutout cutout-float-alt"  style="font-size:100px;top:-8px;right:25px;--r:14deg;opacity:0.55">🎯</div>
-    <div class="cutout cutout-float-slow" style="font-size:52px;top:28%;left:6%;--r:20deg;opacity:0.42">🌈</div>
-    <div class="cutout cutout-float-slow" style="font-size:44px;bottom:26%;right:9%;--r:-18deg;opacity:0.38">⭐</div>
-
-    <div class="content">
-      <div class="cat-badge badge-buntetuete">🛍️ Bunte Tüte</div>
-      <div class="bag-icon">🎲</div>
-      <div class="mystery-text">Was kommt als Nächstes?</div>
-      <div class="sub-text">Weltkarte · Ordnen · 8‑aus‑1 · Blitz · Fotosprint...</div>
-      <div class="color-pills">
-        <div class="color-pill" style="background:rgba(234,179,8,0.13);color:#FDE68A;border-color:rgba(234,179,8,0.28)">🗺️ Weltkarte</div>
-        <div class="color-pill" style="background:rgba(139,92,246,0.13);color:#DDD6FE;border-color:rgba(139,92,246,0.28)">🔢 Ordnen</div>
-        <div class="color-pill" style="background:rgba(59,130,246,0.13);color:#BFDBFE;border-color:rgba(59,130,246,0.28)">⚡ Blitz</div>
-        <div class="color-pill" style="background:rgba(16,185,129,0.13);color:#A7F3D0;border-color:rgba(16,185,129,0.28)">✔️ 8‑1‑Falsch</div>
-        <div class="color-pill" style="background:rgba(220,38,38,0.13);color:#FECACA;border-color:rgba(220,38,38,0.28)">📷 Fotosprint</div>
+  <div class="layout">
+    <div class="header">
+      <div class="cat-badge badge-mucho">🎯 Mu-cho</div>
+      <!-- Kerzen-Timer -->
+      <div class="candle-wrap">
+        <div class="candle-label">23 Sek.</div>
+        <svg class="candle-svg" viewBox="0 0 50 100">
+          <!-- Glüh-Halo -->
+          <ellipse class="candle-glow" cx="25" cy="22" rx="22" ry="22"/>
+          <!-- Flamme -->
+          <ellipse class="flame-outer" cx="25" cy="22" rx="9"  ry="16"/>
+          <ellipse class="flame-mid"   cx="25" cy="24" rx="5.5" ry="10"/>
+          <ellipse class="flame-core"  cx="25" cy="27" rx="2.5" ry="5"/>
+          <!-- Docht -->
+          <line class="candle-wick" x1="25" y1="37" x2="25" y2="40"/>
+          <!-- Wachs-Körper -->
+          <rect class="candle-body" x="14" y="40" width="22" height="52" rx="5"/>
+          <rect class="candle-body-shade" x="32" y="40" width="4" height="52" rx="2"/>
+          <!-- Wachs-Tropfen -->
+          <ellipse class="wax-drip" cx="19" cy="40" rx="4" ry="6"/>
+          <ellipse class="wax-drip" cx="34" cy="44" rx="3" ry="5" style="animation-delay:1.5s"/>
+          <!-- Kerzen-Basis -->
+          <rect fill="#B45309" x="10" y="88" width="30" height="8" rx="4"/>
+        </svg>
       </div>
     </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════
-       SLIDE 4 — 10 VON 10 (Punkte verteilen)
-  ══════════════════════════════════════════════════ -->
-  <div class="slide" id="s4">
-
-    <!-- Cutouts -->
-    <div class="cutout cutout-float"     style="font-size:130px;bottom:-18px;right:-20px;--r:10deg;opacity:0.62">🎯</div>
-    <div class="cutout cutout-float-alt" style="font-size:90px;top:-5px;left:30px;--r:-8deg;opacity:0.52">💰</div>
-
-    <div class="layout">
-      <div class="header">
-        <div class="cat-badge badge-10von10">✅ 10 von 10</div>
-        <div style="font-family:'Caveat',cursive;font-size:20px;color:rgba(52,211,153,0.5)">10 Punkte verteilen auf A, B oder C</div>
-      </div>
-      <div class="cozy-card" style="padding:20px 32px;">
-        <div class="q-text">Wie viele Tore hat Lewandowski in der Saison 21/22 für den FC Bayern geschossen?</div>
-        <div class="points-hint">Teams verteilen ihre 10 Punkte auf die wahrscheinlichste Antwort</div>
-      </div>
-      <div class="options-col">
-
-        <div class="ten-option">
-          <div class="ten-letter" style="background:linear-gradient(135deg,#1E3A8A,#2563EB)">A</div>
-          <div class="ten-option-text">35 Tore</div>
-          <div class="ten-bars">
-            <!-- je ein Balken pro Team -->
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🦁</div>
-              <div class="ten-bar" style="background:rgba(234,179,8,0.12)">
-                <div class="ten-bar-fill" style="height:30%;background:rgba(234,179,8,0.7)"></div>
-                <div class="ten-bar-pts">3</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌊</div>
-              <div class="ten-bar" style="background:rgba(59,130,246,0.12)">
-                <div class="ten-bar-fill" style="height:50%;background:rgba(59,130,246,0.7)"></div>
-                <div class="ten-bar-pts">5</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">⚡</div>
-              <div class="ten-bar" style="background:rgba(139,92,246,0.12)">
-                <div class="ten-bar-fill" style="height:20%;background:rgba(139,92,246,0.7)"></div>
-                <div class="ten-bar-pts">2</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌿</div>
-              <div class="ten-bar" style="background:rgba(16,185,129,0.12)">
-                <div class="ten-bar-fill" style="height:40%;background:rgba(16,185,129,0.7)"></div>
-                <div class="ten-bar-pts">4</div>
-              </div>
-            </div>
+    <div class="cozy-card question-card">
+      <div class="q-text">Welche Stadt ist die Hauptstadt von Australien?</div>
+    </div>
+    <div class="options-grid">
+      <div class="card-wrap opt-a">
+        <div class="mc-card" style="--delay:0.15s">
+          <div class="card-back"></div>
+          <div class="card-front">
+            <div class="mc-img">🦘</div>
+            <div class="mc-label"><div class="mc-letter">A</div><div class="mc-text">Sydney</div></div>
           </div>
         </div>
-
-        <div class="ten-option">
-          <div class="ten-letter" style="background:linear-gradient(135deg,#14532D,#16A34A)">B</div>
-          <div class="ten-option-text">41 Tore</div>
-          <div class="ten-bars">
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🦁</div>
-              <div class="ten-bar" style="background:rgba(234,179,8,0.12)">
-                <div class="ten-bar-fill" style="height:50%;background:rgba(234,179,8,0.7)"></div>
-                <div class="ten-bar-pts">5</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌊</div>
-              <div class="ten-bar" style="background:rgba(59,130,246,0.12)">
-                <div class="ten-bar-fill" style="height:20%;background:rgba(59,130,246,0.7)"></div>
-                <div class="ten-bar-pts">2</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">⚡</div>
-              <div class="ten-bar" style="background:rgba(139,92,246,0.12)">
-                <div class="ten-bar-fill" style="height:70%;background:rgba(139,92,246,0.7)"></div>
-                <div class="ten-bar-pts">7</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌿</div>
-              <div class="ten-bar" style="background:rgba(16,185,129,0.12)">
-                <div class="ten-bar-fill" style="height:20%;background:rgba(16,185,129,0.7)"></div>
-                <div class="ten-bar-pts">2</div>
-              </div>
-            </div>
+      </div>
+      <div class="card-wrap opt-b">
+        <div class="mc-card" style="--delay:0.35s">
+          <div class="card-back"></div>
+          <div class="card-front">
+            <div class="mc-img">🌿</div>
+            <div class="mc-label"><div class="mc-letter">B</div><div class="mc-text">Melbourne</div></div>
           </div>
         </div>
-
-        <div class="ten-option">
-          <div class="ten-letter" style="background:linear-gradient(135deg,#7F1D1D,#DC2626)">C</div>
-          <div class="ten-option-text">29 Tore</div>
-          <div class="ten-bars">
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🦁</div>
-              <div class="ten-bar" style="background:rgba(234,179,8,0.12)">
-                <div class="ten-bar-fill" style="height:20%;background:rgba(234,179,8,0.7)"></div>
-                <div class="ten-bar-pts">2</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌊</div>
-              <div class="ten-bar" style="background:rgba(59,130,246,0.12)">
-                <div class="ten-bar-fill" style="height:30%;background:rgba(59,130,246,0.7)"></div>
-                <div class="ten-bar-pts">3</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">⚡</div>
-              <div class="ten-bar" style="background:rgba(139,92,246,0.12)">
-                <div class="ten-bar-fill" style="height:10%;background:rgba(139,92,246,0.7)"></div>
-                <div class="ten-bar-pts">1</div>
-              </div>
-            </div>
-            <div class="ten-bar-wrap">
-              <div class="ten-bar-label">🌿</div>
-              <div class="ten-bar" style="background:rgba(16,185,129,0.12)">
-                <div class="ten-bar-fill" style="height:40%;background:rgba(16,185,129,0.7)"></div>
-                <div class="ten-bar-pts">4</div>
-              </div>
-            </div>
+      </div>
+      <div class="card-wrap opt-c">
+        <div class="mc-card" style="--delay:0.55s">
+          <div class="card-back"></div>
+          <div class="card-front">
+            <div class="mc-img">🏛️</div>
+            <div class="mc-label"><div class="mc-letter">C</div><div class="mc-text">Canberra</div></div>
           </div>
         </div>
-
+      </div>
+      <div class="card-wrap opt-d">
+        <div class="mc-card" style="--delay:0.75s">
+          <div class="card-back"></div>
+          <div class="card-front">
+            <div class="mc-img">🌊</div>
+            <div class="mc-label"><div class="mc-letter">D</div><div class="mc-text">Brisbane</div></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ══════════════════════════════════════════════
-       SLIDE 5 — CHEESE (Bildfragen)
-  ══════════════════════════════════════════════════ -->
-  <div class="slide" id="s5">
+<!-- ══════════════════════════════════════════
+     SLIDE 3 — BUNTE TÜTE: GLÜHWÜRMCHEN + DOODLE
+══════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div id="ff3" style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden"></div>
 
-    <!-- Cutouts -->
-    <div class="cutout cutout-float"     style="font-size:140px;top:-18px;right:-10px;--r:10deg;opacity:0.60">📷</div>
-    <div class="cutout cutout-float-alt" style="font-size:90px;bottom:-8px;left:20px;--r:-12deg;opacity:0.52">🔍</div>
-    <div class="cutout cutout-float-slow" style="font-size:50px;top:30%;right:6%;--r:8deg;opacity:0.38">💜</div>
+  <!-- SVG Doodle-Rahmen -->
+  <svg class="doodle-frame" viewBox="0 0 900 500" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:24px;width:calc(100% - 48px);height:calc(100% - 48px)">
+    <path d="M30 30 Q60 10 120 28 Q300 18 450 26 Q600 14 750 22 Q820 18 868 34 Q880 80 872 200 Q880 350 866 456 Q840 474 720 466 Q500 476 280 468 Q120 476 32 460 Q18 400 26 260 Q16 120 30 30 Z"
+      stroke="rgba(220,38,38,0.25)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+      stroke-dasharray="2800" stroke-dashoffset="2800" style="animation:drawDoodle 2.5s ease 0.3s forwards"/>
+    <!-- Kleine Doodle-Sterne an Ecken -->
+    <text x="48" y="68" font-size="22" fill="rgba(254,202,202,0.35)" style="animation:drawDoodle 0.5s ease 2s both">✦</text>
+    <text x="830" y="68" font-size="22" fill="rgba(254,202,202,0.35)" style="animation:drawDoodle 0.5s ease 2.2s both">✦</text>
+    <text x="48" y="464" font-size="22" fill="rgba(254,202,202,0.35)" style="animation:drawDoodle 0.5s ease 2.4s both">✦</text>
+    <text x="830" y="464" font-size="22" fill="rgba(254,202,202,0.35)" style="animation:drawDoodle 0.5s ease 2.6s both">✦</text>
+  </svg>
 
-    <div class="layout">
+  <div class="cutout cf"  style="font-size:130px;bottom:-20px;left:-24px;--r:-10deg;opacity:0.65">🎲</div>
+  <div class="cutout cfa" style="font-size:92px;top:-8px;right:24px;--r:14deg;opacity:0.55">🎯</div>
+  <div class="cutout cfs" style="font-size:48px;top:26%;left:5%;--r:20deg;opacity:0.38">🌈</div>
+  <div class="cutout cfs" style="font-size:40px;bottom:24%;right:8%;--r:-18deg;opacity:0.32">⭐</div>
+
+  <div class="content">
+    <div class="cat-badge badge-buntetuete">🛍️ Bunte Tüte</div>
+    <div class="bag-icon">🎲</div>
+    <div class="mystery-text">Was kommt als Nächstes?</div>
+    <div class="sub-text">Weltkarte · Ordnen · 8‑aus‑1 · Blitz · Fotosprint...</div>
+    <div class="color-pills">
+      <div class="color-pill" style="background:rgba(234,179,8,0.13);color:#FDE68A;border-color:rgba(234,179,8,0.28)">🗺️ Weltkarte</div>
+      <div class="color-pill" style="background:rgba(139,92,246,0.13);color:#DDD6FE;border-color:rgba(139,92,246,0.28)">🔢 Ordnen</div>
+      <div class="color-pill" style="background:rgba(59,130,246,0.13);color:#BFDBFE;border-color:rgba(59,130,246,0.28)">⚡ Blitz</div>
+      <div class="color-pill" style="background:rgba(16,185,129,0.13);color:#A7F3D0;border-color:rgba(16,185,129,0.28)">✔️ 8‑1‑Falsch</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 4 — 10 VON 10: NOTIZBUCH
+══════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="cutout cf"  style="font-size:120px;bottom:-16px;right:-18px;--r:10deg;opacity:0.58">🎯</div>
+  <div class="cutout cfa" style="font-size:80px;top:-4px;right:120px;--r:-6deg;opacity:0.44">💰</div>
+
+  <!-- Spiralbindung -->
+  <div class="spiral" id="spiral4"></div>
+
+  <div class="layout">
+    <div class="header">
+      <div class="cat-badge badge-10von10">✅ 10 von 10</div>
+      <div style="font-family:'Caveat',cursive;font-size:19px;color:rgba(52,211,153,0.45)">10 Punkte verteilen · A, B oder C</div>
+    </div>
+    <div class="cozy-card" style="padding:18px 28px">
+      <div class="q-text">Wie viele Tore hat Lewandowski in der Saison 2021/22 für Bayern geschossen?</div>
+      <div class="points-hint">Setze deine 10 Punkte auf die wahrscheinlichste Antwort</div>
+    </div>
+    <div class="options-col">
+      <div class="ten-option">
+        <div class="ten-letter" style="background:linear-gradient(135deg,#1E3A8A,#2563EB)">A</div>
+        <div class="ten-option-text">35 Tore</div>
+        <div class="ten-bars">
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🦁</div><div class="ten-bar" style="background:rgba(234,179,8,.1)"><div class="ten-bar-fill" style="height:30%;background:rgba(234,179,8,.7)"></div><div class="ten-pts">3</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌊</div><div class="ten-bar" style="background:rgba(59,130,246,.1)"><div class="ten-bar-fill" style="height:50%;background:rgba(59,130,246,.7)"></div><div class="ten-pts">5</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">⚡</div><div class="ten-bar" style="background:rgba(139,92,246,.1)"><div class="ten-bar-fill" style="height:20%;background:rgba(139,92,246,.7)"></div><div class="ten-pts">2</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌿</div><div class="ten-bar" style="background:rgba(16,185,129,.1)"><div class="ten-bar-fill" style="height:40%;background:rgba(16,185,129,.7)"></div><div class="ten-pts">4</div></div></div>
+        </div>
+      </div>
+      <div class="ten-option">
+        <div class="ten-letter" style="background:linear-gradient(135deg,#14532D,#16A34A)">B</div>
+        <div class="ten-option-text">41 Tore</div>
+        <div class="ten-bars">
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🦁</div><div class="ten-bar" style="background:rgba(234,179,8,.1)"><div class="ten-bar-fill" style="height:50%;background:rgba(234,179,8,.7)"></div><div class="ten-pts">5</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌊</div><div class="ten-bar" style="background:rgba(59,130,246,.1)"><div class="ten-bar-fill" style="height:20%;background:rgba(59,130,246,.7)"></div><div class="ten-pts">2</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">⚡</div><div class="ten-bar" style="background:rgba(139,92,246,.1)"><div class="ten-bar-fill" style="height:70%;background:rgba(139,92,246,.7)"></div><div class="ten-pts">7</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌿</div><div class="ten-bar" style="background:rgba(16,185,129,.1)"><div class="ten-bar-fill" style="height:20%;background:rgba(16,185,129,.7)"></div><div class="ten-pts">2</div></div></div>
+        </div>
+      </div>
+      <div class="ten-option">
+        <div class="ten-letter" style="background:linear-gradient(135deg,#7F1D1D,#DC2626)">C</div>
+        <div class="ten-option-text">29 Tore</div>
+        <div class="ten-bars">
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🦁</div><div class="ten-bar" style="background:rgba(234,179,8,.1)"><div class="ten-bar-fill" style="height:20%;background:rgba(234,179,8,.7)"></div><div class="ten-pts">2</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌊</div><div class="ten-bar" style="background:rgba(59,130,246,.1)"><div class="ten-bar-fill" style="height:30%;background:rgba(59,130,246,.7)"></div><div class="ten-pts">3</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">⚡</div><div class="ten-bar" style="background:rgba(139,92,246,.1)"><div class="ten-bar-fill" style="height:10%;background:rgba(139,92,246,.7)"></div><div class="ten-pts">1</div></div></div>
+          <div class="ten-bar-wrap"><div class="ten-bar-label">🌿</div><div class="ten-bar" style="background:rgba(16,185,129,.1)"><div class="ten-bar-fill" style="height:40%;background:rgba(16,185,129,.7)"></div><div class="ten-pts">4</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 5 — CHEESE: RUBBELLOS + AVATARE
+══════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="cutout cf"  style="font-size:130px;top:-16px;right:-12px;--r:10deg;opacity:0.58">📷</div>
+  <div class="cutout cfa" style="font-size:80px;bottom:-6px;left:18px;--r:-12deg;opacity:0.48">🔍</div>
+  <div class="cutout cfs" style="font-size:44px;top:28%;right:5%;--r:8deg;opacity:0.34">💜</div>
+
+  <div class="layout">
+    <div class="top-row">
       <div class="img-panel">
         <div class="cat-badge badge-cheese">📸 Cheese</div>
-        <div class="img-frame">
-          🏛️
-          <div class="img-stamp">Frage 7</div>
-        </div>
+        <div class="img-frame">🏛️<div class="img-stamp">Frage 7 von 12</div></div>
         <div class="img-caption">Erkennst du das Gebäude?</div>
       </div>
-      <div class="question-panel">
+      <div class="answer-panel">
         <div class="q-text">In welcher Stadt steht dieses berühmte Wahrzeichen?</div>
-        <div class="answer-hint">Teams tippen ihre Antwort...</div>
-        <div class="team-answers">
-          <div class="answer-row">
-            <div class="a-name" style="color:#EAB308">🦁 Löwen</div>
-            <div class="a-text">Paris</div>
-            <div class="a-status">⏳</div>
+        <div style="font-family:'Caveat',cursive;font-size:20px;color:rgba(167,139,250,0.5)">Antwort aufdecken...</div>
+        <!-- Rubbellos-Reveal -->
+        <div class="rubbellos-wrap">
+          <div class="rubbellos-answer">
+            <div class="answer-label">Die richtige Antwort ist:</div>
+            <div class="answer-text">🏛️ Athen, Griechenland</div>
           </div>
-          <div class="answer-row">
-            <div class="a-name" style="color:#93C5FD">🌊 Wellen</div>
-            <div class="a-text">Rom</div>
-            <div class="a-status">✅</div>
-          </div>
-          <div class="answer-row">
-            <div class="a-name" style="color:#C4B5FD">⚡ Blitze</div>
-            <div class="a-text">Athen</div>
-            <div class="a-status">✅</div>
-          </div>
-          <div class="answer-row">
-            <div class="a-name" style="color:#6EE7B7">🌿 Eulen</div>
-            <div class="a-text">—</div>
-            <div class="a-status">⏳</div>
-          </div>
+          <div class="rubbellos-overlay">✦ Zum Aufdecken ✦</div>
         </div>
       </div>
     </div>
+    <!-- Team-Avatare mit Reaktionen -->
+    <div class="avatars-row">
+      <div class="avatar-card react-bounce" style="border-color:rgba(234,179,8,0.25)">
+        <div class="avatar-emoji">🦁</div>
+        <div class="avatar-name" style="color:#EAB308">Löwen</div>
+        <div class="avatar-pts">✅ +80 Pts</div>
+      </div>
+      <div class="avatar-card react-wrong" style="border-color:rgba(59,130,246,0.25)">
+        <div class="avatar-emoji">🌊</div>
+        <div class="avatar-name" style="color:#93C5FD">Wellen</div>
+        <div class="avatar-pts">❌ +0 Pts</div>
+      </div>
+      <div class="avatar-card react-bounce" style="border-color:rgba(139,92,246,0.25);animation-delay:2.5s">
+        <div class="avatar-emoji">⚡</div>
+        <div class="avatar-name" style="color:#C4B5FD">Blitze</div>
+        <div class="avatar-pts">✅ +60 Pts</div>
+      </div>
+      <div class="avatar-card react-neutral" style="border-color:rgba(16,185,129,0.18)">
+        <div class="avatar-emoji">🌿</div>
+        <div class="avatar-name" style="color:#6EE7B7">Eulen</div>
+        <div class="avatar-pts">⏳ —</div>
+      </div>
+    </div>
   </div>
-
 </div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 6 — NOTIZBUCH-PUNKTESTAND
+══════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div class="spiral" id="spiral6"></div>
+  <div class="cutout cfs" style="font-size:100px;bottom:-14px;right:24px;--r:8deg;opacity:0.52">🏆</div>
+  <div class="cutout cf"  style="font-size:68px;top:12px;right:180px;--r:-6deg;opacity:0.38">🌟</div>
+
+  <div class="layout">
+    <div class="page-title">🏆 Zwischenstand</div>
+    <div style="font-family:'Caveat',cursive;font-size:20px;color:rgba(234,179,8,0.4);margin-top:-12px">Nach Runde 2 von 4 — handgeschrieben von CozyQuiz</div>
+    <div class="score-list">
+      <div class="nb-row first" style="--del:0.1s">
+        <div class="nb-rank">1</div>
+        <div class="nb-color" style="background:#EAB308"></div>
+        <div class="nb-name">🦁 Löwen</div>
+        <div class="nb-tally">
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div class="tally-mark cross"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div style="width:8px"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div class="tally-mark cross"></div>
+        </div>
+        <div class="nb-pts">2.840</div>
+        <div class="nb-delta">+320</div>
+      </div>
+      <div class="nb-row" style="--del:0.2s">
+        <div class="nb-rank">2</div>
+        <div class="nb-color" style="background:#3B82F6"></div>
+        <div class="nb-name">🌊 Wellen</div>
+        <div class="nb-tally">
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div class="tally-mark cross"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div style="width:8px"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+        </div>
+        <div class="nb-pts">2.610</div>
+        <div class="nb-delta">+280</div>
+      </div>
+      <div class="nb-row" style="--del:0.3s">
+        <div class="nb-rank">3</div>
+        <div class="nb-color" style="background:#8B5CF6"></div>
+        <div class="nb-name">⚡ Blitze</div>
+        <div class="nb-tally">
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div class="tally-mark cross"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div>
+          <div style="width:8px"></div>
+          <div class="tally-mark"></div><div class="tally-mark"></div>
+        </div>
+        <div class="nb-pts">2.450</div>
+        <div class="nb-delta">+200</div>
+      </div>
+      <div class="nb-row" style="--del:0.4s">
+        <div class="nb-rank">4</div>
+        <div class="nb-color" style="background:#10B981"></div>
+        <div class="nb-name">🌿 Eulen</div>
+        <div class="nb-tally">
+          <div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div><div class="tally-mark"></div>
+          <div class="tally-mark cross"></div>
+          <div class="tally-mark"></div>
+          <div style="width:8px"></div>
+          <div class="tally-mark"></div>
+        </div>
+        <div class="nb-pts">2.100</div>
+        <div class="nb-delta">+150</div>
+      </div>
+    </div>
+    <!-- Handdrawn Signatur -->
+    <div style="font-family:'Caveat',cursive;font-size:18px;color:rgba(255,255,255,0.2);text-align:right;padding-right:16px">
+      ~ CozyQuiz 60, Runde 2 ~
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides -->
 
 <!-- Navigation -->
 <div class="nav">
@@ -576,36 +799,106 @@ body::after {
     <div class="nav-dot"        data-slide="2" style="background:#EF4444"></div>
     <div class="nav-dot"        data-slide="3" style="background:#10B981"></div>
     <div class="nav-dot"        data-slide="4" style="background:#8B5CF6"></div>
+    <div class="nav-dot"        data-slide="5" style="background:#EAB308"></div>
   </div>
-  <span class="slide-counter" id="counter">1 / 5</span>
+  <span class="slide-counter" id="counter">1 / 6</span>
   <button class="nav-btn" id="nextBtn">weiter →</button>
+  <span class="hint">← →  Space</span>
 </div>
 
 <script>
-  const slides  = document.querySelectorAll('.slide');
-  const dots    = document.querySelectorAll('.nav-dot');
-  const counter = document.getElementById('counter');
-  let current   = 0;
+/* ── NAVIGATION ─────────────────────────────────── */
+const slides  = document.querySelectorAll('.slide');
+const dots    = document.querySelectorAll('.nav-dot');
+const counter = document.getElementById('counter');
+let current   = 0;
 
-  function goTo(n) {
-    slides[current].classList.remove('active');
-    slides[current].classList.add('out');
-    dots[current].classList.remove('active');
-    const prev = current;
-    setTimeout(() => slides[prev].classList.remove('out'), 700);
-    current = (n + slides.length) % slides.length;
-    slides[current].classList.add('active');
-    dots[current].classList.add('active');
-    counter.textContent = `${current + 1} / ${slides.length}`;
+function goTo(n) {
+  slides[current].classList.remove('active');
+  slides[current].classList.add('out');
+  dots[current].classList.remove('active');
+  const prev = current;
+  setTimeout(() => slides[prev].classList.remove('out'), 650);
+  current = (n + slides.length) % slides.length;
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+  counter.textContent = `${current + 1} / ${slides.length}`;
+  onSlideEnter(current);
+}
+
+document.getElementById('nextBtn').onclick = () => goTo(current + 1);
+document.getElementById('prevBtn').onclick = () => goTo(current - 1);
+dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.slide)));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
+});
+
+/* ── SLIDE-ENTER HOOKS ───────────────────────────── */
+function onSlideEnter(idx) {
+  // Slide 1: Intro-Overlay neu triggern
+  if (idx === 0) {
+    const overlay = document.querySelector('#s1 .intro-overlay');
+    if (overlay) {
+      overlay.style.animation = 'none';
+      overlay.style.opacity   = '1';
+      overlay.style.pointerEvents = 'all';
+      void overlay.offsetWidth; // reflow
+      overlay.style.animation = '';
+    }
+    const content = document.querySelector('#s1 .content');
+    if (content) {
+      content.style.animation = 'none'; content.style.opacity = '0';
+      void content.offsetWidth;
+      content.style.animation = '';
+    }
   }
+  // Slide 2: Karten zurücksetzen, dann neu flippen
+  if (idx === 1) {
+    document.querySelectorAll('#s2 .mc-card').forEach(c => {
+      c.style.animation = 'none';
+      c.style.transform = 'rotateY(180deg)';
+      void c.offsetWidth;
+      c.style.animation = '';
+    });
+  }
+}
 
-  document.getElementById('nextBtn').onclick = () => goTo(current + 1);
-  document.getElementById('prevBtn').onclick = () => goTo(current - 1);
-  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.slide)));
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
-  });
+/* ── FIREFLIES ───────────────────────────────────── */
+function spawnFireflies(containerId, count, colorHex) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  for (let i = 0; i < count; i++) {
+    const f = document.createElement('div');
+    f.className = 'firefly';
+    const dx = (Math.random() - 0.5) * 220;
+    const dy = (Math.random() - 0.5) * 180;
+    f.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dx:${dx}px; --dy:${dy}px;
+      --dur:${5 + Math.random()*7}s;
+      --del:${Math.random()*10}s;
+      ${colorHex ? `background:${colorHex};box-shadow:0 0 6px 2px ${colorHex}88;` : ''}
+    `;
+    el.appendChild(f);
+  }
+}
+spawnFireflies('ff1', 22, '#FEF08A');  // Schätzchen: goldgelb
+spawnFireflies('ff3', 28, '#FCA5A5');  // Bunte Tüte: rosa-rot
+
+/* ── SPIRALBINDUNGEN ─────────────────────────────── */
+function buildSpiral(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  for (let i = 0; i < 14; i++) {
+    const r = document.createElement('div');
+    r.className = 'spiral-ring';
+    el.appendChild(r);
+  }
+}
+buildSpiral('spiral4');
+buildSpiral('spiral6');
 </script>
 </body>
 </html>

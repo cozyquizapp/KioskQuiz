@@ -52,39 +52,63 @@ export default function QQModeratorPage() {
   stateRef.current = state;
 
   const handleKey = useCallback((e: KeyboardEvent) => {
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+    const target = e.target as HTMLElement;
+    if (target?.tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const s = stateRef.current;
     if (!s) return;
 
-    switch (e.key) {
-      case ' ':
-      case 'Enter':
-        e.preventDefault();
-        if (s.phase === 'LOBBY') startGame();
-        else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
-        else if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
-        else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-          emitRef.current('qq:nextQuestion', { roomCode });
-        break;
-      case 'ArrowRight':
-        if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-          emitRef.current('qq:nextQuestion', { roomCode });
-        break;
-      case 'Escape':
-      case 'Backspace':
-        if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
-          emitRef.current('qq:markWrong', { roomCode });
-        break;
-      // Number keys 1-5 → mark team correct
-      case '1': case '2': case '3': case '4': case '5': {
-        if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
-          const idx = parseInt(e.key) - 1;
-          const team = s.teams[idx];
-          if (team) emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
-        }
-        break;
-      }
+    // Space — smart next step (mirrors CozyQuiz Space behavior)
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (s.phase === 'LOBBY')                                           startGame();
+      else if (s.phase === 'PHASE_INTRO')                                emitRef.current('qq:activateQuestion', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE')                            emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
+      return;
     }
+
+    // R — Reveal answer (mirrors CozyQuiz R)
+    if (e.code === 'KeyR') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
+      return;
+    }
+
+    // N — Next question (mirrors CozyQuiz N)
+    if (e.code === 'KeyN') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      return;
+    }
+
+    // ArrowRight — Next question (extra StreamDeck option)
+    if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      return;
+    }
+
+    // Escape / Backspace — Niemand korrekt (mirrors CozyQuiz step-back feel)
+    if (e.code === 'Escape' || e.code === 'Backspace') {
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
+        emitRef.current('qq:markWrong', { roomCode });
+      return;
+    }
+
+    // Number keys 1–5 → mark team correct (same as CozyQuiz)
+    if (['Digit1','Digit2','Digit3','Digit4','Digit5'].includes(e.code)) {
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
+        const idx = parseInt(e.code.replace('Digit', '')) - 1;
+        const team = s.teams[idx];
+        if (team) emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
+      }
+      return;
+    }
+
+    // F16 / F20 — reserved for future (mute/pause in CozyQuiz, no equivalent yet in QQ)
   }, [roomCode]);
 
   useEffect(() => {
@@ -108,8 +132,8 @@ export default function QQModeratorPage() {
           <span style={{ fontSize: 12, color: '#64748b' }}>
             Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
           </span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>
-            [Space/Enter] nächster Schritt · [1-5] Team korrekt · [Esc] falsch
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
+            Space · R · N · 1–5 · Esc
           </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
@@ -150,19 +174,19 @@ export default function QQModeratorPage() {
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
                     </select>
-                    <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten [Space]</Btn>
+                    <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
                   </>
                 )}
 
                 {s.phase === 'PHASE_INTRO' && (
                   <Btn color="#22C55E" onClick={() => emit('qq:activateQuestion', { roomCode })}>
-                    ▶ Frage aktivieren [Space]
+                    ▶ Frage aktivieren
                   </Btn>
                 )}
 
                 {s.phase === 'QUESTION_ACTIVE' && (
                   <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
-                    Antwort aufdecken [Space]
+                    Antwort aufdecken
                   </Btn>
                 )}
 
@@ -171,11 +195,11 @@ export default function QQModeratorPage() {
                     {teamList.map((t, i) => (
                       <Btn key={t.id} color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
                         <span>{qqGetAvatar(t.avatarId).emoji}</span>
-                        <span>✓ {t.name} [{i + 1}]</span>
+                        <span>✓ {t.name}</span>
                       </Btn>
                     ))}
                     <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
-                      ✗ Niemand [Esc]
+                      ✗ Niemand
                     </Btn>
                   </>
                 )}
@@ -186,7 +210,7 @@ export default function QQModeratorPage() {
 
                 {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor && (
                   <Btn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })}>
-                    → Nächste Frage [Space]
+                    → Nächste Frage
                   </Btn>
                 )}
 

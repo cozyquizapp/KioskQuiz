@@ -70,15 +70,21 @@
 
 ## CozyQuiz 60 — Offene TODOs
 
-### Bunte Tüte — Erweiterungen
-- [ ] **Heiße Kartoffel** (zweites Finale-Format):
-  - Teams antworten abwechselnd zu einer offenen Frage (z.B. "Länder die mit S anfangen")
-  - Falsche Antwort → Team fliegt raus
-  - Timer läuft ab → Team fliegt raus
-  - Letztes verbleibendes Team gewinnt
-  - Moderator steuert: nächstes Team, richtig/falsch, Timer
-  - Beamer zeigt: aktives Team, Countdown, ausgeschiedene Teams
-  - Zu implementieren in: `ModeratorPage.tsx` + `BeamerView.tsx` + neue BunteTuete-Subtype
+### Bunte Tüte — Formate (final)
+5 Formate gesamt — Precision wurde ersetzt durch Hot Potato:
+1. **Top 5** — bestehend ✅
+2. **One of Eight** — bestehend ✅
+3. **Order** — bestehend ✅
+4. **Map** — bestehend ✅
+5. **Hot Potato** — neu, ersetzt Precision:
+   - Teams antworten abwechselnd zu einer offenen Frage (z.B. "Länder die mit S anfangen")
+   - Falsche Antwort → Team fliegt raus
+   - Timer läuft ab → Team fliegt raus
+   - Letztes verbleibendes Team gewinnt
+   - Moderator steuert: nächstes Team, richtig/falsch, Timer
+   - Beamer zeigt: aktives Team, Countdown, ausgeschiedene Teams
+   - Zu implementieren in: `ModeratorPage.tsx` + `BeamerView.tsx` + neuer BunteTuete-Subtype `hot_potato`
+   - Bestehende `precision`-Fragen im Katalog prüfen/migrieren
 
 ### Fragenkatalog / Builder
 - [ ] **Bilder auf Frage-Slides** (Canva-ähnlicher Picker):

@@ -18,6 +18,10 @@ const builderLinks: LinkItem[] = [
   { path: '/question-catalog', label: 'Fragenbibliothek', note: 'Alle Fragen durchsuchen & bearbeiten' }
 ];
 
+const designLinks: LinkItem[] = [
+  { path: '/sneak-peak.html', label: 'Design Sneak Peak', note: 'Mockup: Wie CozyQuiz mit Canva-Look aussehen könnte' }
+];
+
 const toolsLinks: LinkItem[] = [
   { path: '/intro', label: 'Intro & Regeln', note: 'Pre-Show Slides / Regeln' },
   { path: '/admin', label: 'Admin (Legacy)', note: 'Nur nutzen, falls Moderator ausfaellt' },
@@ -123,6 +127,7 @@ const MenuPage = () => {
         <div style={{ display: 'grid', gap: 18 }}>
           <CardList title="Live spielen" subtitle="Moderator -> Beamer -> Team" links={liveLinks} />
           <CardList title="Quiz erstellen & verwalten" subtitle="Builder & Fragenkatalog" links={builderLinks} />
+          <CardList title="Design & Vorschau" links={designLinks} />
           {showLegacyTools && (
             <div
               style={{

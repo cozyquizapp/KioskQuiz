@@ -13,9 +13,6 @@ const QuestionEditorPage = React.lazy(() => import('./pages/QuestionEditorPage')
 const ModeratorPage = React.lazy(() => import('./pages/ModeratorPage'));
 const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
-// ...existing code...
-// ...existing code...
-// ...existing code...
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 const CreatorCanvasPage = React.lazy(() => import('./pages/CreatorCanvasPage'));
 const QrCodePage = React.lazy(() => import('./pages/QrCodePage'));
@@ -134,20 +131,17 @@ function App() {
           <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/baukasten_neu" element={<CreatorCanvasPage />} />
           <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
-// ...existing code...
           <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/question-editor" element={<QuestionEditorPage />} />
           <Route path="/moderator" element={<ModeratorPage />} />
           <Route path="/intro" element={<IntroSlidesPage />} />
           <Route path="/question-catalog" element={<QuestionCatalogPage />} />
-// ...existing code...
           <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/qrcode" element={<QrCodePage />} />
           <Route path="/quarterquiz-moderator" element={<QQModeratorPage />} />
           <Route path="/quarterquiz-beamer"    element={<QQBeamerPage />} />
           <Route path="/quarterquiz-team"      element={<QQTeamPage />} />
-// ...existing code...
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>
       </Suspense>

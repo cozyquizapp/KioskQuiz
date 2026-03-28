@@ -1,3 +1,5 @@
 /api/*  https://cozyquiz-backend.onrender.com/api/:splat  200
 /socket.io/*  https://cozyquiz-backend.onrender.com/socket.io/:splat  200
+/intro.html  /intro.html  200
+/sneak-peak.html  /sneak-peak.html  200
 /*   /index.html   200

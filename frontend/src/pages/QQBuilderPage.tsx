@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   QQQuestion, QQCategory, QQLanguage, QQDraft,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
@@ -176,6 +177,7 @@ function cellPreview(q: QQQuestion | undefined): { text: string; sub?: string; a
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function QQBuilderPage() {
+  const navigate = useNavigate();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
   const [activeDraft, setActiveDraft] = useState<QQDraft | null>(null);
   const [activeSlot, setActiveSlot] = useState<{ phase: number; qi: number } | null>(null);
@@ -404,6 +406,7 @@ export default function QQBuilderPage() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => navigate(`/qq-slides?draft=${activeDraft.id}`)} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
           <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
           <button onClick={() => saveDraft(activeDraft)} style={btnStyle('#22C55E')} disabled={saving}>{saving ? '…' : '💾 Speichern'}</button>
         </div>

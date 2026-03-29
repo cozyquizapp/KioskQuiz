@@ -244,6 +244,61 @@ export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme>
   nature:  { preset: 'nature',  bgColor: '#0a1a0a', accentColor: '#4ADE80', textColor: '#dcfce7', cardBg: '#132a13' },
 };
 
+// ── Slide Editor ─────────────────────────────────────────────────────────────
+export type QQSlideElementType =
+  | 'text' | 'image' | 'rect'
+  | 'ph_question' | 'ph_options' | 'ph_category' | 'ph_timer'
+  | 'ph_teams' | 'ph_grid' | 'ph_answer' | 'ph_winner'
+  | 'ph_phase_name' | 'ph_phase_desc' | 'ph_room_code';
+
+export interface QQSlideElement {
+  id: string;
+  type: QQSlideElementType;
+  x: number;           // 0–100 (% of canvas width)
+  y: number;           // 0–100 (% of canvas height)
+  w: number;           // 0–100 (% of canvas width)
+  h: number;           // 0–100 (% of canvas height)
+  rotation?: number;
+  zIndex?: number;
+  opacity?: number;
+  // Text
+  text?: string;
+  fontSize?: number;   // vw-equivalent: % of canvas width
+  fontWeight?: number;
+  color?: string;
+  textAlign?: 'left' | 'center' | 'right';
+  letterSpacing?: number;
+  lineHeight?: number;
+  // Image
+  imageUrl?: string;
+  objectFit?: 'cover' | 'contain';
+  // Shape / background
+  background?: string;
+  borderRadius?: number;
+  border?: string;
+  // Entrance animation
+  animIn?: 'none' | 'fadeUp' | 'fadeIn' | 'pop' | 'slideLeft' | 'slideRight';
+  animDelay?: number;
+  animDuration?: number;
+}
+
+export type QQSlideTemplateType =
+  | 'LOBBY'
+  | 'PHASE_INTRO_1' | 'PHASE_INTRO_2' | 'PHASE_INTRO_3'
+  | 'QUESTION_SCHAETZCHEN' | 'QUESTION_MUCHO' | 'QUESTION_BUNTE_TUETE'
+  | 'QUESTION_ZEHN' | 'QUESTION_CHEESE'
+  | 'REVEAL' | 'PLACEMENT' | 'COMEBACK_CHOICE' | 'GAME_OVER';
+
+export interface QQSlideTemplate {
+  type: QQSlideTemplateType;
+  background: string;
+  elements: QQSlideElement[];
+  transitionIn?: 'fade' | 'slideUp' | 'zoom';
+  transitionDuration?: number;
+}
+
+export type QQSlideTemplates = Partial<Record<QQSlideTemplateType, QQSlideTemplate>>;
+
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────
 export interface QQDraft {
   id: string;
@@ -252,6 +307,7 @@ export interface QQDraft {
   language: QQLanguage;
   questions: QQQuestion[];
   theme?: QQTheme;
+  slideTemplates?: QQSlideTemplates;
   createdAt: number;
   updatedAt: number;
 }

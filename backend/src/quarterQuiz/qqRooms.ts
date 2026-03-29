@@ -637,17 +637,37 @@ function pickRandomAliveTeam(room: QQRoomState): string | null {
   return alive[Math.floor(Math.random() * alive.length)];
 }
 
-export function qqMarkCorrect(room: QQRoomState, teamId: string): void {
+// Enhanced: Allow all correct teams to place, fastest first
+export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]): void {
   assertPhase(room, ['QUESTION_REVEAL']);
-  assertTeam(room, teamId);
 
+  // If a list is provided, queue all correct teams (fastest first)
+  if (Array.isArray(teamIdOrList)) {
+    // Store the queue in room state
+    room["_placementQueue"] = [...teamIdOrList];
+    // Start with the first team
+    const first = room["_placementQueue"].shift();
+    if (!first) return;
+    room.correctTeamId = first;
+    room.pendingFor    = first;
+    room.phase         = 'PLACEMENT';
+    const action = pendingActionForPhase(room, first);
+    room.pendingAction = action;
+    if (action === 'PLACE_2') {
+      room.teamPhaseStats[first].placementsLeft = 2;
+    }
+    room.lastActivityAt = Date.now();
+    return;
+  }
+
+  // Single team (legacy/manual)
+  const teamId = teamIdOrList;
+  assertTeam(room, teamId);
   room.correctTeamId = teamId;
   room.pendingFor    = teamId;
   room.phase         = 'PLACEMENT';
-
   const action = pendingActionForPhase(room, teamId);
   room.pendingAction = action;
-
   if (action === 'PLACE_2') {
     room.teamPhaseStats[teamId].placementsLeft = 2;
   }
@@ -998,6 +1018,37 @@ function finishPlacement(room: QQRoomState): void {
     room.pendingAction = null;
     qqBeginPhase(room, room.totalPhases as QQGamePhaseIndex);
     return;
+  }
+
+  // --- RESET jokerFormed after joker bonus placements/steals are completed ---
+  // Only reset if no more bonus placements are pending (placementsLeft == 0 for all teams)
+  const allDone = Object.values(room.teamPhaseStats).every(stats => stats.placementsLeft === 0);
+  if (allDone) {
+    for (let r = 0; r < room.gridSize; r++) {
+      for (let c = 0; c < room.gridSize; c++) {
+        room.grid[r][c].jokerFormed = false;
+      }
+    }
+  }
+
+  // Enhanced: If placement queue exists, process next team
+  if (room["_placementQueue"] && Array.isArray(room["_placementQueue"])) {
+    const next = room["_placementQueue"].shift();
+    if (next) {
+      room.correctTeamId = next;
+      room.pendingFor    = next;
+      const action = pendingActionForPhase(room, next);
+      room.pendingAction = action;
+      if (action === 'PLACE_2') {
+        room.teamPhaseStats[next].placementsLeft = 2;
+      }
+      room.phase = 'PLACEMENT';
+      room.lastActivityAt = Date.now();
+      return;
+    } else {
+      // Queue empty, clean up
+      delete room["_placementQueue"];
+    }
   }
 
   room.pendingFor    = null;

@@ -109,17 +109,29 @@ export default function QQTeamPage() {
     else setError(ack.error ?? 'Fehler beim Beitreten');
   }
 
+  // Always allow local language override, even in lobby/setup
+  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
+  const lang: 'de' | 'en' = localLang;
+  const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
+  const [flagFlip, setFlagFlip] = useState(false);
+  const handleFlagClick = () => {
+    setFlagFlip(f => !f);
+    setLang(lang === 'de' ? 'en' : 'de');
+  };
+
   if (!joined) {
     return <SetupFlow step={step} setStep={setStep}
       avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
-      connected={connected} error={error} onJoin={joinRoom} />;
+      connected={connected} error={error} onJoin={joinRoom}
+      lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
+    />;
   }
   if (!state) {
     return <WaitingScreen roomCode={roomCode} connected={connected} />;
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-    emit={emit} roomCode={roomCode} />;
+    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -127,21 +139,43 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin }: any) {
-  // lang aus session oder prop holen
-  const lang = (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de';
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip }: any) {
   return (
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
             {t.header[lang]}
           </div>
           <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
             {t.header[lang]}
           </div>
+          {/* Always show language flag in setup/lobby */}
+          <button
+            onClick={onFlagClick}
+            style={{
+              border: 'none', background: 'none', cursor: 'pointer', padding: 0,
+              marginLeft: 8, marginRight: 0, outline: 'none',
+              transition: 'transform 0.4s',
+              transform: flagFlip ? 'rotateY(180deg)' : 'none',
+              fontSize: 24,
+              display: 'inline-block',
+              perspective: 400,
+              position: 'absolute', right: 0, top: 0,
+            }}
+            aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
+            title={lang === 'de' ? 'Deutsch (klicken für Englisch)' : 'English (click for German)'}
+          >
+            <span style={{
+              display: 'inline-block',
+              transition: 'transform 0.4s',
+              transform: flagFlip ? 'rotateY(180deg)' : 'none',
+            }}>
+              {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+            </span>
+          </button>
         </div>
         {step === 'AVATAR' && (
           <CozyCard anim>
@@ -211,16 +245,8 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
   const teamColor     = myTeam?.color ?? '#3B82F6';
-  // Derive lang from server language setting; teams can override locally for 'both' mode
-  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
-  const lang: 'de' | 'en' = s.language === 'de' ? 'de' : s.language === 'en' ? 'en' : localLang;
-  const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
-  // Flip-Flagge Animation
-  const [flagFlip, setFlagFlip] = useState(false);
-  const handleFlagClick = () => {
-    setFlagFlip(f => !f);
-    setLang(lang === 'de' ? 'en' : 'de');
-  };
+  // Use lang/flagFlip/onFlagClick from parent (QQTeamPage)
+  const { lang, flagFlip, onFlagClick } = arguments[0];
 
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
@@ -246,30 +272,29 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
                 {myTeam.largestConnected} verbunden · {myTeam.totalCells} gesamt
               </div>
             </div>
-            {/* Language selector — only when server sends 'both' */}
-            {s.language === 'both' && (
-              <button
-                onClick={handleFlagClick}
-                style={{
-                  border: 'none', background: 'none', cursor: 'pointer', padding: 0,
-                  marginLeft: 6, marginRight: 6, outline: 'none',
-                  transition: 'transform 0.4s',
-                  transform: flagFlip ? 'rotateY(180deg)' : 'none',
-                  fontSize: 24,
-                  display: 'inline-block',
-                  perspective: 400,
-                }}
-                aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
-              >
-                <span style={{
-                  display: 'inline-block',
-                  transition: 'transform 0.4s',
-                  transform: flagFlip ? 'rotateY(180deg)' : 'none',
-                }}>
-                  {lang === 'de' ? '🇩🇪' : '🇬🇧'}
-                </span>
-              </button>
-            )}
+            {/* Language selector — always visible, always works */}
+            <button
+              onClick={onFlagClick}
+              style={{
+                border: 'none', background: 'none', cursor: 'pointer', padding: 0,
+                marginLeft: 6, marginRight: 6, outline: 'none',
+                transition: 'transform 0.4s',
+                transform: flagFlip ? 'rotateY(180deg)' : 'none',
+                fontSize: 24,
+                display: 'inline-block',
+                perspective: 400,
+              }}
+              aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
+              title={lang === 'de' ? 'Deutsch (klicken für Englisch)' : 'English (click for German)'}
+            >
+              <span style={{
+                display: 'inline-block',
+                transition: 'transform 0.4s',
+                transform: flagFlip ? 'rotateY(180deg)' : 'none',
+              }}>
+                {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+              </span>
+            </button>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>
                 P{s.gamePhaseIndex}/{s.totalPhases}

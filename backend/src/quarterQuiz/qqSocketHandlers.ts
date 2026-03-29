@@ -78,6 +78,9 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
  * SCHAETZCHEN, CHEESE exact match, BUNTE_TUETE sub-mechanics) are resolved here.
  * When there are multiple tied winners or no winner, the moderator decides.
  */
+// For all question types: if multiple teams are correct (as determined by evaluation),
+// all correct teams get to place a field, sorted by answer time (fastest first).
+// This includes ties in Schätzchen (closest), All In (max points on correct), etc.
 function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   const q = room.currentQuestion;
   if (!q) return;
@@ -92,8 +95,21 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
       qqClearBuzz(room);
       qqMarkCorrect(room, result.winnerTeamIds[0]);
     } catch { /* ignore if phase already advanced */ }
+  } else if (result.winnerTeamIds.length > 1) {
+    // Multiple correct teams: sort by answer time, fastest first
+    try {
+      qqClearBuzz(room);
+      const sorted = result.winnerTeamIds
+        .map(tid => {
+          const ans = room.answers.find(a => a.teamId === tid);
+          return { tid, submittedAt: ans?.submittedAt ?? Infinity };
+        })
+        .sort((a, b) => a.submittedAt - b.submittedAt)
+        .map(e => e.tid);
+      qqMarkCorrect(room, sorted);
+    } catch { /* ignore if phase already advanced */ }
   }
-  // Multiple winners or no winner: leave in QUESTION_REVEAL for moderator
+  // No winner: leave in QUESTION_REVEAL for moderator
 }
 
 export function registerQQHandlers(io: SocketIOServer): void {

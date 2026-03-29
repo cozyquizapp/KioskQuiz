@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+// Fix leaflet default marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png', iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png' });
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
@@ -210,24 +216,63 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
             </div>
             {/* Language selector — only when server sends 'both' */}
             {s.language === 'both' && (
-            <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-              {(['de', 'en'] as const).map(l => {
-                const active = lang === l;
-                return (
-                  <button key={l} onClick={() => setLang(l)}
-                    style={{
-                      padding: '4px 8px', borderRadius: 8, cursor: 'pointer',
-                      fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
-                      border: `1px solid ${active ? teamColor : 'rgba(255,255,255,0.08)'}`,
-                      background: active ? `${teamColor}22` : 'transparent',
-                      color: active ? teamColor : '#475569',
-                      transition: 'all 0.15s',
-                    }}>
-                    {l.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
+              <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                {lang === 'de' ? (
+                  <>
+                    <button
+                      onClick={() => setLang('de')}
+                      style={{
+                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
+                        border: `2px solid ${teamColor}`,
+                        background: `${teamColor}22`,
+                        fontSize: 20,
+                        marginRight: 2,
+                        transition: 'all 0.15s',
+                      }}
+                      aria-label="Deutsch"
+                    >🇩🇪</button>
+                    <button
+                      onClick={() => setLang('en')}
+                      style={{
+                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
+                        border: '1px solid #d1d5db',
+                        background: 'transparent',
+                        fontSize: 20,
+                        opacity: 0.7,
+                        transition: 'all 0.15s',
+                      }}
+                      aria-label="Englisch"
+                    >🇬🇧</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setLang('de')}
+                      style={{
+                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
+                        border: '1px solid #d1d5db',
+                        background: 'transparent',
+                        fontSize: 20,
+                        opacity: 0.7,
+                        marginRight: 2,
+                        transition: 'all 0.15s',
+                      }}
+                      aria-label="Deutsch"
+                    >🇩🇪</button>
+                    <button
+                      onClick={() => setLang('en')}
+                      style={{
+                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
+                        border: `2px solid ${teamColor}`,
+                        background: `${teamColor}22`,
+                        fontSize: 20,
+                        transition: 'all 0.15s',
+                      }}
+                      aria-label="Englisch"
+                    >🇬🇧</button>
+                  </>
+                )}
+              </div>
             )}
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>
@@ -498,7 +543,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} onSubmit={submitText} usedIds={s.answers.map(a => a.text)} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-    if (kind === 'map') return <PinItInput catColor={catColor} onSubmit={submitText} />;
+    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} />;
   }
   // Fallback
   return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
@@ -866,31 +911,48 @@ function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; 
 }
 
 // ── Pin It: simple coordinate input (no leaflet dep needed for basic version) ──
-function PinItInput({ catColor, onSubmit }: { catColor: string; onSubmit: (v: string) => void }) {
-  // Simple lat/lng text entry as fallback (full map would need react-leaflet)
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const valid = lat !== '' && lng !== '' && !isNaN(Number(lat)) && !isNaN(Number(lng));
+function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
+  useMapEvents({ click(e) { onPick(e.latlng.lat, e.latlng.lng); } });
+  return null;
+}
+
+function PinItInput({ question: q, catColor, onSubmit }: { question: any; catColor: string; onSubmit: (v: string) => void }) {
+  const bt = q?.bunteTuete;
+  const centerLat = bt?.lat ?? 51.1657;
+  const centerLng = bt?.lng ?? 10.4515;
+  const zoom = bt?.zoom ?? 5;
+  const [pin, setPin] = useState<[number, number] | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit() {
+    if (!pin) return;
+    setSubmitted(true);
+    onSubmit(`${pin[0]},${pin[1]}`);
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-      <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#64748b', textAlign: 'center' }}>
-        📍 Gib die Koordinaten ein (z.B. von Google Maps)
+      <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
+        📍 Tippe auf die Karte um einen Pin zu setzen
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, marginBottom: 4 }}>Breitengrad (Lat)</div>
-          <input value={lat} onChange={e => setLat(e.target.value)} type="number" step="0.0001" placeholder="53.5503"
-            style={{ width: '100%', padding: '11px 12px', borderRadius: 10, boxSizing: 'border-box', border: `1.5px solid ${lat ? catColor+'55':'rgba(255,255,255,0.08)'}`, background: 'rgba(255,255,255,0.04)', color: '#F1F5F9', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, marginBottom: 4 }}>Längengrad (Lng)</div>
-          <input value={lng} onChange={e => setLng(e.target.value)} type="number" step="0.0001" placeholder="9.9922"
-            style={{ width: '100%', padding: '11px 12px', borderRadius: 10, boxSizing: 'border-box', border: `1.5px solid ${lng ? catColor+'55':'rgba(255,255,255,0.08)'}`, background: 'rgba(255,255,255,0.04)', color: '#F1F5F9', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
-        </div>
+      <div style={{ borderRadius: 14, overflow: 'hidden', border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`, height: 260, position: 'relative' }}>
+        <MapContainer
+          center={[centerLat, centerLng]}
+          zoom={zoom}
+          style={{ width: '100%', height: '100%' }}
+          zoomControl={true}
+          attributionControl={false}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <MapClickHandler onPick={(lat, lng) => setPin([lat, lng])} />
+          {pin && <Marker position={pin} />}
+        </MapContainer>
       </div>
-      {valid && <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 700 }}>📍 {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}</div>}
-      <SubmitBtn onSubmit={() => onSubmit(`${lat},${lng}`)} canSubmit={valid} submitted={false} catColor={catColor} />
+      {pin
+        ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}>📍 {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
+        : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>Noch kein Pin gesetzt</div>
+      }
+      <SubmitBtn onSubmit={handleSubmit} canSubmit={!!pin} submitted={submitted} catColor={catColor} />
     </div>
   );
 }

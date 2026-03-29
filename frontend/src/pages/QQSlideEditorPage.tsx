@@ -560,10 +560,34 @@ export default function QQSlideEditorPage() {
           {/* Canvas area */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}
             onClick={() => setSelectedIds([])}>
-            {/* Main editor area: show live BeamerView of the selected slide */}
-            <div style={{ width: '100%', maxWidth: 1100, aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', background: activeTemplate.background, boxShadow: '0 4px 32px rgba(0,0,0,0.18)' }}>
-              <BeamerView template={activeTemplate} previewMode />
-            </div>
+            {/* Main editor area: restore SlideCanvas for editability */}
+            <SlideCanvas
+              template={activeTemplate}
+              selectedIds={selectedIds}
+              editingId={editingId}
+              snapLines={snapLines}
+              onSnapLinesChange={setSnapLines}
+              onSelect={(id, shift) => {
+                if (shift) {
+                  setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
+                } else {
+                  setSelectedIds([id]);
+                }
+                if (!shift) setEditingId(null);
+              }}
+              onMultiSelect={ids => setSelectedIds(ids)}
+              onClearSelect={() => setSelectedIds([])}
+              onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
+              onUpdateMulti={(patches) => {
+                const patchMap = new Map(patches.map(p => [p.id, p.patch]));
+                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => patchMap.has(e.id) ? { ...e, ...patchMap.get(e.id) } : e) });
+              }}
+              onStartEdit={setEditingId}
+              onEndEdit={(id, text) => {
+                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
+                setEditingId(null);
+              }}
+            />
           </div>
         </div>
 

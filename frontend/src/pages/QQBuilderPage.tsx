@@ -4,7 +4,7 @@ import {
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQImageLayout, QQImageAnimation, QQQuestionImage,
   QQBunteTueteKind, QQ_BUNTE_TUETE_LABELS,
-  QQBunteTuetePayload,
+  QQBunteTuetePayload, QQOptionImage,
   QQThemePreset, QQ_THEME_PRESETS,
 } from '../../../shared/quarterQuizTypes';
 
@@ -76,7 +76,9 @@ export default function QQBuilderPage() {
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const optionFileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Auto-save: debounced localStorage backup ──
@@ -173,7 +175,24 @@ export default function QQBuilderPage() {
     } catch { alert('Hintergrundentfernung fehlgeschlagen'); }
     finally { setRemovingBgFor(null); }
   }
-
+  async function uploadOptionImage() {
+    const file = optionFileInputRef.current?.files?.[0];
+    if (!file || !activeDraft || !optionUploadTarget) return;
+    const { questionId, optionIndex } = optionUploadTarget;
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const res = await fetch('/api/upload/question-image', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      const q = activeDraft.questions.find(q => q.id === questionId);
+      if (!q) return;
+      const imgs = [...(q.optionImages ?? [])];
+      while (imgs.length <= optionIndex) imgs.push(null);
+      imgs[optionIndex] = { url: data.imageUrl, fit: 'cover', opacity: 0.4 };
+      setActiveDraft(updateQuestion(activeDraft, { ...q, optionImages: imgs }));
+    } catch { alert('Upload fehlgeschlagen'); }
+    finally { setOptionUploadTarget(null); if (optionFileInputRef.current) optionFileInputRef.current.value = ''; }
+  }
   const activeQ = activeDraft && activeSlot ? getQuestion(activeDraft, activeSlot.phase, activeSlot.qi) : null;
 
   if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onDelete={deleteDraft} />;
@@ -357,6 +376,7 @@ export default function QQBuilderPage() {
             onUpload={() => uploadImage(activeQ.id)}
             onRemoveBg={() => removeBg(activeQ)}
             onChange={updated => setActiveDraft(updateQuestion(activeDraft, updated))}
+            onOptionImageUpload={(optIdx: number) => { setOptionUploadTarget({ questionId: activeQ.id, optionIndex: optIdx }); setTimeout(() => optionFileInputRef.current?.click(), 0); }}
           />
         )}
         {!activeQ && (
@@ -367,14 +387,16 @@ export default function QQBuilderPage() {
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={() => activeQ && uploadImage(activeQ.id)} />
+      <input ref={optionFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadOptionImage} />
     </div>
   );
 }
 
 // ── Question editor panel ──────────────────────────────────────────────────────
-function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploadingFor, removingBgFor, fileInputRef }: {
+function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload }: {
   question: QQQuestion; onChange: (q: QQQuestion) => void; onUpload: () => void; onRemoveBg: () => void;
   uploadingFor: string | null; removingBgFor: string | null; fileInputRef: React.RefObject<HTMLInputElement>;
+  onOptionImageUpload: (optIdx: number) => void;
 }) {
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catLabel = QQ_CATEGORY_LABELS[q.category];
@@ -408,7 +430,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
       </div>
 
       {/* ── Category-specific answer fields ── */}
-      <CategoryFields question={q} onChange={onChange} catColor={catColor} />
+      <CategoryFields question={q} onChange={onChange} catColor={catColor} onOptionImageUpload={onOptionImageUpload} />
 
       {/* ── Image section ── */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
@@ -451,17 +473,61 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
               ))}
             </div>
 
-            {/* Image position & scale controls */}
-            <label style={{ ...labelStyle, marginTop: 12 }}>Position & Größe</label>
+            {/* Image position & scale controls — drag canvas */}
+            <label style={{ ...labelStyle, marginTop: 12 }}>Position & Größe <span style={{ fontSize: 10, color: '#334155', fontWeight: 400 }}>Drag = verschieben · Scroll = Zoom</span></label>
             <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>X-Offset</div>
-                  <input type="range" min={-100} max={100} value={img.offsetX ?? 0} onChange={e => setImg({ offsetX: Number(e.target.value) })} style={{ width: '100%' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Y-Offset</div>
-                  <input type="range" min={-100} max={100} value={img.offsetY ?? 0} onChange={e => setImg({ offsetY: Number(e.target.value) })} style={{ width: '100%' }} />
+              {/* 16:9 interactive drag preview */}
+              <div
+                style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden', cursor: 'grab', background: '#000', marginBottom: 8, border: '1px solid rgba(255,255,255,0.1)' }}
+                onMouseDown={e => {
+                  e.preventDefault();
+                  const startX = e.clientX, startY = e.clientY;
+                  const startOX = img.offsetX ?? 0, startOY = img.offsetY ?? 0;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const onMove = (ev: MouseEvent) => {
+                    const dx = ((ev.clientX - startX) / rect.width) * 200;
+                    const dy = ((ev.clientY - startY) / rect.height) * 200;
+                    setImg({ offsetX: Math.round(Math.max(-100, Math.min(100, startOX + dx))), offsetY: Math.round(Math.max(-100, Math.min(100, startOY + dy))) });
+                  };
+                  const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+                  window.addEventListener('mousemove', onMove);
+                  window.addEventListener('mouseup', onUp);
+                }}
+                onWheel={e => {
+                  e.preventDefault();
+                  const cur = img.scale ?? 1;
+                  const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                  setImg({ scale: Math.round(Math.max(0.1, Math.min(3, cur + delta)) * 100) / 100 });
+                }}
+                onTouchStart={e => {
+                  if (e.touches.length !== 1) return;
+                  const t = e.touches[0];
+                  const startX = t.clientX, startY = t.clientY;
+                  const startOX = img.offsetX ?? 0, startOY = img.offsetY ?? 0;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const onMove = (ev: TouchEvent) => {
+                    ev.preventDefault();
+                    const ct = ev.touches[0];
+                    const dx = ((ct.clientX - startX) / rect.width) * 200;
+                    const dy = ((ct.clientY - startY) / rect.height) * 200;
+                    setImg({ offsetX: Math.round(Math.max(-100, Math.min(100, startOX + dx))), offsetY: Math.round(Math.max(-100, Math.min(100, startOY + dy))) });
+                  };
+                  const onEnd = () => { window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onEnd); };
+                  window.addEventListener('touchmove', onMove, { passive: false });
+                  window.addEventListener('touchend', onEnd);
+                }}
+              >
+                <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                  transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+                  pointerEvents: 'none', transition: 'transform 0.05s',
+                }} />
+                {/* Crosshair */}
+                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
+                {/* Position indicator */}
+                <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: 4 }}>
+                  X:{img.offsetX ?? 0} Y:{img.offsetY ?? 0} · {((img.scale ?? 1) * 100).toFixed(0)}%
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -478,6 +544,49 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
                 <button onClick={() => setImg({ offsetX: 0, offsetY: 0, scale: 1, rotation: 0 })} style={{ ...btnStyle('#475569'), width: '100%', marginTop: 8, fontSize: 11 }}>↩ Zurücksetzen</button>
               )}
             </div>
+
+            {/* Visual adjustments */}
+            <label style={{ ...labelStyle, marginTop: 12 }}>Visuelle Anpassungen</label>
+            <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Deckkraft ({((img.opacity ?? 1) * 100).toFixed(0)}%)</div>
+                  <input type="range" min={0} max={100} value={(img.opacity ?? 1) * 100} onChange={e => setImg({ opacity: Number(e.target.value) / 100 })} style={{ width: '100%' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Helligkeit ({img.brightness ?? 100}%)</div>
+                  <input type="range" min={0} max={200} value={img.brightness ?? 100} onChange={e => setImg({ brightness: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Kontrast ({img.contrast ?? 100}%)</div>
+                  <input type="range" min={0} max={200} value={img.contrast ?? 100} onChange={e => setImg({ contrast: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Weichzeichner ({img.blur ?? 0}px)</div>
+                  <input type="range" min={0} max={20} value={img.blur ?? 0} onChange={e => setImg({ blur: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+              </div>
+              {(img.opacity !== undefined && img.opacity !== 1) || (img.brightness !== undefined && img.brightness !== 100) || (img.contrast !== undefined && img.contrast !== 100) || img.blur ? (
+                <button onClick={() => setImg({ opacity: 1, brightness: 100, contrast: 100, blur: 0 })} style={{ ...btnStyle('#475569'), width: '100%', marginTop: 8, fontSize: 11 }}>↩ Filter zurücksetzen</button>
+              ) : null}
+            </div>
+
+            {/* Animation timing */}
+            <label style={{ ...labelStyle, marginTop: 12 }}>Animation Timing</label>
+            <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Verzögerung ({(img.animDelay ?? 0).toFixed(1)}s)</div>
+                  <input type="range" min={0} max={50} value={(img.animDelay ?? 0) * 10} onChange={e => setImg({ animDelay: Number(e.target.value) / 10 })} style={{ width: '100%' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Dauer ({(img.animDuration ?? 1).toFixed(1)}s)</div>
+                  <input type="range" min={1} max={100} value={(img.animDuration ?? 1) * 10} onChange={e => setImg({ animDuration: Number(e.target.value) / 10 })} style={{ width: '100%' }} />
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -486,7 +595,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
 }
 
 // ── Category-specific answer fields ───────────────────────────────────────────
-function CategoryFields({ question: q, onChange, catColor }: { question: QQQuestion; onChange: (q: QQQuestion) => void; catColor: string }) {
+function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }: { question: QQQuestion; onChange: (q: QQQuestion) => void; catColor: string; onOptionImageUpload: (optIdx: number) => void }) {
 
   // SCHAETZCHEN ────────────────────────────────────────────────────────────────
   if (q.category === 'SCHAETZCHEN') return (
@@ -526,26 +635,48 @@ function CategoryFields({ question: q, onChange, catColor }: { question: QQQuest
     const optsEn = q.optionsEn ?? ['', '', '', ''];
     const correct = q.correctOptionIndex ?? 0;
     const labels = ['A', 'B', 'C', 'D'];
+    const optImgs = q.optionImages ?? [];
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', fontSize: 12, color: '#94a3b8' }}>
-          4 Antwortoptionen — eine ist korrekt.
+          4 Antwortoptionen — eine ist korrekt. Optional: Bilder pro Option.
         </div>
-        {[0, 1, 2, 3].map(i => (
-          <div key={i} style={{ padding: '10px 12px', borderRadius: 10, border: `2px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.07)'}`, background: correct === i ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: catColor + '33', border: `1px solid ${catColor}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor, flexShrink: 0 }}>{labels[i]}</div>
-              <button onClick={() => onChange({ ...q, correctOptionIndex: i, answer: opts[i], answerEn: optsEn[i] || undefined })}
-                style={{ padding: '3px 10px', borderRadius: 6, border: `1px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, background: correct === i ? 'rgba(34,197,94,0.15)' : 'transparent', color: correct === i ? '#22C55E' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
-                {correct === i ? '✓ Korrekt' : 'Als Antwort'}
-              </button>
+        {[0, 1, 2, 3].map(i => {
+          const optImg = optImgs[i];
+          return (
+          <div key={i} style={{ padding: '10px 12px', borderRadius: 10, border: `2px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.07)'}`, background: correct === i ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)', position: 'relative', overflow: 'hidden' }}>
+            {optImg?.url && <img src={optImg.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.15, pointerEvents: 'none' }} />}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <div style={{ width: 24, height: 24, borderRadius: 6, background: catColor + '33', border: `1px solid ${catColor}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor, flexShrink: 0 }}>{labels[i]}</div>
+                <button onClick={() => onChange({ ...q, correctOptionIndex: i, answer: opts[i], answerEn: optsEn[i] || undefined })}
+                  style={{ padding: '3px 10px', borderRadius: 6, border: `1px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, background: correct === i ? 'rgba(34,197,94,0.15)' : 'transparent', color: correct === i ? '#22C55E' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
+                  {correct === i ? '✓ Korrekt' : 'Als Antwort'}
+                </button>
+                <button onClick={() => onOptionImageUpload(i)} style={{ marginLeft: 'auto', padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: optImg?.url ? 'rgba(139,92,246,0.15)' : 'transparent', color: optImg?.url ? '#A78BFA' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>
+                  {optImg?.url ? '🔄 Bild' : '🖼 Bild'}
+                </button>
+                {optImg?.url && (
+                  <button onClick={() => { const imgs = [...optImgs]; imgs[i] = null; onChange({ ...q, optionImages: imgs }); }}
+                    style={{ padding: '3px 6px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>✕</button>
+                )}
+              </div>
+              {optImg?.url && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, color: '#475569', fontWeight: 700 }}>Deckkraft:</span>
+                  <input type="range" min={5} max={100} value={(optImg.opacity ?? 0.4) * 100} onChange={e => { const imgs = [...optImgs]; imgs[i] = { ...optImg, opacity: Number(e.target.value) / 100 }; onChange({ ...q, optionImages: imgs }); }}
+                    style={{ flex: 1, height: 14 }} />
+                  <span style={{ fontSize: 9, color: '#64748b', width: 28 }}>{((optImg.opacity ?? 0.4) * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              <input value={opts[i]} onChange={e => { const o = [...opts]; o[i] = e.target.value; onChange({ ...q, options: o, answer: correct === i ? e.target.value : q.answer }); }}
+                style={inputStyle} placeholder={`Option ${labels[i]} (DE)…`} />
+              <input value={optsEn[i] ?? ''} onChange={e => { const o = [...optsEn]; o[i] = e.target.value; onChange({ ...q, optionsEn: o, answerEn: correct === i ? e.target.value : q.answerEn }); }}
+                style={{ ...inputStyle, marginTop: 5, fontSize: 12, opacity: 0.7 }} placeholder={`Option ${labels[i]} (EN, optional)…`} />
             </div>
-            <input value={opts[i]} onChange={e => { const o = [...opts]; o[i] = e.target.value; onChange({ ...q, options: o, answer: correct === i ? e.target.value : q.answer }); }}
-              style={inputStyle} placeholder={`Option ${labels[i]} (DE)…`} />
-            <input value={optsEn[i] ?? ''} onChange={e => { const o = [...optsEn]; o[i] = e.target.value; onChange({ ...q, optionsEn: o, answerEn: correct === i ? e.target.value : q.answerEn }); }}
-              style={{ ...inputStyle, marginTop: 5, fontSize: 12, opacity: 0.7 }} placeholder={`Option ${labels[i]} (EN, optional)…`} />
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
@@ -555,26 +686,48 @@ function CategoryFields({ question: q, onChange, catColor }: { question: QQQuest
     const opts = q.options ?? ['', '', ''];
     const optsEn = q.optionsEn ?? ['', '', ''];
     const correct = q.correctOptionIndex ?? 0;
+    const optImgs = q.optionImages ?? [];
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#94a3b8' }}>
-          3 Optionen (1 / 2 / 3) — Teams verteilen Punkte. Eine ist korrekt.
+          3 Optionen (1 / 2 / 3) — Teams verteilen Punkte. Optional: Bilder pro Option.
         </div>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{ padding: '10px 12px', borderRadius: 10, border: `2px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.07)'}`, background: correct === i ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: catColor + '33', border: `1px solid ${catColor}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i + 1}</div>
-              <button onClick={() => onChange({ ...q, correctOptionIndex: i, answer: opts[i], answerEn: optsEn[i] || undefined })}
-                style={{ padding: '3px 10px', borderRadius: 6, border: `1px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, background: correct === i ? 'rgba(34,197,94,0.15)' : 'transparent', color: correct === i ? '#22C55E' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
-                {correct === i ? '✓ Korrekt' : 'Als Antwort'}
-              </button>
+        {[0, 1, 2].map(i => {
+          const optImg = optImgs[i];
+          return (
+          <div key={i} style={{ padding: '10px 12px', borderRadius: 10, border: `2px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.07)'}`, background: correct === i ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)', position: 'relative', overflow: 'hidden' }}>
+            {optImg?.url && <img src={optImg.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.15, pointerEvents: 'none' }} />}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: catColor + '33', border: `1px solid ${catColor}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i + 1}</div>
+                <button onClick={() => onChange({ ...q, correctOptionIndex: i, answer: opts[i], answerEn: optsEn[i] || undefined })}
+                  style={{ padding: '3px 10px', borderRadius: 6, border: `1px solid ${correct === i ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, background: correct === i ? 'rgba(34,197,94,0.15)' : 'transparent', color: correct === i ? '#22C55E' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
+                  {correct === i ? '✓ Korrekt' : 'Als Antwort'}
+                </button>
+                <button onClick={() => onOptionImageUpload(i)} style={{ marginLeft: 'auto', padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: optImg?.url ? 'rgba(139,92,246,0.15)' : 'transparent', color: optImg?.url ? '#A78BFA' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>
+                  {optImg?.url ? '🔄 Bild' : '🖼 Bild'}
+                </button>
+                {optImg?.url && (
+                  <button onClick={() => { const imgs = [...optImgs]; imgs[i] = null; onChange({ ...q, optionImages: imgs }); }}
+                    style={{ padding: '3px 6px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>✕</button>
+                )}
+              </div>
+              {optImg?.url && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, color: '#475569', fontWeight: 700 }}>Deckkraft:</span>
+                  <input type="range" min={5} max={100} value={(optImg.opacity ?? 0.4) * 100} onChange={e => { const imgs = [...optImgs]; imgs[i] = { ...optImg, opacity: Number(e.target.value) / 100 }; onChange({ ...q, optionImages: imgs }); }}
+                    style={{ flex: 1, height: 14 }} />
+                  <span style={{ fontSize: 9, color: '#64748b', width: 28 }}>{((optImg.opacity ?? 0.4) * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              <input value={opts[i]} onChange={e => { const o = [...opts]; o[i] = e.target.value; onChange({ ...q, options: o, answer: correct === i ? e.target.value : q.answer }); }}
+                style={inputStyle} placeholder={`Option ${i + 1} (DE)…`} />
+              <input value={optsEn[i] ?? ''} onChange={e => { const o = [...optsEn]; o[i] = e.target.value; onChange({ ...q, optionsEn: o, answerEn: correct === i ? e.target.value : q.answerEn }); }}
+                style={{ ...inputStyle, marginTop: 5, fontSize: 12, opacity: 0.7 }} placeholder={`Option ${i + 1} (EN, optional)…`} />
             </div>
-            <input value={opts[i]} onChange={e => { const o = [...opts]; o[i] = e.target.value; onChange({ ...q, options: o, answer: correct === i ? e.target.value : q.answer }); }}
-              style={inputStyle} placeholder={`Option ${i + 1} (DE)…`} />
-            <input value={optsEn[i] ?? ''} onChange={e => { const o = [...optsEn]; o[i] = e.target.value; onChange({ ...q, optionsEn: o, answerEn: correct === i ? e.target.value : q.answerEn }); }}
-              style={{ ...inputStyle, marginTop: 5, fontSize: 12, opacity: 0.7 }} placeholder={`Option ${i + 1} (EN, optional)…`} />
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   }

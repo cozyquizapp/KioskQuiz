@@ -152,6 +152,7 @@ export interface QQQuestion {
   options?: string[];
   optionsEn?: string[];
   correctOptionIndex?: number;   // 0, 1, or 2
+  optionImages?: (QQOptionImage | null)[];  // per-option images (MUCHO: 4, ZEHN_VON_ZEHN: 3)
   // BUNTE_TUETE — sub-mechanic payload
   bunteTuete?: QQBunteTuetePayload;
 }
@@ -205,6 +206,22 @@ export interface QQQuestionImage {
   offsetY?: number;   // -100 to 100, percentage offset from center
   scale?: number;     // 0.1 to 3.0, default 1.0
   rotation?: number;  // degrees 0-360
+  // Visual adjustments
+  opacity?: number;       // 0.0 to 1.0, default 1.0
+  brightness?: number;    // 0 to 200, default 100 (%)
+  contrast?: number;      // 0 to 200, default 100 (%)
+  blur?: number;          // 0 to 20, default 0 (px)
+  // Animation timing
+  animDelay?: number;     // seconds delay before animation starts (0-5)
+  animDuration?: number;  // seconds for animation duration (0.1-10)
+}
+
+// ── Option image (for MUCHO / ZEHN_VON_ZEHN answer cards) ─────────────────────
+export interface QQOptionImage {
+  url: string;
+  publicId?: string;
+  fit?: 'cover' | 'contain';  // default 'cover'
+  opacity?: number;            // 0.0 to 1.0, default 1.0 — for text readability
 }
 
 // ── QQ Theme (visual customization for beamer) ────────────────────────────────

@@ -112,12 +112,22 @@ function actionDesc(a: string | null, stats: any) {
   return '';
 }
 
-function imgAnim(anim: string, layout?: string): string | undefined {
-  if (anim === 'float')    return 'imgFloat 4s ease-in-out infinite';
-  if (anim === 'zoom-in')  return 'imgZoomIn 0.8s ease both';
-  if (anim === 'reveal')   return 'imgReveal 1s ease both';
-  if (anim === 'slide-in') return layout === 'window-left' ? 'imgSlideL 0.7s ease both' : 'imgSlideR 0.7s ease both';
+function imgAnim(anim: string, layout?: string, delay?: number, duration?: number): string | undefined {
+  const d = duration ?? undefined;
+  const del = delay ?? 0;
+  if (anim === 'float')    return `imgFloat ${d ?? 4}s ease-in-out ${del}s infinite`;
+  if (anim === 'zoom-in')  return `imgZoomIn ${d ?? 0.8}s ease ${del}s both`;
+  if (anim === 'reveal')   return `imgReveal ${d ?? 1}s ease ${del}s both`;
+  if (anim === 'slide-in') return layout === 'window-left' ? `imgSlideL ${d ?? 0.7}s ease ${del}s both` : `imgSlideR ${d ?? 0.7}s ease ${del}s both`;
   return undefined;
+}
+
+function imgFilter(img: { brightness?: number; contrast?: number; blur?: number }): string | undefined {
+  const parts: string[] = [];
+  if (img.brightness !== undefined && img.brightness !== 100) parts.push(`brightness(${img.brightness}%)`);
+  if (img.contrast !== undefined && img.contrast !== 100) parts.push(`contrast(${img.contrast}%)`);
+  if (img.blur) parts.push(`blur(${img.blur}px)`);
+  return parts.length ? parts.join(' ') : undefined;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -373,8 +383,10 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             position: 'absolute', inset: 0, zIndex: 1,
             backgroundImage: `url(${img.url})`,
             backgroundSize: 'cover', backgroundPosition: 'center',
-            animation: imgAnim(img.animation),
+            animation: imgAnim(img.animation, undefined, img.animDelay, img.animDuration),
             transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+            opacity: img.opacity ?? 1,
+            filter: imgFilter(img),
           }} />
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
@@ -393,9 +405,10 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             right: '8%', top: '15%',
             maxWidth: '35%', maxHeight: '70%',
             objectFit: 'contain',
-            filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.6))',
-            animation: imgAnim(img.animation, 'cutout'),
+            filter: `drop-shadow(0 16px 40px rgba(0,0,0,0.6))${imgFilter(img) ? ' ' + imgFilter(img) : ''}`,
+            animation: imgAnim(img.animation, 'cutout', img.animDelay, img.animDuration),
             transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+            opacity: img.opacity ?? 1,
           }}
         />
       )}
@@ -508,6 +521,64 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             </div>
           </div>
 
+          {/* MUCHO / ZEHN_VON_ZEHN option cards */}
+          {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : '1fr 1fr 1fr',
+              gap: 12, marginBottom: 16,
+              animation: showIntro ? 'contentReveal 0.5s ease 2.5s both' : 'contentReveal 0.35s ease 0.15s both',
+            }}>
+              {q.options.map((opt, i) => {
+                const optImg = q.optionImages?.[i];
+                const isCorrect = revealed && i === q.correctOptionIndex;
+                const muchoLabels = ['A', 'B', 'C', 'D'];
+                const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+                const label = q.category === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
+                const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[i] : accent;
+                const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
+                return (
+                  <div key={i} style={{
+                    position: 'relative', overflow: 'hidden',
+                    borderRadius: 16, padding: '16px 20px',
+                    background: isCorrect ? 'rgba(34,197,94,0.2)' : '#1B1510',
+                    border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}44`,
+                    boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    minHeight: optImg?.url ? 90 : 60,
+                    transition: 'all 0.3s ease',
+                    animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                  }}>
+                    {optImg?.url && (
+                      <img src={optImg.url} alt="" style={{
+                        position: 'absolute', inset: 0, width: '100%', height: '100%',
+                        objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
+                        pointerEvents: 'none',
+                      }} />
+                    )}
+                    {optImg?.url && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
+                    )}
+                    <div style={{
+                      position: 'relative', zIndex: 1,
+                      width: 36, height: 36, borderRadius: 10,
+                      background: isCorrect ? '#22C55E' : optColor,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 900, color: '#fff', flexShrink: 0,
+                      boxShadow: `0 2px 8px ${(isCorrect ? '#22C55E' : optColor)}66`,
+                    }}>{isCorrect ? '✓' : label}</div>
+                    <div style={{
+                      position: 'relative', zIndex: 1,
+                      fontSize: 'clamp(16px, 2vw, 28px)', fontWeight: 800,
+                      color: '#F1F5F9', lineHeight: 1.3,
+                      textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
+                    }}>{optText}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Answer reveal */}
           {revealed && s.revealedAnswer && (
             <div style={{
@@ -582,8 +653,10 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
                 maxWidth: '100%', maxHeight: '80vh',
                 borderRadius: 22, objectFit: 'contain',
                 boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
-                animation: imgAnim(img.animation, img.layout),
+                animation: imgAnim(img.animation, img.layout, img.animDelay, img.animDuration),
                 transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+                opacity: img.opacity ?? 1,
+                filter: imgFilter(img),
               }}
             />
           </div>

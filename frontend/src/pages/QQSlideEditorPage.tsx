@@ -470,28 +470,84 @@ export default function QQSlideEditorPage() {
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-        {/* Left: slide list with thumbnails */}
-        <div style={{ width: 206, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
-          {GROUPS.map(group => {
-            const specs = TEMPLATE_SPECS.filter(s => s.group === group);
+        {/* Left: slide list with all actual steps */}
+        <div style={{ width: 240, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
+          {/* Build the real beamer/game step sequence for this draft */}
+          {draft && (() => {
+            // Helper to get template type for a question
+            const getQuestionTemplateType = (q: QQQuestion) => {
+              switch (q.category) {
+                case 'SCHAETZCHEN': return 'QUESTION_SCHAETZCHEN';
+                case 'MUCHO': return 'QUESTION_MUCHO';
+                case 'BUNTE_TUETE': return 'QUESTION_BUNTE_TUETE';
+                case 'ZEHN_VON_ZEHN': return 'QUESTION_ZEHN';
+                case 'CHEESE': return 'QUESTION_CHEESE';
+                default: return 'QUESTION_SCHAETZCHEN';
+              }
+            };
+            // Build the step list
+            const steps: Array<{
+              key: string;
+              label: string;
+              type: QQSlideTemplateType;
+              question?: QQQuestion;
+              phase?: number;
+              icon?: string;
+              color?: string;
+            }> = [];
+            // Lobby
+            steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
+            // For each phase
+            for (let p = 1; p <= draft.phases; p++) {
+              steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : '#EF4444', phase: p });
+              // All questions in this phase
+              const qs = draft.questions.filter(q => q.phaseIndex === p);
+              for (const q of qs) {
+                const ttype = getQuestionTemplateType(q);
+                const spec = TEMPLATE_SPECS.find(s => s.type === ttype);
+                steps.push({
+                  key: `q-${q.id}`,
+                  label: `${spec?.label || q.category} (${q.text?.slice(0, 18)})`,
+                  type: ttype,
+                  question: q,
+                  icon: spec?.icon,
+                  color: spec?.color,
+                  phase: p,
+                });
+                // Reveal
+                steps.push({ key: `reveal-${q.id}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', question: q, phase: p });
+                // Placement
+                steps.push({ key: `placement-${q.id}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', question: q, phase: p });
+              }
+              // After phase 2, add Comeback
+              if (p === 2) steps.push({ key: 'comeback', label: 'Comeback', type: 'COMEBACK_CHOICE', icon: '⚡', color: '#F97316', phase: p });
+            }
+            // Game over
+            steps.push({ key: 'game-over', label: 'Spielende', type: 'GAME_OVER', icon: '🏆', color: '#F59E0B' });
+
+            // Render the step list
             return (
-              <div key={group}>
-                <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{group}</div>
-                {specs.map(s => {
-                  const isActive = activeType === s.type;
-                  const isCustom = !!templates[s.type];
-                  const tpl = templates[s.type] ?? makeDefault(s.type);
+              <div>
+                <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
+                {steps.map((step, idx) => {
+                  const isActive = activeType === step.type && (!step.question || (selectedIds[0] === step.key));
+                  // For per-question slides, allow unique selection by key
                   return (
-                    <button key={s.type} onClick={() => { setActiveType(s.type); setSelectedIds([]); }}
-                      style={{ width: '100%', padding: '8px 10px', background: isActive ? s.color + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? s.color : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
+                    <button key={step.key}
+                      onClick={() => {
+                        setActiveType(step.type);
+                        // For per-question slides, use question id as selectedId to allow unique editing
+                        if (step.question) setSelectedIds([step.key]);
+                        else setSelectedIds([]);
+                      }}
+                      style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
                       {/* Thumbnail */}
-                      <SlideThumbnail template={tpl} />
+                      <SlideThumbnail template={templates[step.type] ?? makeDefault(step.type)} />
                       {/* Label row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ fontSize: 13, flexShrink: 0 }}>{s.icon}</span>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? s.color : '#64748b', lineHeight: 1.2 }}>{s.label}</div>
-                          {isCustom && <div style={{ fontSize: 9, color: '#22C55E', fontWeight: 700 }}>✓ angepasst</div>}
+                          <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2 }}>{step.label}</div>
                         </div>
                       </div>
                     </button>
@@ -499,7 +555,7 @@ export default function QQSlideEditorPage() {
                 })}
               </div>
             );
-          })}
+          })()}
         </div>
 
         {/* Center: canvas + toolbar */}

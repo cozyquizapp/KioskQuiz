@@ -17,11 +17,22 @@ export const QQ_CATEGORIES: QQCategory[] = [
 ];
 
 export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; emoji: string }> = {
-  SCHAETZCHEN:   { de: 'Schätzchen',  en: 'Estimate',    emoji: '🍯' },
-  MUCHO:         { de: 'Mu-cho',      en: 'Mu-cho',      emoji: '🎵' },
-  BUNTE_TUETE:   { de: 'Bunte Tüte',  en: 'Mixed Bag',   emoji: '🎁' },
-  ZEHN_VON_ZEHN: { de: '10 von 10',   en: '10 of 10',    emoji: '🔟' },
-  CHEESE:        { de: 'Cheese',      en: 'Cheese',      emoji: '🧀' },
+  SCHAETZCHEN:   { de: 'Schätzchen',   en: 'Close Call',    emoji: '🍯' },
+  MUCHO:         { de: 'Mu-Cho',       en: 'Mu-Cho',        emoji: '🎵' },
+  BUNTE_TUETE:   { de: 'Bunte Tüte',   en: 'Lucky Bag',     emoji: '🎁' },
+  ZEHN_VON_ZEHN: { de: 'All In',       en: 'All In',        emoji: '🎰' },
+  CHEESE:        { de: 'Picture This', en: 'Picture This',  emoji: '📸' },
+};
+
+// ── Bunte Tüte sub-mechanics ──────────────────────────────────────────────────
+export type QQBunteTueteKind = 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map';
+
+export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: string; emoji: string }> = {
+  hotPotato:  { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },
+  top5:       { de: 'Top 5',           en: 'Top 5',      emoji: '🏆' },
+  oneOfEight: { de: 'Imposter',        en: 'Imposter',   emoji: '🕵️' },
+  order:      { de: 'Fix It',          en: 'Fix It',     emoji: '🔀' },
+  map:        { de: 'Pin It',          en: 'Pin It',     emoji: '📍' },
 };
 
 export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
@@ -79,6 +90,49 @@ export interface QQCell {
 
 export type QQGrid = QQCell[][];  // [row][col]
 
+// ── Bunte Tüte sub-mechanic payloads ─────────────────────────────────────────
+
+export interface QQBunteTueteTop5 {
+  kind: 'top5';
+  answers: string[];      // up to 5 correct answers (DE)
+  answersEn?: string[];   // EN versions
+}
+
+export interface QQBunteTueteOneOfEight {
+  kind: 'oneOfEight';
+  statements: string[];    // exactly 8 statements (DE)
+  statementsEn?: string[]; // EN versions
+  falseIndex: number;      // 0-7, which statement is the imposter
+}
+
+export interface QQBunteTueteOrder {
+  kind: 'order';
+  items: string[];         // items to sort (DE)
+  itemsEn?: string[];      // EN versions
+  correctOrder: number[];  // indices in correct order
+  criteria?: string;       // e.g. "nach Größe", "chronologisch"
+  criteriaEn?: string;
+}
+
+export interface QQBunteTueteMap {
+  kind: 'map';
+  lat: number;
+  lng: number;
+  targetLabel?: string;    // e.g. "Jungfernstieg, Hamburg"
+}
+
+export interface QQBunteTueteHotPotato {
+  kind: 'hotPotato';
+  // No extra fields — text/answer from parent QQQuestion
+}
+
+export type QQBunteTuetePayload =
+  | QQBunteTueteTop5
+  | QQBunteTueteOneOfEight
+  | QQBunteTueteOrder
+  | QQBunteTueteMap
+  | QQBunteTueteHotPotato;
+
 // ── Questions ─────────────────────────────────────────────────────────────────
 export interface QQQuestion {
   id: string;
@@ -90,7 +144,16 @@ export interface QQQuestion {
   answer: string;
   answerEn?: string;
   image?: QQQuestionImage;
-  targetValue?: number;  // Schätzchen: the correct number to estimate
+  // SCHAETZCHEN
+  targetValue?: number;
+  unit?: string;
+  unitEn?: string;
+  // ZEHN_VON_ZEHN (All In) — 3 options labeled 1/2/3
+  options?: string[];
+  optionsEn?: string[];
+  correctOptionIndex?: number;   // 0, 1, or 2
+  // BUNTE_TUETE — sub-mechanic payload
+  bunteTuete?: QQBunteTuetePayload;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────

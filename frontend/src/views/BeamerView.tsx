@@ -4674,6 +4674,31 @@ useEffect(() => {
 
   return (
     <main style={{...pageStyle, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale'}} className={featureFlags.isCozyMode ? `cozy-beamer-shell${gameState === 'LOBBY' ? ' cozy-beamer-lobby' : ''}` : undefined}>
+      {/* Offline-Banner */}
+      {connectionStatus === 'disconnected' && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          zIndex: 100,
+          background: 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)',
+          color: '#fff',
+          fontWeight: 900,
+          fontSize: 20,
+          textAlign: 'center',
+          padding: '18px 0 14px 0',
+          letterSpacing: '0.04em',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+          borderBottom: '2px solid #b91c1c',
+          textShadow: '0 2px 8px #b91c1c44',
+          animation: 'shake 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) 1'
+        }}>
+          {language === 'de'
+            ? 'Verbindung zum Server verloren. Bitte warten ...'
+            : 'Lost connection to server. Please wait ...'}
+        </div>
+      )}
       <ParticleCanvas count={110} opacity={0.85} zIndex={0} />
       {showTechnicalHud && offlineBar(connectionStatus, language, handleReconnect)}
       {toast && <div style={toastStyle}>{toast}</div>}

@@ -226,7 +226,7 @@ const StatsPage: React.FC = () => {
                           fontSize: 13
                         }}
                       >
-                        {key}: {val}
+                        {key}: {String(val)}
                       </div>
                     ))}
                   </div>

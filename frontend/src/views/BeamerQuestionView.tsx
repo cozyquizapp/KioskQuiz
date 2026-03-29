@@ -83,7 +83,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
             {payload.kind === 'top5' ? 'Top 5' : 'Ordnen'}
           </div>
           <ol style={{ margin: '8px 0 0', paddingInlineStart: 20 }}>
-            {payload.items.map((item) => (
+            {(payload.items ?? []).map((item) => (
               <li key={item.id} style={{ marginBottom: 4 }}>
                 {item.label}
               </li>

@@ -258,7 +258,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).background = 'rgba(15,23,42,0.8)';
+            (e.currentTarget as any).background = 'rgba(15,23,42,0.8)';
           }}
         >
           {showCustomEditor ? '▼ Hide Custom Editor' : '▶ Advanced: Edit Colors'}

@@ -502,7 +502,7 @@ export default function AdminView({ roomCode }: Props) {
           {activeTab === 'teams' && renderTeams()}
         </div>
 
-        <ModeratorFunnyAnswersPanel roomCode={roomCode} language={language} />
+        <ModeratorFunnyAnswersPanel roomCode={roomCode} language={language as 'de' | 'en'} />
       </div>
     </AdminLayout>
   );

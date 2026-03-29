@@ -566,6 +566,7 @@ const BeamerView = ({ roomCode }: BeamerProps) => {
   const connectionStatusRef = useRef(connectionStatus);
   const confettiRef = useRef<ReturnType<typeof createConfetti> | null>(null);
   const prevGameStateRef = useRef<CozyGameState | null>(null);
+  const mapRevealTimerRef = useRef<number | null>(null);
 
   const categories = useMemo(() => Object.keys(categoryLabels) as QuizCategory[], []);
   const effectiveLang = language === 'both' ? 'de' : language;

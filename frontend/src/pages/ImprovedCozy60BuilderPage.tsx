@@ -29,7 +29,7 @@ const summarizeDraft = (draft: CozyQuizDraft): CozyDraftSummary => ({
   updatedAt: draft.updatedAt,
   createdAt: draft.createdAt,
   questionCount: draft.questions.length,
-  potatoCount: draft.potatoPool?.length ?? 0,
+  potatoCount: (draft as any).potatoPool?.length ?? 0,
   blitzThemes: draft.blitz?.pool?.length ?? 0
 });
 
@@ -225,7 +225,7 @@ const ImprovedCozy60BuilderPage = () => {
     setStatus('✨ Neues Quiz erstellt...');
     try {
       const data = await createCozyDraft();
-      setDrafts((prev) => [data.draft, ...prev.filter((d) => d.id !== data.draft.id)]);
+      setDrafts((prev) => [summarizeDraft(data.draft), ...prev.filter((d) => d.id !== data.draft.id)]);
       setDraft(data.draft);
       setLastPersistedSignature(draftSignature(data.draft));
       setIsDirty(false);
@@ -248,7 +248,7 @@ const ImprovedCozy60BuilderPage = () => {
     const newTitle = `Kopie von ${drafts.find(d => d.id === sourceDraftId)?.title || 'Quiz'}`;
     try {
       const data = await duplicateCozyDraft(sourceDraftId, newTitle);
-      setDrafts((prev) => [data.draft, ...prev]);
+      setDrafts((prev) => [summarizeDraft(data.draft), ...prev]);
       setDraft(data.draft);
       setLastPersistedSignature(draftSignature(data.draft));
       setIsDirty(false);

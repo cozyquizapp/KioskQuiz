@@ -264,7 +264,6 @@ function ModeratorPage(): React.ReactElement {
     teamStatus: socketTeamStatus,
     connected: socketConnected,
     emit: socketEmit,
-    config: socketConfig,
     nextStage: socketNextStage,
     scoreboardOverlayForced: socketScoreboardOverlayForced,
     avatarsEnabled: socketAvatarsEnabled,
@@ -274,7 +273,7 @@ function ModeratorPage(): React.ReactElement {
   const rundlauf: RundlaufState | null = socketRundlauf ?? null;
   const normalizedGameState: CozyGameState = socketGameState ?? 'LOBBY';
   const nextStage = socketNextStage ?? null;
-  const gameStateInfoMap: Record<CozyGameState, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
+  const gameStateInfoMap: Record<string, { label: string; hint: string; tone: 'setup' | 'live' | 'eval' | 'final' }> = {
     LOBBY: { label: 'Lobby', hint: 'Teams joinen gerade', tone: 'setup' },
     INTRO: { label: 'Intro', hint: 'Intro/Regeln', tone: 'setup' },
     QUESTION_INTRO: { label: 'Frage intro', hint: 'Neue Frage startet', tone: 'live' },
@@ -452,6 +451,10 @@ function ModeratorPage(): React.ReactElement {
   }, [socketTimerEndsAt, countdownTick]);
   const timerActive = socketTimerEndsAt && socketTimerEndsAt > Date.now();
 
+  function handleShowAwards() {
+    sendHostCommand('host:next');
+  }
+
   function handleScoreboardAction() {
     if (!roomCode) return;
     if (normalizedGameState === 'AWARDS') {
@@ -628,11 +631,11 @@ function ModeratorPage(): React.ReactElement {
           listPublishedQuizzes().catch(() => ({ quizzes: [] })),
           listCozyDrafts().catch(() => ({ drafts: [] }))
         ]);
-        const merged: QuizTemplate[] = [
+        const merged: QuizTemplate[] = ([
           ...(res.quizzes || []),
-          ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered', questionIds: q.questionIds })),
+          ...(pub.quizzes || []).map((q) => ({ id: q.id, name: `${q.name} (Published)`, mode: 'ordered' as const, questionIds: q.questionIds })),
           ...(cozy.drafts || []).map((d: any) => ({ id: d.id, name: `${d.title} (Draft)`, mode: 'cozy60', questionIds: [] }))
-        ];
+        ] as any[]) as QuizTemplate[];
         const filtered = merged.filter((q) => (q as any).mode === 'cozy60' || isCozyPlayableQuiz(q));
         const usable = filtered.length ? filtered : merged; // Fallback: zeige auch kurze Demo-Quizzes, sonst ist die Liste leer
         setQuizzes(usable);
@@ -1026,7 +1029,7 @@ function ModeratorPage(): React.ReactElement {
     } as const;
     const key = keyMap[eventName];
     setActionState((prev) => ({ ...prev, [key]: true }));
-    const emitted = emitHost(eventName, { roomCode }, (resp?: { ok: boolean; error?: string }) => {
+    const emitted = emitHost(eventName, { roomCode }, (resp?: { ok?: boolean; error?: string }) => {
       setActionState((prev) => ({ ...prev, [key]: false }));
       if (!resp?.ok) {
         setToast(resp?.error || 'Aktion fehlgeschlagen');
@@ -1189,7 +1192,9 @@ function ModeratorPage(): React.ReactElement {
       | 'host:lockBlitzSet'
       | 'host:revealBlitzSet'
       | 'host:nextBlitzSet'
-      | 'host:finishBlitz',
+      | 'host:finishBlitz'
+      | 'host:blitzOpenSelection'
+      | 'host:pickBlitzTheme',
     payload?: Record<string, unknown>,
     onSuccess?: () => void
   ) {
@@ -1442,8 +1447,7 @@ function ModeratorPage(): React.ReactElement {
       case 'BLITZ_SCOREBOARD':
       case 'BLITZ_PAUSE':
         return { hotkey: '1', label: 'WEITER', detail: 'Fotosprint', context: `Set ${(blitz?.setIndex ?? -1) + 1}/3` };
-      case 'POTATO':
-        return { hotkey: '-', label: 'Potato deaktiviert', detail: 'Nicht verwendet', context: '�' };
+      // 'POTATO' state removed (not in CozyGameState)
       case 'AWARDS':
         return { hotkey: '1', label: 'WEITER', detail: 'Awards zeigen', context: 'Finale' };
       default:

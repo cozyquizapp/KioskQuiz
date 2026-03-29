@@ -31,13 +31,11 @@ type SocketEvents = {
   scores?: StateUpdatePayload['scores'];
   teamsConnected?: number;
   teamStatus?: StateUpdatePayload['teamStatus'];
-  potato?: PotatoState | null;
   blitz?: BlitzState | null;
   rundlauf?: RundlaufState | null;
   questionProgress?: StateUpdatePayload['questionProgress'];
   results?: StateUpdatePayload['results'];
   warnings?: string[];
-  config?: StateUpdatePayload['config'];
   nextStage?: NextStageHint | null;
   scoreboardOverlayForced?: boolean;
   avatarsEnabled?: boolean;
@@ -202,8 +200,8 @@ export const useQuizSocket = (roomCode: string) => {
       // If neither liveAnswers nor results have data, keep previous answers (undefined)
       setEvents((prev) => {
         // Clear answers if switching to a new question
-        const isSwitchingQuestion = payload.currentQuestion !== undefined && 
-          prev.currentQuestion && 
+        const isSwitchingQuestion = payload.currentQuestion != null &&
+          prev.currentQuestion != null &&
           prev.currentQuestion.id !== payload.currentQuestion.id;
         
         return {
@@ -217,7 +215,6 @@ export const useQuizSocket = (roomCode: string) => {
           scores: payload.scores,
           teamsConnected: payload.teamsConnected,
           teamStatus: payload.teamStatus ?? prev.teamStatus,
-          potato: payload.potato ?? prev.potato,
           blitz: payload.blitz ?? prev.blitz,
           rundlauf: payload.rundlauf ?? prev.rundlauf,
           questionProgress: payload.questionProgress ?? prev.questionProgress,
@@ -225,7 +222,6 @@ export const useQuizSocket = (roomCode: string) => {
           // Clear answers if switching question, otherwise use nextAnswers or previous
           answers: isSwitchingQuestion ? {} : (nextAnswers !== undefined ? nextAnswers : prev.answers),
           warnings: payload.warnings ?? prev.warnings,
-          config: payload.config ?? prev.config,
           nextStage: payload.nextStage ?? prev.nextStage,
           scoreboardOverlayForced: payload.scoreboardOverlayForced ?? prev.scoreboardOverlayForced,
           avatarsEnabled: payload.avatarsEnabled ?? prev.avatarsEnabled,

@@ -174,7 +174,10 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
   const teamColor     = myTeam?.color ?? '#3B82F6';
-  const [lang, setLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
+  // Derive lang from server language setting; teams can override locally for 'both' mode
+  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
+  const lang: 'de' | 'en' = s.language === 'de' ? 'de' : s.language === 'en' ? 'en' : localLang;
+  const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
 
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
@@ -200,12 +203,13 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
                 {myTeam.largestConnected} verbunden · {myTeam.totalCells} gesamt
               </div>
             </div>
-            {/* Language selector */}
+            {/* Language selector — only when server sends 'both' */}
+            {s.language === 'both' && (
             <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
               {(['de', 'en'] as const).map(l => {
                 const active = lang === l;
                 return (
-                  <button key={l} onClick={() => { setLang(l); sessionStorage.setItem('qq_lang', l); }}
+                  <button key={l} onClick={() => setLang(l)}
                     style={{
                       padding: '4px 8px', borderRadius: 8, cursor: 'pointer',
                       fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
@@ -219,6 +223,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
                 );
               })}
             </div>
+            )}
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>
                 P{s.gamePhaseIndex}/{s.totalPhases}

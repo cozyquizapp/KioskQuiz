@@ -84,7 +84,10 @@ export default function QQModeratorPage() {
       }
       questions = await res.json();
     }
-    await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme });
+    if (!ack.ok) {
+      alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
+    }
   }
 
   function applyTimer() {

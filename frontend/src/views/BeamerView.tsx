@@ -1714,8 +1714,31 @@ useEffect(() => {
     const slide = introSlides[introIndex % introSlides.length];
     const backLabel = language === 'de' ? 'Zurück' : 'Back';
     const nextLabel = language === 'de' ? 'Weiter' : 'Next';
+    // Fallback-Hinweis anzeigen, wenn keine Custom Slides geladen wurden
+    const isFallback = introSlides === INTRO_SLIDE_MAP[language];
     return (
-      <div style={{ ...cardFrame, padding: 0 }}>
+      <div style={{ ...cardFrame, padding: 0, position: 'relative' }}>
+        {isFallback && (
+          <div style={{
+            position: 'absolute',
+            top: 18,
+            right: 24,
+            zIndex: 10,
+            background: 'rgba(255, 196, 0, 0.92)',
+            color: '#222',
+            fontWeight: 700,
+            fontSize: 16,
+            borderRadius: 10,
+            padding: '8px 18px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.13)',
+            border: '1px solid #ffe082',
+            letterSpacing: '0.01em'
+          }}>
+            {language === 'de'
+              ? 'Hinweis: Es sind noch keine eigenen Folien gespeichert. Es werden die Standard-Intro-Slides angezeigt.'
+              : 'Note: No custom slides saved yet. Showing default intro slides.'}
+          </div>
+        )}
         <div
           style={{
             position: 'relative',

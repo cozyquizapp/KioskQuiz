@@ -7727,7 +7727,7 @@ app.get('/api/qq/questions/from-draft/:draftId', async (req, res) => {
 
     const result = mapping.map(([slotIdx, category, phaseIndex, questionIndexInPhase]) => {
       const q = qs[slotIdx];
-      return {
+      const entry: any = {
         id: `${draftId}-qq-p${phaseIndex}-q${questionIndexInPhase}`,
         category,
         phaseIndex,
@@ -7737,6 +7737,11 @@ app.get('/api/qq/questions/from-draft/:draftId', async (req, res) => {
         answer:   q ? qqExtractAnswer(q) : '?',
         answerEn: q ? qqExtractAnswerEn(q) : undefined,
       };
+      // Pass through targetValue for Schätzchen (estimate) questions
+      if (category === 'SCHAETZCHEN' && q?.mechanic === 'estimate' && (q as any).targetValue != null) {
+        entry.targetValue = (q as any).targetValue;
+      }
+      return entry;
     });
 
     res.json(result);

@@ -7,7 +7,8 @@
     "text": "Wie viele Einwohner hat Wien?",
     "textEn": "How many inhabitants does Vienna have?",
     "answer": "ca. 2 Millionen",
-    "answerEn": "approx. 2 million"
+    "answerEn": "approx. 2 million",
+    "targetValue": 2000000
   },
   {
     "id": "qq-m1-1",
@@ -57,7 +58,8 @@
     "text": "Wie viele Knochen hat ein erwachsener Mensch?",
     "textEn": "How many bones does an adult human have?",
     "answer": "206",
-    "answerEn": "206"
+    "answerEn": "206",
+    "targetValue": 206
   },
   {
     "id": "qq-m2-1",
@@ -107,7 +109,8 @@
     "text": "Wie hoch ist der Eiffelturm in Metern?",
     "textEn": "How tall is the Eiffel Tower in meters?",
     "answer": "330 Meter",
-    "answerEn": "330 meters"
+    "answerEn": "330 meters",
+    "targetValue": 330
   },
   {
     "id": "qq-m3-1",

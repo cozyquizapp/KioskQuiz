@@ -111,19 +111,20 @@ export function qqJoinTeam(
   teamName: string,
   avatarId: string
 ): void {
+  if (room.teams[teamId]) {
+    // Rejoin — update avatar/name, keep color, mark connected (works in any phase)
+    room.teams[teamId].name      = teamName;
+    room.teams[teamId].avatarId  = avatarId;
+    room.teams[teamId].connected = true;
+    return;
+  }
+  // New team — only in LOBBY
   if (room.phase !== 'LOBBY') {
     throw new QQError('GAME_STARTED', 'Das Spiel hat bereits begonnen.');
   }
   const existingCount = Object.keys(room.teams).length;
   if (existingCount >= 5) {
     throw new QQError('ROOM_FULL', 'Maximale Teamanzahl (5) erreicht.');
-  }
-  if (room.teams[teamId]) {
-    // Rejoin — update avatar/name, keep color
-    room.teams[teamId].name      = teamName;
-    room.teams[teamId].avatarId  = avatarId;
-    room.teams[teamId].connected = true;
-    return;
   }
   const colorIndex = existingCount % QQ_TEAM_PALETTE.length;
   room.teams[teamId] = {

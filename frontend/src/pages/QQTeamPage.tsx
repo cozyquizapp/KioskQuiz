@@ -174,13 +174,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
   const teamColor     = myTeam?.color ?? '#3B82F6';
+  const [lang, setLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
 
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
 
-      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '12px 16px 24px', position: 'relative', zIndex: 5 }}>
+      <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
         {/* Team header */}
         {myTeam && (
@@ -199,6 +200,25 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
                 {myTeam.largestConnected} verbunden · {myTeam.totalCells} gesamt
               </div>
             </div>
+            {/* Language selector */}
+            <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+              {(['de', 'en'] as const).map(l => {
+                const active = lang === l;
+                return (
+                  <button key={l} onClick={() => { setLang(l); sessionStorage.setItem('qq_lang', l); }}
+                    style={{
+                      padding: '4px 8px', borderRadius: 8, cursor: 'pointer',
+                      fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+                      border: `1px solid ${active ? teamColor : 'rgba(255,255,255,0.08)'}`,
+                      background: active ? `${teamColor}22` : 'transparent',
+                      color: active ? teamColor : '#475569',
+                      transition: 'all 0.15s',
+                    }}>
+                    {l.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>
                 P{s.gamePhaseIndex}/{s.totalPhases}
@@ -214,7 +234,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} />}
         {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-          <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />
+          <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'PLACEMENT' && (
           <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} />
@@ -295,8 +315,8 @@ function PhaseIntroCard({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
-function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
-  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string;
+function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; lang: 'de' | 'en';
 }) {
   const q = s.currentQuestion;
   if (!q) return null;
@@ -316,10 +336,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
         boxShadow: `0 0 16px ${catColor}22`,
       }}>
         <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
-        {s.language === 'en' ? catLabel.en : catLabel.de}
-        {s.language === 'both' && catLabel.en !== catLabel.de && (
-          <span style={{ opacity: 0.5, fontSize: 11 }}>· {catLabel.en}</span>
-        )}
+        {lang === 'en' ? catLabel.en : catLabel.de}
       </div>
 
       {/* Timer bar */}
@@ -329,16 +346,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
 
       {/* Question text */}
       <div style={{
-        fontSize: 'clamp(17px, 4.5vw, 22px)', fontWeight: 900, lineHeight: 1.3,
-        color: '#F1F5F9', marginBottom: 12,
+        fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 900, lineHeight: 1.3,
+        color: '#F8FAFC', marginBottom: 14,
       }}>
-        {s.language === 'en' && q.textEn ? q.textEn : q.text}
+        {lang === 'en' && q.textEn ? q.textEn : q.text}
       </div>
-      {s.language === 'both' && q.textEn && (
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#475569', marginBottom: 12 }}>
-          {q.textEn}
-        </div>
-      )}
 
       {/* Answer input (active only) */}
       {!isRevealed && s.hotPotatoActiveTeamId === myTeamId && (
@@ -370,7 +382,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
         </div>
       )}
       {!isRevealed && (
-        <AnswerInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} />
+        <AnswerInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />
       )}
 
       {/* Revealed answer */}
@@ -382,7 +394,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
           animation: 'tcreveal 0.4s ease both',
         }}>
           ✓ {s.revealedAnswer}
-          {s.language === 'both' && q.answerEn && q.answerEn !== s.revealedAnswer && (
+          {lang === 'en' && q.answerEn && q.answerEn !== s.revealedAnswer && (
             <div style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: 'rgba(74,222,128,0.5)', marginTop: 4 }}>
               {q.answerEn}
             </div>
@@ -448,8 +460,8 @@ function SubmittedBadge({ text }: { text: string }) {
 }
 
 // ── Main AnswerInput router ───────────────────────────────────────────────────
-function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor }: {
-  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string;
+function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
 }) {
   const q = s.currentQuestion;
   const myAnswer = s.answers.find(a => a.teamId === myTeamId);
@@ -467,15 +479,15 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor }: {
   if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') return null;
 
   // Route by category
-  if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
-  if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
-  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `Zahl (${s.language === 'en' && q.unitEn ? q.unitEn : q.unit}) eingeben…` : 'Zahl eingeben…'} />;
+  if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
+  if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
+  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `Zahl (${lang === 'en' && q.unitEn ? q.unitEn : q.unit}) eingeben…` : 'Zahl eingeben…'} />;
   if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
-    if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={s.language} />;
-    if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} onSubmit={submitText} usedIds={s.answers.map(a => a.text)} lang={s.language} />;
-    if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
+    if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} />;
+    if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} onSubmit={submitText} usedIds={s.answers.map(a => a.text)} lang={lang} />;
+    if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'map') return <PinItInput catColor={catColor} onSubmit={submitText} />;
   }
   // Fallback
@@ -919,7 +931,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   const isFree = s.pendingAction === 'FREE';
   const isSwap = s.comebackAction === 'SWAP_2' && s.pendingAction === 'COMEBACK';
   const isSteal = s.pendingAction === 'STEAL_1' || (isFree && freeMode === 'STEAL');
-  const cellSize = Math.min(52, Math.floor(300 / s.gridSize));
+  const cellSize = Math.min(60, Math.floor(340 / s.gridSize));
 
   useEffect(() => { if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); } }, [isMyTurn]);
 
@@ -1186,8 +1198,8 @@ function CozyCard({ children, anim, borderColor }: { children: React.ReactNode; 
   return (
     <div style={{
       background: '#1B1510',
-      border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.07)'}`,
-      borderRadius: 20, padding: '18px 18px', marginBottom: 12,
+      border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
+      borderRadius: 20, padding: '20px 18px', marginBottom: 14,
       boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)${borderColor ? `, 0 0 20px ${borderColor}18` : ''}`,
       animation: anim ? 'tcreveal 0.4s ease both' : undefined,
     }}>
@@ -1199,7 +1211,7 @@ function CozyCard({ children, anim, borderColor }: { children: React.ReactNode; 
 function CozyBtn({ children, color, onClick, disabled }: { children: React.ReactNode; color: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      width: '100%', padding: '14px', borderRadius: 14, fontFamily: 'inherit', fontWeight: 900, fontSize: 16,
+      width: '100%', padding: '16px', borderRadius: 14, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
       border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : color}`,
       background: disabled ? 'rgba(255,255,255,0.04)' : `${color}22`,
       color: disabled ? '#334155' : color,
@@ -1239,8 +1251,8 @@ const grainOverlay: React.CSSProperties = {
   opacity: 0.04, mixBlendMode: 'overlay',
 };
 const cozyInput: React.CSSProperties = {
-  width: '100%', padding: '12px 16px', borderRadius: 12, marginBottom: 12,
-  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)',
-  color: '#F1F5F9', fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
+  width: '100%', padding: '14px 16px', borderRadius: 12, marginBottom: 12,
+  border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
+  color: '#F1F5F9', fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
   boxSizing: 'border-box', outline: 'none',
 };

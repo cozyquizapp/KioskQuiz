@@ -31,6 +31,7 @@ const BEAMER_CSS = `
   @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
   @keyframes imgSlideL { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
   @keyframes imgSlideR { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes langFadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 `;
 
 // ── Category themes ───────────────────────────────────────────────────────────
@@ -85,6 +86,19 @@ const FF = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const QQ_ROOM = 'default';
+
+/** In 'both' mode, alternate between de and en every 8 s with a fade transition. */
+function useLangFlip(serverLang: string): 'de' | 'en' {
+  const [flip, setFlip] = useState(false);
+  useEffect(() => {
+    if (serverLang !== 'both') return;
+    const iv = setInterval(() => setFlip(f => !f), 8000);
+    return () => clearInterval(iv);
+  }, [serverLang]);
+  if (serverLang === 'de') return 'de';
+  if (serverLang === 'en') return 'en';
+  return flip ? 'en' : 'de';
+}
 function actionVerb(a: string | null) {
   if (a === 'STEAL_1') return '⚡ Klauen';
   if (a === 'COMEBACK') return '⚡ Comeback';
@@ -344,6 +358,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
   const cutouts = CAT_CUTOUTS[cat] ?? [];
   const img = q.image;
   const hasImg = img && img.layout !== 'none' && img.url;
+  const lang = useLangFlip(s.language);
 
   // Intro overlay only during QUESTION_ACTIVE (first mount via key=q.id)
   const showIntro = !revealed;
@@ -414,7 +429,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff',
             animation: 'introBadgePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
           }}>
-            {catLabel.emoji} {s.language === 'en' ? catLabel.en : catLabel.de}
+            {catLabel.emoji} {lang === 'en' ? catLabel.en : catLabel.de}
           </div>
           <div style={{
             fontFamily: "'Caveat', cursive",
@@ -436,16 +451,28 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 44px', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
 
           {/* Category badge */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20, alignSelf: 'flex-start',
-            padding: '8px 22px', borderRadius: 999,
-            background: badgeBg,
-            boxShadow: `0 0 28px ${glow}, 0 4px 10px rgba(0,0,0,0.4)`,
-            fontSize: 13, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff',
-          }}>
-            <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
-            <span>{s.language === 'en' ? catLabel.en : catLabel.de}</span>
-            {s.language === 'both' && catLabel.en !== catLabel.de && <span style={{ opacity: 0.6 }}>· {catLabel.en}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 22px', borderRadius: 999,
+              background: badgeBg,
+              boxShadow: `0 0 28px ${glow}, 0 4px 10px rgba(0,0,0,0.4)`,
+              fontSize: 13, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff',
+            }}>
+              <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
+              <span key={lang} style={{ animation: 'langFadeIn 0.4s ease both' }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
+            </div>
+            {s.language === 'both' && (
+              <span key={`lang-pill-${lang}`} style={{
+                padding: '4px 12px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.5)',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                animation: 'langFadeIn 0.4s ease both',
+              }}>
+                {lang === 'en' ? '🇬🇧 EN' : '🇩🇪 DE'}
+              </span>
+            )}
           </div>
 
           {/* Counter + timer row */}
@@ -463,27 +490,19 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
           {/* Question card */}
           <div style={{
             background: '#1B1510',
-            border: `1px solid rgba(255,255,255,0.07)`,
+            border: `1px solid rgba(255,255,255,0.08)`,
             borderRadius: 22,
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            padding: '28px 36px',
+            padding: '32px 40px',
             marginBottom: 20,
           }}>
-            <div style={{
+            <div key={lang} style={{
               fontSize: 'clamp(26px, 3.6vw, 58px)', fontWeight: 900, lineHeight: 1.22,
               color: '#F1F5F9',
+              animation: 'langFadeIn 0.4s ease both',
             }}>
-              {q.text}
+              {lang === 'en' && q.textEn ? q.textEn : q.text}
             </div>
-            {q.textEn && s.language !== 'de' && (
-              <div style={{
-                fontFamily: "'Caveat', cursive",
-                fontSize: 'clamp(16px, 2vw, 26px)', color: 'rgba(255,255,255,0.3)',
-                marginTop: 12, fontStyle: 'italic',
-              }}>
-                {q.textEn}
-              </div>
-            )}
           </div>
 
           {/* Answer reveal */}
@@ -497,7 +516,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
               color: '#4ade80', marginBottom: 14,
               animation: 'contentReveal 0.4s ease both',
             }}>
-              ✓ {s.revealedAnswer}
+              ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
             </div>
           )}
 
@@ -568,7 +587,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
 
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : 400,
+          width: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : 480,
           overflow: 'hidden',
           flexShrink: 0, padding: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
@@ -617,7 +636,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
               })}
             </div>
           )}
-          <GridDisplay state={s} maxSize={360} />
+          <GridDisplay state={s} maxSize={440} />
           <ScoreBar teams={s.teams} />
         </div>
       </div>
@@ -671,8 +690,8 @@ function PlacementView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Center: large grid + scores */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '20px 44px', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={520} highlightTeam={s.pendingFor} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 200 }}>
+        <GridDisplay state={s} maxSize={600} highlightTeam={s.pendingFor} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 240 }}>
           <ScoreBar teams={s.teams} />
         </div>
       </div>
@@ -734,8 +753,8 @@ function ComebackView({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       {/* Right: grid */}
-      <div style={{ width: 420, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={360} highlightTeam={s.comebackTeamId} />
+      <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
+        <GridDisplay state={s} maxSize={440} highlightTeam={s.comebackTeamId} />
         <ScoreBar teams={s.teams} />
       </div>
     </div>
@@ -812,7 +831,7 @@ function GameOverView({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       {/* Right: final grid */}
-      <div style={{ width: 400, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
+      <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
         {winner && (
           <div style={{ textAlign: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 56, lineHeight: 1, animation: 'winnerPulse 2s ease-in-out infinite' }}>
@@ -823,7 +842,7 @@ function GameOverView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
         )}
-        <GridDisplay state={s} maxSize={360} />
+        <GridDisplay state={s} maxSize={440} />
       </div>
     </div>
   );
@@ -945,20 +964,20 @@ function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {sorted.map((t, i) => (
         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 18, width: 26, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+          <span style={{ fontSize: 22, width: 30, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>
+              <span style={{ fontSize: 14, fontWeight: 900, color: t.color }}>{t.name}</span>
+              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>
                 {t.largestConnected}<span style={{ opacity: 0.5 }}> / {t.totalCells}</span>
               </span>
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 3,
+                height: '100%', borderRadius: 4,
                 background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
                 width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
                 transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',

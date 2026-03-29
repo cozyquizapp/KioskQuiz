@@ -127,6 +127,7 @@ import {
   getQQDraftFromDB,
   saveQQDraftToDB,
   deleteQQDraftFromDB,
+  getQQGameResults,
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -7838,6 +7839,16 @@ app.delete('/api/qq/drafts/:id', async (req, res) => {
   qqDrafts = qqDrafts.filter(d => d.id !== req.params.id);
   cache.del('qqDrafts');
   res.json({ ok: true });
+});
+
+// QQ Game Results — history & stats
+app.get('/api/qq/results', async (_req, res) => {
+  try {
+    const results = await getQQGameResults(100);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Laden der Spielergebnisse' });
+  }
 });
 
 // Background removal via Cloudinary e_background_removal

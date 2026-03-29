@@ -1,6 +1,7 @@
 // ── Quarter Quiz — Socket event handlers ─────────────────────────────────────
 
 import { Server as SocketIOServer } from 'socket.io';
+import { saveQQGameResult } from '../db/schemas';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
   QQStartGamePayload, QQRevealAnswerPayload, QQMarkCorrectPayload,
@@ -43,6 +44,29 @@ function broadcast(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
+  if (room.phase === 'GAME_OVER') persistGameResult(room);
+}
+
+function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
+  if (!room) return;
+  const teamList = Object.values(room.teams);
+  const scores: Record<string, number> = {};
+  teamList.forEach((t: any) => { scores[t.id] = (room.teamPhaseStats[t.id] as any)?.totalScore ?? 0; });
+  const sorted = [...teamList].sort((a: any, b: any) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
+  const winner = (sorted[0] as any)?.name ?? null;
+  const result = {
+    id: `qqr-${room.roomCode}-${Date.now().toString(36)}`,
+    draftId: room.draftId ?? null,
+    draftTitle: room.draftTitle ?? 'Unbekannt',
+    roomCode: room.roomCode,
+    playedAt: Date.now(),
+    teams: teamList.map((t: any) => ({ id: t.id, name: t.name, color: t.color, score: scores[t.id] ?? 0 })),
+    winner,
+    phases: room.totalPhases,
+    language: room.language,
+    grid: room.grid,
+  };
+  saveQQGameResult(result).catch(() => {/* fire and forget */});
 }
 
 /**
@@ -112,7 +136,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:startGame', (payload: QQStartGamePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme, payload.draftId);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme, payload.draftId, payload.draftTitle);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

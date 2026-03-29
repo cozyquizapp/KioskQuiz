@@ -57,6 +57,7 @@ export interface QQRoomState {
   totalPhases: 3 | 4;
   theme?: import('../../../shared/quarterQuizTypes').QQTheme;
   draftId?: string;
+  draftTitle?: string;
   lastActivityAt: number;
 }
 
@@ -177,7 +178,8 @@ export function qqStartGame(
   language: QQLanguage,
   phases: 3 | 4 = 3,
   theme?: import('../../../shared/quarterQuizTypes').QQTheme,
-  draftId?: string
+  draftId?: string,
+  draftTitle?: string
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -206,6 +208,7 @@ export function qqStartGame(
   room.swapFirstCell   = null;
   room.theme           = theme;
   room.draftId         = draftId;
+  room.draftTitle      = draftTitle;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {

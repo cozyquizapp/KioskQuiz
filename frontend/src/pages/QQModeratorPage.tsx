@@ -71,7 +71,8 @@ export default function QQModeratorPage() {
       if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     }
     const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : (selectedDraftId !== '__default__' ? selectedDraftId : undefined);
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId });
+    const qqDraftTitle = qqDraftId ? (drafts.find(d => d.id === qqDraftId)?.title ?? undefined) : undefined;
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }

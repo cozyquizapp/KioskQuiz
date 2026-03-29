@@ -258,3 +258,38 @@ export async function deleteQQDraftFromDB(draftId: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============= QUARTER QUIZ GAME RESULTS =============
+
+const QQGameResultSchema = new mongoose.Schema({
+  id:        { type: String, required: true, unique: true, index: true },
+  draftId:   { type: String, default: null },
+  draftTitle:{ type: String, default: 'Unbekannt' },
+  roomCode:  { type: String, default: '' },
+  playedAt:  { type: Number, default: Date.now, index: true },
+  teams: mongoose.Schema.Types.Mixed,       // Array<{id, name, color, score}>
+  winner:    { type: String, default: null }, // winning team name
+  phases:    { type: Number, default: 3 },
+  language:  { type: String, default: 'both' },
+  grid:      mongoose.Schema.Types.Mixed,   // final territory grid
+}, { strict: false });
+
+export const QQGameResultModel = mongoose.model('QQGameResult', QQGameResultSchema);
+
+export async function saveQQGameResult(result: any): Promise<void> {
+  try {
+    const doc = new QQGameResultModel({ ...result, id: result.id ?? `qqr-${Date.now().toString(36)}` });
+    await doc.save();
+  } catch (err) {
+    console.error('Fehler beim Speichern des QQ Spielergebnisses:', err);
+  }
+}
+
+export async function getQQGameResults(limit = 50): Promise<any[]> {
+  try {
+    return await QQGameResultModel.find({}).lean().sort({ playedAt: -1 }).limit(limit);
+  } catch (err) {
+    console.error('Fehler beim Laden der QQ Spielergebnisse:', err);
+    return [];
+  }
+}

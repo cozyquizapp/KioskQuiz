@@ -46,6 +46,11 @@ export default function QQTeamPage() {
 
   const { state, connected, emit } = useQQSocket(roomCode);
 
+  // Reset joined on disconnect so auto-rejoin fires on reconnect
+  useEffect(() => {
+    if (!connected && joined) setJoined(false);
+  }, [connected]);
+
   // Auto-rejoin if we have a stored session
   useEffect(() => {
     if (joined || !connected) return;

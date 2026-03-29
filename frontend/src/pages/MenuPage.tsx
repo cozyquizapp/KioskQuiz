@@ -1,240 +1,208 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-
 import { featureFlags } from '../config/features';
 
-type LinkItem = { path: string; label: string; note?: string };
+type LinkItem = { path: string; label: string; emoji: string; note?: string };
 
-// ── CozyQuiz 60 ──────────────────────────────────────────────────────────────
-const cozyLiveLinks: LinkItem[] = [
-  { path: '/moderator', label: 'Moderator', note: 'Stage wechseln, Session steuern' },
-  { path: '/beamer', label: 'Beamer', note: 'Praesentation / Slides anzeigen' },
-  { path: 'https://play.cozyquiz.app/team', label: 'Team', note: 'Mitspielen & Antworten eingeben' },
-  { path: '/qrcode', label: 'QR-Code', note: 'Beitritts-QR-Code für Teams anzeigen' },
-  { path: '/intro.html', label: 'Regelerklärvideo', note: 'Animiertes Intro mit allen Spielregeln' }
+// ── CozyQuiz 60 links ─────────────────────────────────────────────────────────
+const cozyLinks: LinkItem[] = [
+  { path: '/moderator',       label: 'Moderator',        emoji: '🎛️', note: 'Session steuern, Stages wechseln' },
+  { path: '/beamer',          label: 'Beamer',            emoji: '📽️', note: 'Präsentation & Slides anzeigen' },
+  { path: 'https://play.cozyquiz.app/team', label: 'Team', emoji: '📱', note: 'Mitspielen & Antworten eingeben' },
+  { path: '/qrcode',          label: 'QR-Code',           emoji: '🔳', note: 'Beitritts-QR für Teams' },
+  { path: '/intro.html',      label: 'Regelerklärvideo',  emoji: '🎬', note: 'Animiertes Intro mit Spielregeln' },
+  { path: '/kanban-builder',  label: 'Kanban Builder',    emoji: '🗂️', note: 'Visueller Quiz-Builder mit Drag & Drop' },
+  { path: '/question-catalog',label: 'Fragenbibliothek',  emoji: '📚', note: 'Alle Fragen durchsuchen & bearbeiten' },
 ];
 
-// ── Neues Spiel (Name TBD) ────────────────────────────────────────────────────
-const revierLiveLinks: LinkItem[] = [
-  { path: '/quarterquiz-moderator', label: 'Moderator', note: 'Fragen steuern, Gewinner bestätigen' },
-  { path: '/quarterquiz-beamer', label: 'Beamer', note: 'Grid live anzeigen' },
-  { path: '/quarterquiz-team', label: 'Team', note: 'Antworten & Felder wählen' },
-  { path: '/qq-builder', label: 'QQ Builder', note: 'Fragensätze erstellen & verwalten' },
+// ── Quarter Quiz links ────────────────────────────────────────────────────────
+const qqLinks: LinkItem[] = [
+  { path: '/quarterquiz-moderator', label: 'Moderator',       emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
+  { path: '/quarterquiz-beamer',    label: 'Beamer',           emoji: '📽️', note: 'Grid live anzeigen' },
+  { path: '/quarterquiz-team',      label: 'Team',             emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
+  { path: '/qq-builder',            label: 'QQ Builder',       emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
+  { path: '/bingo-grid-test.html',  label: 'Grid Tester',      emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
+  { path: '/sneak-peak.html',       label: 'Design Sneak Peak',emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
 ];
 
-const revierDevLinks: LinkItem[] = [
-  { path: '/bingo-grid-test.html', label: 'Grid Tester', note: 'Spielfeld & Mechaniken simulieren' },
-  { path: '/sneak-peak.html', label: 'Design Sneak Peak', note: 'Mockup: Canva-Look für das neue Design' },
+// ── Legacy ────────────────────────────────────────────────────────────────────
+const legacyLinks: LinkItem[] = [
+  { path: '/intro',              label: 'Intro & Regeln',       emoji: '📖', note: 'Pre-Show Slides / Regeln' },
+  { path: '/admin',              label: 'Admin (Legacy)',        emoji: '⚙️', note: 'Nur nutzen falls Moderator ausfällt' },
+  { path: '/creator-canvas',     label: 'Creator Canvas (alt)', emoji: '🖼️', note: 'Legacy Builder' },
+  { path: '/stats',              label: 'Stats & Leaderboard',  emoji: '📊', note: 'Letzte Runs & Frage-Verteilungen' },
 ];
 
-// ── Übergreifend ─────────────────────────────────────────────────────────────
-const builderLinks: LinkItem[] = [
-  { path: '/kanban-builder', label: 'Kanban Quiz Builder', note: 'Visueller Builder mit Drag & Drop' },
-  { path: '/question-catalog', label: 'Fragenbibliothek', note: 'Alle Fragen durchsuchen & bearbeiten' }
-];
+// ── Link helpers ──────────────────────────────────────────────────────────────
+const isExternal = (path: string) => /^https?:\/\//i.test(path) || path.endsWith('.html');
 
-// ── Legacy ───────────────────────────────────────────────────────────────────
-const toolsLinks: LinkItem[] = [
-  { path: '/intro', label: 'Intro & Regeln', note: 'Pre-Show Slides / Regeln' },
-  { path: '/admin', label: 'Admin (Legacy)', note: 'Nur nutzen, falls Moderator ausfaellt' },
-  { path: '/Baukasten Neu_neu', label: 'Baukasten Neu', note: 'Alter Struktur-Flow' },
-  { path: '/creator-canvas', label: 'Creator Canvas (alt)', note: 'Legacy Builder' },
-  { path: '/stats', label: 'Stats & Leaderboard', note: 'Letzte Runs & Frage-Verteilungen' }
-];
-
-// ── Components ────────────────────────────────────────────────────────────────
-const LinkWrapper = ({ link, children }: { link: LinkItem; children: React.ReactNode }) => {
-  const isExternal = /^https?:\/\//i.test(link.path) || link.path.endsWith('.html');
-  if (isExternal) {
-    return (
-      <a href={link.path} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link to={link.path} style={{ textDecoration: 'none', color: 'inherit' }}>
-      {children}
-    </Link>
-  );
-};
-
-const LinkCard = ({ link }: { link: LinkItem }) => (
-  <LinkWrapper link={link}>
-    <div
-      className="tool-card card-tilt tap-squish"
-      style={{
-        padding: '14px 16px',
-        borderRadius: 14,
-        border: '1px solid rgba(255,255,255,0.12)',
-        background: 'rgba(0,0,0,0.18)',
-        boxShadow: '0 16px 30px rgba(0,0,0,0.35)',
-        transition: 'transform 0.2s ease, border-color 0.2s ease'
-      }}
-    >
-      <div style={{ fontWeight: 800, fontSize: 16 }}>{link.label}</div>
-      {link.note && <div style={{ marginTop: 4, color: '#cbd5e1', fontSize: 13 }}>{link.note}</div>}
-      <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 12 }}>{link.path}</div>
-    </div>
-  </LinkWrapper>
-);
-
-const AppSection = ({
-  badge,
-  badgeColor,
-  title,
-  subtitle,
-  sections
-}: {
-  badge: string;
-  badgeColor: string;
-  title: string;
-  subtitle?: string;
-  sections: { label?: string; links: LinkItem[] }[];
-}) => (
-  <div
-    className="tool-card card-tilt"
-    style={{
-      borderRadius: 16,
-      border: `1px solid ${badgeColor}22`,
-      background: 'rgba(255,255,255,0.03)',
-      padding: '16px',
-      boxShadow: '0 16px 30px rgba(0,0,0,0.35)'
+function LinkCard({ link, accent }: { link: LinkItem; accent: string }) {
+  const inner = (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '11px 14px', borderRadius: 12,
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      transition: 'background 0.15s, border-color 0.15s',
+      cursor: 'pointer',
     }}
-  >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: subtitle ? 4 : 12 }}>
-      <div
-        style={{
-          padding: '3px 10px',
-          borderRadius: 999,
-          background: `${badgeColor}18`,
-          border: `1px solid ${badgeColor}44`,
-          color: badgeColor,
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: '0.07em',
-          textTransform: 'uppercase' as const
-        }}
-      >
-        {badge}
-      </div>
-      <div style={{ fontWeight: 800, fontSize: 16 }}>{title}</div>
-    </div>
-    {subtitle && <div style={{ color: '#64748b', fontSize: 12, marginBottom: 12 }}>{subtitle}</div>}
-
-    {sections.map((section, i) => (
-      <div key={i} style={{ marginTop: i > 0 ? 14 : 0 }}>
-        {section.label && (
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            {section.label}
-          </div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-          {section.links.map((link) => (
-            <LinkCard key={link.path} link={link} />
-          ))}
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-const CollapsibleSection = ({ title, children }: { title: string; children: React.ReactNode }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.02)',
-        padding: '12px 16px',
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.background = `${accent}14`;
+        (e.currentTarget as HTMLDivElement).style.borderColor = `${accent}44`;
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.08)';
       }}
     >
+      <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{link.emoji}</span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9', lineHeight: 1.2 }}>{link.label}</div>
+        {link.note && <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{link.note}</div>}
+      </div>
+    </div>
+  );
+
+  if (isExternal(link.path)) {
+    return <a href={link.path} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>{inner}</a>;
+  }
+  return <Link to={link.path} style={{ textDecoration: 'none', color: 'inherit' }}>{inner}</Link>;
+}
+
+// ── Expandable app panel ──────────────────────────────────────────────────────
+function AppPanel({
+  id, label, emoji, tagline, accent, links, defaultOpen = false,
+}: {
+  id: string; label: string; emoji: string; tagline: string;
+  accent: string; links: LinkItem[]; defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div style={{
+      borderRadius: 18,
+      border: `1px solid ${open ? accent + '40' : 'rgba(255,255,255,0.09)'}`,
+      background: open ? `${accent}09` : 'rgba(255,255,255,0.025)',
+      overflow: 'hidden',
+      transition: 'border-color 0.2s, background 0.2s',
+    }}>
+      {/* Header — always visible */}
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={() => setOpen(p => !p)}
         style={{
-          width: '100%', textAlign: 'left', background: 'transparent',
-          color: '#64748b', border: 'none', padding: 0, fontWeight: 700,
-          fontSize: 13, display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', cursor: 'pointer', letterSpacing: '0.04em'
+          width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+          padding: '18px 20px', background: 'transparent', border: 'none',
+          cursor: 'pointer', textAlign: 'left', color: '#e2e8f0',
         }}
       >
-        <span>{title}</span>
-        <span style={{ fontSize: 18 }}>{open ? '−' : '+'}</span>
+        <div style={{
+          width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+          background: `${accent}22`, border: `1.5px solid ${accent}44`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+        }}>
+          {emoji}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#f8fafc', lineHeight: 1.2 }}>{label}</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{tagline}</div>
+        </div>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+          background: open ? `${accent}22` : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${open ? accent + '44' : 'rgba(255,255,255,0.10)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 16, color: open ? accent : '#64748b',
+          transition: 'all 0.2s',
+        }}>
+          {open ? '−' : '+'}
+        </div>
       </button>
-      {open && <div style={{ marginTop: 14 }}>{children}</div>}
+
+      {/* Links grid */}
+      {open && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: 8, padding: '0 16px 16px',
+        }}>
+          {links.map(link => (
+            <LinkCard key={link.path} link={link} accent={accent} />
+          ))}
+        </div>
+      )}
     </div>
   );
-};
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 const MenuPage = () => {
-  const showLegacyTools = featureFlags.showLegacyPanels;
+  const showLegacy = featureFlags.showLegacyPanels;
 
   return (
-    <div
-      className="page-transition-enter-active"
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        color: '#e2e8f0',
-        padding: '40px 24px',
-        fontFamily: 'var(--font)'
-      }}
-    >
-      <div style={{ maxWidth: 740, margin: '0 auto' }}>
-        <div style={{ marginBottom: 22 }}>
-          <h1 style={{ margin: '0 0 6px', fontSize: 24 }}>Schnellzugriff</h1>
-          <p style={{ margin: '0 0 4px', color: '#64748b', fontSize: 13 }}>
-            Falls direkte URLs nicht laden: erst diese Seite öffnen, dann Link klicken (SPA-Routing).
-          </p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      color: '#e2e8f0',
+      fontFamily: 'var(--font)',
+      padding: '0 0 60px',
+    }}>
+
+      {/* ── Hero header ───────────────────────────────────────────────────── */}
+      <div style={{
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        padding: '28px 32px 24px',
+        display: 'flex', alignItems: 'center', gap: 18,
+      }}>
+        <img
+          src="/logo.png"
+          alt="Logo"
+          style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'contain' }}
+        />
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: '#f8fafc', lineHeight: 1.1 }}>
+            Cozy Kiosk Quiz
+          </div>
+          <div style={{ fontSize: 12, color: '#475569', marginTop: 3, letterSpacing: '0.04em' }}>
+            a cozy wolf production
+          </div>
         </div>
+      </div>
 
-        <div style={{ display: 'grid', gap: 14 }}>
+      {/* ── Panels ────────────────────────────────────────────────────────── */}
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* CozyQuiz 60 */}
-          <AppSection
-            badge="CozyQuiz 60"
-            badgeColor="#F59E0B"
-            title="Live spielen"
-            subtitle="Moderator → Beamer → Team"
-            sections={[{ links: cozyLiveLinks }]}
+        <AppPanel
+          id="cozy"
+          label="CozyQuiz 60"
+          emoji="🐺"
+          tagline="Das klassische Gemeinschaftsquiz — 60 Minuten, 5 Kategorien"
+          accent="#F59E0B"
+          links={cozyLinks}
+          defaultOpen={true}
+        />
+
+        <AppPanel
+          id="qq"
+          label="Quarter Quiz"
+          emoji="🗺️"
+          tagline="Territorium-Quiz — Felder erobern, Comeback kämpfen"
+          accent="#3B82F6"
+          links={qqLinks}
+          defaultOpen={true}
+        />
+
+        {showLegacy && (
+          <AppPanel
+            id="legacy"
+            label="Legacy & Tools"
+            emoji="🔧"
+            tagline="Ältere Versionen und interne Tools"
+            accent="#6B7280"
+            links={legacyLinks}
           />
+        )}
 
-          {/* Quarter Quiz / Quartier Quiz */}
-          <AppSection
-            badge="Quarter Quiz"
-            badgeColor="#3B82F6"
-            title="Quartier Quiz"
-            subtitle="Territorium-Quiz — in Entwicklung"
-            sections={[
-              { label: 'Live spielen', links: revierLiveLinks },
-              { label: 'Entwicklung & Vorschau', links: revierDevLinks },
-            ]}
-          />
-
-          {/* Übergreifend */}
-          <AppSection
-            badge="Übergreifend"
-            badgeColor="#22C55E"
-            title="Quiz erstellen & verwalten"
-            subtitle="Builder & Fragenkatalog — für beide Apps"
-            sections={[{ links: builderLinks }]}
-          />
-
-          {/* Legacy */}
-          {showLegacyTools && (
-            <CollapsibleSection title="Legacy & Tools (Erweitert)">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-                {toolsLinks.map((link) => (
-                  <LinkCard key={link.path} link={link} />
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-        </div>
       </div>
     </div>
   );

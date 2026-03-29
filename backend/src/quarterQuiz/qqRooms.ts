@@ -59,6 +59,10 @@ export interface QQRoomState {
   draftId?: string;
   draftTitle?: string;
   lastActivityAt: number;
+  /**
+   * Internal: queue of teamIds for multi-team placement (not persisted)
+   */
+  _placementQueue?: string[];
 }
 
 // ── In-process room map ───────────────────────────────────────────────────────

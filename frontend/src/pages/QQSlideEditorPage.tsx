@@ -1061,6 +1061,13 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
         <button onClick={onDelete} style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
       </div>
 
+      {/* Emoji/Icon */}
+      <Section label="Emoji / Icon">
+        <Field label="Emoji/Icon (optional)">
+          <input value={el.emoji ?? ''} onChange={e => onChange({ emoji: e.target.value })} style={{ ...input, fontSize: 22, width: 60, textAlign: 'center' }} maxLength={2} placeholder="z.B. 🎉" />
+        </Field>
+      </Section>
+
       {isPh && (
         <div style={{ padding: '7px 9px', borderRadius: 7, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#8b7cf8', lineHeight: 1.5 }}>
           Zeigt Live-Daten im Beamer. Position und Größe sind hier editierbar.
@@ -1184,16 +1191,13 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
         </Section>
       )}
 
-      {/* Animation */}
-      <Section label="Einblend-Animation">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
-          {ANIM_IN_OPTIONS.map(a => (
-            <button key={String(a)} onClick={() => onChange({ animIn: a })}
-              style={{ padding: '5px 3px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.animIn === a ? '#F59E0B22' : 'rgba(255,255,255,0.04)', color: el.animIn === a ? '#F59E0B' : '#64748b', fontFamily: 'inherit', fontSize: 10, fontWeight: 800, outline: el.animIn === a ? '1px solid #F59E0B55' : 'none' }}>
-              {a ?? 'none'}
-            </button>
-          ))}
-        </div>
+      {/* Animation & Effekte */}
+      <Section label="Animation & Effekte">
+        <Field label="Animationstyp">
+          <select value={el.animIn ?? 'none'} onChange={e => onChange({ animIn: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
+            {ANIM_IN_OPTIONS.map(a => <option key={String(a)} value={a}>{a ?? 'none'}</option>)}
+          </select>
+        </Field>
         {el.animIn && el.animIn !== 'none' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
             <Field label="Verzögerung (s)">
@@ -1203,6 +1207,20 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
               <input type="number" value={el.animDuration ?? 0.5} step={0.1} min={0.1} onChange={e => onChange({ animDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
             </Field>
           </div>
+        )}
+        <Field label="Spezialeffekt">
+          <select value={el.effect ?? ''} onChange={e => onChange({ effect: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
+            <option value="">Keiner</option>
+            <option value="glow">Glow</option>
+            <option value="pulse">Pulse</option>
+            <option value="shake">Shake</option>
+            <option value="custom">Custom (CSS)</option>
+          </select>
+        </Field>
+        {el.effect === 'custom' && (
+          <Field label="Custom CSS-Klasse">
+            <input value={el.effectClass ?? ''} onChange={e => onChange({ effectClass: e.target.value })} style={{ ...input, padding: '4px 7px' }} placeholder="z.B. my-special-effect" />
+          </Field>
         )}
       </Section>
     </div>

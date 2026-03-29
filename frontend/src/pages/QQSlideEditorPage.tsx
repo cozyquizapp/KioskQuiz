@@ -5,7 +5,7 @@ import BeamerView from '../views/BeamerView';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
-  QQSlideElementType,
+  QQSlideElementType, QQQuestion
 } from '../../../shared/quarterQuizTypes';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -146,8 +146,6 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
 // ── SlidePreview (BeamerView wrapper) ─────────────────────────────────────────
 function SlidePreview({ template }: { template: QQSlideTemplate }) {
   // Minimal BeamerView usage for static preview
-  // We pass a fake roomCode and only the template as a prop
-  // BeamerView will need to be adapted to accept a template prop for static rendering
   return (
     <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: template.background, flexShrink: 0 }}>
       <BeamerView template={template} previewMode />
@@ -171,6 +169,7 @@ export default function QQSlideEditorPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [layerPanelOpen, setLayerPanelOpen] = useState(true);
   const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
+  const [previewMode, setPreviewMode] = useState(false); // <-- Add previewMode state
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -205,10 +204,11 @@ export default function QQSlideEditorPage() {
 
   function addElement(type: QQSlideElementType) {
     const newEl: QQSlideElement = {
-      id: eid(), type, x: 20, y: 20, w: 40, h: 20, zIndex: 5,
+          id: eid(), type, x: 20, y: 20, w: 20, h: 35, zIndex: 5,
       ...(type === 'text'  ? { text: 'Text', fontSize: 3, fontWeight: 700, color: '#ffffff', textAlign: 'center' } : {}),
       ...(type === 'rect'  ? { background: 'rgba(30,41,59,0.8)', borderRadius: 12 } : {}),
       ...(type === 'image' ? { imageUrl: '', objectFit: 'contain' as const } : {}),
+          ...(type === 'animatedAvatar' ? { avatarId: 'avatar1', animType: 'wiggle', avatarAnimDuration: 1.2, avatarAnimDelay: 0 } : {}),
     };
     patchTemplate({ ...activeTemplate, elements: [...(activeTemplate.elements || []), newEl] });
     setSelectedIds([newEl.id]);
@@ -479,15 +479,14 @@ export default function QQSlideEditorPage() {
               <div>
                 <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
                 {steps.map((step, idx) => {
-                  const isActive = activeType === step.type && (!step.question || (selectedIds[0] === step.key));
-                  // For per-question slides, allow unique selection by key
+                  const isActive = activeType === step.type;
                   return (
                     <button key={step.key}
                       onClick={() => {
                         setActiveType(step.type);
-                        // For per-question slides, use question id as selectedId to allow unique editing
-                        if (step.question) setSelectedIds([step.key]);
-                        else setSelectedIds([]);
+                        // Nach Slide-Wechsel: Wähle das erste Element der neuen Slide aus (falls vorhanden)
+                        const newEls = (templates[step.type]?.elements ?? makeDefault(step.type).elements) || [];
+                        setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
                       }}
                       style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
                       {/* Thumbnail */}
@@ -557,37 +556,62 @@ export default function QQSlideEditorPage() {
             </div>
           )}
 
-          {/* Canvas area */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}
-            onClick={() => setSelectedIds([])}>
-            {/* Main editor area: restore SlideCanvas for editability */}
-            <SlideCanvas
-              template={activeTemplate}
-              selectedIds={selectedIds}
-              editingId={editingId}
-              snapLines={snapLines}
-              onSnapLinesChange={setSnapLines}
-              onSelect={(id, shift) => {
-                if (shift) {
-                  setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
-                } else {
-                  setSelectedIds([id]);
-                }
-                if (!shift) setEditingId(null);
-              }}
-              onMultiSelect={ids => setSelectedIds(ids)}
-              onClearSelect={() => setSelectedIds([])}
-              onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
-              onUpdateMulti={(patches) => {
-                const patchMap = new Map(patches.map(p => [p.id, p.patch]));
-                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => patchMap.has(e.id) ? { ...e, ...patchMap.get(e.id) } : e) });
-              }}
-              onStartEdit={setEditingId}
-              onEndEdit={(id, text) => {
-                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
-                setEditingId(null);
-              }}
-            />
+          {/* Canvas area with edit/preview toggle */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}>
+            <div style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
+              <button
+                onClick={() => setPreviewMode((prev) => !prev)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #64748b',
+                  background: previewMode ? '#334155' : '#1e293b',
+                  color: previewMode ? '#fbbf24' : '#e2e8f0',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  marginBottom: 4,
+                  marginRight: 4,
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+                title={previewMode ? 'Zurück zur Bearbeitung' : 'Vorschau anzeigen'}
+              >
+                {previewMode ? '🖉 Bearbeiten' : '👁 Vorschau'}
+              </button>
+            </div>
+            <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
+              {previewMode ? (
+                <BeamerView template={activeTemplate} previewMode={true} />
+              ) : (
+                <SlideCanvas
+                  template={activeTemplate}
+                  selectedIds={selectedIds}
+                  editingId={editingId}
+                  snapLines={snapLines}
+                  onSnapLinesChange={setSnapLines}
+                  onSelect={(id, shift) => {
+                    if (shift) {
+                      setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
+                    } else {
+                      setSelectedIds([id]);
+                    }
+                    if (!shift) setEditingId(null);
+                  }}
+                  onMultiSelect={ids => setSelectedIds(ids)}
+                  onClearSelect={() => setSelectedIds([])}
+                  onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
+                  onUpdateMulti={(patches) => {
+                    const patchMap = new Map(patches.map(p => [p.id, p.patch]));
+                    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => patchMap.has(e.id) ? { ...e, ...patchMap.get(e.id) } : e) });
+                  }}
+                  onStartEdit={setEditingId}
+                  onEndEdit={(id, text) => {
+                    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
+                    setEditingId(null);
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -865,6 +889,32 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
   onDblClick: () => void;
   onEndEdit: (text: string) => void;
 }) {
+  // Animated Avatar rendering (simple placeholder)
+  if (el.type === 'animatedAvatar') {
+    return (
+      <div className="qqse-elem"
+        style={{
+          position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+          zIndex: el.zIndex ?? 1, opacity: el.opacity ?? 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(59,130,246,0.08)', border: selected ? '2px solid #3B82F6' : '1.5px dashed #3B82F6', borderRadius: 12,
+          cursor: 'move',
+        }}
+        onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
+        onMouseDown={e => { if (!editing) { onDragStart(e); } }}
+      >
+        <div style={{ fontSize: Math.max(18, canvasW * 0.04), color: '#3B82F6', fontWeight: 900, userSelect: 'none', transition: 'transform 0.3s',
+          transform: el.animType === 'wiggle' ? 'rotate(-7deg)' : el.animType === 'bounce' ? 'translateY(-8%)' : undefined }}>
+          🕺
+        </div>
+        {selected && (
+          <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
+            Avatar · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
+          </div>
+        )}
+      </div>
+    );
+  }
   const isPh = el.type.startsWith('ph_');
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
   const editRef = useRef<HTMLDivElement>(null);
@@ -973,6 +1023,18 @@ const FONT_OPTIONS = [
   { value: 'monospace',            label: 'Monospace' },
   { value: "'Impact', sans-serif", label: 'Impact' },
 ];
+// Avatar/Animation options for animatedAvatar
+const AVATAR_OPTIONS = [
+  { id: 'avatar1', label: 'Avatar 1', icon: '🧑' },
+  { id: 'avatar2', label: 'Avatar 2', icon: '👩' },
+  { id: 'avatar3', label: 'Avatar 3', icon: '🧔' },
+  { id: 'avatar4', label: 'Avatar 4', icon: '🧑‍🦱' },
+];
+const ANIM_TYPE_OPTIONS = [
+  { value: 'wiggle', label: 'Wackeln' },
+  { value: 'walk', label: 'Gehen' },
+  { value: 'bounce', label: 'Hüpfen' },
+];
 
 function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
   element: QQSlideElement;
@@ -1000,23 +1062,45 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
     }
   }
 
+
   return (
     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
         <div style={{ flex: 1, fontSize: 12, fontWeight: 900, color: isPh ? '#A78BFA' : '#93C5FD' }}>
-          {isPh ? `[${PH_LABELS[el.type]}]` : el.type === 'text' ? '📝 Text' : el.type === 'image' ? '🖼 Bild' : '⬛ Form'}
+          {isPh ? `[${PH_LABELS[el.type]}]` : el.type === 'text' ? '📝 Text' : el.type === 'image' ? '🖼 Bild' : el.type === 'animatedAvatar' ? '🕺 Avatar' : '⬛ Form'}
         </div>
         <button onClick={onDuplicate} style={{ ...btn('#6366F1', true), padding: '2px 7px', fontSize: 11 }}>⎘</button>
         <button onClick={onDelete} style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
       </div>
 
-      {/* Emoji/Icon */}
-      <Section label="Emoji / Icon">
-        <Field label="Emoji/Icon (optional)">
-          <input value={el.emoji ?? ''} onChange={e => onChange({ emoji: e.target.value })} style={{ ...input, fontSize: 22, width: 60, textAlign: 'center' }} maxLength={2} placeholder="z.B. 🎉" />
-        </Field>
-      </Section>
+      {/* Animated Avatar Eigenschaften */}
+      {el.type === 'animatedAvatar' && (
+        <Section label="Avatar-Eigenschaften">
+          <Field label="Avatar">
+            <div style={{ display: 'flex', gap: 6 }}>
+              {AVATAR_OPTIONS.map(opt => (
+                <button key={opt.id} onClick={() => onChange({ avatarId: opt.id })} style={{
+                  padding: '6px 10px', borderRadius: 7, border: el.avatarId === opt.id ? '2px solid #3B82F6' : '1px solid #64748b', background: el.avatarId === opt.id ? '#3B82F6' : 'rgba(59,130,246,0.06)', color: el.avatarId === opt.id ? '#fff' : '#64748b', fontWeight: 800, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit',
+                }}>{opt.icon}</button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Animationstyp">
+            <select value={el.animType ?? 'wiggle'} onChange={e => onChange({ animType: e.target.value as any })} style={{ ...input, padding: '4px 7px' }}>
+              {ANIM_TYPE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            </select>
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            <Field label="Dauer (s)">
+              <input type="number" value={el.avatarAnimDuration ?? 1.2} step={0.1} min={0.1} onChange={e => onChange({ avatarAnimDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+            <Field label="Verzögerung (s)">
+              <input type="number" value={el.avatarAnimDelay ?? 0} step={0.1} min={0} onChange={e => onChange({ avatarAnimDelay: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+          </div>
+        </Section>
+      )}
 
       {isPh && (
         <div style={{ padding: '7px 9px', borderRadius: 7, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#8b7cf8', lineHeight: 1.5 }}>
@@ -1144,7 +1228,15 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
       {/* Animation & Effekte */}
       <Section label="Animation & Effekte">
         <Field label="Animationstyp">
-          <select value={el.animIn ?? 'none'} onChange={e => onChange({ animIn: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
+          <select
+            value={el.animIn ?? 'none'}
+            onChange={e => {
+              // Only allow valid animIn values
+              const val = e.target.value as QQSlideElement['animIn'];
+              onChange({ animIn: val });
+            }}
+            style={{ ...input, padding: '4px 7px' }}
+          >
             {ANIM_IN_OPTIONS.map(a => <option key={String(a)} value={a}>{a ?? 'none'}</option>)}
           </select>
         </Field>
@@ -1158,20 +1250,6 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
             </Field>
           </div>
         )}
-        <Field label="Spezialeffekt">
-          <select value={el.effect ?? ''} onChange={e => onChange({ effect: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
-            <option value="">Keiner</option>
-            <option value="glow">Glow</option>
-            <option value="pulse">Pulse</option>
-            <option value="shake">Shake</option>
-            <option value="custom">Custom (CSS)</option>
-          </select>
-        </Field>
-        {el.effect === 'custom' && (
-          <Field label="Custom CSS-Klasse">
-            <input value={el.effectClass ?? ''} onChange={e => onChange({ effectClass: e.target.value })} style={{ ...input, padding: '4px 7px' }} placeholder="z.B. my-special-effect" />
-          </Field>
-        )}
       </Section>
     </div>
   );
@@ -1184,7 +1262,7 @@ function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) 
       <div style={{ fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Element hinzufügen</div>
       <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, fontWeight: 700 }}>Statische Elemente:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-        {([['text', '📝 Text — statischer Text'], ['image', '🖼 Bild — URL oder hochladen'], ['rect', '⬛ Form — Hintergrund, Overlay']] as const).map(([t, label]) => (
+          {([['text', '📝 Text — statischer Text'], ['image', '🖼 Bild — URL oder hochladen'], ['rect', '⬛ Form — Hintergrund, Overlay'], ['animatedAvatar', '🕺 Avatar — animiert']] as const).map(([t, label]) => (
           <button key={t} onClick={() => onAdd(t)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.06)', color: '#93C5FD', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, textAlign: 'left' }}>{label}</button>
         ))}
       </div>

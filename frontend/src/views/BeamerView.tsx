@@ -393,11 +393,12 @@ const BeamerWalkingAvatar: React.FC<{
 const BeamerView = ({ roomCode, template, previewMode }: BeamerProps) => {
     // If in previewMode and template is provided, render a static slide preview
     if (previewMode && template) {
-      // Render the template as a static slide (no game state, no socket, no timers)
-      // This is a minimal rendering for editor/preview context
+      // Editor-Preview: Zeige animierten Hintergrund (ParticleCanvas) wie im Live-Modus
       const sorted = [...(template.elements || [])].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
       return (
         <div style={{ width: '100%', height: '100%', aspectRatio: '16/9', position: 'relative', background: template.background, borderRadius: 8, overflow: 'hidden' }}>
+          {/* Animierter Hintergrund wie im Live-Modus */}
+          <ParticleCanvas background={template.background} />
           {sorted.map(el => {
             const isPh = el.type.startsWith('ph_');
             if (el.type === 'rect') {

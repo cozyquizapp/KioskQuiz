@@ -3,7 +3,10 @@ import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
   QQQuestionImage,
+  QQSlideTemplates, QQSlideTemplate, QQSlideElement,
 } from '../../../shared/quarterQuizTypes';
+
+const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = `
@@ -137,6 +140,8 @@ function imgFilter(img: { brightness?: number; contrast?: number; blur?: number 
 export default function QQBeamerPage() {
   const roomCode = QQ_ROOM;
   const [joined, setJoined] = useState(false);
+  const [slideTemplates, setSlideTemplates] = useState<QQSlideTemplates>({});
+  const fetchedDraftId = useRef<string | null>(null);
   const { state, connected, emit } = useQQSocket(roomCode);
 
   useEffect(() => {
@@ -154,23 +159,40 @@ export default function QQBeamerPage() {
     document.head.appendChild(link);
   }, []);
 
+  // Fetch slide templates when draftId becomes available
+  useEffect(() => {
+    const draftId = state?.draftId;
+    if (!draftId || fetchedDraftId.current === draftId) return;
+    fetchedDraftId.current = draftId;
+    fetch(`${API_BASE}/qq/drafts/${encodeURIComponent(draftId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(draft => {
+        if (draft?.slideTemplates) setSlideTemplates(draft.slideTemplates);
+      })
+      .catch(() => {/* ignore — fallback to hardcoded components */});
+  }, [state?.draftId]);
+
   if (!state) return <LoadingScreen roomCode={roomCode} connected={connected} />;
-  return <BeamerView state={state} />;
+  return <BeamerView state={state} slideTemplates={slideTemplates} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Beamer view — top-level router
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function BeamerView({ state: s }: { state: QQStateUpdate }) {
+function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates }) {
   const cat = s.currentQuestion?.category;
   const bg = s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
 
+  // Resolve slide template type for current phase
+  const templateType = resolveTemplateType(s);
+  const activeTemplate = templateType ? slideTemplates[templateType] : undefined;
+
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
-      background: bg,
+      background: activeTemplate?.background ?? bg,
       fontFamily: "'Nunito', system-ui, sans-serif",
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
@@ -186,16 +208,365 @@ function BeamerView({ state: s }: { state: QQStateUpdate }) {
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
-      {s.phase === 'LOBBY'           && <LobbyView state={s} />}
-      {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-      {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-        <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} />
+      {activeTemplate ? (
+        <CustomSlide template={activeTemplate} state={s} />
+      ) : (
+        <>
+          {s.phase === 'LOBBY'           && <LobbyView state={s} />}
+          {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
+          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
+            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} />
+          )}
+          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
+          {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
+          {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
+        </>
       )}
-      {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
-      {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
-      {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
     </div>
   );
+}
+
+// ─── Template type resolver ────────────────────────────────────────────────────
+function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQuizTypes').QQSlideTemplateType | null {
+  switch (s.phase) {
+    case 'LOBBY':           return 'LOBBY';
+    case 'PHASE_INTRO': {
+      const idx = s.gamePhaseIndex as number;
+      if (idx === 1) return 'PHASE_INTRO_1';
+      if (idx === 2) return 'PHASE_INTRO_2';
+      return 'PHASE_INTRO_3';
+    }
+    case 'QUESTION_ACTIVE':
+    case 'QUESTION_REVEAL': {
+      const cat = s.currentQuestion?.category;
+      if (cat === 'SCHAETZCHEN')   return 'QUESTION_SCHAETZCHEN';
+      if (cat === 'MUCHO')         return 'QUESTION_MUCHO';
+      if (cat === 'BUNTE_TUETE')   return 'QUESTION_BUNTE_TUETE';
+      if (cat === 'ZEHN_VON_ZEHN') return 'QUESTION_ZEHN';
+      if (cat === 'CHEESE')        return 'QUESTION_CHEESE';
+      return null;
+    }
+    case 'PLACEMENT':       return 'PLACEMENT';
+    case 'COMEBACK_CHOICE': return 'COMEBACK_CHOICE';
+    case 'GAME_OVER':       return 'GAME_OVER';
+    default:                return null;
+  }
+}
+
+// ─── Custom slide renderer ─────────────────────────────────────────────────────
+const SLIDE_ANIM_KEYFRAMES = `
+  @keyframes csElFadeUp    { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes csElFadeIn    { from{opacity:0} to{opacity:1} }
+  @keyframes csElPop       { from{opacity:0;transform:scale(0.6)} to{opacity:1;transform:scale(1)} }
+  @keyframes csElSlideLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes csElSlideRight{ from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+`;
+
+function elementAnimation(el: QQSlideElement): string | undefined {
+  if (!el.animIn || el.animIn === 'none') return undefined;
+  const dur = el.animDuration ?? 0.5;
+  const del = el.animDelay ?? 0;
+  const map: Record<string, string> = {
+    fadeUp:     'csElFadeUp',
+    fadeIn:     'csElFadeIn',
+    pop:        'csElPop',
+    slideLeft:  'csElSlideLeft',
+    slideRight: 'csElSlideRight',
+  };
+  const kf = map[el.animIn];
+  if (!kf) return undefined;
+  return `${kf} ${dur}s ease ${del}s both`;
+}
+
+function CustomSlide({ template, state: s }: { template: QQSlideTemplate; state: QQStateUpdate }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasW, setCanvasW] = useState(1920);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) setCanvasW(entry.contentRect.width);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const lang = useLangFlip(s.language);
+
+  return (
+    <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <style>{BEAMER_CSS + SLIDE_ANIM_KEYFRAMES}</style>
+      {template.elements.map(el => (
+        <CustomSlideElement key={el.id} el={el} state={s} canvasW={canvasW} lang={lang} />
+      ))}
+    </div>
+  );
+}
+
+function CustomSlideElement({
+  el, state: s, canvasW, lang,
+}: {
+  el: QQSlideElement;
+  state: QQStateUpdate;
+  canvasW: number;
+  lang: 'de' | 'en';
+}) {
+  const baseStyle: React.CSSProperties = {
+    position: 'absolute',
+    left:   `${el.x}%`,
+    top:    `${el.y}%`,
+    width:  `${el.w}%`,
+    height: `${el.h}%`,
+    zIndex: el.zIndex ?? 1,
+    opacity: el.opacity ?? 1,
+    transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+    animation: elementAnimation(el),
+    boxSizing: 'border-box',
+  };
+
+  const q = s.currentQuestion;
+  const cat = q?.category;
+  const accent = cat ? (CAT_ACCENT[cat] ?? '#e2e8f0') : '#e2e8f0';
+
+  switch (el.type) {
+    case 'text':
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize:      `${(el.fontSize ?? 2) * canvasW / 100}px`,
+          fontWeight:    el.fontWeight ?? 700,
+          color:         el.color ?? '#e2e8f0',
+          textAlign:     el.textAlign ?? 'left',
+          letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
+          lineHeight:    el.lineHeight ?? 1.3,
+          display:       'flex', alignItems: 'center',
+          padding:       '4px 8px',
+          whiteSpace:    'pre-wrap',
+          wordBreak:     'break-word',
+        }}>
+          {el.text ?? ''}
+        </div>
+      );
+
+    case 'image':
+      return (
+        <img
+          src={el.imageUrl ?? ''}
+          alt=""
+          style={{
+            ...baseStyle,
+            objectFit: el.objectFit ?? 'cover',
+          }}
+        />
+      );
+
+    case 'rect':
+      return (
+        <div style={{
+          ...baseStyle,
+          background:    el.background ?? 'rgba(255,255,255,0.1)',
+          borderRadius:  el.borderRadius ? `${el.borderRadius}px` : undefined,
+          border:        el.border,
+        }} />
+      );
+
+    case 'ph_question':
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize:   `${(el.fontSize ?? 3) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 900,
+          color:      el.color ?? '#F1F5F9',
+          textAlign:  el.textAlign ?? 'left',
+          lineHeight: el.lineHeight ?? 1.22,
+          display:    'flex', alignItems: 'center',
+          padding:    '8px 16px',
+          wordBreak:  'break-word',
+        }}>
+          {lang === 'en' && q?.textEn ? q.textEn : (q?.text ?? '')}
+        </div>
+      );
+
+    case 'ph_category': {
+      if (!cat) return null;
+      const catLabel = QQ_CATEGORY_LABELS[cat as QQCategory];
+      const badgeBg  = CAT_BADGE_BG[cat] ?? '#374151';
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: badgeBg,
+          borderRadius: el.borderRadius ? `${el.borderRadius}px` : 999,
+          fontSize:   `${(el.fontSize ?? 1.4) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 900,
+          color:      el.color ?? '#fff',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          gap: 8,
+        }}>
+          <span>{catLabel?.emoji}</span>
+          <span>{lang === 'en' ? catLabel?.en : catLabel?.de}</span>
+        </div>
+      );
+    }
+
+    case 'ph_timer':
+      return s.timerEndsAt ? (
+        <div style={{ ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+        </div>
+      ) : null;
+
+    case 'ph_teams':
+      return (
+        <div style={{ ...baseStyle, overflow: 'hidden' }}>
+          <ScoreBar teams={s.teams} />
+        </div>
+      );
+
+    case 'ph_grid':
+      return (
+        <div style={{ ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <GridDisplay state={s} maxSize={Math.min(el.w, el.h) * canvasW / 100 * 0.9} />
+        </div>
+      );
+
+    case 'ph_answer':
+      return s.revealedAnswer ? (
+        <div style={{
+          ...baseStyle,
+          fontSize:   `${(el.fontSize ?? 2.5) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 900,
+          color:      el.color ?? '#4ade80',
+          textAlign:  el.textAlign ?? 'left',
+          display:    'flex', alignItems: 'center',
+          padding:    '8px 16px',
+        }}>
+          ✓ {lang === 'en' && q?.answerEn ? q.answerEn : s.revealedAnswer}
+        </div>
+      ) : null;
+
+    case 'ph_winner': {
+      const winner = s.correctTeamId ? s.teams.find(t => t.id === s.correctTeamId) : null;
+      return winner ? (
+        <div style={{
+          ...baseStyle,
+          display:    'flex', alignItems: 'center', gap: 12,
+          fontSize:   `${(el.fontSize ?? 2) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 900,
+          color:      el.color ?? winner.color,
+          padding:    '8px 16px',
+        }}>
+          <span style={{ fontSize: `${(el.fontSize ?? 2.5) * canvasW / 100}px` }}>
+            {qqGetAvatar(winner.avatarId).emoji}
+          </span>
+          <span>{winner.name}</span>
+        </div>
+      ) : null;
+    }
+
+    case 'ph_phase_name': {
+      const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Finale' };
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize:   `${(el.fontSize ?? 8) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 900,
+          color:      el.color ?? '#e2e8f0',
+          textAlign:  el.textAlign ?? 'center',
+          display:    'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {phaseNames[s.gamePhaseIndex] ?? `Phase ${s.gamePhaseIndex}`}
+        </div>
+      );
+    }
+
+    case 'ph_phase_desc': {
+      const phaseDescs: Record<number, string> = { 1: 'Felder besetzen', 2: 'Setzen oder Klauen', 3: 'Alles aufs Spiel' };
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize:   `${(el.fontSize ?? 2.5) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 700,
+          color:      el.color ?? 'rgba(255,255,255,0.6)',
+          textAlign:  el.textAlign ?? 'center',
+          display:    'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {phaseDescs[s.gamePhaseIndex] ?? ''}
+        </div>
+      );
+    }
+
+    case 'ph_room_code':
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize:      `${(el.fontSize ?? 2) * canvasW / 100}px`,
+          fontWeight:    el.fontWeight ?? 900,
+          color:         el.color ?? '#e2e8f0',
+          textAlign:     el.textAlign ?? 'center',
+          letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : '0.06em',
+          display:       'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {s.roomCode}
+        </div>
+      );
+
+    case 'ph_options': {
+      if (!q?.options) return null;
+      const muchoLabels  = ['A', 'B', 'C', 'D'];
+      const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+      const cols = cat === 'MUCHO' ? 2 : 3;
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gap: 10, padding: 8,
+          alignContent: 'start',
+        }}>
+          {q.options.map((opt, i) => {
+            const optImg    = q.optionImages?.[i];
+            const isCorrect = s.phase === 'QUESTION_REVEAL' && i === q.correctOptionIndex;
+            const label     = cat === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
+            const optColor  = cat === 'MUCHO' ? MUCHO_COLORS[i] : accent;
+            const optText   = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
+            return (
+              <div key={i} style={{
+                position: 'relative', overflow: 'hidden',
+                borderRadius: 14, padding: '12px 16px',
+                background: isCorrect ? 'rgba(34,197,94,0.2)' : '#1B1510',
+                border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                {optImg?.url && (
+                  <img src={optImg.url} alt="" style={{
+                    position: 'absolute', inset: 0, width: '100%', height: '100%',
+                    objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4, pointerEvents: 'none',
+                  }} />
+                )}
+                <div style={{
+                  position: 'relative', zIndex: 1,
+                  width: 30, height: 30, borderRadius: 8,
+                  background: isCorrect ? '#22C55E' : optColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0,
+                }}>{isCorrect ? '✓' : label}</div>
+                <div style={{
+                  position: 'relative', zIndex: 1,
+                  fontSize: `${(el.fontSize ?? 1.6) * canvasW / 100}px`,
+                  fontWeight: 800, color: '#F1F5F9', lineHeight: 1.3,
+                }}>{optText}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    default:
+      return null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -368,7 +739,9 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
   const glow = CAT_GLOW[cat] ?? 'transparent';
   const cutouts = CAT_CUTOUTS[cat] ?? [];
   const img = q.image;
-  const hasImg = img && img.layout !== 'none' && img.url;
+  // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
+  const isCheese = cat === 'CHEESE';
+  const hasImg = img && img.url && (isCheese || img.layout !== 'none');
   const lang = useLangFlip(s.language);
 
   // Intro overlay only during QUESTION_ACTIVE (first mount via key=q.id)
@@ -520,6 +893,35 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
               {lang === 'en' && q.textEn ? q.textEn : q.text}
             </div>
           </div>
+
+          {/* CHEESE center-stage image — shown when not handled by existing window/fullscreen/cutout renderers */}
+          {isCheese && hasImg && img && img.layout !== 'window-left' && img.layout !== 'window-right' && img.layout !== 'fullscreen' && img.layout !== 'cutout' && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              marginBottom: 20,
+              animation: showIntro ? 'contentReveal 0.7s ease 2.3s both' : 'contentReveal 0.5s ease 0.1s both',
+            }}>
+              <img
+                src={img.bgRemovedUrl || img.url}
+                alt=""
+                style={{
+                  maxWidth: '55%', maxHeight: '70vh',
+                  borderRadius: img.bgRemovedUrl ? 0 : 22,
+                  objectFit: 'contain',
+                  boxShadow: img.bgRemovedUrl
+                    ? 'none'
+                    : `0 16px 56px rgba(0,0,0,0.6), 0 0 40px ${glow}`,
+                  filter: [
+                    img.bgRemovedUrl ? 'drop-shadow(0 20px 48px rgba(0,0,0,0.7))' : '',
+                    imgFilter(img) ?? '',
+                  ].filter(Boolean).join(' ') || undefined,
+                  animation: imgAnim(img.animation, 'center', img.animDelay, img.animDuration),
+                  transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+                  opacity: img.opacity ?? 1,
+                }}
+              />
+            </div>
+          )}
 
           {/* MUCHO / ZEHN_VON_ZEHN option cards */}
           {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
@@ -713,7 +1115,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
               })}
             </div>
           )}
-          <GridDisplay state={s} maxSize={440} />
+          {revealed && <GridDisplay state={s} maxSize={440} />}
           <ScoreBar teams={s.teams} />
         </div>
       </div>

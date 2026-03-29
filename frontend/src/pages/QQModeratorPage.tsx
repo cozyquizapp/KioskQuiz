@@ -70,7 +70,8 @@ export default function QQModeratorPage() {
       theme = draft.theme;
       if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     }
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme });
+    const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : (selectedDraftId !== '__default__' ? selectedDraftId : undefined);
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }

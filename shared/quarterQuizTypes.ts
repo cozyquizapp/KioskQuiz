@@ -345,6 +345,8 @@ export interface QQStateUpdate {
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
   theme?: QQTheme;
+  // Draft reference (for slide template lookup on beamer)
+  draftId?: string;
 }
 
 export type QQPendingAction =
@@ -359,7 +361,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }

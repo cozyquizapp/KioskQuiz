@@ -18,7 +18,7 @@ import {
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
-  qqAutoEvaluateEstimate,
+  qqAutoEvaluateEstimate, qqEvaluateAnswers,
   qqHotPotatoStart, qqHotPotatoEliminate,
 } from './qqRooms';
 
@@ -43,6 +43,33 @@ function broadcast(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
+}
+
+/**
+ * Run full auto-evaluation for the current question and, if there is exactly
+ * one deterministic winner, immediately call qqMarkCorrect so the moderator
+ * only needs to advance — they can still override via qq:markCorrect/Wrong.
+ *
+ * Categories with a single clear winner (MUCHO, ZEHN_VON_ZEHN with 1 best bet,
+ * SCHAETZCHEN, CHEESE exact match, BUNTE_TUETE sub-mechanics) are resolved here.
+ * When there are multiple tied winners or no winner, the moderator decides.
+ */
+function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
+  const q = room.currentQuestion;
+  if (!q) return;
+
+  // Hot Potato is handled entirely by hotPotatoCorrect/Wrong — skip
+  if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') return;
+
+  const result = qqEvaluateAnswers(room);
+  if (result.winnerTeamIds.length === 1) {
+    // Single deterministic winner → auto-mark correct
+    try {
+      qqClearBuzz(room);
+      qqMarkCorrect(room, result.winnerTeamIds[0]);
+    } catch { /* ignore if phase already advanced */ }
+  }
+  // Multiple winners or no winner: leave in QUESTION_REVEAL for moderator
 }
 
 export function registerQQHandlers(io: SocketIOServer): void {
@@ -85,7 +112,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:startGame', (payload: QQStartGamePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme, payload.draftId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -98,11 +125,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // Timer expired — reveal answer automatically and broadcast
           try {
             qqRevealAnswer(room);
-            const estWinner = qqAutoEvaluateEstimate(room);
-            if (estWinner) {
-              qqClearBuzz(room);
-              qqMarkCorrect(room, estWinner);
-            }
+            applyAutoEval(room);
           } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
         });
@@ -115,12 +138,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqRevealAnswer(room);
-        // Schätzchen auto-eval: closest numeric answer wins
-        const estWinner = qqAutoEvaluateEstimate(room);
-        if (estWinner) {
-          qqClearBuzz(room);
-          qqMarkCorrect(room, estWinner);
-        }
+        applyAutoEval(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -177,11 +195,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (allAnswered) {
           try {
             qqRevealAnswer(room);
-            const estWinner = qqAutoEvaluateEstimate(room);
-            if (estWinner) {
-              qqClearBuzz(room);
-              qqMarkCorrect(room, estWinner);
-            }
+            applyAutoEval(room);
           } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
         }

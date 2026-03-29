@@ -56,6 +56,7 @@ export interface QQRoomState {
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
   theme?: import('../../../shared/quarterQuizTypes').QQTheme;
+  draftId?: string;
   lastActivityAt: number;
 }
 
@@ -175,7 +176,8 @@ export function qqStartGame(
   questions: QQQuestion[],
   language: QQLanguage,
   phases: 3 | 4 = 3,
-  theme?: import('../../../shared/quarterQuizTypes').QQTheme
+  theme?: import('../../../shared/quarterQuizTypes').QQTheme,
+  draftId?: string
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -203,6 +205,7 @@ export function qqStartGame(
   room.comebackAction  = null;
   room.swapFirstCell   = null;
   room.theme           = theme;
+  room.draftId         = draftId;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {
@@ -331,6 +334,273 @@ export function qqAutoEvaluateEstimate(room: QQRoomState): string | null {
     }
   }
   return best?.teamId ?? null;
+}
+
+// ── Full auto-evaluation for all categories ───────────────────────────────────
+
+/**
+ * Auto-evaluate all submitted answers for the current question.
+ * Sets `isCorrect` on each QQAnswerEntry and returns an array of winning teamIds
+ * (may be multiple on ties). Returns [] if no deterministic winner can be found.
+ *
+ * Must be called in QUESTION_REVEAL phase (after qqRevealAnswer).
+ */
+export interface QQEvalResult {
+  /** TeamIds that are considered correct / winners */
+  winnerTeamIds: string[];
+  /**
+   * For ZEHN_VON_ZEHN: points each team earns (keyed by teamId).
+   * For other categories: empty object (no point calculation here).
+   */
+  earnedPoints: Record<string, number>;
+}
+
+export function qqEvaluateAnswers(room: QQRoomState): QQEvalResult {
+  const q = room.currentQuestion;
+  if (!q || room.phase !== 'QUESTION_REVEAL') {
+    return { winnerTeamIds: [], earnedPoints: {} };
+  }
+
+  switch (q.category) {
+    case 'MUCHO':       return evalMucho(room, q);
+    case 'ZEHN_VON_ZEHN': return evalAllIn(room, q);
+    case 'SCHAETZCHEN': return evalSchaetzchen(room, q);
+    case 'CHEESE':      return evalCheese(room, q);
+    case 'BUNTE_TUETE': return evalBunteTuete(room, q);
+    default:            return { winnerTeamIds: [], earnedPoints: {} };
+  }
+}
+
+// ── MUCHO (multiple choice A/B/C/D) ──────────────────────────────────────────
+function evalMucho(room: QQRoomState, q: QQQuestion): QQEvalResult {
+  if (q.correctOptionIndex == null) return { winnerTeamIds: [], earnedPoints: {} };
+
+  const LETTER_TO_INDEX: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+  const winners: string[] = [];
+
+  for (const ans of room.answers) {
+    const text = ans.text.trim().toUpperCase();
+    let submittedIndex: number | null = null;
+
+    // Accept "A"/"B"/"C"/"D"
+    if (text in LETTER_TO_INDEX) {
+      submittedIndex = LETTER_TO_INDEX[text];
+    } else {
+      // Accept "0"/"1"/"2"/"3"
+      const n = parseInt(text, 10);
+      if (!Number.isNaN(n) && n >= 0 && n <= 3) submittedIndex = n;
+    }
+
+    if (submittedIndex === q.correctOptionIndex) {
+      winners.push(ans.teamId);
+    }
+  }
+
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// ── ZEHN_VON_ZEHN / All In (bet distribution "4,3,3") ────────────────────────
+// Teams distribute 10 points across 3 options as "pts0,pts1,pts2".
+// The points bet on the correct option = their earned points.
+function evalAllIn(room: QQRoomState, q: QQQuestion): QQEvalResult {
+  if (q.correctOptionIndex == null) return { winnerTeamIds: [], earnedPoints: {} };
+
+  const earnedPoints: Record<string, number> = {};
+  let maxPoints = 0;
+
+  for (const ans of room.answers) {
+    const parts = ans.text.split(',').map(s => parseInt(s.trim(), 10));
+    if (parts.length !== 3 || parts.some(Number.isNaN)) continue;
+    const earned = parts[q.correctOptionIndex] ?? 0;
+    earnedPoints[ans.teamId] = earned;
+    if (earned > maxPoints) maxPoints = earned;
+  }
+
+  // Winners = teams who bet the most on the correct option (all who tied at max)
+  const winners: string[] = maxPoints > 0
+    ? Object.entries(earnedPoints)
+        .filter(([, pts]) => pts === maxPoints)
+        .map(([tid]) => tid)
+    : [];
+
+  return { winnerTeamIds: winners, earnedPoints };
+}
+
+// ── SCHAETZCHEN (closest numeric estimate) ────────────────────────────────────
+function evalSchaetzchen(room: QQRoomState, q: QQQuestion): QQEvalResult {
+  if (q.targetValue == null) return { winnerTeamIds: [], earnedPoints: {} };
+
+  let minDist = Infinity;
+  const distMap: Array<{ teamId: string; distance: number }> = [];
+
+  for (const ans of room.answers) {
+    const parsed = Number(ans.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+    if (Number.isNaN(parsed)) continue;
+    const distance = Math.abs(parsed - q.targetValue);
+    distMap.push({ teamId: ans.teamId, distance });
+    if (distance < minDist) minDist = distance;
+  }
+
+  if (distMap.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+
+  // All teams at minimum distance win (tie handling)
+  const winners = distMap
+    .filter(d => d.distance === minDist)
+    .map(d => d.teamId);
+
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// ── CHEESE / Picture This (text match) ───────────────────────────────────────
+function evalCheese(room: QQRoomState, q: QQQuestion): QQEvalResult {
+  const correctDE = (q.answer ?? '').trim().toLowerCase();
+  const correctEN = (q.answerEn ?? '').trim().toLowerCase();
+  const correct = new Set<string>([correctDE, correctEN].filter(Boolean));
+
+  const winners: string[] = [];
+  for (const ans of room.answers) {
+    const submitted = ans.text.trim().toLowerCase();
+    // Exact or partial match (submitted contains correct answer or vice versa)
+    const matches = [...correct].some(
+      c => c && (submitted === c || submitted.includes(c) || c.includes(submitted))
+    );
+    if (matches) winners.push(ans.teamId);
+  }
+
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// ── BUNTE_TUETE (routes to sub-mechanic evaluators) ──────────────────────────
+function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
+  const bt = q.bunteTuete;
+  if (!bt) return { winnerTeamIds: [], earnedPoints: {} };
+
+  switch (bt.kind) {
+    case 'hotPotato':  return { winnerTeamIds: [], earnedPoints: {} }; // handled via hotPotatoCorrect
+    case 'oneOfEight': return evalOneOfEight(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight);
+    case 'top5':       return evalTop5(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5);
+    case 'order':      return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
+    case 'map':        return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
+    default:           return { winnerTeamIds: [], earnedPoints: {} };
+  }
+}
+
+// oneOfEight: teams submit the index (as string) of the statement they think is false
+function evalOneOfEight(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight
+): QQEvalResult {
+  const correctIdx = bt.falseIndex;
+  const winners: string[] = [];
+
+  for (const ans of room.answers) {
+    const submitted = parseInt(ans.text.trim(), 10);
+    if (!Number.isNaN(submitted) && submitted === correctIdx) {
+      winners.push(ans.teamId);
+    }
+  }
+
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// top5: teams submit pipe-separated answers; score = number of answers that match correct list
+// Winner = team with highest score
+function evalTop5(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteTop5
+): QQEvalResult {
+  const correctDE = (bt.answers ?? []).map(s => s.trim().toLowerCase()).filter(Boolean);
+  const correctEN = (bt.answersEn ?? []).map(s => s.trim().toLowerCase()).filter(Boolean);
+  const allCorrect = new Set([...correctDE, ...correctEN]);
+
+  if (allCorrect.size === 0) return { winnerTeamIds: [], earnedPoints: {} };
+
+  let maxScore = 0;
+  const scores: Array<{ teamId: string; score: number }> = [];
+
+  for (const ans of room.answers) {
+    const submitted = ans.text.split('|').map(s => s.trim().toLowerCase()).filter(Boolean);
+    let score = 0;
+    for (const s of submitted) {
+      // Check if submitted answer matches any correct answer (partial match)
+      const matched = [...allCorrect].some(c => c && (s === c || s.includes(c) || c.includes(s)));
+      if (matched) score++;
+    }
+    scores.push({ teamId: ans.teamId, score });
+    if (score > maxScore) maxScore = score;
+  }
+
+  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {} };
+
+  const winners = scores.filter(s => s.score === maxScore).map(s => s.teamId);
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// order (Fix It): teams submit pipe-separated items in their chosen order
+// Score = number of items in the correct position vs correctOrder
+// Winner = highest score
+function evalOrder(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteOrder
+): QQEvalResult {
+  const correctOrder = bt.correctOrder ?? [];
+  const items = bt.items ?? [];
+  if (correctOrder.length === 0 || items.length === 0) {
+    return { winnerTeamIds: [], earnedPoints: {} };
+  }
+
+  // Build the correct sequence of item texts (DE)
+  const correctSequence = correctOrder.map(idx => (items[idx] ?? '').trim().toLowerCase());
+
+  let maxScore = 0;
+  const scores: Array<{ teamId: string; score: number }> = [];
+
+  for (const ans of room.answers) {
+    const submitted = ans.text.split('|').map(s => s.trim().toLowerCase()).filter(Boolean);
+    let score = 0;
+    for (let i = 0; i < Math.min(submitted.length, correctSequence.length); i++) {
+      if (submitted[i] === correctSequence[i]) score++;
+    }
+    scores.push({ teamId: ans.teamId, score });
+    if (score > maxScore) maxScore = score;
+  }
+
+  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {} };
+
+  const winners = scores.filter(s => s.score === maxScore).map(s => s.teamId);
+  return { winnerTeamIds: winners, earnedPoints: {} };
+}
+
+// map (Pin It): teams submit "lat,lng"; closest team to target wins
+// Uses simple Euclidean distance (sufficient for game purposes)
+function evalMap(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteMap
+): QQEvalResult {
+  const targetLat = bt.lat;
+  const targetLng = bt.lng;
+
+  let minDist = Infinity;
+  const distMap: Array<{ teamId: string; distance: number }> = [];
+
+  for (const ans of room.answers) {
+    const parts = ans.text.split(',');
+    if (parts.length < 2) continue;
+    const lat = parseFloat(parts[0].trim());
+    const lng = parseFloat(parts[1].trim());
+    if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
+    // Simple Pythagorean distance (fine for relative ranking across a small area)
+    const dLat = lat - targetLat;
+    const dLng = lng - targetLng;
+    const distance = Math.sqrt(dLat * dLat + dLng * dLng);
+    distMap.push({ teamId: ans.teamId, distance });
+    if (distance < minDist) minDist = distance;
+  }
+
+  if (distMap.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+
+  const winners = distMap.filter(d => d.distance === minDist).map(d => d.teamId);
+  return { winnerTeamIds: winners, earnedPoints: {} };
 }
 
 // ── Hot Potato (Bunte Tüte) ───────────────────────────────────────────────────
@@ -764,6 +1034,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     theme:            room.theme,
+    draftId:          room.draftId,
   };
 }
 

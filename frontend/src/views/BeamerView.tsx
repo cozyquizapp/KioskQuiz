@@ -3870,9 +3870,45 @@ useEffect(() => {
           status={phase === 'active' ? 'active' : phase === 'locked' ? 'locked' : 'final'}
         >
           {isMapReveal ? (
-            /* Map reveal: full-area map (its own pin→target→split layout) */
-            <div key={phase} style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-              {renderQuestionCardGrid()}
+            /* Map reveal: full-area map (all team pins + target) */
+            <div key={phase} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+              <div style={{ width: '100%', maxWidth: 900, height: 420, borderRadius: 18, overflow: 'hidden', border: '2px solid #334155', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+                <MapContainer
+                  center={[(question as any)?.bunteTuete?.lat ?? 51.1657, (question as any)?.bunteTuete?.lng ?? 10.4515]}
+                  zoom={5}
+                  style={{ width: '100%', height: '100%' }}
+                  zoomControl={true}
+                  attributionControl={false}
+                  scrollWheelZoom={false}
+                  doubleClickZoom={false}
+                  dragging={false}
+                  keyboard={false}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  {/* Zielpunkt */}
+                  <Marker position={[(question as any)?.bunteTuete?.lat ?? 51.1657, (question as any)?.bunteTuete?.lng ?? 10.4515]}>
+                    <Popup>{(question as any)?.bunteTuete?.targetLabel || (language === 'de' ? 'Ziel' : 'Target')}</Popup>
+                  </Marker>
+                  {/* Team-Pins */}
+                  {answerResults?.map((entry, idx) => {
+                    if (!entry.answer) return null;
+                    const [lat, lng] = entry.answer.split(',').map(Number);
+                    if (isNaN(lat) || isNaN(lng)) return null;
+                    const teamColor = teamColorMap[entry.teamId] || fallbackColors[idx % fallbackColors.length];
+                    return (
+                      <Marker key={entry.teamId} position={[lat, lng]} icon={L.divIcon({
+                        className: '',
+                        html: `<div style='background:${teamColor};border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.18);font-size:13px;font-weight:800;color:#fff;'>${idx + 1}</div>`
+                      })}>
+                        <Popup>{entry.teamName || entry.teamId}</Popup>
+                      </Marker>
+                    );
+                  })}
+                </MapContainer>
+              </div>
+              <div style={{ width: '100%', maxWidth: 900 }}>
+                {renderRevealAnswersList()}
+              </div>
             </div>
           ) : showSplitLayout ? (
             /* Image question: split layout (portrait=side-by-side, landscape=stacked) */

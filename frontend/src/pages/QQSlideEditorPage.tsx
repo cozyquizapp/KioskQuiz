@@ -151,6 +151,9 @@ export default function QQSlideEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const historyRef = useRef<QQSlideTemplates[]>([{}]);
+  const histIdxRef = useRef(0);
 
   useEffect(() => {
     if (!draftId) { setLoading(false); return; }
@@ -163,7 +166,13 @@ export default function QQSlideEditorPage() {
   const activeTemplate: QQSlideTemplate = templates[activeType] ?? makeDefault(activeType);
 
   function patchTemplate(t: QQSlideTemplate) {
-    setTemplates(prev => ({ ...prev, [activeType]: t }));
+    setTemplates(prev => {
+      const next = { ...prev, [activeType]: t };
+      historyRef.current = historyRef.current.slice(0, histIdxRef.current + 1);
+      historyRef.current.push(next);
+      histIdxRef.current = historyRef.current.length - 1;
+      return next;
+    });
   }
 
   function patchElement(patch: Partial<QQSlideElement>) {
@@ -197,6 +206,19 @@ export default function QQSlideEditorPage() {
     setSelectedId(copy.id);
   }
 
+  function undo() {
+    if (histIdxRef.current <= 0) return;
+    histIdxRef.current--;
+    setTemplates(historyRef.current[histIdxRef.current]);
+    setSelectedId(null);
+    setEditingId(null);
+  }
+  function redo() {
+    if (histIdxRef.current >= historyRef.current.length - 1) return;
+    histIdxRef.current++;
+    setTemplates(historyRef.current[histIdxRef.current]);
+  }
+
   function resetTemplate() {
     if (!confirm('Folie auf Standard zurücksetzen?')) return;
     patchTemplate(makeDefault(activeType));
@@ -214,6 +236,30 @@ export default function QQSlideEditorPage() {
       if (res.ok) setDraft(await res.json());
     } finally { setSaving(false); }
   }
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+      if (target.isContentEditable) return;
+      if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); return; }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); void save(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); duplicateSelected(); return; }
+      if (!selectedId) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
+      const nudge = e.shiftKey ? 2 : 0.5;
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, x: Math.max(0, Math.min(97, el.x - nudge)) } : el) }); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, x: Math.max(0, Math.min(97, el.x + nudge)) } : el) }); }
+      if (e.key === 'ArrowUp')    { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, y: Math.max(0, Math.min(97, el.y - nudge)) } : el) }); }
+      if (e.key === 'ArrowDown')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, y: Math.max(0, Math.min(97, el.y + nudge)) } : el) }); }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, editingId, activeTemplate, activeType]);
 
   const selectedEl = activeTemplate.elements.find(e => e.id === selectedId) ?? null;
   const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
@@ -241,10 +287,13 @@ export default function QQSlideEditorPage() {
         <div style={{ fontSize: 15, fontWeight: 900 }}>{draft.title}</div>
         <div style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Folien-Editor</div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-          <button onClick={resetTemplate} style={btn('#475569', true)}>↩ Zurücksetzen</button>
-          <button onClick={duplicateSelected} disabled={!selectedId} style={btn('#6366F1', true)}>⎘ Duplizieren</button>
-          <button onClick={deleteSelected} disabled={!selectedId} style={btn('#EF4444', true)}>🗑 Löschen</button>
-          <button onClick={save} disabled={saving} style={btn('#22C55E')}>{saving ? '…' : '💾 Speichern'}</button>
+          <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={btn('#475569', true)}>↩</button>
+          <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>
+          <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', alignSelf: 'center' }} />
+          <button onClick={resetTemplate} style={btn('#475569', true)}>Zurücksetzen</button>
+          <button onClick={duplicateSelected} disabled={!selectedId} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘ Duplizieren</button>
+          <button onClick={deleteSelected} disabled={!selectedId} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑 Löschen</button>
+          <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={btn('#22C55E')}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
       </div>
 
@@ -313,8 +362,14 @@ export default function QQSlideEditorPage() {
             <SlideCanvas
               template={activeTemplate}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              editingId={editingId}
+              onSelect={id => { setSelectedId(id); if (id !== editingId) setEditingId(null); }}
               onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
+              onStartEdit={setEditingId}
+              onEndEdit={(id, text) => {
+                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
+                setEditingId(null);
+              }}
             />
           </div>
         </div>
@@ -333,11 +388,14 @@ export default function QQSlideEditorPage() {
 }
 
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
-function SlideCanvas({ template, selectedId, onSelect, onUpdate }: {
+function SlideCanvas({ template, selectedId, editingId, onSelect, onUpdate, onStartEdit, onEndEdit }: {
   template: QQSlideTemplate;
   selectedId: string | null;
+  editingId: string | null;
   onSelect: (id: string | null) => void;
   onUpdate: (id: string, patch: Partial<QQSlideElement>) => void;
+  onStartEdit: (id: string) => void;
+  onEndEdit: (id: string, text: string) => void;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(800);
@@ -392,10 +450,12 @@ function SlideCanvas({ template, selectedId, onSelect, onUpdate }: {
       style={{ width: '100%', maxWidth: `${canvasH * CANVAS_RATIO}px`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: template.background, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onClick={e => { if (e.target === e.currentTarget) onSelect(null); }}>
       {sorted.map(el => (
-        <CanvasElement key={el.id} el={el} canvasW={canvasW} selected={selectedId === el.id}
+        <CanvasElement key={el.id} el={el} canvasW={canvasW} selected={selectedId === el.id} editing={editingId === el.id}
           onSelect={() => onSelect(el.id)}
           onDragStart={e => { e.stopPropagation(); onSelect(el.id); dragRef.current = { id: el.id, startMX: e.clientX, startMY: e.clientY, startX: el.x, startY: el.y }; }}
           onResizeStart={(e, handle) => { e.stopPropagation(); resizeRef.current = { id: el.id, handle, startMX: e.clientX, startMY: e.clientY, startX: el.x, startY: el.y, startW: el.w, startH: el.h }; }}
+          onDblClick={() => { if (el.type === 'text') { onSelect(el.id); onStartEdit(el.id); } }}
+          onEndEdit={text => onEndEdit(el.id, text)}
         />
       ))}
     </div>
@@ -415,14 +475,28 @@ const HANDLE_STYLE: Record<string, React.CSSProperties> = {
   w:  { top: 'calc(50% - 4px)', left: '-5px',          cursor: 'w-resize' },
 };
 
-function CanvasElement({ el, canvasW, selected, onSelect, onDragStart, onResizeStart }: {
-  el: QQSlideElement; canvasW: number; selected: boolean;
+function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, onResizeStart, onDblClick, onEndEdit }: {
+  el: QQSlideElement; canvasW: number; selected: boolean; editing: boolean;
   onSelect: () => void;
   onDragStart: (e: React.MouseEvent) => void;
   onResizeStart: (e: React.MouseEvent, handle: string) => void;
+  onDblClick: () => void;
+  onEndEdit: (text: string) => void;
 }) {
   const isPh = el.type.startsWith('ph_');
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
+  const editRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editing && editRef.current) {
+      editRef.current.focus();
+      const range = document.createRange();
+      range.selectNodeContents(editRef.current);
+      range.collapse(false);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+    }
+  }, [editing]);
 
   return (
     <div className="qqse-elem"
@@ -430,22 +504,44 @@ function CanvasElement({ el, canvasW, selected, onSelect, onDragStart, onResizeS
         position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
         transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
         zIndex: el.zIndex ?? 1, opacity: el.opacity ?? 1,
-        cursor: 'move', boxSizing: 'border-box', overflow: 'hidden',
+        cursor: editing ? 'text' : 'move', boxSizing: 'border-box', overflow: 'hidden',
         background: el.background ?? (isPh ? 'rgba(139,92,246,0.10)' : 'transparent'),
         borderRadius: el.borderRadius != null ? `${el.borderRadius}px` : undefined,
-        border: selected ? '2px solid #3B82F6' : (isPh ? '1.5px dashed rgba(139,92,246,0.4)' : (el.border ?? undefined)),
-        outline: selected ? '1px solid rgba(59,130,246,0.3)' : undefined,
+        border: editing ? '2px solid #F59E0B' : (selected ? '2px solid #3B82F6' : (isPh ? '1.5px dashed rgba(139,92,246,0.4)' : (el.border ?? undefined))),
+        outline: selected && !editing ? '1px solid rgba(59,130,246,0.3)' : undefined,
         outlineOffset: selected ? '3px' : undefined,
       }}
       onClick={e => { e.stopPropagation(); onSelect(); }}
-      onMouseDown={e => { onSelect(); onDragStart(e); }}>
+      onDoubleClick={e => { e.stopPropagation(); onDblClick(); }}
+      onMouseDown={e => { if (!editing) { onSelect(); onDragStart(e); } }}>
 
       {/* Text content */}
-      {el.type === 'text' && (
+      {el.type === 'text' && !editing && (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '2px 6px', boxSizing: 'border-box', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
           <span style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, letterSpacing: el.letterSpacing != null ? `${el.letterSpacing}em` : undefined, wordBreak: 'break-word', width: '100%' }}>
             {el.text || '…'}
           </span>
+        </div>
+      )}
+
+      {/* In-place text editing */}
+      {el.type === 'text' && editing && (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '2px 6px', boxSizing: 'border-box', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+          <div
+            ref={editRef}
+            contentEditable
+            suppressContentEditableWarning
+            style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, wordBreak: 'break-word', width: '100%', outline: 'none', whiteSpace: 'pre-wrap', minHeight: '1em' }}
+            onBlur={e => onEndEdit(e.currentTarget.innerText)}
+            onKeyDown={e => {
+              e.stopPropagation();
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.target as HTMLElement).blur(); }
+              if (e.key === 'Escape') { (e.target as HTMLElement).blur(); }
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {el.text}
+          </div>
         </div>
       )}
 
@@ -648,8 +744,11 @@ function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) 
         ))}
       </div>
       <div style={{ marginTop: 14, padding: '10px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
-        Klicke auf ein Element im Canvas um es zu bearbeiten.<br />
-        Drag = verschieben · Ecken = Größe ändern · Doppelklick = nächste Ebene
+        Klicke auf ein Element zum Bearbeiten.<br />
+        Drag = verschieben · Ecken = Größe ändern<br />
+        Doppelklick auf Text = direkt bearbeiten<br />
+        <strong style={{ color: '#475569' }}>Tastatur:</strong> Entf = löschen · Pfeile = nudgen · Shift+Pfeile = groß nudgen<br />
+        Ctrl+Z/Y = Undo/Redo · Ctrl+D = duplizieren · Ctrl+S = speichern
       </div>
     </div>
   );

@@ -269,7 +269,7 @@ export default function QQModeratorPage() {
                     <select
                       value={selectedDraftId}
                       onChange={e => setSelectedDraftId(e.target.value)}
-                      style={selectStyle}
+                      style={{ ...selectStyle, maxWidth: 220 }}
                     >
                       <option value="__default__">📋 Standard-Testfragen</option>
                       {drafts.map(d => (
@@ -538,24 +538,26 @@ export default function QQModeratorPage() {
 
               {/* Timer */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>⏱ Timer (Sekunden)</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    type="number" min={5} max={120}
-                    value={timerInput}
-                    onChange={e => setTimerInput(Number(e.target.value))}
-                    style={{ ...inputStyle, width: 70 }}
-                  />
-                  <Btn small color="#3B82F6" onClick={applyTimer}>Setzen</Btn>
-                  {[15, 20, 30, 45, 60].map(t => (
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>⏱ Timer</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {[30, 60].map(t => (
                     <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
                       style={{
-                        padding: '4px 8px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
+                        padding: '6px 12px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
                         background: s.timerDurationSec === t ? 'rgba(59,130,246,0.2)' : 'transparent',
                         color: s.timerDurationSec === t ? '#3B82F6' : '#64748b',
-                        cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                        cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
                       }}>{t}s</button>
                   ))}
+                  <input
+                    type="number" min={5} max={300}
+                    value={timerInput}
+                    onChange={e => setTimerInput(Number(e.target.value))}
+                    onKeyDown={e => e.key === 'Enter' && applyTimer()}
+                    placeholder="…s"
+                    style={{ ...inputStyle, width: 58, textAlign: 'center' }}
+                  />
+                  <Btn small color="#3B82F6" onClick={applyTimer}>Setzen</Btn>
                 </div>
               </div>
 
@@ -593,13 +595,8 @@ export default function QQModeratorPage() {
               </div>
             </div>
 
-            {/* Grid */}
-            {s.grid && (
-              <div style={card}>
-                <div style={sectionLabel}>Grid {s.gridSize}×{s.gridSize}</div>
-                <MiniGrid state={s} />
-              </div>
-            )}
+            {/* Grid — collapsible */}
+            {s.grid && <CollapsibleGrid state={s} />}
 
             {/* Rangliste */}
             <div style={card}>
@@ -788,6 +785,31 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
       <Btn small color="#22C55E" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'PLACE_2' })}>📍 2 Felder</Btn>
       <Btn small color="#EF4444" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'STEAL_1' })}>⚡ Klauen</Btn>
       <Btn small color="#8B5CF6" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'SWAP_2' })}>🔄 Tauschen</Btn>
+    </div>
+  );
+}
+
+function CollapsibleGrid({ state: s }: { state: QQStateUpdate }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#94a3b8', fontFamily: 'inherit',
+        }}
+      >
+        <span style={sectionLabel}>Grid {s.gridSize}×{s.gridSize}</span>
+        <span style={{ fontSize: 15, color: '#475569' }}>{open ? '−' : '+'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <MiniGrid state={s} />
+        </div>
+      )}
     </div>
   );
 }

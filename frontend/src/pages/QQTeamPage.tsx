@@ -1,39 +1,67 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
-  QQTeam, qqGetAvatar,
+  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 
 // ── CSS for animations ────────────────────────────────────────────────────────
 const TEAM_CSS = `
-  @keyframes tcfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-8px) rotate(var(--r,0deg))} }
-  @keyframes tcpop    { from{opacity:0;transform:scale(0.7) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
-  @keyframes tcpulse  { 0%,100%{box-shadow: 0 0 0 0 var(--c,rgba(255,255,255,0.2))} 50%{box-shadow: 0 0 0 6px transparent} }
-  @keyframes tcspin   { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-  @keyframes tcreveal { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes tctimer  { from{width:100%} to{width:0%} }
-  @keyframes tcwobble { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+  @keyframes tcfloat   { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-8px) rotate(var(--r,0deg))} }
+  @keyframes tcpop     { from{opacity:0;transform:scale(0.7) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  @keyframes tcpulse   { 0%,100%{box-shadow: 0 0 0 0 var(--c,rgba(255,255,255,0.2))} 50%{box-shadow: 0 0 0 6px transparent} }
+  @keyframes tcspin    { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  @keyframes tcreveal  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes tctimer   { from{width:100%} to{width:0%} }
+  @keyframes tcwobble  { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+  @keyframes tcbtnpop  { 0%{transform:scale(0.96)} 60%{transform:scale(1.04)} 100%{transform:scale(1)} }
+  @keyframes tcsuccess { 0%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.98)} 100%{transform:scale(1)} }
+  @keyframes tcoptIn   { from{opacity:0;transform:translateY(18px) scale(0.94)} to{opacity:1;transform:translateY(0) scale(1)} }
+  @keyframes tcwheelslide { from{transform:translateY(var(--from,0px));opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes tccheckpop { from{transform:scale(0)} to{transform:scale(1)} }
 `;
 
 const QQ_ROOM = 'default';
 
 type SetupStep = 'AVATAR' | 'NAME';
 
+function getOrCreateTeamId(): string {
+  const key = 'qq_teamId';
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = `team-${Math.random().toString(36).slice(2, 8)}`;
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+
 export default function QQTeamPage() {
   const roomCode = QQ_ROOM;
   const [step, setStep]         = useState<SetupStep>('AVATAR');
-  const [avatarId, setAvatarId] = useState('fox');
-  const [teamName, setTeamName] = useState('');
-  const [teamId]                = useState(`team-${Math.random().toString(36).slice(2, 8)}`);
+  const [avatarId, setAvatarId] = useState(() => sessionStorage.getItem('qq_avatarId') ?? 'fox');
+  const [teamName, setTeamName] = useState(() => sessionStorage.getItem('qq_teamName') ?? '');
+  const [teamId]                = useState(getOrCreateTeamId);
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
   const { state, connected, emit } = useQQSocket(roomCode);
 
+  // Auto-rejoin if we have a stored session
+  useEffect(() => {
+    if (joined || !connected) return;
+    const storedName = sessionStorage.getItem('qq_teamName');
+    if (storedName) {
+      emit('qq:joinTeam', { roomCode, teamId, teamName: storedName, avatarId }).then((ack: any) => {
+        if (ack.ok) setJoined(true);
+      });
+    }
+  }, [connected]);
+
   async function joinRoom() {
     if (!teamName.trim()) return;
     setError(null);
+    sessionStorage.setItem('qq_teamName', teamName.trim());
+    sessionStorage.setItem('qq_avatarId', avatarId);
     const ack = await emit('qq:joinTeam', { roomCode, teamId, teamName: teamName.trim(), avatarId });
     if (ack.ok) setJoined(true);
     else setError(ack.error ?? 'Fehler beim Beitreten');
@@ -304,9 +332,9 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
         fontSize: 'clamp(17px, 4.5vw, 22px)', fontWeight: 900, lineHeight: 1.3,
         color: '#F1F5F9', marginBottom: 12,
       }}>
-        {q.text}
+        {s.language === 'en' && q.textEn ? q.textEn : q.text}
       </div>
-      {q.textEn && s.language !== 'de' && (
+      {s.language === 'both' && q.textEn && (
         <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#475569', marginBottom: 12 }}>
           {q.textEn}
         </div>
@@ -354,6 +382,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
           animation: 'tcreveal 0.4s ease both',
         }}>
           ✓ {s.revealedAnswer}
+          {s.language === 'both' && q.answerEn && q.answerEn !== s.revealedAnswer && (
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: 'rgba(74,222,128,0.5)', marginTop: 4 }}>
+              {q.answerEn}
+            </div>
+          )}
         </div>
       )}
 
@@ -371,65 +404,471 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode }: {
   );
 }
 
+// ── Submit button (shared) ────────────────────────────────────────────────────
+function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label = 'Abschicken' }: {
+  onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string;
+}) {
+  const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}28` : 'rgba(255,255,255,0.04)';
+  const border = submitted ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
+  const color = submitted ? '#fff' : canSubmit ? catColor : '#334155';
+  return (
+    <button
+      onClick={onSubmit}
+      disabled={!canSubmit || submitted}
+      style={{
+        width: '100%', padding: '15px', borderRadius: 14, marginTop: 10,
+        border: `2px solid ${border}`, background: bg, color,
+        cursor: canSubmit && !submitted ? 'pointer' : 'default',
+        fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 20px ${catColor}22` : submitted ? '0 4px 0 #15803d' : 'none',
+        transition: 'all 0.2s',
+        animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      }}
+    >
+      {submitted
+        ? <><span style={{ animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both', display: 'inline-block', fontSize: 20 }}>✓</span> Abgeschickt</>
+        : label}
+    </button>
+  );
+}
+
+// ── Submitted state ───────────────────────────────────────────────────────────
+function SubmittedBadge({ text }: { text: string }) {
+  return (
+    <div style={{
+      padding: '12px 16px', borderRadius: 14, textAlign: 'center',
+      background: 'rgba(34,197,94,0.1)', border: '2px solid rgba(34,197,94,0.3)',
+      fontSize: 15, fontWeight: 800, color: '#4ade80',
+      animation: 'tcreveal 0.3s ease both',
+    }}>
+      ✓ Abgegeben: „{text}"
+    </div>
+  );
+}
+
+// ── Main AnswerInput router ───────────────────────────────────────────────────
 function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor }: {
   state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string;
 }) {
-  const [answer, setAnswer] = useState('');
+  const q = s.currentQuestion;
   const myAnswer = s.answers.find(a => a.teamId === myTeamId);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setAnswer('');
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [s.currentQuestion?.id]);
-
-  async function submit() {
-    if (!answer.trim()) return;
-    await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: answer.trim() });
+  async function submitText(text: string) {
+    if (!text.trim()) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
-  if (myAnswer) {
-    return (
-      <div style={{
-        padding: '12px 16px', borderRadius: 14, textAlign: 'center',
-        background: 'rgba(34,197,94,0.1)', border: '2px solid rgba(34,197,94,0.3)',
-        fontSize: 15, fontWeight: 800, color: '#4ade80',
-        animation: 'tcreveal 0.3s ease both',
-      }}>
-        ✓ Abgegeben: „{myAnswer.text}"
-      </div>
-    );
-  }
+  if (myAnswer) return <SubmittedBadge text={myAnswer.text} />;
+  if (!q) return null;
 
+  // Hot Potato — no input needed
+  if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') return null;
+
+  // Route by category
+  if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
+  if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
+  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `Zahl (${s.language === 'en' && q.unitEn ? q.unitEn : q.unit}) eingeben…` : 'Zahl eingeben…'} />;
+  if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
+  if (q.category === 'BUNTE_TUETE') {
+    const kind = q.bunteTuete?.kind;
+    if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={s.language} />;
+    if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} onSubmit={submitText} usedIds={s.answers.map(a => a.text)} lang={s.language} />;
+    if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={s.language} />;
+    if (kind === 'map') return <PinItInput catColor={catColor} onSubmit={submitText} />;
+  }
+  // Fallback
+  return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
+}
+
+// ── Text input (Schätzchen + Picture This fallback) ───────────────────────────
+function TextInput({ catColor, onSubmit, placeholder, numeric }: {
+  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean;
+}) {
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTimeout(() => ref.current?.focus(), 120); }, []);
   return (
     <div style={{ marginTop: 4 }}>
       <input
-        ref={inputRef}
-        value={answer}
-        onChange={e => setAnswer(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && submit()}
-        placeholder="Antwort eingeben…"
-        style={{
-          width: '100%', padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
-          border: `2px solid ${answer ? catColor + '66' : 'rgba(255,255,255,0.1)'}`,
-          background: `${answer ? catColor + '10' : 'rgba(255,255,255,0.05)'}`,
-          color: '#F1F5F9', fontFamily: 'inherit', fontSize: 19, fontWeight: 700,
-          marginBottom: 10, outline: 'none', transition: 'all 0.2s',
-        }}
+        ref={ref}
+        type={numeric ? 'number' : 'text'}
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val)}
+        placeholder={placeholder ?? 'Antwort eingeben…'}
         autoComplete="off"
+        style={{
+          width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
+          border: `2px solid ${val ? catColor + '66' : 'rgba(255,255,255,0.1)'}`,
+          background: val ? `${catColor}10` : 'rgba(255,255,255,0.05)',
+          color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
+          outline: 'none', transition: 'all 0.2s',
+          boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
+        }}
       />
-      <button onClick={submit} disabled={!answer.trim()} style={{
-        width: '100%', padding: '14px', borderRadius: 14,
-        border: `2px solid ${answer.trim() ? catColor : 'rgba(255,255,255,0.08)'}`,
-        background: answer.trim() ? `${catColor}25` : 'rgba(255,255,255,0.03)',
-        color: answer.trim() ? catColor : '#334155',
-        cursor: answer.trim() ? 'pointer' : 'default',
-        fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
-        boxShadow: answer.trim() ? `0 0 20px ${catColor}33` : 'none',
-        transition: 'all 0.2s',
-      }}>
-        ✓ Abschicken
-      </button>
+      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!!val.trim()} submitted={false} catColor={catColor} />
+    </div>
+  );
+}
+
+// ── Mu-Cho: A/B/C/D buttons ───────────────────────────────────────────────────
+const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
+const MUCHO_LABELS = ['A','B','C','D'];
+
+function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const opts: string[] = q.options ?? [];
+  const optsEn: string[] = q.optionsEn ?? [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      {opts.map((opt: string, i: number) => {
+        const color = MUCHO_COLORS[i] ?? catColor;
+        const isSelected = selected === i;
+        const label = lang === 'en' && optsEn[i] ? optsEn[i] : opt;
+        return (
+          <button
+            key={i}
+            onClick={() => setSelected(i)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 0,
+              borderRadius: 14, overflow: 'hidden', border: 'none', cursor: 'pointer',
+              background: isSelected ? `${color}30` : 'rgba(255,255,255,0.04)',
+              boxShadow: isSelected ? `0 4px 0 ${color}55` : '0 3px 0 rgba(0,0,0,0.4)',
+              transform: isSelected ? 'translateY(-2px)' : 'none',
+              transition: 'all 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+              animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+              outline: isSelected ? `2px solid ${color}` : `1px solid ${color}33`,
+            }}
+          >
+            {/* Letter badge */}
+            <div style={{
+              width: 48, height: 52, flexShrink: 0,
+              background: isSelected ? color : `${color}22`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, fontWeight: 900, color: isSelected ? '#fff' : color,
+              borderRight: `1px solid ${color}44`,
+              transition: 'all 0.15s',
+            }}>
+              {isSelected ? '✓' : MUCHO_LABELS[i]}
+            </div>
+            {/* Option text */}
+            <div style={{
+              flex: 1, padding: '14px 16px', textAlign: 'left',
+              fontSize: 'clamp(15px,4vw,18px)', fontWeight: 700,
+              color: isSelected ? '#fff' : '#CBD5E1', fontFamily: 'inherit',
+            }}>
+              {label}
+            </div>
+          </button>
+        );
+      })}
+      <SubmitBtn
+        onSubmit={() => selected !== null && onSubmit(opts[selected])}
+        canSubmit={selected !== null}
+        submitted={false}
+        catColor={catColor}
+      />
+    </div>
+  );
+}
+
+// ── All In: 1/2/3 betting ─────────────────────────────────────────────────────
+const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
+const POOL = 10;
+
+function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+  const [bets, setBets] = useState([0, 0, 0]);
+  const opts: string[] = q.options ?? [];
+  const optsEn: string[] = q.optionsEn ?? [];
+  const remaining = POOL - bets.reduce((a, b) => a + b, 0);
+
+  function updateBet(i: number, delta: number) {
+    setBets(prev => {
+      const next = [...prev];
+      const newVal = Math.max(0, Math.min(prev[i] + delta, prev[i] + remaining + (delta < 0 ? 0 : 0)));
+      if (delta > 0 && remaining <= 0) return prev;
+      next[i] = newVal;
+      return next;
+    });
+  }
+
+  const pillColor = remaining === 0 ? '#22C55E' : remaining < POOL ? '#F59E0B' : '#475569';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      {/* Remaining */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Punkte verteilen</span>
+        <div style={{
+          padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
+          background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
+        }}>
+          {remaining} übrig
+        </div>
+      </div>
+
+      {opts.map((opt: string, i: number) => {
+        const color = ALLIN_COLORS[i] ?? catColor;
+        const label = lang === 'en' && optsEn[i] ? optsEn[i] : opt;
+        const pts = bets[i];
+        return (
+          <div key={i} style={{
+            display: 'grid', gridTemplateColumns: '1fr auto auto auto',
+            alignItems: 'center', gap: 8,
+            padding: '10px 14px', borderRadius: 14,
+            background: pts > 0 ? `${color}12` : 'rgba(255,255,255,0.04)',
+            border: `2px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
+            transition: 'all 0.15s',
+            borderLeft: `4px solid ${color}`,
+            animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.08}s both`,
+          }}>
+            <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
+              {label}
+            </div>
+            {/* − */}
+            <button onClick={() => updateBet(i, -1)} disabled={pts <= 0} style={{
+              width: 40, height: 40, borderRadius: 10, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : '#334155',
+              cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 20, fontWeight: 900,
+            }}>−</button>
+            {/* Points */}
+            <div style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#475569', fontVariantNumeric: 'tabular-nums' }}>
+              {pts}
+            </div>
+            {/* + */}
+            <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0} style={{
+              width: 40, height: 40, borderRadius: 10, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : '#334155',
+              cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 20, fontWeight: 900,
+            }}>+</button>
+          </div>
+        );
+      })}
+      <SubmitBtn
+        onSubmit={() => onSubmit(bets.join(','))}
+        canSubmit={remaining === 0}
+        submitted={false}
+        catColor={catColor}
+        label={remaining === 0 ? 'Abschicken' : `Noch ${remaining} Punkt${remaining === 1 ? '' : 'e'} verteilen`}
+      />
+    </div>
+  );
+}
+
+// ── Top 5 ─────────────────────────────────────────────────────────────────────
+function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (v: string) => void; lang: string }) {
+  const [vals, setVals] = useState(['','','','','']);
+  const filled = vals.filter(v => v.trim()).length;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
+      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>
+        {lang === 'en' ? 'Enter up to 5 answers (order doesn\'t matter)' : 'Bis zu 5 Antworten eingeben (Reihenfolge egal)'}
+      </div>
+      {vals.map((v, i) => (
+        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ width: 24, height: 24, borderRadius: 6, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i+1}</div>
+          <input
+            value={v}
+            onChange={e => { const a = [...vals]; a[i] = e.target.value; setVals(a); }}
+            placeholder={lang === 'en' ? `Answer ${i+1}…` : `Antwort ${i+1}…`}
+            style={{
+              flex: 1, padding: '11px 14px', borderRadius: 12, boxSizing: 'border-box',
+              border: `1.5px solid ${v ? catColor+'55' : 'rgba(255,255,255,0.08)'}`,
+              background: v ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
+              color: '#F1F5F9', fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
+              outline: 'none', transition: 'all 0.15s',
+            }}
+          />
+        </div>
+      ))}
+      <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={filled >= 1} submitted={false} catColor={catColor} />
+    </div>
+  );
+}
+
+// ── Imposter: Drum-Wheel Carousel ─────────────────────────────────────────────
+function ImposterInput({ question: q, catColor, onSubmit, usedIds, lang }: {
+  question: any; catColor: string; onSubmit: (v: string) => void; usedIds: string[]; lang: string;
+}) {
+  const bt = q.bunteTuete;
+  const stmts: string[] = (lang === 'en' && bt?.statementsEn?.some((s:string)=>s) ? bt.statementsEn : bt?.statements) ?? [];
+  // Filter out already submitted
+  const remaining = stmts.map((s: string, i: number) => ({ text: s, idx: i })).filter(x => x.text && !usedIds.includes(String(x.idx)));
+  const [idx, setIdx] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const touchStartY = useRef(0);
+
+  const clamped = Math.max(0, Math.min(idx, remaining.length - 1));
+  const current = remaining[clamped];
+  const canUp = clamped > 0;
+  const canDown = clamped < remaining.length - 1;
+
+  const SLOT_H = 100;
+
+  function handleConfirm() {
+    if (!current || submitted) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    setSubmitted(true);
+    onSubmit(String(current.idx));
+  }
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; }, []);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const delta = touchStartY.current - e.changedTouches[0].clientY;
+    if (delta > 30) setIdx(i => Math.min(i + 1, remaining.length - 1));
+    if (delta < -30) setIdx(i => Math.max(i - 1, 0));
+  }, [remaining.length]);
+
+  if (!remaining.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>Alle Optionen gewählt</div>;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
+        🕵️ {lang === 'en' ? 'Which statement is false?' : 'Welche Aussage ist falsch?'}
+      </div>
+
+      {/* Drum wheel */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          borderRadius: 16, height: SLOT_H * 3, overflow: 'hidden', position: 'relative',
+          background: 'rgba(10,15,35,0.97)', border: '1.5px solid rgba(148,163,184,0.15)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          userSelect: 'none',
+        }}
+      >
+        {/* Top slot (blurred) */}
+        <div
+          onClick={() => canUp && setIdx(i => i - 1)}
+          style={{
+            height: SLOT_H, padding: '0 40px 0 16px', display: '-webkit-box', alignItems: 'center',
+            filter: 'blur(2px)', opacity: 0.3, cursor: canUp ? 'pointer' : 'default',
+            fontSize: 14, color: '#94a3b8', overflow: 'hidden',
+            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          } as any}
+        >
+          {canUp ? remaining[clamped - 1]?.text : ''}
+        </div>
+
+        {/* Center slot (active) */}
+        <div key={clamped} style={{
+          height: SLOT_H, padding: '0 48px 0 16px', display: 'flex', alignItems: 'center',
+          background: 'rgba(148,45,89,0.18)',
+          borderTop: '1.5px solid rgba(148,45,89,0.5)',
+          borderBottom: '1.5px solid rgba(148,45,89,0.5)',
+          fontSize: 'clamp(14px,3.8vw,17px)', fontWeight: 800, color: '#ffe4f2',
+          lineHeight: 1.35,
+          animation: 'tcwheelslide 0.22s ease both',
+        }}>
+          {current?.text}
+        </div>
+
+        {/* Bottom slot (blurred) */}
+        <div
+          onClick={() => canDown && setIdx(i => i + 1)}
+          style={{
+            height: SLOT_H, padding: '0 40px 0 16px', display: 'flex', alignItems: 'center',
+            filter: 'blur(2px)', opacity: 0.3, cursor: canDown ? 'pointer' : 'default',
+            fontSize: 14, color: '#94a3b8', overflow: 'hidden',
+          }}
+        >
+          {canDown ? remaining[clamped + 1]?.text : ''}
+        </div>
+
+        {/* Arrow buttons */}
+        {canUp && <div onClick={() => setIdx(i => i - 1)} style={{ position: 'absolute', top: 8, right: 12, color: '#64748b', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▲</div>}
+        {canDown && <div onClick={() => setIdx(i => i + 1)} style={{ position: 'absolute', bottom: 8, right: 12, color: '#64748b', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▼</div>}
+      </div>
+
+      {/* Counter */}
+      <div style={{ textAlign: 'center', fontSize: 12, color: '#475569', fontWeight: 700, marginTop: 6 }}>
+        {clamped + 1} / {remaining.length}
+      </div>
+
+      <SubmitBtn onSubmit={handleConfirm} canSubmit={!!current && !submitted} submitted={submitted} catColor="#942d59" label={lang === 'en' ? 'Choose' : 'Wählen'} />
+    </div>
+  );
+}
+
+// ── Fix It: sortable list (no dnd-kit dep, manual reorder via buttons) ─────────
+function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+  const bt = q.bunteTuete;
+  const srcItems: string[] = (lang === 'en' && bt?.itemsEn?.some((s:string)=>s) ? bt.itemsEn : bt?.items) ?? [];
+  // Shuffle on mount for challenge
+  const [items, setItems] = useState(() => [...srcItems].sort(() => Math.random() - 0.5));
+  const criteria = lang === 'en' ? (bt?.criteriaEn || bt?.criteria) : bt?.criteria;
+
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    setItems(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      {criteria && (
+        <div style={{ fontSize: 12, color: catColor, fontWeight: 800, textAlign: 'center', padding: '5px 12px', borderRadius: 8, background: `${catColor}12`, border: `1px solid ${catColor}33` }}>
+          🔀 {criteria}
+        </div>
+      )}
+      <div style={{ fontSize: 12, color: '#475569', textAlign: 'center' }}>
+        {lang === 'en' ? 'Tap ▲▼ to reorder' : '▲▼ zum Sortieren tippen'}
+      </div>
+      {items.map((item, i) => (
+        <div key={item + i} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '12px 14px', borderRadius: 14,
+          background: 'rgba(26,32,53,0.9)', border: `1.5px solid ${catColor}22`,
+          animation: `tcoptIn 0.3s ease ${i * 0.05}s both`,
+        }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: catColor }}>
+            {i + 1}
+          </div>
+          <div style={{ flex: 1, fontSize: 'clamp(14px,3.8vw,16px)', fontWeight: 700, color: '#F1F5F9' }}>{item}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 28, height: 26, borderRadius: 6, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 28, height: 26, borderRadius: 6, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+          </div>
+        </div>
+      ))}
+      <SubmitBtn onSubmit={() => onSubmit(items.join('|'))} canSubmit={items.length > 0} submitted={false} catColor={catColor} />
+    </div>
+  );
+}
+
+// ── Pin It: simple coordinate input (no leaflet dep needed for basic version) ──
+function PinItInput({ catColor, onSubmit }: { catColor: string; onSubmit: (v: string) => void }) {
+  // Simple lat/lng text entry as fallback (full map would need react-leaflet)
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
+  const valid = lat !== '' && lng !== '' && !isNaN(Number(lat)) && !isNaN(Number(lng));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+        📍 Gib die Koordinaten ein (z.B. von Google Maps)
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, marginBottom: 4 }}>Breitengrad (Lat)</div>
+          <input value={lat} onChange={e => setLat(e.target.value)} type="number" step="0.0001" placeholder="53.5503"
+            style={{ width: '100%', padding: '11px 12px', borderRadius: 10, boxSizing: 'border-box', border: `1.5px solid ${lat ? catColor+'55':'rgba(255,255,255,0.08)'}`, background: 'rgba(255,255,255,0.04)', color: '#F1F5F9', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, marginBottom: 4 }}>Längengrad (Lng)</div>
+          <input value={lng} onChange={e => setLng(e.target.value)} type="number" step="0.0001" placeholder="9.9922"
+            style={{ width: '100%', padding: '11px 12px', borderRadius: 10, boxSizing: 'border-box', border: `1.5px solid ${lng ? catColor+'55':'rgba(255,255,255,0.08)'}`, background: 'rgba(255,255,255,0.04)', color: '#F1F5F9', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
+        </div>
+      </div>
+      {valid && <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 700 }}>📍 {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}</div>}
+      <SubmitBtn onSubmit={() => onSubmit(`${lat},${lng}`)} canSubmit={valid} submitted={false} catColor={catColor} />
     </div>
   );
 }

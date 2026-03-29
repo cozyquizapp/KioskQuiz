@@ -17,7 +17,6 @@ interface DraftSummary {
 
 export default function QQModeratorPage() {
   const roomCode = QQ_ROOM;
-  const [language, setLanguage] = useState<QQLanguage>('both');
   const [phases, setPhases] = useState<3 | 4>(3);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
@@ -83,7 +82,7 @@ export default function QQModeratorPage() {
       }
       questions = await res.json();
     }
-    await emit('qq:startGame', { roomCode, questions, language, phases });
+    await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases });
   }
 
   function applyTimer() {
@@ -267,11 +266,6 @@ export default function QQModeratorPage() {
                         }}>{n}</button>
                       ))}
                     </div>
-                    <select value={language} onChange={e => setLanguage(e.target.value as QQLanguage)} style={selectStyle}>
-                      <option value="both">DE + EN</option>
-                      <option value="de">Deutsch</option>
-                      <option value="en">English</option>
-                    </select>
                     <select
                       value={selectedDraftId}
                       onChange={e => setSelectedDraftId(e.target.value)}
@@ -441,6 +435,21 @@ export default function QQModeratorPage() {
               </div>
             )}
 
+            {/* Schätzchen ranking — shown when it's a SCHAETZCHEN reveal */}
+            {(s.phase === 'QUESTION_REVEAL' || s.phase === 'QUESTION_ACTIVE') &&
+              s.currentQuestion?.category === 'SCHAETZCHEN' &&
+              s.currentQuestion.targetValue != null && (
+              <SchaetzRanking
+                answers={s.answers}
+                teams={s.teams}
+                targetValue={s.currentQuestion.targetValue}
+                correctTeamId={s.correctTeamId}
+                phase={s.phase}
+                roomCode={roomCode}
+                emit={emit}
+              />
+            )}
+
             {/* Teams + live answers */}
             <div style={card}>
               <div style={sectionLabel}>Teams ({teamList.length})</div>
@@ -452,6 +461,7 @@ export default function QQModeratorPage() {
                   const stats = s.teamPhaseStats[t.id];
                   const answer = s.answers.find(a => a.teamId === t.id);
                   const isActive = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
+                  const isSchaetz = s.currentQuestion?.category === 'SCHAETZCHEN';
                   return (
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 10,
@@ -487,8 +497,8 @@ export default function QQModeratorPage() {
                             color: '#64748b', fontSize: 11, fontFamily: 'inherit',
                           }}>✕</button>
                       </div>
-                      {/* Live answer */}
-                      {isActive && answer && (
+                      {/* Live answer — hide for Schätzchen (shown in ranking above) */}
+                      {isActive && answer && !isSchaetz && (
                         <div style={{
                           marginTop: 8, padding: '6px 10px', borderRadius: 8,
                           background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
@@ -509,7 +519,7 @@ export default function QQModeratorPage() {
               </div>
 
               {/* Niemand-Button wenn alle geantwortet haben */}
-              {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
+              {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.currentQuestion?.category !== 'SCHAETZCHEN' && (
                 <div style={{ marginTop: 8 }}>
                   <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
                     ✗ Niemand korrekt
@@ -640,6 +650,97 @@ function TimerPill({ endsAt }: { endsAt: number }) {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+// ── Schätzchen ranking ────────────────────────────────────────────────────────
+
+function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roomCode, emit }: {
+  answers: any[]; teams: any[]; targetValue: number; correctTeamId: string | null;
+  phase: string; roomCode: string; emit: any;
+}) {
+  // Parse + rank answers by distance
+  const ranked = answers
+    .map(a => {
+      const parsed = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+      const distance = Number.isNaN(parsed) ? Infinity : Math.abs(parsed - targetValue);
+      const team = teams.find((t: any) => t.id === a.teamId);
+      return { teamId: a.teamId, text: a.text, parsed, distance, team };
+    })
+    .sort((a, b) => a.distance - b.distance);
+
+  const autoWinnerId = ranked[0]?.distance !== Infinity ? ranked[0]?.teamId : null;
+
+  return (
+    <div style={{ ...card, borderColor: 'rgba(245,158,11,0.35)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#F59E0B', fontWeight: 900 }}>{targetValue.toLocaleString('de-DE')}</span></div>
+        {phase === 'QUESTION_REVEAL' && !correctTeamId && autoWinnerId && (
+          <span style={{ fontSize: 11, color: '#64748b' }}>Auto-Auswertung aktiv</span>
+        )}
+      </div>
+
+      {ranked.length === 0 && (
+        <div style={{ color: '#475569', fontSize: 13 }}>Noch keine Antworten eingegangen…</div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {ranked.map((r, i) => {
+          const isWinner = r.teamId === (correctTeamId ?? autoWinnerId);
+          const barWidth = r.distance === Infinity ? 0 : Math.max(4, 100 - Math.min(99, (r.distance / targetValue) * 100));
+          return (
+            <div key={r.teamId} style={{
+              padding: '8px 12px', borderRadius: 10,
+              border: `2px solid ${isWinner ? (r.team?.color ?? '#F59E0B') : 'rgba(255,255,255,0.07)'}`,
+              background: isWinner ? `${r.team?.color ?? '#F59E0B'}14` : 'rgba(255,255,255,0.03)',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Distance bar */}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, height: 2,
+                width: `${barWidth}%`,
+                background: isWinner ? (r.team?.color ?? '#F59E0B') : 'rgba(255,255,255,0.12)',
+                transition: 'width 0.4s ease',
+              }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#F59E0B' : '#475569', width: 18 }}>
+                  {i === 0 ? '🥇' : `#${i + 1}`}
+                </span>
+                <span style={{ fontSize: 18 }}>{qqGetAvatar(r.team?.avatarId ?? 'fox').emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontWeight: 800, color: r.team?.color ?? '#94a3b8' }}>{r.team?.name ?? r.teamId}</span>
+                  <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: '#e2e8f0' }}>
+                    {r.parsed !== Infinity && !Number.isNaN(r.parsed) ? r.parsed.toLocaleString('de-DE') : r.text}
+                  </span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  {r.distance !== Infinity ? (
+                    <span style={{ fontSize: 12, color: isWinner ? '#4ade80' : '#64748b', fontWeight: 700 }}>
+                      {r.distance === 0 ? '✓ Exakt' : `±${r.distance.toLocaleString('de-DE')}`}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: '#475569' }}>—</span>
+                  )}
+                </div>
+                {phase === 'QUESTION_REVEAL' && !correctTeamId && r.team && (
+                  <Btn small color={r.team.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: r.teamId })}>
+                    ✓
+                  </Btn>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {phase === 'QUESTION_REVEAL' && !correctTeamId && (
+        <div style={{ marginTop: 8 }}>
+          <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
+            ✗ Niemand korrekt
+          </Btn>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PlacementControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.pendingFor);

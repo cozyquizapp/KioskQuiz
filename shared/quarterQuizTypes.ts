@@ -200,7 +200,32 @@ export interface QQQuestionImage {
   layout: QQImageLayout;
   animation: QQImageAnimation;
   bgRemovedUrl?: string;
+  // Position/transform (set via builder canvas)
+  offsetX?: number;   // -100 to 100, percentage offset from center
+  offsetY?: number;   // -100 to 100, percentage offset from center
+  scale?: number;     // 0.1 to 3.0, default 1.0
+  rotation?: number;  // degrees 0-360
 }
+
+// ── QQ Theme (visual customization for beamer) ────────────────────────────────
+export type QQThemePreset = 'default' | 'dark' | 'neon' | 'retro' | 'nature' | 'custom';
+
+export interface QQTheme {
+  preset: QQThemePreset;
+  bgColor?: string;       // background color
+  accentColor?: string;   // accent highlight
+  textColor?: string;     // primary text
+  cardBg?: string;        // card background
+  fontFamily?: string;    // e.g. 'Inter' | 'Space Grotesk'
+}
+
+export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme> = {
+  default: { preset: 'default', bgColor: '#0D0A06', accentColor: '#F59E0B', textColor: '#e2e8f0', cardBg: '#1e293b' },
+  dark:    { preset: 'dark',    bgColor: '#030712', accentColor: '#6366F1', textColor: '#e2e8f0', cardBg: '#111827' },
+  neon:    { preset: 'neon',    bgColor: '#0a0a0a', accentColor: '#00FF88', textColor: '#ffffff', cardBg: '#1a1a2e' },
+  retro:   { preset: 'retro',   bgColor: '#1a1423', accentColor: '#FF6B9D', textColor: '#fde68a', cardBg: '#2d1b3d' },
+  nature:  { preset: 'nature',  bgColor: '#0a1a0a', accentColor: '#4ADE80', textColor: '#dcfce7', cardBg: '#132a13' },
+};
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────
 export interface QQDraft {
@@ -209,6 +234,7 @@ export interface QQDraft {
   phases: 3 | 4;
   language: QQLanguage;
   questions: QQQuestion[];
+  theme?: QQTheme;
   createdAt: number;
   updatedAt: number;
 }
@@ -245,6 +271,7 @@ export interface QQStateUpdate {
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
+  theme?: QQTheme;
 }
 
 export type QQPendingAction =
@@ -259,7 +286,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }

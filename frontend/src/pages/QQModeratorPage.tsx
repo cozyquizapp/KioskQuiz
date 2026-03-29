@@ -61,6 +61,7 @@ export default function QQModeratorPage() {
 
   async function startGame() {
     let questions: QQQuestion[];
+    let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
     if (selectedDraftId === '__default__') {
       const res = await fetch('/api/qq/questions/default');
       if (!res.ok) { alert('Standard-Fragen konnten nicht geladen werden'); return; }
@@ -72,6 +73,7 @@ export default function QQModeratorPage() {
       if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
       const draft = await res.json();
       questions = draft.questions ?? [];
+      theme = draft.theme;
       if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     } else {
       const res = await fetch(`/api/qq/questions/from-draft/${encodeURIComponent(selectedDraftId)}?phases=${phases}`);
@@ -82,7 +84,7 @@ export default function QQModeratorPage() {
       }
       questions = await res.json();
     }
-    await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases });
+    await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme });
   }
 
   function applyTimer() {

@@ -55,6 +55,7 @@ export interface QQRoomState {
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
+  theme?: import('../../../shared/quarterQuizTypes').QQTheme;
   lastActivityAt: number;
 }
 
@@ -173,7 +174,8 @@ export function qqStartGame(
   room: QQRoomState,
   questions: QQQuestion[],
   language: QQLanguage,
-  phases: 3 | 4 = 3
+  phases: 3 | 4 = 3,
+  theme?: import('../../../shared/quarterQuizTypes').QQTheme
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -200,6 +202,7 @@ export function qqStartGame(
   room.comebackTeamId  = null;
   room.comebackAction  = null;
   room.swapFirstCell   = null;
+  room.theme           = theme;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {
@@ -580,9 +583,19 @@ export function qqTriggerComeback(room: QQRoomState): void {
     return;
   }
 
-  room.comebackTeamId = lastTeamId;
+  // Tie for last place? Pick randomly among tied teams
+  const tiedTeams = room.joinOrder.filter(id => {
+    const r = territories[id];
+    if (!r || !lastResult) return false;
+    return r.largest === lastResult.largest && r.total === lastResult.total;
+  });
+  const comebackTeam = tiedTeams.length > 1
+    ? tiedTeams[Math.floor(Math.random() * tiedTeams.length)]
+    : lastTeamId;
+
+  room.comebackTeamId = comebackTeam;
   room.comebackAction = null;
-  room.pendingFor     = lastTeamId;
+  room.pendingFor     = comebackTeam;
   room.pendingAction  = 'COMEBACK';
   room.phase          = 'COMEBACK_CHOICE';
   room.lastActivityAt = Date.now();
@@ -644,12 +657,15 @@ export function qqNextQuestion(room: QQRoomState): void {
     );
   }
 
+  qqStopTimer(room);
+
   const nextIndex = room.questionIndex + 1;
 
   // End of phase?
   if (nextIndex >= room.gamePhaseIndex * QQ_QUESTIONS_PER_PHASE) {
     const next = (room.gamePhaseIndex + 1) as QQGamePhaseIndex;
     if (room.gamePhaseIndex >= room.totalPhases) {
+      updateTerritories(room);
       room.phase = 'GAME_OVER';
     } else if (next === room.totalPhases) {
       // Before final phase → comeback
@@ -747,6 +763,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoEliminated:   room.hotPotatoEliminated,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
+    theme:            room.theme,
   };
 }
 

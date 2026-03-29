@@ -8,6 +8,8 @@ import path from 'path';
 import fs from 'fs';
 import mongoose from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 
 import * as Sentry from '@sentry/node';
@@ -143,9 +145,17 @@ const io = new SocketIOServer(httpServer, {
   pingInterval: 25000
 });
 
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb' }));
+
+// Rate limiting: 100 req/min per IP for API routes
+const apiLimiter = rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false });
+app.use('/api/', apiLimiter);
+// Stricter limit for uploads: 10 req/min per IP
+const uploadLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false });
+app.use('/api/upload', uploadLimiter);
 
 const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
@@ -7758,22 +7768,33 @@ let qqDrafts: Array<{
 }> = [];
 
 app.get('/api/qq/drafts', async (_req, res) => {
+  const cached = cache.get<any[]>('qqDrafts');
+  if (cached) return res.json(cached);
   if (await ensureDraftDbConnection()) {
     const dbDrafts = await getAllQQDraftsFromDB();
+    cache.set('qqDrafts', dbDrafts, 120);
     return res.json(dbDrafts);
   }
-  res.json([...qqDrafts].sort((a, b) => b.updatedAt - a.updatedAt));
+  const sorted = [...qqDrafts].sort((a, b) => b.updatedAt - a.updatedAt);
+  cache.set('qqDrafts', sorted, 120);
+  res.json(sorted);
 });
 
 app.post('/api/qq/drafts', async (req, res) => {
-  const draft = { ...req.body, id: req.body.id || `qq-draft-${Date.now().toString(36)}`, createdAt: Date.now(), updatedAt: Date.now() };
+  const body = req.body;
+  if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });
+  if (body.phases !== 3 && body.phases !== 4) return res.status(400).json({ error: 'Phasen muss 3 oder 4 sein' });
+  if (!Array.isArray(body.questions) || body.questions.length > 50) return res.status(400).json({ error: 'Ungültige Fragen' });
+  const draft = { ...body, id: body.id || `qq-draft-${Date.now().toString(36)}`, createdAt: Date.now(), updatedAt: Date.now() };
   if (await ensureDraftDbConnection()) {
     try {
       const saved = await saveQQDraftToDB(draft);
+      cache.del('qqDrafts');
       return res.json(saved);
     } catch { /* fall through to in-memory */ }
   }
   qqDrafts.unshift(draft);
+  cache.del('qqDrafts');
   res.json(draft);
 });
 
@@ -7788,19 +7809,25 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
 });
 
 app.put('/api/qq/drafts/:id', async (req, res) => {
-  const updated = { ...req.body, id: req.params.id, updatedAt: Date.now() };
+  const body = req.body;
+  if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });
+  if (!Array.isArray(body.questions) || body.questions.length > 50) return res.status(400).json({ error: 'Ungültige Fragen' });
+  const updated = { ...body, id: req.params.id, updatedAt: Date.now() };
   if (await ensureDraftDbConnection()) {
     try {
       const saved = await saveQQDraftToDB(updated);
+      cache.del('qqDrafts');
       return res.json(saved);
     } catch { /* fall through */ }
   }
   const idx = qqDrafts.findIndex(d => d.id === req.params.id);
   if (idx === -1) {
     qqDrafts.unshift(updated);
+    cache.del('qqDrafts');
     return res.json(updated);
   }
   qqDrafts[idx] = { ...qqDrafts[idx], ...req.body, updatedAt: Date.now() };
+  cache.del('qqDrafts');
   res.json(qqDrafts[idx]);
 });
 
@@ -7809,13 +7836,15 @@ app.delete('/api/qq/drafts/:id', async (req, res) => {
     await deleteQQDraftFromDB(req.params.id);
   }
   qqDrafts = qqDrafts.filter(d => d.id !== req.params.id);
+  cache.del('qqDrafts');
   res.json({ ok: true });
 });
 
 // Background removal via Cloudinary e_background_removal
 app.post('/api/qq/remove-bg', (req, res) => {
   const { imageUrl } = req.body as { imageUrl?: string };
-  if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
+  if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.length > 2048) return res.status(400).json({ error: 'imageUrl fehlt oder ungültig' });
+  if (!/^https?:\/\//i.test(imageUrl)) return res.status(400).json({ error: 'Ungültige URL' });
   try {
     // Apply Cloudinary bg removal transformation (requires AI add-on)
     const bgRemovedUrl = imageUrl.includes('/upload/')

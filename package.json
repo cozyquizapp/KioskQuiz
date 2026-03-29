@@ -11,15 +11,19 @@
     "build": "npm run build:all",
     "build:all": "npm --prefix backend run build && npm --prefix frontend run build",
     "smoke": "npm run build:all",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "optimize:images": "node optimize-images.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "imagemin": "^8.0.0",
+    "imagemin-webp": "^7.0.0",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.3.3"
-      ,
-      "imagemin": "^8.0.0",
-      "imagemin-webp": "^7.0.0",
-      "svgo": "^3.0.0"
+    "svgo": "^3.0.0",
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0"

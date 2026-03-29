@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   QQQuestion, QQCategory, QQLanguage, QQDraft,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQImageLayout, QQImageAnimation, QQQuestionImage,
   QQBunteTueteKind, QQ_BUNTE_TUETE_LABELS,
   QQBunteTuetePayload,
+  QQThemePreset, QQ_THEME_PRESETS,
 } from '../../../shared/quarterQuizTypes';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -73,7 +74,41 @@ export default function QQBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
+  const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Auto-save: debounced localStorage backup ──
+  useEffect(() => {
+    if (!activeDraft) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`qq-draft-backup-${activeDraft.id}`, JSON.stringify({ draft: activeDraft, savedAt: Date.now() }));
+      } catch { /* quota exceeded */ }
+    }, 2000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [activeDraft]);
+
+  // ── Check for unsaved local backup when opening a draft ──
+  const origSetActiveDraft = useCallback((draft: QQDraft | null) => {
+    if (draft) {
+      try {
+        const raw = localStorage.getItem(`qq-draft-backup-${draft.id}`);
+        if (raw) {
+          const backup = JSON.parse(raw) as { draft: QQDraft; savedAt: number };
+          if (backup.draft.updatedAt > draft.updatedAt) {
+            setShowRestore({ draft: backup.draft, savedAt: backup.savedAt });
+            setActiveDraft(draft);
+            return;
+          }
+          localStorage.removeItem(`qq-draft-backup-${draft.id}`);
+        }
+      } catch { /* ignore corrupt data */ }
+    }
+    setActiveDraft(draft);
+  }, []);
 
   useEffect(() => {
     fetch('/api/qq/drafts').then(r => r.json()).then(data => { if (Array.isArray(data)) setDrafts(data); }).catch(() => {});
@@ -95,7 +130,12 @@ export default function QQBuilderPage() {
     setSaving(true);
     try {
       const res = await fetch(`/api/qq/drafts/${draft.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
-      if (res.ok) { const saved = await res.json(); setDrafts(prev => prev.map(d => d.id === saved.id ? saved : d)); setActiveDraft(saved); }
+      if (res.ok) {
+        const saved = await res.json();
+        setDrafts(prev => prev.map(d => d.id === saved.id ? saved : d));
+        setActiveDraft(saved);
+        try { localStorage.removeItem(`qq-draft-backup-${draft.id}`); } catch {}
+      }
     } finally { setSaving(false); }
   }
   async function deleteDraft(id: string) {
@@ -136,12 +176,64 @@ export default function QQBuilderPage() {
 
   const activeQ = activeDraft && activeSlot ? getQuestion(activeDraft, activeSlot.phase, activeSlot.qi) : null;
 
-  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={setActiveDraft} onCreate={createDraft} onDelete={deleteDraft} />;
+  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onDelete={deleteDraft} />;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        @media (max-width: 800px) {
+          .qq-builder-body { flex-direction: column !important; }
+          .qq-builder-grid { min-width: 0 !important; }
+          .qq-builder-grid-inner { min-width: auto !important; grid-template-columns: 60px repeat(5, 1fr) !important; gap: 4px !important; font-size: 10px !important; }
+          .qq-builder-editor { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.07) !important; max-height: 50vh !important; }
+          .qq-builder-header { padding: 8px 12px !important; gap: 8px !important; }
+        }
+      `}</style>
+      {/* Restore dialog */}
+      {showRestore && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#1e293b', borderRadius: 16, padding: '28px 32px', maxWidth: 420, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>💾 Lokale Änderungen gefunden</div>
+            <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.5, margin: '0 0 20px' }}>
+              Es gibt ungespeicherte Änderungen vom {new Date(showRestore.savedAt).toLocaleString('de-DE')}. Wiederherstellen?
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setActiveDraft(showRestore.draft); setShowRestore(null); }} style={{ ...btnStyle('#22C55E'), flex: 1 }}>✅ Wiederherstellen</button>
+              <button onClick={() => { try { localStorage.removeItem(`qq-draft-backup-${showRestore.draft.id}`); } catch {} setShowRestore(null); }} style={{ ...btnStyle('#EF4444'), flex: 1 }}>🗑 Verwerfen</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Preview modal */}
+      {showPreview && activeQ && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowPreview(false)}>
+          <div style={{ width: '80vw', maxWidth: 960, aspectRatio: '16/9', background: '#0f172a', borderRadius: 16, border: `3px solid ${QQ_CATEGORY_COLORS[activeQ.category]}`, boxShadow: `0 0 80px ${QQ_CATEGORY_COLORS[activeQ.category]}33`, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, position: 'relative' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ position: 'absolute', top: 12, right: 16, cursor: 'pointer', fontSize: 20, color: '#475569' }} onClick={() => setShowPreview(false)}>✕</div>
+            <div style={{ padding: '6px 16px', borderRadius: 20, background: QQ_CATEGORY_COLORS[activeQ.category] + '33', border: `1px solid ${QQ_CATEGORY_COLORS[activeQ.category]}66`, fontSize: 14, fontWeight: 900, color: QQ_CATEGORY_COLORS[activeQ.category] }}>
+              {QQ_CATEGORY_LABELS[activeQ.category].emoji} {QQ_CATEGORY_LABELS[activeQ.category].de}
+            </div>
+            {activeQ.image?.url && (
+              <img src={activeQ.image.bgRemovedUrl || activeQ.image.url} alt="" style={{ maxHeight: '40%', maxWidth: '60%', objectFit: 'contain', borderRadius: 12, transform: `translate(${activeQ.image.offsetX ?? 0}%, ${activeQ.image.offsetY ?? 0}%) scale(${activeQ.image.scale ?? 1}) rotate(${activeQ.image.rotation ?? 0}deg)` }} />
+            )}
+            <div style={{ fontSize: 28, fontWeight: 900, textAlign: 'center', lineHeight: 1.3, maxWidth: '80%' }}>{activeQ.text || 'Kein Fragetext'}</div>
+            {activeQ.textEn && <div style={{ fontSize: 18, color: '#64748b', textAlign: 'center', fontStyle: 'italic' }}>{activeQ.textEn}</div>}
+            {activeQ.options && (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
+                {activeQ.options.map((opt, i) => (
+                  <div key={i} style={{ padding: '8px 20px', borderRadius: 10, background: i === activeQ.correctOptionIndex ? '#22C55E33' : 'rgba(255,255,255,0.06)', border: `2px solid ${i === activeQ.correctOptionIndex ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, fontWeight: 800, fontSize: 16 }}>
+                    {String.fromCharCode(65 + i)}: {opt}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ position: 'absolute', bottom: 16, right: 20, fontSize: 12, color: '#334155' }}>Phase {activeQ.phaseIndex} · Slot {activeQ.questionIndexInPhase + 1}</div>
+          </div>
+        </div>
+      )}
       {/* Header */}
-      <div style={{ padding: '12px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ padding: '12px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
         <button onClick={() => setActiveDraft(null)} style={btnStyle('#475569')}>← Zurück</button>
         <input value={activeDraft.title} onChange={e => setActiveDraft({ ...activeDraft, title: e.target.value, updatedAt: Date.now() })}
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'inherit', minWidth: 220 }} />
@@ -165,16 +257,31 @@ export default function QQBuilderPage() {
             <option value="en">English</option>
           </select>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Theme:</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
+              const th = QQ_THEME_PRESETS[t];
+              const active = (activeDraft.theme?.preset ?? 'default') === t;
+              return (
+                <button key={t} onClick={() => setActiveDraft({ ...activeDraft, theme: { ...th }, updatedAt: Date.now() })}
+                  title={t.charAt(0).toUpperCase() + t.slice(1)}
+                  style={{ width: 22, height: 22, borderRadius: 6, border: active ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer', background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`, boxShadow: active ? `0 0 8px ${th.accentColor}66` : 'none' }} />
+              );
+            })}
+          </div>
+        </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
           <button onClick={() => saveDraft(activeDraft)} style={btnStyle('#22C55E')} disabled={saving}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }} className="qq-builder-body">
         {/* Grid */}
-        <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${CATEGORIES.length}, 1fr)`, gap: 6, minWidth: 700 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: 24 }} className="qq-builder-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${CATEGORIES.length}, 1fr)`, gap: 6, minWidth: 700 }} className="qq-builder-grid-inner">
             <div />
             {CATEGORIES.map(cat => (
               <div key={cat} style={{ padding: '8px 6px', borderRadius: 8, textAlign: 'center', background: QQ_CATEGORY_COLORS[cat] + '22', border: `1px solid ${QQ_CATEGORY_COLORS[cat]}44`, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: QQ_CATEGORY_COLORS[cat] }}>
@@ -208,6 +315,36 @@ export default function QQBuilderPage() {
               ];
             }).flat()}
           </div>
+
+          {/* Slide filmstrip */}
+          <div style={{ marginTop: 16, paddingBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#475569', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Slide-Vorschau</div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
+              {activeDraft.questions.map((q, i) => {
+                const cat = q.category;
+                const isActive = activeSlot?.phase === q.phaseIndex && activeSlot?.qi === q.questionIndexInPhase;
+                const th = activeDraft.theme ?? QQ_THEME_PRESETS.default;
+                return (
+                  <div key={q.id} onClick={() => setActiveSlot({ phase: q.phaseIndex, qi: q.questionIndexInPhase })}
+                    style={{ flexShrink: 0, width: 128, height: 72, borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                      background: th.bgColor ?? '#0D0A06', border: isActive ? `2px solid ${QQ_CATEGORY_COLORS[cat]}` : '2px solid rgba(255,255,255,0.08)',
+                      boxShadow: isActive ? `0 0 12px ${QQ_CATEGORY_COLORS[cat]}44` : 'none', transition: 'all 0.15s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+                    {q.image?.url && <img src={q.image.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }} />}
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
+                      <div style={{ fontSize: 8, fontWeight: 900, color: QQ_CATEGORY_COLORS[cat], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {QQ_CATEGORY_LABELS[cat].emoji} P{q.phaseIndex}
+                      </div>
+                      <div style={{ fontSize: 8, color: th.textColor ?? '#e2e8f0', textAlign: 'center', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3, width: '100%' }}>
+                        {q.text || '—'}
+                      </div>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Editor panel */}
@@ -223,7 +360,7 @@ export default function QQBuilderPage() {
           />
         )}
         {!activeQ && (
-          <div style={{ width: 360, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="qq-builder-editor" style={{ width: 360, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ color: '#334155', fontSize: 14, textAlign: 'center' }}>← Slot auswählen</div>
           </div>
         )}
@@ -249,7 +386,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
   }
 
   return (
-    <div style={{ width: 380, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="qq-builder-editor" style={{ width: 380, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* Category header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
@@ -312,6 +449,34 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
                   {ANIM_LABELS[a]}
                 </button>
               ))}
+            </div>
+
+            {/* Image position & scale controls */}
+            <label style={{ ...labelStyle, marginTop: 12 }}>Position & Größe</label>
+            <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>X-Offset</div>
+                  <input type="range" min={-100} max={100} value={img.offsetX ?? 0} onChange={e => setImg({ offsetX: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Y-Offset</div>
+                  <input type="range" min={-100} max={100} value={img.offsetY ?? 0} onChange={e => setImg({ offsetY: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Zoom ({((img.scale ?? 1) * 100).toFixed(0)}%)</div>
+                  <input type="range" min={10} max={300} value={(img.scale ?? 1) * 100} onChange={e => setImg({ scale: Number(e.target.value) / 100 })} style={{ width: '100%' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Drehung ({img.rotation ?? 0}°)</div>
+                  <input type="range" min={0} max={360} value={img.rotation ?? 0} onChange={e => setImg({ rotation: Number(e.target.value) })} style={{ width: '100%' }} />
+                </div>
+              </div>
+              {(img.offsetX || img.offsetY || (img.scale && img.scale !== 1) || img.rotation) && (
+                <button onClick={() => setImg({ offsetX: 0, offsetY: 0, scale: 1, rotation: 0 })} style={{ ...btnStyle('#475569'), width: '100%', marginTop: 8, fontSize: 11 }}>↩ Zurücksetzen</button>
+              )}
             </div>
           </>
         )}

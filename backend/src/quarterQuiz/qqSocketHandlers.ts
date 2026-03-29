@@ -69,6 +69,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:joinTeam', (payload: QQJoinTeamPayload, ack?: unknown) => {
       try {
+        if (!payload.teamName || typeof payload.teamName !== 'string' || payload.teamName.length > 100) throw new QQError('INVALID_NAME', 'Teamname ungültig (max 100 Zeichen).');
+        if (!payload.teamId || typeof payload.teamId !== 'string' || payload.teamId.length > 100) throw new QQError('INVALID_ID', 'TeamId ungültig.');
         const room = ensureQQRoom(payload.roomCode);
         qqJoinTeam(room, payload.teamId, payload.teamName, payload.avatarId);
         socket.join(payload.roomCode);
@@ -83,7 +85,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:startGame', (payload: QQStartGamePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -167,6 +169,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // ── Answer submission (teams) ──────────────────────────────────────────
     socket.on('qq:submitAnswer', (payload: QQSubmitAnswerPayload, ack?: unknown) => {
       try {
+        if (typeof payload.answer !== 'string' || payload.answer.length > 1000) throw new QQError('INVALID_ANSWER', 'Antwort zu lang (max 1000 Zeichen).');
         const room = ensureQQRoom(payload.roomCode);
         const { allAnswered } = qqSubmitAnswer(room, payload.teamId, payload.answer);
         broadcast(io, payload.roomCode);
@@ -209,6 +212,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:hotPotatoWrong', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        if (!room.hotPotatoActiveTeamId) {
+          throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
+        }
         const next = qqHotPotatoEliminate(room);
         if (!next) {
           // All eliminated — no winner, proceed via markWrong

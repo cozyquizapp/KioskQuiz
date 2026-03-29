@@ -154,14 +154,15 @@ export default function QQBeamerPage() {
 
 function BeamerView({ state: s }: { state: QQStateUpdate }) {
   const cat = s.currentQuestion?.category;
-  const bg = cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06';
+  const bg = s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
+  const textCol = s.theme?.textColor ?? '#e2e8f0';
 
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
       background: bg,
       fontFamily: "'Nunito', system-ui, sans-serif",
-      color: '#e2e8f0', display: 'flex', flexDirection: 'column',
+      color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
       transition: 'background 0.8s ease',
     }}>
@@ -373,6 +374,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             backgroundImage: `url(${img.url})`,
             backgroundSize: 'cover', backgroundPosition: 'center',
             animation: imgAnim(img.animation),
+            transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
           }} />
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
@@ -393,6 +395,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
             objectFit: 'contain',
             filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.6))',
             animation: imgAnim(img.animation, 'cutout'),
+            transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
           }}
         />
       )}
@@ -580,6 +583,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
                 borderRadius: 22, objectFit: 'contain',
                 boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
                 animation: imgAnim(img.animation, img.layout),
+                transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
               }}
             />
           </div>

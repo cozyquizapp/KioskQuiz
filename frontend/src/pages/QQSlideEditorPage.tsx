@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
@@ -139,6 +139,73 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
   };
 }
 
+// ── SlideThumbnail ─────────────────────────────────────────────────────────────
+function SlideThumbnail({ template }: { template: QQSlideTemplate }) {
+  const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
+  return (
+    <div style={{
+      width: '100%', aspectRatio: '16/9', position: 'relative', overflow: 'hidden',
+      background: template.background, borderRadius: 4, flexShrink: 0,
+    }}>
+      {sorted.map(el => {
+        const isPh = el.type.startsWith('ph_');
+        if (el.type === 'rect') {
+          return (
+            <div key={el.id} style={{
+              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+              background: el.background ?? 'transparent', borderRadius: el.borderRadius ? `${el.borderRadius * 0.2}px` : undefined,
+              zIndex: el.zIndex ?? 1,
+            }} />
+          );
+        }
+        if (el.type === 'text') {
+          return (
+            <div key={el.id} style={{
+              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+              zIndex: el.zIndex ?? 1, display: 'flex', alignItems: 'center',
+              justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start',
+              overflow: 'hidden',
+            }}>
+              <span style={{
+                fontSize: `${(el.fontSize ?? 3) * 0.14}px`,
+                fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff',
+                textAlign: el.textAlign, lineHeight: 1.2, wordBreak: 'break-word', width: '100%',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{el.text || ''}</span>
+            </div>
+          );
+        }
+        if (isPh) {
+          return (
+            <div key={el.id} style={{
+              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+              zIndex: el.zIndex ?? 1, background: 'rgba(139,92,246,0.15)',
+              border: '1px dashed rgba(139,92,246,0.4)', borderRadius: 2, display: 'flex',
+              alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+            }}>
+              <span style={{ fontSize: '4px', color: '#A78BFA', fontWeight: 700 }}>{PH_LABELS[el.type]?.slice(0, 8)}</span>
+            </div>
+          );
+        }
+        if (el.type === 'image') {
+          return (
+            <div key={el.id} style={{
+              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+              zIndex: el.zIndex ?? 1, background: 'rgba(255,255,255,0.08)', borderRadius: 2,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {el.imageUrl
+                ? <img src={el.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: el.objectFit ?? 'contain' }} />
+                : <span style={{ fontSize: '5px' }}>🖼</span>}
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function QQSlideEditorPage() {
   const [searchParams] = useSearchParams();
@@ -148,12 +215,19 @@ export default function QQSlideEditorPage() {
   const [draft, setDraft] = useState<QQDraft | null>(null);
   const [templates, setTemplates] = useState<QQSlideTemplates>({});
   const [activeType, setActiveType] = useState<QQSlideTemplateType>('LOBBY');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Multi-select: array, selectedIds[0] is the "primary" for properties panel
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [layerPanelOpen, setLayerPanelOpen] = useState(true);
+  const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
+  const clipboardRef = useRef<QQSlideElement[]>([]);
+
+  // Derived: primary selected id (for properties panel)
+  const selectedId = selectedIds[0] ?? null;
 
   useEffect(() => {
     if (!draftId) { setLoading(false); return; }
@@ -188,29 +262,31 @@ export default function QQSlideEditorPage() {
       ...(type === 'image' ? { imageUrl: '', objectFit: 'contain' as const } : {}),
     };
     patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, newEl] });
-    setSelectedId(newEl.id);
+    setSelectedIds([newEl.id]);
   }
 
   function deleteSelected() {
-    if (!selectedId) return;
-    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.filter(e => e.id !== selectedId) });
-    setSelectedId(null);
+    if (selectedIds.length === 0) return;
+    const ids = new Set(selectedIds);
+    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.filter(e => !ids.has(e.id)) });
+    setSelectedIds([]);
   }
 
   function duplicateSelected() {
-    if (!selectedId) return;
-    const el = activeTemplate.elements.find(e => e.id === selectedId);
-    if (!el) return;
-    const copy = { ...el, id: eid(), x: el.x + 3, y: el.y + 3, zIndex: (el.zIndex ?? 1) + 1 };
-    patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, copy] });
-    setSelectedId(copy.id);
+    if (selectedIds.length === 0) return;
+    const ids = new Set(selectedIds);
+    const els = activeTemplate.elements.filter(e => ids.has(e.id));
+    if (els.length === 0) return;
+    const copies = els.map(el => ({ ...el, id: eid(), x: el.x + 3, y: el.y + 3, zIndex: (el.zIndex ?? 1) + 1 }));
+    patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, ...copies] });
+    setSelectedIds(copies.map(c => c.id));
   }
 
   function undo() {
     if (histIdxRef.current <= 0) return;
     histIdxRef.current--;
     setTemplates(historyRef.current[histIdxRef.current]);
-    setSelectedId(null);
+    setSelectedIds([]);
     setEditingId(null);
   }
   function redo() {
@@ -222,7 +298,7 @@ export default function QQSlideEditorPage() {
   function resetTemplate() {
     if (!confirm('Folie auf Standard zurücksetzen?')) return;
     patchTemplate(makeDefault(activeType));
-    setSelectedId(null);
+    setSelectedIds([]);
   }
 
   async function save() {
@@ -237,29 +313,118 @@ export default function QQSlideEditorPage() {
     } finally { setSaving(false); }
   }
 
+  // ── Alignment helpers ─────────────────────────────────────────────────────
+  function alignElements(action: string) {
+    if (selectedIds.length === 0) return;
+    const els = activeTemplate.elements.filter(e => selectedIds.includes(e.id));
+    if (els.length === 0) return;
+
+    // Bounding box of selection
+    const minX = Math.min(...els.map(e => e.x));
+    const minY = Math.min(...els.map(e => e.y));
+    const maxX = Math.max(...els.map(e => e.x + e.w));
+    const maxY = Math.max(...els.map(e => e.y + e.h));
+    const selW = maxX - minX;
+    const selH = maxY - minY;
+
+    const idSet = new Set(selectedIds);
+    const newEls = activeTemplate.elements.map(el => {
+      if (!idSet.has(el.id)) return el;
+      let { x, y, w, h } = el;
+      switch (action) {
+        case 'left':    x = els.length === 1 ? 0 : minX; break;
+        case 'centerH': x = els.length === 1 ? 50 - w / 2 : minX + (selW - w) / 2; break;
+        case 'right':   x = els.length === 1 ? 100 - w : maxX - w; break;
+        case 'top':     y = els.length === 1 ? 0 : minY; break;
+        case 'centerV': y = els.length === 1 ? 50 - h / 2 : minY + (selH - h) / 2; break;
+        case 'bottom':  y = els.length === 1 ? 100 - h : maxY - h; break;
+        case 'distH': {
+          if (els.length < 3) break;
+          const sorted = [...els].sort((a, b) => a.x - b.x);
+          const totalW = sorted.reduce((sum, e) => sum + e.w, 0);
+          const gap = (maxX - minX - totalW) / (sorted.length - 1);
+          let cx = minX;
+          const positions: Record<string, number> = {};
+          sorted.forEach(e => { positions[e.id] = cx; cx += e.w + gap; });
+          x = positions[el.id] ?? x;
+          break;
+        }
+        case 'distV': {
+          if (els.length < 3) break;
+          const sorted = [...els].sort((a, b) => a.y - b.y);
+          const totalH = sorted.reduce((sum, e) => sum + e.h, 0);
+          const gap = (maxY - minY - totalH) / (sorted.length - 1);
+          let cy = minY;
+          const positions: Record<string, number> = {};
+          sorted.forEach(e => { positions[e.id] = cy; cy += e.h + gap; });
+          y = positions[el.id] ?? y;
+          break;
+        }
+      }
+      return { ...el, x, y };
+    });
+    patchTemplate({ ...activeTemplate, elements: newEls });
+  }
+
+  // ── Layer z-order ─────────────────────────────────────────────────────────
+  function changeZ(id: string, dir: 'up' | 'down') {
+    const els = [...activeTemplate.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
+    const idx = els.findIndex(e => e.id === id);
+    if (idx === -1) return;
+    if (dir === 'up' && idx < els.length - 1) {
+      const a = els[idx], b = els[idx + 1];
+      const az = a.zIndex ?? 1, bz = b.zIndex ?? 1;
+      patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === a.id ? { ...e, zIndex: bz } : e.id === b.id ? { ...e, zIndex: az } : e) });
+    }
+    if (dir === 'down' && idx > 0) {
+      const a = els[idx], b = els[idx - 1];
+      const az = a.zIndex ?? 1, bz = b.zIndex ?? 1;
+      patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === a.id ? { ...e, zIndex: bz } : e.id === b.id ? { ...e, zIndex: az } : e) });
+    }
+  }
+
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
       if (target.isContentEditable) return;
-      if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); return; }
+      if (e.key === 'Escape') { setSelectedIds([]); setEditingId(null); return; }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); void save(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); duplicateSelected(); return; }
-      if (!selectedId) return;
+      // Ctrl+C: copy
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        if (selectedIds.length > 0) {
+          const ids = new Set(selectedIds);
+          clipboardRef.current = activeTemplate.elements.filter(el => ids.has(el.id));
+        }
+        return;
+      }
+      // Ctrl+V: paste
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        if (clipboardRef.current.length > 0) {
+          const copies = clipboardRef.current.map(el => ({ ...el, id: eid(), x: el.x + 3, y: el.y + 3 }));
+          patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, ...copies] });
+          setSelectedIds(copies.map(c => c.id));
+        }
+        return;
+      }
+      if (selectedIds.length === 0) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
       const nudge = e.shiftKey ? 2 : 0.5;
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, x: Math.max(0, Math.min(97, el.x - nudge)) } : el) }); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, x: Math.max(0, Math.min(97, el.x + nudge)) } : el) }); }
-      if (e.key === 'ArrowUp')    { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, y: Math.max(0, Math.min(97, el.y - nudge)) } : el) }); }
-      if (e.key === 'ArrowDown')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => el.id === selectedId ? { ...el, y: Math.max(0, Math.min(97, el.y + nudge)) } : el) }); }
+      const ids = new Set(selectedIds);
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x - nudge)) } : el) }); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x + nudge)) } : el) }); }
+      if (e.key === 'ArrowUp')    { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y - nudge)) } : el) }); }
+      if (e.key === 'ArrowDown')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y + nudge)) } : el) }); }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, editingId, activeTemplate, activeType]);
+  }, [selectedIds, editingId, activeTemplate, activeType]);
 
   const selectedEl = activeTemplate.elements.find(e => e.id === selectedId) ?? null;
   const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
@@ -279,6 +444,11 @@ export default function QQSlideEditorPage() {
       <style>{`
         .qqse-elem:hover { outline: 1px solid rgba(59,130,246,0.5) !important; }
         .qqse-handle { position: absolute; width: 9px; height: 9px; background: #3B82F6; border: 2px solid #fff; border-radius: 2px; z-index: 9999; }
+        .qqse-align-btn { padding: 5px 7px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 800; line-height: 1; }
+        .qqse-align-btn:hover { background: rgba(59,130,246,0.2); color: #93C5FD; border-color: rgba(59,130,246,0.4); }
+        .qqse-layer-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+        .qqse-layer-row:hover { background: rgba(255,255,255,0.04); }
+        .qqse-layer-row.selected { background: rgba(59,130,246,0.12); }
       `}</style>
 
       {/* ── Header ── */}
@@ -291,8 +461,8 @@ export default function QQSlideEditorPage() {
           <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', alignSelf: 'center' }} />
           <button onClick={resetTemplate} style={btn('#475569', true)}>Zurücksetzen</button>
-          <button onClick={duplicateSelected} disabled={!selectedId} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘ Duplizieren</button>
-          <button onClick={deleteSelected} disabled={!selectedId} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑 Löschen</button>
+          <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘ Duplizieren</button>
+          <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑 Löschen</button>
           <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={btn('#22C55E')}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
       </div>
@@ -300,8 +470,8 @@ export default function QQSlideEditorPage() {
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-        {/* Left: slide list */}
-        <div style={{ width: 196, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
+        {/* Left: slide list with thumbnails */}
+        <div style={{ width: 206, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
           {GROUPS.map(group => {
             const specs = TEMPLATE_SPECS.filter(s => s.group === group);
             return (
@@ -310,12 +480,19 @@ export default function QQSlideEditorPage() {
                 {specs.map(s => {
                   const isActive = activeType === s.type;
                   const isCustom = !!templates[s.type];
+                  const tpl = templates[s.type] ?? makeDefault(s.type);
                   return (
-                    <button key={s.type} onClick={() => { setActiveType(s.type); setSelectedId(null); }} style={{ width: '100%', padding: '9px 14px', background: isActive ? s.color + '20' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? s.color : 'transparent'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'inherit', textAlign: 'left' }}>
-                      <span style={{ fontSize: 16, flexShrink: 0 }}>{s.icon}</span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: isActive ? 900 : 600, color: isActive ? s.color : '#64748b', lineHeight: 1.2 }}>{s.label}</div>
-                        {isCustom && <div style={{ fontSize: 9, color: '#22C55E', fontWeight: 700 }}>✓ angepasst</div>}
+                    <button key={s.type} onClick={() => { setActiveType(s.type); setSelectedIds([]); }}
+                      style={{ width: '100%', padding: '8px 10px', background: isActive ? s.color + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? s.color : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
+                      {/* Thumbnail */}
+                      <SlideThumbnail template={tpl} />
+                      {/* Label row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>{s.icon}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? s.color : '#64748b', lineHeight: 1.2 }}>{s.label}</div>
+                          {isCustom && <div style={{ fontSize: 9, color: '#22C55E', fontWeight: 700 }}>✓ angepasst</div>}
+                        </div>
                       </div>
                     </button>
                   );
@@ -356,15 +533,49 @@ export default function QQSlideEditorPage() {
             ))}
           </div>
 
+          {/* Alignment toolbar (visible when selection exists) */}
+          {selectedIds.length > 0 && (
+            <div style={{ padding: '5px 14px', background: '#162032', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, color: '#475569', fontWeight: 800, marginRight: 4 }}>Ausrichten:</span>
+              {[
+                { action: 'left',    icon: '⬛←', title: 'Linksbündig' },
+                { action: 'centerH', icon: '↔',  title: 'Horizontal zentrieren' },
+                { action: 'right',   icon: '→⬛', title: 'Rechtsbündig' },
+                { action: 'top',     icon: '⬛↑', title: 'Oben ausrichten' },
+                { action: 'centerV', icon: '↕',  title: 'Vertikal zentrieren' },
+                { action: 'bottom',  icon: '↓⬛', title: 'Unten ausrichten' },
+                { action: 'distH',   icon: '⫞⫟', title: 'Horizontal verteilen' },
+                { action: 'distV',   icon: '⫠⫡', title: 'Vertikal verteilen' },
+              ].map(({ action, icon, title }) => (
+                <button key={action} className="qqse-align-btn" onClick={() => alignElements(action)} title={title}>{icon}</button>
+              ))}
+            </div>
+          )}
+
           {/* Canvas area */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}
-            onClick={() => setSelectedId(null)}>
+            onClick={() => setSelectedIds([])}>
             <SlideCanvas
               template={activeTemplate}
-              selectedId={selectedId}
+              selectedIds={selectedIds}
               editingId={editingId}
-              onSelect={id => { setSelectedId(id); if (id !== editingId) setEditingId(null); }}
+              snapLines={snapLines}
+              onSnapLinesChange={setSnapLines}
+              onSelect={(id, shift) => {
+                if (shift) {
+                  setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
+                } else {
+                  setSelectedIds([id]);
+                }
+                if (!shift) setEditingId(null);
+              }}
+              onMultiSelect={ids => setSelectedIds(ids)}
+              onClearSelect={() => setSelectedIds([])}
               onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
+              onUpdateMulti={(patches) => {
+                const patchMap = new Map(patches.map(p => [p.id, p.patch]));
+                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => patchMap.has(e.id) ? { ...e, ...patchMap.get(e.id) } : e) });
+              }}
               onStartEdit={setEditingId}
               onEndEdit={(id, text) => {
                 patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
@@ -374,13 +585,50 @@ export default function QQSlideEditorPage() {
           </div>
         </div>
 
-        {/* Right: properties */}
-        <div style={{ width: 290, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflowY: 'auto' }}>
-          {selectedEl ? (
-            <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected} />
-          ) : (
-            <EmptyProperties onAdd={addElement} />
-          )}
+        {/* Right: properties + layer panel */}
+        <div style={{ width: 290, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            {selectedEl ? (
+              <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected} />
+            ) : (
+              <EmptyProperties onAdd={addElement} />
+            )}
+          </div>
+
+          {/* Layer Panel */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+            <button onClick={() => setLayerPanelOpen(p => !p)}
+              style={{ width: '100%', padding: '8px 14px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', color: '#94a3b8', fontWeight: 800, fontSize: 11 }}>
+              <span style={{ fontSize: 10 }}>{layerPanelOpen ? '▼' : '▶'}</span>
+              Ebenen
+              <span style={{ marginLeft: 'auto', fontSize: 9, color: '#475569' }}>{activeTemplate.elements.length}</span>
+            </button>
+            {layerPanelOpen && (
+              <div style={{ padding: '4px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {[...activeTemplate.elements]
+                  .sort((a, b) => (b.zIndex ?? 1) - (a.zIndex ?? 1))
+                  .map(el => {
+                    const isPh = el.type.startsWith('ph_');
+                    const isSelected = selectedIds.includes(el.id);
+                    const icon = isPh ? '⬡' : el.type === 'text' ? '📝' : el.type === 'image' ? '🖼' : '⬛';
+                    const label = isPh ? (PH_LABELS[el.type] ?? el.type) : (el.type === 'text' ? (el.text?.slice(0, 16) ?? 'Text') : el.type);
+                    return (
+                      <div key={el.id}
+                        className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
+                        onClick={() => setSelectedIds([el.id])}>
+                        <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
+                        <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : '#64748b', fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                        <span style={{ fontSize: 9, color: '#334155', fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
+                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }}
+                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }} title="Ebene nach vorne">↑</button>
+                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }}
+                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }} title="Ebene nach hinten">↓</button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -388,12 +636,19 @@ export default function QQSlideEditorPage() {
 }
 
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
-function SlideCanvas({ template, selectedId, editingId, onSelect, onUpdate, onStartEdit, onEndEdit }: {
+const SNAP_THRESHOLD = 1.5; // percent
+
+function SlideCanvas({ template, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit }: {
   template: QQSlideTemplate;
-  selectedId: string | null;
+  selectedIds: string[];
   editingId: string | null;
-  onSelect: (id: string | null) => void;
+  snapLines: { x?: number; y?: number };
+  onSnapLinesChange: (lines: { x?: number; y?: number }) => void;
+  onSelect: (id: string, shift: boolean) => void;
+  onMultiSelect: (ids: string[]) => void;
+  onClearSelect: () => void;
   onUpdate: (id: string, patch: Partial<QQSlideElement>) => void;
+  onUpdateMulti: (patches: Array<{ id: string; patch: Partial<QQSlideElement> }>) => void;
   onStartEdit: (id: string) => void;
   onEndEdit: (id: string, text: string) => void;
 }) {
@@ -401,8 +656,11 @@ function SlideCanvas({ template, selectedId, editingId, onSelect, onUpdate, onSt
   const [canvasW, setCanvasW] = useState(800);
   const canvasH = canvasW / CANVAS_RATIO;
 
-  const dragRef = useRef<{ id: string; startMX: number; startMY: number; startX: number; startY: number } | null>(null);
+  // dragRef stores per-element start positions for multi-drag
+  const dragRef = useRef<{ ids: string[]; startMX: number; startMY: number; starts: Array<{ id: string; x: number; y: number }> } | null>(null);
   const resizeRef = useRef<{ id: string; handle: string; startMX: number; startMY: number; startX: number; startY: number; startW: number; startH: number } | null>(null);
+  const marqueeRef = useRef<{ startX: number; startY: number; curX: number; curY: number } | null>(null);
+  const [marqueeRect, setMarqueeRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -414,17 +672,60 @@ function SlideCanvas({ template, selectedId, editingId, onSelect, onUpdate, onSt
     return () => obs.disconnect();
   }, []);
 
+  const applySnap = useCallback((elId: string, rawX: number, rawY: number, elW: number, elH: number) => {
+    let x = rawX, y = rawY;
+    const newSnap: { x?: number; y?: number } = {};
+
+    // Horizontal snaps
+    const cx = x + elW / 2;
+    if (Math.abs(cx - 50) < SNAP_THRESHOLD) { x = 50 - elW / 2; newSnap.x = 50; }
+    else if (Math.abs(x) < SNAP_THRESHOLD) { x = 0; newSnap.x = 0; }
+    else if (Math.abs(x + elW - 100) < SNAP_THRESHOLD) { x = 100 - elW; newSnap.x = 100; }
+
+    // Vertical snaps
+    const cy = y + elH / 2;
+    if (Math.abs(cy - 50) < SNAP_THRESHOLD) { y = 50 - elH / 2; newSnap.y = 50; }
+    else if (Math.abs(y) < SNAP_THRESHOLD) { y = 0; newSnap.y = 0; }
+    else if (Math.abs(y + elH - 100) < SNAP_THRESHOLD) { y = 100 - elH; newSnap.y = 100; }
+
+    onSnapLinesChange(newSnap);
+    return { x, y };
+  }, [onSnapLinesChange]);
+
   useEffect(() => {
     function onMove(e: MouseEvent) {
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const cw = rect.width, ch = rect.height;
+
       if (dragRef.current) {
-        const { id, startMX, startMY, startX, startY } = dragRef.current;
+        const { ids, startMX, startMY, starts } = dragRef.current;
         const dx = ((e.clientX - startMX) / cw) * 100;
         const dy = ((e.clientY - startMY) / ch) * 100;
-        onUpdate(id, { x: Math.max(0, Math.min(97, startX + dx)), y: Math.max(0, Math.min(97, startY + dy)) });
+
+        // For single element drag, apply snap
+        if (ids.length === 1) {
+          const s = starts[0];
+          const el = template.elements.find(el => el.id === s.id);
+          if (el) {
+            const rawX = Math.max(0, Math.min(97, s.x + dx));
+            const rawY = Math.max(0, Math.min(97, s.y + dy));
+            const { x, y } = applySnap(s.id, rawX, rawY, el.w, el.h);
+            onUpdate(s.id, { x, y });
+          }
+        } else {
+          // Multi-drag: move all without snap
+          const patches = starts.map(s => ({
+            id: s.id,
+            patch: {
+              x: Math.max(0, Math.min(97, s.x + dx)),
+              y: Math.max(0, Math.min(97, s.y + dy)),
+            },
+          }));
+          onUpdateMulti(patches);
+        }
       }
+
       if (resizeRef.current) {
         const { id, handle, startMX, startMY, startX, startY, startW, startH } = resizeRef.current;
         const dx = ((e.clientX - startMX) / cw) * 100;
@@ -436,28 +737,103 @@ function SlideCanvas({ template, selectedId, editingId, onSelect, onUpdate, onSt
         if (handle.includes('n')) { patch.y = Math.max(0, startY + dy); patch.h = Math.max(3, startH - dy); }
         onUpdate(id, patch);
       }
+
+      if (marqueeRef.current) {
+        const mx = ((e.clientX - rect.left) / cw) * 100;
+        const my = ((e.clientY - rect.top) / ch) * 100;
+        marqueeRef.current.curX = mx;
+        marqueeRef.current.curY = my;
+        const { startX, startY } = marqueeRef.current;
+        setMarqueeRect({
+          x: Math.min(startX, mx),
+          y: Math.min(startY, my),
+          w: Math.abs(mx - startX),
+          h: Math.abs(my - startY),
+        });
+      }
     }
-    function onUp() { dragRef.current = null; resizeRef.current = null; }
+
+    function onUp(e: MouseEvent) {
+      if (marqueeRef.current) {
+        const { startX, startY, curX, curY } = marqueeRef.current;
+        const x1 = Math.min(startX, curX), x2 = Math.max(startX, curX);
+        const y1 = Math.min(startY, curY), y2 = Math.max(startY, curY);
+        if (Math.abs(x2 - x1) > 1 || Math.abs(y2 - y1) > 1) {
+          const selected = template.elements.filter(el => {
+            const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+            return cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2;
+          });
+          if (selected.length > 0) onMultiSelect(selected.map(el => el.id));
+        }
+        marqueeRef.current = null;
+        setMarqueeRect(null);
+      }
+      dragRef.current = null;
+      resizeRef.current = null;
+      onSnapLinesChange({});
+    }
+
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, [onUpdate]);
+  }, [onUpdate, onUpdateMulti, onMultiSelect, onSnapLinesChange, applySnap, template.elements]);
 
   const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
 
   return (
     <div ref={canvasRef}
       style={{ width: '100%', maxWidth: `${canvasH * CANVAS_RATIO}px`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: template.background, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
-      onClick={e => { if (e.target === e.currentTarget) onSelect(null); }}>
+      onMouseDown={e => {
+        if (e.target !== e.currentTarget) return;
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const mx = ((e.clientX - rect.left) / rect.width) * 100;
+        const my = ((e.clientY - rect.top) / rect.height) * 100;
+        marqueeRef.current = { startX: mx, startY: my, curX: mx, curY: my };
+        onClearSelect();
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClearSelect(); }}>
+
       {sorted.map(el => (
-        <CanvasElement key={el.id} el={el} canvasW={canvasW} selected={selectedId === el.id} editing={editingId === el.id}
-          onSelect={() => onSelect(el.id)}
-          onDragStart={e => { e.stopPropagation(); onSelect(el.id); dragRef.current = { id: el.id, startMX: e.clientX, startMY: e.clientY, startX: el.x, startY: el.y }; }}
+        <CanvasElement key={el.id} el={el} canvasW={canvasW}
+          selected={selectedIds.includes(el.id)}
+          editing={editingId === el.id}
+          onSelect={(shift) => onSelect(el.id, shift)}
+          onDragStart={(e) => {
+            e.stopPropagation();
+            onSelect(el.id, e.shiftKey);
+            // Build multi-drag starts: include all currently selected + this element
+            const ids = selectedIds.includes(el.id) ? selectedIds : [el.id];
+            const starts = ids.map(id => {
+              const found = template.elements.find(x => x.id === id);
+              return { id, x: found?.x ?? 0, y: found?.y ?? 0 };
+            });
+            dragRef.current = { ids, startMX: e.clientX, startMY: e.clientY, starts };
+          }}
           onResizeStart={(e, handle) => { e.stopPropagation(); resizeRef.current = { id: el.id, handle, startMX: e.clientX, startMY: e.clientY, startX: el.x, startY: el.y, startW: el.w, startH: el.h }; }}
-          onDblClick={() => { if (el.type === 'text') { onSelect(el.id); onStartEdit(el.id); } }}
+          onDblClick={() => { if (el.type === 'text') { onSelect(el.id, false); onStartEdit(el.id); } }}
           onEndEdit={text => onEndEdit(el.id, text)}
         />
       ))}
+
+      {/* Marquee selection rect */}
+      {marqueeRect && (
+        <div style={{
+          position: 'absolute',
+          left: `${marqueeRect.x}%`, top: `${marqueeRect.y}%`,
+          width: `${marqueeRect.w}%`, height: `${marqueeRect.h}%`,
+          border: '1px solid #3B82F6', background: 'rgba(59,130,246,0.08)',
+          pointerEvents: 'none', zIndex: 99999,
+        }} />
+      )}
+
+      {/* Snap lines */}
+      {snapLines.x !== undefined && (
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${snapLines.x}%`, width: 1, background: '#3B82F6', opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
+      )}
+      {snapLines.y !== undefined && (
+        <div style={{ position: 'absolute', left: 0, right: 0, top: `${snapLines.y}%`, height: 1, background: '#3B82F6', opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
+      )}
     </div>
   );
 }
@@ -477,7 +853,7 @@ const HANDLE_STYLE: Record<string, React.CSSProperties> = {
 
 function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, onResizeStart, onDblClick, onEndEdit }: {
   el: QQSlideElement; canvasW: number; selected: boolean; editing: boolean;
-  onSelect: () => void;
+  onSelect: (shift: boolean) => void;
   onDragStart: (e: React.MouseEvent) => void;
   onResizeStart: (e: React.MouseEvent, handle: string) => void;
   onDblClick: () => void;
@@ -486,6 +862,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
   const isPh = el.type.startsWith('ph_');
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
   const editRef = useRef<HTMLDivElement>(null);
+  const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily;
 
   useEffect(() => {
     if (editing && editRef.current) {
@@ -511,14 +888,14 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
         outline: selected && !editing ? '1px solid rgba(59,130,246,0.3)' : undefined,
         outlineOffset: selected ? '3px' : undefined,
       }}
-      onClick={e => { e.stopPropagation(); onSelect(); }}
+      onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
       onDoubleClick={e => { e.stopPropagation(); onDblClick(); }}
-      onMouseDown={e => { if (!editing) { onSelect(); onDragStart(e); } }}>
+      onMouseDown={e => { if (!editing) { onDragStart(e); } }}>
 
       {/* Text content */}
       {el.type === 'text' && !editing && (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '2px 6px', boxSizing: 'border-box', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
-          <span style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, letterSpacing: el.letterSpacing != null ? `${el.letterSpacing}em` : undefined, wordBreak: 'break-word', width: '100%' }}>
+          <span style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, letterSpacing: el.letterSpacing != null ? `${el.letterSpacing}em` : undefined, wordBreak: 'break-word', width: '100%', fontFamily: fontFamily ?? "'Nunito', sans-serif" }}>
             {el.text || '…'}
           </span>
         </div>
@@ -531,7 +908,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
             ref={editRef}
             contentEditable
             suppressContentEditableWarning
-            style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, wordBreak: 'break-word', width: '100%', outline: 'none', whiteSpace: 'pre-wrap', minHeight: '1em' }}
+            style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, wordBreak: 'break-word', width: '100%', outline: 'none', whiteSpace: 'pre-wrap', minHeight: '1em', fontFamily: fontFamily ?? "'Nunito', sans-serif" }}
             onBlur={e => onEndEdit(e.currentTarget.innerText)}
             onKeyDown={e => {
               e.stopPropagation();
@@ -584,6 +961,12 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
 
 // ── PropertiesPanel ───────────────────────────────────────────────────────────
 const ANIM_IN_OPTIONS: Array<QQSlideElement['animIn']> = ['none', 'fadeIn', 'fadeUp', 'pop', 'slideLeft', 'slideRight'];
+const FONT_OPTIONS = [
+  { value: "'Nunito', sans-serif", label: 'Nunito (Standard)' },
+  { value: 'Georgia, serif',       label: 'Georgia (Serif)' },
+  { value: 'monospace',            label: 'Monospace' },
+  { value: "'Impact', sans-serif", label: 'Impact' },
+];
 
 function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
   element: QQSlideElement;
@@ -592,6 +975,24 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
   onDuplicate: () => void;
 }) {
   const isPh = el.type.startsWith('ph_');
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily ?? '';
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch('/api/upload/question-image', { method: 'POST', body: fd });
+      if (res.ok) {
+        const { url } = await res.json() as { url: string };
+        onChange({ imageUrl: url } as Partial<QQSlideElement>);
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -647,6 +1048,12 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
               </select>
             </Field>
           </div>
+          <Field label="Schriftart">
+            <select value={fontFamily} onChange={e => onChange({ fontFamily: e.target.value } as Partial<QQSlideElement>)} style={{ ...input, padding: '4px 7px' }}>
+              <option value="">Standard (Nunito)</option>
+              {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
           <Field label="Farbe">
             <div style={{ display: 'flex', gap: 6 }}>
               <input type="color" value={el.color ?? '#ffffff'} onChange={e => onChange({ color: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
@@ -690,6 +1097,26 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
         <Section label="Bild">
           <Field label="URL">
             <input value={el.imageUrl ?? ''} onChange={e => onChange({ imageUrl: e.target.value })} style={{ ...input, padding: '4px 7px', fontFamily: 'monospace', fontSize: 11 }} placeholder="https://…" />
+          </Field>
+          <Field label="Hochladen">
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button
+                onClick={() => uploadRef.current?.click()}
+                disabled={uploading}
+                style={{ ...btn('#3B82F6', true), padding: '5px 10px', fontSize: 11 }}>
+                {uploading ? '⏳ Lädt…' : '📤 Hochladen'}
+              </button>
+              <input
+                ref={uploadRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) void handleUpload(f); e.target.value = ''; }}
+              />
+              {el.imageUrl && (
+                <img src={el.imageUrl} alt="" style={{ width: 36, height: 24, objectFit: 'cover', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' }} />
+              )}
+            </div>
           </Field>
           <Field label="Darstellung">
             <div style={{ display: 'flex', gap: 4 }}>
@@ -745,10 +1172,12 @@ function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) 
       </div>
       <div style={{ marginTop: 14, padding: '10px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
         Klicke auf ein Element zum Bearbeiten.<br />
+        Shift+Klick = Mehrfachauswahl · Drag leer = Marquee<br />
         Drag = verschieben · Ecken = Größe ändern<br />
         Doppelklick auf Text = direkt bearbeiten<br />
         <strong style={{ color: '#475569' }}>Tastatur:</strong> Entf = löschen · Pfeile = nudgen · Shift+Pfeile = groß nudgen<br />
-        Ctrl+Z/Y = Undo/Redo · Ctrl+D = duplizieren · Ctrl+S = speichern
+        Ctrl+Z/Y = Undo/Redo · Ctrl+D = duplizieren · Ctrl+S = speichern<br />
+        Ctrl+C/V = Kopieren/Einfügen
       </div>
     </div>
   );

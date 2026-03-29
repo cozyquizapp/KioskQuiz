@@ -249,7 +249,8 @@ export type QQSlideElementType =
   | 'text' | 'image' | 'rect'
   | 'ph_question' | 'ph_options' | 'ph_category' | 'ph_timer'
   | 'ph_teams' | 'ph_grid' | 'ph_answer' | 'ph_winner'
-  | 'ph_phase_name' | 'ph_phase_desc' | 'ph_room_code';
+  | 'ph_phase_name' | 'ph_phase_desc' | 'ph_room_code'
+  | 'animatedAvatar';
 
 export interface QQSlideElement {
   id: string;
@@ -280,6 +281,12 @@ export interface QQSlideElement {
   animIn?: 'none' | 'fadeUp' | 'fadeIn' | 'pop' | 'slideLeft' | 'slideRight';
   animDelay?: number;
   animDuration?: number;
+  // Animated Avatar (only for type === 'animatedAvatar')
+  avatarId?: string; // Which avatar to show
+  animType?: 'wiggle' | 'walk' | 'bounce';
+  // Animation type for avatar
+  avatarAnimDuration?: number; // seconds
+  avatarAnimDelay?: number; // seconds
 }
 
 export type QQSlideTemplateType =

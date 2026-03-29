@@ -37,6 +37,114 @@ function makeEmptyQuestion(phaseIndex: number, questionIndexInPhase: number, cat
   return base;
 }
 
+function makeSampleDraft(): QQDraft {
+  const id = `qq-draft-sample-${Date.now().toString(36)}`;
+  const questions: QQQuestion[] = [
+    // ── Phase 1 ────────────────────────────────────────────────────────────────
+    { id: `${id}-p1-0`, category: 'SCHAETZCHEN', phaseIndex: 1, questionIndexInPhase: 0,
+      text: 'Wie viele Brücken hat Hamburg?',
+      textEn: 'How many bridges does Hamburg have?',
+      targetValue: 2500, unit: 'Brücken', unitEn: 'bridges',
+      answer: 'Ca. 2.500 Brücken — mehr als Venedig!', answerEn: 'Around 2,500 bridges — more than Venice!' },
+    { id: `${id}-p1-1`, category: 'MUCHO', phaseIndex: 1, questionIndexInPhase: 1,
+      text: 'Welche Stadt hat mehr Einwohner als Hamburg?',
+      textEn: 'Which city has more inhabitants than Hamburg?',
+      options: ['Bremen', 'Hannover', 'München', 'Kiel'], optionsEn: ['Bremen', 'Hannover', 'Munich', 'Kiel'],
+      correctOptionIndex: 2, answer: 'München', answerEn: 'Munich' },
+    { id: `${id}-p1-2`, category: 'BUNTE_TUETE', phaseIndex: 1, questionIndexInPhase: 2,
+      text: 'Nenne ein Hamburger Wahrzeichen — reihum!',
+      textEn: 'Name a Hamburg landmark — one by one!',
+      answer: 'Michel, Elbphilharmonie, Speicherstadt, Hafen…', answerEn: 'Michel, Elbphilharmonie, Speicherstadt, Port…',
+      bunteTuete: { kind: 'hotPotato' } },
+    { id: `${id}-p1-3`, category: 'ZEHN_VON_ZEHN', phaseIndex: 1, questionIndexInPhase: 3,
+      text: 'Was war Hamburg bevor es Teil Deutschlands wurde?',
+      textEn: 'What was Hamburg before becoming part of Germany?',
+      options: ['Fürstentum', 'Freie Hansestadt', 'Königreich'],
+      optionsEn: ['Principality', 'Free Hanseatic City', 'Kingdom'],
+      correctOptionIndex: 1, answer: 'Freie Hansestadt', answerEn: 'Free Hanseatic City' },
+    { id: `${id}-p1-4`, category: 'CHEESE', phaseIndex: 1, questionIndexInPhase: 4,
+      text: 'Was ist auf diesem Bild zu sehen?',
+      textEn: 'What can you see in this picture?',
+      answer: 'Elbphilharmonie', answerEn: 'Elbphilharmonie' },
+    // ── Phase 2 ────────────────────────────────────────────────────────────────
+    { id: `${id}-p2-0`, category: 'SCHAETZCHEN', phaseIndex: 2, questionIndexInPhase: 0,
+      text: 'In welchem Jahr wurde der Hamburger Hafen offiziell gegründet?',
+      textEn: 'In which year was Hamburg\'s port officially founded?',
+      targetValue: 1189, unit: '', unitEn: '',
+      answer: '1189 — per Urkunde von Friedrich Barbarossa', answerEn: '1189 — by charter of Frederick Barbarossa' },
+    { id: `${id}-p2-1`, category: 'MUCHO', phaseIndex: 2, questionIndexInPhase: 1,
+      text: 'Welcher Hamburger Künstler gilt als „König von Hamburg"?',
+      textEn: 'Which Hamburg artist is known as the "King of Hamburg"?',
+      options: ['Fettes Brot', 'Jan Delay', 'Beginner', 'Samy Deluxe'], optionsEn: ['Fettes Brot', 'Jan Delay', 'Beginner', 'Samy Deluxe'],
+      correctOptionIndex: 1, answer: 'Jan Delay', answerEn: 'Jan Delay' },
+    { id: `${id}-p2-2`, category: 'BUNTE_TUETE', phaseIndex: 2, questionIndexInPhase: 2,
+      text: '8 Aussagen über Hamburg — eine ist gelogen. Welche?',
+      textEn: '8 facts about Hamburg — one is a lie. Which one?',
+      answer: 'Hamburg hat keinen U-Bahn-Tunnel unter der Elbe (falsch — es gibt den Elbtunnel!)',
+      answerEn: 'Hamburg has no subway tunnel under the Elbe (false — the Elbtunnel exists!)',
+      bunteTuete: { kind: 'oneOfEight', falseIndex: 4,
+        statements: [
+          'Hamburg hat mehr Brücken als Venedig',
+          'Der Hamburger Michel ist 132 Meter hoch',
+          'Die Reeperbahn ist Deutschlands bekannteste Amüsiermeile',
+          'Der Hamburger Hafen ist der drittgrößte in Europa',
+          'In Hamburg gibt es keinen Tunnel unter der Elbe',
+          'Der Hamburger SV wurde 1887 gegründet',
+          'Die Speicherstadt steht auf der UNESCO-Welterbeliste',
+          'Hamburg war Gründungsmitglied der Hanse',
+        ],
+        statementsEn: [
+          'Hamburg has more bridges than Venice',
+          'St. Michael\'s Church is 132 metres tall',
+          'The Reeperbahn is Germany\'s most famous entertainment district',
+          'Hamburg\'s port is the third largest in Europe',
+          'There is no tunnel under the Elbe in Hamburg',
+          'Hamburger SV was founded in 1887',
+          'The Speicherstadt is on the UNESCO World Heritage list',
+          'Hamburg was a founding member of the Hanseatic League',
+        ] } },
+    { id: `${id}-p2-3`, category: 'ZEHN_VON_ZEHN', phaseIndex: 2, questionIndexInPhase: 3,
+      text: 'In welchem Jahr wurde die Elbphilharmonie eröffnet?',
+      textEn: 'In which year was the Elbphilharmonie opened?',
+      options: ['2015', '2017', '2019'], optionsEn: ['2015', '2017', '2019'],
+      correctOptionIndex: 1, answer: '2017', answerEn: '2017' },
+    { id: `${id}-p2-4`, category: 'CHEESE', phaseIndex: 2, questionIndexInPhase: 4,
+      text: 'Was ist dieses typisch norddeutsche Gericht?',
+      textEn: 'What is this typical North German dish?',
+      answer: 'Labskaus', answerEn: 'Labskaus' },
+    // ── Phase 3 ────────────────────────────────────────────────────────────────
+    { id: `${id}-p3-0`, category: 'SCHAETZCHEN', phaseIndex: 3, questionIndexInPhase: 0,
+      text: 'Wie viele Meter hoch ist die Elbphilharmonie (Dach)?',
+      textEn: 'How many metres tall is the Elbphilharmonie (roof)?',
+      targetValue: 110, unit: 'Meter', unitEn: 'metres',
+      answer: '110 Meter (Firsthöhe)', answerEn: '110 metres (roof height)' },
+    { id: `${id}-p3-1`, category: 'MUCHO', phaseIndex: 3, questionIndexInPhase: 1,
+      text: 'Welches Hamburger Unternehmen ist für Kaffee weltweit bekannt?',
+      textEn: 'Which Hamburg company is world-famous for coffee?',
+      options: ['Jacobs', 'Dallmayr', 'Tchibo', 'Löwenbräu'], optionsEn: ['Jacobs', 'Dallmayr', 'Tchibo', 'Löwenbräu'],
+      correctOptionIndex: 2, answer: 'Tchibo', answerEn: 'Tchibo' },
+    { id: `${id}-p3-2`, category: 'BUNTE_TUETE', phaseIndex: 3, questionIndexInPhase: 2,
+      text: 'Nenne 5 Hamburger Stadtteile!',
+      textEn: 'Name 5 Hamburg districts!',
+      answer: 'Altona, Eimsbüttel, Wandsbek, Bergedorf, Harburg, St. Pauli…',
+      answerEn: 'Altona, Eimsbüttel, Wandsbek, Bergedorf, Harburg, St. Pauli…',
+      bunteTuete: { kind: 'top5',
+        answers: ['Altona', 'Eimsbüttel', 'Wandsbek', 'Bergedorf', 'Harburg'],
+        answersEn: ['Altona', 'Eimsbüttel', 'Wandsbek', 'Bergedorf', 'Harburg'] } },
+    { id: `${id}-p3-3`, category: 'ZEHN_VON_ZEHN', phaseIndex: 3, questionIndexInPhase: 3,
+      text: 'Wie heißt der amtierende Hamburger Bürgermeister (2024)?',
+      textEn: 'Who is the current Hamburg mayor (2024)?',
+      options: ['Peter Tschentscher', 'Ole von Beust', 'Olaf Scholz'],
+      optionsEn: ['Peter Tschentscher', 'Ole von Beust', 'Olaf Scholz'],
+      correctOptionIndex: 0, answer: 'Peter Tschentscher', answerEn: 'Peter Tschentscher' },
+    { id: `${id}-p3-4`, category: 'CHEESE', phaseIndex: 3, questionIndexInPhase: 4,
+      text: 'Welches Hamburger Expressionismus-Gebäude ist das?',
+      textEn: 'Which Hamburg Expressionist building is this?',
+      answer: 'Chilehaus', answerEn: 'Chilehaus' },
+  ];
+  return { id, title: '🗺️ Hamburg Probekatalog', phases: 3, language: 'both', questions, createdAt: Date.now(), updatedAt: Date.now() };
+}
+
 function makeEmptyDraft(phases: 3 | 4): QQDraft {
   const id = `qq-draft-${Date.now().toString(36)}`;
   const questions: QQQuestion[] = [];
@@ -128,6 +236,11 @@ export default function QQBuilderPage() {
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
+  async function createSampleDraft() {
+    const draft = makeSampleDraft();
+    const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
+    if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
+  }
   async function saveDraft(draft: QQDraft) {
     setSaving(true);
     try {
@@ -195,7 +308,7 @@ export default function QQBuilderPage() {
   }
   const activeQ = activeDraft && activeSlot ? getQuestion(activeDraft, activeSlot.phase, activeSlot.qi) : null;
 
-  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onDelete={deleteDraft} />;
+  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onDelete={deleteDraft} />;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
@@ -203,8 +316,8 @@ export default function QQBuilderPage() {
         @media (max-width: 800px) {
           .qq-builder-body { flex-direction: column !important; }
           .qq-builder-grid { min-width: 0 !important; }
-          .qq-builder-grid-inner { min-width: auto !important; grid-template-columns: 60px repeat(5, 1fr) !important; gap: 4px !important; font-size: 10px !important; }
-          .qq-builder-editor { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.07) !important; max-height: 50vh !important; }
+          .qq-builder-grid-inner { min-width: auto !important; grid-template-columns: 90px repeat(3, 1fr) !important; gap: 4px !important; font-size: 10px !important; }
+          .qq-builder-editor { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.07) !important; max-height: 55vh !important; overflow-y: auto !important; }
           .qq-builder-header { padding: 8px 12px !important; gap: 8px !important; }
         }
       `}</style>
@@ -300,39 +413,45 @@ export default function QQBuilderPage() {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }} className="qq-builder-body">
         {/* Grid */}
         <div style={{ flex: 1, overflow: 'auto', padding: 24 }} className="qq-builder-grid">
-          <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${CATEGORIES.length}, 1fr)`, gap: 6, minWidth: 700 }} className="qq-builder-grid-inner">
+          <div style={{ display: 'grid', gridTemplateColumns: `140px repeat(${activeDraft.phases}, 1fr)`, gap: 6, minWidth: 560 }} className="qq-builder-grid-inner">
+            {/* Header: blank + Phase labels */}
             <div />
-            {CATEGORIES.map(cat => (
-              <div key={cat} style={{ padding: '8px 6px', borderRadius: 8, textAlign: 'center', background: QQ_CATEGORY_COLORS[cat] + '22', border: `1px solid ${QQ_CATEGORY_COLORS[cat]}44`, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: QQ_CATEGORY_COLORS[cat] }}>
-                {QQ_CATEGORY_LABELS[cat].emoji} {QQ_CATEGORY_LABELS[cat].de}
+            {Array.from({ length: activeDraft.phases }, (_, pi) => (
+              <div key={pi} style={{ padding: '10px 8px', borderRadius: 8, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 13, fontWeight: 900, color: '#64748b', letterSpacing: '0.06em' }}>
+                Phase {pi + 1}
               </div>
             ))}
-            {Array.from({ length: activeDraft.phases }, (_, pi) => {
-              const phaseNum = pi + 1;
-              return [
-                <div key={`label-${phaseNum}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ph {phaseNum}</div>,
-                ...CATEGORIES.map((cat, qi) => {
-                  const q = getQuestion(activeDraft, phaseNum, qi);
-                  const isActive = activeSlot?.phase === phaseNum && activeSlot?.qi === qi;
-                  const preview = cellPreview(q);
-                  return (
-                    <div key={`${phaseNum}-${qi}`} onClick={() => setActiveSlot({ phase: phaseNum, qi })} style={{
-                      padding: '10px 12px', borderRadius: 10, cursor: 'pointer', minHeight: 72, position: 'relative',
-                      background: isActive ? `${QQ_CATEGORY_COLORS[cat]}33` : preview.text ? '#1e293b' : 'rgba(255,255,255,0.03)',
-                      border: `2px solid ${isActive ? QQ_CATEGORY_COLORS[cat] : preview.text ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
-                      transition: 'all 0.15s',
-                    }}>
-                      {q?.image?.url && <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 14 }}>🖼</div>}
-                      {preview.sub && <div style={{ fontSize: 10, fontWeight: 800, color: QQ_CATEGORY_COLORS[cat], marginBottom: 3, opacity: 0.8 }}>{preview.sub}</div>}
-                      <div style={{ fontSize: 11, color: preview.text ? '#94a3b8' : '#334155', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                        {preview.text || <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>Leer…</span>}
-                      </div>
-                      {preview.answer && <div style={{ marginTop: 4, fontSize: 10, color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{preview.answer}</div>}
+            {/* Category rows */}
+            {CATEGORIES.map((cat, qi) => [
+              <div key={`cat-${cat}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 10px', borderRadius: 10, background: QQ_CATEGORY_COLORS[cat] + '11', border: `1px solid ${QQ_CATEGORY_COLORS[cat]}22` }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{QQ_CATEGORY_LABELS[cat].emoji}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: QQ_CATEGORY_COLORS[cat], lineHeight: 1.2 }}>{QQ_CATEGORY_LABELS[cat].de}</div>
+                  <div style={{ fontSize: 10, color: '#475569', lineHeight: 1.2 }}>{QQ_CATEGORY_LABELS[cat].en}</div>
+                </div>
+              </div>,
+              ...Array.from({ length: activeDraft.phases }, (_, pi) => {
+                const phaseNum = pi + 1;
+                const q = getQuestion(activeDraft, phaseNum, qi);
+                const isActive = activeSlot?.phase === phaseNum && activeSlot?.qi === qi;
+                const preview = cellPreview(q);
+                return (
+                  <div key={`${phaseNum}-${qi}`} onClick={() => setActiveSlot({ phase: phaseNum, qi })} style={{
+                    padding: '10px 12px', borderRadius: 10, cursor: 'pointer', minHeight: 72, position: 'relative',
+                    background: isActive ? `${QQ_CATEGORY_COLORS[cat]}33` : preview.text ? '#1e293b' : 'rgba(255,255,255,0.03)',
+                    border: `2px solid ${isActive ? QQ_CATEGORY_COLORS[cat] : preview.text ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
+                    transition: 'all 0.15s',
+                  }}>
+                    {q?.image?.url && <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 14 }}>🖼</div>}
+                    {preview.sub && <div style={{ fontSize: 10, fontWeight: 800, color: QQ_CATEGORY_COLORS[cat], marginBottom: 3, opacity: 0.8 }}>{preview.sub}</div>}
+                    <div style={{ fontSize: 11, color: preview.text ? '#94a3b8' : '#334155', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {preview.text || <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>Leer…</span>}
                     </div>
-                  );
-                }),
-              ];
-            }).flat()}
+                    {preview.answer && <div style={{ marginTop: 4, fontSize: 10, color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{preview.answer}</div>}
+                  </div>
+                );
+              }),
+            ]).flat()}
           </div>
 
           {/* Slide filmstrip */}
@@ -380,7 +499,7 @@ export default function QQBuilderPage() {
           />
         )}
         {!activeQ && (
-          <div className="qq-builder-editor" style={{ width: 360, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="qq-builder-editor" style={{ width: 480, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ color: '#334155', fontSize: 14, textAlign: 'center' }}>← Slot auswählen</div>
           </div>
         )}
@@ -408,7 +527,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
   }
 
   return (
-    <div className="qq-builder-editor" style={{ width: 380, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="qq-builder-editor" style={{ width: 480, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* Category header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
@@ -455,26 +574,85 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
               {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
             </button>
 
+            {/* Layout: visual icon buttons */}
             <label style={labelStyle}>Layout</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 10 }}>
               {(Object.keys(LAYOUT_LABELS) as QQImageLayout[]).map(l => (
-                <button key={l} onClick={() => setImg({ layout: l })} style={{ padding: '5px 6px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 800, background: img.layout === l ? catColor + '44' : 'rgba(255,255,255,0.05)', color: img.layout === l ? catColor : '#64748b', outline: img.layout === l ? `1px solid ${catColor}66` : 'none' }}>
-                  {LAYOUT_LABELS[l]}
+                <button key={l} onClick={() => setImg({ layout: l })} title={LAYOUT_LABELS[l]}
+                  style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.layout === l ? catColor + '33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.layout === l ? catColor : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  {/* 16:9 mini icon */}
+                  <div style={{ width: 38, height: 22, borderRadius: 3, background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                    {l === 'fullscreen' && <div style={{ position: 'absolute', inset: 0, background: catColor + '70' }} />}
+                    {l === 'window-left' && <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', background: catColor + '70' }} />}
+                    {l === 'window-right' && <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', background: catColor + '70' }} />}
+                    {l === 'cutout' && <>
+                      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 10, height: 15, background: catColor + '90', borderRadius: '50% 50% 0 0' }} />
+                      <div style={{ position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: catColor + '90', borderRadius: '50%' }} />
+                    </>}
+                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: img.layout === l ? catColor : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{LAYOUT_LABELS[l]}</span>
                 </button>
               ))}
             </div>
 
+            {/* Animation: icon + label buttons */}
             <label style={labelStyle}>Animation</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
-              {(Object.keys(ANIM_LABELS) as QQImageAnimation[]).map(a => (
-                <button key={a} onClick={() => setImg({ animation: a })} style={{ padding: '5px 6px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 800, background: img.animation === a ? '#F59E0B33' : 'rgba(255,255,255,0.05)', color: img.animation === a ? '#F59E0B' : '#64748b', outline: img.animation === a ? '1px solid #F59E0B66' : 'none' }}>
-                  {ANIM_LABELS[a]}
-                </button>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 4 }}>
+              {(Object.keys(ANIM_LABELS) as QQImageAnimation[]).map(a => {
+                const icons: Record<QQImageAnimation, string> = { none: '—', float: '🌊', 'zoom-in': '🔍', reveal: '✨', 'slide-in': '➡️' };
+                return (
+                  <button key={a} onClick={() => setImg({ animation: a })}
+                    style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.animation === a ? '#F59E0B33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.animation === a ? '#F59E0B' : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 14 }}>{icons[a]}</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: img.animation === a ? '#F59E0B' : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{ANIM_LABELS[a]}</span>
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Animation timeline visualization */}
+            {img.animation !== 'none' && (
+              <div style={{ background: '#0a0f1a', borderRadius: 10, padding: '10px 14px', marginBottom: 4, border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 10, color: '#475569', fontWeight: 800, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>⏱ Animation Timeline</div>
+                {(() => {
+                  const delay = img.animDelay ?? 0;
+                  const dur = img.animDuration ?? 1;
+                  const total = Math.max(4, delay + dur + 0.5);
+                  const delayPct = (delay / total) * 100;
+                  const durPct = (dur / total) * 100;
+                  return (
+                    <div style={{ position: 'relative', marginBottom: 22 }}>
+                      {/* track */}
+                      <div style={{ height: 24, background: 'rgba(255,255,255,0.04)', borderRadius: 6, position: 'relative', overflow: 'visible' }}>
+                        {/* delay zone */}
+                        {delay > 0 && (
+                          <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${delayPct}%`, background: 'rgba(255,255,255,0.04)', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ fontSize: 8, color: '#334155', fontWeight: 700, whiteSpace: 'nowrap' }}>warten</span>
+                          </div>
+                        )}
+                        {/* animation segment */}
+                        <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${delayPct}%`, width: `${durPct}%`, background: 'linear-gradient(90deg, #F59E0B, #FBBF24)', borderRadius: 4, minWidth: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 9, color: '#000', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', padding: '0 4px' }}>{ANIM_LABELS[img.animation]}</span>
+                        </div>
+                      </div>
+                      {/* time labels */}
+                      <div style={{ position: 'absolute', top: 28, left: 0, fontSize: 9, color: '#475569', fontWeight: 700 }}>0s</div>
+                      {delay > 0 && (
+                        <div style={{ position: 'absolute', top: 28, left: `${delayPct}%`, fontSize: 9, color: '#94a3b8', fontWeight: 700, transform: 'translateX(-50%)' }}>{delay.toFixed(1)}s</div>
+                      )}
+                      <div style={{ position: 'absolute', top: 28, left: `${delayPct + durPct}%`, fontSize: 9, color: '#94a3b8', fontWeight: 700, transform: 'translateX(-50%)' }}>{(delay + dur).toFixed(1)}s</div>
+                      <div style={{ position: 'absolute', top: 28, right: 0, fontSize: 9, color: '#334155', fontWeight: 700 }}>{total.toFixed(1)}s</div>
+                    </div>
+                  );
+                })()}
+                <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
+                  Einblenden nach <b style={{ color: '#e2e8f0' }}>{(img.animDelay ?? 0).toFixed(1)}s</b> · Dauer <b style={{ color: '#e2e8f0' }}>{(img.animDuration ?? 1).toFixed(1)}s</b>
+                </div>
+              </div>
+            )}
 
             {/* Image position & scale controls — drag canvas */}
-            <label style={{ ...labelStyle, marginTop: 12 }}>Position & Größe <span style={{ fontSize: 10, color: '#334155', fontWeight: 400 }}>Drag = verschieben · Scroll = Zoom</span></label>
+            <label style={{ ...labelStyle, marginTop: 8 }}>Position & Größe <span style={{ fontSize: 10, color: '#334155', fontWeight: 400 }}>Drag = verschieben · Scroll = Zoom</span></label>
             <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
               {/* 16:9 interactive drag preview */}
               <div
@@ -948,15 +1126,17 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
 }
 
 // ── Draft list screen ─────────────────────────────────────────────────────────
-function DraftListScreen({ drafts, onOpen, onCreate, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onDelete: (id: string) => void }) {
+function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onCreateSample: () => void; onDelete: (id: string) => void }) {
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", padding: 40, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Quarter Quiz</div>
-        <div style={{ fontSize: 36, fontWeight: 900, marginBottom: 20 }}>Fragensätze</div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => onCreate(3)} style={btnStyle('#22C55E')}>+ 3 Runden (15 Fragen)</button>
-          <button onClick={() => onCreate(4)} style={btnStyle('#3B82F6')}>+ 4 Runden (20 Fragen)</button>
+        <div style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>Fragensätze</div>
+        <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Erstelle einen neuen leeren Fragensatz oder lade den Hamburg Probekatalog als Beispiel.</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={() => onCreate(3)} style={btnStyle('#22C55E')}>+ Leer (3 Runden)</button>
+          <button onClick={() => onCreate(4)} style={btnStyle('#3B82F6')}>+ Leer (4 Runden)</button>
+          <button onClick={onCreateSample} style={{ ...btnStyle('#F59E0B'), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog laden</button>
         </div>
       </div>
       {drafts.length === 0 ? (

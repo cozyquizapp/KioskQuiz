@@ -1,4 +1,7 @@
+// TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
+
 import { useState, useEffect, useRef, useCallback } from 'react';
+import BeamerView from '../views/BeamerView';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
@@ -139,69 +142,15 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
   };
 }
 
-// ── SlideThumbnail ─────────────────────────────────────────────────────────────
-function SlideThumbnail({ template }: { template: QQSlideTemplate }) {
-  const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
+
+// ── SlidePreview (BeamerView wrapper) ─────────────────────────────────────────
+function SlidePreview({ template }: { template: QQSlideTemplate }) {
+  // Minimal BeamerView usage for static preview
+  // We pass a fake roomCode and only the template as a prop
+  // BeamerView will need to be adapted to accept a template prop for static rendering
   return (
-    <div style={{
-      width: '100%', aspectRatio: '16/9', position: 'relative', overflow: 'hidden',
-      background: template.background, borderRadius: 4, flexShrink: 0,
-    }}>
-      {sorted.map(el => {
-        const isPh = el.type.startsWith('ph_');
-        if (el.type === 'rect') {
-          return (
-            <div key={el.id} style={{
-              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
-              background: el.background ?? 'transparent', borderRadius: el.borderRadius ? `${el.borderRadius * 0.2}px` : undefined,
-              zIndex: el.zIndex ?? 1,
-            }} />
-          );
-        }
-        if (el.type === 'text') {
-          return (
-            <div key={el.id} style={{
-              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
-              zIndex: el.zIndex ?? 1, display: 'flex', alignItems: 'center',
-              justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start',
-              overflow: 'hidden',
-            }}>
-              <span style={{
-                fontSize: `${(el.fontSize ?? 3) * 0.14}px`,
-                fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff',
-                textAlign: el.textAlign, lineHeight: 1.2, wordBreak: 'break-word', width: '100%',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>{el.text || ''}</span>
-            </div>
-          );
-        }
-        if (isPh) {
-          return (
-            <div key={el.id} style={{
-              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
-              zIndex: el.zIndex ?? 1, background: 'rgba(139,92,246,0.15)',
-              border: '1px dashed rgba(139,92,246,0.4)', borderRadius: 2, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-            }}>
-              <span style={{ fontSize: '4px', color: '#A78BFA', fontWeight: 700 }}>{PH_LABELS[el.type]?.slice(0, 8)}</span>
-            </div>
-          );
-        }
-        if (el.type === 'image') {
-          return (
-            <div key={el.id} style={{
-              position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
-              zIndex: el.zIndex ?? 1, background: 'rgba(255,255,255,0.08)', borderRadius: 2,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {el.imageUrl
-                ? <img src={el.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: el.objectFit ?? 'contain' }} />
-                : <span style={{ fontSize: '5px' }}>🖼</span>}
-            </div>
-          );
-        }
-        return null;
-      })}
+    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: template.background, flexShrink: 0 }}>
+      <BeamerView template={template} previewMode />
     </div>
   );
 }
@@ -251,7 +200,7 @@ export default function QQSlideEditorPage() {
 
   function patchElement(patch: Partial<QQSlideElement>) {
     if (!selectedId) return;
-    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === selectedId ? { ...e, ...patch } : e) });
+    patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements || []).map(e => e.id === selectedId ? { ...e, ...patch } : e) });
   }
 
   function addElement(type: QQSlideElementType) {
@@ -261,24 +210,24 @@ export default function QQSlideEditorPage() {
       ...(type === 'rect'  ? { background: 'rgba(30,41,59,0.8)', borderRadius: 12 } : {}),
       ...(type === 'image' ? { imageUrl: '', objectFit: 'contain' as const } : {}),
     };
-    patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, newEl] });
+    patchTemplate({ ...activeTemplate, elements: [...(activeTemplate.elements || []), newEl] });
     setSelectedIds([newEl.id]);
   }
 
   function deleteSelected() {
     if (selectedIds.length === 0) return;
     const ids = new Set(selectedIds);
-    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.filter(e => !ids.has(e.id)) });
+    patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements || []).filter(e => !ids.has(e.id)) });
     setSelectedIds([]);
   }
 
   function duplicateSelected() {
     if (selectedIds.length === 0) return;
     const ids = new Set(selectedIds);
-    const els = activeTemplate.elements.filter(e => ids.has(e.id));
+    const els = (activeTemplate.elements || []).filter(e => ids.has(e.id));
     if (els.length === 0) return;
     const copies = els.map(el => ({ ...el, id: eid(), x: el.x + 3, y: el.y + 3, zIndex: (el.zIndex ?? 1) + 1 }));
-    patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, ...copies] });
+    patchTemplate({ ...activeTemplate, elements: [...(activeTemplate.elements || []), ...copies] });
     setSelectedIds(copies.map(c => c.id));
   }
 
@@ -316,7 +265,7 @@ export default function QQSlideEditorPage() {
   // ── Alignment helpers ─────────────────────────────────────────────────────
   function alignElements(action: string) {
     if (selectedIds.length === 0) return;
-    const els = activeTemplate.elements.filter(e => selectedIds.includes(e.id));
+    const els = (activeTemplate.elements || []).filter(e => selectedIds.includes(e.id));
     if (els.length === 0) return;
 
     // Bounding box of selection
@@ -328,7 +277,7 @@ export default function QQSlideEditorPage() {
     const selH = maxY - minY;
 
     const idSet = new Set(selectedIds);
-    const newEls = activeTemplate.elements.map(el => {
+    const newEls = (activeTemplate.elements || []).map(el => {
       if (!idSet.has(el.id)) return el;
       let { x, y, w, h } = el;
       switch (action) {
@@ -542,7 +491,7 @@ export default function QQSlideEditorPage() {
                       }}
                       style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
                       {/* Thumbnail */}
-                      <SlideThumbnail template={templates[step.type] ?? makeDefault(step.type)} />
+                      <SlidePreview template={templates[step.type] ?? makeDefault(step.type)} />
                       {/* Label row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
@@ -611,33 +560,10 @@ export default function QQSlideEditorPage() {
           {/* Canvas area */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}
             onClick={() => setSelectedIds([])}>
-            <SlideCanvas
-              template={activeTemplate}
-              selectedIds={selectedIds}
-              editingId={editingId}
-              snapLines={snapLines}
-              onSnapLinesChange={setSnapLines}
-              onSelect={(id, shift) => {
-                if (shift) {
-                  setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
-                } else {
-                  setSelectedIds([id]);
-                }
-                if (!shift) setEditingId(null);
-              }}
-              onMultiSelect={ids => setSelectedIds(ids)}
-              onClearSelect={() => setSelectedIds([])}
-              onUpdate={(id, patch) => patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, ...patch } : e) })}
-              onUpdateMulti={(patches) => {
-                const patchMap = new Map(patches.map(p => [p.id, p.patch]));
-                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => patchMap.has(e.id) ? { ...e, ...patchMap.get(e.id) } : e) });
-              }}
-              onStartEdit={setEditingId}
-              onEndEdit={(id, text) => {
-                patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
-                setEditingId(null);
-              }}
-            />
+            {/* Main editor area: show live BeamerView of the selected slide */}
+            <div style={{ width: '100%', maxWidth: 1100, aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', background: activeTemplate.background, boxShadow: '0 4px 32px rgba(0,0,0,0.18)' }}>
+              <BeamerView template={activeTemplate} previewMode />
+            </div>
           </div>
         </div>
 

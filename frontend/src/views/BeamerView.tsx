@@ -149,7 +149,13 @@ const AvatarMedia: React.FC<{ avatar: AvatarOption; style?: React.CSSProperties;
   return <img src={avatar.dataUri} alt={alt || avatar.name} style={style} />;
 };
 
-type BeamerProps = { roomCode: string };
+import type { QQSlideTemplate } from '../../../shared/quarterQuizTypes';
+
+type BeamerProps = {
+  roomCode?: string;
+  template?: QQSlideTemplate;
+  previewMode?: boolean;
+};
 
 const SLOT_ITEM_HEIGHT = 70;
 const buildQrUrl = (url: string) => `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
@@ -384,7 +390,72 @@ const BeamerWalkingAvatar: React.FC<{
   );
 };
 
-const BeamerView = ({ roomCode }: BeamerProps) => {
+const BeamerView = ({ roomCode, template, previewMode }: BeamerProps) => {
+    // If in previewMode and template is provided, render a static slide preview
+    if (previewMode && template) {
+      // Render the template as a static slide (no game state, no socket, no timers)
+      // This is a minimal rendering for editor/preview context
+      const sorted = [...(template.elements || [])].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
+      return (
+        <div style={{ width: '100%', height: '100%', aspectRatio: '16/9', position: 'relative', background: template.background, borderRadius: 8, overflow: 'hidden' }}>
+          {sorted.map(el => {
+            const isPh = el.type.startsWith('ph_');
+            if (el.type === 'rect') {
+              return (
+                <div key={el.id} style={{
+                  position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+                  background: el.background ?? 'transparent', borderRadius: el.borderRadius ? `${el.borderRadius * 0.2}px` : undefined,
+                  zIndex: el.zIndex ?? 1,
+                }} />
+              );
+            }
+            if (el.type === 'text') {
+              return (
+                <div key={el.id} style={{
+                  position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+                  zIndex: el.zIndex ?? 1, display: 'flex', alignItems: 'center',
+                  justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start',
+                  overflow: 'hidden',
+                }}>
+                  <span style={{
+                    fontSize: `${(el.fontSize ?? 3) * 0.14}px`,
+                    fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff',
+                    textAlign: el.textAlign, lineHeight: 1.2, wordBreak: 'break-word', width: '100%',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{el.text || ''}</span>
+                </div>
+              );
+            }
+            if (isPh) {
+              return (
+                <div key={el.id} style={{
+                  position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+                  zIndex: el.zIndex ?? 1, background: 'rgba(139,92,246,0.15)',
+                  border: '1px dashed rgba(139,92,246,0.4)', borderRadius: 2, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                }}>
+                  <span style={{ fontSize: '4px', color: '#A78BFA', fontWeight: 700 }}>{el.type.replace('ph_', '').slice(0, 8)}</span>
+                </div>
+              );
+            }
+            if (el.type === 'image') {
+              return (
+                <div key={el.id} style={{
+                  position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
+                  zIndex: el.zIndex ?? 1, background: 'rgba(255,255,255,0.08)', borderRadius: 2,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {el.imageUrl
+                    ? <img src={el.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: el.objectFit ?? 'contain' }} />
+                    : <span style={{ fontSize: '5px' }}>🖼</span>}
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
+      );
+    }
   const slotSpinMs = 2400;
   const slotHoldMs = 1200;
   const slotIntervalMs = 260;

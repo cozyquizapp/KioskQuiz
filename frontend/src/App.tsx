@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
+import PinGate from './components/PinGate';
 
 // Eager load: Fast paths
 import LandingPage from './pages/LandingPage';
@@ -122,8 +123,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/welcome" element={<LandingPage />} />
-          <Route path="/menu" element={<MenuPage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/menu" element={<PinGate><MenuPage /></PinGate>} />
+          <Route path="/admin" element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/beamer" element={<BeamerPage />} />
           <Route path="/beamer/:roomCode" element={<BeamerPage />} />
@@ -136,18 +137,18 @@ function App() {
           <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
           <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/question-editor" element={<QuestionEditorPage />} />
-          <Route path="/moderator" element={<ModeratorPage />} />
+          <Route path="/moderator" element={<PinGate><ModeratorPage /></PinGate>} />
           <Route path="/intro" element={<IntroSlidesPage />} />
           <Route path="/question-catalog" element={<QuestionCatalogPage />} />
           <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/qrcode" element={<QrCodePage />} />
-          <Route path="/quarterquiz-moderator" element={<QQModeratorPage />} />
+          <Route path="/quarterquiz-moderator" element={<PinGate><QQModeratorPage /></PinGate>} />
           <Route path="/quarterquiz-beamer"    element={<QQBeamerPage />} />
           <Route path="/quarterquiz-team"      element={<QQTeamPage />} />
-          <Route path="/qq-builder"            element={<QQBuilderPage />} />
-          <Route path="/qq-library"            element={<QQLibraryPage />} />
-          <Route path="/qq-slides"             element={<QQSlideEditorPage />} />
+          <Route path="/qq-builder"            element={<PinGate><QQBuilderPage /></PinGate>} />
+          <Route path="/qq-library"            element={<PinGate><QQLibraryPage /></PinGate>} />
+          <Route path="/qq-slides"             element={<PinGate><QQSlideEditorPage /></PinGate>} />
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>
       </Suspense>

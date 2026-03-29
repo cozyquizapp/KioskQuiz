@@ -42,6 +42,10 @@ export default function QQLibraryPage() {
   const [sortBy, setSortBy] = useState<SortKey>('updated');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // "In Draft kopieren" state
+  const [targetDraftId, setTargetDraftId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
   useEffect(() => {
     fetch('/api/qq/drafts')
       .then(r => r.json())
@@ -49,6 +53,13 @@ export default function QQLibraryPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Auto-clear toast after 2.5s
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const filtered = useMemo(() => {
     let list = [...drafts];
@@ -156,12 +167,61 @@ export default function QQLibraryPage() {
     input.click();
   }
 
+  async function copyQuestionToDraft(question: QQQuestion) {
+    if (!targetDraftId) return;
+    try {
+      const res = await fetch(`/api/qq/drafts/${targetDraftId}`);
+      if (!res.ok) { setToast('Fehler: Draft nicht gefunden'); return; }
+      const draft: QQDraft = await res.json();
+
+      // Find first empty slot (question with no text)
+      const slotIndex = draft.questions.findIndex(q => !q.text.trim());
+      if (slotIndex === -1) {
+        alert('Kein freier Slot im Ziel-Draft');
+        return;
+      }
+
+      // Replace that slot with the source question (keep original id to avoid collisions, use new id)
+      const updatedQuestions = [...draft.questions];
+      updatedQuestions[slotIndex] = {
+        ...question,
+        id: `${question.id}-copy-${Date.now().toString(36)}`,
+      };
+
+      const putRes = await fetch(`/api/qq/drafts/${targetDraftId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...draft, questions: updatedQuestions, updatedAt: Date.now() }),
+      });
+      if (putRes.ok) {
+        setToast(`✓ Eingefügt in Slot ${slotIndex + 1}`);
+      } else {
+        setToast('Fehler beim Speichern');
+      }
+    } catch {
+      setToast('Fehler beim Kopieren');
+    }
+  }
+
   const totalDrafts = drafts.length;
   const completeDrafts = drafts.filter(d => getDraftStatus(d) === 'complete').length;
   const totalQuestions = drafts.reduce((sum, d) => sum + d.questions.filter(q => q.text.trim()).length, 0);
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif" }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#22C55E', color: '#fff', fontWeight: 800, fontSize: 14,
+          padding: '10px 24px', borderRadius: 10, zIndex: 9999,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          pointerEvents: 'none',
+        }}>
+          {toast}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ padding: '20px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -178,6 +238,24 @@ export default function QQLibraryPage() {
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#e2e8f0', fontSize: 18 }}>{totalDrafts}</span> Fragensätze</div>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#22C55E', fontSize: 18 }}>{completeDrafts}</span> komplett</div>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#3B82F6', fontSize: 18 }}>{totalQuestions}</span> Fragen gesamt</div>
+        </div>
+
+        {/* Ziel-Draft Selektor */}
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>📋 In Draft kopieren:</span>
+          <select
+            value={targetDraftId ?? ''}
+            onChange={e => setTargetDraftId(e.target.value || null)}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, minWidth: 220 }}
+          >
+            <option value="">Ziel-Draft wählen…</option>
+            {drafts.map(d => (
+              <option key={d.id} value={d.id}>{d.title || 'Ohne Titel'}</option>
+            ))}
+          </select>
+          {targetDraftId && (
+            <span style={{ fontSize: 12, color: '#64748b' }}>Klick auf 📋 Kopieren bei einer Frage unten</span>
+          )}
         </div>
       </div>
 
@@ -260,12 +338,26 @@ export default function QQLibraryPage() {
                   </div>
 
                   {/* Question preview list */}
-                  <div style={{ marginTop: 12, maxHeight: 200, overflow: 'auto' }}>
-                    {d.questions.filter(q => q.text.trim()).map((q, i) => (
-                      <div key={q.id} style={{ padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8, fontSize: 12 }}>
+                  <div style={{ marginTop: 12, maxHeight: 300, overflow: 'auto' }}>
+                    {d.questions.filter(q => q.text.trim()).map((q) => (
+                      <div key={q.id} style={{ padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8, fontSize: 12, alignItems: 'center' }}>
                         <span style={{ color: QQ_CATEGORY_COLORS[q.category], fontWeight: 800, minWidth: 20 }}>{QQ_CATEGORY_LABELS[q.category].emoji}</span>
                         <span style={{ color: '#94a3b8', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{q.text}</span>
                         <span style={{ color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: 150 }}>{q.answer}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyQuestionToDraft(q); }}
+                          disabled={!targetDraftId}
+                          title={targetDraftId ? 'In Ziel-Draft kopieren' : 'Erst Ziel-Draft auswählen'}
+                          style={{
+                            padding: '3px 10px', borderRadius: 6, border: 'none', cursor: targetDraftId ? 'pointer' : 'not-allowed',
+                            fontWeight: 700, fontSize: 11, flexShrink: 0,
+                            background: targetDraftId ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
+                            color: targetDraftId ? '#60a5fa' : '#475569',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          📋 Kopieren
+                        </button>
                       </div>
                     ))}
                   </div>

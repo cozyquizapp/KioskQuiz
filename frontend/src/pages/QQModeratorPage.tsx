@@ -39,13 +39,7 @@ export default function QQModeratorPage() {
 
   // Load available drafts once (Cozy60 + QQ Builder)
   useEffect(() => {
-    Promise.all([
-      fetch('/api/studio/cozy60').then(r => r.json()).catch(() => ({ drafts: [] })),
-      fetch('/api/qq/drafts').then(r => r.json()).catch(() => []),
-    ]).then(([cozyData, qqDrafts]) => {
-      const cozy: DraftSummary[] = Array.isArray(cozyData.drafts)
-        ? cozyData.drafts.map((d: any) => ({ ...d, id: d.id, source: 'cozy' }))
-        : [];
+    fetch('/api/qq/drafts').then(r => r.json()).catch(() => []).then((qqDrafts: any[]) => {
       const qq: DraftSummary[] = Array.isArray(qqDrafts)
         ? qqDrafts.map((d: any) => ({
             id: `qq:${d.id}`,
@@ -55,7 +49,7 @@ export default function QQModeratorPage() {
             questionCount: d.questions?.length ?? 0,
           }))
         : [];
-      setDrafts([...qq, ...cozy].sort((a, b) => b.updatedAt - a.updatedAt));
+      setDrafts(qq.sort((a, b) => b.updatedAt - a.updatedAt));
     });
   }, []);
 
@@ -66,23 +60,15 @@ export default function QQModeratorPage() {
       const res = await fetch('/api/qq/questions/default');
       if (!res.ok) { alert('Standard-Fragen konnten nicht geladen werden'); return; }
       questions = await res.json();
-    } else if (selectedDraftId.startsWith('qq:')) {
+    } else {
       // QQ Builder draft — questions already in QQ format
-      const qqId = selectedDraftId.slice(3);
+      const qqId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
       const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
       if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
       const draft = await res.json();
       questions = draft.questions ?? [];
       theme = draft.theme;
       if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
-    } else {
-      const res = await fetch(`/api/qq/questions/from-draft/${encodeURIComponent(selectedDraftId)}?phases=${phases}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unbekannter Fehler' }));
-        alert(`Fehler: ${err.error}`);
-        return;
-      }
-      questions = await res.json();
     }
     const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme });
     if (!ack.ok) {

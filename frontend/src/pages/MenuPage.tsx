@@ -21,6 +21,7 @@ const qqLinks: LinkItem[] = [
   { path: '/quarterquiz-beamer',    label: 'Beamer',           emoji: '📽️', note: 'Grid live anzeigen' },
   { path: '/quarterquiz-team',      label: 'Team',             emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
   { path: '/qq-builder',            label: 'QQ Builder',       emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
+  { path: '/qq-library',             label: 'Fragenbibliothek', emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
   { path: '/bingo-grid-test.html',  label: 'Grid Tester',      emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',       label: 'Design Sneak Peak',emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
 ];

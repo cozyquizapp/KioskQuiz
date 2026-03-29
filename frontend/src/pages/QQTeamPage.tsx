@@ -11,7 +11,38 @@ import {
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 
-// ── CSS for animations ────────────────────────────────────────────────────────
+// ── Übersetzungen ─────────────────────────────────────────────────────────────
+const t = {
+  header: { de: 'Quartier Quiz', en: 'Quarter Quiz' },
+  setup: {
+    chooseAvatar: { de: 'Wähle deinen Avatar', en: 'Choose your avatar' },
+    teamName: { de: 'Team-Name', en: 'Team name' },
+    placeholder: { de: 'z.B. Die Wilden', en: 'e.g. The Wild Ones' },
+    join: { de: '▶ Spiel beitreten', en: '▶ Join game' },
+    next: { de: 'Weiter →', en: 'Next →' },
+    error: { de: 'Fehler beim Beitreten', en: 'Join error' },
+  },
+  lobby: {
+    ready: { de: 'Bereit!', en: 'Ready!' },
+    waiting: { de: 'Warteraum', en: 'Waiting room' },
+    waitingForMod: { de: 'Warte auf Moderator', en: 'Waiting for moderator' },
+    teams: { de: 'Team', en: 'Team' },
+  },
+  phase: {
+    next: { de: 'Nächste Phase', en: 'Next phase' },
+    round: { de: 'Runde', en: 'Round' },
+  },
+  answer: {
+    submit: { de: 'Abschicken', en: 'Submit' },
+    choose: { de: 'Wählen', en: 'Choose' },
+  },
+  correct: { de: '🎉 Richtig! Du darfst ein Feld wählen', en: '🎉 Correct! You may choose a field' },
+  potato: {
+    yourTurn: { de: '🥔 Du bist dran!', en: '🥔 Your turn!' },
+    otherTurn: { de: '🥔 {name} ist dran', en: '🥔 {name} is up' },
+    out: { de: '❌ Du bist raus', en: '❌ You are out' },
+  },
+};
 const TEAM_CSS = `
   @keyframes tcfloat   { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-8px) rotate(var(--r,0deg))} }
   @keyframes tcpop     { from{opacity:0;transform:scale(0.7) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
@@ -97,27 +128,24 @@ export default function QQTeamPage() {
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
   teamName, setTeamName, connected, error, onJoin }: any) {
+  // lang aus session oder prop holen
+  const lang = (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de';
   return (
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
-      {/* Grain */}
       <div style={grainOverlay} />
-
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
-            Quartier Quiz
+            {t.header[lang]}
           </div>
           <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
-            Quarter Quiz
+            {t.header[lang]}
           </div>
         </div>
-
-        {/* AVATAR step */}
         {step === 'AVATAR' && (
           <CozyCard anim>
-            <StepLabel>Wähle deinen Avatar</StepLabel>
+            <StepLabel>{t.setup.chooseAvatar[lang]}</StepLabel>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
               {QQ_AVATARS.map((a, i) => {
                 const sel = avatarId === a.id;
@@ -138,11 +166,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 );
               })}
             </div>
-            <CozyBtn color="#3B82F6" onClick={() => setStep('NAME')}>Weiter →</CozyBtn>
+            <CozyBtn color="#3B82F6" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
           </CozyCard>
         )}
-
-        {/* NAME step */}
         {step === 'NAME' && (
           <CozyCard anim>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -151,21 +177,21 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 {qqGetAvatar(avatarId).emoji}
               </span>
             </div>
-            <StepLabel>Team-Name</StepLabel>
+            <StepLabel>{t.setup.teamName[lang]}</StepLabel>
             <input
               value={teamName}
               onChange={e => setTeamName(e.target.value)}
-              placeholder="z.B. Die Wilden"
+              placeholder={t.setup.placeholder[lang]}
               style={cozyInput}
               autoFocus
               maxLength={20}
               onKeyDown={e => e.key === 'Enter' && teamName.trim() && onJoin()}
             />
             {error && (
-              <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{error}</div>
+              <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}
             <CozyBtn color="#22C55E" onClick={onJoin} disabled={!teamName.trim()}>
-              ▶ Spiel beitreten
+              {t.setup.join[lang]}
             </CozyBtn>
           </CozyCard>
         )}
@@ -189,6 +215,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
   const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
   const lang: 'de' | 'en' = s.language === 'de' ? 'de' : s.language === 'en' ? 'en' : localLang;
   const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
+  // Flip-Flagge Animation
+  const [flagFlip, setFlagFlip] = useState(false);
+  const handleFlagClick = () => {
+    setFlagFlip(f => !f);
+    setLang(lang === 'de' ? 'en' : 'de');
+  };
 
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
@@ -216,63 +248,27 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
             </div>
             {/* Language selector — only when server sends 'both' */}
             {s.language === 'both' && (
-              <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                {lang === 'de' ? (
-                  <>
-                    <button
-                      onClick={() => setLang('de')}
-                      style={{
-                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
-                        border: `2px solid ${teamColor}`,
-                        background: `${teamColor}22`,
-                        fontSize: 20,
-                        marginRight: 2,
-                        transition: 'all 0.15s',
-                      }}
-                      aria-label="Deutsch"
-                    >🇩🇪</button>
-                    <button
-                      onClick={() => setLang('en')}
-                      style={{
-                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
-                        border: '1px solid #d1d5db',
-                        background: 'transparent',
-                        fontSize: 20,
-                        opacity: 0.7,
-                        transition: 'all 0.15s',
-                      }}
-                      aria-label="Englisch"
-                    >🇬🇧</button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setLang('de')}
-                      style={{
-                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
-                        border: '1px solid #d1d5db',
-                        background: 'transparent',
-                        fontSize: 20,
-                        opacity: 0.7,
-                        marginRight: 2,
-                        transition: 'all 0.15s',
-                      }}
-                      aria-label="Deutsch"
-                    >🇩🇪</button>
-                    <button
-                      onClick={() => setLang('en')}
-                      style={{
-                        padding: '2px 8px', borderRadius: 8, cursor: 'pointer',
-                        border: `2px solid ${teamColor}`,
-                        background: `${teamColor}22`,
-                        fontSize: 20,
-                        transition: 'all 0.15s',
-                      }}
-                      aria-label="Englisch"
-                    >🇬🇧</button>
-                  </>
-                )}
-              </div>
+              <button
+                onClick={handleFlagClick}
+                style={{
+                  border: 'none', background: 'none', cursor: 'pointer', padding: 0,
+                  marginLeft: 6, marginRight: 6, outline: 'none',
+                  transition: 'transform 0.4s',
+                  transform: flagFlip ? 'rotateY(180deg)' : 'none',
+                  fontSize: 24,
+                  display: 'inline-block',
+                  perspective: 400,
+                }}
+                aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
+              >
+                <span style={{
+                  display: 'inline-block',
+                  transition: 'transform 0.4s',
+                  transform: flagFlip ? 'rotateY(180deg)' : 'none',
+                }}>
+                  {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+                </span>
+              </button>
             )}
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>

@@ -94,7 +94,11 @@ const QQ_ROOM = 'default';
 function useLangFlip(serverLang: string): 'de' | 'en' {
   const [flip, setFlip] = useState(false);
   useEffect(() => {
-    if (serverLang !== 'both') return;
+    if (serverLang !== 'both') {
+      setFlip(false);
+      return;
+    }
+    setFlip(false); // always start with DE on new slide
     const iv = setInterval(() => setFlip(f => !f), 8000);
     return () => clearInterval(iv);
   }, [serverLang]);

@@ -557,13 +557,41 @@ export default function QQModeratorPage() {
               {/* Language */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🌐 Sprache</div>
-                <select value={s.language}
-                  onChange={e => emit('qq:setLanguage', { roomCode, language: e.target.value as QQLanguage })}
-                  style={selectStyle}>
-                  <option value="both">DE + EN</option>
-                  <option value="de">Deutsch</option>
-                  <option value="en">English</option>
-                </select>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    onClick={() => emit('qq:setLanguage', { roomCode, language: 'de' })}
+                    style={{
+                      border: s.language === 'de' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      background: s.language === 'de' ? '#3B82F622' : 'transparent',
+                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      opacity: s.language === 'de' ? 1 : 0.7,
+                      transition: 'all 0.15s',
+                    }}
+                    aria-label="Deutsch"
+                  >🇩🇪</button>
+                  <button
+                    onClick={() => emit('qq:setLanguage', { roomCode, language: 'en' })}
+                    style={{
+                      border: s.language === 'en' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      background: s.language === 'en' ? '#3B82F622' : 'transparent',
+                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      opacity: s.language === 'en' ? 1 : 0.7,
+                      transition: 'all 0.15s',
+                    }}
+                    aria-label="Englisch"
+                  >🇬🇧</button>
+                  <button
+                    onClick={() => emit('qq:setLanguage', { roomCode, language: 'both' })}
+                    style={{
+                      border: s.language === 'both' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      background: s.language === 'both' ? '#3B82F622' : 'transparent',
+                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      opacity: s.language === 'both' ? 1 : 0.7,
+                      transition: 'all 0.15s',
+                    }}
+                    aria-label="Beide Sprachen (Flip)"
+                  >🌐</button>
+                </div>
               </div>
 
               {/* Avatars */}

@@ -688,8 +688,12 @@ export function qqMarkWrong(room: QQRoomState): void {
 
 function pendingActionForPhase(
   room: QQRoomState,
-  teamId: string
+  _teamId: string
 ): QQPendingAction {
+  // If no free cells left, force steal mode regardless of phase (#10)
+  const hasFreeCell = room.grid.some(row => row.some(cell => cell.ownerId === null));
+  if (!hasFreeCell) return 'STEAL_1';
+
   if (room.gamePhaseIndex === 1) return 'PLACE_1';
   if (room.gamePhaseIndex === 2) return 'PLACE_2'; // moderator/team may switch to STEAL_1
   return 'FREE'; // Phase 3

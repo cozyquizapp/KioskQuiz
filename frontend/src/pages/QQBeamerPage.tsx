@@ -749,11 +749,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && s.correctTeamId && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
             if (!team) return null;
+            const cat = q.category;
+            const isEn = lang === 'en';
+            const winMsg = cat === 'SCHAETZCHEN'
+              ? (isEn ? 'was closest!' : 'war am nächsten dran!')
+              : cat === 'CHEESE'
+                ? (isEn ? 'got it right!' : 'hat es erkannt!')
+                : cat === 'BUNTE_TUETE'
+                  ? (isEn ? 'wins this round!' : 'gewinnt die Runde!')
+                  : (isEn ? 'answered correctly!' : 'antwortet richtig!');
             return (
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, animation: 'contentReveal 0.5s ease 0.15s both' }}>
                 <span style={{ fontSize: 36, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
                 <span style={{ fontWeight: 900, fontSize: 22, color: team.color }}>{team.name}</span>
-                <span style={{ color: '#475569', fontSize: 16, fontWeight: 700 }}>antwortet richtig!</span>
+                <span style={{ color: '#475569', fontSize: 16, fontWeight: 700 }}>{winMsg}</span>
               </div>
             );
           })()}
@@ -833,7 +842,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               })}
             </div>
           )}
-          {revealed && <GridDisplay state={s} maxSize={440} />}
+          {revealed && <GridDisplay state={s} maxSize={440} showJoker={false} />}
           <ScoreBar teams={s.teams} />
         </div>
       </div>
@@ -887,7 +896,7 @@ export function PlacementView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Center: large grid + scores */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '20px 44px', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={600} highlightTeam={s.pendingFor} />
+        <GridDisplay state={s} maxSize={600} highlightTeam={s.pendingFor} showJoker />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 240 }}>
           <ScoreBar teams={s.teams} />
         </div>
@@ -951,7 +960,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Right: grid */}
       <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={440} highlightTeam={s.comebackTeamId} />
+        <GridDisplay state={s} maxSize={440} highlightTeam={s.comebackTeamId} showJoker />
         <ScoreBar teams={s.teams} />
       </div>
     </div>
@@ -1039,7 +1048,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
         )}
-        <GridDisplay state={s} maxSize={440} />
+        <GridDisplay state={s} maxSize={440} showJoker={false} />
       </div>
     </div>
   );
@@ -1086,9 +1095,27 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
   );
 }
 
-export function GridDisplay({ state: s, maxSize = 320, highlightTeam }: { state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null }) {
+export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true }: {
+  state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean;
+}) {
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
+
+  // Track newly placed cells for pop animation (#5)
+  const prevGridRef = useRef<string>('');
+  const newCellsRef = useRef<Set<string>>(new Set());
+  const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
+  if (gridKey !== prevGridRef.current) {
+    const newSet = new Set<string>();
+    s.grid.forEach((row, r) => row.forEach((cell, c) => {
+      const prevOwner = prevGridRef.current.split(',')[(r * s.gridSize) + c];
+      if (cell.ownerId && prevOwner === '') newSet.add(`${r}-${c}`);
+    }));
+    newCellsRef.current = newSet;
+    prevGridRef.current = gridKey;
+    // Clear new-cell markers after animation completes
+    if (newSet.size > 0) setTimeout(() => { newCellsRef.current = new Set(); }, 700);
+  }
 
   return (
     <div>
@@ -1107,28 +1134,34 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam }: { state:
           row.map((cell, c) => {
             const team = s.teams.find(t => t.id === cell.ownerId);
             const isHighlighted = highlightTeam && team?.id === highlightTeam;
+            const isNew = newCellsRef.current.has(`${r}-${c}`);
+            const showStar = showJoker && cell.jokerFormed;
             return (
               <div key={`${r}-${c}`} style={{
                 width: cellSize, height: cellSize, borderRadius: Math.max(4, cellSize * 0.16),
                 background: team
                   ? `linear-gradient(135deg, ${team.color}${isHighlighted ? 'ff' : '99'}, ${team.color}${isHighlighted ? 'cc' : '66'})`
                   : 'rgba(255,255,255,0.04)',
-                border: cell.jokerFormed
+                border: showStar
                   ? '2px solid rgba(251,191,36,0.9)'
                   : team
                     ? `1px solid ${team.color}${isHighlighted ? 'ff' : '55'}`
                     : '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
-                transition: 'all 0.35s ease',
-                boxShadow: cell.jokerFormed
-                  ? '0 0 10px rgba(251,191,36,0.5)'
-                  : isHighlighted
-                    ? `0 0 12px ${team?.color ?? '#fff'}66`
-                    : 'none',
+                transition: 'background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease',
+                transform: isNew ? 'scale(1.25)' : 'scale(1)',
+                transitionProperty: isNew ? 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.35s, border 0.35s, box-shadow 0.35s' : undefined,
+                boxShadow: isNew
+                  ? `0 0 24px ${team?.color ?? '#fff'}99`
+                  : showStar
+                    ? '0 0 10px rgba(251,191,36,0.5)'
+                    : isHighlighted
+                      ? `0 0 12px ${team?.color ?? '#fff'}66`
+                      : 'none',
               }}>
-                {cell.jokerFormed && '⭐'}
-                {!cell.jokerFormed && team && qqGetAvatar(team.avatarId).emoji}
+                {showStar && '⭐'}
+                {!showStar && team && qqGetAvatar(team.avatarId).emoji}
               </div>
             );
           })

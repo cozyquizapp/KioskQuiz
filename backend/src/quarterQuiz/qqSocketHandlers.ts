@@ -162,12 +162,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqActivateQuestion(room, () => {
-          // Timer expired — reveal answer automatically and broadcast
-          try {
-            qqRevealAnswer(room);
-            applyAutoEval(room);
-          } catch { /* already revealed */ }
+          // Timer expired — reveal first, then auto-eval after 3s pause
+          try { qqRevealAnswer(room); } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
+          setTimeout(() => {
+            try { applyAutoEval(room); } catch { /* ignore */ }
+            broadcast(io, payload.roomCode);
+          }, 3000);
         });
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -233,11 +234,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         broadcast(io, payload.roomCode);
         // Auto-reveal when all connected teams have answered
         if (allAnswered) {
-          try {
-            qqRevealAnswer(room);
-            applyAutoEval(room);
-          } catch { /* already revealed */ }
+          try { qqRevealAnswer(room); } catch { /* already revealed */ }
           broadcast(io, payload.roomCode);
+          // Pause on reveal screen for 3s, then auto-eval → PLACEMENT
+          setTimeout(() => {
+            try { applyAutoEval(room); } catch { /* ignore */ }
+            broadcast(io, payload.roomCode);
+          }, 3000);
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

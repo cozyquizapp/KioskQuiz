@@ -660,7 +660,7 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
         );
       })}
       <SubmitBtn
-        onSubmit={() => selected !== null && onSubmit(opts[selected])}
+        onSubmit={() => selected !== null && onSubmit(String(selected))}
         canSubmit={selected !== null}
         submitted={false}
         catColor={catColor}
@@ -1029,7 +1029,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
   const isFree = s.pendingAction === 'FREE';
   const isSwap = s.comebackAction === 'SWAP_2' && s.pendingAction === 'COMEBACK';
-  const isSteal = s.pendingAction === 'STEAL_1' || (isFree && freeMode === 'STEAL');
+  const isSteal = s.pendingAction === 'STEAL_1'
+    || (isFree && freeMode === 'STEAL')
+    || (s.pendingAction === 'COMEBACK' && s.comebackAction === 'STEAL_1');
   const cellSize = Math.min(60, Math.floor(340 / s.gridSize));
 
   useEffect(() => { if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); } }, [isMyTurn]);

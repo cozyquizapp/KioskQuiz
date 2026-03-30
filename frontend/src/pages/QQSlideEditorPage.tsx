@@ -1,7 +1,7 @@
 // TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { CustomSlide } from '../components/QQCustomSlide';
+import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
 import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -727,7 +727,6 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(800);
-  const canvasH = canvasW / CANVAS_RATIO;
 
   // dragRef stores per-element start positions for multi-drag
   const dragRef = useRef<{ ids: string[]; startMX: number; startMY: number; starts: Array<{ id: string; x: number; y: number }> } | null>(null);
@@ -853,9 +852,11 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
 
   const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
 
+  const mockState = makePreviewState(templateType);
+
   return (
     <div ref={canvasRef}
-      style={{ width: '100%', maxWidth: `min(100%, ${canvasH * CANVAS_RATIO}px)`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
+      style={{ width: '100%', maxWidth: '100%', maxHeight: '100%', aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onMouseDown={e => {
         if (e.target !== e.currentTarget) return;
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -867,11 +868,12 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
       }}
       onClick={e => { if (e.target === e.currentTarget) onClearSelect(); }}>
 
-      {/* Built-in view as non-interactive background reference */}
+      {/* Render all elements (incl. ph_*) with mock data — non-interactive visual layer */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <QQBuiltinSlide templateType={templateType} />
+        <CustomSlide template={template} previewState={mockState} />
       </div>
 
+      {/* Transparent interactive overlays for drag/select/resize — one per element */}
       {sorted.map(el => (
         <CanvasElement key={el.id} el={el} canvasW={canvasW}
           selected={selectedIds.includes(el.id)}
@@ -880,7 +882,6 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
           onDragStart={(e) => {
             e.stopPropagation();
             onSelect(el.id, e.shiftKey);
-            // Build multi-drag starts: include all currently selected + this element
             const ids = selectedIds.includes(el.id) ? selectedIds : [el.id];
             const starts = ids.map(id => {
               const found = template.elements.find(x => x.id === id);
@@ -937,46 +938,11 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
   onDblClick: () => void;
   onEndEdit: (text: string) => void;
 }) {
-  // Animated Avatar rendering — shows real emoji with wiggle
-  if (el.type === 'animatedAvatar') {
-    const emoji = el.text ?? '✨';
-    const fs = `${(el.fontSize ?? 6) * canvasW / 100}px`;
-    return (
-      <div className="qqse-elem"
-        style={{
-          position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
-          zIndex: el.zIndex ?? 1, opacity: el.opacity ?? 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: selected ? '2px solid #3B82F6' : '1.5px dashed rgba(59,130,246,0.4)',
-          borderRadius: 8, cursor: 'move', boxSizing: 'border-box',
-          transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-        }}
-        onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
-        onMouseDown={e => { if (!editing) { onDragStart(e); } }}
-      >
-        <span style={{ fontSize: fs, lineHeight: 1, userSelect: 'none',
-          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
-          animation: `${el.animType === 'bounce' ? 'cfloata' : 'cfloat'} ${el.avatarAnimDuration ?? 4}s ease-in-out ${el.avatarAnimDelay ?? 0}s infinite`,
-          ['--r' as string]: `${el.rotation ?? 0}deg`,
-        }}>
-          {emoji}
-        </span>
-        {selected && (
-          <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
-            {emoji} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
-          </div>
-        )}
-        {selected && HANDLES.map(h => (
-          <div key={h} className="qqse-handle" style={{ ...HANDLE_STYLE[h] }}
-            onMouseDown={e => { e.stopPropagation(); onResizeStart(e, h); }} />
-        ))}
-      </div>
-    );
-  }
   const isPh = el.type.startsWith('ph_');
+  const isAvatar = el.type === 'animatedAvatar';
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
-  const editRef = useRef<HTMLDivElement>(null);
   const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily;
+  const editRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editing && editRef.current) {
@@ -989,33 +955,28 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
     }
   }, [editing]);
 
+  const label = isPh ? (PH_LABELS[el.type] ?? el.type) : isAvatar ? (el.text ?? '✨') : el.type;
+
   return (
     <div className="qqse-elem"
       style={{
         position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
         transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-        zIndex: el.zIndex ?? 1, opacity: el.opacity ?? 1,
-        cursor: editing ? 'text' : 'move', boxSizing: 'border-box', overflow: 'hidden',
-        background: el.background ?? (isPh ? 'rgba(139,92,246,0.10)' : 'transparent'),
+        zIndex: (el.zIndex ?? 1) + 1000, // always above CustomSlide render layer
+        opacity: editing ? 1 : undefined,
+        cursor: editing ? 'text' : 'move', boxSizing: 'border-box',
+        // Transparent overlay — visual is provided by CustomSlide below
+        background: editing ? (el.background ?? 'rgba(13,10,6,0.95)') : 'transparent',
         borderRadius: el.borderRadius != null ? `${el.borderRadius}px` : undefined,
-        border: editing ? '2px solid #F59E0B' : (selected ? '2px solid #3B82F6' : (isPh ? '1.5px dashed rgba(139,92,246,0.4)' : (el.border ?? undefined))),
-        outline: selected && !editing ? '1px solid rgba(59,130,246,0.3)' : undefined,
-        outlineOffset: selected ? '3px' : undefined,
+        border: editing ? '2px solid #F59E0B' : selected ? '2px solid #3B82F6' : 'none',
+        outline: selected && !editing ? '1.5px dashed rgba(59,130,246,0.6)' : 'none',
+        outlineOffset: '2px',
       }}
       onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
       onDoubleClick={e => { e.stopPropagation(); onDblClick(); }}
       onMouseDown={e => { if (!editing) { onDragStart(e); } }}>
 
-      {/* Text content */}
-      {el.type === 'text' && !editing && (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '2px 6px', boxSizing: 'border-box', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
-          <span style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, letterSpacing: el.letterSpacing != null ? `${el.letterSpacing}em` : undefined, wordBreak: 'break-word', width: '100%', fontFamily: fontFamily ?? "'Nunito', sans-serif" }}>
-            {el.text || '…'}
-          </span>
-        </div>
-      )}
-
-      {/* In-place text editing */}
+      {/* In-place text editing (only shown when actively editing) */}
       {el.type === 'text' && editing && (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '2px 6px', boxSizing: 'border-box', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
           <div
@@ -1036,27 +997,6 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
         </div>
       )}
 
-      {/* Image */}
-      {el.type === 'image' && el.imageUrl && (
-        <img src={el.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: el.objectFit ?? 'contain', display: 'block', pointerEvents: 'none' }} />
-      )}
-      {el.type === 'image' && !el.imageUrl && (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', fontSize: Math.max(9, canvasW * 0.012), color: '#334155' }}>🖼</div>
-      )}
-
-      {/* Placeholder */}
-      {isPh && (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, padding: 4, boxSizing: 'border-box' }}>
-          <div style={{ fontSize: Math.max(8, canvasW * 0.013), fontWeight: 800, color: '#A78BFA', textAlign: 'center', lineHeight: 1.3 }}>[{PH_LABELS[el.type]}]</div>
-          {el.fontSize && <div style={{ fontSize: Math.max(7, canvasW * 0.009), color: '#475569', fontWeight: 600 }}>{el.fontSize}vw</div>}
-        </div>
-      )}
-
-      {/* Shape: just background, no text */}
-      {el.type === 'rect' && !el.background && (
-        <div style={{ width: '100%', height: '100%' }} />
-      )}
-
       {/* Resize handles (selected only) */}
       {selected && HANDLES.map(h => (
         <div key={h} className="qqse-handle" style={{ ...HANDLE_STYLE[h] }}
@@ -1066,7 +1006,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
       {/* Selected label */}
       {selected && (
         <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
-          {isPh ? PH_LABELS[el.type] : el.type} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
+          {label} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
         </div>
       )}
     </div>

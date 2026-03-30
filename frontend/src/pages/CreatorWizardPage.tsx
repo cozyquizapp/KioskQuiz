@@ -36,9 +36,9 @@ const catLabel: Record<QuizCategory, string> = {
 const mixedMechanics: { value: MixedMechanicId; label: string; hint: string }[] = [
   { value: 'sortieren', label: 'Sortieren (Nord/Süd/Chrono)', hint: 'Ordne Reihenfolgen zu' },
   { value: 'wer-bietet-mehr', label: 'Wer bietet mehr?', hint: 'Bieten, dann liefern' },
-  { value: 'eine-ist-falsch', label: '8 Aussagen – eine falsch', hint: 'Finde die falsche' },
+  { value: 'eine-falsch', label: '8 Aussagen – eine falsch', hint: 'Finde die falsche' },
   { value: 'three-clue-race', label: 'Three Clue Race', hint: 'Frühes Raten = mehr Risiko' },
-  { value: 'vier-woerter', label: '4 Wörter – ein Ursprung', hint: 'Gemeinsamen Begriff finden' }
+  { value: 'vier-woerter-eins', label: '4 Wörter – ein Ursprung', hint: 'Gemeinsamen Begriff finden' }
 ];
 
 const badge: React.CSSProperties = {

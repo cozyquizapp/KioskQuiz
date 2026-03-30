@@ -554,21 +554,6 @@ export default function QQSlideEditorPage() {
               style={{ width: 28, height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0 }} />
             <input value={activeTemplate.background} onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
               style={{ ...input, width: 260, fontSize: 11, padding: '4px 8px' }} placeholder="#000 oder CSS gradient…" />
-            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
-            {/* Add static elements */}
-            {(['text', 'image', 'rect'] as const).map(t => (
-              <button key={t} onClick={() => addElement(t)} style={btn('#3B82F6', true)}>
-                + {t === 'text' ? '📝 Text' : t === 'image' ? '🖼 Bild' : '⬛ Form'}
-              </button>
-            ))}
-            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
-            {/* Add placeholder elements (compact) */}
-            {(Object.entries(PH_LABELS) as [QQSlideElementType, string][]).map(([t, label]) => (
-              <button key={t} onClick={() => addElement(t)} title={`Platzhalter: ${label}`}
-                style={{ padding: '4px 7px', borderRadius: 6, border: '1px solid rgba(139,92,246,0.35)', background: 'rgba(139,92,246,0.08)', color: '#A78BFA', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 700 }}>
-                + {label.split('-')[0].split(' ')[0]}
-              </button>
-            ))}
           </div>
 
           {/* Alignment toolbar (visible when selection exists) */}
@@ -615,13 +600,8 @@ export default function QQSlideEditorPage() {
             </div>
             <div style={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
               {previewMode ? (
-                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: '#0D0A06', borderRadius: 10, overflow: 'hidden' }}>
-                  <QQBuiltinSlide templateType={activeType} />
-                  {activeTemplate.elements.length > 0 && (
-                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                      <CustomSlide template={activeTemplate} overlayOnly />
-                    </div>
-                  )}
+                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
+                  <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
                 </div>
               ) : (
                 <SlideCanvas
@@ -651,6 +631,8 @@ export default function QQSlideEditorPage() {
                     patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === id ? { ...e, text } : e) });
                     setEditingId(null);
                   }}
+                  onDelete={deleteSelected}
+                  onDuplicate={duplicateSelected}
                 />
               )}
             </div>
@@ -682,8 +664,15 @@ export default function QQSlideEditorPage() {
                   .map(el => {
                     const isPh = el.type.startsWith('ph_');
                     const isSelected = selectedIds.includes(el.id);
-                    const icon = isPh ? '⬡' : el.type === 'text' ? '📝' : el.type === 'image' ? '🖼' : '⬛';
-                    const label = isPh ? (PH_LABELS[el.type] ?? el.type) : (el.type === 'text' ? (el.text?.slice(0, 16) ?? 'Text') : el.type);
+                    const icon = el.type === 'animatedAvatar' ? (el.text ?? '✨')
+                      : isPh ? '⬡'
+                      : el.type === 'text' ? '📝'
+                      : el.type === 'image' ? '🖼'
+                      : '⬛';
+                    const label = el.type === 'animatedAvatar' ? (el.text ?? '✨')
+                      : isPh ? (PH_LABELS[el.type] ?? el.type)
+                      : el.type === 'text' ? (el.text?.slice(0, 16) ?? 'Text')
+                      : el.type;
                     return (
                       <div key={el.id}
                         className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
@@ -710,7 +699,7 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit }: {
+function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
   template: QQSlideTemplate;
   templateType: QQSlideTemplateType;
   selectedIds: string[];
@@ -724,6 +713,8 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
   onUpdateMulti: (patches: Array<{ id: string; patch: Partial<QQSlideElement> }>) => void;
   onStartEdit: (id: string) => void;
   onEndEdit: (id: string, text: string) => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(800);
@@ -892,6 +883,8 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
           onResizeStart={(e, handle) => { e.stopPropagation(); resizeRef.current = { id: el.id, handle, startMX: e.clientX, startMY: e.clientY, startX: el.x, startY: el.y, startW: el.w, startH: el.h }; }}
           onDblClick={() => { if (el.type === 'text') { onSelect(el.id, false); onStartEdit(el.id); } }}
           onEndEdit={text => onEndEdit(el.id, text)}
+          onDelete={() => { onSelect(el.id, false); onDelete(); }}
+          onDuplicate={() => { onSelect(el.id, false); onDuplicate(); }}
         />
       ))}
 
@@ -930,19 +923,30 @@ const HANDLE_STYLE: Record<string, React.CSSProperties> = {
   w:  { top: 'calc(50% - 4px)', left: '-5px',          cursor: 'w-resize' },
 };
 
-function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, onResizeStart, onDblClick, onEndEdit }: {
+function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, onResizeStart, onDblClick, onEndEdit, onDelete, onDuplicate }: {
   el: QQSlideElement; canvasW: number; selected: boolean; editing: boolean;
   onSelect: (shift: boolean) => void;
   onDragStart: (e: React.MouseEvent) => void;
   onResizeStart: (e: React.MouseEvent, handle: string) => void;
   onDblClick: () => void;
   onEndEdit: (text: string) => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const isPh = el.type.startsWith('ph_');
   const isAvatar = el.type === 'animatedAvatar';
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
   const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily;
   const editRef = useRef<HTMLDivElement>(null);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!ctxMenu) return;
+    function close() { setCtxMenu(null); }
+    window.addEventListener('click', close);
+    window.addEventListener('contextmenu', close);
+    return () => { window.removeEventListener('click', close); window.removeEventListener('contextmenu', close); };
+  }, [ctxMenu]);
 
   useEffect(() => {
     if (editing && editRef.current) {
@@ -974,7 +978,8 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
       }}
       onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
       onDoubleClick={e => { e.stopPropagation(); onDblClick(); }}
-      onMouseDown={e => { if (!editing) { onDragStart(e); } }}>
+      onMouseDown={e => { if (!editing) { onDragStart(e); } }}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onSelect(false); setCtxMenu({ x: e.clientX, y: e.clientY }); }}>
 
       {/* In-place text editing (only shown when actively editing) */}
       {el.type === 'text' && editing && (
@@ -1007,6 +1012,30 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
       {selected && (
         <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
           {label} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
+        </div>
+      )}
+
+      {/* Context menu */}
+      {ctxMenu && (
+        <div style={{
+          position: 'fixed', left: ctxMenu.x, top: ctxMenu.y, zIndex: 999999,
+          background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)', padding: '4px 0', minWidth: 150,
+          fontFamily: "'Nunito', sans-serif",
+        }} onClick={e => e.stopPropagation()}>
+          {[
+            { label: '⎘ Duplizieren', action: () => { setCtxMenu(null); onDuplicate(); } },
+            { label: '🗑 Löschen', action: () => { setCtxMenu(null); onDelete(); } },
+          ].map(item => (
+            <button key={item.label} onClick={item.action} style={{
+              display: 'block', width: '100%', padding: '7px 14px', background: 'transparent',
+              border: 'none', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 12,
+              fontWeight: 700, textAlign: 'left', cursor: 'pointer',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >{item.label}</button>
+          ))}
         </div>
       )}
     </div>

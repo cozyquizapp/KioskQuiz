@@ -197,7 +197,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
-      background: bg,
+      background: activeTemplate ? (activeTemplate.background || bg) : bg,
       fontFamily: "'Nunito', system-ui, sans-serif",
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
@@ -213,21 +213,26 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
-      {/* Built-in views — always shown */}
-      {s.phase === 'LOBBY'           && <LobbyView state={s} />}
-      {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-      {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-        <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} hideCutouts={!!activeTemplate} />
-      )}
-      {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
-      {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
-      {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
-
-      {/* Custom overlay elements from template (on top of built-in view) */}
-      {activeTemplate && activeTemplate.elements.length > 0 && (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 100 }}>
-          <CustomSlide template={activeTemplate} state={s} overlayOnly />
-        </div>
+      {activeTemplate ? (
+        /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
+        <>
+          <Fireflies />
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <CustomSlide template={activeTemplate} state={s} />
+          </div>
+        </>
+      ) : (
+        /* No template: built-in views */
+        <>
+          {s.phase === 'LOBBY'           && <LobbyView state={s} />}
+          {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
+          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
+            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} hideCutouts={false} />
+          )}
+          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
+          {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
+          {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
+        </>
       )}
     </div>
   );
@@ -1161,7 +1166,7 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   );
 }
 
-function Fireflies() {
+export function Fireflies() {
   return (
     <>
       {FF.map((f, i) => (

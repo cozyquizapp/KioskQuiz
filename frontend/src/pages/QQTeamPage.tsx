@@ -113,10 +113,17 @@ export default function QQTeamPage() {
   const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
   const lang: 'de' | 'en' = localLang;
   const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
-  const [flagFlip, setFlagFlip] = useState(false);
+  const [flagFlip, setFlagFlip] = useState(false); // true = mid-flip (hidden at 90°)
+  const flipLockRef = useRef(false);
   const handleFlagClick = () => {
-    setFlagFlip(f => !f);
-    setLang(lang === 'de' ? 'en' : 'de');
+    if (flipLockRef.current) return;
+    flipLockRef.current = true;
+    setFlagFlip(true);
+    setTimeout(() => {
+      setLang(lang === 'de' ? 'en' : 'de');
+      setFlagFlip(false);
+      setTimeout(() => { flipLockRef.current = false; }, 220);
+    }, 200);
   };
 
   if (!joined) {
@@ -162,11 +169,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             style={{
               border: 'none', background: 'none', cursor: 'pointer', padding: 0,
               marginLeft: 8, marginRight: 0, outline: 'none',
-              transition: 'transform 0.4s',
-              transform: flagFlip ? 'rotateY(180deg)' : 'none',
-              fontSize: 24,
-              display: 'inline-block',
-              perspective: 400,
+              fontSize: 24, display: 'inline-block',
+              perspective: '400px',
               position: 'absolute', right: 0, top: 0,
             }}
             aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
@@ -174,8 +178,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           >
             <span style={{
               display: 'inline-block',
-              transition: 'transform 0.4s',
-              transform: flagFlip ? 'rotateY(180deg)' : 'none',
+              transition: 'transform 0.2s ease-in-out, opacity 0.2s',
+              transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
+              opacity: flagFlip ? 0 : 1,
             }}>
               {lang === 'de' ? '🇩🇪' : '🇬🇧'}
             </span>
@@ -281,19 +286,17 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
               style={{
                 border: 'none', background: 'none', cursor: 'pointer', padding: 0,
                 marginLeft: 6, marginRight: 6, outline: 'none',
-                transition: 'transform 0.4s',
-                transform: flagFlip ? 'rotateY(180deg)' : 'none',
-                fontSize: 24,
-                display: 'inline-block',
-                perspective: 400,
+                fontSize: 24, display: 'inline-block',
+                perspective: '400px',
               }}
               aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
               title={lang === 'de' ? 'Deutsch (klicken für Englisch)' : 'English (click for German)'}
             >
               <span style={{
                 display: 'inline-block',
-                transition: 'transform 0.4s',
-                transform: flagFlip ? 'rotateY(180deg)' : 'none',
+                transition: 'transform 0.2s ease-in-out, opacity 0.2s',
+                transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
+                opacity: flagFlip ? 0 : 1,
               }}>
                 {lang === 'de' ? '🇩🇪' : '🇬🇧'}
               </span>

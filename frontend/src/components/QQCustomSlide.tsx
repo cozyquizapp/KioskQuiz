@@ -627,6 +627,26 @@ function CustomSlideElement({
       );
     }
 
+    case 'animatedAvatar': {
+      const emoji = el.text ?? '✨';
+      const animName = el.animType === 'bounce' ? 'cfloata' : 'cfloat';
+      const dur = el.avatarAnimDuration ?? 4;
+      const del = el.avatarAnimDelay ?? 0;
+      return (
+        <div style={{
+          ...baseStyle,
+          fontSize: `${(el.fontSize ?? 6) * canvasW / 100}px`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          lineHeight: 1, userSelect: 'none',
+          filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.5))',
+          ['--r' as string]: `${el.rotation ?? 0}deg`,
+          animation: `${animName} ${dur}s ease-in-out ${del}s infinite`,
+        }}>
+          {emoji}
+        </div>
+      );
+    }
+
     default:
       return null;
   }

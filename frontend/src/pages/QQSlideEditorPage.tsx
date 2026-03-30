@@ -73,11 +73,11 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
     case 'PHASE_INTRO_1': return phaseIntro(type, '#3B82F6', 'Runde 1');
     case 'PHASE_INTRO_2': return phaseIntro(type, '#F59E0B', 'Runde 2');
     case 'PHASE_INTRO_3': return phaseIntro(type, '#EF4444', 'Finale');
-    case 'QUESTION_SCHAETZCHEN': return questionTpl(type, '#F59E0B');
-    case 'QUESTION_MUCHO':       return questionTpl(type, '#3B82F6', true);
-    case 'QUESTION_BUNTE_TUETE': return questionTpl(type, '#EF4444');
-    case 'QUESTION_ZEHN':        return questionTpl(type, '#22C55E', true);
-    case 'QUESTION_CHEESE':      return questionTpl(type, '#8B5CF6');
+    case 'QUESTION_SCHAETZCHEN': return questionTpl(type, '#F59E0B', false, 'SCHAETZCHEN');
+    case 'QUESTION_MUCHO':       return questionTpl(type, '#3B82F6', true,  'MUCHO');
+    case 'QUESTION_BUNTE_TUETE': return questionTpl(type, '#EF4444', false, 'BUNTE_TUETE');
+    case 'QUESTION_ZEHN':        return questionTpl(type, '#22C55E', true,  'ZEHN_VON_ZEHN');
+    case 'QUESTION_CHEESE':      return questionTpl(type, '#8B5CF6', false, 'CHEESE');
     case 'REVEAL': return {
       type, background: bg,
       elements: [
@@ -130,15 +130,40 @@ function phaseIntro(type: QQSlideTemplateType, color: string, label: string): QQ
   };
 }
 
-function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = false): QQSlideTemplate {
+interface CutoutSpec { text: string; top?: number; bottom?: number; left?: number; right?: number; rot: number; alt?: boolean }
+
+const CAT_CUTOUT_ELEMENTS: Record<string, CutoutSpec[]> = {
+  SCHAETZCHEN:   [{ text: '🍯', top: 6,  right: 11, rot: -12 }, { text: '✨', bottom: 14, left: 7,  rot: 8   }, { text: '💛', top: 30, right: 5,  rot: 16  }],
+  MUCHO:         [{ text: '🎵', top: 8,  right: 13, rot: -8  }, { text: '🎶', bottom: 18, left: 6,  rot: 12  }, { text: '🎸', top: 38, right: 6,  rot: -14, alt: true }],
+  BUNTE_TUETE:   [{ text: '🎁', top: 7,  right: 10, rot: -10 }, { text: '🎲', bottom: 16, left: 8,  rot: 14  }, { text: '⭐', top: 42, right: 5,  rot: 20  }],
+  ZEHN_VON_ZEHN: [{ text: '🔟', top: 10, right: 12, rot: -6  }, { text: '✅', bottom: 20, left: 7,  rot: 10  }, { text: '📊', top: 32, right: 7,  rot: -12, alt: true }],
+  CHEESE:        [{ text: '🧀', top: 9,  right: 11, rot: -11 }, { text: '🎭', bottom: 15, left: 7,  rot: 8   }, { text: '👑', top: 36, right: 6,  rot: -9,  alt: true }],
+};
+
+function cutoutElements(cat: string): QQSlideElement[] {
+  const specs = CAT_CUTOUT_ELEMENTS[cat] ?? [];
+  return specs.map((c, i) => ({
+    id: eid(),
+    type: 'animatedAvatar' as const,
+    text: c.text,
+    x: c.left ?? (100 - (c.right ?? 10) - 8),
+    y: c.top !== undefined ? c.top : (100 - (c.bottom ?? 15) - 14),
+    w: 8, h: 14,
+    rotation: c.rot,
+    fontSize: 6,
+    zIndex: 3,
+    animType: (c.alt ? 'bounce' : 'wiggle') as 'bounce' | 'wiggle',
+    avatarAnimDuration: 4 + i * 0.7,
+    avatarAnimDelay: i * 0.5,
+  }));
+}
+
+function questionTpl(type: QQSlideTemplateType, color: string, _hasOptions = false, cat?: string): QQSlideTemplate {
   return {
     type, background: '#0D0A06',
     elements: [
       { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: `radial-gradient(ellipse at 50% 0%, ${color}18 0%, transparent 50%)`, zIndex: 0 },
-      { id: eid(), type: 'ph_category', x: 2, y: 2, w: 24, h: 10, zIndex: 2 },
-      { id: eid(), type: 'ph_timer', x: 76, y: 2, w: 22, h: 10, zIndex: 2 },
-      { id: eid(), type: 'ph_question', x: 5, y: 15, w: 90, h: hasOptions ? 20 : 28, fontSize: hasOptions ? 3.2 : 4, fontWeight: 900, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
-      { id: eid(), type: 'ph_options', x: 4, y: hasOptions ? 40 : 48, w: 92, h: hasOptions ? 54 : 44, zIndex: 2 },
+      ...(cat ? cutoutElements(cat) : []),
     ],
   };
 }

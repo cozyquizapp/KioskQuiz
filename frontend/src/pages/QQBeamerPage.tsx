@@ -217,7 +217,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
       {s.phase === 'LOBBY'           && <LobbyView state={s} />}
       {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
       {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-        <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} />
+        <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} hideCutouts={!!activeTemplate} />
       )}
       {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
       {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
@@ -420,7 +420,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 // QUESTION VIEW (active + reveal)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: boolean }) {
+export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
   const q = s.currentQuestion;
   if (!q) return null;
   const cat = q.category as QQCategory;
@@ -476,8 +476,8 @@ export function QuestionView({ state: s, revealed }: { state: QQStateUpdate; rev
           }}
         />
       )}
-      {/* Cutout emojis */}
-      {cutouts.map((c, i) => (
+      {/* Cutout emojis — hidden when template overlay handles them */}
+      {!hideCutouts && cutouts.map((c, i) => (
         <div key={i} style={{
           position: 'absolute', pointerEvents: 'none', zIndex: 3,
           top: c.top, bottom: c.bottom, left: c.left, right: c.right,

@@ -167,7 +167,7 @@ export function QQBuiltinSlide({ templateType, state }: {
       {s.phase === 'LOBBY'           && <LobbyView state={s} />}
       {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
       {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-        <QuestionView key={s.currentQuestion?.id ?? 'preview'} state={s} revealed={revealed} />
+        <QuestionView key={s.currentQuestion?.id ?? 'preview'} state={s} revealed={revealed} hideCutouts />
       )}
       {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
       {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}

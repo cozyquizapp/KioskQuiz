@@ -139,7 +139,11 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip }: any) {
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip }: {
+  step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
+  teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
+  onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
+}) {
   return (
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
@@ -238,15 +242,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 // GAME VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode }: {
+function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick }: {
   state: QQStateUpdate; myTeam: QQTeam | null;
   myTeamId: string; emit: any; roomCode: string;
+  lang: 'de' | 'en'; flagFlip: boolean; onFlagClick: () => void;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
   const teamColor     = myTeam?.color ?? '#3B82F6';
-  // Use lang/flagFlip/onFlagClick from parent (QQTeamPage)
-  const { lang, flagFlip, onFlagClick } = arguments[0];
 
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>

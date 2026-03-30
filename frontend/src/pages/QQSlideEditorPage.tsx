@@ -1,7 +1,7 @@
 // TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import BeamerView from '../views/BeamerView';
+import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
@@ -143,12 +143,11 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
 }
 
 
-// ── SlidePreview (BeamerView wrapper) ─────────────────────────────────────────
+// ── SlidePreview (QQ CustomSlide thumbnail) ───────────────────────────────────
 function SlidePreview({ template }: { template: QQSlideTemplate }) {
-  // Minimal BeamerView usage for static preview
   return (
-    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: template.background, flexShrink: 0 }}>
-      <BeamerView template={template} previewMode />
+    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: template.background, flexShrink: 0, position: 'relative' }}>
+      <CustomSlide template={template} previewState={makePreviewState(template.type)} />
     </div>
   );
 }
@@ -581,7 +580,9 @@ export default function QQSlideEditorPage() {
             </div>
             <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
               {previewMode ? (
-                <BeamerView template={activeTemplate} previewMode={true} />
+                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background, borderRadius: 10, overflow: 'hidden' }}>
+                  <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
+                </div>
               ) : (
                 <SlideCanvas
                   template={activeTemplate}

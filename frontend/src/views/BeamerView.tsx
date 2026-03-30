@@ -398,7 +398,7 @@ const BeamerView = ({ roomCode, template, previewMode }: BeamerProps) => {
       return (
         <div style={{ width: '100%', height: '100%', aspectRatio: '16/9', position: 'relative', background: template.background, borderRadius: 8, overflow: 'hidden' }}>
           {/* Animierter Hintergrund wie im Live-Modus */}
-          <ParticleCanvas background={template.background} />
+          <ParticleCanvas />
           {sorted.map(el => {
             const isPh = el.type.startsWith('ph_');
             if (el.type === 'rect') {
@@ -1068,6 +1068,7 @@ const BeamerView = ({ roomCode, template, previewMode }: BeamerProps) => {
 
   // initial fetch
   useEffect(() => {
+    if (!roomCode) return;
     fetchLanguage(roomCode)
       .then((res) => res.language && setLanguage(res.language))
       .catch(() => undefined);
@@ -1080,7 +1081,7 @@ const BeamerView = ({ roomCode, template, previewMode }: BeamerProps) => {
         }
       })
       .catch(() => undefined);
-    fetchTimer(roomCode)
+    fetchTimer(roomCode as string)
       .then((res) => {
         const ends = res?.timer?.endsAt ?? null;
         if (ends) {
@@ -1787,7 +1788,7 @@ useEffect(() => {
     const backLabel = language === 'de' ? 'Zurück' : 'Back';
     const nextLabel = language === 'de' ? 'Weiter' : 'Next';
     // Fallback-Hinweis anzeigen, wenn keine Custom Slides geladen wurden
-    const isFallback = introSlides === INTRO_SLIDE_MAP[language];
+    const isFallback = introSlides === INTRO_SLIDE_MAP[normalizeLang(language)];
     return (
       <div style={{ ...cardFrame, padding: 0, position: 'relative' }}>
         {isFallback && (
@@ -1991,7 +1992,7 @@ useEffect(() => {
               </div>
             </div>
           </BeamerFrame>
-          <LobbyStatsDisplay roomCode={roomCode} language={language} />
+          <LobbyStatsDisplay roomCode={roomCode ?? ''} language={language} />
         </>
       );
     }
@@ -2009,7 +2010,7 @@ useEffect(() => {
           getCategoryLabel={getCategoryLabel}
           getCategoryDescription={getCategoryDescription}
         />
-      <LobbyStatsDisplay roomCode={roomCode} language={language} />
+      <LobbyStatsDisplay roomCode={roomCode ?? ''} language={language} />
       </>
     );
   };
@@ -3962,11 +3963,14 @@ useEffect(() => {
                     <Popup>{(question as any)?.bunteTuete?.targetLabel || (language === 'de' ? 'Ziel' : 'Target')}</Popup>
                   </Marker>
                   {/* Team-Pins */}
-                  {answerResults?.map((entry, idx) => {
+                  {(() => {
+                    const _fallbackColors = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#8b5cf6','#10b981','#f87171','#60a5fa'];
+                    const _teamColorMap: Record<string,string> = Object.fromEntries((teamStatus ?? []).map((t: any) => [t.id, t.color]));
+                    return answerResults?.map((entry, idx) => {
                     if (!entry.answer) return null;
-                    const [lat, lng] = entry.answer.split(',').map(Number);
+                    const [lat, lng] = (entry.answer as string).split(',').map(Number);
                     if (isNaN(lat) || isNaN(lng)) return null;
-                    const teamColor = teamColorMap[entry.teamId] || fallbackColors[idx % fallbackColors.length];
+                    const teamColor = _teamColorMap[entry.teamId] || _fallbackColors[idx % _fallbackColors.length];
                     return (
                       <Marker key={entry.teamId} position={[lat, lng]} icon={L.divIcon({
                         className: '',
@@ -3975,7 +3979,8 @@ useEffect(() => {
                         <Popup>{entry.teamName || entry.teamId}</Popup>
                       </Marker>
                     );
-                  })}
+                  });
+                  })()}
                 </MapContainer>
               </div>
               <div style={{ width: '100%', maxWidth: 900 }}>

@@ -313,8 +313,8 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         )}
 
         {/* Phase content */}
-        {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} />}
-        {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} />}
+        {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
+        {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
         {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
           <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
         )}
@@ -346,16 +346,16 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 // Phase cards
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function LobbyCard({ state: s, myTeam }: { state: QQStateUpdate; myTeam: QQTeam | null }) {
+function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 44, marginBottom: 10, animation: 'tcwobble 2s ease-in-out infinite' }}>🎮</div>
-        <div style={{ fontWeight: 900, fontSize: 20, color: '#F1F5F9', marginBottom: 6 }}>
-          {myTeam ? 'Bereit!' : 'Warteraum'}
+        <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 6 }}>
+          {myTeam ? (lang === 'de' ? 'Bereit!' : 'Ready!') : (lang === 'de' ? 'Warteraum' : 'Waiting room')}
         </div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: '#64748b', marginBottom: 16 }}>
-          {s.teams.length} Team{s.teams.length !== 1 ? 's' : ''} · Warte auf Moderator
+        <div style={{ fontSize: 15, color: '#64748b', marginBottom: 16 }}>
+          {s.teams.length} Team{s.teams.length !== 1 ? 's' : ''} · {lang === 'de' ? 'Warte auf Moderator' : 'Waiting for moderator'}
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
           {s.teams.map(t => (
@@ -374,23 +374,24 @@ function LobbyCard({ state: s, myTeam }: { state: QQStateUpdate; myTeam: QQTeam 
   );
 }
 
-function PhaseIntroCard({ state: s }: { state: QQStateUpdate }) {
+function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const colors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
   const color  = colors[(s.gamePhaseIndex - 1) % 4];
-  const names  = ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'];
-  const descs  = ['', '1 Feld pro Sieg', '2 Felder oder klauen', 'Comeback-Phase', 'Alles auf Spiel'];
+  const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] };
+  const descs  = { de: ['', '1 Feld pro Sieg', '2 Felder oder klauen', 'Comeback-Phase', 'Alles auf Spiel'],
+                   en: ['', '1 field per win', '2 fields or steal', 'Comeback phase', 'All in'] };
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: '#475569', marginBottom: 6 }}>
-          Nächste Phase
+        <div style={{ fontSize: 14, color: '#475569', marginBottom: 6 }}>
+          {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
         </div>
         <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
           animation: 'tcfloat 3s ease-in-out infinite' }}>
-          {names[s.gamePhaseIndex] ?? `Runde ${s.gamePhaseIndex}`}
+          {names[lang][s.gamePhaseIndex] ?? `Round ${s.gamePhaseIndex}`}
         </div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: `${color}88`, marginTop: 8 }}>
-          {descs[s.gamePhaseIndex] ?? ''}
+        <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
+          {descs[lang][s.gamePhaseIndex] ?? ''}
         </div>
       </div>
     </CozyCard>

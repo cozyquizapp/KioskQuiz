@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
@@ -270,63 +271,84 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
+  const joinUrl = `${window.location.origin}/quarterquiz-team`;
+  const [de, setDe] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setDe(p => !p), 8000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 48, gap: 40 }}>
-      {/* Decorative fireflies */}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', padding: '40px 48px', gap: 40, position: 'relative' }}>
       <Fireflies />
 
-      {/* Title */}
-      <div style={{ textAlign: 'center', position: 'relative', zIndex: 5 }}>
-        <div style={{
-          fontFamily: "'Caveat', cursive", fontSize: 'clamp(18px, 2.2vw, 28px)',
-          color: 'rgba(234,179,8,0.55)', marginBottom: 8, letterSpacing: '0.06em',
-        }}>
-          Quartier Quiz · Quarter Quiz
+      {/* Left: title + teams */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 32, position: 'relative', zIndex: 5 }}>
+        <div>
+          <div style={{
+            fontFamily: "'Nunito', sans-serif",
+            fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
+            background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            letterSpacing: '-0.02em',
+            transition: 'opacity 0.4s',
+          }}>
+            {de ? 'Quartier Quiz' : 'Quarter Quiz'}
+          </div>
         </div>
-        <div style={{
-          fontFamily: "'Nunito', sans-serif",
-          fontSize: 'clamp(52px, 8vw, 108px)', fontWeight: 900, lineHeight: 1,
-          background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.02em',
-        }}>
-          Quarter Quiz
-        </div>
-        <div style={{ marginTop: 16, fontSize: 20, color: '#475569', fontWeight: 700 }}>
-          Raum: <span style={{ color: '#e2e8f0', fontWeight: 900, letterSpacing: '0.06em' }}>{s.roomCode}</span>
+
+        {/* Teams */}
+        {s.teams.length === 0 ? (
+          <div style={{ color: '#334155', fontSize: 18, fontWeight: 700 }}>
+            {de ? 'Warte auf alle Teams…' : 'Waiting for all teams…'}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {s.teams.map(t => (
+              <div key={t.id} style={{
+                padding: '16px 22px', borderRadius: 20,
+                background: '#1B1510',
+                border: `2px solid ${t.color}55`,
+                boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
+                textAlign: 'center', minWidth: 120,
+              }}>
+                <div style={{ fontSize: 44, marginBottom: 6, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
+                <div style={{ fontWeight: 900, fontSize: 18, color: t.color }}>{t.name}</div>
+                <div style={{ fontSize: 11, marginTop: 4, fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
+                  {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ color: '#1e293b', fontSize: 14, fontWeight: 700 }}>
+          {s.teams.length < 2
+            ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
+            : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
         </div>
       </div>
 
-      {/* Teams */}
-      {s.teams.length === 0 ? (
-        <div style={{ color: '#334155', fontSize: 18, fontWeight: 700, position: 'relative', zIndex: 5 }}>
-          Warte auf Teams…
+      {/* Right: QR code */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 18, position: 'relative', zIndex: 5, flexShrink: 0,
+      }}>
+        <div style={{
+          background: '#ffffff', borderRadius: 20, padding: 20,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+        }}>
+          <QRCodeSVG value={joinUrl} size={200} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
         </div>
-      ) : (
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
-          {s.teams.map(t => (
-            <div key={t.id} style={{
-              padding: '20px 28px', borderRadius: 22,
-              background: '#1B1510',
-              border: `2px solid ${t.color}55`,
-              boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
-              textAlign: 'center', minWidth: 140,
-            }}>
-              <div style={{ fontSize: 52, marginBottom: 8, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
-              <div style={{ fontWeight: 900, fontSize: 20, color: t.color }}>{t.name}</div>
-              <div style={{
-                fontSize: 12, marginTop: 6, fontWeight: 700,
-                color: t.connected ? '#22C55E' : '#475569',
-              }}>
-                {t.connected ? '● verbunden' : '○ wartend'}
-              </div>
-            </div>
-          ))}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{de ? 'Jetzt mitspielen' : 'Join now'}</div>
+          <div style={{
+            fontSize: 13, color: '#475569', fontFamily: 'monospace',
+            background: '#1B1510', padding: '6px 14px', borderRadius: 8,
+          }}>
+            {joinUrl.replace('https://', '').replace('http://', '')}
+          </div>
         </div>
-      )}
-
-      <div style={{ color: '#1e293b', fontSize: 15, fontWeight: 700, position: 'relative', zIndex: 5 }}>
-        {s.teams.length < 2 ? 'Mindestens 2 Teams benötigt' : 'Moderator startet das Spiel'}
       </div>
     </div>
   );

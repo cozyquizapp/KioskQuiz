@@ -485,16 +485,45 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         </div>
       )}
 
-      {iWon && isRevealed && (
-        <div style={{
-          marginTop: 8, padding: '10px 14px', borderRadius: 12,
-          background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)',
-          fontSize: 15, fontWeight: 800, color: '#60a5fa', textAlign: 'center',
-          animation: 'tcreveal 0.4s ease 0.2s both',
-        }}>
-          🎉 Richtig! Du darfst ein Feld wählen
-        </div>
-      )}
+      {isRevealed && s.correctTeamId && (() => {
+        const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
+        const cat = q.category;
+        const isEn = lang === 'en';
+        if (iWon) {
+          const winMsg = cat === 'SCHAETZCHEN'
+            ? (isEn ? '🎯 You were closest! Choose a field.' : '🎯 Ihr wart am nächsten dran! Wählt ein Feld.')
+            : cat === 'CHEESE'
+              ? (isEn ? '📸 Correct! Choose a field.' : '📸 Erkannt! Wählt ein Feld.')
+              : cat === 'BUNTE_TUETE'
+                ? (isEn ? '🎁 You win this round! Choose a field.' : '🎁 Ihr gewinnt die Runde! Wählt ein Feld.')
+                : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
+          return (
+            <div style={{
+              marginTop: 8, padding: '10px 14px', borderRadius: 12,
+              background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
+              fontSize: 15, fontWeight: 800, color: '#4ade80', textAlign: 'center',
+              animation: 'tcreveal 0.4s ease 0.2s both',
+            }}>
+              {winMsg}
+            </div>
+          );
+        } else if (winnerTeam) {
+          const loseMsg = cat === 'SCHAETZCHEN'
+            ? (isEn ? `😔 ${winnerTeam.name} was closer.` : `😔 Leider war ${winnerTeam.name} näher dran.`)
+            : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
+          return (
+            <div style={{
+              marginTop: 8, padding: '10px 14px', borderRadius: 12,
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              fontSize: 14, fontWeight: 700, color: '#64748b', textAlign: 'center',
+              animation: 'tcreveal 0.4s ease 0.2s both',
+            }}>
+              {loseMsg}
+            </div>
+          );
+        }
+        return null;
+      })()}
     </CozyCard>
   );
 }
@@ -1029,9 +1058,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   const [swapFirst, setSwapFirst] = useState<{ r: number; c: number } | null>(null);
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
   const isFree = s.pendingAction === 'FREE';
+  const isPhase2Choice = s.pendingAction === 'PLACE_2' && s.gamePhaseIndex === 2 && !freeMode;
   const isSwap = s.comebackAction === 'SWAP_2' && s.pendingAction === 'COMEBACK';
   const isSteal = s.pendingAction === 'STEAL_1'
     || (isFree && freeMode === 'STEAL')
+    || (s.pendingAction === 'PLACE_2' && freeMode === 'STEAL')
     || (s.pendingAction === 'COMEBACK' && s.comebackAction === 'STEAL_1');
   const cellSize = Math.min(60, Math.floor(340 / s.gridSize));
 
@@ -1080,7 +1111,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
                 {qqGetAvatar(pendingTeam.avatarId).emoji}
               </div>
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', marginTop: 4 }}>
+              <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
                 wählt ein Feld…
               </div>
             </>
@@ -1095,8 +1126,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
-        {isSwap ? '🔄 Tausche 2 gegnerische Felder!' : isSteal ? '⚡ Klau ein fremdes Feld!' : '📍 Wähle ein Feld!'}
+        {isSwap ? '🔄 Tausche 2 gegnerische Felder!' : isSteal ? '⚡ Klau ein fremdes Feld!' : isPhase2Choice ? '🏆 Runde 2 — Wähle deine Aktion!' : '📍 Wähle ein Feld!'}
       </div>
+
+      {/* Phase 2 choice: place 2 OR steal 1 */}
+      {isPhase2Choice && !selecting && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>📍 2 Felder setzen</CozyBtn>
+          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>⚡ 1 Feld klauen</CozyBtn>
+        </div>
+      )}
 
       {/* Phase 3 FREE action choice */}
       {isFree && !freeMode && !selecting && (
@@ -1106,7 +1145,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
         </div>
       )}
 
-      {(!isFree || freeMode) && !selecting ? (
+      {(!isFree || freeMode) && !isPhase2Choice && !selecting ? (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
           {isSwap ? '🔄 Felder wählen' : isSteal ? '⚡ Klauen' : '📍 Feld wählen'}
         </CozyBtn>

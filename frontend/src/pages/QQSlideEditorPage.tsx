@@ -158,11 +158,15 @@ function cutoutElements(cat: string): QQSlideElement[] {
   }));
 }
 
-function questionTpl(type: QQSlideTemplateType, color: string, _hasOptions = false, cat?: string): QQSlideTemplate {
+function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = false, cat?: string): QQSlideTemplate {
   return {
     type, background: '#0D0A06',
     elements: [
-      { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: `radial-gradient(ellipse at 50% 0%, ${color}18 0%, transparent 50%)`, zIndex: 0 },
+      { id: eid(), type: 'rect',        x: 0,  y: 0,  w: 100, h: 100, background: `radial-gradient(ellipse at 50% 0%, ${color}18 0%, transparent 50%)`, zIndex: 0 },
+      { id: eid(), type: 'ph_category', x: 2,  y: 2,  w: 24,  h: 10,  zIndex: 2 },
+      { id: eid(), type: 'ph_timer',    x: 76, y: 2,  w: 22,  h: 10,  zIndex: 2 },
+      { id: eid(), type: 'ph_question', x: 5,  y: 15, w: 90,  h: hasOptions ? 20 : 28, fontSize: hasOptions ? 3.2 : 4, fontWeight: 900, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
+      { id: eid(), type: 'ph_options',  x: 4,  y: hasOptions ? 40 : 48, w: 92, h: hasOptions ? 54 : 44, zIndex: 2 },
       ...(cat ? cutoutElements(cat) : []),
     ],
   };
@@ -609,7 +613,7 @@ export default function QQSlideEditorPage() {
                 {previewMode ? '🖉 Bearbeiten' : '👁 Vorschau'}
               </button>
             </div>
-            <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
+            <div style={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
               {previewMode ? (
                 <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: '#0D0A06', borderRadius: 10, overflow: 'hidden' }}>
                   <QQBuiltinSlide templateType={activeType} />
@@ -851,7 +855,7 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
 
   return (
     <div ref={canvasRef}
-      style={{ width: '100%', maxWidth: `${canvasH * CANVAS_RATIO}px`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
+      style={{ width: '100%', maxWidth: `min(100%, ${canvasH * CANVAS_RATIO}px)`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onMouseDown={e => {
         if (e.target !== e.currentTarget) return;
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -933,29 +937,39 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
   onDblClick: () => void;
   onEndEdit: (text: string) => void;
 }) {
-  // Animated Avatar rendering (simple placeholder)
+  // Animated Avatar rendering — shows real emoji with wiggle
   if (el.type === 'animatedAvatar') {
+    const emoji = el.text ?? '✨';
+    const fs = `${(el.fontSize ?? 6) * canvasW / 100}px`;
     return (
       <div className="qqse-elem"
         style={{
           position: 'absolute', left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`,
           zIndex: el.zIndex ?? 1, opacity: el.opacity ?? 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(59,130,246,0.08)', border: selected ? '2px solid #3B82F6' : '1.5px dashed #3B82F6', borderRadius: 12,
-          cursor: 'move',
+          border: selected ? '2px solid #3B82F6' : '1.5px dashed rgba(59,130,246,0.4)',
+          borderRadius: 8, cursor: 'move', boxSizing: 'border-box',
+          transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
         }}
         onClick={e => { e.stopPropagation(); onSelect(e.shiftKey); }}
         onMouseDown={e => { if (!editing) { onDragStart(e); } }}
       >
-        <div style={{ fontSize: Math.max(18, canvasW * 0.04), color: '#3B82F6', fontWeight: 900, userSelect: 'none', transition: 'transform 0.3s',
-          transform: el.animType === 'wiggle' ? 'rotate(-7deg)' : el.animType === 'bounce' ? 'translateY(-8%)' : undefined }}>
-          🕺
-        </div>
+        <span style={{ fontSize: fs, lineHeight: 1, userSelect: 'none',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+          animation: `${el.animType === 'bounce' ? 'cfloata' : 'cfloat'} ${el.avatarAnimDuration ?? 4}s ease-in-out ${el.avatarAnimDelay ?? 0}s infinite`,
+          ['--r' as string]: `${el.rotation ?? 0}deg`,
+        }}>
+          {emoji}
+        </span>
         {selected && (
           <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
-            Avatar · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
+            {emoji} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
           </div>
         )}
+        {selected && HANDLES.map(h => (
+          <div key={h} className="qqse-handle" style={{ ...HANDLE_STYLE[h] }}
+            onMouseDown={e => { e.stopPropagation(); onResizeStart(e, h); }} />
+        ))}
       </div>
     );
   }

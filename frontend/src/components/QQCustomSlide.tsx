@@ -643,10 +643,14 @@ export function CustomSlide({
   template,
   state,
   previewState,
+  overlayOnly,
 }: {
   template: QQSlideTemplate;
   state?: QQStateUpdate;
   previewState?: Partial<QQStateUpdate>;
+  /** When true, only renders non-placeholder elements (text, image, rect, animatedAvatar).
+   *  Use this when a built-in view is already rendering the dynamic content. */
+  overlayOnly?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(1920);
@@ -664,10 +668,14 @@ export function CustomSlide({
   const effectiveState: QQStateUpdate = state ?? { ...MOCK_STATE_BASE, ...previewState };
   const lang = useLangFlip(effectiveState.language);
 
+  const visibleElements = overlayOnly
+    ? template.elements.filter(el => !el.type.startsWith('ph_'))
+    : template.elements;
+
   return (
     <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
       <style>{BEAMER_CSS + SLIDE_ANIM_KEYFRAMES}</style>
-      {template.elements.map(el => (
+      {visibleElements.map(el => (
         <CustomSlideElement key={el.id} el={el} state={effectiveState} canvasW={canvasW} lang={lang} />
       ))}
     </div>

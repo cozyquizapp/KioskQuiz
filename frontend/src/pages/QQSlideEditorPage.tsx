@@ -1,7 +1,8 @@
 // TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
+import { CustomSlide } from '../components/QQCustomSlide';
+import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
@@ -143,11 +144,16 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
 }
 
 
-// ── SlidePreview (QQ CustomSlide thumbnail) ───────────────────────────────────
+// ── SlidePreview (thumbnail showing real built-in view) ──────────────────────
 function SlidePreview({ template }: { template: QQSlideTemplate }) {
   return (
-    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: template.background, flexShrink: 0, position: 'relative' }}>
-      <CustomSlide template={template} previewState={makePreviewState(template.type)} />
+    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: '#0D0A06', flexShrink: 0, position: 'relative' }}>
+      <QQBuiltinSlide templateType={template.type} />
+      {template.elements.length > 0 && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <CustomSlide template={template} overlayOnly />
+        </div>
+      )}
     </div>
   );
 }
@@ -580,12 +586,18 @@ export default function QQSlideEditorPage() {
             </div>
             <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
               {previewMode ? (
-                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background, borderRadius: 10, overflow: 'hidden' }}>
-                  <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
+                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: '#0D0A06', borderRadius: 10, overflow: 'hidden' }}>
+                  <QQBuiltinSlide templateType={activeType} />
+                  {activeTemplate.elements.length > 0 && (
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                      <CustomSlide template={activeTemplate} overlayOnly />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <SlideCanvas
                   template={activeTemplate}
+                  templateType={activeType}
                   selectedIds={selectedIds}
                   editingId={editingId}
                   snapLines={snapLines}
@@ -669,8 +681,9 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit }: {
+function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit }: {
   template: QQSlideTemplate;
+  templateType: QQSlideTemplateType;
   selectedIds: string[];
   editingId: string | null;
   snapLines: { x?: number; y?: number };
@@ -813,7 +826,7 @@ function SlideCanvas({ template, selectedIds, editingId, snapLines, onSnapLinesC
 
   return (
     <div ref={canvasRef}
-      style={{ width: '100%', maxWidth: `${canvasH * CANVAS_RATIO}px`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: template.background, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
+      style={{ width: '100%', maxWidth: `${canvasH * CANVAS_RATIO}px`, aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onMouseDown={e => {
         if (e.target !== e.currentTarget) return;
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -824,6 +837,11 @@ function SlideCanvas({ template, selectedIds, editingId, snapLines, onSnapLinesC
         onClearSelect();
       }}
       onClick={e => { if (e.target === e.currentTarget) onClearSelect(); }}>
+
+      {/* Built-in view as non-interactive background reference */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <QQBuiltinSlide templateType={templateType} />
+      </div>
 
       {sorted.map(el => (
         <CanvasElement key={el.id} el={el} canvasW={canvasW}

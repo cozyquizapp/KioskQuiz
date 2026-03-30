@@ -10,7 +10,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
-const BEAMER_CSS = `
+export const BEAMER_CSS = `
   @keyframes cfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-12px) rotate(var(--r,0deg))} }
   @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
   @keyframes ffmove {
@@ -46,7 +46,7 @@ const CAT_BG: Record<string, string> = {
   ZEHN_VON_ZEHN: ['repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px)','radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%)','#0D0A06'].join(','),
   CHEESE:        ['radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%)','radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%)','#0D0A06'].join(','),
 };
-const CAT_BADGE_BG: Record<string, string> = {
+export const CAT_BADGE_BG: Record<string, string> = {
   SCHAETZCHEN:   'linear-gradient(135deg, #A16207, #EAB308)',
   MUCHO:         'linear-gradient(135deg, #1E3A8A, #2563EB)',
   BUNTE_TUETE:   'linear-gradient(135deg, #991B1B, #DC2626)',
@@ -60,7 +60,7 @@ const CAT_GLOW: Record<string, string> = {
   ZEHN_VON_ZEHN: 'rgba(5,150,105,0.42)',
   CHEESE:        'rgba(124,58,237,0.45)',
 };
-const CAT_ACCENT: Record<string, string> = {
+export const CAT_ACCENT: Record<string, string> = {
   SCHAETZCHEN:   '#EAB308',
   MUCHO:         '#60A5FA',
   BUNTE_TUETE:   '#F87171',
@@ -197,7 +197,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
-      background: activeTemplate?.background ?? bg,
+      background: bg,
       fontFamily: "'Nunito', system-ui, sans-serif",
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
@@ -213,19 +213,21 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
-      {activeTemplate ? (
-        <CustomSlide template={activeTemplate} state={s} />
-      ) : (
-        <>
-          {s.phase === 'LOBBY'           && <LobbyView state={s} />}
-          {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} />
-          )}
-          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
-          {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
-          {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
-        </>
+      {/* Built-in views — always shown */}
+      {s.phase === 'LOBBY'           && <LobbyView state={s} />}
+      {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
+      {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
+        <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} />
+      )}
+      {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
+      {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
+      {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
+
+      {/* Custom overlay elements from template (on top of built-in view) */}
+      {activeTemplate && activeTemplate.elements.length > 0 && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 100 }}>
+          <CustomSlide template={activeTemplate} state={s} overlayOnly />
+        </div>
       )}
     </div>
   );
@@ -262,7 +264,7 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
 // LOBBY
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function LobbyView({ state: s }: { state: QQStateUpdate }) {
+export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 48, gap: 40 }}>
       {/* Decorative fireflies */}
@@ -329,7 +331,7 @@ function LobbyView({ state: s }: { state: QQStateUpdate }) {
 // PHASE INTRO
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
+export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
   const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
   const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Finale' };
@@ -418,7 +420,7 @@ function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 // QUESTION VIEW (active + reveal)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: boolean }) {
+export function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: boolean }) {
   const q = s.currentQuestion;
   if (!q) return null;
   const cat = q.category as QQCategory;
@@ -816,7 +818,7 @@ function QuestionView({ state: s, revealed }: { state: QQStateUpdate; revealed: 
 // PLACEMENT VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function PlacementView({ state: s }: { state: QQStateUpdate }) {
+export function PlacementView({ state: s }: { state: QQStateUpdate }) {
   const team = s.teams.find(t => t.id === s.pendingFor);
 
   return (
@@ -871,7 +873,7 @@ function PlacementView({ state: s }: { state: QQStateUpdate }) {
 // COMEBACK VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ComebackView({ state: s }: { state: QQStateUpdate }) {
+export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const team = s.teams.find(t => t.id === s.comebackTeamId);
 
   return (
@@ -933,7 +935,7 @@ function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // GAME OVER — Notebook style
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function GameOverView({ state: s }: { state: QQStateUpdate }) {
+export function GameOverView({ state: s }: { state: QQStateUpdate }) {
   const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const winner = sorted[0];
 
@@ -1020,7 +1022,7 @@ function GameOverView({ state: s }: { state: QQStateUpdate }) {
 // Sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
+export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
   const urgent = remaining <= 5;
 
@@ -1057,7 +1059,7 @@ function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; duration
   );
 }
 
-function GridDisplay({ state: s, maxSize = 320, highlightTeam }: { state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null }) {
+export function GridDisplay({ state: s, maxSize = 320, highlightTeam }: { state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null }) {
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
 
@@ -1128,7 +1130,7 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
+export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
   return (

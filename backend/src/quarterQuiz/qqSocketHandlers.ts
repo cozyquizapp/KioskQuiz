@@ -21,6 +21,7 @@ import {
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
   qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
+  qqClearHotPotatoTimer,
   qqImposterStart, qqImposterChoose,
 } from './qqRooms';
 
@@ -171,6 +172,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
             broadcast(io, payload.roomCode);
           }, 3000);
         });
+        // Auto-start Hot Potato if the activated question is a hotPotato type
+        if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+          qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -271,8 +276,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
           if (room.phase !== 'QUESTION_ACTIVE' || !room.hotPotatoActiveTeamId) return;
           const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(roomCode));
           if (!next) {
+            // All eliminated — no winner
             qqRevealAnswer(room);
             qqMarkWrong(room);
+          } else {
+            // Check if only 1 team left → they win
+            const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+            if (alive.length === 1) {
+              qqClearHotPotatoTimer(room);
+              qqRevealAnswer(room);
+              qqClearBuzz(room);
+              qqMarkCorrect(room, next);
+            }
           }
           broadcast(io, roomCode);
         } catch { /* room gone */ }
@@ -299,6 +314,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // All eliminated — no winner, proceed via markWrong
           qqRevealAnswer(room);
           qqMarkWrong(room);
+        } else {
+          // Check if only 1 team left → they win
+          const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+          if (alive.length === 1) {
+            qqClearHotPotatoTimer(room);
+            qqRevealAnswer(room);
+            qqClearBuzz(room);
+            qqMarkCorrect(room, next);
+          }
         }
         broadcast(io, payload.roomCode);
         ok(ack);

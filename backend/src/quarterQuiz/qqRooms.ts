@@ -64,6 +64,8 @@ export interface QQRoomState {
   lastPlacedCell: { row: number; col: number; teamId: string } | null;
   // Internal round-robin index for Hot Potato (not sent to clients)
   _hotPotatoRoundRobinIdx?: number;
+  // Internal: stored timer expiry callback for mid-round restarts
+  _timerOnExpire: (() => void) | null;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
@@ -119,6 +121,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       imposterChosenIndices: [],
       imposterEliminated: [],
       lastPlacedCell: null,
+      _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
       lastActivityAt: Date.now(),
@@ -252,6 +255,7 @@ export function qqStopTimer(room: QQRoomState): void {
     room.timerHandle = null;
   }
   room.timerEndsAt = null;
+  room._timerOnExpire = null;
 }
 
 // onExpire is called by the socket handler to broadcast when timer ends
@@ -260,17 +264,23 @@ export function qqStartTimer(
   onExpire: () => void
 ): void {
   qqStopTimer(room);
+  room._timerOnExpire = onExpire;
   const durationMs   = room.timerDurationSec * 1000;
   room.timerEndsAt   = Date.now() + durationMs;
   room.timerHandle   = setTimeout(() => {
     room.timerHandle = null;
     room.timerEndsAt = null;
+    room._timerOnExpire = null;
     onExpire();
   }, durationMs);
 }
 
 export function qqSetTimerDuration(room: QQRoomState, durationSec: number): void {
   room.timerDurationSec = Math.max(5, Math.min(120, durationSec));
+  // If a timer is currently running, restart it with the new duration
+  if (room.timerHandle && room._timerOnExpire) {
+    qqStartTimer(room, room._timerOnExpire);
+  }
 }
 
 // ── Answer submission ─────────────────────────────────────────────────────────
@@ -642,7 +652,7 @@ function evalMap(
 const HOT_POTATO_TURN_SEC = 15;
 
 /** Clear turn timer for hot potato. */
-function qqClearHotPotatoTimer(room: QQRoomState): void {
+export function qqClearHotPotatoTimer(room: QQRoomState): void {
   if (room._hotPotatoTimerHandle) {
     clearTimeout(room._hotPotatoTimerHandle);
     room._hotPotatoTimerHandle = null;

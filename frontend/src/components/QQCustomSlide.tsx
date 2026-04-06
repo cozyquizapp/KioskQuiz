@@ -1335,8 +1335,8 @@ export function CustomSlide({
   const lang = useLangFlip(effectiveState.language);
 
   const visibleElements = overlayOnly
-    ? template.elements.filter(el => !el.type.startsWith('ph_'))
-    : template.elements;
+    ? (template.elements ?? []).filter(el => !el.type.startsWith('ph_'))
+    : (template.elements ?? []);
 
   return (
     <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%', animation: transAnim || undefined }}>

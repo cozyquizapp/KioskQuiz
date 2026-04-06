@@ -243,7 +243,8 @@ export default function QQSlideEditorPage() {
       .finally(() => setLoading(false));
   }, [draftId]);
 
-  const activeTemplate: QQSlideTemplate = templates[activeType] ?? makeDefault(activeType);
+  const rawTemplate = templates[activeType] ?? makeDefault(activeType);
+  const activeTemplate: QQSlideTemplate = { ...rawTemplate, elements: rawTemplate.elements ?? [] };
 
   function patchTemplate(t: QQSlideTemplate) {
     setTemplates(prev => {
@@ -471,17 +472,17 @@ export default function QQSlideEditorPage() {
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
       const nudge = e.shiftKey ? 2 : 0.5;
       const ids = new Set(selectedIds);
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x - nudge)) } : el) }); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x + nudge)) } : el) }); }
-      if (e.key === 'ArrowUp')    { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y - nudge)) } : el) }); }
-      if (e.key === 'ArrowDown')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y + nudge)) } : el) }); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements ?? []).map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x - nudge)) } : el) }); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements ?? []).map(el => ids.has(el.id) ? { ...el, x: Math.max(0, Math.min(97, el.x + nudge)) } : el) }); }
+      if (e.key === 'ArrowUp')    { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements ?? []).map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y - nudge)) } : el) }); }
+      if (e.key === 'ArrowDown')  { e.preventDefault(); patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements ?? []).map(el => ids.has(el.id) ? { ...el, y: Math.max(0, Math.min(97, el.y + nudge)) } : el) }); }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, editingId, activeTemplate, activeType, previewMode, currentStepIdx]);
 
-  const selectedEl = activeTemplate.elements.find(e => e.id === selectedId) ?? null;
+  const selectedEl = (activeTemplate.elements ?? []).find(e => e.id === selectedId) ?? null;
   const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
 
   if (loading) return (

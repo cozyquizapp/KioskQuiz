@@ -540,7 +540,26 @@ export default function QQModeratorPage() {
                           fontSize: 14, fontWeight: 700, color: '#e2e8f0',
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                         }}>
-                          <span>„{answer.text}"</span>
+                          <span>„{(() => {
+                            const q = s.currentQuestion;
+                            if (!q) return answer.text;
+                            // Mucho: map index to option text
+                            if (q.category === 'MUCHO') {
+                              const idx = parseInt(answer.text, 10);
+                              const opts: string[] = (q as any).options ?? [];
+                              if (Number.isFinite(idx) && opts[idx]) {
+                                const letters = ['A','B','C','D'];
+                                return `${letters[idx] ?? idx}: ${opts[idx]}`;
+                              }
+                            }
+                            // Zehn von Zehn: map "3,4,3" to readable bet summary
+                            if (q.category === 'ZEHN_VON_ZEHN' && answer.text.includes(',')) {
+                              const bets = answer.text.split(',').map(Number);
+                              const opts: string[] = (q as any).options ?? [];
+                              return bets.map((b, i) => `${opts[i] ?? i + 1}: ${b}`).filter((_, i) => bets[i] > 0).join(', ');
+                            }
+                            return answer.text;
+                          })()}"</span>
                           {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
                             <Btn small color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
                               ✓ Richtig

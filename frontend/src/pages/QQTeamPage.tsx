@@ -126,11 +126,22 @@ export default function QQTeamPage() {
     }, 200);
   };
 
+  const takenAvatarIds = (state?.teams ?? []).map(t => t.avatarId);
+
+  // Auto-switch to a free avatar if current selection gets taken
+  useEffect(() => {
+    if (!joined && takenAvatarIds.includes(avatarId)) {
+      const free = QQ_AVATARS.find(a => !takenAvatarIds.includes(a.id));
+      if (free) setAvatarId(free.id);
+    }
+  }, [takenAvatarIds.join(',')]);
+
   if (!joined) {
     return <SetupFlow step={step} setStep={setStep}
       avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
       connected={connected} error={error} onJoin={joinRoom}
       lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
+      takenAvatarIds={takenAvatarIds}
     />;
   }
   if (!state) {
@@ -146,10 +157,11 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip }: {
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
+  takenAvatarIds: string[];
 }) {
   return (
     <div style={darkPage}>
@@ -192,19 +204,22 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
               {QQ_AVATARS.map((a, i) => {
                 const sel = avatarId === a.id;
+                const taken = takenAvatarIds.includes(a.id);
                 return (
-                  <button key={a.id} onClick={() => setAvatarId(a.id)} style={{
-                    padding: '12px 4px', borderRadius: 14, cursor: 'pointer',
-                    background: sel ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${sel ? '#3B82F6' : 'rgba(255,255,255,0.07)'}`,
+                  <button key={a.id} onClick={() => !taken && setAvatarId(a.id)} disabled={taken} style={{
+                    padding: '12px 4px', borderRadius: 14, cursor: taken ? 'not-allowed' : 'pointer',
+                    background: taken ? 'rgba(255,255,255,0.02)' : sel ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? '#3B82F6' : 'rgba(255,255,255,0.07)'}`,
+                    opacity: taken ? 0.35 : 1,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     fontFamily: 'inherit', transition: 'all 0.15s',
                     boxShadow: sel ? '0 0 16px rgba(59,130,246,0.3)' : 'none',
                     ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
                     animation: sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
                   }}>
-                    <span style={{ fontSize: 34, lineHeight: 1 }}>{a.emoji}</span>
-                    <span style={{ fontSize: 11, color: sel ? '#3B82F6' : '#475569', fontWeight: 800 }}>{a.label}</span>
+                    <span style={{ fontSize: 34, lineHeight: 1, filter: taken ? 'grayscale(1)' : 'none' }}>{a.emoji}</span>
+                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? '#3B82F6' : '#475569', fontWeight: 800,
+                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? 'Vergeben' : a.label}</span>
                   </button>
                 );
               })}

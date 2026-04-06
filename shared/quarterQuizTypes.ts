@@ -254,6 +254,7 @@ export type QQSlideElementType =
   | 'ph_question_image' | 'ph_comeback_cards' | 'ph_game_rankings'
   | 'ph_qr_code' | 'ph_counter'
   | 'ph_hot_potato' | 'ph_imposter' | 'ph_answer_count'
+  | 'ph_mini_grid' | 'ph_placement_banner' | 'ph_phase_scores'
   | 'animatedAvatar';
 
 export interface QQSlideElement {

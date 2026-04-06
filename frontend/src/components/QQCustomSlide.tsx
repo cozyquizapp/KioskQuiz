@@ -231,9 +231,13 @@ export function makePreviewState(templateType: QQSlideTemplateType): Partial<QQS
         phase: 'PLACEMENT',
         currentQuestion: { ...MOCK_QUESTION_BASE, category: 'MUCHO' },
         correctTeamId: 't1',
+        pendingFor: 't1',
+        pendingAction: 'PLACE_1',
+        revealedAnswer: 'Berlin',
         teams: MOCK_TEAMS,
         grid: MOCK_GRID,
         gridSize: MOCK_GRID_SIZE,
+        teamPhaseStats: { t1: { stealsUsed: 0, jokersEarned: 0, placementsLeft: 1 }, t2: { stealsUsed: 0, jokersEarned: 0, placementsLeft: 0 } },
       };
 
     case 'COMEBACK_CHOICE':
@@ -1144,6 +1148,123 @@ function CustomSlideElement({
               }} />
             );
           })}
+        </div>
+      );
+    }
+
+    // ── Phase-Intro mini grid ─────────────────────────────────────────────────
+    case 'ph_mini_grid': {
+      const cellPx = Math.floor(
+        (Math.min(el.w, el.h) * canvasW / 100 * 0.9 - (s.gridSize - 1) * 2) / s.gridSize,
+      );
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          opacity: el.opacity ?? 0.5,
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${s.gridSize}, ${cellPx}px)`,
+            gap: 2,
+          }}>
+            {s.grid.flatMap((row, r) =>
+              row.map((cell, c) => {
+                const team = s.teams.find(t => t.id === cell.ownerId);
+                return (
+                  <div key={`${r}-${c}`} style={{
+                    width: cellPx, height: cellPx, borderRadius: 3,
+                    background: team ? team.color : 'rgba(255,255,255,0.05)',
+                  }} />
+                );
+              }),
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Phase-Intro score chips ───────────────────────────────────────────────
+    case 'ph_phase_scores': {
+      const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'flex', flexWrap: 'wrap', gap: `${0.8 * canvasW / 100}px`,
+          alignItems: 'center', justifyContent: el.textAlign ?? 'center',
+        }}>
+          {sorted.map(t => (
+            <div key={t.id} style={{
+              padding: `${0.5 * canvasW / 100}px ${1.2 * canvasW / 100}px`,
+              borderRadius: 50,
+              border: `2px solid ${t.color}66`,
+              background: `${t.color}18`,
+              display: 'flex', alignItems: 'center',
+              gap: `${0.5 * canvasW / 100}px`,
+            }}>
+              <span style={{ fontSize: `${1.4 * canvasW / 100}px` }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <span style={{ fontWeight: 800, color: t.color, fontSize: `${0.9 * canvasW / 100}px` }}>{t.name}</span>
+              <span style={{ color: '#64748b', fontSize: `${0.75 * canvasW / 100}px`, fontWeight: 700 }}>{t.largestConnected} Felder</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── Placement action banner ───────────────────────────────────────────────
+    case 'ph_placement_banner': {
+      const team = s.pendingFor ? s.teams.find(t => t.id === s.pendingFor) : null;
+      const actionVerb = (a: string | null) => {
+        if (a === 'STEAL_1') return '⚡ Klauen';
+        if (a === 'COMEBACK') return '⚡ Comeback';
+        return '📍 Setzen';
+      };
+      const actionDesc = (a: string | null, stats: any) => {
+        if (a === 'PLACE_1') return '1 Feld wählen';
+        if (a === 'PLACE_2') return `2 Felder wählen (${stats?.placementsLeft ?? 2} übrig)`;
+        if (a === 'STEAL_1') return '1 fremdes Feld klauen';
+        if (a === 'FREE') return 'Setzen oder Klauen';
+        return '';
+      };
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'flex', alignItems: 'center',
+          gap: `${1.2 * canvasW / 100}px`,
+          padding: `${1.2 * canvasW / 100}px ${2.6 * canvasW / 100}px`,
+          background: el.background ?? 'rgba(13,10,6,0.6)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          <span style={{
+            fontSize: `${0.85 * canvasW / 100}px`, fontWeight: 900,
+            textTransform: 'uppercase', letterSpacing: '0.12em',
+            color: '#475569',
+          }}>
+            {actionVerb(s.pendingAction)}
+          </span>
+          {team && (
+            <>
+              <span style={{ fontSize: `${2 * canvasW / 100}px`, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+              <span style={{ fontWeight: 900, fontSize: `${1.8 * canvasW / 100}px`, color: team.color }}>{team.name}</span>
+              <span style={{ color: '#475569', fontSize: `${0.9 * canvasW / 100}px`, fontWeight: 700 }}>
+                {actionDesc(s.pendingAction, s.teamPhaseStats[team.id])}
+              </span>
+            </>
+          )}
+          {s.revealedAnswer && (
+            <div style={{
+              marginLeft: 'auto',
+              padding: `${0.4 * canvasW / 100}px ${1 * canvasW / 100}px`,
+              borderRadius: 10,
+              background: 'rgba(34,197,94,0.08)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              fontSize: `${0.9 * canvasW / 100}px`,
+              color: '#4ade80', fontWeight: 700,
+            }}>
+              ✓ {s.revealedAnswer}
+            </div>
+          )}
         </div>
       );
     }

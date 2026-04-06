@@ -57,6 +57,9 @@ const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
   ph_hot_potato:     'Hot Potato (aktiv)',
   ph_imposter:       'Imposter (aktiv)',
   ph_answer_count:   'Antwort-Indikator',
+  ph_mini_grid:      'Mini-Grid (Vorschau)',
+  ph_phase_scores:   'Phasen-Scores',
+  ph_placement_banner: 'Platzierung-Banner',
 };
 
 const GROUPS: string[] = ['Start', 'Phasen', 'Fragen', 'Ablauf'];
@@ -102,10 +105,9 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
     case 'PLACEMENT': return {
       type, background: bg,
       elements: [
-        { id: eid(), type: 'text', x: 4, y: 3, w: 50, h: 8, text: 'Feld wählen', fontSize: 2.8, fontWeight: 900, color: '#e2e8f0', textAlign: 'left', zIndex: 2 },
-        { id: eid(), type: 'ph_winner', x: 4, y: 10, w: 50, h: 7, fontSize: 2, fontWeight: 800, color: '#F59E0B', textAlign: 'left', zIndex: 2 },
-        { id: eid(), type: 'ph_grid', x: 3, y: 19, w: 58, h: 76, zIndex: 2 },
-        { id: eid(), type: 'ph_teams', x: 64, y: 3, w: 34, h: 92, zIndex: 2 },
+        { id: eid(), type: 'ph_placement_banner', x: 0, y: 0, w: 100, h: 14, zIndex: 3 },
+        { id: eid(), type: 'ph_grid', x: 3, y: 17, w: 58, h: 78, zIndex: 2 },
+        { id: eid(), type: 'ph_teams', x: 64, y: 17, w: 34, h: 78, zIndex: 2 },
       ],
     };
     case 'COMEBACK_CHOICE': return {
@@ -136,9 +138,12 @@ function phaseIntro(type: QQSlideTemplateType, color: string, label: string): QQ
     type, background: '#0D0A06',
     elements: [
       { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: `radial-gradient(ellipse at 50% 50%, ${color}33 0%, transparent 65%)`, zIndex: 0 },
-      { id: eid(), type: 'text', x: 10, y: 16, w: 80, h: 24, text: label, fontSize: 11, fontWeight: 900, color, textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.1 },
-      { id: eid(), type: 'ph_phase_name', x: 10, y: 52, w: 80, h: 10, fontSize: 3.2, fontWeight: 800, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
-      { id: eid(), type: 'ph_phase_desc', x: 15, y: 65, w: 70, h: 7, fontSize: 2, fontWeight: 600, color: '#64748b', textAlign: 'center', zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
+      { id: eid(), type: 'text', x: 10, y: 10, w: 80, h: 10, text: `Phase`, fontSize: 1.8, fontWeight: 700, color: `${color}99`, textAlign: 'center', letterSpacing: 0.14, zIndex: 2, animIn: 'fadeIn', animDelay: 0.1 },
+      { id: eid(), type: 'text', x: 10, y: 16, w: 80, h: 24, text: label, fontSize: 11, fontWeight: 900, color, textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.2 },
+      { id: eid(), type: 'ph_phase_name', x: 10, y: 44, w: 80, h: 10, fontSize: 3.2, fontWeight: 800, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
+      { id: eid(), type: 'ph_phase_desc', x: 15, y: 55, w: 70, h: 7, fontSize: 2, fontWeight: 600, color: '#64748b', textAlign: 'center', zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
+      { id: eid(), type: 'ph_mini_grid', x: 35, y: 66, w: 30, h: 18, zIndex: 2, opacity: 0.5, animIn: 'fadeIn', animDelay: 0.9 },
+      { id: eid(), type: 'ph_phase_scores', x: 10, y: 86, w: 80, h: 10, zIndex: 2, animIn: 'fadeIn', animDelay: 1.1 },
     ],
   };
 }

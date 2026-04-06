@@ -534,18 +534,6 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         {lang === 'en' && q.textEn ? q.textEn : q.text}
       </div>
 
-      {/* Question image (for CHEESE / Picture This and any question with an image) */}
-      {q.image?.url && q.image.layout !== 'none' && (
-        <div style={{
-          marginBottom: 14, borderRadius: 16, overflow: 'hidden',
-          border: '2px solid rgba(255,255,255,0.08)',
-          boxShadow: `0 4px 20px rgba(0,0,0,0.4), 0 0 16px ${catColor}22`,
-        }}>
-          <img src={q.image.bgRemovedUrl || q.image.url} alt=""
-            style={{ width: '100%', maxHeight: '40vh', objectFit: 'contain', display: 'block', background: 'rgba(0,0,0,0.3)' }} />
-        </div>
-      )}
-
       {/* Answer input (active only) */}
       {!isRevealed && s.hotPotatoActiveTeamId === myTeamId && (
         <div style={{

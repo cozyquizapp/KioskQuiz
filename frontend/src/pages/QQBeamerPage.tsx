@@ -59,6 +59,7 @@ export const BEAMER_CSS = `
   @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
   @keyframes imgSlideL { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
   @keyframes imgSlideR { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes fsExpand { from{clip-path:inset(10% 15% 10% 15% round 22px)} to{clip-path:inset(0 0 0 0 round 0px)} }
   @keyframes langFadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 `;
 
@@ -590,7 +591,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             position: 'absolute', inset: 0, zIndex: 1,
             backgroundImage: `url(${img.url})`,
             backgroundSize: 'cover', backgroundPosition: 'center',
-            animation: imgAnim(img.animation, undefined, img.animDelay, img.animDuration),
+            clipPath: revealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
+            animation: revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both',
+            transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
             transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
             opacity: img.opacity ?? 1,
             filter: imgFilter(img),
@@ -601,6 +604,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
               'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
             ].join(', '),
+            opacity: revealed ? 0.4 : 1,
+            transition: 'opacity 0.8s ease',
           }} />
         </>
       )}

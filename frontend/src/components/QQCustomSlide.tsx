@@ -31,6 +31,7 @@ const BEAMER_CSS = `
   @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
   @keyframes imgSlideL { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
   @keyframes imgSlideR { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes fsExpand { from{clip-path:inset(10% 15% 10% 15% round 22px)} to{clip-path:inset(0 0 0 0 round 0px)} }
   @keyframes langFadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 `;
 
@@ -934,17 +935,26 @@ function CustomSlideElement({
         return p.length ? p.join(' ') : undefined;
       })();
       if (img.layout === 'fullscreen') {
+        const isRevealed = s.phase === 'QUESTION_REVEAL';
         return (
           <>
             <div style={{
               ...baseStyle,
               backgroundImage: `url(${img.url})`,
               backgroundSize: 'cover', backgroundPosition: 'center',
+              clipPath: isRevealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
+              animation: isRevealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both',
+              transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
               transform: imgTransform, opacity: img.opacity ?? 1, filter: imgFilterStr,
             }} />
             <div style={{
               ...baseStyle, zIndex: (el.zIndex ?? 1) + 1,
-              background: 'linear-gradient(90deg, rgba(13,10,6,0.88) 0%, rgba(13,10,6,0.6) 50%, rgba(13,10,6,0.3) 100%)',
+              background: [
+                'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
+                'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
+              ].join(', '),
+              opacity: isRevealed ? 0.4 : 1,
+              transition: 'opacity 0.8s ease',
             }} />
           </>
         );

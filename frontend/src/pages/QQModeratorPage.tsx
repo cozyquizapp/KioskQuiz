@@ -610,7 +610,7 @@ export default function QQModeratorPage() {
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>⏱ Timer</div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {[30, 60].map(t => (
+                  {[15, 30, 45, 60, 90].map(t => (
                     <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
                       style={{
                         padding: '6px 12px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,

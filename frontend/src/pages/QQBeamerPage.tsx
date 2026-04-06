@@ -11,57 +11,11 @@ import { CustomSlide } from '../components/QQCustomSlide';
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
-export const BEAMER_CSS = `
-  @keyframes cfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-12px) rotate(var(--r,0deg))} }
-  @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
-  @keyframes ffmove {
-    0%{transform:translate(0,0) scale(1);opacity:0}
-    10%{opacity:0.85}
-    45%{transform:translate(var(--dx,40px),var(--dy,-50px)) scale(1.3);opacity:0.6}
-    90%{opacity:0.3}
-    100%{transform:translate(calc(var(--dx,40px)*1.6),calc(var(--dy,-50px)*1.6)) scale(0.6);opacity:0}
-  }
-  @keyframes introBadgePop { from{opacity:0;transform:scale(0.45) translateY(48px)} to{opacity:1;transform:scale(1) translateY(0)} }
-  @keyframes introFadeOut  { to{opacity:0;pointer-events:none} }
-  @keyframes contentReveal { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes floatNum { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
-  @keyframes phasePop { from{opacity:0;transform:scale(0.6) translateY(40px)} to{opacity:1;transform:scale(1) translateY(0)} }
-  @keyframes phaseLineGrow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
-  @keyframes nbSlide { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
-  @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
-  @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
-  @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
-  @keyframes cellInkFill {
-    0%   { clip-path: circle(0% at 50% 50%); opacity: 0; filter: brightness(1); }
-    30%  { opacity: 1; filter: brightness(1.8); }
-    60%  { filter: brightness(1.2); }
-    100% { clip-path: circle(100% at 50% 50%); opacity: 1; filter: brightness(1); }
-  }
-  @keyframes cellShockwave {
-    0%   { transform: scale(0.8); opacity: 0.8; }
-    40%  { transform: scale(1.6); opacity: 0.4; }
-    100% { transform: scale(2.6); opacity: 0; }
-  }
-  @keyframes cellEmojiDrop {
-    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-    50%  { transform: scale(1.4) rotate(6deg); opacity: 1; }
-    70%  { transform: scale(0.85) rotate(-3deg); }
-    85%  { transform: scale(1.08) rotate(1deg); }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-  @keyframes cellSparkle {
-    0%   { transform: translate(0,0) scale(1); opacity: 1; }
-    100% { transform: translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
-  }
-  @keyframes toastUp { from{opacity:0;transform:translateY(16px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
-  @keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
-  @keyframes imgZoomIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
-  @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
-  @keyframes imgSlideL { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
-  @keyframes imgSlideR { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
-  @keyframes fsExpand { from{clip-path:inset(10% 15% 10% 15% round 22px)} to{clip-path:inset(0 0 0 0 round 0px)} }
-  @keyframes langFadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-`;
+import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
+
+export const BEAMER_CSS = QQ_BEAMER_CSS;
+export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
+export const CAT_ACCENT = QQ_CAT_ACCENT;
 
 // ── Category themes ───────────────────────────────────────────────────────────
 const CAT_BG: Record<string, string> = {
@@ -71,13 +25,7 @@ const CAT_BG: Record<string, string> = {
   ZEHN_VON_ZEHN: ['repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px)','radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%)','#0D0A06'].join(','),
   CHEESE:        ['radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%)','radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%)','#0D0A06'].join(','),
 };
-export const CAT_BADGE_BG: Record<string, string> = {
-  SCHAETZCHEN:   'linear-gradient(135deg, #A16207, #EAB308)',
-  MUCHO:         'linear-gradient(135deg, #1E3A8A, #2563EB)',
-  BUNTE_TUETE:   'linear-gradient(135deg, #991B1B, #DC2626)',
-  ZEHN_VON_ZEHN: 'linear-gradient(135deg, #065F46, #059669)',
-  CHEESE:        'linear-gradient(135deg, #4C1D95, #7C3AED)',
-};
+// (CAT_BADGE_BG and CAT_ACCENT removed — now imported from qqShared)
 const CAT_GLOW: Record<string, string> = {
   SCHAETZCHEN:   'rgba(234,179,8,0.45)',
   MUCHO:         'rgba(37,99,235,0.45)',
@@ -85,13 +33,7 @@ const CAT_GLOW: Record<string, string> = {
   ZEHN_VON_ZEHN: 'rgba(5,150,105,0.42)',
   CHEESE:        'rgba(124,58,237,0.45)',
 };
-export const CAT_ACCENT: Record<string, string> = {
-  SCHAETZCHEN:   '#EAB308',
-  MUCHO:         '#60A5FA',
-  BUNTE_TUETE:   '#F87171',
-  ZEHN_VON_ZEHN: '#34D399',
-  CHEESE:        '#A78BFA',
-};
+// (CAT_ACCENT removed — now imported from qqShared)
 interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: string; right?: string; size: number; rot: number; alt?: boolean }
 const CAT_CUTOUTS: Record<string, CutoutSpec[]> = {
   SCHAETZCHEN:   [{ emoji:'🍯', top:'6%',  right:'11%', size:80, rot:-12 },{ emoji:'✨', bottom:'14%', left:'7%',  size:50, rot:8  },{ emoji:'💛', top:'30%', right:'5%',  size:40, rot:16, alt:true }],
@@ -237,16 +179,6 @@ export default function QQBeamerPage() {
     if (!connected || joined) return;
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
   }, [connected]);
-
-  // Inject Caveat font
-  useEffect(() => {
-    const id = 'qq-caveat-font';
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id; link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap';
-    document.head.appendChild(link);
-  }, []);
 
   // Fetch slide templates when draftId becomes available
   useEffect(() => {
@@ -626,7 +558,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {hasImg && img.layout === 'cutout' && (
         <img
           src={img.bgRemovedUrl || img.url}
-          alt=""
+          alt={isCheese ? (q.text || 'Question image') : ''}
           style={{
             position: 'absolute', zIndex: 3, pointerEvents: 'none',
             right: '8%', top: '15%',
@@ -770,7 +702,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               />
               <img
                 src={img.bgRemovedUrl || img.url}
-                alt=""
+                alt={isCheese ? (q.text || 'Question image') : 'Question image'}
                 style={{
                   position: 'relative', zIndex: 1,
                   maxWidth: '55%', maxHeight: '70vh',
@@ -1141,7 +1073,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {/* Main image */}
             <img
               src={img.bgRemovedUrl || img.url}
-              alt=""
+              alt={isCheese ? (q.text || 'Question image') : 'Question image'}
               style={{
                 position: 'relative', zIndex: 1,
                 maxWidth: '100%', maxHeight: '80vh',

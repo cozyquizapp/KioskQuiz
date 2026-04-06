@@ -128,6 +128,19 @@ const TEAM_CSS = `
   @keyframes tcoptIn   { from{opacity:0;transform:translateY(18px) scale(0.94)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes tcwheelslide { from{transform:translateY(var(--from,0px));opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes tccheckpop { from{transform:scale(0)} to{transform:scale(1)} }
+
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid #F59E0B;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 `;
 
 const QQ_ROOM = 'default';
@@ -136,10 +149,11 @@ type SetupStep = 'AVATAR' | 'NAME';
 
 function getOrCreateTeamId(): string {
   const key = 'qq_teamId';
-  let id = sessionStorage.getItem(key);
+  // Use localStorage so the same team ID persists across tabs
+  let id = localStorage.getItem(key);
   if (!id) {
     id = `team-${Math.random().toString(36).slice(2, 8)}`;
-    sessionStorage.setItem(key, id);
+    localStorage.setItem(key, id);
   }
   return id;
 }

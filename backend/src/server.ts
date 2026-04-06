@@ -7763,18 +7763,43 @@ app.get('/api/qq/questions/from-draft/:draftId', async (req, res) => {
 });
 
 // ── Quarter Quiz Builder — Draft CRUD ──────────────────────────────────────────
+const qqDraftsPath = path.join(__dirname, 'data', 'qqDrafts.json');
 let qqDrafts: Array<{
   id: string; title: string; phases: 3 | 4; language: string;
   questions: any[]; createdAt: number; updatedAt: number;
 }> = [];
+
+function persistQQDrafts() {
+  try {
+    fs.writeFileSync(qqDraftsPath, JSON.stringify(qqDrafts, null, 2), 'utf-8');
+  } catch { /* ignore persistence issues */ }
+}
+
+// Load persisted QQ drafts on startup
+try {
+  if (fs.existsSync(qqDraftsPath)) {
+    const loaded = JSON.parse(fs.readFileSync(qqDraftsPath, 'utf-8'));
+    if (Array.isArray(loaded)) qqDrafts = loaded;
+  }
+} catch {
+  console.error('Fehler beim Laden von qqDrafts.json');
+}
 
 app.get('/api/qq/drafts', async (_req, res) => {
   const cached = cache.get<any[]>('qqDrafts');
   if (cached) return res.json(cached);
   if (await ensureDraftDbConnection()) {
     const dbDrafts = await getAllQQDraftsFromDB();
-    cache.set('qqDrafts', dbDrafts, 120);
-    return res.json(dbDrafts);
+    // Merge any file-backed drafts that aren't yet in DB
+    const dbIds = new Set(dbDrafts.map((d: any) => d.id));
+    const fileDrafts = qqDrafts.filter(d => !dbIds.has(d.id));
+    // Sync file-only drafts into DB for future
+    for (const fd of fileDrafts) {
+      try { await saveQQDraftToDB(fd); } catch { /* ignore */ }
+    }
+    const merged = [...dbDrafts, ...fileDrafts].sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+    cache.set('qqDrafts', merged, 120);
+    return res.json(merged);
   }
   const sorted = [...qqDrafts].sort((a, b) => b.updatedAt - a.updatedAt);
   cache.set('qqDrafts', sorted, 120);
@@ -7795,6 +7820,7 @@ app.post('/api/qq/drafts', async (req, res) => {
     } catch { /* fall through to in-memory */ }
   }
   qqDrafts.unshift(draft);
+  persistQQDrafts();
   cache.del('qqDrafts');
   res.json(draft);
 });
@@ -7824,10 +7850,12 @@ app.put('/api/qq/drafts/:id', async (req, res) => {
   const idx = qqDrafts.findIndex(d => d.id === req.params.id);
   if (idx === -1) {
     qqDrafts.unshift(updated);
+    persistQQDrafts();
     cache.del('qqDrafts');
     return res.json(updated);
   }
   qqDrafts[idx] = { ...qqDrafts[idx], ...req.body, updatedAt: Date.now() };
+  persistQQDrafts();
   cache.del('qqDrafts');
   res.json(qqDrafts[idx]);
 });
@@ -7837,6 +7865,7 @@ app.delete('/api/qq/drafts/:id', async (req, res) => {
     await deleteQQDraftFromDB(req.params.id);
   }
   qqDrafts = qqDrafts.filter(d => d.id !== req.params.id);
+  persistQQDrafts();
   cache.del('qqDrafts');
   res.json({ ok: true });
 });

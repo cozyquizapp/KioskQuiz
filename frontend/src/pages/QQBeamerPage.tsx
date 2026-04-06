@@ -31,6 +31,8 @@ export const BEAMER_CSS = `
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+  @keyframes cellPlacedRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.5);opacity:0} }
+  @keyframes toastUp { from{opacity:0;transform:translateY(16px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
   @keyframes imgZoomIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
   @keyframes imgReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
@@ -1145,31 +1147,33 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 
       {/* Center: large grid + scores */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '20px 44px', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={600} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker />
+        <GridDisplay state={s} maxSize={600} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 240 }}>
           <ScoreBar teams={s.teams} />
         </div>
       </div>
 
-      {/* Flash overlay: cell placed animation */}
+      {/* Flash: cell placed notification */}
       {flashCell && team && (
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          pointerEvents: 'none',
+          position: 'absolute', bottom: 32, left: 0, right: 0,
+          zIndex: 20, pointerEvents: 'none',
+          display: 'flex', justifyContent: 'center',
         }}>
           <div style={{
-            background: `${team.color}22`, border: `3px solid ${team.color}`,
-            borderRadius: 28, padding: '24px 48px',
-            display: 'flex', alignItems: 'center', gap: 20,
-            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.6)`,
-            animation: 'contentReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+            background: `linear-gradient(135deg, ${team.color}28, ${team.color}14)`,
+            border: `2px solid ${team.color}88`,
+            borderRadius: 18, padding: '14px 32px',
+            display: 'flex', alignItems: 'center', gap: 14,
+            boxShadow: `0 0 40px ${team.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+            backdropFilter: 'blur(16px)',
+            animation: 'toastUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
           }}>
-            <span style={{ fontSize: 52, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
             <div>
-              <div style={{ fontSize: 'clamp(24px,3vw,40px)', fontWeight: 900, color: team.color }}>{team.name}</div>
-              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', fontWeight: 700, marginTop: 4 }}>
-                ✓ Feld gesetzt ({String.fromCharCode(65 + flashCell.col)}{flashCell.row + 1})
+              <div style={{ fontSize: 20, fontWeight: 900, color: team.color }}>{team.name}</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
+                ✓ Feld {String.fromCharCode(65 + flashCell.col)}{flashCell.row + 1} gesetzt
               </div>
             </div>
           </div>
@@ -1369,8 +1373,8 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
   );
 }
 
-export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true }: {
-  state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean;
+export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true, flashCellKey }: {
+  state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean; flashCellKey?: string | null;
 }) {
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
@@ -1409,31 +1413,45 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const team = s.teams.find(t => t.id === cell.ownerId);
             const isHighlighted = highlightTeam && team?.id === highlightTeam;
             const isNew = newCellsRef.current.has(`${r}-${c}`);
+            const isFlash = flashCellKey === `${r}-${c}`;
+            const isAccent = isNew || isFlash;
             const showStar = showJoker && cell.jokerFormed;
+            const cellRadius = Math.max(4, cellSize * 0.16);
             return (
               <div key={`${r}-${c}`} style={{
-                width: cellSize, height: cellSize, borderRadius: Math.max(4, cellSize * 0.16),
+                position: 'relative', overflow: 'visible',
+                width: cellSize, height: cellSize, borderRadius: cellRadius,
                 background: team
-                  ? `linear-gradient(135deg, ${team.color}${isHighlighted ? 'ff' : '99'}, ${team.color}${isHighlighted ? 'cc' : '66'})`
+                  ? `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`
                   : 'rgba(255,255,255,0.04)',
                 border: showStar
                   ? '2px solid rgba(251,191,36,0.9)'
                   : team
-                    ? `1px solid ${team.color}${isHighlighted ? 'ff' : '55'}`
+                    ? `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`
                     : '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
-                transition: 'background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease',
-                transform: isNew ? 'scale(1.25)' : 'scale(1)',
-                transitionProperty: isNew ? 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.35s, border 0.35s, box-shadow 0.35s' : undefined,
-                boxShadow: isNew
-                  ? `0 0 24px ${team?.color ?? '#fff'}99`
+                transition: isNew
+                  ? 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease'
+                  : 'transform 0.4s ease, background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease',
+                transform: isNew ? 'scale(1.2)' : 'scale(1)',
+                boxShadow: isAccent
+                  ? `0 0 ${isFlash ? 28 : 20}px ${team?.color ?? '#fff'}aa`
                   : showStar
                     ? '0 0 10px rgba(251,191,36,0.5)'
                     : isHighlighted
                       ? `0 0 12px ${team?.color ?? '#fff'}66`
                       : 'none',
+                zIndex: isAccent ? 5 : 1,
               }}>
+                {isFlash && (
+                  <div style={{
+                    position: 'absolute', inset: -4, borderRadius: cellRadius + 3,
+                    border: `2px solid ${team?.color ?? '#fff'}88`,
+                    animation: 'cellPlacedRing 0.9s ease-out 2',
+                    pointerEvents: 'none',
+                  }} />
+                )}
                 {showStar && '⭐'}
                 {!showStar && team && qqGetAvatar(team.avatarId).emoji}
               </div>

@@ -287,8 +287,31 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
+                {/* Imposter (oneOfEight) controls */}
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'oneOfEight' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {!s.imposterActiveTeamId ? (
+                      <Btn color="#8B5CF6" onClick={() => emit('qq:imposterStart', { roomCode })}>
+                        🕵️ Imposter starten
+                      </Btn>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.imposterActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
+                          🕵️ {s.teams.find(t => t.id === s.imposterActiveTeamId)?.name ?? '?'} wählt
+                        </div>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                          {((s.currentQuestion?.bunteTuete as any)?.statements?.length ?? 8) - s.imposterChosenIndices.length} Aussagen übrig
+                          {s.imposterEliminated.length > 0 && (
+                            <> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Hot Potato controls (Bunte Tüte) */}
-                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'BUNTE_TUETE' && (
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'hotPotato' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {!s.hotPotatoActiveTeamId ? (
                       <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoStart', { roomCode })}>

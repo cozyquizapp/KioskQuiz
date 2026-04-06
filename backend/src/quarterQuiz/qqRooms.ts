@@ -52,6 +52,15 @@ export interface QQRoomState {
   // Hot Potato state
   hotPotatoActiveTeamId: string | null;
   hotPotatoEliminated: string[];
+  // Imposter (oneOfEight) round-robin state
+  imposterActiveTeamId: string | null;
+  imposterQueue: string[];          // round-robin order
+  imposterChosenIndices: number[];  // statement indices already picked (correct ones)
+  imposterEliminated: string[];     // teams who picked the false statement
+  // Last placed cell for beamer animation
+  lastPlacedCell: { row: number; col: number; teamId: string } | null;
+  // Internal round-robin index for Hot Potato (not sent to clients)
+  _hotPotatoRoundRobinIdx?: number;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
@@ -59,9 +68,6 @@ export interface QQRoomState {
   draftId?: string;
   draftTitle?: string;
   lastActivityAt: number;
-  /**
-   * Internal: queue of teamIds for multi-team placement (not persisted)
-   */
   _placementQueue?: string[];
 }
 
@@ -102,6 +108,11 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       buzzQueue: [],
       hotPotatoActiveTeamId: null,
       hotPotatoEliminated: [],
+      imposterActiveTeamId: null,
+      imposterQueue: [],
+      imposterChosenIndices: [],
+      imposterEliminated: [],
+      lastPlacedCell: null,
       avatarsEnabled: true,
       totalPhases: 3,
       lastActivityAt: Date.now(),
@@ -119,9 +130,11 @@ export function qqJoinTeam(
   avatarId: string
 ): void {
   if (room.teams[teamId]) {
-    // Rejoin — update avatar/name, keep color, mark connected (works in any phase)
+    // Rejoin — check avatar exclusivity (another team may have taken it in the meantime)
+    const takenBy = Object.values(room.teams).find(t => t.id !== teamId && t.avatarId === avatarId);
+    const safeAvatarId = takenBy ? room.teams[teamId].avatarId : avatarId; // keep old if taken
     room.teams[teamId].name      = teamName;
-    room.teams[teamId].avatarId  = avatarId;
+    room.teams[teamId].avatarId  = safeAvatarId;
     room.teams[teamId].connected = true;
     return;
   }
@@ -132,6 +145,11 @@ export function qqJoinTeam(
   const existingCount = Object.keys(room.teams).length;
   if (existingCount >= 5) {
     throw new QQError('ROOM_FULL', 'Maximale Teamanzahl (5) erreicht.');
+  }
+  // Avatar exclusivity: each avatar can only be chosen by one team
+  const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);
+  if (avatarTaken) {
+    throw new QQError('AVATAR_TAKEN', 'Dieser Avatar ist bereits vergeben.');
   }
   const colorIndex = existingCount % QQ_TEAM_PALETTE.length;
   room.teams[teamId] = {
@@ -612,33 +630,140 @@ function evalMap(
 
 // ── Hot Potato (Bunte Tüte) ───────────────────────────────────────────────────
 
-/** Pick a random non-eliminated connected team for Hot Potato. */
+/** Start Hot Potato: random first team, then round-robin. */
 export function qqHotPotatoStart(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   room.hotPotatoEliminated = [];
-  room.hotPotatoActiveTeamId = pickRandomAliveTeam(room);
+  const alive = getAliveTeams(room);
+  if (alive.length === 0) return;
+  // Random start index stored in room for round-robin tracking
+  const startIdx = Math.floor(Math.random() * alive.length);
+  room._hotPotatoRoundRobinIdx = startIdx;
+  room.hotPotatoActiveTeamId = alive[startIdx];
   room.lastActivityAt = Date.now();
 }
 
-/** Eliminate the active team (wrong / too slow), draw next or end round. */
+/** Eliminate the active team (wrong/too slow), advance to next in round-robin order. */
 export function qqHotPotatoEliminate(room: QQRoomState): string | null {
   assertPhase(room, ['QUESTION_ACTIVE']);
   if (!room.hotPotatoActiveTeamId) {
     throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
   }
   room.hotPotatoEliminated.push(room.hotPotatoActiveTeamId);
-  const next = pickRandomAliveTeam(room);
+  const next = nextRoundRobinTeam(room);
   room.hotPotatoActiveTeamId = next;
   room.lastActivityAt = Date.now();
-  return next; // null when all eliminated
+  return next;
 }
 
-function pickRandomAliveTeam(room: QQRoomState): string | null {
-  const alive = room.joinOrder.filter(
+/** Advance round-robin to next alive team WITHOUT eliminating current. */
+export function qqHotPotatoNext(room: QQRoomState): string | null {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  const next = nextRoundRobinTeam(room);
+  room.hotPotatoActiveTeamId = next;
+  room.lastActivityAt = Date.now();
+  return next;
+}
+
+function getAliveTeams(room: QQRoomState): string[] {
+  return room.joinOrder.filter(
     id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected
   );
+}
+
+function nextRoundRobinTeam(room: QQRoomState): string | null {
+  const alive = getAliveTeams(room);
   if (alive.length === 0) return null;
-  return alive[Math.floor(Math.random() * alive.length)];
+  const currentIdx = alive.indexOf(room.hotPotatoActiveTeamId ?? '');
+  const nextIdx = (currentIdx + 1) % alive.length;
+  room._hotPotatoRoundRobinIdx = nextIdx;
+  return alive[nextIdx];
+}
+
+// ── Imposter (oneOfEight) round-robin ─────────────────────────────────────────
+
+/** Start Imposter round: random team begins, set up round-robin queue. */
+export function qqImposterStart(room: QQRoomState): void {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  room.imposterEliminated = [];
+  room.imposterChosenIndices = [];
+  const teams = room.joinOrder.filter(id => room.teams[id]?.connected);
+  if (teams.length === 0) return;
+  const startIdx = Math.floor(Math.random() * teams.length);
+  // Build queue starting from random position, then round-robin
+  room.imposterQueue = [
+    ...teams.slice(startIdx),
+    ...teams.slice(0, startIdx),
+  ];
+  room.imposterActiveTeamId = room.imposterQueue[0];
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * Active team chooses a statement.
+ * Returns: { eliminated: false } if statement was correct (round continues),
+ *          { eliminated: true, allWin: false } if it was the false one (team eliminated),
+ *          { eliminated: false, allWin: true } if all correct statements are gone (everyone wins).
+ */
+export function qqImposterChoose(
+  room: QQRoomState,
+  teamId: string,
+  statementIndex: number,
+): { eliminated: boolean; allWin: boolean } {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+
+  if (room.imposterActiveTeamId !== teamId) {
+    throw new QQError('NOT_YOUR_TURN', 'Dieses Team ist gerade nicht dran (Imposter).');
+  }
+
+  const q = room.currentQuestion;
+  if (!q || q.bunteTuete?.kind !== 'oneOfEight') {
+    throw new QQError('WRONG_CATEGORY', 'Keine oneOfEight-Frage aktiv.');
+  }
+
+  const { falseIndex } = q.bunteTuete;
+  const totalStatements = q.bunteTuete.statements.length; // 8
+
+  if (statementIndex < 0 || statementIndex >= totalStatements) {
+    throw new QQError('INVALID_INDEX', `Ungültiger Statement-Index: ${statementIndex}.`);
+  }
+  if (room.imposterChosenIndices.includes(statementIndex)) {
+    throw new QQError('ALREADY_CHOSEN', 'Diese Aussage wurde bereits gewählt.');
+  }
+
+  if (statementIndex === falseIndex) {
+    // Team chose the false statement — eliminated
+    room.imposterEliminated.push(teamId);
+    room.imposterActiveTeamId = null;
+    room.lastActivityAt = Date.now();
+    return { eliminated: true, allWin: false };
+  }
+
+  // Correct statement — mark as chosen, advance round-robin
+  room.imposterChosenIndices.push(statementIndex);
+
+  // Check if only the false statement remains → everyone still in wins
+  const remaining = totalStatements - room.imposterChosenIndices.length;
+  if (remaining <= 1) {
+    // Only the false one left — all surviving teams win
+    room.imposterActiveTeamId = null;
+    room.lastActivityAt = Date.now();
+    return { eliminated: false, allWin: true };
+  }
+
+  // Advance to next team in queue (skip eliminated teams)
+  const currentPos = room.imposterQueue.indexOf(teamId);
+  let nextTeamId: string | null = null;
+  for (let i = 1; i <= room.imposterQueue.length; i++) {
+    const candidate = room.imposterQueue[(currentPos + i) % room.imposterQueue.length];
+    if (!room.imposterEliminated.includes(candidate) && room.teams[candidate]?.connected) {
+      nextTeamId = candidate;
+      break;
+    }
+  }
+  room.imposterActiveTeamId = nextTeamId;
+  room.lastActivityAt = Date.now();
+  return { eliminated: false, allWin: false };
 }
 
 // Enhanced: Allow all correct teams to place, fastest first
@@ -749,6 +874,7 @@ export function qqPlaceCell(
   }
 
   cell.ownerId = teamId;
+  room.lastPlacedCell = { row, col, teamId };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
 
@@ -814,6 +940,7 @@ export function qqStealCell(
   }
 
   cell.ownerId = teamId;
+  room.lastPlacedCell = { row, col, teamId };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
 
@@ -1093,6 +1220,10 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     buzzQueue:        room.buzzQueue,
     hotPotatoActiveTeamId: room.hotPotatoActiveTeamId,
     hotPotatoEliminated:   room.hotPotatoEliminated,
+    imposterActiveTeamId:  room.imposterActiveTeamId,
+    imposterChosenIndices: room.imposterChosenIndices,
+    imposterEliminated:    room.imposterEliminated,
+    lastPlacedCell:        room.lastPlacedCell,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     theme:            room.theme,
@@ -1120,6 +1251,11 @@ export function qqResetRoom(room: QQRoomState): void {
   room.swapFirstCell   = null;
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
+  room.imposterActiveTeamId  = null;
+  room.imposterQueue         = [];
+  room.imposterChosenIndices = [];
+  room.imposterEliminated    = [];
+  room.lastPlacedCell        = null;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

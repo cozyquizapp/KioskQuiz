@@ -191,6 +191,21 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   const bg = s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
 
+  // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
+  // PlacementView briefly with the just-placed cell highlighted (#2)
+  const prevPhaseRef = useRef(s.phase);
+  const [placementFlash, setPlacementFlash] = useState<{ cell: { row: number; col: number; teamId: string }; state: QQStateUpdate } | null>(null);
+
+  useEffect(() => {
+    if (prevPhaseRef.current === 'PLACEMENT' && s.phase === 'QUESTION_REVEAL' && s.lastPlacedCell) {
+      setPlacementFlash({ cell: s.lastPlacedCell, state: s });
+      const t = setTimeout(() => setPlacementFlash(null), 1800);
+      prevPhaseRef.current = s.phase;
+      return () => clearTimeout(t);
+    }
+    prevPhaseRef.current = s.phase;
+  }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
   const activeTemplate = templateType ? slideTemplates[templateType] : undefined;
@@ -227,10 +242,14 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         <>
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
+          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} hideCutouts={false} />
           )}
-          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
+          {/* Placement flash: briefly keep PlacementView after cell placed, then reveal */}
+          {placementFlash && (
+            <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
+          )}
+          {s.phase === 'PLACEMENT' && !placementFlash && <PlacementView state={s} />}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
         </>
@@ -745,6 +764,70 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
+          {/* MUCHO / ZEHN_VON_ZEHN: who chose which option */}
+          {revealed && s.answers.length > 0 && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && q.options && (
+            <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+              {q.options.map((_, optIdx) => {
+                const voters = s.answers
+                  .filter(a => a.text === String(optIdx))
+                  .sort((a, b) => a.submittedAt - b.submittedAt)
+                  .map(a => s.teams.find(t => t.id === a.teamId))
+                  .filter(Boolean);
+                if (!voters.length) return null;
+                const isCorrect = optIdx === q.correctOptionIndex;
+                const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+                const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
+                return (
+                  <div key={optIdx} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '6px 14px', borderRadius: 10, marginBottom: 4,
+                    background: isCorrect ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: isCorrect ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                    animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.07}s both`,
+                  }}>
+                    <span style={{ width: 22, height: 22, borderRadius: 6, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                      {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
+                    </span>
+                    {voters.map((t, vi) => (
+                      <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 4, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
+                        <span style={{ fontSize: 18 }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: t!.color }}>{t!.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* CHEESE / BUNTE_TUETE: speed-ranked text answers */}
+          {revealed && s.answers.length > 0 && (q.category === 'CHEESE' || (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind !== 'hotPotato')) && (
+            <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+              {[...s.answers]
+                .sort((a, b) => a.submittedAt - b.submittedAt)
+                .map((a, i) => {
+                  const team = s.teams.find(t => t.id === a.teamId);
+                  const isWinner = a.teamId === s.correctTeamId;
+                  return (
+                    <div key={a.teamId} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '7px 14px', borderRadius: 10, marginBottom: 4,
+                      background: isWinner ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+                      border: isWinner ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                      animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
+                      {team && <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                      <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name ?? a.teamId}</span>
+                      <span style={{ fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
+                      {isWinner && <span style={{ fontSize: 14, color: '#4ade80' }}>✓</span>}
+                    </div>
+                  );
+                })
+              }
+            </div>
+          )}
+
           {/* Correct team */}
           {revealed && s.correctTeamId && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
@@ -800,6 +883,36 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'relative', zIndex: 5,
           transition: 'width 0.3s',
         }}>
+          {/* Imposter (oneOfEight): active team + remaining statements count */}
+          {!revealed && s.imposterActiveTeamId && (() => {
+            const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);
+            if (!activeTeam) return null;
+            const totalStmts = (s.currentQuestion?.bunteTuete as any)?.statements?.length ?? 8;
+            const remaining = totalStmts - s.imposterChosenIndices.length;
+            return (
+              <div style={{
+                borderRadius: 16, padding: '14px 20px', textAlign: 'center',
+                background: '#1B1510', border: `2px solid ${activeTeam.color}88`,
+                boxShadow: `0 0 28px ${activeTeam.color}44`,
+                animation: 'contentReveal 0.4s ease both',
+              }}>
+                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                  🕵️ Imposter — wählt eine Aussage
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 28 }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
+                  <span style={{ fontWeight: 900, fontSize: 20, color: activeTeam.color }}>{activeTeam.name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+                  {remaining} Aussage{remaining !== 1 ? 'n' : ''} übrig
+                  {s.imposterEliminated.length > 0 && (
+                    <span> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Hot Potato: active team highlight */}
           {!revealed && s.hotPotatoActiveTeamId && (() => {
             const activeTeam = s.teams.find(t => t.id === s.hotPotatoActiveTeamId);
@@ -854,8 +967,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 // PLACEMENT VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function PlacementView({ state: s }: { state: QQStateUpdate }) {
-  const team = s.teams.find(t => t.id === s.pendingFor);
+export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; flashCell?: { row: number; col: number; teamId: string } | null }) {
+  const team = s.teams.find(t => t.id === (flashCell?.teamId ?? s.pendingFor));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -896,11 +1009,36 @@ export function PlacementView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Center: large grid + scores */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '20px 44px', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={600} highlightTeam={s.pendingFor} showJoker />
+        <GridDisplay state={s} maxSize={600} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 240 }}>
           <ScoreBar teams={s.teams} />
         </div>
       </div>
+
+      {/* Flash overlay: cell placed animation */}
+      {flashCell && team && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            background: `${team.color}22`, border: `3px solid ${team.color}`,
+            borderRadius: 28, padding: '24px 48px',
+            display: 'flex', alignItems: 'center', gap: 20,
+            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.6)`,
+            animation: 'contentReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+          }}>
+            <span style={{ fontSize: 52, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            <div>
+              <div style={{ fontSize: 'clamp(24px,3vw,40px)', fontWeight: 900, color: team.color }}>{team.name}</div>
+              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', fontWeight: 700, marginTop: 4 }}>
+                ✓ Feld gesetzt ({String.fromCharCode(65 + flashCell.col)}{flashCell.row + 1})
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

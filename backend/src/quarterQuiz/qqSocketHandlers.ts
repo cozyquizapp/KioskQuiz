@@ -20,7 +20,8 @@ import {
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
-  qqHotPotatoStart, qqHotPotatoEliminate,
+  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext,
+  qqImposterStart, qqImposterChoose,
 } from './qqRooms';
 
 type AckFn = (payload: QQAck) => void;
@@ -293,6 +294,62 @@ export function registerQQHandlers(io: SocketIOServer): void {
         qqMarkCorrect(room, teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Advance to next team in round-robin WITHOUT eliminating current (correct answer, continue round)
+    socket.on('qq:hotPotatoNext', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const next = qqHotPotatoNext(room);
+        if (!next) {
+          // All teams answered correctly — everyone wins
+          qqRevealAnswer(room);
+          const aliveIds = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id));
+          qqMarkCorrect(room, aliveIds);
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Imposter / oneOfEight (moderator + team) ───────────────────────────
+    socket.on('qq:imposterStart', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqImposterStart(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:imposterChoose', (
+      payload: { roomCode: string; teamId: string; statementIndex: number },
+      ack?: unknown,
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const result = qqImposterChoose(room, payload.teamId, payload.statementIndex);
+
+        if (result.allWin) {
+          // All surviving teams win → mark correct for all non-eliminated teams, reveal answer
+          qqRevealAnswer(room);
+          const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
+          qqMarkCorrect(room, survivors);
+        } else if (result.eliminated) {
+          // The choosing team is eliminated — but the game can continue with remaining teams
+          // Moderator decides next: start next round or end (via hotPotatoCorrect-style)
+          // If only 1 team left alive, they win automatically
+          const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
+          if (survivors.length === 1) {
+            qqRevealAnswer(room);
+            qqMarkCorrect(room, survivors);
+          }
+          // else: game continues — next imposterStart or moderator calls imposterChoose for next team
+        }
+
+        broadcast(io, payload.roomCode);
+        if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });
 

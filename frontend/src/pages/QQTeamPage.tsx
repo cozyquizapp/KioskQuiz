@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -598,7 +598,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} />;
-    if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} onSubmit={submitText} usedIds={s.answers.map(a => a.text)} lang={lang} />;
+    if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} />;
   }
@@ -814,45 +814,86 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
   );
 }
 
-// ── Imposter: Drum-Wheel Carousel ─────────────────────────────────────────────
-function ImposterInput({ question: q, catColor, onSubmit, usedIds, lang }: {
-  question: any; catColor: string; onSubmit: (v: string) => void; usedIds: string[]; lang: string;
+// ── Imposter: Round-Robin (only active team picks) ────────────────────────────
+function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCode, lang }: {
+  question: any; catColor: string; state: QQStateUpdate; myTeamId: string;
+  emit: any; roomCode: string; lang: string;
 }) {
   const bt = q.bunteTuete;
-  const stmts: string[] = (lang === 'en' && bt?.statementsEn?.some((s:string)=>s) ? bt.statementsEn : bt?.statements) ?? [];
-  // Filter out already submitted
-  const remaining = stmts.map((s: string, i: number) => ({ text: s, idx: i })).filter(x => x.text && !usedIds.includes(String(x.idx)));
+  const stmts: string[] = (lang === 'en' && bt?.statementsEn?.some((st: string) => st) ? bt.statementsEn : bt?.statements) ?? [];
+  // Filter out already-chosen correct statements
+  const available = stmts
+    .map((text: string, i: number) => ({ text, idx: i }))
+    .filter(x => x.text && !s.imposterChosenIndices.includes(x.idx));
+
   const [idx, setIdx] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const touchStartY = useRef(0);
 
-  const clamped = Math.max(0, Math.min(idx, remaining.length - 1));
-  const current = remaining[clamped];
-  const canUp = clamped > 0;
-  const canDown = clamped < remaining.length - 1;
+  const isMyTurn = s.imposterActiveTeamId === myTeamId;
+  const isEliminated = s.imposterEliminated.includes(myTeamId);
+  const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);
 
+  const clamped = Math.max(0, Math.min(idx, available.length - 1));
+  const current = available[clamped];
+  const canUp = clamped > 0;
+  const canDown = clamped < available.length - 1;
   const SLOT_H = 100;
 
-  function handleConfirm() {
-    if (!current || submitted) return;
+  async function handleConfirm() {
+    if (!current || submitted || !isMyTurn) return;
     if (navigator.vibrate) navigator.vibrate(40);
     setSubmitted(true);
-    onSubmit(String(current.idx));
+    await emit('qq:imposterChoose', { roomCode, teamId: myTeamId, statementIndex: current.idx });
   }
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; }, []);
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
     const delta = touchStartY.current - e.changedTouches[0].clientY;
-    if (delta > 30) setIdx(i => Math.min(i + 1, remaining.length - 1));
+    if (delta > 30) setIdx(i => Math.min(i + 1, available.length - 1));
     if (delta < -30) setIdx(i => Math.max(i - 1, 0));
-  }, [remaining.length]);
+  };
 
-  if (!remaining.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>Alle Optionen gewählt</div>;
+  // Not yet started
+  if (!s.imposterActiveTeamId && !isEliminated) {
+    return (
+      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
+        🕵️ Warten auf Start…
+      </div>
+    );
+  }
+  // Eliminated
+  if (isEliminated) {
+    return (
+      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 15, fontWeight: 800 }}>
+        ❌ Falsche Aussage gewählt — du bist raus
+      </div>
+    );
+  }
+  // Waiting for other team
+  if (!isMyTurn) {
+    return (
+      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
+        🕵️ {activeTeam?.name ?? '?'} wählt gerade…
+        <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{available.length} Aussage{available.length !== 1 ? 'n' : ''} übrig</div>
+      </div>
+    );
+  }
+  // Already submitted this turn
+  if (submitted) {
+    return (
+      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80', fontSize: 15, fontWeight: 800 }}>
+        ✓ Gewählt — warte auf nächstes Team…
+      </div>
+    );
+  }
+
+  if (!available.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>Alle Aussagen gewählt</div>;
 
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
-        🕵️ {lang === 'en' ? 'Which statement is false?' : 'Welche Aussage ist falsch?'}
+        🕵️ {lang === 'en' ? 'Your turn — which is false?' : 'Du bist dran — welche ist falsch?'}
       </div>
 
       {/* Drum wheel */}
@@ -876,7 +917,7 @@ function ImposterInput({ question: q, catColor, onSubmit, usedIds, lang }: {
             WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
           } as any}
         >
-          {canUp ? remaining[clamped - 1]?.text : ''}
+          {canUp ? available[clamped - 1]?.text : ''}
         </div>
 
         {/* Center slot (active) */}
@@ -901,7 +942,7 @@ function ImposterInput({ question: q, catColor, onSubmit, usedIds, lang }: {
             fontSize: 14, color: '#94a3b8', overflow: 'hidden',
           }}
         >
-          {canDown ? remaining[clamped + 1]?.text : ''}
+          {canDown ? available[clamped + 1]?.text : ''}
         </div>
 
         {/* Arrow buttons */}
@@ -911,7 +952,7 @@ function ImposterInput({ question: q, catColor, onSubmit, usedIds, lang }: {
 
       {/* Counter */}
       <div style={{ textAlign: 'center', fontSize: 12, color: '#475569', fontWeight: 700, marginTop: 6 }}>
-        {clamped + 1} / {remaining.length}
+        {clamped + 1} / {available.length}
       </div>
 
       <SubmitBtn onSubmit={handleConfirm} canSubmit={!!current && !submitted} submitted={submitted} catColor="#942d59" label={lang === 'en' ? 'Choose' : 'Wählen'} />

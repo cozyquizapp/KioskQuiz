@@ -348,6 +348,12 @@ export interface QQStateUpdate {
   // Hot Potato
   hotPotatoActiveTeamId: string | null;
   hotPotatoEliminated: string[];
+  // Imposter (oneOfEight round-robin)
+  imposterActiveTeamId: string | null;
+  imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)
+  imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
+  // Last placed cell — for beamer placement animation
+  lastPlacedCell: { row: number; col: number; teamId: string } | null;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;

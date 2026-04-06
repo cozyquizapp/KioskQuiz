@@ -119,8 +119,8 @@ body {
   --ui-chip-border: rgba(240, 95, 178, 0.2);
 }
 
-/* Animated Gradient Mesh Background */
-body::before {
+/* Animated Gradient Mesh Background — hidden on QQ pages via .qq-active class */
+body:not(.qq-active)::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -133,7 +133,7 @@ body::before {
   animation: gradient-shift 22s ease infinite;
 }
 
-body::after {
+body:not(.qq-active)::after {
   content: '';
   position: fixed;
   inset: 0;

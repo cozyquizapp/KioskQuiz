@@ -227,6 +227,12 @@ export default function QQBeamerPage() {
   const fetchedDraftId = useRef<string | null>(null);
   const { state, connected, emit } = useQQSocket(roomCode);
 
+  // Disable Cozy gradient mesh on QQ pages
+  useEffect(() => {
+    document.body.classList.add('qq-active');
+    return () => { document.body.classList.remove('qq-active'); };
+  }, []);
+
   useEffect(() => {
     if (!connected || joined) return;
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
@@ -431,7 +437,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         )}
 
-        <div style={{ color: '#1e293b', fontSize: 14, fontWeight: 700 }}>
+        <div style={{ color: '#64748b', fontSize: 14, fontWeight: 700 }}>
           {s.teams.length < 2
             ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
             : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}

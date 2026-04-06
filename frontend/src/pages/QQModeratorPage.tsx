@@ -23,6 +23,12 @@ export default function QQModeratorPage() {
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
+
+  // Disable Cozy gradient mesh on QQ pages
+  useEffect(() => {
+    document.body.classList.add('qq-active');
+    return () => { document.body.classList.remove('qq-active'); };
+  }, []);
   const { state, connected, emit } = useQQSocket(roomCode);
 
   // Auto-join (and re-join after reconnect)
@@ -89,6 +95,8 @@ export default function QQModeratorPage() {
   emitRef.current = emit;
   const stateRef = useRef(state);
   stateRef.current = state;
+  const startGameRef = useRef(startGame);
+  startGameRef.current = startGame;
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
@@ -100,7 +108,7 @@ export default function QQModeratorPage() {
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
       e.preventDefault();
-      if (s.phase === 'LOBBY')                                           startGame();
+      if (s.phase === 'LOBBY')                                           startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')                            emitRef.current('qq:revealAnswer', { roomCode });
       else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
@@ -150,7 +158,7 @@ export default function QQModeratorPage() {
     // F13 — Nächste Aktion (= Space)
     if (e.code === 'F13') {
       e.preventDefault();
-      if (s.phase === 'LOBBY')                                                    startGame();
+      if (s.phase === 'LOBBY')                                                    startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                         emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')                                     emitRef.current('qq:revealAnswer', { roomCode });
       else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
@@ -630,9 +638,9 @@ export default function QQModeratorPage() {
                   <button
                     onClick={() => emit('qq:setLanguage', { roomCode, language: 'de' })}
                     style={{
-                      border: s.language === 'de' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      border: s.language === 'de' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'de' ? '#3B82F622' : 'transparent',
-                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'de' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}
@@ -641,9 +649,9 @@ export default function QQModeratorPage() {
                   <button
                     onClick={() => emit('qq:setLanguage', { roomCode, language: 'en' })}
                     style={{
-                      border: s.language === 'en' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      border: s.language === 'en' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'en' ? '#3B82F622' : 'transparent',
-                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'en' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}
@@ -652,9 +660,9 @@ export default function QQModeratorPage() {
                   <button
                     onClick={() => emit('qq:setLanguage', { roomCode, language: 'both' })}
                     style={{
-                      border: s.language === 'both' ? '2px solid #3B82F6' : '1px solid #d1d5db',
+                      border: s.language === 'both' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'both' ? '#3B82F622' : 'transparent',
-                      color: '#222', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'both' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}

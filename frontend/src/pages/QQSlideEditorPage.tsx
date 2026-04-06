@@ -1,5 +1,3 @@
-// TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
-
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
 import { QQBuiltinSlide } from '../components/QQBuiltinSlide';

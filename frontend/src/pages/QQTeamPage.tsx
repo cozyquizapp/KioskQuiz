@@ -155,6 +155,12 @@ export default function QQTeamPage() {
 
   const { state, connected, emit } = useQQSocket(roomCode);
 
+  // Disable Cozy gradient mesh on QQ pages
+  useEffect(() => {
+    document.body.classList.add('qq-active');
+    return () => { document.body.classList.remove('qq-active'); };
+  }, []);
+
   // Reset joined on disconnect so auto-rejoin fires on reconnect
   useEffect(() => {
     if (!connected && joined) setJoined(false);

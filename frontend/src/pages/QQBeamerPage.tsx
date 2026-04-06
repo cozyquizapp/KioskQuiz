@@ -213,6 +213,9 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   const cat = s.currentQuestion?.category;
   const bg = s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
+  const accent = s.theme?.accentColor ?? '#F59E0B';
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
@@ -237,7 +240,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     <div style={{
       minHeight: '100vh', width: '100vw',
       background: activeTemplate ? (activeTemplate.background || bg) : bg,
-      fontFamily: "'Nunito', system-ui, sans-serif",
+      fontFamily: fontFam,
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
       transition: 'background 0.8s ease',
@@ -313,6 +316,8 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const joinUrl = `${window.location.origin}/quarterquiz-team`;
   const [de, setDe] = useState(true);
   useEffect(() => {
@@ -328,7 +333,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 32, position: 'relative', zIndex: 5 }}>
         <div>
           <div style={{
-            fontFamily: "'Nunito', sans-serif",
+            fontFamily: fontFam,
             fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
             background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
@@ -349,7 +354,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             {s.teams.map(t => (
               <div key={t.id} style={{
                 padding: '16px 22px', borderRadius: 20,
-                background: '#1B1510',
+                background: cardBg,
                 border: `2px solid ${t.color}55`,
                 boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
                 textAlign: 'center', minWidth: 120,
@@ -386,7 +391,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{de ? 'Jetzt mitspielen' : 'Join now'}</div>
           <div style={{
             fontSize: 13, color: '#475569', fontFamily: 'monospace',
-            background: '#1B1510', padding: '6px 14px', borderRadius: 8,
+            background: cardBg, padding: '6px 14px', borderRadius: 8,
           }}>
             {joinUrl.replace('https://', '').replace('http://', '')}
           </div>
@@ -401,6 +406,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
   const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
   const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Finale' };
@@ -426,7 +432,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       }}>Phase {s.gamePhaseIndex} von {s.totalPhases}</div>
 
       <div style={{
-        fontFamily: "'Nunito', sans-serif",
+        fontFamily: fontFam,
         fontSize: 'clamp(64px, 12vw, 156px)', fontWeight: 900, lineHeight: 0.95,
         color,
         textShadow: `0 0 80px ${color}44, 0 8px 0 ${color}33`,
@@ -498,6 +504,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
   const cutouts = CAT_CUTOUTS[cat] ?? [];
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
   const img = q.image;
   // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
   const isCheese = cat === 'CHEESE';
@@ -638,7 +645,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Question card */}
           <div style={{
-            background: '#1B1510',
+            background: cardBg,
             border: `1px solid rgba(255,255,255,0.08)`,
             borderRadius: 22,
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
@@ -703,7 +710,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
                     borderRadius: 16, padding: '16px 20px',
-                    background: isCorrect ? 'rgba(34,197,94,0.2)' : '#1B1510',
+                    background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}44`,
                     boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 14,
@@ -1051,7 +1058,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 borderRadius: 16, padding: '14px 20px', textAlign: 'center',
-                background: '#1B1510', border: `2px solid ${activeTeam.color}88`,
+                background: cardBg, border: `2px solid ${activeTeam.color}88`,
                 boxShadow: `0 0 28px ${activeTeam.color}44`,
                 animation: 'contentReveal 0.4s ease both',
               }}>
@@ -1096,7 +1103,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {!revealed && s.answers.length > 0 && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4,
-              background: '#1B1510', border: '1px solid rgba(255,255,255,0.07)',
+              background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 12, padding: '8px 16px',
             }}>
               <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>Antworten:</span>
@@ -1182,6 +1189,9 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function ComebackView({ state: s }: { state: QQStateUpdate }) {
+  const accent = s.theme?.accentColor ?? '#F59E0B';
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const textCol = s.theme?.textColor ?? '#e2e8f0';
   const team = s.teams.find(t => t.id === s.comebackTeamId);
 
   return (
@@ -1192,7 +1202,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '48px 44px', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
         <div style={{
           fontFamily: "'Caveat', cursive",
-          fontSize: 'clamp(16px, 2vw, 26px)', color: '#F59E0B', fontWeight: 700,
+          fontSize: 'clamp(16px, 2vw, 26px)', color: accent, fontWeight: 700,
           marginBottom: 20, letterSpacing: '0.06em',
         }}>
           ⚡ Comeback-Chance!
@@ -1210,16 +1220,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
             {!s.comebackAction ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <ComebackOption icon="📍" label="2 Felder setzen" desc="Platziere 2 freie Felder deiner Wahl" color="#22C55E" />
-                <ComebackOption icon="⚡" label="1 Feld klauen"   desc="Nimm ein fremdes Feld"                color="#EF4444" />
-                <ComebackOption icon="🔄" label="2 Felder tauschen" desc="Tausche je ein Feld von zwei Gegnern" color="#8B5CF6" />
+                <ComebackOption icon="📍" label="2 Felder setzen" desc="Platziere 2 freie Felder deiner Wahl" color="#22C55E" cardBg={cardBg} />
+                <ComebackOption icon="⚡" label="1 Feld klauen"   desc="Nimm ein fremdes Feld"                color="#EF4444" cardBg={cardBg} />
+                <ComebackOption icon="🔄" label="2 Felder tauschen" desc="Tausche je ein Feld von zwei Gegnern" color="#8B5CF6" cardBg={cardBg} />
               </div>
             ) : (
               <div style={{
                 padding: '22px 28px', borderRadius: 20,
-                background: '#1B1510', border: '1px solid rgba(255,255,255,0.07)',
+                background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900, color: '#e2e8f0',
+                fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900, color: textCol,
               }}>
                 {s.comebackAction === 'PLACE_2' && '📍 2 Felder werden gesetzt…'}
                 {s.comebackAction === 'STEAL_1' && '⚡ 1 Feld wird geklaut…'}
@@ -1244,6 +1254,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function GameOverView({ state: s }: { state: QQStateUpdate }) {
+  const accent = s.theme?.accentColor ?? '#F59E0B';
   const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const winner = sorted[0];
 
@@ -1289,7 +1300,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
             }}>
               <div style={{
                 fontFamily: "'Caveat', cursive", fontSize: 34, fontWeight: 700, width: 44,
-                color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.18)',
+                color: i === 0 ? accent : 'rgba(255,255,255,0.18)',
               }}>#{i + 1}</div>
               <div style={{ width: 14, height: 44, borderRadius: 7, background: t.color, flexShrink: 0 }} />
               <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
@@ -1297,7 +1308,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
                 {t.name}
                 {i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
               </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 22, color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 22, color: i === 0 ? accent : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
                 {t.largestConnected} verbunden
               </div>
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: 18, color: '#475569', fontWeight: 600, minWidth: 80, textAlign: 'right' }}>
@@ -1576,11 +1587,11 @@ export function Fireflies() {
   );
 }
 
-function ComebackOption({ icon, label, desc, color }: { icon: string; label: string; desc: string; color: string }) {
+function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string; label: string; desc: string; color: string; cardBg?: string }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 16, padding: '16px 22px', borderRadius: 16,
-      background: '#1B1510',
+      background: bg ?? '#1B1510',
       border: `1px solid ${color}33`,
       boxShadow: `0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)`,
     }}>

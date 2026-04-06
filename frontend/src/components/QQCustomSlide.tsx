@@ -389,6 +389,8 @@ function CustomSlideElement({
   canvasW: number;
   lang: 'de' | 'en';
 }) {
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const themeAccent = s.theme?.accentColor ?? '#EAB308';
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left:   `${el.x}%`,
@@ -613,7 +615,7 @@ function CustomSlideElement({
           <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
             {ranked.map((a, i) => (
               <div key={a.teamId} style={rowStyle(i === 0)}>
-                <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: fs * 2 }}>#{i + 1}</span>
+                <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? themeAccent : '#475569', width: fs * 2 }}>#{i + 1}</span>
                 {a.team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
                 <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{a.team?.name ?? a.teamId}</span>
                 <span style={{ fontSize: fs * 1.2, fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
@@ -842,7 +844,7 @@ function CustomSlideElement({
               <div key={i} style={{
                 position: 'relative', overflow: 'hidden',
                 borderRadius: 14, padding: '12px 16px',
-                background: isCorrect ? 'rgba(34,197,94,0.2)' : '#1B1510',
+                background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                 border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
                 display: 'flex', flexDirection: 'column', gap: 6,
               }}>
@@ -984,7 +986,7 @@ function CustomSlideElement({
           {cards.map((c, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: fs, padding: `${fs * 0.8}px ${fs}px`,
-              borderRadius: fs * 0.7, background: '#1B1510',
+              borderRadius: fs * 0.7, background: cardBg,
               border: `1px solid ${c.color}33`,
               boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
             }}>
@@ -1011,7 +1013,7 @@ function CustomSlideElement({
               borderBottom: '1px solid rgba(255,255,255,0.05)',
               animation: `nbSlide 0.5s cubic-bezier(0.34,1.2,0.64,1) ${i * 0.12}s both`,
             }}>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 2, fontWeight: 700, width: fs * 2.8, color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.18)' }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 2, fontWeight: 700, width: fs * 2.8, color: i === 0 ? themeAccent : 'rgba(255,255,255,0.18)' }}>
                 #{i + 1}
               </div>
               <div style={{ width: fs * 0.8, height: fs * 2.5, borderRadius: fs * 0.4, background: t.color, flexShrink: 0 }} />
@@ -1019,7 +1021,7 @@ function CustomSlideElement({
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.8, fontWeight: 700, color: '#fff', flex: 1 }}>
                 {t.name}{i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
               </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.2, color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.2, color: i === 0 ? themeAccent : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
                 {t.largestConnected} verbunden
               </div>
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs, color: '#475569', fontWeight: 600, minWidth: fs * 5, textAlign: 'right' as const }}>
@@ -1041,7 +1043,7 @@ function CustomSlideElement({
           </div>
           <div style={{ textAlign: 'center' as const }}>
             <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>Jetzt mitspielen</div>
-            <div style={{ fontSize: Math.max(9, canvasW * 0.007), color: '#475569', fontFamily: 'monospace', background: '#1B1510', padding: '4px 12px', borderRadius: 8 }}>
+            <div style={{ fontSize: Math.max(9, canvasW * 0.007), color: '#475569', fontFamily: 'monospace', background: cardBg, padding: '4px 12px', borderRadius: 8 }}>
               {joinUrl.replace(/^https?:\/\//, '')}
             </div>
           </div>
@@ -1104,7 +1106,7 @@ function CustomSlideElement({
         <div style={{
           ...baseStyle,
           borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: '#1B1510', border: `2px solid ${activeTeam.color}88`,
+          background: cardBg, border: `2px solid ${activeTeam.color}88`,
           boxShadow: `0 0 28px ${activeTeam.color}44`,
           padding: 12,
         }}>
@@ -1133,7 +1135,7 @@ function CustomSlideElement({
         <div style={{
           ...baseStyle,
           display: 'flex', alignItems: 'center', gap: dotSize * 0.8,
-          background: '#1B1510', border: '1px solid rgba(255,255,255,0.07)',
+          background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: 12, padding: `${dotSize * 0.8}px ${dotSize * 1.5}px`,
         }}>
           <span style={{ fontSize: dotSize * 1.4, color: '#64748b', fontWeight: 700 }}>Antworten:</span>

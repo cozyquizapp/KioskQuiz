@@ -227,6 +227,7 @@ export default function QQSlideEditorPage() {
   const [layerPanelOpen, setLayerPanelOpen] = useState(true);
   const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
   const [previewMode, setPreviewMode] = useState(false); // <-- Add previewMode state
+  const [showThemeColors, setShowThemeColors] = useState(false);
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -482,7 +483,37 @@ export default function QQSlideEditorPage() {
               />
             );
           })}
+          <button
+            title="Farben anpassen"
+            onClick={() => setShowThemeColors(p => !p)}
+            style={{
+              width: 22, height: 22, borderRadius: '50%', border: showThemeColors ? '2px solid #fff' : '2px solid transparent',
+              background: 'conic-gradient(#EF4444, #F59E0B, #22C55E, #3B82F6, #8B5CF6, #EF4444)',
+              cursor: 'pointer', flexShrink: 0, marginLeft: 4,
+            }}
+          />
         </div>
+        {/* Custom color pickers */}
+        {showThemeColors && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginLeft: 8 }}>
+            {([
+              { key: 'bgColor', label: 'BG', fallback: '#0D0A06' },
+              { key: 'accentColor', label: 'Akzent', fallback: '#F59E0B' },
+              { key: 'textColor', label: 'Text', fallback: '#e2e8f0' },
+              { key: 'cardBg', label: 'Karte', fallback: '#1B1510' },
+            ] as const).map(({ key, label, fallback }) => (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#64748b', fontWeight: 700, cursor: 'pointer' }}>
+                {label}
+                <input
+                  type="color"
+                  value={(draft.theme as any)?.[key] ?? fallback}
+                  onChange={e => setDraft({ ...draft, theme: { ...(draft.theme ?? { preset: 'custom' as const }), preset: 'custom' as const, [key]: e.target.value }, updatedAt: Date.now() })}
+                  style={{ width: 22, height: 22, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent', padding: 0 }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={btn('#475569', true)}>↩</button>
           <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>

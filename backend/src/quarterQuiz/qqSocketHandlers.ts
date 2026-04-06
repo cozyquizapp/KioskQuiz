@@ -180,8 +180,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqRevealAnswer(room);
-        applyAutoEval(room);
         broadcast(io, payload.roomCode);
+        // Show reveal for 3s before auto-eval transitions to PLACEMENT
+        setTimeout(() => {
+          try { applyAutoEval(room); } catch { /* ignore */ }
+          broadcast(io, payload.roomCode);
+        }, 3000);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

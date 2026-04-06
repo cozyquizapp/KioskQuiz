@@ -31,7 +31,22 @@ export const BEAMER_CSS = `
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
-  @keyframes cellPlacedRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.5);opacity:0} }
+  @keyframes cellInkFill {
+    0%   { clip-path: circle(0% at 50% 50%); opacity: 0; }
+    40%  { opacity: 1; }
+    100% { clip-path: circle(75% at 50% 50%); opacity: 1; }
+  }
+  @keyframes cellShockwave {
+    0%   { transform: scale(0.8); opacity: 0.7; }
+    50%  { transform: scale(1.8); opacity: 0.3; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes cellEmojiDrop {
+    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
+    80%  { transform: scale(0.9) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
   @keyframes toastUp { from{opacity:0;transform:translateY(16px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
   @keyframes imgZoomIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
@@ -1152,33 +1167,6 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
           <ScoreBar teams={s.teams} />
         </div>
       </div>
-
-      {/* Flash: cell placed notification */}
-      {flashCell && team && (
-        <div style={{
-          position: 'absolute', bottom: 32, left: 0, right: 0,
-          zIndex: 20, pointerEvents: 'none',
-          display: 'flex', justifyContent: 'center',
-        }}>
-          <div style={{
-            background: `linear-gradient(135deg, ${team.color}28, ${team.color}14)`,
-            border: `2px solid ${team.color}88`,
-            borderRadius: 18, padding: '14px 32px',
-            display: 'flex', alignItems: 'center', gap: 14,
-            boxShadow: `0 0 40px ${team.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
-            backdropFilter: 'blur(16px)',
-            animation: 'toastUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
-          }}>
-            <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: team.color }}>{team.name}</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
-                ✓ Feld {String.fromCharCode(65 + flashCell.col)}{flashCell.row + 1} gesetzt
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1421,39 +1409,61 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
               <div key={`${r}-${c}`} style={{
                 position: 'relative', overflow: 'visible',
                 width: cellSize, height: cellSize, borderRadius: cellRadius,
-                background: team
-                  ? `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`
-                  : 'rgba(255,255,255,0.04)',
-                border: showStar
-                  ? '2px solid rgba(251,191,36,0.9)'
-                  : team
-                    ? `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`
-                    : '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
-                transition: isNew
-                  ? 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease'
-                  : 'transform 0.4s ease, background 0.35s ease, border 0.35s ease, box-shadow 0.35s ease',
-                transform: isNew ? 'scale(1.2)' : 'scale(1)',
-                boxShadow: isAccent
-                  ? `0 0 ${isFlash ? 28 : 20}px ${team?.color ?? '#fff'}aa`
-                  : showStar
-                    ? '0 0 10px rgba(251,191,36,0.5)'
-                    : isHighlighted
-                      ? `0 0 12px ${team?.color ?? '#fff'}66`
-                      : 'none',
                 zIndex: isAccent ? 5 : 1,
               }}>
-                {isFlash && (
+                {/* Empty cell base */}
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: cellRadius,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }} />
+                {/* Team color layer — ink fill for new cells */}
+                {team && (
                   <div style={{
-                    position: 'absolute', inset: -4, borderRadius: cellRadius + 3,
-                    border: `2px solid ${team?.color ?? '#fff'}88`,
-                    animation: 'cellPlacedRing 0.9s ease-out 2',
+                    position: 'absolute', inset: 0, borderRadius: cellRadius,
+                    background: `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`,
+                    border: showStar
+                      ? '2px solid rgba(251,191,36,0.9)'
+                      : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
+                    animation: isNew ? 'cellInkFill 0.7s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    boxShadow: isAccent
+                      ? `0 0 ${isFlash ? 28 : 20}px ${team.color}aa`
+                      : showStar
+                        ? '0 0 10px rgba(251,191,36,0.5)'
+                        : isHighlighted
+                          ? `0 0 12px ${team.color}66`
+                          : 'none',
+                    transition: 'box-shadow 0.4s ease',
+                  }} />
+                )}
+                {/* Shockwave ring on new cells */}
+                {isNew && (
+                  <div style={{
+                    position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+                    border: `2px solid ${team?.color ?? '#fff'}66`,
+                    animation: 'cellShockwave 0.8s ease-out both',
                     pointerEvents: 'none',
                   }} />
                 )}
-                {showStar && '⭐'}
-                {!showStar && team && qqGetAvatar(team.avatarId).emoji}
+                {/* Flash ring */}
+                {isFlash && !isNew && (
+                  <div style={{
+                    position: 'absolute', inset: -4, borderRadius: cellRadius + 3,
+                    border: `2px solid ${team?.color ?? '#fff'}88`,
+                    animation: 'cellShockwave 1s ease-out 2',
+                    pointerEvents: 'none',
+                  }} />
+                )}
+                {/* Emoji / star content */}
+                <div style={{
+                  position: 'relative', zIndex: 2,
+                  animation: isNew ? 'cellEmojiDrop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' : undefined,
+                }}>
+                  {showStar && '⭐'}
+                  {!showStar && team && qqGetAvatar(team.avatarId).emoji}
+                </div>
               </div>
             );
           })

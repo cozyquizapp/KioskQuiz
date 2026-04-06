@@ -178,7 +178,7 @@ export default function QQTeamPage() {
     sessionStorage.setItem('qq_avatarId', avatarId);
     const ack = await emit('qq:joinTeam', { roomCode, teamId, teamName: teamName.trim(), avatarId });
     if (ack.ok) setJoined(true);
-    else setError(ack.error ?? 'Fehler beim Beitreten');
+    else setError(ack.error ?? 'error');
   }
 
   // Always allow local language override, even in lobby/setup
@@ -1454,7 +1454,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
       return (
         <CozyCard borderColor="#8B5CF6">
           <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
-            🔄 Tausch wird vorbereitet…
+            {lang === 'de' ? '🔄 Tausch wird vorbereitet…' : '🔄 Preparing swap…'}
           </div>
         </CozyCard>
       );

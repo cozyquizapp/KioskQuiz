@@ -568,7 +568,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
   const isCheese = cat === 'CHEESE';
   const hasImg = img && img.url && (isCheese || img.layout !== 'none');
+  const isWindow = hasImg && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
+
+  // Auto-size: shorter fontSize for long questions
+  const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+  const qFontSize = qText.length > 200 ? 'clamp(18px, 2.2vw, 32px)'
+    : qText.length > 120 ? 'clamp(20px, 2.6vw, 40px)'
+    : qText.length > 60 ? 'clamp(22px, 3vw, 48px)'
+    : 'clamp(26px, 3.6vw, 58px)';
 
   // Intro overlay only during QUESTION_ACTIVE (first mount via key=q.id)
   const showIntro = !revealed;
@@ -712,11 +720,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             marginBottom: 20,
           }}>
             <div key={lang} style={{
-              fontSize: 'clamp(26px, 3.6vw, 58px)', fontWeight: 900, lineHeight: 1.22,
+              fontSize: qFontSize, fontWeight: 900, lineHeight: 1.22,
               color: '#F1F5F9',
               animation: 'langFadeIn 0.4s ease both',
             }}>
-              {lang === 'en' && q.textEn ? q.textEn : q.text}
+              {qText}
             </div>
           </div>
 
@@ -724,13 +732,27 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {isCheese && hasImg && img && img.layout !== 'window-left' && img.layout !== 'window-right' && img.layout !== 'fullscreen' && img.layout !== 'cutout' && (
             <div style={{
               display: 'flex', justifyContent: 'center', alignItems: 'center',
-              marginBottom: 20,
+              marginBottom: 20, position: 'relative',
               animation: showIntro ? 'contentReveal 0.7s ease 2.3s both' : 'contentReveal 0.5s ease 0.1s both',
             }}>
+              {/* Ambient blur glow */}
+              <img
+                src={img.bgRemovedUrl || img.url}
+                alt="" aria-hidden
+                style={{
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  objectFit: 'contain',
+                  filter: 'blur(50px) saturate(1.8) brightness(0.4)',
+                  opacity: 0.5, pointerEvents: 'none',
+                  transform: 'scale(1.1)',
+                }}
+              />
               <img
                 src={img.bgRemovedUrl || img.url}
                 alt=""
                 style={{
+                  position: 'relative', zIndex: 1,
                   maxWidth: '55%', maxHeight: '70vh',
                   borderRadius: img.bgRemovedUrl ? 0 : 22,
                   objectFit: 'contain',
@@ -1077,37 +1099,77 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         </div>
 
         {/* ── Image window panel (window-left / window-right) ── */}
-        {hasImg && (img.layout === 'window-left' || img.layout === 'window-right') && (
+        {isWindow && (
           <div style={{
-            width: '42%', flexShrink: 0, position: 'relative', zIndex: 5,
+            width: '35%', flexShrink: 0, position: 'relative', zIndex: 5,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 28,
+            padding: 24,
           }}>
+            {/* Ambient blur glow behind image */}
             <img
-              src={img.url}
+              src={img.bgRemovedUrl || img.url}
+              alt="" aria-hidden
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain',
+                filter: 'blur(60px) saturate(1.8) brightness(0.5)',
+                opacity: 0.5, pointerEvents: 'none',
+                transform: 'scale(1.15)',
+              }}
+            />
+            {/* Main image */}
+            <img
+              src={img.bgRemovedUrl || img.url}
               alt=""
               style={{
+                position: 'relative', zIndex: 1,
                 maxWidth: '100%', maxHeight: '80vh',
-                borderRadius: 22, objectFit: 'contain',
-                boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
+                borderRadius: img.bgRemovedUrl ? 0 : 22,
+                objectFit: 'contain',
+                boxShadow: img.bgRemovedUrl
+                  ? 'none'
+                  : `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
+                filter: img.bgRemovedUrl
+                  ? `drop-shadow(0 16px 40px rgba(0,0,0,0.7))${imgFilter(img) ? ' ' + imgFilter(img) : ''}`
+                  : imgFilter(img),
                 animation: imgAnim(img.animation, img.layout, img.animDelay, img.animDuration),
                 transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
                 opacity: img.opacity ?? 1,
-                filter: imgFilter(img),
               }}
             />
+            {/* Dark vignette frame to blend white-bg images into dark theme */}
+            {!img.bgRemovedUrl && (
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                borderRadius: 22,
+                background: 'radial-gradient(ellipse at center, transparent 55%, rgba(13,10,6,0.7) 100%)',
+              }} />
+            )}
           </div>
         )}
 
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : 480,
+          width: isWindow ? 0 : 480,
           overflow: 'hidden',
-          flexShrink: 0, padding: hasImg && (img.layout === 'window-left' || img.layout === 'window-right') ? 0 : '28px 28px 28px 16px',
+          flexShrink: 0, padding: isWindow ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
           transition: 'width 0.3s',
         }}>
+          {/* Mini-grid overlay when image panel hides the main grid */}
+          {isWindow && (
+            <div style={{
+              position: 'fixed', bottom: 16, right: 16, zIndex: 10,
+              opacity: 0.6, pointerEvents: 'none',
+              background: 'rgba(13,10,6,0.5)', borderRadius: 10, padding: 6,
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <MiniGrid state={s} size={90} />
+            </div>
+          )}
           {/* Imposter (oneOfEight): active team + remaining statements count */}
           {!revealed && s.imposterActiveTeamId && (() => {
             const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);

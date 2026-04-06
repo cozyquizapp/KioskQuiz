@@ -720,8 +720,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Answer reveal */}
-          {revealed && s.revealedAnswer && (
+          {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
+          {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
               padding: '18px 28px', borderRadius: 18,
               background: 'rgba(34,197,94,0.08)',

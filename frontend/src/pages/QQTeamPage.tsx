@@ -149,7 +149,7 @@ export default function QQTeamPage() {
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} />;
+    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -262,10 +262,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 // GAME VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick }: {
+function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected }: {
   state: QQStateUpdate; myTeam: QQTeam | null;
   myTeamId: string; emit: any; roomCode: string;
   lang: 'de' | 'en'; flagFlip: boolean; onFlagClick: () => void;
+  connected: boolean;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
@@ -324,6 +325,17 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 F{(s.questionIndex % 5) + 1}/5
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Disconnect banner */}
+        {!connected && (
+          <div style={{
+            padding: '10px 16px', borderRadius: 12, marginBottom: 12, textAlign: 'center',
+            background: '#7F1D1D', border: '1px solid #EF4444', color: '#FCA5A5',
+            fontWeight: 800, fontSize: 13, animation: 'pulse 2s infinite',
+          }}>
+            {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
           </div>
         )}
 

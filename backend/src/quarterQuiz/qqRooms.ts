@@ -79,6 +79,20 @@ export interface QQRoomState {
 // ── In-process room map ───────────────────────────────────────────────────────
 const qqRooms = new Map<string, QQRoomState>();
 
+const QQ_ROOM_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+/** Periodically clean up stale QQ rooms (no activity for 4 hours). */
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of qqRooms) {
+    if (now - room.lastActivityAt > QQ_ROOM_TTL_MS) {
+      qqStopTimer(room);
+      qqClearHotPotatoTimer(room);
+      qqRooms.delete(code);
+    }
+  }
+}, 10 * 60 * 1000); // check every 10 min
+
 export function getQQRoom(roomCode: string): QQRoomState | undefined {
   return qqRooms.get(roomCode);
 }

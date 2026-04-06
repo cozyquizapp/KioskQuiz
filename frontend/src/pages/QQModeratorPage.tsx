@@ -24,9 +24,10 @@ export default function QQModeratorPage() {
   const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
   const { state, connected, emit } = useQQSocket(roomCode);
 
-  // Auto-join
+  // Auto-join (and re-join after reconnect)
   useEffect(() => {
-    if (!connected || joined) return;
+    if (!connected) { setJoined(false); return; }
+    if (joined) return;
     emit('qq:joinModerator', { roomCode }).then(ack => {
       if (ack.ok) setJoined(true);
     });
@@ -381,7 +382,10 @@ export default function QQModeratorPage() {
                   <div style={{ fontSize: 14, color: '#64748b' }}>🏆 Spiel beendet</div>
                 )}
 
-                <Btn color="#EF4444" outline onClick={() => emit('qq:resetRoom', { roomCode })}>
+                <Btn color="#EF4444" outline onClick={() => {
+                  if (s.phase !== 'LOBBY' && !window.confirm('Spiel wirklich zurücksetzen? Alle Fortschritte gehen verloren!')) return;
+                  emit('qq:resetRoom', { roomCode });
+                }}>
                   ↺ Reset
                 </Btn>
               </div>

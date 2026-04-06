@@ -20,12 +20,13 @@ export function useQQSocket(roomCode: string) {
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
     });
     socketRef.current = socket;
 
     socket.on('connect',    () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
+    socket.on('reconnect_failed', () => setConnected(false));
 
     socket.on('qq:stateUpdate', (payload: QQStateUpdate) => {
       setState(payload);
@@ -44,7 +45,11 @@ export function useQQSocket(roomCode: string) {
         resolve({ ok: false, error: 'Nicht verbunden', code: 'NOT_CONNECTED' });
         return;
       }
+      const timeout = setTimeout(() => {
+        resolve({ ok: false, error: 'Zeitüberschreitung', code: 'TIMEOUT' });
+      }, 10000);
       socketRef.current.emit(event, payload, (ack: QQAck) => {
+        clearTimeout(timeout);
         resolve(ack ?? { ok: true });
       });
     });

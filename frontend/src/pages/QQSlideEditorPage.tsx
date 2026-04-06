@@ -6,7 +6,7 @@ import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
-  QQSlideElementType, QQQuestion
+  QQSlideElementType, QQQuestion, QQThemePreset, QQ_THEME_PRESETS,
 } from '../../../shared/quarterQuizTypes';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -462,6 +462,27 @@ export default function QQSlideEditorPage() {
         <button onClick={() => navigate(`/qq-builder`)} style={btn('#475569')}>← Builder</button>
         <div style={{ fontSize: 15, fontWeight: 900 }}>{draft.title}</div>
         <div style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Folien-Editor</div>
+        {/* Theme preset swatches */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 16 }}>
+          <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginRight: 2 }}>Theme:</span>
+          {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
+            const th = QQ_THEME_PRESETS[t];
+            const active = (draft.theme?.preset ?? 'default') === t;
+            return (
+              <button
+                key={t}
+                title={t.charAt(0).toUpperCase() + t.slice(1)}
+                onClick={() => setDraft({ ...draft, theme: { ...th }, updatedAt: Date.now() })}
+                style={{
+                  width: active ? 26 : 20, height: active ? 26 : 20,
+                  borderRadius: '50%', border: active ? '2px solid #fff' : '2px solid transparent',
+                  background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`,
+                  cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                }}
+              />
+            );
+          })}
+        </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={btn('#475569', true)}>↩</button>
           <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>
@@ -630,6 +651,7 @@ export default function QQSlideEditorPage() {
                 <SlideCanvas
                   template={activeTemplate}
                   templateType={activeType}
+                  bgColor={draft.theme?.bgColor ?? '#0D0A06'}
                   selectedIds={selectedIds}
                   editingId={editingId}
                   snapLines={snapLines}
@@ -722,9 +744,10 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
+function SlideCanvas({ template, templateType, bgColor, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
   template: QQSlideTemplate;
   templateType: QQSlideTemplateType;
+  bgColor: string;
   selectedIds: string[];
   editingId: string | null;
   snapLines: { x?: number; y?: number };
@@ -870,7 +893,7 @@ function SlideCanvas({ template, templateType, selectedIds, editingId, snapLines
 
   return (
     <div ref={canvasRef}
-      style={{ width: '100%', maxWidth: '100%', maxHeight: '100%', aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: '#0D0A06', borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
+      style={{ width: '100%', maxWidth: '100%', maxHeight: '100%', aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: bgColor, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onMouseDown={e => {
         if (e.target !== e.currentTarget) return;
         const rect = canvasRef.current?.getBoundingClientRect();

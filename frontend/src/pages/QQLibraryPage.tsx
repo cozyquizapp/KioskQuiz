@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQQuestion, QQCategory,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
+  QQBunteTueteKind, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 
 type DraftStatus = 'all' | 'draft' | 'complete' | 'incomplete';
+type ViewMode = 'drafts' | 'questions';
 
 function getDraftStatus(d: QQDraft): 'complete' | 'incomplete' {
   const filled = d.questions.filter(q => q.text.trim().length > 0).length;
@@ -41,6 +43,10 @@ export default function QQLibraryPage() {
   const [statusFilter, setStatusFilter] = useState<DraftStatus>('all');
   const [sortBy, setSortBy] = useState<SortKey>('updated');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('drafts');
+  const [catFilter, setCatFilter] = useState<QQCategory | 'all'>('all');
+  const [phaseFilter, setPhaseFilter] = useState<number | 'all'>('all');
+  const [mechFilter, setMechFilter] = useState<QQBunteTueteKind | 'all'>('all');
 
   // "In Draft kopieren" state
   const [targetDraftId, setTargetDraftId] = useState<string | null>(null);
@@ -94,6 +100,33 @@ export default function QQLibraryPage() {
 
     return list;
   }, [drafts, search, statusFilter, sortBy]);
+
+  // Flat question list for "Alle Fragen" view
+  const flatQuestions = useMemo(() => {
+    type FlatQ = QQQuestion & { draftTitle: string; draftId: string };
+    const all: FlatQ[] = [];
+    for (const d of drafts) {
+      for (const q of d.questions) {
+        if (!q.text.trim()) continue;
+        all.push({ ...q, draftTitle: d.title, draftId: d.id });
+      }
+    }
+    let list = all;
+    // Search
+    if (search.trim()) {
+      const s = search.toLowerCase();
+      list = list.filter(q =>
+        q.text.toLowerCase().includes(s) || q.answer.toLowerCase().includes(s) || q.draftTitle.toLowerCase().includes(s)
+      );
+    }
+    // Category
+    if (catFilter !== 'all') list = list.filter(q => q.category === catFilter);
+    // Phase
+    if (phaseFilter !== 'all') list = list.filter(q => q.phaseIndex === phaseFilter);
+    // Mechanic (BUNTE_TUETE sub-type)
+    if (mechFilter !== 'all') list = list.filter(q => q.bunteTuete?.kind === mechFilter);
+    return list;
+  }, [drafts, search, catFilter, phaseFilter, mechFilter]);
 
   async function deleteDraft(id: string) {
     if (!confirm('Fragensatz endgültig löschen?')) return;
@@ -259,25 +292,97 @@ export default function QQLibraryPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div style={{ padding: '16px 24px', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="🔍 Suchen (Titel, Frage, Antwort)..."
-          style={{ flex: 1, minWidth: 200, padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 14 }}
-        />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as DraftStatus)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
-          <option value="all">Alle Status</option>
-          <option value="complete">✅ Komplett</option>
-          <option value="incomplete">⏳ In Arbeit</option>
-        </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
-          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+      {/* View Toggle + Filters */}
+      <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* View toggle */}
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 3, width: 'fit-content' }}>
+          {([['drafts', '📋 Fragensätze'], ['questions', '🔍 Alle Fragen']] as const).map(([v, label]) => (
+            <button key={v} onClick={() => setViewMode(v)} style={{
+              padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
+              background: viewMode === v ? '#3B82F6' : 'transparent',
+              color: viewMode === v ? '#fff' : '#64748b',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {/* Search + draft-level filters */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={viewMode === 'drafts' ? '🔍 Suchen (Titel, Frage, Antwort)...' : '🔍 Suchen in allen Fragen…'}
+            style={{ flex: 1, minWidth: 200, padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 14 }}
+          />
+          {viewMode === 'drafts' && (
+            <>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as DraftStatus)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
+                <option value="all">Alle Status</option>
+                <option value="complete">✅ Komplett</option>
+                <option value="incomplete">⏳ In Arbeit</option>
+              </select>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </>
+          )}
+        </div>
+
+        {/* Question-level filters (only in "Alle Fragen" view) */}
+        {viewMode === 'questions' && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Category chips */}
+            <button onClick={() => setCatFilter('all')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit', background: catFilter === 'all' ? '#475569' : 'rgba(255,255,255,0.05)', color: catFilter === 'all' ? '#fff' : '#64748b' }}>Alle</button>
+            {(['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'] as QQCategory[]).map(cat => {
+              const l = QQ_CATEGORY_LABELS[cat];
+              const c = QQ_CATEGORY_COLORS[cat];
+              const active = catFilter === cat;
+              return (
+                <button key={cat} onClick={() => setCatFilter(active ? 'all' : cat)} style={{
+                  padding: '4px 12px', borderRadius: 6, border: `1px solid ${active ? c : 'transparent'}`,
+                  cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+                  background: active ? c + '22' : 'rgba(255,255,255,0.05)',
+                  color: active ? c : '#94a3b8',
+                }}>{l.emoji} {l.de}</button>
+              );
+            })}
+            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
+            {/* Phase filter */}
+            {[1, 2, 3].map(p => (
+              <button key={p} onClick={() => setPhaseFilter(phaseFilter === p ? 'all' : p)} style={{
+                padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+                background: phaseFilter === p ? '#6366F1' + '33' : 'rgba(255,255,255,0.05)',
+                color: phaseFilter === p ? '#818CF8' : '#64748b',
+              }}>R{p}</button>
+            ))}
+            {/* Mechanic filter (BUNTE_TUETE sub-types) */}
+            {(catFilter === 'BUNTE_TUETE' || catFilter === 'all') && (
+              <>
+                <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
+                {(['hotPotato', 'top5', 'oneOfEight', 'order', 'map'] as QQBunteTueteKind[]).map(mk => {
+                  const ml = QQ_BUNTE_TUETE_LABELS[mk];
+                  const active = mechFilter === mk;
+                  return (
+                    <button key={mk} onClick={() => setMechFilter(active ? 'all' : mk)} style={{
+                      padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontWeight: 700, fontSize: 11, fontFamily: 'inherit',
+                      background: active ? '#EF4444' + '22' : 'rgba(255,255,255,0.04)',
+                      color: active ? '#F87171' : '#475569',
+                    }}>{ml.emoji} {ml.de}</button>
+                  );
+                })}
+              </>
+            )}
+            <div style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b', fontWeight: 700 }}>
+              {flatQuestions.length} Fragen
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Draft list */}
+      {/* ═══ DRAFTS VIEW ═══ */}
+      {viewMode === 'drafts' && (
       <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#475569' }}>Lade…</div>}
         {!loading && filtered.length === 0 && (
@@ -375,6 +480,63 @@ export default function QQLibraryPage() {
           );
         })}
       </div>
+      )}
+
+      {/* ═══ FLAT QUESTIONS VIEW ═══ */}
+      {viewMode === 'questions' && (
+      <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {loading && <div style={{ textAlign: 'center', padding: 40, color: '#475569' }}>Lade…</div>}
+        {!loading && flatQuestions.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>Keine Fragen gefunden</div>
+        )}
+        {!loading && flatQuestions.length > 0 && (
+          <div style={{ fontSize: 12, color: '#64748b', padding: '4px 0', fontWeight: 700 }}>{flatQuestions.length} Frage{flatQuestions.length !== 1 ? 'n' : ''}</div>
+        )}
+        {flatQuestions.map((q, i) => (
+          <div key={`${q.draftId}-${q.id}`} style={{
+            background: i % 2 === 0 ? '#1e293b' : '#1a2332',
+            borderRadius: 8, padding: '8px 14px',
+            display: 'flex', gap: 10, fontSize: 12, alignItems: 'center',
+            border: '1px solid rgba(255,255,255,0.04)',
+          }}>
+            <span style={{ color: QQ_CATEGORY_COLORS[q.category], fontWeight: 800, fontSize: 16, minWidth: 22 }}>
+              {QQ_CATEGORY_LABELS[q.category].emoji}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 600 }}>{q.text}</div>
+              <div style={{ color: '#22C55E', fontSize: 11, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginTop: 2 }}>✓ {q.answer}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 800, color: '#64748b' }}>
+                R{q.phaseIndex}
+              </span>
+              {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind && (
+                <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,85,247,0.15)', fontSize: 10, fontWeight: 800, color: '#a855f7' }}>
+                  {QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind]?.emoji} {QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind]?.de}
+                </span>
+              )}
+              <span style={{ fontSize: 10, color: '#475569', maxWidth: 100, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={q.draftTitle}>
+                📄 {q.draftTitle}
+              </span>
+              <button
+                onClick={() => copyQuestionToDraft(q)}
+                disabled={!targetDraftId}
+                title={targetDraftId ? 'In Ziel-Draft kopieren' : 'Erst Ziel-Draft auswählen'}
+                style={{
+                  padding: '3px 10px', borderRadius: 6, border: 'none', cursor: targetDraftId ? 'pointer' : 'not-allowed',
+                  fontWeight: 700, fontSize: 11, flexShrink: 0,
+                  background: targetDraftId ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
+                  color: targetDraftId ? '#60a5fa' : '#475569',
+                  fontFamily: 'inherit',
+                }}
+              >
+                📋 Kopieren
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      )}
     </div>
   );
 }

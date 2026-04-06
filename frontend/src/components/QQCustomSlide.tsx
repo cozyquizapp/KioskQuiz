@@ -217,6 +217,10 @@ export function makePreviewState(templateType: QQSlideTemplateType): Partial<QQS
         revealedAnswer: 'Berlin',
         correctTeamId: 't1',
         teams: MOCK_TEAMS,
+        answers: [
+          { teamId: 't1', text: '0', submittedAt: Date.now() - 3000 },
+          { teamId: 't2', text: '2', submittedAt: Date.now() - 2000 },
+        ],
       };
 
     case 'PLACEMENT':
@@ -579,11 +583,236 @@ function CustomSlideElement({
         </div>
       );
 
+    case 'ph_team_answers': {
+      if (s.phase !== 'QUESTION_REVEAL' || !s.answers?.length || !q) return null;
+      const fs = (el.fontSize ?? 1.2) * canvasW / 100;
+      const rowStyle = (highlight: boolean): React.CSSProperties => ({
+        display: 'flex', alignItems: 'center', gap: fs * 0.8,
+        padding: `${fs * 0.5}px ${fs * 0.8}px`, borderRadius: fs * 0.7, marginBottom: fs * 0.3,
+        background: highlight ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+        border: highlight ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+      });
+
+      // SCHAETZCHEN: ranked answers by distance
+      if (cat === 'SCHAETZCHEN' && q.targetValue != null) {
+        const ranked = [...s.answers]
+          .map(a => {
+            const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+            const team = s.teams.find(t => t.id === a.teamId);
+            return { ...a, num, distance: Number.isNaN(num) ? Infinity : Math.abs(num - q.targetValue!), team };
+          })
+          .sort((a, b) => a.distance - b.distance);
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {ranked.map((a, i) => (
+              <div key={a.teamId} style={rowStyle(i === 0)}>
+                <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: fs * 2 }}>#{i + 1}</span>
+                {a.team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
+                <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{a.team?.name ?? a.teamId}</span>
+                <span style={{ fontSize: fs * 1.2, fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
+                <span style={{ fontSize: fs * 0.85, color: '#64748b' }}>
+                  {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      // CHEESE: speed-ranked text answers
+      if (cat === 'CHEESE') {
+        const ranked = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {ranked.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isWinner = a.teamId === s.correctTeamId;
+              return (
+                <div key={a.teamId} style={rowStyle(isWinner)}>
+                  <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                  {team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
+                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
+                  {isWinner && <span style={{ fontSize: fs, color: '#4ade80' }}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      // BUNTE_TUETE / top5
+      if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'top5') {
+        const bt = q.bunteTuete as any;
+        const correctDE: string[] = (bt.answers ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+        const correctEN: string[] = (bt.answersEn ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+        const allCorrect = new Set([...correctDE, ...correctEN]);
+        const scored = [...s.answers].map(a => {
+          const parts = a.text.split('|').map((p: string) => p.trim()).filter(Boolean);
+          const hits = parts.filter((p: string) => [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase()))));
+          return { ...a, parts, hits: hits.length };
+        }).sort((a, b) => b.hits - a.hits || a.submittedAt - b.submittedAt);
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {scored.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isWinner = a.teamId === s.correctTeamId;
+              return (
+                <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                    {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: fs * 0.3, paddingLeft: fs * 2.5 }}>
+                    {a.parts.map((p: string, pi: number) => {
+                      const hit = [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase())));
+                      return (
+                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: hit ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', color: hit ? '#4ade80' : '#64748b', border: hit ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent' }}>
+                          {hit ? '✓ ' : ''}{p}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      // BUNTE_TUETE / order
+      if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'order') {
+        const bt = q.bunteTuete as any;
+        const items: string[] = bt.items ?? [];
+        const correctOrder: number[] = bt.correctOrder ?? items.map((_: any, i: number) => i);
+        const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim().toLowerCase());
+        const scored = [...s.answers].map(a => {
+          const parts = a.text.split('|').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
+          const score = parts.filter((p: string, i: number) => p === correctSeq[i]).length;
+          return { ...a, parts, score };
+        }).sort((a, b) => b.score - a.score || a.submittedAt - b.submittedAt);
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {scored.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isWinner = a.teamId === s.correctTeamId;
+              return (
+                <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                    {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: fs * 0.3, paddingLeft: fs * 2.5 }}>
+                    {a.parts.map((p: string, pi: number) => {
+                      const correct = p === correctSeq[pi];
+                      return (
+                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.1)', color: correct ? '#4ade80' : '#f87171', border: `1px solid ${correct ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}` }}>
+                          <span style={{ color: '#475569', fontSize: fs * 0.7 }}>{pi + 1}.</span> {p}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      // BUNTE_TUETE / map: distance ranking
+      if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
+        const bt = q.bunteTuete as any;
+        const tLat: number = bt.lat; const tLng: number = bt.lng;
+        const ranked = [...s.answers].map(a => {
+          const parts = a.text.split(',');
+          const lat = parseFloat(parts[0]); const lng = parseFloat(parts[1]);
+          if (Number.isNaN(lat) || Number.isNaN(lng)) return { ...a, distKm: null as number | null };
+          const R = 6371; const dLat = (lat - tLat) * Math.PI / 180; const dLng = (lng - tLng) * Math.PI / 180;
+          const aa = Math.sin(dLat / 2) ** 2 + Math.cos(tLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+          return { ...a, distKm: R * 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa)) };
+        }).sort((a, b) => {
+          if (a.distKm === null) return 1; if (b.distKm === null) return -1;
+          return a.distKm - b.distKm;
+        });
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {ranked.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isWinner = a.teamId === s.correctTeamId;
+              const distStr = a.distKm === null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
+              return (
+                <div key={a.teamId} style={rowStyle(isWinner)}>
+                  <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569', width: fs * 2 }}>#{i + 1}</span>
+                  {team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
+                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{distStr}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      // MUCHO / ZEHN_VON_ZEHN: voter breakdown (handled by ph_options, but show here too as standalone)
+      if (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') {
+        if (!q.options) return null;
+        const muchoLabels = ['A', 'B', 'C', 'D'];
+        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+        return (
+          <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+            {q.options.map((_, optIdx) => {
+              const voters = s.answers
+                .filter(a => a.text === String(optIdx))
+                .map(a => s.teams.find(t => t.id === a.teamId))
+                .filter(Boolean);
+              if (!voters.length) return null;
+              const isCorrect = optIdx === q.correctOptionIndex;
+              const optColor = cat === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
+              return (
+                <div key={optIdx} style={rowStyle(isCorrect)}>
+                  <span style={{ width: fs * 1.5, height: fs * 1.5, borderRadius: fs * 0.4, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs * 0.8, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                    {cat === 'MUCHO' ? muchoLabels[optIdx] : optIdx + 1}
+                  </span>
+                  {voters.map(t => (
+                    <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: fs * 0.3 }}>
+                      <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                      <span style={{ fontSize: fs, fontWeight: 800, color: t!.color }}>{t!.name}</span>
+                    </span>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      // Fallback: generic answer list
+      return (
+        <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+          {s.answers.map((a, i) => {
+            const team = s.teams.find(t => t.id === a.teamId);
+            return (
+              <div key={a.teamId} style={rowStyle(a.teamId === s.correctTeamId)}>
+                {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
+                <span style={{ fontSize: fs, color: '#e2e8f0' }}>{a.text}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
     case 'ph_options': {
       if (!q?.options) return null;
       const muchoLabels  = ['A', 'B', 'C', 'D'];
       const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
       const cols = cat === 'MUCHO' ? 2 : 3;
+      const isRevealed = s.phase === 'QUESTION_REVEAL';
       return (
         <div style={{
           ...baseStyle,
@@ -594,17 +823,21 @@ function CustomSlideElement({
         }}>
           {q.options.map((opt, i) => {
             const optImg    = q.optionImages?.[i];
-            const isCorrect = s.phase === 'QUESTION_REVEAL' && i === q.correctOptionIndex;
+            const isCorrect = isRevealed && i === q.correctOptionIndex;
             const label     = cat === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
             const optColor  = cat === 'MUCHO' ? MUCHO_COLORS[i] : accent;
             const optText   = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
+            // Voter breakdown on reveal
+            const voters = isRevealed && s.answers?.length
+              ? s.answers.filter(a => a.text === String(i)).map(a => s.teams.find(t => t.id === a.teamId)).filter(Boolean)
+              : [];
             return (
               <div key={i} style={{
                 position: 'relative', overflow: 'hidden',
                 borderRadius: 14, padding: '12px 16px',
                 background: isCorrect ? 'rgba(34,197,94,0.2)' : '#1B1510',
                 border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
-                display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', flexDirection: 'column', gap: 6,
               }}>
                 {optImg?.url && (
                   <img src={optImg.url} alt="" style={{
@@ -612,18 +845,28 @@ function CustomSlideElement({
                     objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4, pointerEvents: 'none',
                   }} />
                 )}
-                <div style={{
-                  position: 'relative', zIndex: 1,
-                  width: 30, height: 30, borderRadius: 8,
-                  background: isCorrect ? '#22C55E' : optColor,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0,
-                }}>{isCorrect ? '✓' : label}</div>
-                <div style={{
-                  position: 'relative', zIndex: 1,
-                  fontSize: `${(el.fontSize ?? 1.6) * canvasW / 100}px`,
-                  fontWeight: 800, color: '#F1F5F9', lineHeight: 1.3,
-                }}>{optText}</div>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 8,
+                    background: isCorrect ? '#22C55E' : optColor,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0,
+                  }}>{isCorrect ? '✓' : label}</div>
+                  <div style={{
+                    fontSize: `${(el.fontSize ?? 1.6) * canvasW / 100}px`,
+                    fontWeight: 800, color: '#F1F5F9', lineHeight: 1.3,
+                  }}>{optText}</div>
+                </div>
+                {voters.length > 0 && (
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 6, paddingLeft: 40 }}>
+                    {voters.map(t => (
+                      <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: Math.max(12, canvasW * 0.014) }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                        <span style={{ fontSize: Math.max(10, canvasW * 0.01), fontWeight: 800, color: t!.color }}>{t!.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

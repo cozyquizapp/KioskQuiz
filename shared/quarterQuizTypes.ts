@@ -250,6 +250,7 @@ export type QQSlideElementType =
   | 'ph_question' | 'ph_options' | 'ph_category' | 'ph_timer'
   | 'ph_teams' | 'ph_grid' | 'ph_answer' | 'ph_winner'
   | 'ph_phase_name' | 'ph_phase_desc' | 'ph_room_code'
+  | 'ph_team_answers'
   | 'animatedAvatar';
 
 export interface QQSlideElement {

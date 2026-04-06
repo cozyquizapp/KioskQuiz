@@ -48,6 +48,7 @@ const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
   ph_phase_name: 'Phasen-Name',
   ph_phase_desc: 'Phasen-Beschreibung',
   ph_room_code:  'Raum-Code',
+  ph_team_answers: 'Team-Antworten',
 };
 
 const GROUPS: string[] = ['Start', 'Phasen', 'Fragen', 'Ablauf'];
@@ -84,6 +85,7 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
         { id: eid(), type: 'ph_category', x: 2, y: 2, w: 24, h: 10, zIndex: 2 },
         { id: eid(), type: 'ph_question', x: 4, y: 14, w: 92, h: 16, fontSize: 2.8, fontWeight: 900, color: '#94a3b8', textAlign: 'center', zIndex: 2 },
         { id: eid(), type: 'ph_answer', x: 8, y: 34, w: 84, h: 24, fontSize: 5.5, fontWeight: 900, color: '#22C55E', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.3 },
+        { id: eid(), type: 'ph_team_answers', x: 4, y: 60, w: 92, h: 30, fontSize: 1.2, zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
         { id: eid(), type: 'ph_winner', x: 8, y: 63, w: 84, h: 14, fontSize: 3, fontWeight: 800, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
       ],
     };

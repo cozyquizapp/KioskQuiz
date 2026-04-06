@@ -334,6 +334,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const teamId = room.hotPotatoActiveTeamId;
         if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
+        qqClearHotPotatoTimer(room);
         qqRevealAnswer(room);
         qqClearBuzz(room);
         qqMarkCorrect(room, teamId);
@@ -395,15 +396,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
           const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
           qqMarkCorrect(room, survivors);
         } else if (result.eliminated) {
-          // The choosing team is eliminated — but the game can continue with remaining teams
-          // Moderator decides next: start next round or end (via hotPotatoCorrect-style)
-          // If only 1 team left alive, they win automatically
           const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
-          if (survivors.length === 1) {
+          if (survivors.length <= 1) {
+            // 0 or 1 survivors — end the round
             qqRevealAnswer(room);
-            qqMarkCorrect(room, survivors);
+            if (survivors.length === 1) {
+              qqMarkCorrect(room, survivors);
+            } else {
+              // All eliminated — mark wrong, nobody wins
+              qqMarkWrong(room);
+            }
           }
-          // else: game continues — next imposterStart or moderator calls imposterChoose for next team
+          // else: game continues with next team (auto-advanced in qqImposterChoose)
         }
 
         broadcast(io, payload.roomCode);

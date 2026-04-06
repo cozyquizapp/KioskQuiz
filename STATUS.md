@@ -7,7 +7,8 @@
 
 ## Erledigt ✅
 
-### 2026-04-06 — Bugfixes & QQ-Drafts
+### 2026-04-06 — Bugfixes, QQ-Drafts & Editor-Preview
+- ✅ Slide-Editor zeigt jetzt echte Fragenbilder aus dem Draft in der Vorschau
 - ✅ Hot Potato startet automatisch wenn Frage aktiviert wird
 - ✅ Hot Potato: letztes Team gewinnt automatisch (Turn-Expired + Wrong-Answer)
 - ✅ Timer-Dauer kann mitten in der Runde geändert werden (Neustart mit neuer Dauer)
@@ -36,15 +37,13 @@
 ## Offen 🔲
 
 ### Quarter Quiz
-- 🔲 **Team Feldwahl am Handy** — Phase 2/3: Team klickt eigenes Feld auf dem Handy-Grid
-- 🔲 CHEESE-Fragen brauchen noch Bilder (manuell im QQ Builder hochladen)
-
-### CozyQuiz 60
-- 🔲 **Bilder auf Frage-Slides** — Canva-ähnlicher Picker, Cloudinary-Upload, Crop/Position
-- 🔲 MongoDB Films-Frage: falsches `bunteTuete`-Feld fixen (enthält Football oneOfEight)
+- ✅ **Team Feldwahl am Handy** — Phase 2/3: PlacementCard in QQTeamPage.tsx
+- ✅ CHEESE-Fragen Bilder — User lädt manuell im QQ Builder hoch
 
 ### Sonstiges
-- 🔲 "Hands off" Modus? (Klärung ausstehend)
+- 🔲 MongoDB Films-Frage: falsches `bunteTuete`-Feld fixen (enthält Football oneOfEight) — DB-Fix
+
+⚠️ **CozyQuiz 60 ist eine separate App — NICHT anfassen!**
 
 ---
 
@@ -58,6 +57,7 @@
 
 | Commit | Beschreibung |
 |---|---|
+| `540c1c0` | Echte Fragenbilder im Slide-Editor Preview |
 | `43db749` | Slide-Editor fixes + Beamer Fallback + Sample-Drafts |
 | `b7f77f2` | QQ-Draft Persistenz (qqDrafts.json) |
 | `2bb186e` | HP Auto-Start, Last-Team-Wins, Timer-Fix, Slide-Editor Guards |

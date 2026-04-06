@@ -504,9 +504,9 @@ function evalCheese(room: QQRoomState, q: QQQuestion): QQEvalResult {
   const winners: string[] = [];
   for (const ans of room.answers) {
     const submitted = ans.text.trim().toLowerCase();
-    // Exact or partial match (submitted contains correct answer or vice versa)
+    if (submitted.length < 2) continue; // too short to be a valid answer
     const matches = [...correct].some(
-      c => c && (submitted === c || submitted.includes(c) || c.includes(submitted))
+      c => c && (submitted === c || submitted.includes(c) || (c.length > 3 && c.includes(submitted) && submitted.length >= 3))
     );
     if (matches) winners.push(ans.teamId);
   }
@@ -791,7 +791,17 @@ export function qqImposterChoose(
   if (statementIndex === falseIndex) {
     // Team chose the false statement — eliminated
     room.imposterEliminated.push(teamId);
-    room.imposterActiveTeamId = null;
+    // Auto-advance to next surviving team
+    const currentPos = room.imposterQueue.indexOf(teamId);
+    let nextTeamId: string | null = null;
+    for (let i = 1; i <= room.imposterQueue.length; i++) {
+      const candidate = room.imposterQueue[(currentPos + i) % room.imposterQueue.length];
+      if (!room.imposterEliminated.includes(candidate) && room.teams[candidate]?.connected) {
+        nextTeamId = candidate;
+        break;
+      }
+    }
+    room.imposterActiveTeamId = nextTeamId;
     room.lastActivityAt = Date.now();
     return { eliminated: true, allWin: false };
   }
@@ -1174,6 +1184,11 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.hotPotatoLastAnswer   = null;
   room.hotPotatoTurnEndsAt   = null;
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
+  room.imposterActiveTeamId  = null;
+  room.imposterQueue         = [];
+  room.imposterChosenIndices = [];
+  room.imposterEliminated    = [];
+  delete room._placementQueue;
   room.phase           = 'PHASE_INTRO';
   room.lastActivityAt  = Date.now();
 }
@@ -1297,6 +1312,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
 // ── Reset ─────────────────────────────────────────────────────────────────────
 export function qqResetRoom(room: QQRoomState): void {
   qqStopTimer(room);
+  qqClearHotPotatoTimer(room);
+  delete room._placementQueue;
   room.answers         = [];
   room.buzzQueue       = [];
   const gs = room.gridSize;

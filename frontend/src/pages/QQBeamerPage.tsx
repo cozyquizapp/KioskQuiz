@@ -597,7 +597,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           }} />
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
-            background: 'linear-gradient(90deg, rgba(13,10,6,0.88) 0%, rgba(13,10,6,0.6) 50%, rgba(13,10,6,0.3) 100%)',
+            background: [
+              'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
+              'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
+            ].join(', '),
           }} />
         </>
       )}

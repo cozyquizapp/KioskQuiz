@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
 import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
+import { Fireflies } from './QQBeamerPage';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   QQDraft, QQSlideElement, QQSlideTemplate, QQSlideTemplateType, QQSlideTemplates,
@@ -685,6 +686,13 @@ export default function QQSlideEditorPage() {
               {previewMode ? (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
+                    <Fireflies />
+                    {/* Grain overlay (matches beamer) */}
+                    <div style={{
+                      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+                      opacity: 0.04, mixBlendMode: 'overlay',
+                    }} />
                     <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions)} />
                   </div>
                   {/* Slideshow navigation */}

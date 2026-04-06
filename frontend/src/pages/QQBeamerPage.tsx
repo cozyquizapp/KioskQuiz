@@ -318,6 +318,12 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           <div style={{ position: 'absolute', inset: 0 }}>
             <CustomSlide template={activeTemplate} state={s} />
           </div>
+          {/* Placement flash overlay for custom template mode */}
+          {placementFlash && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
+              <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
+            </div>
+          )}
         </>
       ) : (
         /* No template: built-in views */

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
@@ -455,10 +456,13 @@ export default function QQModeratorPage() {
               <div style={card}>
                 <div style={sectionLabel}>Teams einladen</div>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${window.location.origin}/quarterquiz-team?room=${roomCode}`)}&bgcolor=1B1510&color=e2e8f0&margin=4`}
-                    alt="QR Code"
-                    style={{ borderRadius: 8, width: 90, height: 90 }}
+                  <QRCodeSVG
+                    value={`${window.location.origin}/quarterquiz-team?room=${roomCode}`}
+                    size={90}
+                    bgColor="#1B1510"
+                    fgColor="#e2e8f0"
+                    level="M"
+                    style={{ borderRadius: 8 }}
                   />
                   <div>
                     <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>Team-URL:</div>

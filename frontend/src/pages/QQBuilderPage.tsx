@@ -203,6 +203,14 @@ export default function QQBuilderPage() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [activeDraft]);
 
+  // ── Warn before leaving with unsaved changes ──
+  useEffect(() => {
+    if (!activeDraft) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [activeDraft]);
+
   // ── Check for unsaved local backup when opening a draft ──
   const origSetActiveDraft = useCallback((draft: QQDraft | null) => {
     if (draft) {
@@ -265,6 +273,7 @@ export default function QQBuilderPage() {
   async function uploadImage(questionId: string) {
     const file = fileInputRef.current?.files?.[0];
     if (!file || !activeDraft) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Datei zu groß (max. 2 MB)'); if (fileInputRef.current) fileInputRef.current.value = ''; return; }
     setUploadingFor(questionId);
     try {
       const fd = new FormData(); fd.append('file', file);
@@ -293,6 +302,7 @@ export default function QQBuilderPage() {
   async function uploadOptionImage() {
     const file = optionFileInputRef.current?.files?.[0];
     if (!file || !activeDraft || !optionUploadTarget) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Datei zu groß (max. 2 MB)'); if (optionFileInputRef.current) optionFileInputRef.current.value = ''; return; }
     const { questionId, optionIndex } = optionUploadTarget;
     try {
       const fd = new FormData(); fd.append('file', file);

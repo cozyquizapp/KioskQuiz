@@ -560,7 +560,9 @@ function CustomSlideElement({
     }
 
     case 'ph_phase_name': {
-      const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Finale' };
+      const isFinal = s.gamePhaseIndex === s.totalPhases;
+      const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Runde 3', 4: 'Runde 4' };
+      const name = isFinal ? 'Finale' : (phaseNames[s.gamePhaseIndex] ?? `Phase ${s.gamePhaseIndex}`);
       return (
         <div style={{
           ...baseStyle,
@@ -570,13 +572,15 @@ function CustomSlideElement({
           textAlign:  el.textAlign ?? 'center',
           display:    'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {phaseNames[s.gamePhaseIndex] ?? `Phase ${s.gamePhaseIndex}`}
+          {name}
         </div>
       );
     }
 
     case 'ph_phase_desc': {
-      const phaseDescs: Record<number, string> = { 1: 'Felder besetzen', 2: 'Setzen oder Klauen', 3: 'Alles aufs Spiel' };
+      const isFinalD = s.gamePhaseIndex === s.totalPhases;
+      const phaseDescs: Record<number, string> = { 1: 'Felder besetzen', 2: 'Setzen oder Klauen', 3: 'Comeback-Phase', 4: 'Comeback-Phase' };
+      const desc = isFinalD ? 'Alles aufs Spiel' : (phaseDescs[s.gamePhaseIndex] ?? '');
       return (
         <div style={{
           ...baseStyle,
@@ -586,7 +590,7 @@ function CustomSlideElement({
           textAlign:  el.textAlign ?? 'center',
           display:    'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {phaseDescs[s.gamePhaseIndex] ?? ''}
+          {desc}
         </div>
       );
     }

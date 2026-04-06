@@ -465,8 +465,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
   const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
-  const phaseNames = bt.phase.names[lang];
-  const phaseDescs = bt.phase.descs[lang];
+  const phaseNamesRaw = bt.phase.names[lang];
+  const phaseDescsRaw = bt.phase.descs[lang];
+  const isFinal = s.gamePhaseIndex === s.totalPhases;
+  const phaseName = isFinal ? (lang === 'de' ? 'Finale' : 'Final') : phaseNamesRaw[s.gamePhaseIndex];
+  const phaseDesc = isFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in') : phaseDescsRaw[s.gamePhaseIndex];
 
   return (
     <div style={{
@@ -495,7 +498,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both, floatNum 3.5s ease-in-out 1s infinite',
         position: 'relative', zIndex: 5,
       }}>
-        {phaseNames[s.gamePhaseIndex]}
+        {phaseName}
       </div>
 
       {/* Animated underline */}
@@ -514,7 +517,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both',
         position: 'relative', zIndex: 5,
       }}>
-        {phaseDescs[s.gamePhaseIndex]}
+        {phaseDesc}
       </div>
 
       {/* Mini grid preview */}

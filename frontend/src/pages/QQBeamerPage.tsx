@@ -32,20 +32,26 @@ export const BEAMER_CSS = `
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
   @keyframes cellInkFill {
-    0%   { clip-path: circle(0% at 50% 50%); opacity: 0; }
-    40%  { opacity: 1; }
-    100% { clip-path: circle(75% at 50% 50%); opacity: 1; }
+    0%   { clip-path: circle(0% at 50% 50%); opacity: 0; filter: brightness(1); }
+    30%  { opacity: 1; filter: brightness(1.8); }
+    60%  { filter: brightness(1.2); }
+    100% { clip-path: circle(100% at 50% 50%); opacity: 1; filter: brightness(1); }
   }
   @keyframes cellShockwave {
-    0%   { transform: scale(0.8); opacity: 0.7; }
-    50%  { transform: scale(1.8); opacity: 0.3; }
-    100% { transform: scale(2.4); opacity: 0; }
+    0%   { transform: scale(0.8); opacity: 0.8; }
+    40%  { transform: scale(1.6); opacity: 0.4; }
+    100% { transform: scale(2.6); opacity: 0; }
   }
   @keyframes cellEmojiDrop {
     0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-    60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
-    80%  { transform: scale(0.9) rotate(-2deg); }
+    50%  { transform: scale(1.4) rotate(6deg); opacity: 1; }
+    70%  { transform: scale(0.85) rotate(-3deg); }
+    85%  { transform: scale(1.08) rotate(1deg); }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes cellSparkle {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
   }
   @keyframes toastUp { from{opacity:0;transform:translateY(16px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
@@ -1380,7 +1386,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     newCellsRef.current = newSet;
     prevGridRef.current = gridKey;
     // Clear new-cell markers after animation completes
-    if (newSet.size > 0) setTimeout(() => { newCellsRef.current = new Set(); }, 700);
+    if (newSet.size > 0) setTimeout(() => { newCellsRef.current = new Set(); }, 1200);
   }
 
   return (
@@ -1427,9 +1433,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     border: showStar
                       ? '2px solid rgba(251,191,36,0.9)'
                       : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
-                    animation: isNew ? 'cellInkFill 0.7s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
                     boxShadow: isAccent
-                      ? `0 0 ${isFlash ? 28 : 20}px ${team.color}aa`
+                      ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                       : showStar
                         ? '0 0 10px rgba(251,191,36,0.5)'
                         : isHighlighted
@@ -1438,15 +1444,41 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     transition: 'box-shadow 0.4s ease',
                   }} />
                 )}
-                {/* Shockwave ring on new cells */}
+                {/* Shockwave rings on new cells */}
                 {isNew && (
-                  <div style={{
-                    position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                    border: `2px solid ${team?.color ?? '#fff'}66`,
-                    animation: 'cellShockwave 0.8s ease-out both',
-                    pointerEvents: 'none',
-                  }} />
+                  <>
+                    <div style={{
+                      position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+                      border: `2.5px solid ${team?.color ?? '#fff'}88`,
+                      animation: 'cellShockwave 0.7s ease-out both',
+                      pointerEvents: 'none',
+                    }} />
+                    <div style={{
+                      position: 'absolute', inset: -4, borderRadius: cellRadius + 4,
+                      border: `1.5px solid ${team?.color ?? '#fff'}44`,
+                      animation: 'cellShockwave 0.9s ease-out 0.15s both',
+                      pointerEvents: 'none',
+                    }} />
+                  </>
                 )}
+                {/* Sparkle particles on new cells */}
+                {isNew && [0, 1, 2, 3, 4, 5].map(i => {
+                  const angle = i * 60;
+                  const dist = cellSize * 0.6;
+                  const sx = `${Math.cos(angle * Math.PI / 180) * dist}px`;
+                  const sy = `${Math.sin(angle * Math.PI / 180) * dist}px`;
+                  return (
+                    <div key={`sp-${i}`} style={{
+                      position: 'absolute',
+                      width: 4, height: 4, borderRadius: '50%',
+                      background: team?.color ?? '#fff',
+                      top: '50%', left: '50%', marginTop: -2, marginLeft: -2,
+                      ['--sx' as string]: sx, ['--sy' as string]: sy,
+                      animation: `cellSparkle 0.6s ease-out ${0.1 + i * 0.04}s both`,
+                      pointerEvents: 'none', zIndex: 3,
+                    }} />
+                  );
+                })}
                 {/* Flash ring */}
                 {isFlash && !isNew && (
                   <div style={{
@@ -1459,7 +1491,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {/* Emoji / star content */}
                 <div style={{
                   position: 'relative', zIndex: 2,
-                  animation: isNew ? 'cellEmojiDrop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' : undefined,
+                  animation: isNew ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
                 }}>
                   {showStar && '⭐'}
                   {!showStar && team && qqGetAvatar(team.avatarId).emoji}

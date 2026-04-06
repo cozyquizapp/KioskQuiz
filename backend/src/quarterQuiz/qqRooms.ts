@@ -52,6 +52,9 @@ export interface QQRoomState {
   // Hot Potato state
   hotPotatoActiveTeamId: string | null;
   hotPotatoEliminated: string[];
+  hotPotatoLastAnswer: string | null;
+  hotPotatoTurnEndsAt: number | null;
+  _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   // Imposter (oneOfEight) round-robin state
   imposterActiveTeamId: string | null;
   imposterQueue: string[];          // round-robin order
@@ -108,6 +111,9 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       buzzQueue: [],
       hotPotatoActiveTeamId: null,
       hotPotatoEliminated: [],
+      hotPotatoLastAnswer: null,
+      hotPotatoTurnEndsAt: null,
+      _hotPotatoTimerHandle: null,
       imposterActiveTeamId: null,
       imposterQueue: [],
       imposterChosenIndices: [],
@@ -327,6 +333,9 @@ export function qqActivateQuestion(
   room.buzzQueue      = [];
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
+  room.hotPotatoLastAnswer   = null;
+  room.hotPotatoTurnEndsAt   = null;
+  if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.lastActivityAt = Date.now();
   qqStartTimer(room, onTimerExpire);
 }
@@ -630,10 +639,30 @@ function evalMap(
 
 // ── Hot Potato (Bunte Tüte) ───────────────────────────────────────────────────
 
+const HOT_POTATO_TURN_SEC = 15;
+
+/** Clear turn timer for hot potato. */
+function qqClearHotPotatoTimer(room: QQRoomState): void {
+  if (room._hotPotatoTimerHandle) {
+    clearTimeout(room._hotPotatoTimerHandle);
+    room._hotPotatoTimerHandle = null;
+  }
+  room.hotPotatoTurnEndsAt = null;
+}
+
+/** Begin a new turn: set deadline + auto-eliminate timer. */
+function qqStartHotPotatoTurn(room: QQRoomState, onExpire: () => void): void {
+  qqClearHotPotatoTimer(room);
+  room.hotPotatoLastAnswer = null;
+  room.hotPotatoTurnEndsAt = Date.now() + HOT_POTATO_TURN_SEC * 1000;
+  room._hotPotatoTimerHandle = setTimeout(onExpire, HOT_POTATO_TURN_SEC * 1000);
+}
+
 /** Start Hot Potato: random first team, then round-robin. */
-export function qqHotPotatoStart(room: QQRoomState): void {
+export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   room.hotPotatoEliminated = [];
+  room.hotPotatoLastAnswer = null;
   const alive = getAliveTeams(room);
   if (alive.length === 0) return;
   // Random start index stored in room for round-robin tracking
@@ -641,28 +670,46 @@ export function qqHotPotatoStart(room: QQRoomState): void {
   room._hotPotatoRoundRobinIdx = startIdx;
   room.hotPotatoActiveTeamId = alive[startIdx];
   room.lastActivityAt = Date.now();
+  qqStartHotPotatoTurn(room, onTurnExpire);
 }
 
 /** Eliminate the active team (wrong/too slow), advance to next in round-robin order. */
-export function qqHotPotatoEliminate(room: QQRoomState): string | null {
+export function qqHotPotatoEliminate(room: QQRoomState, onTurnExpire?: () => void): string | null {
   assertPhase(room, ['QUESTION_ACTIVE']);
   if (!room.hotPotatoActiveTeamId) {
     throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
   }
+  qqClearHotPotatoTimer(room);
   room.hotPotatoEliminated.push(room.hotPotatoActiveTeamId);
   const next = nextRoundRobinTeam(room);
   room.hotPotatoActiveTeamId = next;
+  room.hotPotatoLastAnswer = null;
   room.lastActivityAt = Date.now();
+  if (next && onTurnExpire) qqStartHotPotatoTurn(room, onTurnExpire);
   return next;
 }
 
 /** Advance round-robin to next alive team WITHOUT eliminating current. */
-export function qqHotPotatoNext(room: QQRoomState): string | null {
+export function qqHotPotatoNext(room: QQRoomState, onTurnExpire?: () => void): string | null {
   assertPhase(room, ['QUESTION_ACTIVE']);
+  qqClearHotPotatoTimer(room);
   const next = nextRoundRobinTeam(room);
   room.hotPotatoActiveTeamId = next;
+  room.hotPotatoLastAnswer = null;
   room.lastActivityAt = Date.now();
+  if (next && onTurnExpire) qqStartHotPotatoTurn(room, onTurnExpire);
   return next;
+}
+
+/** Team submits their Hot Potato answer text. */
+export function qqHotPotatoSubmitAnswer(room: QQRoomState, teamId: string, answer: string): void {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  if (room.hotPotatoActiveTeamId !== teamId) {
+    throw new QQError('NOT_YOUR_TURN', 'Du bist gerade nicht dran.');
+  }
+  qqClearHotPotatoTimer(room);
+  room.hotPotatoLastAnswer = answer;
+  room.lastActivityAt = Date.now();
 }
 
 function getAliveTeams(room: QQRoomState): string[] {
@@ -1114,6 +1161,9 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.buzzQueue       = [];
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
+  room.hotPotatoLastAnswer   = null;
+  room.hotPotatoTurnEndsAt   = null;
+  if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.phase           = 'PHASE_INTRO';
   room.lastActivityAt  = Date.now();
 }
@@ -1188,6 +1238,7 @@ function finishPlacement(room: QQRoomState): void {
 
   room.pendingFor    = null;
   room.pendingAction = null;
+  room.correctTeamId = null;   // Clear so team page doesn't re-show "Richtig!"
   room.phase         = 'QUESTION_REVEAL'; // Stay on reveal, moderator advances
   room.lastActivityAt = Date.now();
 }
@@ -1220,6 +1271,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     buzzQueue:        room.buzzQueue,
     hotPotatoActiveTeamId: room.hotPotatoActiveTeamId,
     hotPotatoEliminated:   room.hotPotatoEliminated,
+    hotPotatoLastAnswer:   room.hotPotatoLastAnswer,
+    hotPotatoTurnEndsAt:   room.hotPotatoTurnEndsAt,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,

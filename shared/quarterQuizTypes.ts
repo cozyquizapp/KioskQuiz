@@ -349,6 +349,8 @@ export interface QQStateUpdate {
   // Hot Potato
   hotPotatoActiveTeamId: string | null;
   hotPotatoEliminated: string[];
+  hotPotatoLastAnswer: string | null;   // last submitted answer text (for moderator)
+  hotPotatoTurnEndsAt: number | null;   // ms timestamp when current turn expires
   // Imposter (oneOfEight round-robin)
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)

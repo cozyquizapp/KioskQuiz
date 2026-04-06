@@ -322,14 +322,33 @@ export default function QQModeratorPage() {
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           🥔 {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
-                            ✓ Richtig
-                          </Btn>
-                          <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
-                            ✗ Falsch / Zu langsam
-                          </Btn>
-                        </div>
+                        {s.hotPotatoLastAnswer ? (
+                          <>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: '#F1F5F9', padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
+                              „{s.hotPotatoLastAnswer}"
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
+                                ✓ Richtig
+                              </Btn>
+                              <Btn color="#F97316" onClick={() => emit('qq:hotPotatoNext', { roomCode })}>
+                                → Weiter
+                              </Btn>
+                              <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
+                                ✗ Falsch
+                              </Btn>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
+                              ✓ Richtig
+                            </Btn>
+                            <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
+                              ✗ Falsch / Zu langsam
+                            </Btn>
+                          </div>
+                        )}
                         {s.hotPotatoEliminated.length > 0 && (
                           <div style={{ fontSize: 11, color: '#94a3b8' }}>
                             Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}

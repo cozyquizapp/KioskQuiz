@@ -45,6 +45,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   buzzQueue: [],
   hotPotatoActiveTeamId: null,
   hotPotatoEliminated: [],
+  hotPotatoLastAnswer: null,
+  hotPotatoTurnEndsAt: null,
   imposterActiveTeamId: null,
   imposterChosenIndices: [],
   imposterEliminated: [],

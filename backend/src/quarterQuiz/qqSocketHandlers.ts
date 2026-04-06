@@ -20,7 +20,7 @@ import {
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
-  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext,
+  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqImposterStart, qqImposterChoose,
 } from './qqRooms';
 
@@ -261,11 +261,28 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // ── Hot Potato (moderator) ──────────────────────────────────────────────
+    // ── Hot Potato (moderator + team) ─────────────────────────────────────
+
+    /** Helper: build an auto-eliminate callback for the current active team. */
+    function hotPotatoTurnExpired(roomCode: string) {
+      return () => {
+        try {
+          const room = ensureQQRoom(roomCode);
+          if (room.phase !== 'QUESTION_ACTIVE' || !room.hotPotatoActiveTeamId) return;
+          const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(roomCode));
+          if (!next) {
+            qqRevealAnswer(room);
+            qqMarkWrong(room);
+          }
+          broadcast(io, roomCode);
+        } catch { /* room gone */ }
+      };
+    }
+
     socket.on('qq:hotPotatoStart', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqHotPotatoStart(room);
+        qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -277,7 +294,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (!room.hotPotatoActiveTeamId) {
           throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
         }
-        const next = qqHotPotatoEliminate(room);
+        const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(payload.roomCode));
         if (!next) {
           // All eliminated — no winner, proceed via markWrong
           qqRevealAnswer(room);
@@ -305,13 +322,26 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:hotPotatoNext', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        const next = qqHotPotatoNext(room);
+        const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
         if (!next) {
           // All teams answered correctly — everyone wins
           qqRevealAnswer(room);
           const aliveIds = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id));
           qqMarkCorrect(room, aliveIds);
         }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Team submits their Hot Potato answer text
+    socket.on('qq:hotPotatoAnswer', (
+      payload: { roomCode: string; teamId: string; answer: string },
+      ack?: unknown,
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqHotPotatoSubmitAnswer(room, payload.teamId, payload.answer.slice(0, 500));
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

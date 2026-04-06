@@ -587,8 +587,10 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (myAnswer) return <SubmittedBadge text={myAnswer.text} />;
   if (!q) return null;
 
-  // Hot Potato — no input needed
-  if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') return null;
+  // Hot Potato — team text input (only active team, not eliminated)
+  if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') {
+    return <HotPotatoInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} />;
+  }
 
   // Route by category
   if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
@@ -604,6 +606,92 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   }
   // Fallback
   return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
+}
+
+// ── Hot Potato team input with countdown ──────────────────────────────────────
+function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string;
+}) {
+  const isMyTurn = s.hotPotatoActiveTeamId === myTeamId;
+  const eliminated = s.hotPotatoEliminated.includes(myTeamId);
+  const submitted = !!s.hotPotatoLastAnswer && isMyTurn;
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  // Countdown timer synced to server deadline
+  useEffect(() => {
+    if (!s.hotPotatoTurnEndsAt) { setSecondsLeft(null); return; }
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((s.hotPotatoTurnEndsAt! - Date.now()) / 1000));
+      setSecondsLeft(left);
+    };
+    tick();
+    const iv = setInterval(tick, 250);
+    return () => clearInterval(iv);
+  }, [s.hotPotatoTurnEndsAt]);
+
+  // Auto-focus when it becomes your turn
+  useEffect(() => {
+    if (isMyTurn && !submitted) {
+      setVal('');
+      setTimeout(() => ref.current?.focus(), 120);
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+  }, [isMyTurn, submitted]);
+
+  if (eliminated) return null; // eliminated teams see the status badge above, not the input
+  if (!isMyTurn) return null;  // not your turn — status shown in the main view above
+  if (submitted) return <SubmittedBadge text={s.hotPotatoLastAnswer!} />;
+
+  async function submit() {
+    if (!val.trim()) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
+  }
+
+  const urgency = secondsLeft !== null && secondsLeft <= 5;
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      {/* Countdown bar */}
+      {secondsLeft !== null && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          marginBottom: 8, padding: '6px 12px', borderRadius: 10,
+          background: urgency ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${urgency ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`,
+          transition: 'all 0.3s',
+        }}>
+          <span style={{
+            fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
+            color: urgency ? '#f87171' : '#94a3b8',
+            animation: urgency ? 'tcpulse 0.6s ease-in-out infinite' : 'none',
+          }}>
+            {secondsLeft}s
+          </span>
+        </div>
+      )}
+      <input
+        ref={ref}
+        type="text"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && val.trim() && submit()}
+        placeholder="Antwort eingeben…"
+        autoComplete="off"
+        style={{
+          width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
+          border: `2px solid ${val ? catColor + '66' : urgency ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
+          background: val ? `${catColor}10` : 'rgba(255,255,255,0.05)',
+          color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
+          outline: 'none', transition: 'all 0.2s',
+          boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
+        }}
+      />
+      <SubmitBtn onSubmit={submit} canSubmit={!!val.trim()} submitted={false} catColor={catColor} />
+    </div>
+  );
 }
 
 // ── Text input (Schätzchen + Picture This fallback) ───────────────────────────

@@ -1304,22 +1304,23 @@ export function CustomSlide({
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(1920);
   const [transAnim, setTransAnim] = useState('');
-  const prevTemplateType = useRef(template.type);
+  const tplType = template?.type;
+  const prevTemplateType = useRef(tplType);
 
   // Trigger slide transition when template type changes
   useEffect(() => {
-    if (prevTemplateType.current !== template.type) {
-      prevTemplateType.current = template.type;
-      const t = template.transitionIn;
+    if (prevTemplateType.current !== tplType) {
+      prevTemplateType.current = tplType;
+      const t = template?.transitionIn;
       if (t) {
-        const dur = template.transitionDuration ?? 0.5;
+        const dur = template?.transitionDuration ?? 0.5;
         const name = t === 'fade' ? 'csTransFade' : t === 'slideUp' ? 'csTransSlideUp' : 'csTransZoom';
         setTransAnim(`${name} ${dur}s ease-out both`);
         const timer = setTimeout(() => setTransAnim(''), dur * 1000 + 50);
         return () => clearTimeout(timer);
       }
     }
-  }, [template.type, template.transitionIn, template.transitionDuration]);
+  }, [tplType, template?.transitionIn, template?.transitionDuration]);
 
   useEffect(() => {
     if (!containerRef.current) return;

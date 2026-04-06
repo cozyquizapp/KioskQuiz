@@ -234,7 +234,9 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
 
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
-  const activeTemplate = templateType ? slideTemplates[templateType] : undefined;
+  const rawActiveTemplate = templateType ? slideTemplates[templateType] : undefined;
+  // Only use custom template if it has actual elements to render
+  const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;
 
   return (
     <div style={{

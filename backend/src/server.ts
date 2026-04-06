@@ -7775,6 +7775,67 @@ function persistQQDrafts() {
   } catch { /* ignore persistence issues */ }
 }
 
+// ── Sample QQ Drafts ─────────────────────────────────────────────────────────
+function createSampleQQDrafts(): typeof qqDrafts {
+  const CATS = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'] as const;
+  const now = Date.now();
+
+  function q(id: string, phase: number, qi: number, cat: string, data: Record<string, any>) {
+    return { id, category: cat, phaseIndex: phase, questionIndexInPhase: qi, text: '', answer: '', ...data };
+  }
+
+  // Draft 1: Allgemeinwissen
+  const d1id = 'qq-sample-allgemeinwissen';
+  const d1qs = [
+    // Phase 1
+    q(`${d1id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Länder gibt es auf der Welt?', answer: '195', targetValue: 195 }),
+    q(`${d1id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Land der Erde?', answer: 'Russland', options: ['Kanada', 'Russland', 'China', 'USA'], optionsEn: ['Canada', 'Russia', 'China', 'USA'], correctOptionIndex: 1 }),
+    q(`${d1id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein europäisches Land — reihum!', answer: 'Deutschland, Frankreich, Spanien…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d1id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Farbe hat die Sonne beim Untergang?', answer: 'Rot/Orange', options: ['Rot/Orange', 'Gelb', 'Weiß'], correctOptionIndex: 0 }),
+    q(`${d1id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches berühmte Bauwerk ist das?', answer: 'Eiffelturm' }),
+    // Phase 2
+    q(`${d1id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie hoch ist der Mount Everest in Metern?', answer: '8849', targetValue: 8849, unit: 'm' }),
+    q(`${d1id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welcher Planet ist der Sonne am nächsten?', answer: 'Merkur', options: ['Venus', 'Merkur', 'Mars', 'Jupiter'], correctOptionIndex: 1 }),
+    q(`${d1id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 bevölkerungsreichsten Länder!', answer: 'China, Indien, USA, Indonesien, Pakistan', bunteTuete: { kind: 'top5', answers: ['China', 'Indien', 'USA', 'Indonesien', 'Pakistan'] } }),
+    q(`${d1id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Kontinente gibt es?', answer: '7', options: ['5', '6', '7'], correctOptionIndex: 2 }),
+    q(`${d1id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche Flagge ist das?', answer: 'Japan' }),
+    // Phase 3
+    q(`${d1id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr wurde die Berliner Mauer gebaut?', answer: '1961', targetValue: 1961 }),
+    q(`${d1id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer malte die Mona Lisa?', answer: 'Leonardo da Vinci', options: ['Michelangelo', 'Leonardo da Vinci', 'Raphael', 'Donatello'], correctOptionIndex: 1 }),
+    q(`${d1id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Erfindungen in die richtige Reihenfolge!', answer: 'Buchdruck, Dampfmaschine, Telefon, Internet', bunteTuete: { kind: 'order', items: ['Telefon', 'Internet', 'Buchdruck', 'Dampfmaschine'], correctOrder: [2, 3, 0, 1] } }),
+    q(`${d1id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptstadt von Australien?', answer: 'Canberra', options: ['Sydney', 'Melbourne', 'Canberra'], correctOptionIndex: 2 }),
+    q(`${d1id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Axolotl' }),
+  ];
+
+  // Draft 2: Pop & Kultur
+  const d2id = 'qq-sample-popkultur';
+  const d2qs = [
+    // Phase 1
+    q(`${d2id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Spotify-Streams hat der meistgestreamte Song aller Zeiten (Blinding Lights)?', answer: '4,5 Milliarden', targetValue: 4500000000 }),
+    q(`${d2id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welcher Film gewann 2024 den Oscar für den besten Film?', answer: 'Oppenheimer', options: ['Barbie', 'Oppenheimer', 'Killers of the Flower Moon', 'Poor Things'], correctOptionIndex: 1 }),
+    q(`${d2id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne eine Marvel-Figur — reihum!', answer: 'Iron Man, Spider-Man, Thor…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d2id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Serie hat die meisten Emmy-Auszeichnungen?', answer: 'Game of Thrones', options: ['Breaking Bad', 'Game of Thrones', 'Friends'], correctOptionIndex: 1 }),
+    q(`${d2id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welcher Film ist das?', answer: 'Jurassic Park' }),
+    // Phase 2
+    q(`${d2id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Folgen hat die Serie "Die Simpsons" (ca.)?', answer: '770', targetValue: 770 }),
+    q(`${d2id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wer singt "Bohemian Rhapsody"?', answer: 'Queen', options: ['The Beatles', 'Queen', 'Led Zeppelin', 'Pink Floyd'], correctOptionIndex: 1 }),
+    q(`${d2id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 meistverkauften Videospiele aller Zeiten!', answer: 'Minecraft, GTA V, Tetris, Wii Sports, PUBG', bunteTuete: { kind: 'top5', answers: ['Minecraft', 'GTA V', 'Tetris', 'Wii Sports', 'PUBG'] } }),
+    q(`${d2id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Jahr erschien das erste iPhone?', answer: '2007', options: ['2005', '2007', '2009'], correctOptionIndex: 1 }),
+    q(`${d2id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Album-Cover ist das?', answer: 'Abbey Road' }),
+    // Phase 3
+    q(`${d2id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Harry-Potter-Bücher gibt es?', answer: '7', targetValue: 7 }),
+    q(`${d2id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer spielt Jack Sparrow?', answer: 'Johnny Depp', options: ['Brad Pitt', 'Johnny Depp', 'Orlando Bloom', 'Leonardo DiCaprio'], correctOptionIndex: 1 }),
+    q(`${d2id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Disney-Filme in die richtige Reihenfolge!', answer: 'Schneewittchen, Der König der Löwen, Frozen, Encanto', bunteTuete: { kind: 'order', items: ['Frozen', 'Der König der Löwen', 'Encanto', 'Schneewittchen'], correctOrder: [3, 1, 0, 2] } }),
+    q(`${d2id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land hat die meisten Fußball-WM-Titel?', answer: 'Brasilien', options: ['Deutschland', 'Brasilien', 'Argentinien'], correctOptionIndex: 1 }),
+    q(`${d2id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche berühmte Person ist das?', answer: 'Albert Einstein' }),
+  ];
+
+  return [
+    { id: d1id, title: '🧠 Allgemeinwissen', phases: 3 as const, language: 'both', questions: d1qs, createdAt: now - 1000, updatedAt: now - 1000 },
+    { id: d2id, title: '🎬 Pop & Kultur', phases: 3 as const, language: 'both', questions: d2qs, createdAt: now, updatedAt: now },
+  ];
+}
+
 // Load persisted QQ drafts on startup
 try {
   if (fs.existsSync(qqDraftsPath)) {
@@ -7783,6 +7844,12 @@ try {
   }
 } catch {
   console.error('Fehler beim Laden von qqDrafts.json');
+}
+
+// Seed sample drafts if none exist
+if (qqDrafts.length === 0) {
+  qqDrafts = createSampleQQDrafts();
+  persistQQDrafts();
 }
 
 app.get('/api/qq/drafts', async (_req, res) => {

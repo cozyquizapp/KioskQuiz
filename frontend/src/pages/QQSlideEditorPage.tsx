@@ -198,12 +198,13 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
 
 // ── SlidePreview (thumbnail showing real built-in view) ──────────────────────
 function SlidePreview({ template }: { template: QQSlideTemplate }) {
+  const elements = template.elements ?? [];
   return (
     <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 4, overflow: 'hidden', background: '#0D0A06', flexShrink: 0, position: 'relative' }}>
       <QQBuiltinSlide templateType={template.type} />
-      {template.elements.length > 0 && (
+      {elements.length > 0 && (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <CustomSlide template={template} overlayOnly />
+          <CustomSlide template={{ ...template, elements }} overlayOnly />
         </div>
       )}
     </div>

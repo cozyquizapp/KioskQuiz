@@ -800,33 +800,169 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* CHEESE / BUNTE_TUETE: speed-ranked text answers */}
-          {revealed && s.answers.length > 0 && (q.category === 'CHEESE' || (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind !== 'hotPotato')) && (
+          {/* CHEESE: speed-ranked text answers */}
+          {revealed && s.answers.length > 0 && q.category === 'CHEESE' && (
             <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
-              {[...s.answers]
-                .sort((a, b) => a.submittedAt - b.submittedAt)
-                .map((a, i) => {
+              {[...s.answers].sort((a, b) => a.submittedAt - b.submittedAt).map((a, i) => {
+                const team = s.teams.find(t => t.id === a.teamId);
+                const isWinner = a.teamId === s.correctTeamId;
+                return (
+                  <div key={a.teamId} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '7px 14px', borderRadius: 10, marginBottom: 4,
+                    background: isWinner ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+                    border: isWinner ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                    animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
+                    {team && <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
+                    <span style={{ fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
+                    {isWinner && <span style={{ fontSize: 14, color: '#4ade80' }}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* BUNTE TÜTE — Top 5: show each team's hits vs correct list */}
+          {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'top5' && (() => {
+            const bt = q.bunteTuete as any;
+            const correctDE: string[] = (bt.answers ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+            const correctEN: string[] = (bt.answersEn ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+            const allCorrect = new Set([...correctDE, ...correctEN]);
+            const scored = [...s.answers].map(a => {
+              const parts = a.text.split('|').map((p: string) => p.trim()).filter(Boolean);
+              const hits = parts.filter((p: string) => [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase()))));
+              return { ...a, parts, hits: hits.length };
+            }).sort((a, b) => b.hits - a.hits || a.submittedAt - b.submittedAt);
+            return (
+              <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+                {scored.map((a, i) => {
                   const team = s.teams.find(t => t.id === a.teamId);
                   const isWinner = a.teamId === s.correctTeamId;
                   return (
                     <div key={a.teamId} style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '7px 14px', borderRadius: 10, marginBottom: 4,
-                      background: isWinner ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-                      border: isWinner ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                      padding: '8px 14px', borderRadius: 10, marginBottom: 5,
+                      background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
                       animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                     }}>
-                      <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
-                      {team && <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
-                      <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name ?? a.teamId}</span>
-                      <span style={{ fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
-                      {isWinner && <span style={{ fontSize: 14, color: '#4ade80' }}>✓</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+                        <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
+                        {team && <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                        <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5} Treffer</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 32 }}>
+                        {a.parts.map((p: string, pi: number) => {
+                          const hit = [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase())));
+                          return (
+                            <span key={pi} style={{ padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: hit ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', color: hit ? '#4ade80' : '#64748b', border: hit ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent' }}>
+                              {hit ? '✓ ' : ''}{p}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
-                })
-              }
-            </div>
-          )}
+                })}
+              </div>
+            );
+          })()}
+
+          {/* BUNTE TÜTE — Fix It (order): show team ranking vs correct sequence */}
+          {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'order' && (() => {
+            const bt = q.bunteTuete as any;
+            const items: string[] = bt.items ?? [];
+            const correctOrder: number[] = bt.correctOrder ?? items.map((_: any, i: number) => i);
+            const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim().toLowerCase());
+            const scored = [...s.answers].map(a => {
+              const parts = a.text.split('|').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
+              const score = parts.filter((p: string, i: number) => p === correctSeq[i]).length;
+              return { ...a, parts, score };
+            }).sort((a, b) => b.score - a.score || a.submittedAt - b.submittedAt);
+            return (
+              <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+                {scored.map((a, i) => {
+                  const team = s.teams.find(t => t.id === a.teamId);
+                  const isWinner = a.teamId === s.correctTeamId;
+                  return (
+                    <div key={a.teamId} style={{
+                      padding: '8px 14px', borderRadius: 10, marginBottom: 5,
+                      background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                      animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+                        <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
+                        {team && <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                        <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length} richtig</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 32 }}>
+                        {a.parts.map((p: string, pi: number) => {
+                          const correct = p === correctSeq[pi];
+                          return (
+                            <span key={pi} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.1)', color: correct ? '#4ade80' : '#f87171', border: `1px solid ${correct ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}` }}>
+                              <span style={{ color: '#475569', fontSize: 10 }}>{pi + 1}.</span> {p}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* BUNTE TÜTE — Pin It (map): closest to target wins, show distance */}
+          {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map' && (() => {
+            const bt = q.bunteTuete as any;
+            const tLat: number = bt.lat;
+            const tLng: number = bt.lng;
+            const scored = [...s.answers].map(a => {
+              const parts = a.text.split(',');
+              const lat = parseFloat(parts[0]);
+              const lng = parseFloat(parts[1]);
+              if (Number.isNaN(lat) || Number.isNaN(lng)) return { ...a, distKm: null };
+              // Haversine distance (km)
+              const R = 6371;
+              const dLat = (lat - tLat) * Math.PI / 180;
+              const dLng = (lng - tLng) * Math.PI / 180;
+              const aa = Math.sin(dLat / 2) ** 2 + Math.cos(tLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+              const distKm = R * 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+              return { ...a, distKm };
+            }).sort((a, b) => {
+              if (a.distKm === null) return 1;
+              if (b.distKm === null) return -1;
+              return a.distKm - b.distKm;
+            });
+            return (
+              <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+                {scored.map((a, i) => {
+                  const team = s.teams.find(t => t.id === a.teamId);
+                  const isWinner = a.teamId === s.correctTeamId;
+                  const distStr = a.distKm === null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
+                  return (
+                    <div key={a.teamId} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '7px 14px', borderRadius: 10, marginBottom: 4,
+                      background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                      animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#60A5FA' : '#475569', width: 22 }}>#{i + 1}</span>
+                      {team && <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                      <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
+                      <span style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: isWinner ? '#4ade80' : '#64748b' }}>📍 {distStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Correct team */}
           {revealed && s.correctTeamId && (() => {

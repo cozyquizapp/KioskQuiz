@@ -1,6 +1,6 @@
 // TEST: Deployment-Check – Wenn du das siehst, ist der neue Code aktiv!
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
 import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -308,6 +308,47 @@ export default function QQSlideEditorPage() {
     setSelectedIds([]);
   }
 
+  // Game-flow step sequence for sidebar + slideshow preview
+  const getQTemplateType = useCallback((q: QQQuestion): QQSlideTemplateType => {
+    switch (q.category) {
+      case 'SCHAETZCHEN': return 'QUESTION_SCHAETZCHEN';
+      case 'MUCHO': return 'QUESTION_MUCHO';
+      case 'BUNTE_TUETE': return 'QUESTION_BUNTE_TUETE';
+      case 'ZEHN_VON_ZEHN': return 'QUESTION_ZEHN';
+      case 'CHEESE': return 'QUESTION_CHEESE';
+      default: return 'QUESTION_SCHAETZCHEN';
+    }
+  }, []);
+
+  type StepItem = { key: string; label: string; type: QQSlideTemplateType; question?: QQQuestion; phase?: number; icon?: string; color?: string };
+  const gameSteps: StepItem[] = useMemo(() => {
+    if (!draft) return [];
+    const steps: StepItem[] = [];
+    steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
+    for (let p = 1; p <= draft.phases; p++) {
+      steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : '#EF4444', phase: p });
+      const qs = draft.questions.filter(q => q.phaseIndex === p);
+      for (const q of qs) {
+        const ttype = getQTemplateType(q);
+        const spec = TEMPLATE_SPECS.find(s => s.type === ttype);
+        steps.push({ key: `q-${q.id}`, label: `${spec?.label || q.category} (${q.text?.slice(0, 18)})`, type: ttype, question: q, icon: spec?.icon, color: spec?.color, phase: p });
+        steps.push({ key: `reveal-${q.id}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', question: q, phase: p });
+        steps.push({ key: `placement-${q.id}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', question: q, phase: p });
+      }
+      if (p === 2) steps.push({ key: 'comeback', label: 'Comeback', type: 'COMEBACK_CHOICE', icon: '⚡', color: '#F97316', phase: p });
+    }
+    steps.push({ key: 'game-over', label: 'Spielende', type: 'GAME_OVER', icon: '🏆', color: '#F59E0B' });
+    return steps;
+  }, [draft, getQTemplateType]);
+
+  const currentStepIdx = gameSteps.findIndex(s => s.type === activeType);
+  function goStep(dir: number) {
+    const i = currentStepIdx + dir;
+    if (i >= 0 && i < gameSteps.length) {
+      setActiveType(gameSteps[i].type);
+    }
+  }
+
   async function save() {
     if (!draft) return;
     setSaving(true);
@@ -396,6 +437,13 @@ export default function QQSlideEditorPage() {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
       if (target.isContentEditable) return;
+      // Preview mode: arrow keys navigate slides
+      if (previewMode) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goStep(-1); return; }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goStep(1); return; }
+        if (e.key === 'Escape') { setPreviewMode(false); return; }
+        return;
+      }
       if (e.key === 'Escape') { setSelectedIds([]); setEditingId(null); return; }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); return; }
@@ -431,7 +479,7 @@ export default function QQSlideEditorPage() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIds, editingId, activeTemplate, activeType]);
+  }, [selectedIds, editingId, activeTemplate, activeType, previewMode, currentStepIdx]);
 
   const selectedEl = activeTemplate.elements.find(e => e.id === selectedId) ?? null;
   const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
@@ -530,89 +578,29 @@ export default function QQSlideEditorPage() {
 
         {/* Left: slide list with all actual steps */}
         <div style={{ width: 240, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
-          {/* Build the real beamer/game step sequence for this draft */}
-          {draft && (() => {
-            // Helper to get template type for a question
-            const getQuestionTemplateType = (q: QQQuestion) => {
-              switch (q.category) {
-                case 'SCHAETZCHEN': return 'QUESTION_SCHAETZCHEN';
-                case 'MUCHO': return 'QUESTION_MUCHO';
-                case 'BUNTE_TUETE': return 'QUESTION_BUNTE_TUETE';
-                case 'ZEHN_VON_ZEHN': return 'QUESTION_ZEHN';
-                case 'CHEESE': return 'QUESTION_CHEESE';
-                default: return 'QUESTION_SCHAETZCHEN';
-              }
-            };
-            // Build the step list
-            const steps: Array<{
-              key: string;
-              label: string;
-              type: QQSlideTemplateType;
-              question?: QQQuestion;
-              phase?: number;
-              icon?: string;
-              color?: string;
-            }> = [];
-            // Lobby
-            steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
-            // For each phase
-            for (let p = 1; p <= draft.phases; p++) {
-              steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : '#EF4444', phase: p });
-              // All questions in this phase
-              const qs = draft.questions.filter(q => q.phaseIndex === p);
-              for (const q of qs) {
-                const ttype = getQuestionTemplateType(q);
-                const spec = TEMPLATE_SPECS.find(s => s.type === ttype);
-                steps.push({
-                  key: `q-${q.id}`,
-                  label: `${spec?.label || q.category} (${q.text?.slice(0, 18)})`,
-                  type: ttype,
-                  question: q,
-                  icon: spec?.icon,
-                  color: spec?.color,
-                  phase: p,
-                });
-                // Reveal
-                steps.push({ key: `reveal-${q.id}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', question: q, phase: p });
-                // Placement
-                steps.push({ key: `placement-${q.id}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', question: q, phase: p });
-              }
-              // After phase 2, add Comeback
-              if (p === 2) steps.push({ key: 'comeback', label: 'Comeback', type: 'COMEBACK_CHOICE', icon: '⚡', color: '#F97316', phase: p });
-            }
-            // Game over
-            steps.push({ key: 'game-over', label: 'Spielende', type: 'GAME_OVER', icon: '🏆', color: '#F59E0B' });
-
-            // Render the step list
-            return (
-              <div>
-                <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
-                {steps.map((step, idx) => {
-                  const isActive = activeType === step.type;
-                  return (
-                    <button key={step.key}
-                      onClick={() => {
-                        setActiveType(step.type);
-                        // Nach Slide-Wechsel: Wähle das erste Element der neuen Slide aus (falls vorhanden)
-                        const newEls = (templates[step.type]?.elements ?? makeDefault(step.type).elements) || [];
-                        setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
-                      }}
-                      style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
-                      {/* Thumbnail */}
-                      <SlidePreview template={templates[step.type] ?? makeDefault(step.type)} />
-                      {/* Label row */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2 }}>{step.label}</div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          <div>
+            <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
+            {gameSteps.map((step) => {
+              const isActive = activeType === step.type;
+              return (
+                <button key={step.key}
+                  onClick={() => {
+                    setActiveType(step.type);
+                    const newEls = (templates[step.type]?.elements ?? makeDefault(step.type).elements) || [];
+                    setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
+                  }}
+                  style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
+                  <SlidePreview template={templates[step.type] ?? makeDefault(step.type)} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2 }}>{step.label}</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Center: canvas + toolbar */}
@@ -629,6 +617,24 @@ export default function QQSlideEditorPage() {
               style={{ width: 28, height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0 }} />
             <input value={activeTemplate.background} onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
               style={{ ...input, width: 260, fontSize: 11, padding: '4px 8px' }} placeholder="#000 oder CSS gradient…" />
+            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Übergang:</span>
+            <select value={activeTemplate.transitionIn || ''} onChange={e => patchTemplate({ ...activeTemplate, transitionIn: (e.target.value || undefined) as any })}
+              style={{ ...input, width: 90, fontSize: 11, padding: '3px 6px' }}>
+              <option value="">Keiner</option>
+              <option value="fade">Einblenden</option>
+              <option value="slideUp">Hochschieben</option>
+              <option value="zoom">Zoom</option>
+            </select>
+            {activeTemplate.transitionIn && (
+              <>
+                <span style={{ fontSize: 10, color: '#475569' }}>Dauer:</span>
+                <input type="number" min={0.1} max={2} step={0.1} value={activeTemplate.transitionDuration ?? 0.5}
+                  onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
+                  style={{ ...input, width: 52, fontSize: 11, padding: '3px 6px', textAlign: 'center' }} />
+                <span style={{ fontSize: 10, color: '#475569' }}>s</span>
+              </>
+            )}
           </div>
 
           {/* Alignment toolbar (visible when selection exists) */}
@@ -675,8 +681,24 @@ export default function QQSlideEditorPage() {
             </div>
             <div style={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
               {previewMode ? (
-                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
-                  <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
+                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
+                  </div>
+                  {/* Slideshow navigation */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button onClick={() => goStep(-1)} disabled={currentStepIdx <= 0}
+                      style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: currentStepIdx <= 0 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.08)', color: currentStepIdx <= 0 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>
+                      ◀ Zurück
+                    </button>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700, minWidth: 80, textAlign: 'center' }}>
+                      {currentStepIdx + 1} / {gameSteps.length}
+                    </span>
+                    <button onClick={() => goStep(1)} disabled={currentStepIdx >= gameSteps.length - 1}
+                      style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: currentStepIdx >= gameSteps.length - 1 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.08)', color: currentStepIdx >= gameSteps.length - 1 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>
+                      Weiter ▶
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <SlideCanvas
@@ -1013,7 +1035,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
   const isPh = el.type.startsWith('ph_');
   const isAvatar = el.type === 'animatedAvatar';
   const fs = el.fontSize ? `${(el.fontSize / 100) * canvasW}px` : undefined;
-  const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily;
+  const fontFamily = el.fontFamily;
   const editRef = useRef<HTMLDivElement>(null);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -1065,7 +1087,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
             ref={editRef}
             contentEditable
             suppressContentEditableWarning
-            style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, wordBreak: 'break-word', width: '100%', outline: 'none', whiteSpace: 'pre-wrap', minHeight: '1em', fontFamily: fontFamily ?? "'Nunito', sans-serif" }}
+            style={{ fontSize: fs, fontWeight: el.fontWeight ?? 700, fontStyle: el.fontStyle ?? 'normal', color: el.color ?? '#fff', textAlign: el.textAlign, lineHeight: el.lineHeight ?? 1.3, letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined, wordBreak: 'break-word', width: '100%', outline: 'none', whiteSpace: 'pre-wrap', minHeight: '1em', fontFamily: fontFamily ?? "'Nunito', sans-serif" }}
             onBlur={e => onEndEdit(e.currentTarget.innerText)}
             onKeyDown={e => {
               e.stopPropagation();
@@ -1149,7 +1171,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
   const isPh = el.type.startsWith('ph_');
   const uploadRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const fontFamily = (el as QQSlideElement & { fontFamily?: string }).fontFamily ?? '';
+  const fontFamily = el.fontFamily ?? '';
 
   async function handleUpload(file: File) {
     setUploading(true);
@@ -1250,7 +1272,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
             </Field>
           </div>
           <Field label="Schriftart">
-            <select value={fontFamily} onChange={e => onChange({ fontFamily: e.target.value } as Partial<QQSlideElement>)} style={{ ...input, padding: '4px 7px' }}>
+            <select value={fontFamily} onChange={e => onChange({ fontFamily: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
               <option value="">Standard (Nunito)</option>
               {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -1268,11 +1290,19 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
                   {a === 'left' ? '⬅' : a === 'center' ? '↔' : '➡'}
                 </button>
               ))}
+              <button onClick={() => onChange({ fontStyle: el.fontStyle === 'italic' ? 'normal' : 'italic' })} style={{ padding: '5px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.fontStyle === 'italic' ? '#3B82F6' : 'rgba(255,255,255,0.06)', color: el.fontStyle === 'italic' ? '#fff' : '#64748b', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 800, fontStyle: 'italic' }}>
+                I
+              </button>
             </div>
           </Field>
-          <Field label="Zeilenabstand">
-            <input type="number" value={el.lineHeight ?? 1.3} step={0.1} onChange={e => onChange({ lineHeight: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
-          </Field>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Field label="Zeilenabstand">
+              <input type="number" value={el.lineHeight ?? 1.3} step={0.1} onChange={e => onChange({ lineHeight: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+            <Field label="Zeichenabstand">
+              <input type="number" value={el.letterSpacing ?? 0} step={0.5} onChange={e => onChange({ letterSpacing: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+          </div>
         </Section>
       )}
 

@@ -40,6 +40,9 @@ const SLIDE_ANIM_KEYFRAMES = `
   @keyframes csElPop       { from{opacity:0;transform:scale(0.6)} to{opacity:1;transform:scale(1)} }
   @keyframes csElSlideLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
   @keyframes csElSlideRight{ from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes csTransFade   { from{opacity:0} to{opacity:1} }
+  @keyframes csTransSlideUp{ from{opacity:0;transform:translateY(60px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes csTransZoom   { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
 `;
 
 // ── Category themes ───────────────────────────────────────────────────────────
@@ -415,6 +418,8 @@ function CustomSlideElement({
           ...baseStyle,
           fontSize:      `${(el.fontSize ?? 2) * canvasW / 100}px`,
           fontWeight:    el.fontWeight ?? 700,
+          fontFamily:    el.fontFamily ?? undefined,
+          fontStyle:     el.fontStyle ?? undefined,
           color:         el.color ?? '#e2e8f0',
           textAlign:     el.textAlign ?? 'left',
           letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
@@ -1298,6 +1303,23 @@ export function CustomSlide({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(1920);
+  const [transAnim, setTransAnim] = useState('');
+  const prevTemplateType = useRef(template.type);
+
+  // Trigger slide transition when template type changes
+  useEffect(() => {
+    if (prevTemplateType.current !== template.type) {
+      prevTemplateType.current = template.type;
+      const t = template.transitionIn;
+      if (t) {
+        const dur = template.transitionDuration ?? 0.5;
+        const name = t === 'fade' ? 'csTransFade' : t === 'slideUp' ? 'csTransSlideUp' : 'csTransZoom';
+        setTransAnim(`${name} ${dur}s ease-out both`);
+        const timer = setTimeout(() => setTransAnim(''), dur * 1000 + 50);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [template.type, template.transitionIn, template.transitionDuration]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -1317,7 +1339,7 @@ export function CustomSlide({
     : template.elements;
 
   return (
-    <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%', animation: transAnim || undefined }}>
       <style>{BEAMER_CSS + SLIDE_ANIM_KEYFRAMES}</style>
       {visibleElements.map(el => (
         <CustomSlideElement key={el.id} el={el} state={effectiveState} canvasW={canvasW} lang={lang} />

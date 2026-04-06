@@ -271,6 +271,8 @@ export interface QQSlideElement {
   text?: string;
   fontSize?: number;   // vw-equivalent: % of canvas width
   fontWeight?: number;
+  fontFamily?: string; // e.g. 'Nunito', 'Georgia', 'Impact'
+  fontStyle?: 'normal' | 'italic';
   color?: string;
   textAlign?: 'left' | 'center' | 'right';
   letterSpacing?: number;

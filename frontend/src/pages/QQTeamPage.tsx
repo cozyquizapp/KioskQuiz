@@ -34,13 +34,85 @@ const t = {
   },
   answer: {
     submit: { de: 'Abschicken', en: 'Submit' },
+    submitted: { de: 'Abgeschickt', en: 'Submitted' },
     choose: { de: 'Wählen', en: 'Choose' },
+    given: { de: '✓ Abgegeben', en: '✓ Submitted' },
+    enterAnswer: { de: 'Antwort eingeben…', en: 'Enter answer…' },
+    enterNumber: { de: 'Zahl eingeben…', en: 'Enter number…' },
   },
   correct: { de: '🎉 Richtig! Du darfst ein Feld wählen', en: '🎉 Correct! You may choose a field' },
   potato: {
     yourTurn: { de: '🥔 Du bist dran!', en: '🥔 Your turn!' },
     otherTurn: { de: '🥔 {name} ist dran', en: '🥔 {name} is up' },
     out: { de: '❌ Du bist raus', en: '❌ You are out' },
+  },
+  imposter: {
+    waiting: { de: '🕵️ Warten auf Start…', en: '🕵️ Waiting for start…' },
+    eliminated: { de: '❌ Falsche Aussage gewählt — du bist raus', en: '❌ Wrong statement — you are out' },
+    chosen: { de: '✓ Gewählt — warte auf nächstes Team…', en: '✓ Chosen — waiting for next team…' },
+    allChosen: { de: 'Alle Aussagen gewählt', en: 'All statements chosen' },
+    otherPicking: { de: '{name} wählt gerade…', en: '{name} is choosing…' },
+    remaining: { de: '{n} Aussage(n) übrig', en: '{n} statement(s) left' },
+  },
+  placement: {
+    tapEmpty: { de: 'Tippe auf ein freies Feld', en: 'Tap an empty field' },
+    tapOpponent: { de: 'Tippe auf ein fremdes Feld', en: 'Tap an opponent\'s field' },
+    tapOpponent12: { de: 'Tippe auf ein gegnerisches Feld (1/2)', en: 'Tap an opponent field (1/2)' },
+    swap2nd: { de: 'Jetzt das 2. Feld (anderes Team) wählen', en: 'Now choose the 2nd field (different team)' },
+    otherChoosing: { de: 'wählt ein Feld…', en: 'is choosing a field…' },
+    cancel: { de: 'Abbrechen', en: 'Cancel' },
+    titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a field!' },
+    titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s field!' },
+    titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent fields!' },
+    titlePhase2: { de: '🏆 Runde 2 — Wähle deine Aktion!', en: '🏆 Round 2 — Choose your action!' },
+    place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 fields' },
+    steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 field' },
+    placeBtn: { de: '📍 Setzen', en: '📍 Place' },
+    stealBtn: { de: '⚡ Klauen', en: '⚡ Steal' },
+    swapBtn: { de: '🔄 Felder wählen', en: '🔄 Choose fields' },
+    confirmPlace: { de: '📍 Feld wählen', en: '📍 Choose field' },
+    confirmSteal: { de: '⚡ Klauen', en: '⚡ Steal' },
+  },
+  comeback: {
+    title: { de: '⚡ Deine Comeback-Chance!', en: '⚡ Your comeback chance!' },
+    otherTeam: { de: '⚡ Comeback-Aktion läuft…', en: '⚡ Comeback action in progress…' },
+    place2: { de: '2 Felder setzen', en: 'Place 2 fields' },
+    place2desc: { de: 'Platziere 2 freie Felder', en: 'Place 2 empty fields' },
+    steal1: { de: '1 Feld klauen', en: 'Steal 1 field' },
+    steal1desc: { de: 'Nimm ein fremdes Feld', en: 'Take an opponent\'s field' },
+    swap2: { de: '2 Felder tauschen', en: 'Swap 2 fields' },
+    swap2desc: { de: 'Tausche je 1 Feld zweier Gegner', en: 'Swap 1 field each of two opponents' },
+    activePlace: { de: '📍 Wähle 2 freie Felder', en: '📍 Choose 2 empty fields' },
+    activeSteal: { de: '⚡ Klau ein fremdes Feld', en: '⚡ Steal an opponent\'s field' },
+    activeSwap: { de: '🔄 Wähle 2 gegnerische Felder zum Tauschen', en: '🔄 Choose 2 opponent fields to swap' },
+  },
+  gameOver: {
+    won: { de: 'Gewonnen! 🎉', en: 'You won! 🎉' },
+    wins: { de: '{name} gewinnt!', en: '{name} wins!' },
+    rank: { de: 'Platz {n} für dich', en: 'You placed #{n}' },
+    connected: { de: 'verbunden', en: 'connected' },
+    total: { de: 'gesamt', en: 'total' },
+  },
+  stats: {
+    stolen: { de: 'geklaut', en: 'stolen' },
+    joker: { de: 'Joker', en: 'Joker' },
+    connected: { de: 'verbunden', en: 'connected' },
+    total: { de: 'gesamt', en: 'total' },
+  },
+  allIn: {
+    distribute: { de: 'Punkte verteilen', en: 'Distribute points' },
+    remaining: { de: '{n} übrig', en: '{n} left' },
+    leftToDistribute: { de: 'Noch {n} Punkt(e) verteilen', en: '{n} point(s) left' },
+  },
+  pinIt: {
+    tap: { de: '📍 Tippe auf die Karte um einen Pin zu setzen', en: '📍 Tap the map to place a pin' },
+    noPin: { de: 'Noch kein Pin gesetzt', en: 'No pin placed yet' },
+  },
+  taken: { de: 'Vergeben', en: 'Taken' },
+  waiting: {
+    room: { de: 'Raum', en: 'Room' },
+    loading: { de: '● Verbunden, lade Spielzustand…', en: '● Connected, loading game state…' },
+    connecting: { de: '○ Verbinde…', en: '○ Connecting…' },
   },
 };
 const TEAM_CSS = `
@@ -145,7 +217,7 @@ export default function QQTeamPage() {
     />;
   }
   if (!state) {
-    return <WaitingScreen roomCode={roomCode} connected={connected} />;
+    return <WaitingScreen roomCode={roomCode} connected={connected} lang={lang} />;
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
@@ -219,7 +291,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   }}>
                     <span style={{ fontSize: 34, lineHeight: 1, filter: taken ? 'grayscale(1)' : 'none' }}>{a.emoji}</span>
                     <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? '#3B82F6' : '#475569', fontWeight: 800,
-                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? 'Vergeben' : a.label}</span>
+                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>
                   </button>
                 );
               })}
@@ -293,7 +365,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 {myTeam.name}
               </div>
               <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>
-                {myTeam.largestConnected} verbunden · {myTeam.totalCells} gesamt
+                {myTeam.largestConnected} {t.stats.connected[lang]} · {myTeam.totalCells} {t.stats.total[lang]}
               </div>
             </div>
             {/* Language selector — always visible, always works */}
@@ -346,21 +418,21 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'PLACEMENT' && (
-          <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} />
+          <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'COMEBACK_CHOICE' && (
-          <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} />
+          <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
-        {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} />}
+        {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} />}
 
         {/* Phase stats */}
         {myTeam && s.teamPhaseStats[myTeamId] && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
             {s.teamPhaseStats[myTeamId].stealsUsed > 0 && (
-              <StatChip label={`⚡ ${s.teamPhaseStats[myTeamId].stealsUsed} geklaut`} color="#EF4444" />
+              <StatChip label={`⚡ ${s.teamPhaseStats[myTeamId].stealsUsed} ${t.stats.stolen[lang]}`} color="#EF4444" />
             )}
             {s.teamPhaseStats[myTeamId].jokersEarned > 0 && (
-              <StatChip label={`⭐ ${s.teamPhaseStats[myTeamId].jokersEarned} Joker`} color="#FBBF24" />
+              <StatChip label={`⭐ ${s.teamPhaseStats[myTeamId].jokersEarned} ${t.stats.joker[lang]}`} color="#FBBF24" />
             )}
           </div>
         )}
@@ -483,7 +555,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           animation: 'tcpulse 1.5s ease-in-out infinite',
           marginBottom: 8,
         }}>
-          🥔 Du bist dran!
+          {t.potato.yourTurn[lang]}
         </div>
       )}
       {!isRevealed && s.hotPotatoActiveTeamId && s.hotPotatoActiveTeamId !== myTeamId && (
@@ -492,7 +564,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           fontSize: 14, color: '#64748b', marginBottom: 8,
         }}>
-          🥔 {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'} ist dran
+          🥔 {s.teams.find(tm => tm.id === s.hotPotatoActiveTeamId)?.name ?? '?'} {lang === 'en' ? 'is up' : 'ist dran'}
         </div>
       )}
       {!isRevealed && s.hotPotatoEliminated.includes(myTeamId) && (
@@ -500,7 +572,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           padding: '8px 14px', borderRadius: 12, textAlign: 'center',
           background: 'rgba(239,68,68,0.1)', fontSize: 14, color: '#f87171', marginBottom: 8,
         }}>
-          ❌ Du bist raus
+          {t.potato.out[lang]}
         </div>
       )}
       {!isRevealed && (
@@ -568,8 +640,8 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
 }
 
 // ── Submit button (shared) ────────────────────────────────────────────────────
-function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label = 'Abschicken' }: {
-  onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string;
+function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang = 'de' }: {
+  onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang?: 'de' | 'en';
 }) {
   const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}28` : 'rgba(255,255,255,0.04)';
   const border = submitted ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
@@ -590,14 +662,14 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label = 'Abschick
       }}
     >
       {submitted
-        ? <><span style={{ animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both', display: 'inline-block', fontSize: 20 }}>✓</span> Abgeschickt</>
-        : label}
+        ? <><span style={{ animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
+        : label ?? t.answer.submit[lang]}
     </button>
   );
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────────
-function SubmittedBadge({ text }: { text: string }) {
+function SubmittedBadge({ text, lang = 'de' }: { text: string; lang?: 'de' | 'en' }) {
   return (
     <div style={{
       padding: '12px 16px', borderRadius: 14, textAlign: 'center',
@@ -605,7 +677,7 @@ function SubmittedBadge({ text }: { text: string }) {
       fontSize: 15, fontWeight: 800, color: '#4ade80',
       animation: 'tcreveal 0.3s ease both',
     }}>
-      ✓ Abgegeben: „{text}"
+      {t.answer.given[lang]}: „{text}"
     </div>
   );
 }
@@ -623,33 +695,33 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
-  if (myAnswer) return <SubmittedBadge text={myAnswer.text} />;
+  if (myAnswer) return <SubmittedBadge text={myAnswer.text} lang={lang} />;
   if (!q) return null;
 
   // Hot Potato — team text input (only active team, not eliminated)
   if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') {
-    return <HotPotatoInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} />;
+    return <HotPotatoInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
   }
 
   // Route by category
   if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
   if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `Zahl (${lang === 'en' && q.unitEn ? q.unitEn : q.unit}) eingeben…` : 'Zahl eingeben…'} />;
-  if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
+  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `${t.answer.enterNumber[lang].replace('…','')} (${lang === 'en' && q.unitEn ? q.unitEn : q.unit})…` : t.answer.enterNumber[lang]} lang={lang} />;
+  if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} />;
+    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
   }
   // Fallback
-  return <TextInput catColor={catColor} onSubmit={submitText} placeholder="Antwort eingeben…" />;
+  return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
 }
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
-function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor }: {
-  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string;
+function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = 'de' }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang?: 'de' | 'en';
 }) {
   const isMyTurn = s.hotPotatoActiveTeamId === myTeamId;
   const eliminated = s.hotPotatoEliminated.includes(myTeamId);
@@ -681,7 +753,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor }: {
 
   if (eliminated) return null; // eliminated teams see the status badge above, not the input
   if (!isMyTurn) return null;  // not your turn — status shown in the main view above
-  if (submitted) return <SubmittedBadge text={s.hotPotatoLastAnswer!} />;
+  if (submitted) return <SubmittedBadge text={s.hotPotatoLastAnswer!} lang={lang} />;
 
   async function submit() {
     if (!val.trim()) return;
@@ -717,7 +789,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor }: {
         value={val}
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && val.trim() && submit()}
-        placeholder="Antwort eingeben…"
+        placeholder={t.answer.enterAnswer[lang]}
         autoComplete="off"
         style={{
           width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
@@ -734,8 +806,8 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor }: {
 }
 
 // ── Text input (Schätzchen + Picture This fallback) ───────────────────────────
-function TextInput({ catColor, onSubmit, placeholder, numeric }: {
-  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean;
+function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
+  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; lang?: 'de' | 'en';
 }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
@@ -748,7 +820,7 @@ function TextInput({ catColor, onSubmit, placeholder, numeric }: {
         value={val}
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val)}
-        placeholder={placeholder ?? 'Antwort eingeben…'}
+        placeholder={placeholder ?? t.answer.enterAnswer[lang]}
         autoComplete="off"
         style={{
           width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
@@ -768,7 +840,7 @@ function TextInput({ catColor, onSubmit, placeholder, numeric }: {
 const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
 const MUCHO_LABELS = ['A','B','C','D'];
 
-function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
   const [selected, setSelected] = useState<number | null>(null);
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
@@ -830,7 +902,7 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
 const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
 const POOL = 10;
 
-function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
   const [bets, setBets] = useState([0, 0, 0]);
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
@@ -852,12 +924,12 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       {/* Remaining */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Punkte verteilen</span>
+        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{t.allIn.distribute[lang]}</span>
         <div style={{
           padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
           background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
         }}>
-          {remaining} übrig
+          {remaining} {lang === 'en' ? 'left' : 'übrig'}
         </div>
       </div>
 
@@ -904,14 +976,14 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
         canSubmit={remaining === 0}
         submitted={false}
         catColor={catColor}
-        label={remaining === 0 ? 'Abschicken' : `Noch ${remaining} Punkt${remaining === 1 ? '' : 'e'} verteilen`}
+        label={remaining === 0 ? t.answer.submit[lang] : t.allIn.leftToDistribute[lang].replace('{n}', String(remaining))}
       />
     </div>
   );
 }
 
 // ── Top 5 ─────────────────────────────────────────────────────────────────────
-function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (v: string) => void; lang: string }) {
+function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
   const [vals, setVals] = useState(['','','','','']);
   const filled = vals.filter(v => v.trim()).length;
   return (
@@ -944,7 +1016,7 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
 // ── Imposter: Round-Robin (only active team picks) ────────────────────────────
 function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCode, lang }: {
   question: any; catColor: string; state: QQStateUpdate; myTeamId: string;
-  emit: any; roomCode: string; lang: string;
+  emit: any; roomCode: string; lang: 'de' | 'en';
 }) {
   const bt = q.bunteTuete;
   const stmts: string[] = (lang === 'en' && bt?.statementsEn?.some((st: string) => st) ? bt.statementsEn : bt?.statements) ?? [];
@@ -985,7 +1057,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (!s.imposterActiveTeamId && !isEliminated) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
-        🕵️ Warten auf Start…
+        {t.imposter.waiting[lang]}
       </div>
     );
   }
@@ -993,7 +1065,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (isEliminated) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 15, fontWeight: 800 }}>
-        ❌ Falsche Aussage gewählt — du bist raus
+        {t.imposter.eliminated[lang]}
       </div>
     );
   }
@@ -1001,8 +1073,8 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (!isMyTurn) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
-        🕵️ {activeTeam?.name ?? '?'} wählt gerade…
-        <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{available.length} Aussage{available.length !== 1 ? 'n' : ''} übrig</div>
+        🕵️ {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing…' : 'wählt gerade…'}
+        <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
     );
   }
@@ -1010,12 +1082,12 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (submitted) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80', fontSize: 15, fontWeight: 800 }}>
-        ✓ Gewählt — warte auf nächstes Team…
+        {t.imposter.chosen[lang]}
       </div>
     );
   }
 
-  if (!available.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>Alle Aussagen gewählt</div>;
+  if (!available.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>{t.imposter.allChosen[lang]}</div>;
 
   return (
     <div style={{ marginTop: 8 }}>
@@ -1082,13 +1154,13 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
         {clamped + 1} / {available.length}
       </div>
 
-      <SubmitBtn onSubmit={handleConfirm} canSubmit={!!current && !submitted} submitted={submitted} catColor="#942d59" label={lang === 'en' ? 'Choose' : 'Wählen'} />
+      <SubmitBtn onSubmit={handleConfirm} canSubmit={!!current && !submitted} submitted={submitted} catColor="#942d59" label={t.answer.choose[lang]} lang={lang} />
     </div>
   );
 }
 
 // ── Fix It: sortable list (no dnd-kit dep, manual reorder via buttons) ─────────
-function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: string }) {
+function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
   const bt = q.bunteTuete;
   const srcItems: string[] = (lang === 'en' && bt?.itemsEn?.some((s:string)=>s) ? bt.itemsEn : bt?.items) ?? [];
   // Shuffle on mount for challenge
@@ -1141,7 +1213,7 @@ function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => voi
   return null;
 }
 
-function PinItInput({ question: q, catColor, onSubmit }: { question: any; catColor: string; onSubmit: (v: string) => void }) {
+function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en' }) {
   const bt = q?.bunteTuete;
   const centerLat = bt?.lat ?? 51.1657;
   const centerLng = bt?.lng ?? 10.4515;
@@ -1158,7 +1230,7 @@ function PinItInput({ question: q, catColor, onSubmit }: { question: any; catCol
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
-        📍 Tippe auf die Karte um einen Pin zu setzen
+        {t.pinIt.tap[lang]}
       </div>
       <div style={{ borderRadius: 14, overflow: 'hidden', border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`, height: 260, position: 'relative' }}>
         <MapContainer
@@ -1175,7 +1247,7 @@ function PinItInput({ question: q, catColor, onSubmit }: { question: any; catCol
       </div>
       {pin
         ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}>📍 {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
-        : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>Noch kein Pin gesetzt</div>
+        : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>{t.pinIt.noPin[lang]}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!!pin} submitted={submitted} catColor={catColor} />
     </div>
@@ -1218,8 +1290,8 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
   );
 }
 
-function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
-  state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string;
+function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'de' }: {
+  state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
 }) {
   const [selecting, setSelecting] = useState(false);
   const [freeMode, setFreeMode] = useState<'PLACE' | 'STEAL' | null>(null);
@@ -1280,7 +1352,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
               </div>
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
               <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
-                wählt ein Feld…
+                {t.placement.otherChoosing[lang]}
               </div>
             </>
           )}
@@ -1294,35 +1366,35 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
-        {isSwap ? '🔄 Tausche 2 gegnerische Felder!' : isSteal ? '⚡ Klau ein fremdes Feld!' : isPhase2Choice ? '🏆 Runde 2 — Wähle deine Aktion!' : '📍 Wähle ein Feld!'}
+        {isSwap ? t.placement.titleSwap[lang] : isSteal ? t.placement.titleSteal[lang] : isPhase2Choice ? t.placement.titlePhase2[lang] : t.placement.titlePlace[lang]}
       </div>
 
       {/* Phase 2 choice: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>📍 2 Felder setzen</CozyBtn>
-          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>⚡ 1 Feld klauen</CozyBtn>
+          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>{t.placement.place2[lang]}</CozyBtn>
+          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>{t.placement.steal1[lang]}</CozyBtn>
         </div>
       )}
 
       {/* Phase 3 FREE action choice */}
       {isFree && !freeMode && !selecting && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>📍 Setzen</CozyBtn>
-          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>⚡ Klauen</CozyBtn>
+          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>{t.placement.placeBtn[lang]}</CozyBtn>
+          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>{t.placement.stealBtn[lang]}</CozyBtn>
         </div>
       )}
 
       {(!isFree || freeMode) && !isPhase2Choice && !selecting ? (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
-          {isSwap ? '🔄 Felder wählen' : isSteal ? '⚡ Klauen' : '📍 Feld wählen'}
+          {isSwap ? t.placement.swapBtn[lang] : isSteal ? t.placement.confirmSteal[lang] : t.placement.confirmPlace[lang]}
         </CozyBtn>
       ) : (
         <>
           <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12 }}>
             {isSwap
-              ? (swapFirst ? 'Jetzt das 2. Feld (anderes Team) wählen' : 'Tippe auf ein gegnerisches Feld (1/2)')
-              : isSteal ? 'Tippe auf ein fremdes Feld' : 'Tippe auf ein freies Feld'}
+              ? (swapFirst ? t.placement.swap2nd[lang] : t.placement.tapOpponent12[lang])
+              : isSteal ? t.placement.tapOpponent[lang] : t.placement.tapEmpty[lang]}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`, gap: 4, justifyContent: 'center' }}>
             {s.grid.flatMap((row, r) =>
@@ -1354,15 +1426,17 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode }: {
             marginTop: 12, width: '100%', padding: '8px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
             color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
-          }}>Abbrechen</button>
+          }}>
+            {t.placement.cancel[lang]}
+          </button>
         </>
       )}
     </CozyCard>
   );
 }
 
-function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
-  state: QQStateUpdate; myTeamId: string; isMine: boolean; emit: any; roomCode: string;
+function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' }: {
+  state: QQStateUpdate; myTeamId: string; isMine: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
 }) {
   const comebackTeam = s.teams.find(t => t.id === s.comebackTeamId);
 
@@ -1378,7 +1452,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
               <div style={{ fontWeight: 800, color: comebackTeam.color, marginTop: 6 }}>{comebackTeam.name}</div>
             </>
           )}
-          <div style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700, marginTop: 8 }}>⚡ Comeback-Aktion läuft…</div>
+          <div style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
         </div>
       </CozyCard>
     );
@@ -1400,9 +1474,9 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
     return (
       <CozyCard borderColor="#F59E0B">
         <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
-          {s.comebackAction === 'PLACE_2' && '📍 Wähle 2 freie Felder'}
-          {s.comebackAction === 'STEAL_1' && '⚡ Klau ein fremdes Feld'}
-          {s.comebackAction === 'SWAP_2'  && '🔄 Wähle 2 gegnerische Felder zum Tauschen'}
+          {s.comebackAction === 'PLACE_2' && t.comeback.activePlace[lang]}
+          {s.comebackAction === 'STEAL_1' && t.comeback.activeSteal[lang]}
+          {s.comebackAction === 'SWAP_2'  && t.comeback.activeSwap[lang]}
         </div>
       </CozyCard>
     );
@@ -1411,13 +1485,13 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
   return (
     <CozyCard borderColor="#F59E0B">
       <div style={{ fontWeight: 900, fontSize: 18, color: '#F59E0B', marginBottom: 16, textAlign: 'center' }}>
-        ⚡ Deine Comeback-Chance!
+        {t.comeback.title[lang]}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[
-          { action: 'PLACE_2', icon: '📍', label: '2 Felder setzen', desc: 'Platziere 2 freie Felder', color: '#22C55E' },
-          { action: 'STEAL_1', icon: '⚡', label: '1 Feld klauen',   desc: 'Nimm ein fremdes Feld',   color: '#EF4444' },
-          { action: 'SWAP_2',  icon: '🔄', label: '2 Felder tauschen', desc: 'Tausche je 1 Feld zweier Gegner', color: '#8B5CF6' },
+          { action: 'PLACE_2', icon: '📍', label: t.comeback.place2[lang], desc: t.comeback.place2desc[lang], color: '#22C55E' },
+          { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang],   desc: t.comeback.steal1desc[lang],   color: '#EF4444' },
+          { action: 'SWAP_2',  icon: '🔄', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: '#8B5CF6' },
         ].map(opt => (
           <button key={opt.action} onClick={() => emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action })}
             style={{
@@ -1439,7 +1513,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode }: {
   );
 }
 
-function GameOverCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: string }) {
+function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
   const sorted  = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
   const myTeam  = sorted.find(t => t.id === myTeamId);
@@ -1451,29 +1525,29 @@ function GameOverCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: 
         {myRank === 1 ? (
           <>
             <div style={{ fontSize: 56, marginBottom: 6, animation: 'tcfloat 2s ease-in-out infinite' }}>🏆</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: myTeam?.color }}>Gewonnen!</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: myTeam?.color }}>{t.gameOver.won[lang]}</div>
           </>
         ) : (
           <>
             <div style={{ fontSize: 48, marginBottom: 6 }}>{qqGetAvatar(winner.avatarId).emoji}</div>
-            <div style={{ fontWeight: 800, color: winner.color, fontSize: 20 }}>{winner.name} gewinnt!</div>
+            <div style={{ fontWeight: 800, color: winner.color, fontSize: 20 }}>{t.gameOver.wins[lang].replace('{name}', winner.name)}</div>
             <div style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: '#64748b', marginTop: 4 }}>
-              Platz {myRank} für dich
+              {t.gameOver.rank[lang].replace('{n}', String(myRank))}
             </div>
           </>
         )}
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {sorted.map((t, i) => (
-            <div key={t.id} style={{
+          {sorted.map((tm, i) => (
+            <div key={tm.id} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
-              background: t.id === myTeamId ? `${t.color}18` : 'rgba(255,255,255,0.03)',
-              border: t.id === myTeamId ? `2px solid ${t.color}44` : '1px solid rgba(255,255,255,0.06)',
+              background: tm.id === myTeamId ? `${tm.color}18` : 'rgba(255,255,255,0.03)',
+              border: tm.id === myTeamId ? `2px solid ${tm.color}44` : '1px solid rgba(255,255,255,0.06)',
               animation: `tcreveal 0.5s ease ${i * 0.1}s both`,
             }}>
               <span style={{ fontSize: 14, width: 22, color: i === 0 ? '#EAB308' : '#475569', fontWeight: 800 }}>#{i + 1}</span>
-              <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-              <span style={{ fontWeight: 900, color: t.color, flex: 1 }}>{t.name}</span>
-              <span style={{ fontSize: 12, color: '#475569' }}>{t.largestConnected} verbunden</span>
+              <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+              <span style={{ fontWeight: 900, color: tm.color, flex: 1 }}>{tm.name}</span>
+              <span style={{ fontSize: 12, color: '#475569' }}>{tm.largestConnected} {t.gameOver.connected[lang]}</span>
             </div>
           ))}
         </div>
@@ -1483,16 +1557,16 @@ function GameOverCard({ state: s, myTeamId }: { state: QQStateUpdate; myTeamId: 
 }
 
 // ─── Waiting screen ────────────────────────────────────────────────────────────
-function WaitingScreen({ roomCode, connected }: { roomCode: string; connected: boolean }) {
+function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string; connected: boolean; lang?: 'de' | 'en' }) {
   return (
     <div style={{ ...darkPage, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <style>{TEAM_CSS}</style>
       <div style={{ textAlign: 'center', color: '#e2e8f0', position: 'relative', zIndex: 5 }}>
         <div style={{ fontSize: 42, marginBottom: 12, animation: 'tcspin 3s linear infinite', display: 'inline-block' }}>⏳</div>
         <div style={{ fontSize: 22, fontWeight: 900 }}>Quarter Quiz</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#475569', margin: '8px 0' }}>Raum: {roomCode}</div>
+        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#475569', margin: '8px 0' }}>{t.waiting.room[lang]}: {roomCode}</div>
         <div style={{ fontSize: 12, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
-          {connected ? '● Verbunden, lade Spielzustand…' : '○ Verbinde…'}
+          {connected ? t.waiting.loading[lang] : t.waiting.connecting[lang]}
         </div>
       </div>
     </div>

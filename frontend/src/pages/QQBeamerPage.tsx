@@ -131,16 +131,69 @@ function useLangFlip(serverLang: string): 'de' | 'en' {
   if (serverLang === 'en') return 'en';
   return flip ? 'en' : 'de';
 }
-function actionVerb(a: string | null) {
-  if (a === 'STEAL_1') return '⚡ Klauen';
-  if (a === 'COMEBACK') return '⚡ Comeback';
-  return '📍 Setzen';
+// ── Beamer translations ───────────────────────────────────────────────────────
+const bt = {
+  action: {
+    steal: { de: '⚡ Klauen', en: '⚡ Steal' },
+    comeback: { de: '⚡ Comeback', en: '⚡ Comeback' },
+    place: { de: '📍 Setzen', en: '📍 Place' },
+    choose1: { de: '1 Feld wählen', en: 'Choose 1 field' },
+    choose2: { de: '2 Felder wählen ({n} übrig)', en: 'Choose 2 fields ({n} left)' },
+    stealDesc: { de: '1 fremdes Feld klauen', en: 'Steal 1 opponent field' },
+    freeDesc: { de: 'Setzen oder Klauen', en: 'Place or steal' },
+  },
+  phase: {
+    names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
+    descs: { de: ['', 'Felder besetzen', 'Setzen oder Klauen', 'Comeback-Phase', 'Alles aufs Spiel'],
+             en: ['', 'Claim fields', 'Place or steal', 'Comeback phase', 'All in'] },
+    of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
+    fields: { de: 'Felder', en: 'fields' },
+  },
+  question: {
+    introLabel: { de: 'Frage {n} von 5', en: 'Question {n} of 5' },
+    counter: { de: 'Phase {p}/{t} · Frage {q}/5', en: 'Phase {p}/{t} · Q {q}/5' },
+    hits: { de: 'Treffer', en: 'hits' },
+    correct: { de: 'richtig', en: 'correct' },
+    imposterTitle: { de: '🕵️ Imposter — wählt eine Aussage', en: '🕵️ Imposter — choose a statement' },
+    statementsLeft: { de: 'Aussage(n) übrig', en: 'statement(s) left' },
+    out: { de: 'Raus', en: 'Out' },
+    answers: { de: 'Antworten', en: 'Answers' },
+  },
+  comeback: {
+    title: { de: '⚡ Comeback-Chance!', en: '⚡ Comeback chance!' },
+    place2: { de: '2 Felder setzen', en: 'Place 2 fields' },
+    place2desc: { de: 'Platziere 2 freie Felder deiner Wahl', en: 'Place 2 empty fields of your choice' },
+    steal1: { de: '1 Feld klauen', en: 'Steal 1 field' },
+    steal1desc: { de: 'Nimm ein fremdes Feld', en: 'Take an opponent\'s field' },
+    swap2: { de: '2 Felder tauschen', en: 'Swap 2 fields' },
+    swap2desc: { de: 'Tausche je ein Feld von zwei Gegnern', en: 'Swap 1 field each of two opponents' },
+    chosenPlace2: { de: '📍 2 Felder werden gesetzt…', en: '📍 Placing 2 fields…' },
+    chosenSteal1: { de: '⚡ 1 Feld wird geklaut…', en: '⚡ Stealing 1 field…' },
+    chosenSwap2: { de: '🔄 Felder werden getauscht…', en: '🔄 Swapping fields…' },
+  },
+  grid: { label: { de: 'Quartier', en: 'Quarter' } },
+  gameOver: {
+    title: { de: 'Spielende! 🎉', en: 'Game over! 🎉' },
+    connected: { de: 'verbunden', en: 'connected' },
+    total: { de: 'gesamt', en: 'total' },
+  },
+  loading: {
+    room: { de: 'Raum', en: 'Room' },
+    waiting: { de: '● Warte auf Spielzustand…', en: '● Waiting for game state…' },
+    connecting: { de: '○ Verbinde…', en: '○ Connecting…' },
+  },
+};
+
+function actionVerb(a: string | null, lang: 'de' | 'en' = 'de') {
+  if (a === 'STEAL_1') return bt.action.steal[lang];
+  if (a === 'COMEBACK') return bt.action.comeback[lang];
+  return bt.action.place[lang];
 }
-function actionDesc(a: string | null, stats: any) {
-  if (a === 'PLACE_1') return '1 Feld wählen';
-  if (a === 'PLACE_2') return `2 Felder wählen (${stats?.placementsLeft ?? 2} übrig)`;
-  if (a === 'STEAL_1') return '1 fremdes Feld klauen';
-  if (a === 'FREE')    return 'Setzen oder Klauen';
+function actionDesc(a: string | null, stats: any, lang: 'de' | 'en' = 'de') {
+  if (a === 'PLACE_1') return bt.action.choose1[lang];
+  if (a === 'PLACE_2') return bt.action.choose2[lang].replace('{n}', String(stats?.placementsLeft ?? 2));
+  if (a === 'STEAL_1') return bt.action.stealDesc[lang];
+  if (a === 'FREE')    return bt.action.freeDesc[lang];
   return '';
 }
 
@@ -408,11 +461,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
   const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
-  const phaseNames: Record<number, string> = { 1: 'Runde 1', 2: 'Runde 2', 3: 'Finale' };
-  const phaseDescs: Record<number, string> = { 1: 'Felder besetzen', 2: 'Setzen oder Klauen', 3: 'Alles aufs Spiel' };
+  const phaseNames = bt.phase.names[lang];
+  const phaseDescs = bt.phase.descs[lang];
 
   return (
     <div style={{
@@ -431,7 +485,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         marginBottom: 8,
         animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
         position: 'relative', zIndex: 5,
-      }}>Phase {s.gamePhaseIndex} von {s.totalPhases}</div>
+      }}>{bt.phase.of[lang].replace('{a}', String(s.gamePhaseIndex)).replace('{b}', String(s.totalPhases))}</div>
 
       <div style={{
         fontFamily: fontFam,
@@ -475,16 +529,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           position: 'relative', zIndex: 5,
           animation: 'contentReveal 0.6s ease 1.1s both',
         }}>
-          {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map(t => (
-            <div key={t.id} style={{
+          {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map(tm => (
+            <div key={tm.id} style={{
               padding: '8px 18px', borderRadius: 50,
-              border: `2px solid ${t.color}66`,
-              background: `${t.color}18`,
+              border: `2px solid ${tm.color}66`,
+              background: `${tm.color}18`,
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <span style={{ fontSize: 20 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-              <span style={{ fontWeight: 800, color: t.color, fontSize: 14 }}>{t.name}</span>
-              <span style={{ color: '#64748b', fontSize: 12, fontWeight: 700 }}>{t.largestConnected} Felder</span>
+              <span style={{ fontSize: 20 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+              <span style={{ fontWeight: 800, color: tm.color, fontSize: 14 }}>{tm.name}</span>
+              <span style={{ color: '#64748b', fontSize: 12, fontWeight: 700 }}>{tm.largestConnected} {bt.phase.fields[lang]}</span>
             </div>
           ))}
         </div>
@@ -594,7 +648,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             fontSize: 'clamp(18px, 2.5vw, 32px)', color: `${accent}88`, fontWeight: 700,
             animation: 'introBadgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.4s both',
           }}>
-            Frage {(s.questionIndex % 5) + 1} von 5
+            {bt.question.introLabel[lang].replace('{n}', String((s.questionIndex % 5) + 1))}
           </div>
         </div>
       )}
@@ -638,7 +692,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div style={{
               fontFamily: "'Caveat', cursive", fontSize: 18, color: 'rgba(255,255,255,0.3)',
             }}>
-              Phase {s.gamePhaseIndex}/{s.totalPhases} · Frage {(s.questionIndex % 5) + 1}/5
+              {bt.question.counter[lang].replace('{p}', String(s.gamePhaseIndex)).replace('{t}', String(s.totalPhases)).replace('{q}', String((s.questionIndex % 5) + 1))}
             </div>
             {s.timerEndsAt && !revealed && (
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
@@ -884,7 +938,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
                         {team && <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
                         <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5} Treffer</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5} {bt.question.hits[lang]}</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 32 }}>
                         {a.parts.map((p: string, pi: number) => {
@@ -930,7 +984,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
                         {team && <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
                         <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length} richtig</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length} {bt.question.correct[lang]}</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 32 }}>
                         {a.parts.map((p: string, pi: number) => {
@@ -1065,16 +1119,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 animation: 'contentReveal 0.4s ease both',
               }}>
                 <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
-                  🕵️ Imposter — wählt eine Aussage
+                  {bt.question.imposterTitle[lang]}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                   <span style={{ fontSize: 28 }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
                   <span style={{ fontWeight: 900, fontSize: 20, color: activeTeam.color }}>{activeTeam.name}</span>
                 </div>
                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                  {remaining} Aussage{remaining !== 1 ? 'n' : ''} übrig
+                  {remaining} {bt.question.statementsLeft[lang]}
                   {s.imposterEliminated.length > 0 && (
-                    <span> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</span>
+                    <span> · {bt.question.out[lang]}: {s.imposterEliminated.map(id => s.teams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}</span>
                   )}
                 </div>
               </div>
@@ -1095,7 +1149,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>🥔 {activeTeam.name}</div>
                 {s.hotPotatoEliminated.length > 0 && (
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-                    Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
+                    {bt.question.out[lang]}: {s.hotPotatoEliminated.map(id => s.teams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}
                   </div>
                 )}
               </div>
@@ -1108,7 +1162,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 12, padding: '8px 16px',
             }}>
-              <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>Antworten:</span>
+              <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{bt.question.answers[lang]}:</span>
               {s.teams.map(t => {
                 const answered = s.answers.some(a => a.teamId === t.id);
                 return (
@@ -1136,7 +1190,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; flashCell?: { row: number; col: number; teamId: string } | null }) {
-  const team = s.teams.find(t => t.id === (flashCell?.teamId ?? s.pendingFor));
+  const lang = useLangFlip(s.language);
+  const team = s.teams.find(tm => tm.id === (flashCell?.teamId ?? s.pendingFor));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -1152,14 +1207,14 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
           fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em',
           color: '#475569',
         }}>
-          {actionVerb(s.pendingAction)}
+          {actionVerb(s.pendingAction, lang)}
         </div>
         {team && (
           <>
             <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
             <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 32px)', color: team.color }}>{team.name}</span>
             <span style={{ color: '#475569', fontSize: 14, fontWeight: 700 }}>
-              {actionDesc(s.pendingAction, s.teamPhaseStats[team.id])}
+              {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
             </span>
           </>
         )}
@@ -1191,10 +1246,11 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function ComebackView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
   const accent = s.theme?.accentColor ?? '#F59E0B';
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const textCol = s.theme?.textColor ?? '#e2e8f0';
-  const team = s.teams.find(t => t.id === s.comebackTeamId);
+  const team = s.teams.find(tm => tm.id === s.comebackTeamId);
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
@@ -1207,7 +1263,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           fontSize: 'clamp(16px, 2vw, 26px)', color: accent, fontWeight: 700,
           marginBottom: 20, letterSpacing: '0.06em',
         }}>
-          ⚡ Comeback-Chance!
+          {bt.comeback.title[lang]}
         </div>
 
         {team && (
@@ -1222,9 +1278,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
             {!s.comebackAction ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <ComebackOption icon="📍" label="2 Felder setzen" desc="Platziere 2 freie Felder deiner Wahl" color="#22C55E" cardBg={cardBg} />
-                <ComebackOption icon="⚡" label="1 Feld klauen"   desc="Nimm ein fremdes Feld"                color="#EF4444" cardBg={cardBg} />
-                <ComebackOption icon="🔄" label="2 Felder tauschen" desc="Tausche je ein Feld von zwei Gegnern" color="#8B5CF6" cardBg={cardBg} />
+                <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
+                <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
+                <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
               </div>
             ) : (
               <div style={{
@@ -1233,9 +1289,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900, color: textCol,
               }}>
-                {s.comebackAction === 'PLACE_2' && '📍 2 Felder werden gesetzt…'}
-                {s.comebackAction === 'STEAL_1' && '⚡ 1 Feld wird geklaut…'}
-                {s.comebackAction === 'SWAP_2'  && '🔄 Felder werden getauscht…'}
+                {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
+                {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
+                {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
               </div>
             )}
           </>
@@ -1256,6 +1312,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function GameOverView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
   const accent = s.theme?.accentColor ?? '#F59E0B';
   const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const winner = sorted[0];
@@ -1288,13 +1345,13 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
           fontSize: 'clamp(36px, 5.5vw, 68px)', color: '#FEF3C7',
           borderBottom: '3px solid rgba(234,179,8,0.2)', paddingBottom: 10,
         }}>
-          Spielende! 🎉
+          {bt.gameOver.title[lang]}
         </div>
 
         {/* Rankings */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
-          {sorted.map((t, i) => (
-            <div key={t.id} style={{
+          {sorted.map((tm, i) => (
+            <div key={tm.id} style={{
               display: 'flex', alignItems: 'center', gap: 20,
               padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
               ['--del' as string]: `${i * 0.12}s`,
@@ -1304,17 +1361,17 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
                 fontFamily: "'Caveat', cursive", fontSize: 34, fontWeight: 700, width: 44,
                 color: i === 0 ? accent : 'rgba(255,255,255,0.18)',
               }}>#{i + 1}</div>
-              <div style={{ width: 14, height: 44, borderRadius: 7, background: t.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <div style={{ width: 14, height: 44, borderRadius: 7, background: tm.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 700, color: '#fff', flex: 1 }}>
-                {t.name}
+                {tm.name}
                 {i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
               </div>
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: 22, color: i === 0 ? accent : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
-                {t.largestConnected} verbunden
+                {tm.largestConnected} {bt.gameOver.connected[lang]}
               </div>
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: 18, color: '#475569', fontWeight: 600, minWidth: 80, textAlign: 'right' }}>
-                {t.totalCells} gesamt
+                {tm.totalCells} {bt.gameOver.total[lang]}
               </div>
             </div>
           ))}
@@ -1383,6 +1440,7 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
 export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true, flashCellKey }: {
   state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean; flashCellKey?: string | null;
 }) {
+  const lang = useLangFlip(s.language);
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
 
@@ -1405,7 +1463,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-        {s.gridSize}×{s.gridSize} Quartier
+        {s.gridSize}×{s.gridSize} {bt.grid.label[lang]}
       </div>
       <div style={{
         display: 'grid',
@@ -1624,9 +1682,9 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           Quarter Quiz
         </div>
-        <div style={{ color: '#334155', marginBottom: 16, fontWeight: 700 }}>Raum: {roomCode}</div>
+        <div style={{ color: '#334155', marginBottom: 16, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
         <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
-          {connected ? '● Warte auf Spielzustand…' : '○ Verbinde…'}
+          {connected ? bt.loading.waiting.de : bt.loading.connecting.de}
         </div>
       </div>
     </div>

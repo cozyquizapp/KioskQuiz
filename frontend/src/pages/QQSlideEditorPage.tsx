@@ -685,7 +685,7 @@ export default function QQSlideEditorPage() {
               {previewMode ? (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
-                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType)} />
+                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions)} />
                   </div>
                   {/* Slideshow navigation */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -707,6 +707,7 @@ export default function QQSlideEditorPage() {
                   template={activeTemplate}
                   templateType={activeType}
                   bgColor={draft.theme?.bgColor ?? '#0D0A06'}
+                  questions={draft.questions}
                   selectedIds={selectedIds}
                   editingId={editingId}
                   snapLines={snapLines}
@@ -799,10 +800,11 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, templateType, bgColor, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
+function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
   template: QQSlideTemplate;
   templateType: QQSlideTemplateType;
   bgColor: string;
+  questions?: QQQuestion[];
   selectedIds: string[];
   editingId: string | null;
   snapLines: { x?: number; y?: number };
@@ -944,7 +946,7 @@ function SlideCanvas({ template, templateType, bgColor, selectedIds, editingId, 
 
   const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
 
-  const mockState = makePreviewState(templateType);
+  const mockState = makePreviewState(templateType, questions);
 
   return (
     <div ref={canvasRef}

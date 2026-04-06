@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
-  QQSlideTemplate, QQSlideElement, QQSlideTemplateType,
+  QQSlideTemplate, QQSlideElement, QQSlideTemplateType, QQQuestion,
 } from '../../../shared/quarterQuizTypes';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
@@ -163,8 +163,17 @@ const MOCK_QUESTION_BASE = {
 
 /**
  * Returns a mock partial QQStateUpdate suitable for previewing each slide type.
+ * If `questions` from the draft are provided, real image data is merged into the mock.
  */
-export function makePreviewState(templateType: QQSlideTemplateType): Partial<QQStateUpdate> {
+export function makePreviewState(templateType: QQSlideTemplateType, questions?: QQQuestion[]): Partial<QQStateUpdate> {
+  // Find a real question with an image for the matching category
+  const catMap: Record<string, QQCategory> = {
+    QUESTION_SCHAETZCHEN: 'SCHAETZCHEN', QUESTION_MUCHO: 'MUCHO',
+    QUESTION_BUNTE_TUETE: 'BUNTE_TUETE', QUESTION_ZEHN: 'ZEHN_VON_ZEHN', QUESTION_CHEESE: 'CHEESE',
+  };
+  const cat = catMap[templateType];
+  const realQ = cat && questions?.find(q => q.category === cat && q.image?.url);
+
   switch (templateType) {
     case 'LOBBY':
       return {
@@ -183,35 +192,35 @@ export function makePreviewState(templateType: QQSlideTemplateType): Partial<QQS
     case 'QUESTION_SCHAETZCHEN':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'SCHAETZCHEN' as QQCategory, text: 'Wie viele Einwohner hat Berlin?', options: ['2 Mio', '3.7 Mio', '5 Mio', '1 Mio'], answer: '3.7 Mio', targetValue: 3700000 },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'SCHAETZCHEN' as QQCategory, text: 'Wie viele Einwohner hat Berlin?', options: ['2 Mio', '3.7 Mio', '5 Mio', '1 Mio'], answer: '3.7 Mio', targetValue: 3700000, ...(realQ?.image ? { image: realQ.image } : {}) },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_MUCHO':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'MUCHO' },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'MUCHO', ...(realQ?.image ? { image: realQ.image } : {}) },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_BUNTE_TUETE':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'BUNTE_TUETE', text: 'Was ist das? Bunte-Tüte-Frage!' },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'BUNTE_TUETE', text: 'Was ist das? Bunte-Tüte-Frage!', ...(realQ?.image ? { image: realQ.image } : {}) },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_ZEHN':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'ZEHN_VON_ZEHN', text: 'Nenne 10 deutsche Städte!', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'ZEHN_VON_ZEHN', text: 'Nenne 10 deutsche Städte!', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], ...(realQ?.image ? { image: realQ.image } : {}) },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_CHEESE':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'CHEESE', text: 'Was siehst du auf dem Bild?' },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'CHEESE', text: 'Was siehst du auf dem Bild?', ...(realQ?.image ? { image: realQ.image } : {}) },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };

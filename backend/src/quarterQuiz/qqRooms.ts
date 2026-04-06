@@ -1238,7 +1238,7 @@ function finishPlacement(room: QQRoomState): void {
 
   room.pendingFor    = null;
   room.pendingAction = null;
-  room.correctTeamId = null;   // Clear so team page doesn't re-show "Richtig!"
+  // Keep correctTeamId so moderator UI shows "Nächste Frage" instead of confirm buttons
   room.phase         = 'QUESTION_REVEAL'; // Stay on reveal, moderator advances
   room.lastActivityAt = Date.now();
 }

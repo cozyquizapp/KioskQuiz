@@ -1177,11 +1177,11 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
     setUploading(true);
     try {
       const fd = new FormData();
-      fd.append('image', file);
+      fd.append('file', file);
       const res = await fetch('/api/upload/question-image', { method: 'POST', body: fd });
       if (res.ok) {
-        const { url } = await res.json() as { url: string };
-        onChange({ imageUrl: url } as Partial<QQSlideElement>);
+        const { imageUrl } = await res.json() as { imageUrl: string };
+        onChange({ imageUrl } as Partial<QQSlideElement>);
       }
     } finally {
       setUploading(false);

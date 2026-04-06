@@ -46,12 +46,34 @@
 - **Langzeit-Ziel**: Teams wählen Feld am eigenen Handy (Team-View)
 
 ### Build-Reihenfolge
-- [ ] **1. Shared Types** — `QuarterQuizState`, `QuarterQuizGrid`, Socket-Events in `shared/quizTypes.ts`
-- [ ] **2. Backend** — Neue Room-Logik, Grid-State, Socket-Events (`quartier:gridUpdate`, `quartier:phaseChange`, `quartier:fieldClaim`, `quartier:joker`)
-- [ ] **3. `/quarterquiz-beamer`** — Grid-Anzeige live, Kategorie-Slides, Phasenwechsel, Avatar auf Feldern
-- [ ] **4. `/quarterquiz-moderator`** — Draft laden, Fragen steuern, Gewinner bestätigen, Feld klicken, StreamDeck-kompatibel
-- [ ] **5. `/quarterquiz-team`** — Avatar-Auswahl beim Start, Antworten eingeben, Joker-Benachrichtigung
+- [x] **1. Shared Types** — `quarterQuizTypes.ts` (QQSlideTemplate, QQSlideElement, QQTheme, Mechaniken etc.)
+- [x] **2. Backend** — Room-Logik, Grid-State, Socket-Events, Answer-Eval, Comeback, Joker, Imposter, Hot Potato, Placement-Flash
+- [x] **3. `/quarterquiz-beamer`** — Grid, Kategorie-Slides, Phasenwechsel, CustomSlide-System (25 Platzhalter-Typen), Theme-Support, Slide-Transitions
+- [x] **4. `/quarterquiz-moderator`** — Draft laden, Fragen steuern, Gewinner bestätigen, Feld klicken, Antwort-Text-Anzeige (Mucho/10v10)
+- [x] **5. `/quarterquiz-team`** — Avatar-Auswahl (vergeben = ausgegraut), Antworten eingeben, Joker, Sprach-Toggle
 - [ ] **6. Team Feldwahl am Handy** — Phase 2/3: Team klickt eigenes Feld auf dem Handy-Grid
+
+### Slide-Editor (WYSIWYG, Canva-ähnlich) ✅
+- [x] Drag/Resize/Rotate Elemente, Text-Inline-Editing, Bild-Upload (Cloudinary)
+- [x] 25 Platzhalter-Typen (ph_game_grid, ph_game_rankings, ph_team_avatars, ...)
+- [x] Theme-Presets (default/dark/neon/retro/nature) + Custom-Colors (BG/Akzent/Text/Karte)
+- [x] Pro-Element: fontFamily, fontStyle (italic), fontSize, letterSpacing, lineHeight, Farbe, Opacity
+- [x] Alignment-Toolbar (links/rechts/oben/unten/zentrieren/verteilen)
+- [x] Copy/Paste, Multi-Select, Z-Index, Lock
+- [x] Slideshow-Vorschau mit Keyboard-Navigation (←/→/Space/Esc)
+- [x] Slide-Transitions (fade/slideUp/zoom) + Dauer-Kontrolle
+- [x] Bibliothek mit Filtern (Kategorie/Phase/Mechanik)
+- [x] Sample-Quizze (Testquiz Wien, Berlin)
+
+### Spielmechaniken ✅
+- [x] Mucho (Multiple Choice A/B/C/D)
+- [x] Schätzchen (Schätzfrage, nächster Wert gewinnt)
+- [x] Bunte Tüte: Top 5, One of Eight, Order, Map, Hot Potato
+- [x] 10 von 10 (Punkte verteilen)
+- [x] Cheese (Freitext)
+- [x] Imposter (Maulwurf)
+- [x] Placement-Flash (Feld-Platzierung mit Animation)
+- [x] Comeback-Wahl vor Phase 3
 
 ### Design-Anforderungen (WICHTIG)
 - **Vorlage**: `preview/sneak-peak.html` und `frontend/public/sneak-peak.html`

@@ -946,9 +946,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* BUNTE TÜTE — Top 5: show each team's hits vs correct list */}
           {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'top5' && (() => {
-            const bt = q.bunteTuete as any;
-            const correctDE: string[] = (bt.answers ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
-            const correctEN: string[] = (bt.answersEn ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+            const btt = q.bunteTuete as any;
+            const correctDE: string[] = (btt.answers ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+            const correctEN: string[] = (btt.answersEn ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
             const allCorrect = new Set([...correctDE, ...correctEN]);
             const scored = [...s.answers].map(a => {
               const parts = a.text.split('|').map((p: string) => p.trim()).filter(Boolean);
@@ -992,9 +992,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* BUNTE TÜTE — Fix It (order): show team ranking vs correct sequence */}
           {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'order' && (() => {
-            const bt = q.bunteTuete as any;
-            const items: string[] = bt.items ?? [];
-            const correctOrder: number[] = bt.correctOrder ?? items.map((_: any, i: number) => i);
+            const btt = q.bunteTuete as any;
+            const items: string[] = btt.items ?? [];
+            const correctOrder: number[] = btt.correctOrder ?? items.map((_: any, i: number) => i);
             const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim().toLowerCase());
             const scored = [...s.answers].map(a => {
               const parts = a.text.split('|').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
@@ -1038,9 +1038,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* BUNTE TÜTE — Pin It (map): closest to target wins, show distance */}
           {revealed && s.answers.length > 0 && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map' && (() => {
-            const bt = q.bunteTuete as any;
-            const tLat: number = bt.lat;
-            const tLng: number = bt.lng;
+            const btt = q.bunteTuete as any;
+            const tLat: number = btt.lat;
+            const tLng: number = btt.lng;
             const scored = [...s.answers].map(a => {
               const parts = a.text.split(',');
               const lat = parseFloat(parts[0]);

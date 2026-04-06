@@ -251,6 +251,9 @@ export type QQSlideElementType =
   | 'ph_teams' | 'ph_grid' | 'ph_answer' | 'ph_winner'
   | 'ph_phase_name' | 'ph_phase_desc' | 'ph_room_code'
   | 'ph_team_answers'
+  | 'ph_question_image' | 'ph_comeback_cards' | 'ph_game_rankings'
+  | 'ph_qr_code' | 'ph_counter'
+  | 'ph_hot_potato' | 'ph_imposter' | 'ph_answer_count'
   | 'animatedAvatar';
 
 export interface QQSlideElement {

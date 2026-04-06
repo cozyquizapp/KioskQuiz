@@ -37,18 +37,26 @@ const TEMPLATE_SPECS: TemplateSpec[] = [
 ];
 
 const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
-  ph_question:   'Fragetext',
-  ph_options:    'Antwort-Optionen',
-  ph_category:   'Kategorie-Badge',
-  ph_timer:      'Timer',
-  ph_teams:      'Teams-Liste',
-  ph_grid:       'Territoriums-Grid',
-  ph_answer:     'Aufgelöste Antwort',
-  ph_winner:     'Gewinner-Team',
-  ph_phase_name: 'Phasen-Name',
-  ph_phase_desc: 'Phasen-Beschreibung',
-  ph_room_code:  'Raum-Code',
-  ph_team_answers: 'Team-Antworten',
+  ph_question:       'Fragetext',
+  ph_options:        'Antwort-Optionen',
+  ph_category:       'Kategorie-Badge',
+  ph_timer:          'Timer',
+  ph_teams:          'Teams-Liste',
+  ph_grid:           'Territoriums-Grid',
+  ph_answer:         'Aufgelöste Antwort',
+  ph_winner:         'Gewinner-Team',
+  ph_phase_name:     'Phasen-Name',
+  ph_phase_desc:     'Phasen-Beschreibung',
+  ph_room_code:      'Raum-Code',
+  ph_team_answers:   'Team-Antworten',
+  ph_question_image: 'Frage-Bild',
+  ph_comeback_cards: 'Comeback-Karten',
+  ph_game_rankings:  'Endrangliste',
+  ph_qr_code:        'QR-Code',
+  ph_counter:        'Frage-Zähler',
+  ph_hot_potato:     'Hot Potato (aktiv)',
+  ph_imposter:       'Imposter (aktiv)',
+  ph_answer_count:   'Antwort-Indikator',
 };
 
 const GROUPS: string[] = ['Start', 'Phasen', 'Fragen', 'Ablauf'];
@@ -68,7 +76,8 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
         { id: eid(), type: 'text', x: 15, y: 8, w: 70, h: 20, text: 'Quarter Quiz', fontSize: 7, fontWeight: 900, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.1 },
         { id: eid(), type: 'text', x: 20, y: 27, w: 60, h: 7, text: 'Warte auf alle Teams…', fontSize: 2.2, fontWeight: 700, color: '#64748b', textAlign: 'center', zIndex: 2 },
         { id: eid(), type: 'ph_room_code', x: 28, y: 35, w: 44, h: 12, fontSize: 4.5, fontWeight: 900, color: '#ffffff', textAlign: 'center', background: 'rgba(255,255,255,0.06)', borderRadius: 14, zIndex: 2 },
-        { id: eid(), type: 'ph_teams', x: 5, y: 51, w: 90, h: 44, zIndex: 2 },
+        { id: eid(), type: 'ph_teams', x: 5, y: 51, w: 58, h: 44, zIndex: 2 },
+        { id: eid(), type: 'ph_qr_code', x: 68, y: 51, w: 28, h: 44, zIndex: 2 },
       ],
     };
     case 'PHASE_INTRO_1': return phaseIntro(type, '#3B82F6', 'Runde 1');
@@ -84,6 +93,7 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
       elements: [
         { id: eid(), type: 'ph_category', x: 2, y: 2, w: 24, h: 10, zIndex: 2 },
         { id: eid(), type: 'ph_question', x: 4, y: 14, w: 92, h: 16, fontSize: 2.8, fontWeight: 900, color: '#94a3b8', textAlign: 'center', zIndex: 2 },
+        { id: eid(), type: 'ph_question_image', x: 70, y: 14, w: 26, h: 16, zIndex: 1, opacity: 0.85 },
         { id: eid(), type: 'ph_answer', x: 8, y: 34, w: 84, h: 24, fontSize: 5.5, fontWeight: 900, color: '#22C55E', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.3 },
         { id: eid(), type: 'ph_team_answers', x: 4, y: 60, w: 92, h: 30, fontSize: 1.2, zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
         { id: eid(), type: 'ph_winner', x: 8, y: 63, w: 84, h: 14, fontSize: 3, fontWeight: 800, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
@@ -102,9 +112,10 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
       type, background: bg,
       elements: [
         { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: 'radial-gradient(ellipse at 50% 50%, rgba(249,115,22,0.2) 0%, transparent 65%)', zIndex: 0 },
-        { id: eid(), type: 'text', x: 10, y: 12, w: 80, h: 20, text: '⚡ Comeback!', fontSize: 8, fontWeight: 900, color: '#F97316', textAlign: 'center', zIndex: 2, animIn: 'pop' },
-        { id: eid(), type: 'ph_winner', x: 15, y: 38, w: 70, h: 10, fontSize: 3.2, fontWeight: 800, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
-        { id: eid(), type: 'text', x: 15, y: 52, w: 70, h: 8, text: 'Wählt euren Comeback-Vorteil', fontSize: 2, fontWeight: 600, color: '#64748b', textAlign: 'center', zIndex: 2 },
+        { id: eid(), type: 'text', x: 10, y: 6, w: 80, h: 16, text: '⚡ Comeback!', fontSize: 8, fontWeight: 900, color: '#F97316', textAlign: 'center', zIndex: 2, animIn: 'pop' },
+        { id: eid(), type: 'ph_comeback_cards', x: 10, y: 24, w: 46, h: 72, fontSize: 1.4, zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
+        { id: eid(), type: 'ph_grid', x: 58, y: 24, w: 40, h: 56, zIndex: 2, animIn: 'fadeIn', animDelay: 0.3 },
+        { id: eid(), type: 'ph_teams', x: 58, y: 82, w: 40, h: 16, zIndex: 2 },
       ],
     };
     case 'GAME_OVER': return {
@@ -112,9 +123,9 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
       elements: [
         { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: 'radial-gradient(ellipse at 50% 30%, rgba(245,158,11,0.25) 0%, transparent 55%)', zIndex: 0 },
         { id: eid(), type: 'text', x: 10, y: 4, w: 80, h: 16, text: '🏆 Spielende!', fontSize: 7.5, fontWeight: 900, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'pop' },
-        { id: eid(), type: 'ph_winner', x: 10, y: 23, w: 80, h: 14, fontSize: 4.5, fontWeight: 900, color: '#ffffff', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.4 },
-        { id: eid(), type: 'ph_grid', x: 3, y: 44, w: 55, h: 52, zIndex: 2 },
-        { id: eid(), type: 'ph_teams', x: 61, y: 44, w: 36, h: 52, zIndex: 2 },
+        { id: eid(), type: 'ph_game_rankings', x: 3, y: 22, w: 55, h: 74, fontSize: 1.4, zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
+        { id: eid(), type: 'ph_grid', x: 58, y: 22, w: 40, h: 54, zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
+        { id: eid(), type: 'ph_teams', x: 58, y: 78, w: 40, h: 18, zIndex: 2 },
       ],
     };
   }
@@ -164,11 +175,16 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
   return {
     type, background: '#0D0A06',
     elements: [
-      { id: eid(), type: 'rect',        x: 0,  y: 0,  w: 100, h: 100, background: `radial-gradient(ellipse at 50% 0%, ${color}18 0%, transparent 50%)`, zIndex: 0 },
-      { id: eid(), type: 'ph_category', x: 2,  y: 2,  w: 24,  h: 10,  zIndex: 2 },
-      { id: eid(), type: 'ph_timer',    x: 76, y: 2,  w: 22,  h: 10,  zIndex: 2 },
-      { id: eid(), type: 'ph_question', x: 5,  y: 15, w: 90,  h: hasOptions ? 20 : 28, fontSize: hasOptions ? 3.2 : 4, fontWeight: 900, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
-      { id: eid(), type: 'ph_options',  x: 4,  y: hasOptions ? 40 : 48, w: 92, h: hasOptions ? 54 : 44, zIndex: 2 },
+      { id: eid(), type: 'rect',              x: 0,  y: 0,  w: 100, h: 100, background: `radial-gradient(ellipse at 50% 0%, ${color}18 0%, transparent 50%)`, zIndex: 0 },
+      { id: eid(), type: 'ph_category',       x: 2,  y: 2,  w: 24,  h: 10,  zIndex: 2 },
+      { id: eid(), type: 'ph_counter',        x: 30, y: 2,  w: 22,  h: 8,   fontSize: 1.5, color: 'rgba(255,255,255,0.3)', textAlign: 'center', zIndex: 2 },
+      { id: eid(), type: 'ph_timer',          x: 76, y: 2,  w: 22,  h: 10,  zIndex: 2 },
+      { id: eid(), type: 'ph_question',       x: 5,  y: 15, w: 90,  h: hasOptions ? 20 : 28, fontSize: hasOptions ? 3.2 : 4, fontWeight: 900, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
+      { id: eid(), type: 'ph_question_image', x: 60, y: 15, w: 36,  h: hasOptions ? 20 : 28, zIndex: 1, opacity: 0.9 },
+      { id: eid(), type: 'ph_options',        x: 4,  y: hasOptions ? 40 : 48, w: 92, h: hasOptions ? 46 : 38, zIndex: 2 },
+      { id: eid(), type: 'ph_answer_count',   x: 4,  y: hasOptions ? 88 : 88, w: 30, h: 8,   zIndex: 2 },
+      { id: eid(), type: 'ph_hot_potato',     x: 62, y: hasOptions ? 88 : 88, w: 34, h: 10,  zIndex: 3 },
+      { id: eid(), type: 'ph_imposter',       x: 62, y: hasOptions ? 88 : 88, w: 34, h: 10,  zIndex: 3 },
       ...(cat ? cutoutElements(cat) : []),
     ],
   };

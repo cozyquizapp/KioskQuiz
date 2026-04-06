@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
   QQSlideTemplate, QQSlideElement, QQSlideTemplateType,
@@ -892,6 +893,257 @@ function CustomSlideElement({
           animation: `${animName} ${dur}s ease-in-out ${del}s infinite`,
         }}>
           {emoji}
+        </div>
+      );
+    }
+
+    case 'ph_question_image': {
+      const img = q?.image;
+      if (!img?.url || img.layout === 'none') return null;
+      const fs = (frac: number) => `${frac * canvasW / 100}px`;
+      const imgTransform = `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`;
+      const imgFilterStr = (() => {
+        const p: string[] = [];
+        if (img.brightness !== undefined && img.brightness !== 100) p.push(`brightness(${img.brightness}%)`);
+        if (img.contrast !== undefined && img.contrast !== 100) p.push(`contrast(${img.contrast}%)`);
+        if (img.blur) p.push(`blur(${img.blur}px)`);
+        return p.length ? p.join(' ') : undefined;
+      })();
+      if (img.layout === 'fullscreen') {
+        return (
+          <>
+            <div style={{
+              ...baseStyle,
+              backgroundImage: `url(${img.url})`,
+              backgroundSize: 'cover', backgroundPosition: 'center',
+              transform: imgTransform, opacity: img.opacity ?? 1, filter: imgFilterStr,
+            }} />
+            <div style={{
+              ...baseStyle, zIndex: (el.zIndex ?? 1) + 1,
+              background: 'linear-gradient(90deg, rgba(13,10,6,0.88) 0%, rgba(13,10,6,0.6) 50%, rgba(13,10,6,0.3) 100%)',
+            }} />
+          </>
+        );
+      }
+      if (img.layout === 'cutout') {
+        return (
+          <img src={img.bgRemovedUrl || img.url} alt="" style={{
+            ...baseStyle, objectFit: 'contain', pointerEvents: 'none',
+            filter: `drop-shadow(0 16px 40px rgba(0,0,0,0.6))${imgFilterStr ? ' ' + imgFilterStr : ''}`,
+            transform: imgTransform, opacity: img.opacity ?? 1,
+          }} />
+        );
+      }
+      // window-left / window-right
+      return (
+        <div style={{ ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <img src={img.url} alt="" style={{
+            maxWidth: '100%', maxHeight: '100%', borderRadius: 22, objectFit: 'contain',
+            boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${accent}44`,
+            transform: imgTransform, opacity: img.opacity ?? 1, filter: imgFilterStr,
+          }} />
+        </div>
+      );
+    }
+
+    case 'ph_comeback_cards': {
+      const cTeam = s.comebackTeamId ? s.teams.find(t => t.id === s.comebackTeamId) : null;
+      const fs = (el.fontSize ?? 1.4) * canvasW / 100;
+      if (s.comebackAction) {
+        const labels: Record<string, string> = {
+          PLACE_2: '📍 2 Felder werden gesetzt…',
+          STEAL_1: '⚡ 1 Feld wird geklaut…',
+          SWAP_2:  '🔄 Felder werden getauscht…',
+        };
+        return (
+          <div style={{
+            ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: fs * 1.4, fontWeight: 900, color: '#e2e8f0',
+          }}>
+            {labels[s.comebackAction] ?? s.comebackAction}
+          </div>
+        );
+      }
+      const cards = [
+        { icon: '📍', label: '2 Felder setzen', desc: 'Platziere 2 freie Felder deiner Wahl', color: '#22C55E' },
+        { icon: '⚡', label: '1 Feld klauen', desc: 'Nimm ein fremdes Feld', color: '#EF4444' },
+        { icon: '🔄', label: '2 Felder tauschen', desc: 'Tausche je ein Feld von zwei Gegnern', color: '#8B5CF6' },
+      ];
+      return (
+        <div style={{ ...baseStyle, display: 'flex', flexDirection: 'column', gap: fs * 0.7 }}>
+          {cTeam && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: fs * 0.6, marginBottom: fs * 0.5 }}>
+              <span style={{ fontSize: fs * 2 }}>{qqGetAvatar(cTeam.avatarId).emoji}</span>
+              <span style={{ fontSize: fs * 1.5, fontWeight: 900, color: cTeam.color }}>{cTeam.name}</span>
+            </div>
+          )}
+          {cards.map((c, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: fs, padding: `${fs * 0.8}px ${fs}px`,
+              borderRadius: fs * 0.7, background: '#1B1510',
+              border: `1px solid ${c.color}33`,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            }}>
+              <span style={{ fontSize: fs * 1.4, lineHeight: 1 }}>{c.icon}</span>
+              <div>
+                <div style={{ fontWeight: 900, color: c.color, fontSize: fs }}>{c.label}</div>
+                <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 0.8, color: '#64748b', marginTop: 2 }}>{c.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    case 'ph_game_rankings': {
+      const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+      const fs = (el.fontSize ?? 1.4) * canvasW / 100;
+      return (
+        <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
+          {sorted.map((t, i) => (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: fs * 1.2,
+              padding: `${fs * 0.8}px 0`,
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              animation: `nbSlide 0.5s cubic-bezier(0.34,1.2,0.64,1) ${i * 0.12}s both`,
+            }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 2, fontWeight: 700, width: fs * 2.8, color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.18)' }}>
+                #{i + 1}
+              </div>
+              <div style={{ width: fs * 0.8, height: fs * 2.5, borderRadius: fs * 0.4, background: t.color, flexShrink: 0 }} />
+              <span style={{ fontSize: fs * 1.8, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.8, fontWeight: 700, color: '#fff', flex: 1 }}>
+                {t.name}{i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
+              </div>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.2, color: i === 0 ? '#EAB308' : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
+                {t.largestConnected} verbunden
+              </div>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs, color: '#475569', fontWeight: 600, minWidth: fs * 5, textAlign: 'right' as const }}>
+                {t.totalCells} gesamt
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    case 'ph_qr_code': {
+      const joinUrl = `${window.location.origin}/quarterquiz-team`;
+      const qrSize = Math.min(el.w, el.h) * canvasW / 100 * 0.7;
+      return (
+        <div style={{ ...baseStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <div style={{ background: '#ffffff', borderRadius: 16, padding: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}>
+            <QRCodeSVG value={joinUrl} size={Math.max(80, qrSize)} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+          </div>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>Jetzt mitspielen</div>
+            <div style={{ fontSize: Math.max(9, canvasW * 0.007), color: '#475569', fontFamily: 'monospace', background: '#1B1510', padding: '4px 12px', borderRadius: 8 }}>
+              {joinUrl.replace(/^https?:\/\//, '')}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    case 'ph_counter': {
+      return (
+        <div style={{
+          ...baseStyle,
+          fontFamily: "'Caveat', cursive",
+          fontSize: `${(el.fontSize ?? 1.5) * canvasW / 100}px`,
+          fontWeight: el.fontWeight ?? 700,
+          color: el.color ?? 'rgba(255,255,255,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start',
+          padding: '4px 8px',
+        }}>
+          Phase {s.gamePhaseIndex}/{s.totalPhases} · Frage {(s.questionIndex % 5) + 1}/5
+        </div>
+      );
+    }
+
+    case 'ph_hot_potato': {
+      if (!s.hotPotatoActiveTeamId) return null;
+      const activeTeam = s.teams.find(t => t.id === s.hotPotatoActiveTeamId);
+      if (!activeTeam) return null;
+      const isRevealed = s.phase === 'QUESTION_REVEAL';
+      if (isRevealed) return null;
+      return (
+        <div style={{
+          ...baseStyle,
+          background: activeTeam.color, borderRadius: 16,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 32px ${activeTeam.color}88`,
+          animation: 'imgFloat 2s ease-in-out infinite',
+          padding: 12,
+        }}>
+          <div style={{ fontSize: `${(el.fontSize ?? 2.5) * canvasW / 100}px`, fontWeight: 900, color: '#fff' }}>
+            🥔 {activeTeam.name}
+          </div>
+          {s.hotPotatoEliminated.length > 0 && (
+            <div style={{ fontSize: `${(el.fontSize ?? 2.5) * canvasW / 100 * 0.5}px`, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
+              Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'ph_imposter': {
+      if (!s.imposterActiveTeamId) return null;
+      const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);
+      if (!activeTeam) return null;
+      const isRevealed = s.phase === 'QUESTION_REVEAL';
+      if (isRevealed) return null;
+      const totalStmts = (q?.bunteTuete as any)?.statements?.length ?? 8;
+      const remaining = totalStmts - s.imposterChosenIndices.length;
+      return (
+        <div style={{
+          ...baseStyle,
+          borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: '#1B1510', border: `2px solid ${activeTeam.color}88`,
+          boxShadow: `0 0 28px ${activeTeam.color}44`,
+          padding: 12,
+        }}>
+          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#64748b', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 6 }}>
+            🕵️ Imposter — wählt eine Aussage
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <span style={{ fontSize: `${(el.fontSize ?? 2) * canvasW / 100}px` }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
+            <span style={{ fontWeight: 900, fontSize: `${(el.fontSize ?? 2) * canvasW / 100 * 0.75}px`, color: activeTeam.color }}>{activeTeam.name}</span>
+          </div>
+          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#64748b', marginTop: 6 }}>
+            {remaining} Aussage{remaining !== 1 ? 'n' : ''} übrig
+            {s.imposterEliminated.length > 0 && (
+              <span> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    case 'ph_answer_count': {
+      const isRevealed = s.phase === 'QUESTION_REVEAL';
+      if (isRevealed || !s.answers?.length) return null;
+      const dotSize = Math.max(8, canvasW * 0.008);
+      return (
+        <div style={{
+          ...baseStyle,
+          display: 'flex', alignItems: 'center', gap: dotSize * 0.8,
+          background: '#1B1510', border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 12, padding: `${dotSize * 0.8}px ${dotSize * 1.5}px`,
+        }}>
+          <span style={{ fontSize: dotSize * 1.4, color: '#64748b', fontWeight: 700 }}>Antworten:</span>
+          {s.teams.map(t => {
+            const answered = s.answers.some(a => a.teamId === t.id);
+            return (
+              <span key={t.id} style={{
+                width: dotSize, height: dotSize, borderRadius: '50%',
+                background: answered ? t.color : 'rgba(255,255,255,0.1)',
+                boxShadow: answered ? `0 0 6px ${t.color}` : 'none',
+                display: 'inline-block', transition: 'all 0.3s',
+              }} />
+            );
+          })}
         </div>
       );
     }

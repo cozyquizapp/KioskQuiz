@@ -393,6 +393,47 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// CONFETTI OVERLAY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CONFETTI_COLORS = ['#F59E0B', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', '#F472B6', '#FCD34D', '#34D399'];
+const CONFETTI_COUNT = 50;
+
+function ConfettiOverlay() {
+  const [particles] = useState(() =>
+    Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      delay: Math.random() * 0.8,
+      duration: 1.8 + Math.random() * 1.4,
+      size: 6 + Math.random() * 6,
+      rotation: 360 + Math.random() * 720,
+      startY: -(20 + Math.random() * 60),
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    }))
+  );
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50, overflow: 'hidden' }}>
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: 'absolute',
+          left: `${p.x}%`,
+          width: p.shape === 'rect' ? p.size : p.size * 0.8,
+          height: p.shape === 'rect' ? p.size * 0.6 : p.size * 0.8,
+          borderRadius: p.shape === 'circle' ? '50%' : 2,
+          background: p.color,
+          ['--cy' as string]: `${p.startY}px`,
+          ['--cr' as string]: `${p.rotation}deg`,
+          animation: `confettiFall ${p.duration}s ease-in ${p.delay}s both`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // LOBBY
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -432,13 +473,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {s.teams.map(t => (
+            {s.teams.map((t, i) => (
               <div key={t.id} style={{
                 padding: '16px 22px', borderRadius: 20,
                 background: cardBg,
                 border: `2px solid ${t.color}55`,
                 boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
                 textAlign: 'center', minWidth: 120,
+                animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${i * 0.1}s both`,
               }}>
                 <div style={{ fontSize: 44, marginBottom: 6, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
                 <div style={{ fontWeight: 900, fontSize: 18, color: t.color }}>{t.name}</div>
@@ -464,7 +506,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <div style={{
           background: '#ffffff', borderRadius: 20, padding: 20,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+          animation: 'qrGlow 3s ease-in-out infinite',
         }}>
           <QRCodeSVG value={joinUrl} size={260} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
         </div>
@@ -1091,13 +1133,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   ? (isEn ? 'wins this round!' : 'gewinnt die Runde!')
                   : (isEn ? 'answered correctly!' : 'antwortet richtig!');
             return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, animation: 'contentReveal 0.5s ease 0.15s both' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, animation: 'celebShake 0.6s ease 0.15s both' }}>
                 <span style={{ fontSize: 36, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
                 <span style={{ fontWeight: 900, fontSize: 22, color: team.color }}>{team.name}</span>
                 <span style={{ color: '#475569', fontSize: 16, fontWeight: 700 }}>{winMsg}</span>
               </div>
             );
           })()}
+          {/* Confetti overlay on correct answer */}
+          {revealed && s.correctTeamId && <ConfettiOverlay />}
         </div>
 
         {/* ── Image window panel (window-left / window-right) ── */}
@@ -1393,6 +1437,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
         '#0D0A06',
       ].join(','),
     }}>
+      {/* Confetti overlay */}
+      <ConfettiOverlay />
+
       {/* Notebook margin line */}
       <div style={{ position: 'absolute', left: 68, top: 0, bottom: 0, width: 1, background: 'rgba(234,179,8,0.07)', pointerEvents: 'none', zIndex: 1 }} />
 
@@ -1449,7 +1496,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
         {winner && (
           <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 56, lineHeight: 1, animation: 'winnerPulse 2s ease-in-out infinite' }}>
+            <div style={{ fontSize: 72, lineHeight: 1, animation: 'winnerPulse 2s ease-in-out infinite, celebShake 0.6s ease 0.3s both' }}>
               {qqGetAvatar(winner.avatarId).emoji}
             </div>
             <div style={{ fontWeight: 900, fontSize: 22, color: winner.color, marginTop: 6, textShadow: `0 0 20px ${winner.color}44` }}>
@@ -1470,6 +1517,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
 export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
   const urgent = remaining <= 5;
+  const critical = remaining <= 3;
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -1490,6 +1538,7 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
         fontWeight: 900, fontSize: 32, minWidth: 52, textAlign: 'center',
         color, textShadow: urgent ? '0 0 20px rgba(239,68,68,0.6)' : `0 0 12px ${color}44`,
         fontVariantNumeric: 'tabular-nums',
+        animation: critical && secs > 0 ? 'timerUrgent 0.5s ease-in-out infinite' : undefined,
       }}>
         {secs}
       </div>
@@ -1665,12 +1714,38 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
 export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
+  const prevScores = useRef<Record<string, number>>({});
+  const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
+  const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
+
+  useEffect(() => {
+    const newPopped = new Set<string>();
+    const newFloaters: typeof floaters = [];
+    for (const t of teams) {
+      const prev = prevScores.current[t.id] ?? 0;
+      if (t.largestConnected > prev && prev > 0) {
+        newPopped.add(t.id);
+        newFloaters.push({ id: `${t.id}-${Date.now()}`, teamId: t.id, diff: t.largestConnected - prev });
+      }
+      prevScores.current[t.id] = t.largestConnected;
+    }
+    if (newPopped.size > 0) {
+      setPoppedIds(newPopped);
+      setFloaters(f => [...f, ...newFloaters]);
+      setTimeout(() => setPoppedIds(new Set()), 500);
+      setTimeout(() => setFloaters(f => f.filter(fl => !newFloaters.includes(fl))), 1200);
+    }
+  }, [teams]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {sorted.map((t, i) => (
-        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div key={t.id} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
+        }}>
           <span style={{ fontSize: 22, width: 30, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 18, fontWeight: 900, color: t.color }}>{t.name}</span>
               <span style={{ fontSize: 16, color: '#64748b', fontWeight: 700 }}>
@@ -1686,6 +1761,16 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
                 boxShadow: i === 0 ? `0 0 8px ${t.color}66` : 'none',
               }} />
             </div>
+            {/* Float +N */}
+            {floaters.filter(f => f.teamId === t.id).map(f => (
+              <div key={f.id} style={{
+                position: 'absolute', right: 0, top: -4,
+                fontWeight: 900, fontSize: 18, color: t.color,
+                animation: 'scoreFloat 1.0s ease-out both',
+                pointerEvents: 'none',
+                textShadow: `0 0 8px ${t.color}66`,
+              }}>+{f.diff}</div>
+            ))}
           </div>
         </div>
       ))}

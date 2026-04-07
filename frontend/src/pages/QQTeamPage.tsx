@@ -10,6 +10,9 @@ import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
+import {
+  resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
+} from '../utils/sounds';
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
 const t = {
@@ -128,6 +131,22 @@ const TEAM_CSS = `
   @keyframes tcoptIn   { from{opacity:0;transform:translateY(18px) scale(0.94)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes tcwheelslide { from{transform:translateY(var(--from,0px));opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes tccheckpop { from{transform:scale(0)} to{transform:scale(1)} }
+  @keyframes tcwinBounce {
+    0%   { transform: scale(0.5); opacity: 0; }
+    40%  { transform: scale(1.15); opacity: 1; }
+    60%  { transform: scale(0.92); }
+    80%  { transform: scale(1.06); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes tcdotPulse {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+  @keyframes tccellTap {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(0.88); }
+    100% { transform: scale(1); }
+  }
 
   button:focus-visible, input:focus-visible {
     outline: 2px solid #F59E0B;
@@ -144,6 +163,19 @@ const TEAM_CSS = `
 `;
 
 const QQ_ROOM = 'default';
+
+function AnimatedDots() {
+  return (
+    <span aria-hidden>
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{
+          animation: `tcdotPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+          fontSize: 'inherit',
+        }}>.</span>
+      ))}
+    </span>
+  );
+}
 
 type SetupStep = 'AVATAR' | 'NAME';
 
@@ -364,6 +396,26 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   const isComebackTeam = s.comebackTeamId === myTeamId;
   const teamColor     = myTeam?.color ?? '#3B82F6';
 
+  // ── Team sounds ──
+  const prevPhaseRef = useRef(s.phase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = s.phase;
+    resumeAudio();
+    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') playFanfare();
+    if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
+      if (s.correctTeamId === myTeamId) {
+        playCorrect();
+        if (typeof navigator.vibrate === 'function') navigator.vibrate([50, 30, 50]);
+      } else {
+        playWrong();
+        if (typeof navigator.vibrate === 'function') navigator.vibrate([80, 40, 80, 40, 80]);
+      }
+    }
+    if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) playScoreUp();
+    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
+  }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
       <style>{TEAM_CSS}</style>
@@ -417,7 +469,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <div style={{
             padding: '10px 16px', borderRadius: 12, marginBottom: 12, textAlign: 'center',
             background: '#7F1D1D', border: '1px solid #EF4444', color: '#FCA5A5',
-            fontWeight: 800, fontSize: 13, animation: 'pulse 2s infinite',
+            fontWeight: 800, fontSize: 13, animation: 'tcpulse 2s infinite',
           }}>
             {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
           </div>
@@ -613,7 +665,8 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               marginTop: 8, padding: '10px 14px', borderRadius: 12,
               background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
               fontSize: 15, fontWeight: 800, color: '#4ade80', textAlign: 'center',
-              animation: 'tcreveal 0.4s ease 0.2s both',
+              animation: 'tcwinBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
+              boxShadow: '0 0 20px rgba(34,197,94,0.25)',
             }}>
               {winMsg}
             </div>
@@ -928,6 +981,8 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
         <div style={{
           padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
           background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
+          animation: remaining === 0 ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+          transition: 'all 0.2s',
         }}>
           {remaining} {lang === 'en' ? 'left' : 'übrig'}
         </div>
@@ -1073,7 +1128,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (!isMyTurn) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
-        🕵️ {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing…' : 'wählt gerade…'}
+        🕵️ {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing' : 'wählt gerade'}<AnimatedDots />
         <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
     );
@@ -1296,6 +1351,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const [selecting, setSelecting] = useState(false);
   const [freeMode, setFreeMode] = useState<'PLACE' | 'STEAL' | null>(null);
   const [swapFirst, setSwapFirst] = useState<{ r: number; c: number } | null>(null);
+  const [tappedCell, setTappedCell] = useState<string | null>(null);
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
   const isFree = s.pendingAction === 'FREE';
   const isPhase2Choice = s.pendingAction === 'PLACE_2' && s.gamePhaseIndex === 2 && !freeMode;
@@ -1316,6 +1372,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   async function handleCell(r: number, c: number) {
     if (!isMyTurn || !selecting) return;
     const cell = s.grid[r][c];
+    const cellKey = `${r}-${c}`;
+    setTappedCell(cellKey);
+    setTimeout(() => setTappedCell(null), 300);
+    if (typeof navigator.vibrate === 'function') navigator.vibrate(20);
     if (isSwap) {
       // SWAP_2: select two opponent cells from different teams
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
@@ -1352,7 +1412,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </div>
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
               <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
-                {t.placement.otherChoosing[lang]}
+                {t.placement.otherChoosing[lang].replace('…', '')}<AnimatedDots />
               </div>
             </>
           )}
@@ -1415,6 +1475,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     opacity: clickable || isSwapFirst ? 1 : 0.35,
                     transition: 'all 0.15s',
                     boxShadow: isSwapFirst ? `0 0 14px ${actionColor}88` : clickable ? `0 0 8px ${actionColor}44` : 'none',
+                    animation: tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
                   }}>
                     {team ? qqGetAvatar(team.avatarId).emoji : ''}
                   </div>

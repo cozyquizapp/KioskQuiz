@@ -51,6 +51,45 @@ export const QQ_BEAMER_CSS = `
   @keyframes fsExpand { from{clip-path:inset(10% 15% 10% 15% round 22px)} to{clip-path:inset(0 0 0 0 round 0px)} }
   @keyframes langFadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
+  @keyframes confettiFall {
+    0%   { transform: translateY(var(--cy, -60px)) rotate(0deg) scale(1); opacity: 1; }
+    75%  { opacity: 1; }
+    100% { transform: translateY(calc(100vh + 40px)) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
+  }
+  @keyframes celebShake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-6px) rotate(-1deg); }
+    30% { transform: translateX(5px) rotate(1deg); }
+    45% { transform: translateX(-4px); }
+    60% { transform: translateX(3px); }
+  }
+  @keyframes scorePop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    70%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  @keyframes qrGlow {
+    0%, 100% { box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+    50%      { box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 30px rgba(234,179,8,0.3), 0 0 60px rgba(234,179,8,0.15); }
+  }
+  @keyframes teamCardIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes timerUrgent {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+  }
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+  @keyframes scoreFloat {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;

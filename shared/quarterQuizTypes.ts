@@ -361,6 +361,7 @@ export interface QQStateUpdate {
   hotPotatoEliminated: string[];
   hotPotatoLastAnswer: string | null;   // last submitted answer text (for moderator)
   hotPotatoTurnEndsAt: number | null;   // ms timestamp when current turn expires
+  hotPotatoUsedAnswers: string[];       // accepted answers shown on beamer
   // Imposter (oneOfEight round-robin)
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)

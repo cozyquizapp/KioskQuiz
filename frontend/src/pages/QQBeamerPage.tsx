@@ -1263,6 +1263,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {bt.question.out[lang]}: {s.hotPotatoEliminated.map(id => s.teams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}
                   </div>
                 )}
+                {s.hotPotatoUsedAnswers && s.hotPotatoUsedAnswers.length > 0 && (
+                  <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 8, padding: '6px 12px', background: 'rgba(0,0,0,0.25)', borderRadius: 10, maxWidth: 500 }}>
+                    <span style={{ fontWeight: 700 }}>{lang === 'en' ? 'Used' : 'Genannt'}:</span>{' '}
+                    {s.hotPotatoUsedAnswers.join(', ')}
+                  </div>
+                )}
               </div>
             );
           })()}

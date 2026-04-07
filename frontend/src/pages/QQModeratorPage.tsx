@@ -376,9 +376,6 @@ export default function QQModeratorPage() {
                               <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
                                 ✓ Richtig
                               </Btn>
-                              <Btn color="#F97316" onClick={() => emit('qq:hotPotatoNext', { roomCode })}>
-                                → Weiter
-                              </Btn>
                               <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
                                 ✗ Falsch
                               </Btn>
@@ -386,9 +383,6 @@ export default function QQModeratorPage() {
                           </>
                         ) : (
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
-                              ✓ Richtig
-                            </Btn>
                             <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
                               ✗ Falsch / Zu langsam
                             </Btn>
@@ -397,6 +391,11 @@ export default function QQModeratorPage() {
                         {s.hotPotatoEliminated.length > 0 && (
                           <div style={{ fontSize: 11, color: '#94a3b8' }}>
                             Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                        {s.hotPotatoUsedAnswers && s.hotPotatoUsedAnswers.length > 0 && (
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                            Genannt: {s.hotPotatoUsedAnswers.join(', ')}
                           </div>
                         )}
                       </>

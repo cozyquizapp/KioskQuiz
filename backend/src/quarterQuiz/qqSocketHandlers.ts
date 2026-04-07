@@ -25,6 +25,7 @@ import {
   qqClearHotPotatoTimer,
   qqImposterStart, qqImposterChoose,
 } from './qqRooms';
+import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 
 type AckFn = (payload: QQAck) => void;
 
@@ -344,39 +345,104 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const teamId = room.hotPotatoActiveTeamId;
         if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
-        qqClearHotPotatoTimer(room);
-        qqRevealAnswer(room);
-        qqClearBuzz(room);
-        qqMarkCorrect(room, teamId);
-        broadcast(io, payload.roomCode);
-        ok(ack);
-      } catch (e) { fail(ack, e); }
-    });
-
-    // Advance to next team in round-robin WITHOUT eliminating current (correct answer, continue round)
-    socket.on('qq:hotPotatoNext', (payload: { roomCode: string }, ack?: unknown) => {
-      try {
-        const room = ensureQQRoom(payload.roomCode);
+        // Record used answer
+        if (room.hotPotatoLastAnswer) room.hotPotatoUsedAnswers.push(room.hotPotatoLastAnswer);
+        // Advance to next team (correct = survive, not win)
         const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
         if (!next) {
-          // All teams answered correctly — everyone wins
+          // Only 1 team alive (current one) — they win
+          qqClearHotPotatoTimer(room);
           qqRevealAnswer(room);
-          const aliveIds = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id));
-          qqMarkCorrect(room, aliveIds);
+          qqClearBuzz(room);
+          qqMarkCorrect(room, teamId);
+        } else {
+          // Check if only 1 team left (shouldn't happen here, but safety)
+          const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+          if (alive.length === 1) {
+            qqClearHotPotatoTimer(room);
+            qqRevealAnswer(room);
+            qqClearBuzz(room);
+            qqMarkCorrect(room, alive[0]);
+          }
         }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
 
-    // Team submits their Hot Potato answer text
+    // Team submits their Hot Potato answer text — with auto-check
     socket.on('qq:hotPotatoAnswer', (
       payload: { roomCode: string; teamId: string; answer: string },
       ack?: unknown,
     ) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqHotPotatoSubmitAnswer(room, payload.teamId, payload.answer.slice(0, 500));
+        const trimmed = payload.answer.slice(0, 500);
+        qqHotPotatoSubmitAnswer(room, payload.teamId, trimmed);
+
+        // Auto-check: duplicate used answer → eliminate
+        const normalizedAnswer = normalizeText(trimmed);
+        const isDuplicate = room.hotPotatoUsedAnswers.some(
+          used => normalizeText(used) === normalizedAnswer
+        );
+        if (isDuplicate && normalizedAnswer.length > 0) {
+          // Duplicate — auto-eliminate
+          const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(payload.roomCode));
+          if (!next) {
+            qqRevealAnswer(room);
+            qqMarkWrong(room);
+          } else {
+            const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+            if (alive.length === 1) {
+              qqClearHotPotatoTimer(room);
+              qqRevealAnswer(room);
+              qqClearBuzz(room);
+              qqMarkCorrect(room, alive[0]);
+            }
+          }
+          broadcast(io, payload.roomCode);
+          ok(ack);
+          return;
+        }
+
+        // Auto-check: match against answer list
+        const q = room.currentQuestion;
+        if (q && normalizedAnswer.length > 0) {
+          const validAnswers = q.answer
+            .split(/[,;]/)
+            .map(a => a.replace(/[…\.]+$/, '').trim())
+            .filter(a => a.length > 0);
+          const isMatch = validAnswers.some(valid => {
+            const score = similarityScore(trimmed, valid);
+            return score >= 0.8;
+          });
+          if (isMatch) {
+            // Correct — record & advance
+            room.hotPotatoUsedAnswers.push(trimmed);
+            const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
+            if (!next) {
+              qqClearHotPotatoTimer(room);
+              qqRevealAnswer(room);
+              qqClearBuzz(room);
+              const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+              if (alive.length === 1) qqMarkCorrect(room, alive[0]);
+              else qqMarkCorrect(room, alive);
+            } else {
+              const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+              if (alive.length === 1) {
+                qqClearHotPotatoTimer(room);
+                qqRevealAnswer(room);
+                qqClearBuzz(room);
+                qqMarkCorrect(room, alive[0]);
+              }
+            }
+            broadcast(io, payload.roomCode);
+            ok(ack);
+            return;
+          }
+        }
+
+        // No auto-match — wait for moderator judgment
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

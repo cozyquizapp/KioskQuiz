@@ -54,6 +54,7 @@ export interface QQRoomState {
   hotPotatoEliminated: string[];
   hotPotatoLastAnswer: string | null;
   hotPotatoTurnEndsAt: number | null;
+  hotPotatoUsedAnswers: string[];
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   // Imposter (oneOfEight) round-robin state
   imposterActiveTeamId: string | null;
@@ -135,6 +136,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       hotPotatoEliminated: [],
       hotPotatoLastAnswer: null,
       hotPotatoTurnEndsAt: null,
+      hotPotatoUsedAnswers: [],
       _hotPotatoTimerHandle: null,
       imposterActiveTeamId: null,
       imposterQueue: [],
@@ -370,6 +372,7 @@ export function qqActivateQuestion(
   room.hotPotatoEliminated   = [];
   room.hotPotatoLastAnswer   = null;
   room.hotPotatoTurnEndsAt   = null;
+  room.hotPotatoUsedAnswers  = [];
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.imageRevealed  = false;
   room.lastActivityAt = Date.now();
@@ -705,6 +708,7 @@ export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): v
   assertPhase(room, ['QUESTION_ACTIVE']);
   room.hotPotatoEliminated = [];
   room.hotPotatoLastAnswer = null;
+  room.hotPotatoUsedAnswers = [];
   const alive = getAliveTeams(room);
   if (alive.length === 0) return;
   // Random start index stored in room for round-robin tracking
@@ -1330,6 +1334,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoEliminated:   room.hotPotatoEliminated,
     hotPotatoLastAnswer:   room.hotPotatoLastAnswer,
     hotPotatoTurnEndsAt:   room.hotPotatoTurnEndsAt,
+    hotPotatoUsedAnswers:  room.hotPotatoUsedAnswers,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
@@ -1367,6 +1372,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.swapFirstCell   = null;
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
+  room.hotPotatoUsedAnswers  = [];
   room.imposterActiveTeamId  = null;
   room.imposterQueue         = [];
   room.imposterChosenIndices = [];

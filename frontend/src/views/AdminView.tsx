@@ -90,7 +90,12 @@ export default function AdminView({ roomCode }: Props) {
         setLanguageState(langRes.language);
         
         // Request admin session token
-        const sessionRes = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'POST' });
+        const storedPin = sessionStorage.getItem('qq_admin_pin') || '';
+        const sessionRes = await fetch(`/api/rooms/${roomCode}/admin-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: storedPin }),
+        });
         if (sessionRes.ok) {
           const { token } = await sessionRes.json();
           setAdminToken(token);

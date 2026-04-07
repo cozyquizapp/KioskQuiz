@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AnyQuestion } from '@shared/quizTypes'
+import { AnyQuestion, QuizCategory } from '@shared/quizTypes'
 import { fetchQuestions, API_BASE } from '../api'
 import { loadPlayDraft, savePlayDraft } from '../utils/draft'
 import { Modal } from '../components/Modal'
@@ -245,7 +245,7 @@ export default function CreatorCanvasPage() {
   const filteredQuestions = useMemo(() => {
     const term = qSearch.toLowerCase()
     return questions.filter((q) => {
-      const matchesText = q.text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
+      const matchesText = (q as any).text?.toLowerCase().includes(term) || q.category?.toLowerCase().includes(term)
       const matchesImage = qImageOnly ? Boolean((q as any).imageUrl || (q as any).image) : true
       const mech = (q as any).mixedMechanic
       const matchesMech = qMechanicOnly ? Boolean(mech) : true
@@ -299,7 +299,7 @@ export default function CreatorCanvasPage() {
 
   const openEdit = (q: AnyQuestion) => {
     setEditQuestion(q)
-    setEditText(q.text || '')
+    setEditText((q as any).text || '')
     setEditAnswer((q as any).answer || '')
     setEditCategory(q.category || '')
     setEditMechanic((q as any).mixedMechanic || '')
@@ -311,11 +311,11 @@ export default function CreatorCanvasPage() {
     const updated = {
       ...editQuestion,
       text: editText,
-      category: editCategory,
+      category: editCategory as QuizCategory,
       mixedMechanic: editMechanic || undefined,
       imageUrl: editImage || undefined,
       answer: editAnswer || undefined,
-    }
+    } as unknown as AnyQuestion
     setQuestions((prev) => prev.map((q) => (q.id === editQuestion.id ? updated : q)))
     try {
       await fetch(`${API_BASE}/questions/${editQuestion.id}`, {
@@ -656,7 +656,7 @@ export default function CreatorCanvasPage() {
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
-                        <div style={{ fontWeight: 700 }}>{q.text}</div>
+                        <div style={{ fontWeight: 700 }}>{(q as any).text}</div>
                       </div>
                       <div style={{ color: "#cbd5e1", fontSize: 12 }}>
                         {q.category} {(q as any).imageUrl || (q as any).image ? "* Bild" : ""} {(q as any).mixedMechanic ? "* Mechanik" : ""}
@@ -757,7 +757,7 @@ export default function CreatorCanvasPage() {
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <input type="checkbox" checked={selectedIds.includes(q.id)} onChange={() => toggleQuestion(q.id)} />
-                              <div style={{ fontWeight: 700 }}>{q.text}</div>
+                              <div style={{ fontWeight: 700 }}>{(q as any).text}</div>
                             </div>
                             <div style={{ color: '#cbd5e1', fontSize: 12 }}>
                               {q.category} {(q as any).imageUrl || (q as any).image ? '* Bild' : ''}{' '}
@@ -1406,7 +1406,7 @@ const sideCard = () => ({
   border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.04)',
   padding: 14,
-  position: 'sticky',
+  position: 'sticky' as const,
   top: 16,
   height: 'fit-content',
 })
@@ -1429,7 +1429,7 @@ const input = () => ({
   fontSize: 14,
 })
 
-const field = () => ({ display: 'flex', flexDirection: 'column', gap: 6 })
+const field = () => ({ display: 'flex', flexDirection: 'column' as const, gap: 6 })
 
 const pill = (color: string) => ({
   padding: '8px 12px',
@@ -1453,8 +1453,8 @@ const cta = (color: string) => ({
   color: '#0b1020',
   fontWeight: 800,
   cursor: 'pointer',
-  textAlign: 'center',
-  textDecoration: 'none',
+  textAlign: 'center' as const,
+  textDecoration: 'none' as const,
   display: 'inline-block',
 })
 

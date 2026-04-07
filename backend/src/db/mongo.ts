@@ -9,6 +9,9 @@ export function getMongoEnvSource(): 'MONGODB_URI' | 'DATABASE_URL' | 'default-l
 }
 
 export async function connectDB() {
+  if (process.env.NODE_ENV === 'production' && getMongoEnvSource() === 'default-local') {
+    console.warn('⚠ WARNUNG: Keine MONGODB_URI gesetzt – nutze lokalen Fallback in Produktion!');
+  }
   try {
     await mongoose.connect(MONGO_URI, {
       retryWrites: true,

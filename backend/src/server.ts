@@ -132,11 +132,16 @@ import {
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+const ADMIN_PIN = process.env.ADMIN_PIN || '2506';
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:4173'];
+
 const app = express();
 const httpServer = http.createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*',
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -146,8 +151,21 @@ const io = new SocketIOServer(httpServer, {
   pingInterval: 25000
 });
 
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com', 'https://unpkg.com', 'https://*.tile.openstreetmap.org'],
+      connectSrc: ["'self'", 'wss:', 'ws:', ...ALLOWED_ORIGINS],
+      mediaSrc: ["'self'", 'blob:', 'https://res.cloudinary.com'],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb' }));
 
@@ -4936,9 +4954,22 @@ app.delete('/api/upload/question-image', (req, res) => {
   return res.json({ ok: true });
 });
 
+// PIN verification endpoint (used by PinGate)
+app.post('/api/verify-pin', (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (!pin || pin !== ADMIN_PIN) {
+    return res.status(401).json({ ok: false, error: 'Falscher PIN' });
+  }
+  return res.json({ ok: true });
+});
+
 // Admin Session Generation Endpoint
 // POST /api/rooms/:roomCode/admin-session - Creates a new admin session token
 app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (!pin || pin !== ADMIN_PIN) {
+    return res.status(401).json({ error: 'Nicht authentifiziert — PIN erforderlich' });
+  }
   const { roomCode } = req.params;
   const room = ensureRoom(roomCode);
   const session = createAdminSession(roomCode);
@@ -4948,6 +4979,10 @@ app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
 
 // GET alias for environments where POST may be restricted
 app.get('/api/rooms/:roomCode/admin-session', (req, res) => {
+  const pin = req.query.pin as string;
+  if (!pin || pin !== ADMIN_PIN) {
+    return res.status(401).json({ error: 'Nicht authentifiziert — PIN erforderlich' });
+  }
   const { roomCode } = req.params;
   ensureRoom(roomCode);
   const session = createAdminSession(roomCode);
@@ -4959,8 +4994,12 @@ app.post('/api/rooms/:roomCode/use-quiz', async (req, res) => {
   const { roomCode } = req.params;
   let token = req.query.token as string;
   
-  // Auth check: Wenn kein Token vorhanden, versuche einen zu erstellen
+  // Auth check: Wenn kein Token vorhanden, versuche einen mit PIN zu erstellen
   if (!token) {
+    const pin = req.body?.pin || req.query.pin;
+    if (pin !== ADMIN_PIN) {
+      return res.status(401).json({ error: 'PIN erforderlich' });
+    }
     try {
       const session = createAdminSession(roomCode);
       token = session.token;

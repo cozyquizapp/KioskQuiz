@@ -4,17 +4,33 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('qq_admin_unlocked') === '1');
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (unlocked) return <>{children}</>;
 
-  function submit() {
-    const correct = import.meta.env.VITE_ADMIN_PIN ?? '2506';
-    if (pin === correct) {
-      sessionStorage.setItem('qq_admin_unlocked', '1');
-      setUnlocked(true);
-    } else {
+  async function submit() {
+    if (!pin.trim() || loading) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem('qq_admin_unlocked', '1');
+        sessionStorage.setItem('qq_admin_pin', pin);
+        setUnlocked(true);
+      } else {
+        setError(true);
+        setPin('');
+      }
+    } catch {
       setError(true);
       setPin('');
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -145,7 +145,8 @@ const ensureAdminSession = async (roomCode: string): Promise<string | null> => {
   const existing = sessionStorage.getItem(key);
   if (existing) return existing;
   try {
-    const res = await fetch(`/api/rooms/${roomCode}/admin-session`, { method: 'GET' });
+    const storedPin = sessionStorage.getItem('qq_admin_pin') || '';
+    const res = await fetch(`/api/rooms/${roomCode}/admin-session?pin=${encodeURIComponent(storedPin)}`, { method: 'GET' });
     if (!res.ok) {
       // Silent fail for 405/404 - server may not support admin-session
       return null;

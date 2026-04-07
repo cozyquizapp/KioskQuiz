@@ -37,7 +37,7 @@ const CAT_GLOW: Record<string, string> = {
 interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: string; right?: string; size: number; rot: number; alt?: boolean }
 const CAT_CUTOUTS: Record<string, CutoutSpec[]> = {
   SCHAETZCHEN:   [{ emoji:'🍯', top:'6%',  right:'11%', size:80, rot:-12 },{ emoji:'✨', bottom:'14%', left:'7%',  size:50, rot:8  },{ emoji:'💛', top:'30%', right:'5%',  size:40, rot:16, alt:true }],
-  MUCHO:         [{ emoji:'🎵', top:'8%',  right:'13%', size:76, rot:-8  },{ emoji:'🎶', bottom:'18%', left:'6%',  size:54, rot:12 },{ emoji:'🎸', top:'38%', right:'6%',  size:44, rot:-14, alt:true }],
+  MUCHO:         [{ emoji:'🤔', top:'8%',  right:'13%', size:76, rot:-8  },{ emoji:'💡', bottom:'18%', left:'6%',  size:54, rot:12 },{ emoji:'🅰️', top:'38%', right:'6%',  size:44, rot:-14, alt:true }],
   BUNTE_TUETE:   [{ emoji:'🎁', top:'7%',  right:'10%', size:84, rot:-10 },{ emoji:'🎲', bottom:'16%', left:'8%',  size:56, rot:14 },{ emoji:'⭐', top:'42%', right:'5%',  size:42, rot:20 }],
   ZEHN_VON_ZEHN: [{ emoji:'🔟', top:'10%', right:'12%', size:72, rot:-6  },{ emoji:'✅', bottom:'20%', left:'7%',  size:50, rot:10 },{ emoji:'📊', top:'32%', right:'7%',  size:46, rot:-12, alt:true }],
   CHEESE:        [{ emoji:'🧀', top:'9%',  right:'11%', size:78, rot:-11 },{ emoji:'🎭', bottom:'15%', left:'7%',  size:52, rot:8  },{ emoji:'👑', top:'36%', right:'6%',  size:44, rot:-9, alt:true }],
@@ -508,6 +508,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
   const cutouts = CAT_CUTOUTS[cat] ?? [];
+  // Per-question emoji override: replace default cutout emojis
+  const effectiveCutouts = q.emojis?.length
+    ? cutouts.map((c, i) => q.emojis![i] ? { ...c, emoji: q.emojis![i] } : c)
+    : cutouts;
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const img = q.image;
   // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
@@ -580,7 +584,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         />
       )}
       {/* Cutout emojis — hidden when template overlay handles them */}
-      {!hideCutouts && cutouts.map((c, i) => (
+      {!hideCutouts && effectiveCutouts.map((c, i) => (
         <div key={i} style={{
           position: 'absolute', pointerEvents: 'none', zIndex: 3,
           top: c.top, bottom: c.bottom, left: c.left, right: c.right,

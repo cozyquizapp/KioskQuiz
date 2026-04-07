@@ -151,7 +151,7 @@ interface CutoutSpec { text: string; top?: number; bottom?: number; left?: numbe
 
 const CAT_CUTOUT_ELEMENTS: Record<string, CutoutSpec[]> = {
   SCHAETZCHEN:   [{ text: '🍯', top: 6,  right: 11, rot: -12 }, { text: '✨', bottom: 14, left: 7,  rot: 8   }, { text: '💛', top: 30, right: 5,  rot: 16  }],
-  MUCHO:         [{ text: '🎵', top: 8,  right: 13, rot: -8  }, { text: '🎶', bottom: 18, left: 6,  rot: 12  }, { text: '🎸', top: 38, right: 6,  rot: -14, alt: true }],
+  MUCHO:         [{ text: '🤔', top: 8,  right: 13, rot: -8  }, { text: '💡', bottom: 18, left: 6,  rot: 12  }, { text: '🅰️', top: 38, right: 6,  rot: -14, alt: true }],
   BUNTE_TUETE:   [{ text: '🎁', top: 7,  right: 10, rot: -10 }, { text: '🎲', bottom: 16, left: 8,  rot: 14  }, { text: '⭐', top: 42, right: 5,  rot: 20  }],
   ZEHN_VON_ZEHN: [{ text: '🔟', top: 10, right: 12, rot: -6  }, { text: '✅', bottom: 20, left: 7,  rot: 10  }, { text: '📊', top: 32, right: 7,  rot: -12, alt: true }],
   CHEESE:        [{ text: '🧀', top: 9,  right: 11, rot: -11 }, { text: '🎭', bottom: 15, left: 7,  rot: 8   }, { text: '👑', top: 36, right: 6,  rot: -9,  alt: true }],

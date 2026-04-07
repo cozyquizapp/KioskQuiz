@@ -781,6 +781,34 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
           </>
         )}
       </div>
+
+      {/* ── Floating Emojis (per-question override) ── */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 8 }}>
+          ✨ Deko-Emojis <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span>
+        </div>
+        <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>
+          Überschreibt die Standard-Emojis der Kategorie. Leer = Standard.
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[0, 1, 2].map(i => (
+            <input
+              key={i}
+              value={q.emojis?.[i] ?? ''}
+              onChange={e => {
+                const emojis = [...(q.emojis ?? ['', '', ''])];
+                emojis[i] = e.target.value;
+                // Clear array if all empty
+                const hasAny = emojis.some(v => v.trim());
+                onChange({ ...q, emojis: hasAny ? emojis : undefined });
+              }}
+              placeholder={['Emoji 1', 'Emoji 2', 'Emoji 3'][i]}
+              style={{ ...inputStyle, flex: 1, textAlign: 'center', fontSize: 20, padding: '6px 4px' }}
+              maxLength={4}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

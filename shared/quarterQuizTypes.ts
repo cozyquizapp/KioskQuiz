@@ -155,6 +155,8 @@ export interface QQQuestion {
   optionImages?: (QQOptionImage | null)[];  // per-option images (MUCHO: 4, ZEHN_VON_ZEHN: 3)
   // BUNTE_TUETE — sub-mechanic payload
   bunteTuete?: QQBunteTuetePayload;
+  // Floating decoration emojis (override category defaults)
+  emojis?: string[];
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────

@@ -64,6 +64,7 @@ export default function QQModeratorPage() {
   async function startGame() {
     let questions: QQQuestion[];
     let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
+    let slideTemplates: undefined | import('../../../shared/quarterQuizTypes').QQSlideTemplates;
     if (selectedDraftId === '__default__') {
       const res = await fetch('/api/qq/questions/default');
       if (!res.ok) { alert('Standard-Fragen konnten nicht geladen werden'); return; }
@@ -76,11 +77,12 @@ export default function QQModeratorPage() {
       const draft = await res.json();
       questions = draft.questions ?? [];
       theme = draft.theme;
+      slideTemplates = draft.slideTemplates;
       if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     }
     const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : (selectedDraftId !== '__default__' ? selectedDraftId : undefined);
     const qqDraftTitle = qqDraftId ? (drafts.find(d => d.id === qqDraftId)?.title ?? undefined) : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }

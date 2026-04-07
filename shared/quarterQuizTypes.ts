@@ -375,6 +375,7 @@ export interface QQStateUpdate {
   theme?: QQTheme;
   // Draft reference (for slide template lookup on beamer)
   draftId?: string;
+  slideTemplates?: QQSlideTemplates;
   // Sound
   globalMuted: boolean;
   volume: number; // 0–1
@@ -392,7 +393,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

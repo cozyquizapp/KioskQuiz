@@ -184,10 +184,22 @@ export default function QQBeamerPage() {
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
   }, [connected]);
 
-  // Fetch slide templates when draftId becomes available
+  // Use slide templates from state (sent inline with startGame payload)
+  useEffect(() => {
+    if (state?.slideTemplates && Object.keys(state.slideTemplates).length > 0) {
+      setSlideTemplates(state.slideTemplates);
+    }
+  }, [state?.slideTemplates]);
+
+  // Fallback: fetch slide templates from server if not in state
   useEffect(() => {
     const draftId = state?.draftId;
     if (!draftId || fetchedDraftId.current === draftId) return;
+    // Skip fetch if we already have templates from state
+    if (state?.slideTemplates && Object.keys(state.slideTemplates).length > 0) {
+      fetchedDraftId.current = draftId;
+      return;
+    }
     fetchedDraftId.current = draftId;
     fetch(`${API_BASE}/qq/drafts/${encodeURIComponent(draftId)}`)
       .then(r => r.ok ? r.json() : null)

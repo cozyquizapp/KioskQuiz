@@ -63,6 +63,23 @@ const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
 
 const GROUPS: string[] = ['Start', 'Phasen', 'Fragen', 'Ablauf'];
 
+// Required placeholders per template type — warn when user tries to delete these
+const REQUIRED_PH: Partial<Record<QQSlideTemplateType, QQSlideElementType[]>> = {
+  LOBBY:                ['ph_qr_code', 'ph_room_code'],
+  PHASE_INTRO_1:        ['ph_phase_name'],
+  PHASE_INTRO_2:        ['ph_phase_name'],
+  PHASE_INTRO_3:        ['ph_phase_name'],
+  QUESTION_SCHAETZCHEN: ['ph_question', 'ph_timer'],
+  QUESTION_MUCHO:       ['ph_question', 'ph_options', 'ph_timer'],
+  QUESTION_BUNTE_TUETE: ['ph_question', 'ph_timer'],
+  QUESTION_ZEHN:        ['ph_question', 'ph_options', 'ph_timer'],
+  QUESTION_CHEESE:      ['ph_question', 'ph_timer'],
+  REVEAL:               ['ph_answer', 'ph_winner'],
+  PLACEMENT:            ['ph_grid', 'ph_placement_banner'],
+  COMEBACK_CHOICE:      ['ph_comeback_cards', 'ph_grid'],
+  GAME_OVER:            ['ph_game_rankings'],
+};
+
 // ── Element ID generator ──────────────────────────────────────────────────────
 let _n = 0;
 function eid() { return `el-${++_n}-${Math.random().toString(36).slice(2, 6)}`; }
@@ -276,6 +293,13 @@ export default function QQSlideEditorPage() {
   function deleteSelected() {
     if (selectedIds.length === 0) return;
     const ids = new Set(selectedIds);
+    const toDelete = (activeTemplate.elements || []).filter(e => ids.has(e.id));
+    const requiredTypes = REQUIRED_PH[activeType] ?? [];
+    const deletingRequired = toDelete.filter(e => requiredTypes.includes(e.type as QQSlideElementType));
+    if (deletingRequired.length > 0) {
+      const names = deletingRequired.map(e => PH_LABELS[e.type as QQSlideElementType] ?? e.type).join(', ');
+      if (!window.confirm(`⚠️ ${names} ${deletingRequired.length === 1 ? 'ist ein wichtiger' : 'sind wichtige'} Platzhalter für dieses Template.\nOhne ${deletingRequired.length === 1 ? 'ihn' : 'sie'} wird der Beamer dort nichts anzeigen.\n\nTrotzdem löschen?`)) return;
+    }
     patchTemplate({ ...activeTemplate, elements: (activeTemplate.elements || []).filter(e => !ids.has(e.id)) });
     setSelectedIds([]);
   }

@@ -352,12 +352,13 @@ function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
 // ── CustomSlideElement ────────────────────────────────────────────────────────
 
 function CustomSlideElement({
-  el, state: s, canvasW, lang,
+  el, state: s, canvasW, lang, isPreview,
 }: {
   el: QQSlideElement;
   state: QQStateUpdate;
   canvasW: number;
   lang: 'de' | 'en';
+  isPreview?: boolean;
 }) {
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const themeAccent = s.theme?.accentColor ?? '#EAB308';
@@ -401,6 +402,22 @@ function CustomSlideElement({
       );
 
     case 'image':
+      if (!el.imageUrl && isPreview) {
+        return (
+          <div style={{
+            ...baseStyle,
+            border: '2px dashed rgba(59,130,246,0.4)',
+            borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(59,130,246,0.06)',
+            color: 'rgba(59,130,246,0.5)',
+            fontSize: Math.max(10, canvasW * 0.012),
+            fontWeight: 700,
+          }}>
+            🖼 Bild
+          </div>
+        );
+      }
       return (
         <img
           src={el.imageUrl ?? ''}
@@ -881,7 +898,36 @@ function CustomSlideElement({
 
     case 'ph_question_image': {
       const img = q?.image;
-      if (!img?.url || img.layout === 'none') return null;
+      // Editor preview: show placeholder box when no image or layout='none'
+      if (!img?.url || img.layout === 'none') {
+        if (isPreview) {
+          // Show image preview even with layout='none' if URL exists
+          if (img?.url) {
+            return (
+              <div style={{ ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+                <img src={img.url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, objectFit: 'contain', opacity: 0.85 }} />
+              </div>
+            );
+          }
+          return (
+            <div style={{
+              ...baseStyle,
+              border: '2px dashed rgba(139,92,246,0.5)',
+              borderRadius: 12,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+              background: 'rgba(139,92,246,0.08)',
+              color: 'rgba(139,92,246,0.6)',
+              fontSize: Math.max(10, canvasW * 0.012),
+              fontWeight: 700,
+            }}>
+              <span style={{ fontSize: '1.8em' }}>🖼</span>
+              <span>Fragebild</span>
+              <span style={{ fontSize: '0.75em', opacity: 0.6 }}>Bild im Builder hochladen</span>
+            </div>
+          );
+        }
+        return null;
+      }
       const fs = (frac: number) => `${frac * canvasW / 100}px`;
       const imgTransform = `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`;
       const imgFilterStr = (() => {
@@ -1314,6 +1360,7 @@ export function CustomSlide({
   // Merge previewState into base mock, or use live state
   const effectiveState: QQStateUpdate = state ?? { ...MOCK_STATE_BASE, ...previewState };
   const lang = useLangFlip(effectiveState.language);
+  const isPreview = !!previewState;
 
   const visibleElements = overlayOnly
     ? (template.elements ?? []).filter(el => !el.type.startsWith('ph_'))
@@ -1323,7 +1370,7 @@ export function CustomSlide({
     <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%', animation: transAnim || undefined }}>
       <style>{BEAMER_CSS + SLIDE_ANIM_KEYFRAMES}</style>
       {visibleElements.map(el => (
-        <CustomSlideElement key={el.id} el={el} state={effectiveState} canvasW={canvasW} lang={lang} />
+        <CustomSlideElement key={el.id} el={el} state={effectiveState} canvasW={canvasW} lang={lang} isPreview={isPreview} />
       ))}
     </div>
   );

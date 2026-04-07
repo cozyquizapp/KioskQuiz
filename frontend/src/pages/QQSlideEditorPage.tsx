@@ -417,19 +417,26 @@ export default function QQSlideEditorPage() {
 
   // ── Layer z-order ─────────────────────────────────────────────────────────
   function changeZ(id: string, dir: 'up' | 'down') {
-    const els = [...activeTemplate.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
-    const idx = els.findIndex(e => e.id === id);
+    // Normalize to unique sequential z-indices first (fixes swap no-op when values are equal)
+    const sorted = [...activeTemplate.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
+    const zMap = new Map<string, number>();
+    sorted.forEach((el, i) => zMap.set(el.id, i));
+    const idx = sorted.findIndex(e => e.id === id);
     if (idx === -1) return;
-    if (dir === 'up' && idx < els.length - 1) {
-      const a = els[idx], b = els[idx + 1];
-      const az = a.zIndex ?? 1, bz = b.zIndex ?? 1;
-      patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === a.id ? { ...e, zIndex: bz } : e.id === b.id ? { ...e, zIndex: az } : e) });
+    if (dir === 'up' && idx < sorted.length - 1) {
+      const aId = sorted[idx].id, bId = sorted[idx + 1].id;
+      const az = zMap.get(aId)!, bz = zMap.get(bId)!;
+      zMap.set(aId, bz);
+      zMap.set(bId, az);
+    } else if (dir === 'down' && idx > 0) {
+      const aId = sorted[idx].id, bId = sorted[idx - 1].id;
+      const az = zMap.get(aId)!, bz = zMap.get(bId)!;
+      zMap.set(aId, bz);
+      zMap.set(bId, az);
+    } else {
+      return;
     }
-    if (dir === 'down' && idx > 0) {
-      const a = els[idx], b = els[idx - 1];
-      const az = a.zIndex ?? 1, bz = b.zIndex ?? 1;
-      patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => e.id === a.id ? { ...e, zIndex: bz } : e.id === b.id ? { ...e, zIndex: az } : e) });
-    }
+    patchTemplate({ ...activeTemplate, elements: activeTemplate.elements.map(e => ({ ...e, zIndex: zMap.get(e.id) ?? (e.zIndex ?? 1) })) });
   }
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────

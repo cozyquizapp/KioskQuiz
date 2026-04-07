@@ -1066,60 +1066,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         )}
 
-        {/* ── CHEESE image panel (on reveal: image shrinks to right panel) ── */}
-        {isCheese && hasImg && revealed && (
-          <div style={{
-            width: '35%', flexShrink: 0, position: 'relative', zIndex: 5,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 24,
-            animation: 'contentReveal 0.5s ease both',
-          }}>
-            {/* Ambient blur glow behind image */}
-            <img
-              src={img!.bgRemovedUrl || img!.url}
-              alt="" aria-hidden
-              style={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%',
-                objectFit: 'contain',
-                filter: 'blur(60px) saturate(1.8) brightness(0.5)',
-                opacity: 0.5, pointerEvents: 'none',
-                transform: 'scale(1.15)',
-              }}
-            />
-            {/* Main image */}
-            <img
-              src={img!.bgRemovedUrl || img!.url}
-              alt={q.text || 'Question image'}
-              style={{
-                position: 'relative', zIndex: 1,
-                maxWidth: '100%', maxHeight: '80vh',
-                borderRadius: img!.bgRemovedUrl ? 0 : 22,
-                objectFit: 'contain',
-                boxShadow: img!.bgRemovedUrl
-                  ? 'none'
-                  : `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
-                filter: img!.bgRemovedUrl
-                  ? `drop-shadow(0 16px 40px rgba(0,0,0,0.7))${imgFilter(img!) ? ' ' + imgFilter(img!) : ''}`
-                  : imgFilter(img!),
-              }}
-            />
-            {/* Dark vignette frame */}
-            {!img!.bgRemovedUrl && (
-              <div style={{
-                position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                borderRadius: 22,
-                background: 'radial-gradient(ellipse at center, transparent 55%, rgba(13,10,6,0.7) 100%)',
-              }} />
-            )}
-          </div>
-        )}
-
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: (isWindow || cheeseFullscreen) ? 0 : (isCheese && revealed) ? 0 : 480,
+          width: (isWindow || cheeseFullscreen) ? 0 : 480,
           overflow: 'hidden',
-          flexShrink: 0, padding: (isWindow || cheeseFullscreen || (isCheese && revealed)) ? 0 : '28px 28px 28px 16px',
+          flexShrink: 0, padding: (isWindow || cheeseFullscreen) ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
           transition: 'width 0.5s ease, padding 0.5s ease',

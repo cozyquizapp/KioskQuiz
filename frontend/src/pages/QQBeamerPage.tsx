@@ -513,8 +513,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
   const isCheese = cat === 'CHEESE';
   const hasImg = img && img.url && (isCheese || img.layout !== 'none');
-  const isWindow = hasImg && (img.layout === 'window-left' || img.layout === 'window-right');
+  const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
+
+  // ── CHEESE staged flow ──────────────────────────────────────────────────
+  // Phase 1 ('question'): question text + grid visible, no image
+  // Phase 2 ('image'): moderator reveals image → goes fullscreen
+  // Phase 3 (revealed=true): image shrinks to right panel, answer visible, grid returns
+  const cheeseFullscreen = isCheese && hasImg && s.imageRevealed && !revealed;
 
   // Auto-size: shorter fontSize for long questions
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
@@ -528,19 +534,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-      {/* Fullscreen background image */}
-      {hasImg && img.layout === 'fullscreen' && (
+      {/* Fullscreen background image (explicit fullscreen layout OR CHEESE staged reveal) */}
+      {((hasImg && img.layout === 'fullscreen') || cheeseFullscreen) && (
         <>
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
-            backgroundImage: `url(${img.url})`,
+            backgroundImage: `url(${img!.url})`,
             backgroundSize: 'cover', backgroundPosition: 'center',
             clipPath: revealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
-            animation: revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both',
+            animation: cheeseFullscreen
+              ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
+              : (revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both'),
             transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
-            transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
-            opacity: img.opacity ?? 1,
-            filter: imgFilter(img),
+            transform: `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
+            opacity: img!.opacity ?? 1,
+            filter: imgFilter(img!),
           }} />
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
@@ -679,49 +687,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {qText}
             </div>
           </div>
-
-          {/* CHEESE center-stage image — shown when not handled by existing window/fullscreen/cutout renderers */}
-          {isCheese && hasImg && img && img.layout !== 'window-left' && img.layout !== 'window-right' && img.layout !== 'fullscreen' && img.layout !== 'cutout' && (
-            <div style={{
-              display: 'flex', justifyContent: 'center', alignItems: 'center',
-              marginBottom: 20, position: 'relative',
-              animation: showIntro ? 'contentReveal 0.7s ease 2.3s both' : 'contentReveal 0.5s ease 0.1s both',
-            }}>
-              {/* Ambient blur glow */}
-              <img
-                src={img.bgRemovedUrl || img.url}
-                alt="" aria-hidden
-                style={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  objectFit: 'contain',
-                  filter: 'blur(50px) saturate(1.8) brightness(0.4)',
-                  opacity: 0.5, pointerEvents: 'none',
-                  transform: 'scale(1.1)',
-                }}
-              />
-              <img
-                src={img.bgRemovedUrl || img.url}
-                alt={isCheese ? (q.text || 'Question image') : 'Question image'}
-                style={{
-                  position: 'relative', zIndex: 1,
-                  maxWidth: '55%', maxHeight: '70vh',
-                  borderRadius: img.bgRemovedUrl ? 0 : 22,
-                  objectFit: 'contain',
-                  boxShadow: img.bgRemovedUrl
-                    ? 'none'
-                    : `0 16px 56px rgba(0,0,0,0.6), 0 0 40px ${glow}`,
-                  filter: [
-                    img.bgRemovedUrl ? 'drop-shadow(0 20px 48px rgba(0,0,0,0.7))' : '',
-                    imgFilter(img) ?? '',
-                  ].filter(Boolean).join(' ') || undefined,
-                  animation: imgAnim(img.animation, 'center', img.animDelay, img.animDuration),
-                  transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
-                  opacity: img.opacity ?? 1,
-                }}
-              />
-            </div>
-          )}
 
           {/* MUCHO / ZEHN_VON_ZEHN option cards */}
           {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
@@ -1101,17 +1066,66 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         )}
 
+        {/* ── CHEESE image panel (on reveal: image shrinks to right panel) ── */}
+        {isCheese && hasImg && revealed && (
+          <div style={{
+            width: '35%', flexShrink: 0, position: 'relative', zIndex: 5,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+            animation: 'contentReveal 0.5s ease both',
+          }}>
+            {/* Ambient blur glow behind image */}
+            <img
+              src={img!.bgRemovedUrl || img!.url}
+              alt="" aria-hidden
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain',
+                filter: 'blur(60px) saturate(1.8) brightness(0.5)',
+                opacity: 0.5, pointerEvents: 'none',
+                transform: 'scale(1.15)',
+              }}
+            />
+            {/* Main image */}
+            <img
+              src={img!.bgRemovedUrl || img!.url}
+              alt={q.text || 'Question image'}
+              style={{
+                position: 'relative', zIndex: 1,
+                maxWidth: '100%', maxHeight: '80vh',
+                borderRadius: img!.bgRemovedUrl ? 0 : 22,
+                objectFit: 'contain',
+                boxShadow: img!.bgRemovedUrl
+                  ? 'none'
+                  : `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
+                filter: img!.bgRemovedUrl
+                  ? `drop-shadow(0 16px 40px rgba(0,0,0,0.7))${imgFilter(img!) ? ' ' + imgFilter(img!) : ''}`
+                  : imgFilter(img!),
+              }}
+            />
+            {/* Dark vignette frame */}
+            {!img!.bgRemovedUrl && (
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                borderRadius: 22,
+                background: 'radial-gradient(ellipse at center, transparent 55%, rgba(13,10,6,0.7) 100%)',
+              }} />
+            )}
+          </div>
+        )}
+
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: isWindow ? 0 : 480,
+          width: (isWindow || cheeseFullscreen) ? 0 : (isCheese && revealed) ? 0 : 480,
           overflow: 'hidden',
-          flexShrink: 0, padding: isWindow ? 0 : '28px 28px 28px 16px',
+          flexShrink: 0, padding: (isWindow || cheeseFullscreen || (isCheese && revealed)) ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
-          transition: 'width 0.3s',
+          transition: 'width 0.5s ease, padding 0.5s ease',
         }}>
           {/* Mini-grid overlay when image panel hides the main grid */}
-          {isWindow && (
+          {(isWindow || cheeseFullscreen) && (
             <div style={{
               position: 'fixed', bottom: 16, right: 16, zIndex: 10,
               opacity: 0.6, pointerEvents: 'none',

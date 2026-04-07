@@ -60,6 +60,8 @@ export interface QQRoomState {
   imposterQueue: string[];          // round-robin order
   imposterChosenIndices: number[];  // statement indices already picked (correct ones)
   imposterEliminated: string[];     // teams who picked the false statement
+  // CHEESE (Picture This) — moderator-controlled image reveal
+  imageRevealed: boolean;
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string } | null;
   // Internal round-robin index for Hot Potato (not sent to clients)
@@ -135,6 +137,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       imposterChosenIndices: [],
       imposterEliminated: [],
       lastPlacedCell: null,
+      imageRevealed: false,
       _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
@@ -360,8 +363,15 @@ export function qqActivateQuestion(
   room.hotPotatoLastAnswer   = null;
   room.hotPotatoTurnEndsAt   = null;
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
+  room.imageRevealed  = false;
   room.lastActivityAt = Date.now();
   qqStartTimer(room, onTimerExpire);
+}
+
+export function qqShowImage(room: QQRoomState): void {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  room.imageRevealed  = true;
+  room.lastActivityAt = Date.now();
 }
 
 export function qqRevealAnswer(room: QQRoomState): void {
@@ -1316,6 +1326,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
     lastPlacedCell:        room.lastPlacedCell,
+    imageRevealed:    room.imageRevealed,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     theme:            room.theme,
@@ -1350,6 +1361,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.imposterChosenIndices = [];
   room.imposterEliminated    = [];
   room.lastPlacedCell        = null;
+  room.imageRevealed         = false;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

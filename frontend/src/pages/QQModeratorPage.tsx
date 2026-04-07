@@ -110,7 +110,13 @@ export default function QQModeratorPage() {
       e.preventDefault();
       if (s.phase === 'LOBBY')                                           startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE')                            emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE') {
+        // CHEESE: show image first, then reveal answer
+        if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
+          emitRef.current('qq:showImage', { roomCode });
+        else
+          emitRef.current('qq:revealAnswer', { roomCode });
+      }
       else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -119,6 +125,14 @@ export default function QQModeratorPage() {
     if (e.code === 'KeyR') {
       e.preventDefault();
       if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
+      return;
+    }
+
+    // B — Show image (CHEESE only)
+    if (e.code === 'KeyB') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
+        emitRef.current('qq:showImage', { roomCode });
       return;
     }
 
@@ -160,7 +174,12 @@ export default function QQModeratorPage() {
       e.preventDefault();
       if (s.phase === 'LOBBY')                                                    startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                         emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE')                                     emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE') {
+        if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
+          emitRef.current('qq:showImage', { roomCode });
+        else
+          emitRef.current('qq:revealAnswer', { roomCode });
+      }
       else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -294,6 +313,13 @@ export default function QQModeratorPage() {
                 {s.phase === 'QUESTION_ACTIVE' && (
                   <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
                     Antwort aufdecken
+                  </Btn>
+                )}
+
+                {/* CHEESE (Picture This): moderator reveals the image before the answer */}
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
+                  <Btn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })}>
+                    📸 Bild zeigen
                   </Btn>
                 )}
 

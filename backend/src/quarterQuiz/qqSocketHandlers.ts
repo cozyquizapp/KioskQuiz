@@ -4,7 +4,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { saveQQGameResult } from '../db/schemas';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
-  QQStartGamePayload, QQRevealAnswerPayload, QQMarkCorrectPayload,
+  QQStartGamePayload, QQRevealAnswerPayload, QQShowImagePayload, QQMarkCorrectPayload,
   QQMarkWrongPayload, QQPlaceCellPayload, QQStealCellPayload,
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
@@ -14,7 +14,7 @@ import {
 import {
   ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
-  qqRevealAnswer, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
+  qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
@@ -191,6 +191,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
           try { applyAutoEval(room); } catch { /* ignore */ }
           broadcast(io, payload.roomCode);
         }, 3000);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:showImage', (payload: QQShowImagePayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqShowImage(room);
+        broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

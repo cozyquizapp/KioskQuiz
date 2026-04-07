@@ -363,6 +363,8 @@ export interface QQStateUpdate {
   imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
   // Last placed cell — for beamer placement animation
   lastPlacedCell: { row: number; col: number; teamId: string } | null;
+  // CHEESE (Picture This) — moderator-controlled image reveal
+  imageRevealed: boolean;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;
@@ -385,6 +387,7 @@ export interface QQJoinTeamPayload       { roomCode: string; teamId: string; tea
 
 export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
+export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }
 export interface QQPlaceCellPayload      { roomCode: string; teamId: string; row: number; col: number; }

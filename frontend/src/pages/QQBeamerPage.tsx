@@ -7,6 +7,10 @@ import {
   QQSlideTemplates,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
+import {
+  resumeAudio, setVolume, playFanfare, playReveal, playCorrect,
+  playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
+} from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -223,6 +227,71 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     }
     prevPhaseRef.current = s.phase;
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sound: sync volume & mute from server state ──
+  useEffect(() => {
+    setVolume(s.globalMuted ? 0 : s.volume);
+  }, [s.globalMuted, s.volume]);
+
+  // ── Sound: phase-based SFX ──
+  const prevSfxPhaseRef = useRef(s.phase);
+  useEffect(() => {
+    const prev = prevSfxPhaseRef.current;
+    prevSfxPhaseRef.current = s.phase;
+    if (s.globalMuted) return;
+    resumeAudio();
+    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') playFanfare();
+    if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') playReveal();
+    if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
+      if (s.correctTeamId) playCorrect();
+      else playWrong();
+    }
+    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
+  }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sound: timer ticks ──
+  useEffect(() => {
+    if (s.globalMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
+    const iv = setInterval(() => {
+      const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
+      if (rem <= 0) { playTimesUp(); clearInterval(iv); return; }
+      if (rem <= 5) playUrgentTick();
+      else if (rem <= 10) playTick();
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [s.timerEndsAt, s.phase, s.globalMuted]);
+
+  // ── Sound: placement → score up ──
+  const prevCorrectRef = useRef(s.correctTeamId);
+  useEffect(() => {
+    if (s.correctTeamId && !prevCorrectRef.current && !s.globalMuted) playScoreUp();
+    prevCorrectRef.current = s.correctTeamId;
+  }, [s.correctTeamId, s.globalMuted]);
+
+  // ── Music: play question musicUrl ──
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    const url = s.currentQuestion?.musicUrl;
+    if (!url) {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      return;
+    }
+    if (s.phase !== 'QUESTION_ACTIVE' && s.phase !== 'QUESTION_REVEAL') {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      return;
+    }
+    if (audioRef.current?.src?.endsWith(url)) {
+      audioRef.current.volume = s.globalMuted ? 0 : Math.min(1, s.volume * 0.5);
+      return;
+    }
+    if (audioRef.current) audioRef.current.pause();
+    const a = new Audio(url);
+    a.loop = true;
+    a.volume = s.globalMuted ? 0 : Math.min(1, s.volume * 0.5);
+    a.play().catch(() => {});
+    audioRef.current = a;
+    return () => { a.pause(); };
+  }, [s.currentQuestion?.musicUrl, s.phase, s.globalMuted, s.volume]);
 
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);

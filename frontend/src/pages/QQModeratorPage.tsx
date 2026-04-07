@@ -215,6 +215,13 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // M — Toggle mute
+    if (e.code === 'KeyM') {
+      e.preventDefault();
+      emitRef.current('qq:setMuted', { roomCode, muted: !(stateRef.current?.globalMuted ?? false) });
+      return;
+    }
+
     // F18 — Reset (Notfall)
     // F20 — reserviert
   }, [roomCode]);
@@ -241,7 +248,7 @@ export default function QQModeratorPage() {
             Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
-            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc
+            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc · M=Mute
           </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
@@ -716,6 +723,35 @@ export default function QQModeratorPage() {
                     {s.avatarsEnabled ? 'Teams wählen selbst' : 'Zufällig zugewiesen'}
                   </span>
                 </div>
+              </div>
+
+              {/* Sound — mute + volume */}
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🔊 Sound</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    onClick={() => emit('qq:setMuted', { roomCode, muted: !s.globalMuted })}
+                    style={{
+                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 800, fontSize: 13,
+                      border: `1px solid ${s.globalMuted ? '#EF4444' : '#22C55E'}`,
+                      background: s.globalMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+                      color: s.globalMuted ? '#EF4444' : '#22C55E',
+                    }}>
+                    {s.globalMuted ? '🔇 Stumm' : '🔊 Ton an'}
+                  </button>
+                  <input
+                    type="range" min={0} max={100} step={5}
+                    value={Math.round((s.volume ?? 0.8) * 100)}
+                    onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
+                    style={{ flex: 1, maxWidth: 120, accentColor: '#3B82F6' }}
+                    disabled={s.globalMuted}
+                  />
+                  <span style={{ fontSize: 11, color: '#475569', minWidth: 30 }}>
+                    {s.globalMuted ? '0%' : `${Math.round((s.volume ?? 0.8) * 100)}%`}
+                  </span>
+                </div>
+                <span style={{ fontSize: 10, color: '#475569' }}>M-Taste = Mute-Toggle</span>
               </div>
             </div>
 

@@ -9,6 +9,7 @@ import {
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
+  QQSetMutedPayload, QQSetVolumePayload,
   QQSubmitAnswerPayload, QQAck,
 } from '../../../shared/quarterQuizTypes';
 import {
@@ -448,6 +449,24 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.avatarsEnabled = payload.enabled;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setMuted', (payload: QQSetMutedPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.globalMuted = payload.muted;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setVolume', (payload: QQSetVolumePayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.volume = Math.max(0, Math.min(1, payload.volume));
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

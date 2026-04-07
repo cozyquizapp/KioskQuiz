@@ -76,6 +76,9 @@ export interface QQRoomState {
   draftTitle?: string;
   lastActivityAt: number;
   _placementQueue?: string[];
+  // Sound
+  globalMuted: boolean;
+  volume: number; // 0–1
 }
 
 // ── In-process room map ───────────────────────────────────────────────────────
@@ -142,6 +145,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       avatarsEnabled: true,
       totalPhases: 3,
       lastActivityAt: Date.now(),
+      globalMuted: false,
+      volume: 0.8,
     };
     qqRooms.set(roomCode, room);
   }
@@ -1331,6 +1336,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     totalPhases:      room.totalPhases,
     theme:            room.theme,
     draftId:          room.draftId,
+    globalMuted:      room.globalMuted,
+    volume:           room.volume,
   };
 }
 

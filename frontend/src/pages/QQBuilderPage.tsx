@@ -809,6 +809,36 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
           ))}
         </div>
       </div>
+
+      {/* ── Music (per-question MP3) ── */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 8 }}>
+          🎵 Hintergrundmusik <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional, MP3)</span>
+        </div>
+        {q.musicUrl ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <audio src={q.musicUrl} controls style={{ height: 32, flex: 1 }} />
+            <button onClick={() => onChange({ ...q, musicUrl: undefined })} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #EF4444', color: '#EF4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 11 }}>✕</button>
+          </div>
+        ) : (
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', cursor: 'pointer', fontSize: 12, color: '#64748b' }}>
+            MP3 hochladen (max 10 MB)
+            <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={async e => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 10 * 1024 * 1024) { alert('max 10 MB'); e.target.value = ''; return; }
+              const fd = new FormData(); fd.append('file', file);
+              try {
+                const res = await fetch('/api/upload/question-audio', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                onChange({ ...q, musicUrl: data.audioUrl });
+              } catch { alert('Upload fehlgeschlagen'); }
+              e.target.value = '';
+            }} />
+          </label>
+        )}
+      </div>
     </div>
   );
 }

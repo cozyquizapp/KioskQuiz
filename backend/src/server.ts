@@ -278,6 +278,24 @@ const blitzUpload = multer({
   }
 });
 
+const audioUploadDir = path.join(uploadRoot, 'audio');
+const audioUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      try {
+        if (!fs.existsSync(audioUploadDir)) fs.mkdirSync(audioUploadDir, { recursive: true });
+      } catch { /* ignore */ }
+      cb(null, audioUploadDir);
+    },
+    filename: (_req, file, cb) => cb(null, `${uuid()}${path.extname(file.originalname)}`)
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('audio/')) cb(null, true);
+    else cb(new Error('Nur Audioformate erlaubt'));
+  }
+});
+
 const extractCloudinaryPublicId = (url: string): string | null => {
   try {
     const marker = '/upload/';
@@ -4824,6 +4842,13 @@ app.post('/api/upload/question-image', upload.single('file'), async (req, res) =
       }
     }
   }
+});
+
+// Audio upload (music per question)
+app.post('/api/upload/question-audio', audioUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Keine Audiodatei erhalten' });
+  const localUrl = `/uploads/audio/${req.file.filename}`;
+  return res.json({ audioUrl: localUrl });
 });
 
 // Blitz image upload

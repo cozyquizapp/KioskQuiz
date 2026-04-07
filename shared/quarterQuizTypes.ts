@@ -157,6 +157,8 @@ export interface QQQuestion {
   bunteTuete?: QQBunteTuetePayload;
   // Floating decoration emojis (override category defaults)
   emojis?: string[];
+  // Per-question background music (uploaded MP3)
+  musicUrl?: string;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────
@@ -373,6 +375,9 @@ export interface QQStateUpdate {
   theme?: QQTheme;
   // Draft reference (for slide template lookup on beamer)
   draftId?: string;
+  // Sound
+  globalMuted: boolean;
+  volume: number; // 0–1
 }
 
 export type QQPendingAction =
@@ -404,6 +409,8 @@ export interface QQSubmitAnswerPayload   { roomCode: string; teamId: string; ans
 export interface QQBuzzInPayload         { roomCode: string; teamId: string; }
 export interface QQSetTimerPayload       { roomCode: string; durationSec: number; }
 export interface QQSetAvatarsPayload     { roomCode: string; enabled: boolean; }
+export interface QQSetMutedPayload       { roomCode: string; muted: boolean; }
+export interface QQSetVolumePayload      { roomCode: string; volume: number; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

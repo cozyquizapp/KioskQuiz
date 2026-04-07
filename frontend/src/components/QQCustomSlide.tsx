@@ -101,8 +101,11 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   imposterChosenIndices: [],
   imposterEliminated: [],
   lastPlacedCell: null,
+  imageRevealed: false,
   avatarsEnabled: true,
   totalPhases: 3,
+  globalMuted: false,
+  volume: 0.8,
 };
 
 const MOCK_QUESTION_BASE = {

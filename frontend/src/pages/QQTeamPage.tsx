@@ -381,11 +381,8 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           }}>
             <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(myTeam.avatarId).emoji}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 17, color: teamColor, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+              <div style={{ fontWeight: 900, fontSize: 20, color: teamColor, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                 {myTeam.name}
-              </div>
-              <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>
-                {myTeam.largestConnected} {t.stats.connected[lang]} · {myTeam.totalCells} {t.stats.total[lang]}
               </div>
             </div>
             {/* Language selector — always visible, always works */}
@@ -409,13 +406,8 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 {lang === 'de' ? '🇩🇪' : '🇬🇧'}
               </span>
             </button>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>
-                P{s.gamePhaseIndex}/{s.totalPhases}
-              </div>
-              <div style={{ fontSize: 11, color: '#475569' }}>
-                F{(s.questionIndex % 5) + 1}/5
-              </div>
+            <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8', flexShrink: 0 }}>
+              {lang === 'de' ? 'Frage' : 'Q'} {(s.questionIndex % 5) + 1}/5
             </div>
           </div>
         )}
@@ -502,7 +494,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
-        <div style={{ fontSize: 14, color: '#475569', marginBottom: 6 }}>
+        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 6 }}>
           {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
         </div>
         <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
@@ -534,7 +526,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14,
         padding: '6px 16px', borderRadius: 999,
         background: `${catColor}22`, border: `2px solid ${catColor}55`,
-        color: catColor, fontSize: 13, fontWeight: 900, letterSpacing: '0.06em',
+        color: catColor, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
         boxShadow: `0 0 16px ${catColor}22`,
       }}>
         <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
@@ -962,9 +954,9 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
             </div>
             {/* − */}
             <button onClick={() => updateBet(i, -1)} disabled={pts <= 0} style={{
-              width: 40, height: 40, borderRadius: 10, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              width: 48, height: 48, borderRadius: 12, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : '#334155',
-              cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 20, fontWeight: 900,
+              cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}>−</button>
             {/* Points */}
             <div style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#475569', fontVariantNumeric: 'tabular-nums' }}>
@@ -972,9 +964,9 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
             </div>
             {/* + */}
             <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0} style={{
-              width: 40, height: 40, borderRadius: 10, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              width: 48, height: 48, borderRadius: 12, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : '#334155',
-              cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 20, fontWeight: 900,
+              cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}>+</button>
           </div>
         );
@@ -1082,7 +1074,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
         🕵️ {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing…' : 'wählt gerade…'}
-        <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
     );
   }
@@ -1095,7 +1087,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
     );
   }
 
-  if (!available.length) return <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', padding: 12 }}>{t.imposter.allChosen[lang]}</div>;
+  if (!available.length) return <div style={{ color: '#64748b', fontSize: 14, textAlign: 'center', padding: 12 }}>{t.imposter.allChosen[lang]}</div>;
 
   return (
     <div style={{ marginTop: 8 }}>
@@ -1158,7 +1150,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
       </div>
 
       {/* Counter */}
-      <div style={{ textAlign: 'center', fontSize: 12, color: '#475569', fontWeight: 700, marginTop: 6 }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: '#64748b', fontWeight: 700, marginTop: 6 }}>
         {clamped + 1} / {available.length}
       </div>
 
@@ -1190,7 +1182,7 @@ function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; 
           🔀 {criteria}
         </div>
       )}
-      <div style={{ fontSize: 12, color: '#475569', textAlign: 'center' }}>
+      <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center' }}>
         {lang === 'en' ? 'Tap ▲▼ to reorder' : '▲▼ zum Sortieren tippen'}
       </div>
       {items.map((item, i) => (
@@ -1205,8 +1197,8 @@ function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; 
           </div>
           <div style={{ flex: 1, fontSize: 'clamp(14px,3.8vw,16px)', fontWeight: 700, color: '#F1F5F9' }}>{item}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 28, height: 26, borderRadius: 6, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
-            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 28, height: 26, borderRadius: 6, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 40, height: 38, borderRadius: 8, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 15, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 40, height: 38, borderRadius: 8, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 15, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
           </div>
         </div>
       ))}
@@ -1281,7 +1273,7 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-        <span style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Timer</span>
+        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Timer</span>
         <span style={{ fontSize: 15, fontWeight: 900, color,
           textShadow: urgent ? '0 0 10px rgba(239,68,68,0.6)' : 'none' }}>
           {Math.ceil(remaining)}s
@@ -1555,7 +1547,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdat
               <span style={{ fontSize: 14, width: 22, color: i === 0 ? '#EAB308' : '#475569', fontWeight: 800 }}>#{i + 1}</span>
               <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
               <span style={{ fontWeight: 900, color: tm.color, flex: 1 }}>{tm.name}</span>
-              <span style={{ fontSize: 12, color: '#475569' }}>{tm.largestConnected} {t.gameOver.connected[lang]}</span>
+              <span style={{ fontSize: 13, color: '#64748b' }}>{tm.largestConnected} {t.gameOver.connected[lang]}</span>
             </div>
           ))}
         </div>
@@ -1572,7 +1564,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
       <div style={{ textAlign: 'center', color: '#e2e8f0', position: 'relative', zIndex: 5 }}>
         <div style={{ fontSize: 42, marginBottom: 12, animation: 'tcspin 3s linear infinite', display: 'inline-block' }}>⏳</div>
         <div style={{ fontSize: 22, fontWeight: 900 }}>Quarter Quiz</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#475569', margin: '8px 0' }}>{t.waiting.room[lang]}: {roomCode}</div>
+        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', margin: '8px 0' }}>{t.waiting.room[lang]}: {roomCode}</div>
         <div style={{ fontSize: 12, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
           {connected ? t.waiting.loading[lang] : t.waiting.connecting[lang]}
         </div>
@@ -1617,7 +1609,7 @@ function CozyBtn({ children, color, onClick, disabled }: { children: React.React
 
 function StepLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+    <div style={{ fontSize: 13, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
       {children}
     </div>
   );
@@ -1625,7 +1617,7 @@ function StepLabel({ children }: { children: React.ReactNode }) {
 
 function StatChip({ label, color }: { label: string; color: string }) {
   return (
-    <div style={{ padding: '3px 10px', borderRadius: 999, background: `${color}18`, border: `1px solid ${color}33`, fontSize: 11, fontWeight: 800, color }}>
+    <div style={{ padding: '3px 10px', borderRadius: 999, background: `${color}18`, border: `1px solid ${color}33`, fontSize: 13, fontWeight: 800, color }}>
       {label}
     </div>
   );

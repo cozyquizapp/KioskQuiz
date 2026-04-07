@@ -454,7 +454,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           background: '#ffffff', borderRadius: 20, padding: 20,
           boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
         }}>
-          <QRCodeSVG value={joinUrl} size={200} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+          <QRCodeSVG value={joinUrl} size={260} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{de ? 'Jetzt mitspielen' : 'Join now'}</div>
@@ -1517,7 +1517,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
         {s.gridSize}×{s.gridSize} {bt.grid.label[lang]}
       </div>
       <div style={{
@@ -1660,8 +1660,8 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
           <span style={{ fontSize: 22, width: 30, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 900, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>
+              <span style={{ fontSize: 18, fontWeight: 900, color: t.color }}>{t.name}</span>
+              <span style={{ fontSize: 16, color: '#64748b', fontWeight: 700 }}>
                 {t.largestConnected}<span style={{ opacity: 0.5 }}> / {t.totalCells}</span>
               </span>
             </div>

@@ -648,7 +648,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         </div>
       )}
 
-      {isRevealed && s.correctTeamId && (() => {
+      {isRevealed && s.correctTeamId && !!(s.pendingFor || s.pendingAction) && (() => {
         const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
         const cat = q.category;
         const isEn = lang === 'en';

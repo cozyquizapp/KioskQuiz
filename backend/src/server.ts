@@ -8011,6 +8011,36 @@ app.get('/api/qq/results', async (_req, res) => {
   }
 });
 
+// QQ Leaderboard — aggregated wins + recent games
+app.get('/api/qq/leaderboard', async (_req, res) => {
+  try {
+    const results = await getQQGameResults(200);
+    const wins: Record<string, number> = {};
+    const gamesPlayed: Record<string, number> = {};
+    for (const r of results) {
+      if (Array.isArray(r.teams)) {
+        for (const t of r.teams) {
+          if (t?.name) gamesPlayed[t.name] = (gamesPlayed[t.name] || 0) + 1;
+        }
+      }
+      if (r.winner) wins[r.winner] = (wins[r.winner] || 0) + 1;
+    }
+    const leaderboard = Object.entries(wins)
+      .map(([name, w]) => ({ name, wins: w, games: gamesPlayed[name] || w }))
+      .sort((a, b) => b.wins - a.wins || b.games - a.games)
+      .slice(0, 10);
+    const recent = results.slice(0, 5).map(r => ({
+      winner: r.winner,
+      teams: Array.isArray(r.teams) ? r.teams.map((t: any) => ({ name: t.name, score: t.score })) : [],
+      playedAt: r.playedAt,
+      draftTitle: r.draftTitle,
+    }));
+    res.json({ leaderboard, recent, totalGames: results.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Laden des Leaderboards' });
+  }
+});
+
 // Background removal via Cloudinary e_background_removal
 app.post('/api/qq/remove-bg', (req, res) => {
   const { imageUrl } = req.body as { imageUrl?: string };

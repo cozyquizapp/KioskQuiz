@@ -43,13 +43,18 @@ export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
   CHEESE:        '#8B5CF6',
 };
 
-// ── Team palette (up to 5 teams) ──────────────────────────────────────────────
+// ── Team palette (up to 10 teams) ─────────────────────────────────────────────
 export const QQ_TEAM_PALETTE: string[] = [
   '#3B82F6',  // blue
   '#EF4444',  // red
   '#F97316',  // orange
   '#22C55E',  // green
   '#8B5CF6',  // violet
+  '#EC4899',  // pink
+  '#14B8A6',  // teal
+  '#F59E0B',  // amber
+  '#6366F1',  // indigo
+  '#84CC16',  // lime
 ];
 
 // ── Game constants ────────────────────────────────────────────────────────────
@@ -58,14 +63,15 @@ export const QQ_QUESTIONS_PER_PHASE   = 5;
 export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_PHASE  = 2;
-export const QQ_MAX_TEAMS             = 5;
+export const QQ_MAX_TEAMS             = 10;
 export const QQ_MIN_TEAMS             = 2;
 
 export function qqGridSize(teamCount: number): number {
-  if (teamCount <= 2) return 4;
-  if (teamCount === 3) return 5;
-  if (teamCount <= 4) return 6;
-  return 6; // 5 teams
+  if (teamCount <= 2) return 4;   // 4×4 = 16
+  if (teamCount === 3) return 5;  // 5×5 = 25
+  if (teamCount <= 5) return 6;   // 6×6 = 36
+  if (teamCount <= 7) return 7;   // 7×7 = 49
+  return 8;                        // 8-10 teams → 8×8 = 64
 }
 
 // ── Phase flow ────────────────────────────────────────────────────────────────

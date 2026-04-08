@@ -305,6 +305,22 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     return () => { a.pause(); };
   }, [s.currentQuestion?.musicUrl, s.phase, s.globalMuted, s.volume]);
 
+  // Fullscreen toggle
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+  const toggleFullscreen = () => {
+    resumeAudio();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
   const rawActiveTemplate = templateType ? slideTemplates[templateType] : undefined;
@@ -329,6 +345,23 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
+
+      {/* Fullscreen toggle — hidden when already fullscreen */}
+      {!isFullscreen && (
+        <button
+          onClick={toggleFullscreen}
+          title="Vollbild"
+          style={{
+            position: 'fixed', top: 12, right: 12, zIndex: 9999,
+            width: 36, height: 36, borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'rgba(13,17,23,0.72)',
+            color: '#e2e8f0', fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(6px)',
+          }}
+        >⛶</button>
+      )}
 
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
@@ -447,6 +480,21 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     return () => clearInterval(id);
   }, []);
 
+  // Leaderboard
+  type LeaderEntry = { name: string; wins: number; games: number };
+  type RecentGame = { winner: string; teams: { name: string; score: number }[]; playedAt: number; draftTitle: string };
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
+  const [totalGames, setTotalGames] = useState(0);
+  useEffect(() => {
+    const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
+    fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
+      if (data.leaderboard) setLeaderboard(data.leaderboard);
+      if (data.recent) setRecentGames(data.recent);
+      if (data.totalGames) setTotalGames(data.totalGames);
+    }).catch(() => {});
+  }, []);
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', padding: '40px 48px', gap: 40, position: 'relative' }}>
       <Fireflies />
@@ -497,6 +545,34 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
             : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
         </div>
+
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <div style={{
+            background: cardBg, borderRadius: 16, padding: '16px 20px',
+            border: '1px solid rgba(255,255,255,0.06)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            maxWidth: 420,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🏆 {de ? 'Bestenliste' : 'Leaderboard'}
+              {totalGames > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+            </div>
+            {leaderboard.slice(0, 5).map((entry, i) => (
+              <div key={entry.name} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0',
+                borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                </span>
+                <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#e2e8f0' }}>{entry.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+                <span style={{ fontSize: 11, color: '#475569' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Right: QR code */}

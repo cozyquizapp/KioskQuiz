@@ -1,6 +1,6 @@
 # QQ App – Handoff Dokument
 
-Stand: 07.04.2026 | Branch: `main` | Letzter Commit: `8135bc5`
+Stand: 08.04.2026 | Branch: `main`
 
 ---
 
@@ -42,7 +42,44 @@ Stand: 07.04.2026 | Branch: `main` | Letzter Commit: `8135bc5`
 
 ---
 
-## Letzte Änderungen (Session 07.04.2026)
+## Letzte Änderungen (Session 08.04.2026)
+
+### Fun Stats & Lobby-Rotation
+
+| Änderung | Dateien |
+|---|---|
+| `questionHistory` + `funnyAnswers` im Room-State — Antworten werden pro Frage akkumuliert | `qqRooms.ts` |
+| Game-Result speichert nun `questionHistory` + `funnyAnswers` (Schema `strict: false`) | `qqSocketHandlers.ts` |
+| `qq:markFunny` Socket-Event — Moderator markiert lustige Antworten (😂-Button) | `qqSocketHandlers.ts`, `QQModeratorPage.tsx` |
+| Leaderboard-API liefert `funStats`: Höchster Score, knappster Sieg, Siegesserie, meiste Spiele, schnellste Antwort, lustigste Antworten | `server.ts` |
+| Beamer-Lobby rotiert automatisch: Bestenliste → Rekorde → Lustige Antworten (10s, mit Dot-Indicator) | `QQBeamerPage.tsx` |
+
+### Commit `873abd6` — Fullscreen, 10 Teams, Leaderboard
+
+| Änderung | Dateien |
+|---|---|
+| Fullscreen-Button auf QQ-Beamer (versteckt sich im Fullscreen) | `QQBeamerPage.tsx` |
+| Team-Limit von 5 auf 10 erhöht (5 neue Farben, Grid skaliert auf 8×8) | `quarterQuizTypes.ts` |
+| Persistentes Leaderboard: `/api/qq/leaderboard` Endpoint | `server.ts`, `schemas.ts` |
+| Beamer-Lobby zeigt Top-5-Teams nach Siegen | `QQBeamerPage.tsx` |
+
+### Commit `a2a631e` — Bugfix Feld-wählen
+
+| Änderung | Dateien |
+|---|---|
+| "Feld wählen"-Nachricht nach Placement ausgeblendet | `QQTeamPage.tsx` |
+
+### Commit `84533ae` — Hot Potato Overhaul
+
+| Änderung | Dateien |
+|---|---|
+| Hot Potato: Eliminierungsmodus (Richtig = überleben + weiter, Letzter gewinnt) | `qqRooms.ts`, `qqSocketHandlers.ts` |
+| Auto-Check: Antworten gegen Antwortliste (Ähnlichkeit ≥ 0.8) + Duplikat-Erkennung | `qqSocketHandlers.ts` |
+| Verwendete & eliminierte Antworten auf Beamer + Moderator sichtbar | `QQBeamerPage.tsx`, `QQModeratorPage.tsx` |
+
+---
+
+## Änderungen Session 07.04.2026
 
 ### Commit `26f9516` — Security & Prod Hardening
 

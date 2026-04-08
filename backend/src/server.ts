@@ -8035,7 +8035,117 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
       playedAt: r.playedAt,
       draftTitle: r.draftTitle,
     }));
-    res.json({ leaderboard, recent, totalGames: results.length });
+
+    // ── Fun stats ────────────────────────────────────────────────────────
+    // Highest single-team score ever
+    let highestScore: { teamName: string; score: number; draftTitle: string } | null = null;
+    // Closest game (smallest score gap between 1st and 2nd)
+    let closestGame: { teams: string[]; gap: number; draftTitle: string } | null = null;
+    // Win streak (consecutive wins by same team, most recent)
+    let winStreak: { teamName: string; streak: number } | null = null;
+    // Most games played
+    let mostGames: { teamName: string; games: number } | null = null;
+    // Fastest answer (smallest submittedAt - questionStart proxy)
+    let fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null = null;
+    // Funny answers (random pick from all marked funny answers)
+    const allFunny: Array<{ teamName: string; text: string; questionText: string }> = [];
+
+    for (const r of results) {
+      const teams = Array.isArray(r.teams) ? r.teams : [];
+      // Highest score
+      for (const t of teams) {
+        if (t?.score != null && t.name && (!highestScore || t.score > highestScore.score)) {
+          highestScore = { teamName: t.name, score: t.score, draftTitle: r.draftTitle ?? '' };
+        }
+      }
+      // Closest game
+      if (teams.length >= 2) {
+        const sorted = [...teams].filter((t: any) => t?.score != null).sort((a: any, b: any) => b.score - a.score);
+        if (sorted.length >= 2) {
+          const gap = (sorted[0] as any).score - (sorted[1] as any).score;
+          if (!closestGame || gap < closestGame.gap) {
+            closestGame = {
+              teams: [(sorted[0] as any).name, (sorted[1] as any).name],
+              gap,
+              draftTitle: r.draftTitle ?? '',
+            };
+          }
+        }
+      }
+      // Funny answers
+      if (Array.isArray((r as any).funnyAnswers)) {
+        for (const fa of (r as any).funnyAnswers) {
+          if (fa?.teamName && fa?.text) {
+            allFunny.push({ teamName: fa.teamName, text: fa.text, questionText: fa.questionText ?? '' });
+          }
+        }
+      }
+      // Fastest answer from questionHistory
+      if (Array.isArray((r as any).questionHistory)) {
+        for (const qh of (r as any).questionHistory) {
+          if (!Array.isArray(qh?.answers) || qh.answers.length === 0) continue;
+          const firstAnswer = qh.answers.reduce((min: any, a: any) =>
+            a.submittedAt < min.submittedAt ? a : min, qh.answers[0]);
+          // Approximate speed: difference between first and second answer, or just use raw submittedAt as proxy
+          // We use the fastest answer relative to question start (submittedAt itself is absolute ms timestamp)
+          // Compare answers within same question: fastest = smallest submittedAt
+          if (qh.answers.length >= 2) {
+            const sortedAns = [...qh.answers].sort((a: any, b: any) => a.submittedAt - b.submittedAt);
+            const speedMs = sortedAns[1].submittedAt - sortedAns[0].submittedAt;
+            if (speedMs > 0 && (!fastestAnswer || speedMs < fastestAnswer.ms)) {
+              // The fastest team beat the second by this margin
+              fastestAnswer = {
+                teamName: sortedAns[0].teamName ?? sortedAns[0].teamId,
+                text: sortedAns[0].text,
+                questionText: qh.questionText ?? '',
+                ms: speedMs,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Win streak (from most recent games backwards)
+    if (results.length > 0) {
+      const recentWinners = results.map(r => r.winner).filter(Boolean) as string[];
+      if (recentWinners.length > 0) {
+        // Find longest streak for any team
+        const streaks: Record<string, number> = {};
+        let currentTeam = recentWinners[0];
+        let currentStreak = 1;
+        streaks[currentTeam] = 1;
+        for (let i = 1; i < recentWinners.length; i++) {
+          if (recentWinners[i] === currentTeam) {
+            currentStreak++;
+            if (currentStreak > (streaks[currentTeam] || 0)) streaks[currentTeam] = currentStreak;
+          } else {
+            currentTeam = recentWinners[i];
+            currentStreak = 1;
+            if (!streaks[currentTeam] || 1 > streaks[currentTeam]) streaks[currentTeam] = 1;
+          }
+        }
+        const best = Object.entries(streaks).sort((a, b) => b[1] - a[1])[0];
+        if (best && best[1] >= 2) {
+          winStreak = { teamName: best[0], streak: best[1] };
+        }
+      }
+    }
+
+    // Most games
+    const mostGamesEntry = Object.entries(gamesPlayed).sort((a, b) => b[1] - a[1])[0];
+    if (mostGamesEntry && mostGamesEntry[1] >= 2) {
+      mostGames = { teamName: mostGamesEntry[0], games: mostGamesEntry[1] };
+    }
+
+    // Pick up to 3 random funny answers
+    const funnyPicks = allFunny.length <= 3 ? allFunny
+      : allFunny.sort(() => Math.random() - 0.5).slice(0, 3);
+
+    res.json({
+      leaderboard, recent, totalGames: results.length,
+      funStats: { highestScore, closestGame, winStreak, mostGames, fastestAnswer, funnyAnswers: funnyPicks },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Fehler beim Laden des Leaderboards' });
   }

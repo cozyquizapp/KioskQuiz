@@ -81,6 +81,14 @@ export interface QQRoomState {
   // Sound
   globalMuted: boolean;
   volume: number; // 0–1
+  // Fun stats — accumulated across questions
+  questionHistory: Array<{
+    questionText: string;
+    category: string;
+    answers: Array<{ teamId: string; teamName: string; text: string; submittedAt: number }>;
+    correctTeamId: string | null;
+  }>;
+  funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
 }
 
 // ── In-process room map ───────────────────────────────────────────────────────
@@ -150,6 +158,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       lastActivityAt: Date.now(),
       globalMuted: false,
       volume: 0.8,
+      questionHistory: [],
+      funnyAnswers: [],
     };
     qqRooms.set(roomCode, room);
   }
@@ -361,6 +371,20 @@ export function qqActivateQuestion(
   onTimerExpire: () => void
 ): void {
   assertPhase(room, ['PHASE_INTRO', 'PLACEMENT', 'COMEBACK_CHOICE']);
+  // Accumulate previous question's answers into history before clearing
+  if (room.currentQuestion && room.answers.length > 0) {
+    room.questionHistory.push({
+      questionText: room.currentQuestion.answer ?? room.currentQuestion.question ?? '',
+      category: room.currentQuestion.category,
+      answers: room.answers.map(a => ({
+        teamId: a.teamId,
+        teamName: room.teams[a.teamId]?.name ?? a.teamId,
+        text: a.text,
+        submittedAt: a.submittedAt,
+      })),
+      correctTeamId: room.correctTeamId,
+    });
+  }
   room.phase          = 'QUESTION_ACTIVE';
   room.revealedAnswer = null;
   room.correctTeamId  = null;
@@ -1385,6 +1409,8 @@ export function qqResetRoom(room: QQRoomState): void {
     room.teams[id].largestConnected = 0;
   }
   room.totalPhases = 3;
+  room.questionHistory = [];
+  room.funnyAnswers = [];
   room.lastActivityAt = Date.now();
 }
 

@@ -58,6 +58,22 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   teamList.forEach((t: any) => { scores[t.id] = (room.teamPhaseStats[t.id] as any)?.totalScore ?? 0; });
   const sorted = [...teamList].sort((a: any, b: any) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
   const winner = (sorted[0] as any)?.name ?? null;
+
+  // Flush last question's answers into history
+  if (room.currentQuestion && room.answers.length > 0) {
+    room.questionHistory.push({
+      questionText: room.currentQuestion.answer ?? room.currentQuestion.question ?? '',
+      category: room.currentQuestion.category,
+      answers: room.answers.map(a => ({
+        teamId: a.teamId,
+        teamName: room.teams[a.teamId]?.name ?? a.teamId,
+        text: a.text,
+        submittedAt: a.submittedAt,
+      })),
+      correctTeamId: room.correctTeamId,
+    });
+  }
+
   const result = {
     id: `qqr-${room.roomCode}-${Date.now().toString(36)}`,
     draftId: room.draftId ?? null,
@@ -69,6 +85,8 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     phases: room.totalPhases,
     language: room.language,
     grid: room.grid,
+    questionHistory: room.questionHistory,
+    funnyAnswers: room.funnyAnswers,
   };
   saveQQGameResult(result).catch(() => {/* fire and forget */});
 }
@@ -497,6 +515,23 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqKickTeam(room, payload.teamId);
         broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Mark funny answer (moderator) ──────────────────────────────────────
+    socket.on('qq:markFunny', (payload: { roomCode: string; teamId: string; text: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const team = room.teams[payload.teamId];
+        if (!team) { ok(ack); return; }
+        const questionText = room.currentQuestion?.question ?? '';
+        room.funnyAnswers.push({
+          teamId: payload.teamId,
+          teamName: team.name,
+          text: payload.text,
+          questionText,
+        });
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

@@ -615,6 +615,16 @@ export default function QQModeratorPage() {
                               ✓ Richtig
                             </Btn>
                           )}
+                          {s.phase === 'QUESTION_REVEAL' && answer && (
+                            <button
+                              onClick={() => emit('qq:markFunny', { roomCode, teamId: t.id, text: answer.text })}
+                              title="Lustige Antwort markieren"
+                              style={{
+                                padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
+                                border: '1px solid rgba(251,191,36,0.3)', background: 'transparent',
+                                fontSize: 16, lineHeight: 1, fontFamily: 'inherit',
+                              }}>😂</button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -480,20 +480,173 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     return () => clearInterval(id);
   }, []);
 
-  // Leaderboard
+  // Leaderboard + fun stats
   type LeaderEntry = { name: string; wins: number; games: number };
   type RecentGame = { winner: string; teams: { name: string; score: number }[]; playedAt: number; draftTitle: string };
+  type FunStats = {
+    highestScore: { teamName: string; score: number; draftTitle: string } | null;
+    closestGame: { teams: string[]; gap: number; draftTitle: string } | null;
+    winStreak: { teamName: string; streak: number } | null;
+    mostGames: { teamName: string; games: number } | null;
+    fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null;
+    funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
+  };
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
-  const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
+  const [_recentGames, setRecentGames] = useState<RecentGame[]>([]);
   const [totalGames, setTotalGames] = useState(0);
+  const [funStats, setFunStats] = useState<FunStats | null>(null);
   useEffect(() => {
     const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
     fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
       if (data.leaderboard) setLeaderboard(data.leaderboard);
       if (data.recent) setRecentGames(data.recent);
       if (data.totalGames) setTotalGames(data.totalGames);
+      if (data.funStats) setFunStats(data.funStats);
     }).catch(() => {});
   }, []);
+
+  // Build rotating panels: leaderboard + each fun stat that exists
+  const panels: Array<{ key: string; node: React.ReactNode }> = [];
+  // Panel 0: Leaderboard
+  if (leaderboard.length > 0) {
+    panels.push({ key: 'leaderboard', node: (
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          🏆 {de ? 'Bestenliste' : 'Leaderboard'}
+          {totalGames > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+        </div>
+        {leaderboard.slice(0, 5).map((entry, i) => (
+          <div key={entry.name} style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0',
+            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+          }}>
+            <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+            </span>
+            <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#e2e8f0' }}>{entry.name}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+            <span style={{ fontSize: 11, color: '#475569' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+  // Panel: Records (highest score + closest game + win streak + most games)
+  if (funStats) {
+    const records: React.ReactNode[] = [];
+    if (funStats.highestScore) {
+      records.push(
+        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+          <span style={{ fontSize: 22 }}>🔥</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+              {de ? 'Höchster Score' : 'Highest Score'}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.closestGame) {
+      records.push(
+        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+          <span style={{ fontSize: 22 }}>⚔️</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+              {de ? 'Knappster Sieg' : 'Closest Game'}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Punkte Unterschied` : `only ${funStats.closestGame.gap} pts apart`}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.winStreak) {
+      records.push(
+        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+          <span style={{ fontSize: 22 }}>🔥</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+              {de ? 'Siegesserie' : 'Win Streak'}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.mostGames) {
+      records.push(
+        <div key="mg" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+          <span style={{ fontSize: 22 }}>🎮</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+              {de ? 'Meiste Spiele' : 'Most Games'}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.mostGames.teamName}</strong> — {funStats.mostGames.games} {de ? 'Spiele' : 'games'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.fastestAnswer) {
+      const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
+      records.push(
+        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+          <span style={{ fontSize: 22 }}>⚡</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+              {de ? 'Schnellste Antwort' : 'Fastest Answer'}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (records.length > 0) {
+      panels.push({ key: 'records', node: (
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            📊 {de ? 'Rekorde' : 'Records'}
+          </div>
+          {records}
+        </div>
+      )});
+    }
+  }
+  // Panel: Funny answers
+  if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
+    panels.push({ key: 'funny', node: (
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          😂 {de ? 'Lustigste Antworten' : 'Funniest Answers'}
+        </div>
+        {funStats.funnyAnswers.map((fa, i) => (
+          <div key={i} style={{ padding: '6px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>— {fa.teamName}</div>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+
+  // Auto-rotate panels
+  const [panelIdx, setPanelIdx] = useState(0);
+  useEffect(() => {
+    if (panels.length <= 1) return;
+    const id = setInterval(() => setPanelIdx(p => (p + 1) % panels.length), 10000);
+    return () => clearInterval(id);
+  }, [panels.length]);
+
+  const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', padding: '40px 48px', gap: 40, position: 'relative' }}>
@@ -546,31 +699,27 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
         </div>
 
-        {/* Leaderboard */}
-        {leaderboard.length > 0 && (
+        {/* Rotating stats panels */}
+        {activePanel && (
           <div style={{
             background: cardBg, borderRadius: 16, padding: '16px 20px',
             border: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
             maxWidth: 420,
+            transition: 'opacity 0.4s',
           }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-              🏆 {de ? 'Bestenliste' : 'Leaderboard'}
-              {totalGames > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
-            </div>
-            {leaderboard.slice(0, 5).map((entry, i) => (
-              <div key={entry.name} style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0',
-                borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-              }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-                </span>
-                <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#e2e8f0' }}>{entry.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
-                <span style={{ fontSize: 11, color: '#475569' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+            {activePanel.node}
+            {panels.length > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+                {panels.map((_, i) => (
+                  <div key={i} style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
+                    transition: 'background 0.3s',
+                  }} />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

@@ -771,6 +771,17 @@ export default function QQSlideEditorPage() {
                   }}
                   onDelete={deleteSelected}
                   onDuplicate={duplicateSelected}
+                  onDropFile={async (file, x, y) => {
+                    if (file.size > 2 * 1024 * 1024) { alert('Bild zu groß (max 2 MB)'); return; }
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    const res = await fetch('/api/upload/question-image', { method: 'POST', body: fd });
+                    if (!res.ok) { alert('Upload fehlgeschlagen'); return; }
+                    const { imageUrl } = await res.json() as { imageUrl: string };
+                    const newEl: QQSlideElement = { id: eid(), type: 'image', x: Math.max(0, x - 15), y: Math.max(0, y - 15), w: 30, h: 30, zIndex: 5, imageUrl, objectFit: 'contain' };
+                    patchTemplate({ ...activeTemplate, elements: [...activeTemplate.elements, newEl] });
+                    setSelectedIds([newEl.id]);
+                  }}
                 />
               )}
             </div>
@@ -781,7 +792,8 @@ export default function QQSlideEditorPage() {
         <div style={{ width: 290, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>
             {selectedEl ? (
-              <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected} />
+              <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
+                onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
             ) : (
               <EmptyProperties onAdd={addElement} />
             )}
@@ -837,7 +849,7 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate }: {
+function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate, onDropFile }: {
   template: QQSlideTemplate;
   templateType: QQSlideTemplateType;
   bgColor: string;
@@ -855,6 +867,7 @@ function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, 
   onEndEdit: (id: string, text: string) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onDropFile?: (file: File, x: number, y: number) => void;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasW, setCanvasW] = useState(800);
@@ -997,7 +1010,18 @@ function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, 
         marqueeRef.current = { startX: mx, startY: my, curX: mx, curY: my };
         onClearSelect();
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClearSelect(); }}>
+      onClick={e => { if (e.target === e.currentTarget) onClearSelect(); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+      onDrop={e => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.type.startsWith('image/') || !onDropFile) return;
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        onDropFile(file, x, y);
+      }}>
 
       {/* Render all elements (incl. ph_*) with mock data — non-interactive visual layer */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
@@ -1203,11 +1227,12 @@ const ANIM_TYPE_OPTIONS = [
   { value: 'bounce', label: 'Hüpfen' },
 ];
 
-function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
+function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAsBackground }: {
   element: QQSlideElement;
   onChange: (p: Partial<QQSlideElement>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onSetAsBackground?: (url: string) => void;
 }) {
   const isPh = el.type.startsWith('ph_');
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -1397,6 +1422,12 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate }: {
               ))}
             </div>
           </Field>
+          {el.imageUrl && onSetAsBackground && (
+            <button onClick={() => onSetAsBackground(el.imageUrl!)}
+              style={{ ...btn('#475569', true), width: '100%', fontSize: 11, padding: '5px 10px', textAlign: 'center' }}>
+              🖼 Als Folienhintergrund setzen
+            </button>
+          )}
         </Section>
       )}
 

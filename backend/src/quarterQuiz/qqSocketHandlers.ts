@@ -62,7 +62,7 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // Flush last question's answers into history
   if (room.currentQuestion && room.answers.length > 0) {
     room.questionHistory.push({
-      questionText: room.currentQuestion.answer ?? room.currentQuestion.question ?? '',
+      questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
       category: room.currentQuestion.category,
       answers: room.answers.map(a => ({
         teamId: a.teamId,
@@ -525,7 +525,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const team = room.teams[payload.teamId];
         if (!team) { ok(ack); return; }
-        const questionText = room.currentQuestion?.question ?? '';
+        const questionText = room.currentQuestion?.text ?? '';
         room.funnyAnswers.push({
           teamId: payload.teamId,
           teamName: team.name,

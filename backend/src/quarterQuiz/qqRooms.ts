@@ -374,7 +374,7 @@ export function qqActivateQuestion(
   // Accumulate previous question's answers into history before clearing
   if (room.currentQuestion && room.answers.length > 0) {
     room.questionHistory.push({
-      questionText: room.currentQuestion.answer ?? room.currentQuestion.question ?? '',
+      questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
       category: room.currentQuestion.category,
       answers: room.answers.map(a => ({
         teamId: a.teamId,

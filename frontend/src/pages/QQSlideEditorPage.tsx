@@ -475,7 +475,7 @@ export default function QQSlideEditorPage() {
       ...(type === 'text'  ? { text: 'Text', fontSize: 3, fontWeight: 700, color: '#ffffff', textAlign: 'center' } : {}),
       ...(type === 'rect'  ? { background: 'rgba(30,41,59,0.8)', borderRadius: 12 } : {}),
       ...(type === 'image' ? { imageUrl: '', objectFit: 'contain' as const } : {}),
-          ...(type === 'animatedAvatar' ? { avatarId: 'avatar1', animType: 'wiggle', avatarAnimDuration: 1.2, avatarAnimDelay: 0 } : {}),
+          ...(type === 'animatedAvatar' ? { text: '🧑', animType: 'wiggle', avatarAnimDuration: 4, avatarAnimDelay: 0 } : {}),
     };
     patchTemplate({ ...activeTemplate, elements: [...(activeTemplate.elements || []), newEl] });
     setSelectedIds([newEl.id]);
@@ -1591,16 +1591,16 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
 
       {/* Animated Avatar Eigenschaften */}
       {el.type === 'animatedAvatar' && (
-        <Section label="Avatar-Eigenschaften">
-          <Field label="Avatar">
-            <div style={{ display: 'flex', gap: 6 }}>
-              {AVATAR_OPTIONS.map(opt => (
-                <button key={opt.id} onClick={() => onChange({ avatarId: opt.id })} style={{
-                  padding: '6px 10px', borderRadius: 7, border: el.avatarId === opt.id ? '2px solid #3B82F6' : '1px solid #64748b', background: el.avatarId === opt.id ? '#3B82F6' : 'rgba(59,130,246,0.06)', color: el.avatarId === opt.id ? '#fff' : '#64748b', fontWeight: 800, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit',
-                }}>{opt.icon}</button>
-              ))}
+        <Section label="Avatar-Bibliothek">
+          {/* Current avatar preview */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', marginBottom: 4 }}>
+            <span style={{ fontSize: 36, lineHeight: 1 }}>{el.text ?? '✨'}</span>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Aktueller Avatar</div>
+              <div style={{ fontSize: 11, color: '#94a3b8' }}>Klick auf Figur zum Wechseln</div>
             </div>
-          </Field>
+          </div>
+          <AvatarLibrary current={el.text ?? ''} onPick={emoji => onChange({ text: emoji })} />
           <Field label="Animationstyp">
             <select value={el.animType ?? 'wiggle'} onChange={e => onChange({ animType: e.target.value as any })} style={{ ...input, padding: '4px 7px' }}>
               {ANIM_TYPE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
@@ -1608,7 +1608,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
             <Field label="Dauer (s)">
-              <input type="number" value={el.avatarAnimDuration ?? 1.2} step={0.1} min={0.1} onChange={e => onChange({ avatarAnimDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+              <input type="number" value={el.avatarAnimDuration ?? 4} step={0.5} min={0.5} onChange={e => onChange({ avatarAnimDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
             </Field>
             <Field label="Verzögerung (s)">
               <input type="number" value={el.avatarAnimDelay ?? 0} step={0.1} min={0} onChange={e => onChange({ avatarAnimDelay: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
@@ -1867,6 +1867,57 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 3 }}>{label}</div>
       {children}
+    </div>
+  );
+}
+
+// ── Avatar Library ────────────────────────────────────────────────────────────
+const AVATAR_LIBRARY: { label: string; entries: string[] }[] = [
+  { label: '🧑 Menschen', entries: ['🧑','👩','👨','🧔','👧','👦','🧒','👶','🧓','👴','👵','🧑‍🦱','🧑‍🦰','🧑‍🦳','🧑‍🦲','👸','🤴','🦸','🦹','🧙'] },
+  { label: '🐾 Tiere', entries: ['🦊','🐻','🐼','🦁','🐯','🐮','🐷','🐸','🐧','🦋','🐙','🦈','🐬','🦄','🦅','🐺','🦊','🐉','🦖','🦕'] },
+  { label: '🧟 Figuren', entries: ['🧟','🧛','🧜','🧚','🧞','🧝','👾','🤖','👻','💀','☠️','👽','🎅','🤶','🦄','🧸','🪆','🎭','🪅','🤡'] },
+  { label: '😀 Gesichter', entries: ['😀','😎','🤩','🥳','😍','🤔','😱','🤯','🥸','😈','👿','💩','🤖','👻','💀','🎃','🧠','👁️','🫀','🫁'] },
+  { label: '🌍 Natur', entries: ['🌵','🌴','🌲','🌳','🌱','🌻','🌺','🌸','🍀','🍄','⭐','🌙','☀️','🌈','❄️','🔥','💧','🌊','🌪️','⚡'] },
+  { label: '🏋️ Sport', entries: ['🏋️','🤸','⛹️','🤼','🤺','🏇','🧗','🤾','🏊','🚴','🎯','🏆','🥇','⚽','🏀','🎾','🏈','🎳','🎿','🛹'] },
+  { label: '🎨 Objekte', entries: ['🎤','🎸','🎹','🥁','🎺','🎻','🎨','🖌️','🎭','🎪','🎡','🎢','🎠','🏰','🗼','🚀','🛸','💡','🔮','🪄'] },
+  { label: '🍕 Essen', entries: ['🍕','🍔','🌮','🍣','🍜','🍦','🎂','🧁','🍩','🍪','🍫','🍿','☕','🧃','🍺','🥂','🍷','🧊','🫙','🍱'] },
+];
+
+function AvatarLibrary({ current, onPick }: { current: string; onPick: (emoji: string) => void }) {
+  const [cat, setCat] = useState(0);
+  return (
+    <div style={{ marginBottom: 6 }}>
+      {/* Category tabs */}
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginBottom: 6 }}>
+        {AVATAR_LIBRARY.map((c, i) => (
+          <button key={i} type="button" onClick={() => setCat(i)} style={{
+            fontSize: 11, padding: '2px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
+            background: cat === i ? '#3B82F6' : 'rgba(255,255,255,0.07)',
+            color: cat === i ? '#fff' : '#94a3b8', fontFamily: 'inherit', fontWeight: 700,
+          }}>
+            {c.label.split(' ')[0]}
+          </button>
+        ))}
+      </div>
+      {/* Avatar grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 2,
+        background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 6,
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        {AVATAR_LIBRARY[cat].entries.map((emoji, i) => (
+          <button key={i} type="button" onClick={() => onPick(emoji)} style={{
+            fontSize: 22, padding: '4px 2px', border: current === emoji ? '2px solid #3B82F6' : '2px solid transparent',
+            background: current === emoji ? 'rgba(59,130,246,0.2)' : 'transparent',
+            cursor: 'pointer', borderRadius: 6, lineHeight: 1, transition: 'all 0.1s',
+          }}
+          onMouseEnter={e => { if (current !== emoji) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+          onMouseLeave={e => { if (current !== emoji) e.currentTarget.style.background = 'transparent'; }}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

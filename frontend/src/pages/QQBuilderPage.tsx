@@ -571,8 +571,15 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
         </div>
 
         {img?.url && (
-          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', maxHeight: 160 }}>
-            <img src={img.bgRemovedUrl ?? img.url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
+          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', height: 140 }}>
+            <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: (img.layout === 'cutout' || img.layout === 'window-left' || img.layout === 'window-right') ? 'contain' : 'cover',
+              transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+            }} />
+            <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700, background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: 4 }}>
+              {img.layout === 'fullscreen' ? 'Vollbild' : img.layout === 'window-left' ? 'Links' : img.layout === 'window-right' ? 'Rechts' : img.layout === 'cutout' ? 'Freisteller' : 'Kein Bild'}
+            </div>
             {img.bgRemovedUrl && <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(34,197,94,0.9)', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>✓ BG entfernt</div>}
           </div>
         )}

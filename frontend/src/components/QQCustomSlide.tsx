@@ -97,6 +97,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   hotPotatoEliminated: [],
   hotPotatoLastAnswer: null,
   hotPotatoTurnEndsAt: null,
+  hotPotatoUsedAnswers: [],
   imposterActiveTeamId: null,
   imposterChosenIndices: [],
   imposterEliminated: [],
@@ -124,16 +125,30 @@ const MOCK_QUESTION_BASE = {
 
 /**
  * Returns a mock partial QQStateUpdate suitable for previewing each slide type.
- * If `questions` from the draft are provided, real image data is merged into the mock.
+ * - `questions`: all draft questions — used to find a real question per category
+ * - `specificQuestion`: if provided, used directly as preview question (overrides category search)
  */
-export function makePreviewState(templateType: QQSlideTemplateType, questions?: QQQuestion[]): Partial<QQStateUpdate> {
-  // Find a real question with an image for the matching category
+export function makePreviewState(templateType: QQSlideTemplateType, questions?: QQQuestion[], specificQuestion?: QQQuestion): Partial<QQStateUpdate> {
   const catMap: Record<string, QQCategory> = {
     QUESTION_SCHAETZCHEN: 'SCHAETZCHEN', QUESTION_MUCHO: 'MUCHO',
     QUESTION_BUNTE_TUETE: 'BUNTE_TUETE', QUESTION_ZEHN: 'ZEHN_VON_ZEHN', QUESTION_CHEESE: 'CHEESE',
   };
   const cat = catMap[templateType];
-  const realQ = cat && questions?.find(q => q.category === cat && q.image?.url);
+
+  // For question templates: use specific question, or first real question of that category
+  if (cat) {
+    const realQ = (specificQuestion?.category === cat ? specificQuestion : null)
+      ?? questions?.find(q => q.category === cat);
+    if (realQ) {
+      return {
+        phase: 'QUESTION_ACTIVE',
+        currentQuestion: realQ,
+        timerEndsAt: Date.now() + 20000,
+        timerDurationSec: 20,
+        teams: MOCK_TEAMS,
+      };
+    }
+  }
 
   switch (templateType) {
     case 'LOBBY':
@@ -153,35 +168,35 @@ export function makePreviewState(templateType: QQSlideTemplateType, questions?: 
     case 'QUESTION_SCHAETZCHEN':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'SCHAETZCHEN' as QQCategory, text: 'Wie viele Einwohner hat Berlin?', options: ['2 Mio', '3.7 Mio', '5 Mio', '1 Mio'], answer: '3.7 Mio', targetValue: 3700000, ...(realQ?.image ? { image: realQ.image } : {}) },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'SCHAETZCHEN' as QQCategory, text: 'Wie viele Einwohner hat Berlin?', options: ['2 Mio', '3.7 Mio', '5 Mio', '1 Mio'], answer: '3.7 Mio', targetValue: 3700000 },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_MUCHO':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'MUCHO', ...(realQ?.image ? { image: realQ.image } : {}) },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'MUCHO' },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_BUNTE_TUETE':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'BUNTE_TUETE', text: 'Was ist das? Bunte-Tüte-Frage!', ...(realQ?.image ? { image: realQ.image } : {}) },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'BUNTE_TUETE', text: 'Was ist das? Bunte-Tüte-Frage!' },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_ZEHN':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'ZEHN_VON_ZEHN', text: 'Nenne 10 deutsche Städte!', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], ...(realQ?.image ? { image: realQ.image } : {}) },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'ZEHN_VON_ZEHN', text: 'Nenne 10 deutsche Städte!', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };
     case 'QUESTION_CHEESE':
       return {
         phase: 'QUESTION_ACTIVE',
-        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'CHEESE', text: 'Was siehst du auf dem Bild?', ...(realQ?.image ? { image: realQ.image } : {}) },
+        currentQuestion: { ...MOCK_QUESTION_BASE, category: 'CHEESE', text: 'Was siehst du auf dem Bild?' },
         timerEndsAt: Date.now() + 20000, timerDurationSec: 20,
         teams: MOCK_TEAMS,
       };

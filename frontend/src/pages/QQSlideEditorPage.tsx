@@ -243,8 +243,9 @@ export default function QQSlideEditorPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [layerPanelOpen, setLayerPanelOpen] = useState(true);
   const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
-  const [previewMode, setPreviewMode] = useState(false); // <-- Add previewMode state
+  const [previewMode, setPreviewMode] = useState(false);
   const [showThemeColors, setShowThemeColors] = useState(false);
+  const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -614,10 +615,12 @@ export default function QQSlideEditorPage() {
             <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
             {gameSteps.map((step) => {
               const isActive = activeType === step.type;
+              const isPreviewQ = previewQuestion?.id === step.question?.id;
               return (
                 <button key={step.key}
                   onClick={() => {
                     setActiveType(step.type);
+                    setPreviewQuestion(step.question ?? null);
                     const newEls = (templates[step.type]?.elements ?? makeDefault(step.type).elements) || [];
                     setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
                   }}
@@ -627,6 +630,11 @@ export default function QQSlideEditorPage() {
                     <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2 }}>{step.label}</div>
+                      {step.question && isActive && (
+                        <div style={{ fontSize: 9, color: isPreviewQ ? '#22C55E' : '#334155', fontWeight: 700, marginTop: 1 }}>
+                          {isPreviewQ ? '👁 diese Frage' : ''}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -722,7 +730,7 @@ export default function QQSlideEditorPage() {
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
                       opacity: 0.04, mixBlendMode: 'overlay',
                     }} />
-                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions)} />
+                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions, previewQuestion ?? undefined)} />
                   </div>
                   {/* Slideshow navigation */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -745,6 +753,7 @@ export default function QQSlideEditorPage() {
                   templateType={activeType}
                   bgColor={draft.theme?.bgColor ?? '#0D0A06'}
                   questions={draft.questions}
+                  previewQuestion={previewQuestion}
                   selectedIds={selectedIds}
                   editingId={editingId}
                   snapLines={snapLines}
@@ -849,11 +858,12 @@ export default function QQSlideEditorPage() {
 // ── SlideCanvas ───────────────────────────────────────────────────────────────
 const SNAP_THRESHOLD = 1.5; // percent
 
-function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate, onDropFile }: {
+function SlideCanvas({ template, templateType, bgColor, questions, previewQuestion, selectedIds, editingId, snapLines, onSnapLinesChange, onSelect, onMultiSelect, onClearSelect, onUpdate, onUpdateMulti, onStartEdit, onEndEdit, onDelete, onDuplicate, onDropFile }: {
   template: QQSlideTemplate;
   templateType: QQSlideTemplateType;
   bgColor: string;
   questions?: QQQuestion[];
+  previewQuestion?: QQQuestion | null;
   selectedIds: string[];
   editingId: string | null;
   snapLines: { x?: number; y?: number };
@@ -996,7 +1006,7 @@ function SlideCanvas({ template, templateType, bgColor, questions, selectedIds, 
 
   const sorted = [...template.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1));
 
-  const mockState = makePreviewState(templateType, questions);
+  const mockState = makePreviewState(templateType, questions, previewQuestion ?? undefined);
 
   return (
     <div ref={canvasRef}

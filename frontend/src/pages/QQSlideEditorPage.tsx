@@ -227,6 +227,126 @@ function SlidePreview({ template }: { template: QQSlideTemplate }) {
   );
 }
 
+// ── Design Presets ────────────────────────────────────────────────────────────
+interface DesignPreset {
+  id: string;
+  label: string;
+  icon: string;
+  bg: string;
+  accent: string;
+  textColor: string;
+  cardBg: string;
+  animIn: QQSlideElement['animIn'];
+  animLoop?: QQSlideElement['animLoop'];
+}
+
+const DESIGN_PRESETS: DesignPreset[] = [
+  {
+    id: 'dark-default',
+    label: 'Dark Classic',
+    icon: '🌑',
+    bg: '#0D0A06',
+    accent: '#F59E0B',
+    textColor: '#e2e8f0',
+    cardBg: '#1B1510',
+    animIn: 'fadeUp',
+  },
+  {
+    id: 'neon-glow',
+    label: 'Neon Glow',
+    icon: '💜',
+    bg: '#0a0014',
+    accent: '#A855F7',
+    textColor: '#f0e6ff',
+    cardBg: '#1a0033',
+    animIn: 'pop',
+    animLoop: 'pulse',
+  },
+  {
+    id: 'ocean-deep',
+    label: 'Ocean Deep',
+    icon: '🌊',
+    bg: 'linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+    accent: '#22D3EE',
+    textColor: '#e0f7fa',
+    cardBg: '#0e3d52',
+    animIn: 'slideLeft',
+  },
+  {
+    id: 'retro-arcade',
+    label: 'Retro Arcade',
+    icon: '🕹️',
+    bg: 'linear-gradient(180deg, #1a0000 0%, #0d0012 100%)',
+    accent: '#FF2D55',
+    textColor: '#fff',
+    cardBg: '#200010',
+    animIn: 'slotDrop',
+  },
+  {
+    id: 'gradient-pop',
+    label: 'Gradient Pop',
+    icon: '🌈',
+    bg: 'linear-gradient(135deg, #1a0533 0%, #0d1a3d 50%, #001a2e 100%)',
+    accent: '#F97316',
+    textColor: '#fef3c7',
+    cardBg: '#1a0c30',
+    animIn: 'bounceIn',
+  },
+  {
+    id: 'forest-night',
+    label: 'Forest Night',
+    icon: '🌲',
+    bg: 'linear-gradient(180deg, #0a1408 0%, #0f2010 100%)',
+    accent: '#4ADE80',
+    textColor: '#dcfce7',
+    cardBg: '#0d1f0d',
+    animIn: 'swingIn',
+  },
+];
+
+/**
+ * Applies a design preset to a template: replaces background and recolors text/rect elements
+ * while preserving all placeholder positions and layout.
+ */
+function applyDesignPreset(template: QQSlideTemplate, preset: DesignPreset): QQSlideTemplate {
+  const recolored = template.elements.map(el => {
+    const base: Partial<QQSlideElement> = {};
+    // Apply entrance animation to all elements
+    if (el.animIn && el.animIn !== 'none') {
+      base.animIn = preset.animIn;
+    }
+    // Recolor text elements that use white/default colors
+    if (el.type === 'text') {
+      if (!el.color || el.color === '#e2e8f0' || el.color === '#ffffff') {
+        base.color = preset.textColor;
+      }
+      // Accent color: elements with yellow/orange/primary color get the new accent
+      if (el.color && /^#F59E0B|#EAB308|#F97316|#A855F7|#22D3EE|#FF2D55|#4ADE80/.test(el.color)) {
+        base.color = preset.accent;
+      }
+    }
+    // Recolor rect backgrounds
+    if (el.type === 'rect' && el.background) {
+      if (el.background.includes('rgba(245,158,11') || el.background.includes('rgba(249,115,22')) {
+        base.background = el.background.replace(/rgba\(\d+,\d+,\d+/,
+          `rgba(${parseInt(preset.accent.slice(1,3),16)},${parseInt(preset.accent.slice(3,5),16)},${parseInt(preset.accent.slice(5,7),16)}`
+        );
+      }
+    }
+    // Loop animation on accent text elements
+    if (preset.animLoop && el.type === 'text' && el.fontWeight && el.fontWeight >= 800 && (el.fontSize ?? 0) > 5) {
+      base.animLoop = preset.animLoop;
+    }
+    return { ...el, ...base };
+  });
+
+  return {
+    ...template,
+    background: preset.bg,
+    elements: recolored,
+  };
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function QQSlideEditorPage() {
   const [searchParams] = useSearchParams();
@@ -248,7 +368,7 @@ export default function QQSlideEditorPage() {
   const [showThemeColors, setShowThemeColors] = useState(false);
   const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers'>('props');
+  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets'>('props');
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -864,12 +984,12 @@ export default function QQSlideEditorPage() {
 
           {/* Tab bar */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-            {(['add', 'props', 'layers'] as const).map(s => {
-              const labels = { add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen' };
+            {(['add', 'props', 'layers', 'presets'] as const).map(s => {
+              const labels = { add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen', presets: '✨ Presets' };
               const isActive = rightSection === s;
               return (
                 <button key={s} onClick={() => setRightSection(s)}
-                  style={{ flex: 1, padding: '8px 4px', background: isActive ? '#1e293b' : 'transparent', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', color: isActive ? '#e2e8f0' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 10, transition: 'all 0.15s' }}>
+                  style={{ flex: 1, padding: '8px 2px', background: isActive ? '#1e293b' : 'transparent', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', color: isActive ? '#e2e8f0' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 9, transition: 'all 0.15s' }}>
                   {labels[s]}
                 </button>
               );
@@ -888,6 +1008,41 @@ export default function QQSlideEditorPage() {
                     Kein Element ausgewählt.<br />
                     <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
                   </div>
+            )}
+
+            {rightSection === 'presets' && (
+              <div style={{ padding: '10px 10px 16px' }}>
+                <div style={{ fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Design-Presets</div>
+                <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+                  Wähle ein fertiges Design als Startpunkt. Dein aktuelles Layout bleibt erhalten — nur Farben &amp; Hintergrund werden angepasst.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {DESIGN_PRESETS.map(preset => (
+                    <button key={preset.id}
+                      onClick={() => {
+                        const based = makeDefault(activeType);
+                        const current = activeTemplate.elements.length > 0 ? activeTemplate : based;
+                        patchTemplate(applyDesignPreset(current, preset));
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                    >
+                      {/* Color swatch */}
+                      <div style={{ width: 36, height: 28, borderRadius: 6, flexShrink: 0, overflow: 'hidden', background: preset.bg, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 16, height: 4, borderRadius: 2, background: preset.accent, opacity: 0.9 }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0' }}>{preset.icon} {preset.label}</div>
+                        <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>Eingang: {preset.animIn}{preset.animLoop ? ` · Schleife: ${preset.animLoop}` : ''}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#A78BFA', fontWeight: 600, lineHeight: 1.5 }}>
+                  Tipp: Nach dem Anwenden kannst du alles im Eigenschaften-Tab weiter anpassen.
+                </div>
+              </div>
             )}
 
             {rightSection === 'layers' && (

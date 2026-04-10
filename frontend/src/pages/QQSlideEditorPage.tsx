@@ -412,6 +412,8 @@ export default function QQSlideEditorPage() {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | null>(null);
   const [soundConfig, setSoundConfigLocal] = useState<import('../../../shared/quarterQuizTypes').QQSoundConfig>({});
+  const [zoom, setZoom] = useState(1);
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -944,62 +946,53 @@ export default function QQSlideEditorPage() {
             </div>
           )}
 
-          {/* Canvas area with edit/preview toggle */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', background: '#060a10', overflow: 'hidden', position: 'relative' }}>
+          {/* Canvas area */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden', position: 'relative' }}>
             {/* Left sidebar toggle button */}
             <button onClick={() => setLeftOpen(p => !p)}
               title={leftOpen ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
               style={{ position: 'absolute', left: leftOpen ? -1 : 6, top: 8, zIndex: 10, padding: '4px 6px', borderRadius: '0 6px 6px 0', border: '1px solid rgba(255,255,255,0.1)', borderLeft: leftOpen ? 'none' : undefined, background: '#1e293b', color: '#64748b', cursor: 'pointer', fontSize: 12, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900 }}>
               {leftOpen ? '◀' : '▶'}
             </button>
-            <div style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
-              <button
-                onClick={() => setPreviewMode((prev) => !prev)}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #64748b',
-                  background: previewMode ? '#334155' : '#1e293b',
-                  color: previewMode ? '#fbbf24' : '#e2e8f0',
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  marginBottom: 4,
-                  marginRight: 4,
-                  transition: 'background 0.2s, color 0.2s',
-                }}
-                title={previewMode ? 'Zurück zur Bearbeitung' : 'Vorschau anzeigen'}
-              >
+
+            {/* Toolbar: zoom + preview */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 6px 40px', background: '#0a0f1a', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+              <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))}
+                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>−</button>
+              <button onClick={() => setZoom(1)}
+                style={{ padding: '2px 10px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, minWidth: 46, textAlign: 'center' }}>
+                {Math.round(zoom * 100)}%
+              </button>
+              <button onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))}
+                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>+</button>
+              <button onClick={() => setZoom(0.5)} title="Einpassen"
+                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>⊡ Fit</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setPreviewMode(p => !p)}
+                style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${previewMode ? '#FBBF24' : 'rgba(255,255,255,0.1)'}`, background: previewMode ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)', color: previewMode ? '#FBBF24' : '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
                 {previewMode ? '🖉 Bearbeiten' : '👁 Vorschau'}
               </button>
+              {previewMode && (
+                <button onClick={() => setFullscreenPreview(true)}
+                  style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
+                  ⛶ Vollbild
+                </button>
+              )}
             </div>
-            <div style={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedIds([])}>
+
+            {/* Scrollable canvas workspace */}
+            <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 32px' }}
+              onClick={() => setSelectedIds([])}>
+              <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center', width: 1280, height: 720, flexShrink: 0, position: 'relative' }}>
               {previewMode ? (
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
-                    <Fireflies />
-                    {/* Grain overlay (matches beamer) */}
-                    <div style={{
-                      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-                      opacity: 0.04, mixBlendMode: 'overlay',
-                    }} />
-                    <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions, previewQuestion ?? undefined)} />
-                  </div>
-                  {/* Slideshow navigation */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button onClick={() => goStep(-1)} disabled={currentStepIdx <= 0}
-                      style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: currentStepIdx <= 0 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.08)', color: currentStepIdx <= 0 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>
-                      ◀ Zurück
-                    </button>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700, minWidth: 80, textAlign: 'center' }}>
-                      {currentStepIdx + 1} / {gameSteps.length}
-                    </span>
-                    <button onClick={() => goStep(1)} disabled={currentStepIdx >= gameSteps.length - 1}
-                      style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: currentStepIdx >= gameSteps.length - 1 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.08)', color: currentStepIdx >= gameSteps.length - 1 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>
-                      Weiter ▶
-                    </button>
-                  </div>
+                <div style={{ width: 1280, height: 720, position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0', boxShadow: '0 8px 64px rgba(0,0,0,0.8)' }}>
+                  <Fireflies />
+                  <div style={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+                    opacity: 0.04, mixBlendMode: 'overlay',
+                  }} />
+                  <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions, previewQuestion ?? undefined)} />
                 </div>
               ) : (
                 <SlideCanvas
@@ -1048,9 +1041,35 @@ export default function QQSlideEditorPage() {
                   }}
                 />
               )}
+              </div>{/* /zoom wrapper */}
+            </div>{/* /scroll container */}
+          </div>{/* /canvas area */}
+        </div>{/* /center column */}
+
+        {/* Fullscreen preview overlay */}
+        {fullscreenPreview && (
+          <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 99999, display: 'flex', flexDirection: 'column' }}
+            onKeyDown={e => { if (e.key === 'Escape') setFullscreenPreview(false); }} tabIndex={0}>
+            <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 100, display: 'flex', gap: 8 }}>
+              <button onClick={() => goStep(-1)} disabled={currentStepIdx <= 0}
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx <= 0 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx <= 0 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>◀</button>
+              <span style={{ padding: '6px 12px', fontSize: 12, color: '#64748b', fontWeight: 700, alignSelf: 'center' }}>{currentStepIdx + 1} / {gameSteps.length}</span>
+              <button onClick={() => goStep(1)} disabled={currentStepIdx >= gameSteps.length - 1}
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx >= gameSteps.length - 1 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx >= gameSteps.length - 1 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>▶</button>
+              <button onClick={() => setFullscreenPreview(false)}
+                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(239,68,68,0.15)', color: '#EF4444', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>✕ Schließen</button>
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '100vw', height: '56.25vw', maxHeight: '100vh', maxWidth: '177.78vh', position: 'relative', background: activeTemplate.background || '#0D0A06', overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
+                <Fireflies />
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+                  opacity: 0.04, mixBlendMode: 'overlay' }} />
+                <CustomSlide template={activeTemplate} previewState={makePreviewState(activeType, draft.questions, previewQuestion ?? undefined)} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Right: icon rail + floating overlay panel */}
         <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
@@ -1349,7 +1368,7 @@ function SlideCanvas({ template, templateType, bgColor, questions, previewQuesti
 
   return (
     <div ref={canvasRef}
-      style={{ width: '100%', maxWidth: '100%', maxHeight: '100%', aspectRatio: `${CANVAS_RATIO}`, position: 'relative', overflow: 'hidden', background: bgColor, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
+      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: bgColor, borderRadius: 10, boxShadow: '0 0 60px rgba(0,0,0,0.8)', userSelect: 'none' }}
       onMouseDown={e => {
         if (e.target !== e.currentTarget) return;
         const rect = canvasRef.current?.getBoundingClientRect();

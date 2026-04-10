@@ -875,8 +875,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // ── CHEESE staged flow ──────────────────────────────────────────────────
   // Phase 1 ('question'): question text + grid visible, no image
   // Phase 2 ('image'): moderator reveals image → goes fullscreen
-  // Phase 3 (revealed=true): image shrinks to right panel, answer visible, grid returns
+  // Phase 3 (revealed=true): image shrinks to right window panel, answer visible
   const cheeseFullscreen = isCheese && hasImg && s.imageRevealed && !revealed;
+  // In CHEESE reveal: treat image as a proper window-right panel (not absolute clip)
+  const isCheeseReveal = isCheese && hasImg && revealed;
 
   // Auto-size: shorter fontSize for long questions
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
@@ -890,8 +892,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-      {/* Fullscreen background image (explicit fullscreen layout OR CHEESE staged reveal) */}
-      {((hasImg && img.layout === 'fullscreen') || cheeseFullscreen) && (
+      {/* Fullscreen background image (explicit fullscreen layout OR CHEESE staged reveal — not CHEESE reveal which uses window panel) */}
+      {((hasImg && img.layout === 'fullscreen') || cheeseFullscreen) && !isCheeseReveal && (
         <>
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
@@ -1373,8 +1375,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && s.correctTeamId && <ConfettiOverlay />}
         </div>
 
-        {/* ── Image window panel (window-left / window-right) ── */}
-        {isWindow && (
+        {/* ── Image window panel (window-left / window-right / CHEESE reveal) ── */}
+        {(isWindow || isCheeseReveal) && (
           <div style={{
             width: '35%', flexShrink: 0, position: 'relative', zIndex: 5,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1426,15 +1428,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: (isWindow || cheeseFullscreen) ? 0 : 480,
+          width: (isWindow || cheeseFullscreen || isCheeseReveal) ? 0 : 480,
           overflow: 'hidden',
-          flexShrink: 0, padding: (isWindow || cheeseFullscreen) ? 0 : '28px 28px 28px 16px',
+          flexShrink: 0, padding: (isWindow || cheeseFullscreen || isCheeseReveal) ? 0 : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
           transition: 'width 0.5s ease, padding 0.5s ease',
         }}>
           {/* Mini-grid overlay when image panel hides the main grid */}
-          {(isWindow || cheeseFullscreen) && (
+          {(isWindow || cheeseFullscreen || isCheeseReveal) && (
             <div style={{
               position: 'fixed', bottom: 16, right: 16, zIndex: 10,
               opacity: 0.6, pointerEvents: 'none',

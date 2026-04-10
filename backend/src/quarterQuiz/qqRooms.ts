@@ -78,6 +78,7 @@ export interface QQRoomState {
   draftId?: string;
   draftTitle?: string;
   slideTemplates?: import('../../../shared/quarterQuizTypes').QQSlideTemplates;
+  soundConfig?: import('../../../shared/quarterQuizTypes').QQSoundConfig;
   lastActivityAt: number;
   _placementQueue?: string[];
   // Sound
@@ -253,6 +254,7 @@ export function qqStartGame(
   draftId?: string,
   draftTitle?: string,
   slideTemplates?: import('../../../shared/quarterQuizTypes').QQSlideTemplates,
+  soundConfig?: import('../../../shared/quarterQuizTypes').QQSoundConfig,
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -283,6 +285,7 @@ export function qqStartGame(
   room.draftId         = draftId;
   room.draftTitle      = draftTitle;
   room.slideTemplates  = slideTemplates;
+  room.soundConfig     = soundConfig;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {
@@ -1521,6 +1524,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     slideTemplates:   room.slideTemplates,
     globalMuted:      room.globalMuted,
     volume:           room.volume,
+    soundConfig:      room.soundConfig,
     rulesSlideIndex:  room.rulesSlideIndex,
   };
 }

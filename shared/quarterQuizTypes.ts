@@ -335,6 +335,38 @@ export interface QQSlideTemplate {
 // Keys: QQSlideTemplateType for category defaults, or 'q-${questionId}' for per-question overrides
 export type QQSlideTemplates = Partial<Record<string, QQSlideTemplate>>;
 
+// ── QQ Sound Config ───────────────────────────────────────────────────────────
+/**
+ * Per-draft custom sounds. Each slot maps to a game event.
+ * If a URL is set, it overrides the built-in Web Audio synth for that event.
+ * Supported formats: MP3, OGG, WAV (browser-native via HTMLAudioElement).
+ */
+export interface QQSoundConfig {
+  timerLoop?: string;        // looping music while timer runs
+  timesUp?: string;          // timer expired buzzer
+  fieldPlaced?: string;      // team places a cell
+  steal?: string;            // team steals an enemy cell
+  correct?: string;          // correct answer fanfare
+  wrong?: string;            // wrong / no answer
+  reveal?: string;           // answer revealed
+  fanfare?: string;          // phase intro / big moment
+  lobbyWelcome?: string;     // lobby ambient / welcome
+  gameOver?: string;         // game over jingle
+}
+
+export const QQ_SOUND_SLOT_LABELS: Record<keyof QQSoundConfig, string> = {
+  timerLoop:    '⏱ Timer-Loop (läuft während Frage)',
+  timesUp:      '⏰ Zeit abgelaufen',
+  fieldPlaced:  '📍 Feld gesetzt',
+  steal:        '⚡ Feld geklaut',
+  correct:      '✅ Richtige Antwort',
+  wrong:        '❌ Falsche / keine Antwort',
+  reveal:       '🔍 Antwort aufgedeckt',
+  fanfare:      '🎉 Phasen-Intro / großer Moment',
+  lobbyWelcome: '🎵 Lobby-Musik',
+  gameOver:     '🏆 Spielende',
+};
+
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────
 export interface QQDraft {
   id: string;
@@ -344,6 +376,7 @@ export interface QQDraft {
   questions: QQQuestion[];
   theme?: QQTheme;
   slideTemplates?: QQSlideTemplates;
+  soundConfig?: QQSoundConfig;
   createdAt: number;
   updatedAt: number;
 }
@@ -402,6 +435,7 @@ export interface QQStateUpdate {
   // Sound
   globalMuted: boolean;
   volume: number; // 0–1
+  soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
 }
 
@@ -420,7 +454,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

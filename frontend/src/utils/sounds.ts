@@ -1,16 +1,44 @@
 /**
- * sounds.ts — Web Audio API synth sounds, no external dependencies.
- * All sounds are generated programmatically.
+ * sounds.ts — Web Audio API synth sounds + custom audio file support.
+ *
+ * Each exported play* function checks for a custom URL first.
+ * If set, it plays the audio file via HTMLAudioElement.
+ * Otherwise it falls back to the built-in Web Audio synth.
+ *
+ * The timer loop also supports a custom URL (loops the file instead of synth).
+ *
+ * Usage:
+ *   setSoundConfig({ fieldPlaced: 'https://...', steal: 'https://...' })
+ *   playFieldPlaced()  // uses custom URL if set
  */
+
+import type { QQSoundConfig } from '../../../shared/quarterQuizTypes';
+
+// ── State ─────────────────────────────────────────────────────────────────────
 
 let ctx: AudioContext | null = null;
 let masterVolume = 0.8;
+let soundConfig: QQSoundConfig = {};
+
+// Cache of preloaded HTMLAudioElement instances per URL
+const audioCache: Map<string, HTMLAudioElement> = new Map();
 
 export function setVolume(v: number) {
   masterVolume = Math.max(0, Math.min(1, v));
+  // Update any playing audio elements
+  audioCache.forEach(el => { el.volume = masterVolume; });
 }
 export function getVolume() {
   return masterVolume;
+}
+
+/** Set custom sound URLs. Call this when the draft/game starts. */
+export function setSoundConfig(config: QQSoundConfig | undefined) {
+  soundConfig = config ?? {};
+}
+
+export function getSoundConfig(): QQSoundConfig {
+  return soundConfig;
 }
 
 function getCtx(): AudioContext | null {
@@ -26,6 +54,29 @@ export function resumeAudio() {
   const c = getCtx();
   if (c && c.state === 'suspended') c.resume();
 }
+
+// ── Audio file playback ───────────────────────────────────────────────────────
+
+function getOrCreateAudio(url: string): HTMLAudioElement {
+  let el = audioCache.get(url);
+  if (!el) {
+    el = new Audio(url);
+    el.preload = 'auto';
+    audioCache.set(url, el);
+  }
+  return el;
+}
+
+/** Play a one-shot audio file. Resets to start if already playing. */
+function playAudioFile(url: string) {
+  const el = getOrCreateAudio(url);
+  el.volume = masterVolume;
+  el.currentTime = 0;
+  el.loop = false;
+  el.play().catch(() => {/* autoplay blocked — needs user gesture first */});
+}
+
+// ── Synth helpers ─────────────────────────────────────────────────────────────
 
 function tone(
   freq: number,
@@ -58,15 +109,27 @@ function tone(
 
 let loopActive = false;
 let loopScheduleTimeout: ReturnType<typeof setTimeout> | null = null;
+let loopAudioEl: HTMLAudioElement | null = null;
 
 /**
- * Starts a looping game-show timer music while the question is active.
- * 120 BPM, C-major bass pulse + ascending melody arpeggio.
+ * Starts a looping timer sound while the question is active.
+ * Uses custom URL if set in soundConfig.timerLoop, else synth.
  */
 export function startTimerLoop() {
-  const ac = getCtx();
-  if (!ac || loopActive) return;
+  if (loopActive) return;
   loopActive = true;
+
+  if (soundConfig.timerLoop) {
+    loopAudioEl = getOrCreateAudio(soundConfig.timerLoop);
+    loopAudioEl.volume = masterVolume;
+    loopAudioEl.currentTime = 0;
+    loopAudioEl.loop = true;
+    loopAudioEl.play().catch(() => {});
+    return;
+  }
+
+  const ac = getCtx();
+  if (!ac) return;
   scheduleLoopPattern(ac, ac.currentTime, 0);
 }
 
@@ -75,27 +138,26 @@ function scheduleLoopPattern(ac: AudioContext, t: number, step: number) {
 
   const beat = 0.5; // 120 BPM
 
-  // Bass pulse on every beat — short sine thump
+  // Bass pulse on every beat
   const bass = ac.createOscillator();
   const bassGain = ac.createGain();
   bass.connect(bassGain);
   bassGain.connect(ac.destination);
   bass.type = 'sine';
-  bass.frequency.setValueAtTime(65, t); // C2
+  bass.frequency.setValueAtTime(65, t);
   bassGain.gain.setValueAtTime(0, t);
   bassGain.gain.linearRampToValueAtTime(0.18 * masterVolume, t + 0.01);
   bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
   bass.start(t);
   bass.stop(t + 0.25);
 
-  // Melody: 8-step C-major arpeggio pattern (C5 E5 G5 C6 G5 E5 C5 rest)
+  // Melody: 8-step C-major arpeggio
   const melody = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 523.25, 0];
   const freq = melody[step % 8];
   if (freq > 0) {
     tone(freq, 'triangle', t, beat * 0.65, 0.10, 0.008, 0.12, ac);
   }
 
-  // Schedule next beat ~50ms early for tight timing
   const nextT = t + beat;
   const delayMs = (nextT - ac.currentTime) * 1000 - 50;
   loopScheduleTimeout = setTimeout(
@@ -110,21 +172,26 @@ export function stopTimerLoop() {
     clearTimeout(loopScheduleTimeout);
     loopScheduleTimeout = null;
   }
+  if (loopAudioEl) {
+    loopAudioEl.pause();
+    loopAudioEl.currentTime = 0;
+    loopAudioEl = null;
+  }
 }
 
 // ── One-shot sounds ───────────────────────────────────────────────────────────
 
-/** Plays a happy major chord arpeggio — correct answer / win */
 export function playCorrect() {
+  if (soundConfig.correct) { playAudioFile(soundConfig.correct); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+  const freqs = [523.25, 659.25, 783.99, 1046.5];
   freqs.forEach((f, i) => tone(f, 'sine', t + i * 0.07, 0.35, 0.22, 0.01, 0.12, ac));
 }
 
-/** Low buzz — wrong answer */
 export function playWrong() {
+  if (soundConfig.wrong) { playAudioFile(soundConfig.wrong); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -132,15 +199,14 @@ export function playWrong() {
   tone(140, 'sawtooth', t + 0.09, 0.18, 0.14, 0.005, 0.12, ac);
 }
 
-/** Short high tick — timer countdown tick (10–6 s) */
 export function playTick() {
+  // Ticks never have custom overrides — they're too frequent
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
   tone(880, 'square', t, 0.055, 0.09, 0.004, 0.04, ac);
 }
 
-/** Urgent double-tick — last 5 seconds of timer */
 export function playUrgentTick() {
   const ac = getCtx();
   if (!ac) return;
@@ -149,12 +215,11 @@ export function playUrgentTick() {
   tone(1100, 'square', t + 0.1, 0.06, 0.13, 0.003, 0.04, ac);
 }
 
-/** Time's up — game-show buzzer: descending sawtooth sting */
 export function playTimesUp() {
+  if (soundConfig.timesUp) { playAudioFile(soundConfig.timesUp); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Main buzzer: descending sawtooth
   const osc = ac.createOscillator();
   const gain = ac.createGain();
   osc.connect(gain);
@@ -166,12 +231,11 @@ export function playTimesUp() {
   gain.gain.linearRampToValueAtTime(0, t + 0.5);
   osc.start(t);
   osc.stop(t + 0.55);
-  // Low impact punch
   tone(75, 'sine', t + 0.05, 0.28, 0.22, 0.004, 0.22, ac);
 }
 
-/** Fanfare — quiz start / new question intro */
 export function playFanfare() {
+  if (soundConfig.fanfare) { playAudioFile(soundConfig.fanfare); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -184,8 +248,8 @@ export function playFanfare() {
   pattern.forEach(([f, offset, dur]) => tone(f, 'sine', t + offset, dur, 0.2, 0.01, 0.08, ac));
 }
 
-/** Reveal whoosh — answer revealed */
 export function playReveal() {
+  if (soundConfig.reveal) { playAudioFile(soundConfig.reveal); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -203,7 +267,6 @@ export function playReveal() {
   osc.stop(t + 0.45);
 }
 
-/** Score points pop — when team gets points */
 export function playScoreUp() {
   const ac = getCtx();
   if (!ac) return;
@@ -212,33 +275,22 @@ export function playScoreUp() {
   tone(1108.73, 'sine', t + 0.1, 0.14, 0.15, 0.005, 0.1, ac);
 }
 
-/**
- * Field placed on the grid — satisfying "stamp" thunk with bright ring.
- * Plays when a territory cell is claimed.
- */
 export function playFieldPlaced() {
+  if (soundConfig.fieldPlaced) { playAudioFile(soundConfig.fieldPlaced); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Low thud
   tone(110, 'sine', t, 0.12, 0.28, 0.004, 0.1, ac);
-  // Mid body
   tone(220, 'sine', t, 0.1, 0.2, 0.004, 0.08, ac);
-  // Bright ring overtone
   tone(660, 'sine', t + 0.04, 0.2, 0.14, 0.005, 0.16, ac);
-  // Shimmer
   tone(1320, 'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
 }
 
-/**
- * Steal sound — mischievous whoosh-down + triumphant sting.
- * Plays when a CHEESE answer reveals / territory is stolen.
- */
 export function playSteal() {
+  if (soundConfig.steal) { playAudioFile(soundConfig.steal); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Descending whoosh
   const osc = ac.createOscillator();
   const gain = ac.createGain();
   osc.connect(gain);
@@ -251,15 +303,12 @@ export function playSteal() {
   gain.gain.linearRampToValueAtTime(0, t + 0.32);
   osc.start(t);
   osc.stop(t + 0.35);
-  // Triumphant two-note sting
-  tone(440, 'triangle', t + 0.28, 0.1,  0.2,  0.005, 0.08, ac);
+  tone(440, 'triangle', t + 0.28, 0.1, 0.2, 0.005, 0.08, ac);
   tone(880, 'triangle', t + 0.36, 0.18, 0.18, 0.005, 0.14, ac);
 }
 
-/**
- * Lobby welcome chime — warm ascending notes when teams join.
- */
 export function playLobbyWelcome() {
+  if (soundConfig.lobbyWelcome) { playAudioFile(soundConfig.lobbyWelcome); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -267,4 +316,21 @@ export function playLobbyWelcome() {
   notes.forEach((f, i) =>
     tone(f, 'sine', t + i * 0.13, 0.45, 0.16 - i * 0.02, 0.01, 0.32, ac)
   );
+}
+
+export function playGameOver() {
+  if (soundConfig.gameOver) { playAudioFile(soundConfig.gameOver); return; }
+  // Default: extended fanfare
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const pattern: [number, number, number][] = [
+    [523.25, 0.0,  0.15],
+    [659.25, 0.15, 0.15],
+    [783.99, 0.30, 0.15],
+    [1046.5, 0.45, 0.35],
+    [783.99, 0.80, 0.12],
+    [1046.5, 0.92, 0.5],
+  ];
+  pattern.forEach(([f, offset, dur]) => tone(f, 'sine', t + offset, dur, 0.22, 0.01, 0.08, ac));
 }

@@ -8,7 +8,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import {
-  resumeAudio, setVolume, playFanfare, playReveal, playCorrect,
+  resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal,
 } from '../utils/sounds';
@@ -241,10 +241,14 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     prevPhaseRef.current = s.phase;
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sound: sync volume & mute from server state ──
+  // ── Sound: sync volume, mute & custom sound config from server state ──
   useEffect(() => {
     setVolume(s.globalMuted ? 0 : s.volume);
   }, [s.globalMuted, s.volume]);
+
+  useEffect(() => {
+    setSoundConfig(s.soundConfig);
+  }, [s.soundConfig]);
 
   // ── Sound: phase-based SFX ──
   const prevSfxPhaseRef = useRef(s.phase);

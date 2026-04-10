@@ -236,16 +236,19 @@ export default function QQSlideEditorPage() {
   const [draft, setDraft] = useState<QQDraft | null>(null);
   const [templates, setTemplates] = useState<QQSlideTemplates>({});
   const [activeType, setActiveType] = useState<QQSlideTemplateType>('LOBBY');
+  // editingKey: actual key in templates being edited — either category type or 'q-${id}'
+  const [editingKey, setEditingKey] = useState<string>('LOBBY');
   // Multi-select: array, selectedIds[0] is the "primary" for properties panel
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [layerPanelOpen, setLayerPanelOpen] = useState(true);
   const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
   const [previewMode, setPreviewMode] = useState(false);
   const [showThemeColors, setShowThemeColors] = useState(false);
   const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers'>('props');
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
   const clipboardRef = useRef<QQSlideElement[]>([]);
@@ -261,12 +264,15 @@ export default function QQSlideEditorPage() {
       .finally(() => setLoading(false));
   }, [draftId]);
 
-  const rawTemplate = templates[activeType] ?? makeDefault(activeType);
+  const rawTemplate = templates[editingKey] ?? makeDefault(activeType);
   const activeTemplate: QQSlideTemplate = { ...rawTemplate, elements: rawTemplate.elements ?? [] };
+
+  // Is the current question using a per-question override?
+  const isIndividual = previewQuestion ? Boolean(templates[`q-${previewQuestion.id}`]?.elements?.length) : false;
 
   function patchTemplate(t: QQSlideTemplate) {
     setTemplates(prev => {
-      const next = { ...prev, [activeType]: t };
+      const next = { ...prev, [editingKey]: t };
       historyRef.current = historyRef.current.slice(0, histIdxRef.current + 1);
       historyRef.current.push(next);
       histIdxRef.current = historyRef.current.length - 1;
@@ -332,6 +338,38 @@ export default function QQSlideEditorPage() {
     if (!confirm('Folie auf Standard zurücksetzen?')) return;
     patchTemplate(makeDefault(activeType));
     setSelectedIds([]);
+  }
+
+  /** Copy category template to per-question override so this question gets its own unique design */
+  function individualizeQuestion() {
+    if (!previewQuestion) return;
+    const perQKey = `q-${previewQuestion.id}`;
+    const base = templates[activeType] ?? makeDefault(activeType);
+    const copy = { ...base, type: activeType };
+    setTemplates(prev => {
+      const next = { ...prev, [perQKey]: copy };
+      historyRef.current = historyRef.current.slice(0, histIdxRef.current + 1);
+      historyRef.current.push(next);
+      histIdxRef.current = historyRef.current.length - 1;
+      return next;
+    });
+    setEditingKey(perQKey);
+  }
+
+  /** Remove per-question override → falls back to category template */
+  function resetToCategory() {
+    if (!previewQuestion) return;
+    if (!confirm('Individuelles Design löschen? Die Frage verwendet dann wieder das Kategorie-Template.')) return;
+    const perQKey = `q-${previewQuestion.id}`;
+    setTemplates(prev => {
+      const next = { ...prev };
+      delete next[perQKey];
+      historyRef.current = historyRef.current.slice(0, histIdxRef.current + 1);
+      historyRef.current.push(next);
+      histIdxRef.current = historyRef.current.length - 1;
+      return next;
+    });
+    setEditingKey(activeType);
   }
 
   // Game-flow step sequence for sidebar + slideshow preview
@@ -595,13 +633,27 @@ export default function QQSlideEditorPage() {
             ))}
           </div>
         )}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+          {/* Per-question design controls */}
+          {previewQuestion && (
+            isIndividual ? (
+              <button onClick={resetToCategory} title="Zurück zum Kategorie-Standard"
+                style={{ ...btn('#8B5CF6', true), fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                ✦ Individuell <span style={{ opacity: 0.6, fontSize: 10 }}>× zurücksetzen</span>
+              </button>
+            ) : (
+              <button onClick={individualizeQuestion} title="Eigenes Design für diese Frage erstellen"
+                style={{ ...btn('#A78BFA', true), fontSize: 11 }}>
+                ✦ Individualisieren
+              </button>
+            )
+          )}
+          <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', alignSelf: 'center' }} />
           <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={btn('#475569', true)}>↩</button>
           <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>
-          <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', alignSelf: 'center' }} />
-          <button onClick={resetTemplate} style={btn('#475569', true)}>Zurücksetzen</button>
-          <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘ Duplizieren</button>
-          <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑 Löschen</button>
+          <button onClick={resetTemplate} style={btn('#475569', true)}>↺</button>
+          <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘</button>
+          <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑</button>
           <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={btn('#22C55E')}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
       </div>
@@ -609,33 +661,37 @@ export default function QQSlideEditorPage() {
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-        {/* Left: slide list with all actual steps */}
-        <div style={{ width: 240, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#080c14', overflowY: 'auto' }}>
-          <div>
-            <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
+        {/* Left: slide list — collapsible */}
+        <div style={{ width: leftOpen ? 180 : 0, flexShrink: 0, borderRight: leftOpen ? '1px solid rgba(255,255,255,0.07)' : 'none', background: '#080c14', overflowY: leftOpen ? 'auto' : 'hidden', overflowX: 'hidden', transition: 'width 0.2s ease', position: 'relative' }}>
+          <div style={{ width: 180 }}>
+            <div style={{ padding: '8px 10px 4px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
             {gameSteps.map((step) => {
-              const isActive = activeType === step.type;
-              const isPreviewQ = previewQuestion?.id === step.question?.id;
+              const isActive = editingKey === step.type || (step.question && editingKey === `q-${step.question.id}`);
+              const hasIndividual = step.question ? Boolean(templates[`q-${step.question.id}`]?.elements?.length) : false;
+              const previewTpl = hasIndividual && step.question
+                ? templates[`q-${step.question.id}`]!
+                : (templates[step.type] ?? makeDefault(step.type));
               return (
                 <button key={step.key}
                   onClick={() => {
+                    const perQKey = step.question ? `q-${step.question.id}` : null;
+                    const key = perQKey && templates[perQKey]?.elements?.length ? perQKey : step.type;
                     setActiveType(step.type);
+                    setEditingKey(key);
                     setPreviewQuestion(step.question ?? null);
-                    const newEls = (templates[step.type]?.elements ?? makeDefault(step.type).elements) || [];
+                    const newEls = (templates[key]?.elements ?? makeDefault(step.type).elements) || [];
                     setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
                   }}
-                  style={{ width: '100%', padding: '8px 10px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, fontFamily: 'inherit', textAlign: 'left' }}>
-                  <SlidePreview template={templates[step.type] ?? makeDefault(step.type)} />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ fontSize: 13, flexShrink: 0 }}>{step.icon}</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2 }}>{step.label}</div>
-                      {step.question && isActive && (
-                        <div style={{ fontSize: 9, color: isPreviewQ ? '#22C55E' : '#334155', fontWeight: 700, marginTop: 1 }}>
-                          {isPreviewQ ? '👁 diese Frage' : ''}
-                        </div>
-                      )}
+                  style={{ width: '100%', padding: '6px 8px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, fontFamily: 'inherit', textAlign: 'left' }}>
+                  <SlidePreview template={previewTpl} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 12, flexShrink: 0 }}>{step.icon}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 10, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.label}</div>
                     </div>
+                    {hasIndividual && (
+                      <div style={{ fontSize: 8, fontWeight: 900, color: '#A78BFA', background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '1px 4px', flexShrink: 0 }}>✦</div>
+                    )}
                   </div>
                 </button>
               );
@@ -697,7 +753,13 @@ export default function QQSlideEditorPage() {
           )}
 
           {/* Canvas area with edit/preview toggle */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, background: '#060a10', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', background: '#060a10', overflow: 'hidden', position: 'relative' }}>
+            {/* Left sidebar toggle button */}
+            <button onClick={() => setLeftOpen(p => !p)}
+              title={leftOpen ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
+              style={{ position: 'absolute', left: leftOpen ? -1 : 6, top: 8, zIndex: 10, padding: '4px 6px', borderRadius: '0 6px 6px 0', border: '1px solid rgba(255,255,255,0.1)', borderLeft: leftOpen ? 'none' : undefined, background: '#1e293b', color: '#64748b', cursor: 'pointer', fontSize: 12, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900 }}>
+              {leftOpen ? '◀' : '▶'}
+            </button>
             <div style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
               <button
                 onClick={() => setPreviewMode((prev) => !prev)}
@@ -797,52 +859,60 @@ export default function QQSlideEditorPage() {
           </div>
         </div>
 
-        {/* Right: properties + layer panel */}
-        <div style={{ width: 290, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1 }}>
-            {selectedEl ? (
-              <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
-                onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
-            ) : (
-              <EmptyProperties onAdd={addElement} />
-            )}
+        {/* Right: accordion panel */}
+        <div style={{ width: 270, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#131c2e', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Tab bar */}
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+            {(['add', 'props', 'layers'] as const).map(s => {
+              const labels = { add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen' };
+              const isActive = rightSection === s;
+              return (
+                <button key={s} onClick={() => setRightSection(s)}
+                  style={{ flex: 1, padding: '8px 4px', background: isActive ? '#1e293b' : 'transparent', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', color: isActive ? '#e2e8f0' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 10, transition: 'all 0.15s' }}>
+                  {labels[s]}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Layer Panel */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-            <button onClick={() => setLayerPanelOpen(p => !p)}
-              style={{ width: '100%', padding: '8px 14px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', color: '#94a3b8', fontWeight: 800, fontSize: 11 }}>
-              <span style={{ fontSize: 10 }}>{layerPanelOpen ? '▼' : '▶'}</span>
-              Ebenen
-              <span style={{ marginLeft: 'auto', fontSize: 9, color: '#475569' }}>{activeTemplate.elements.length}</span>
-            </button>
-            {layerPanelOpen && (
-              <div style={{ padding: '4px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {/* Panel content */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {rightSection === 'add' && <EmptyProperties onAdd={addElement} />}
+
+            {rightSection === 'props' && (
+              selectedEl
+                ? <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
+                    onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
+                : <div style={{ padding: 16, fontSize: 12, color: '#334155', fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
+                    Kein Element ausgewählt.<br />
+                    <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
+                  </div>
+            )}
+
+            {rightSection === 'layers' && (
+              <div style={{ padding: '6px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <div style={{ padding: '4px 8px 6px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Ebenen</span>
+                  <span style={{ color: '#1e3a5f' }}>{activeTemplate.elements.length}</span>
+                </div>
                 {[...activeTemplate.elements]
                   .sort((a, b) => (b.zIndex ?? 1) - (a.zIndex ?? 1))
                   .map(el => {
                     const isPh = el.type.startsWith('ph_');
                     const isSelected = selectedIds.includes(el.id);
-                    const icon = el.type === 'animatedAvatar' ? (el.text ?? '✨')
-                      : isPh ? '⬡'
-                      : el.type === 'text' ? '📝'
-                      : el.type === 'image' ? '🖼'
-                      : '⬛';
-                    const label = el.type === 'animatedAvatar' ? (el.text ?? '✨')
-                      : isPh ? (PH_LABELS[el.type] ?? el.type)
-                      : el.type === 'text' ? (el.text?.slice(0, 16) ?? 'Text')
-                      : el.type;
+                    const icon = el.type === 'animatedAvatar' ? '🕺' : isPh ? '⬡' : el.type === 'text' ? '📝' : el.type === 'image' ? '🖼' : '⬛';
+                    const label = isPh ? (PH_LABELS[el.type as QQSlideElementType] ?? el.type) : el.type === 'text' ? (el.text?.slice(0, 18) ?? 'Text') : el.type;
                     return (
-                      <div key={el.id}
-                        className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
-                        onClick={() => setSelectedIds([el.id])}>
+                      <div key={el.id} className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
+                        onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
                         <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
                         <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : '#64748b', fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
                         <span style={{ fontSize: 9, color: '#334155', fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
-                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }}
-                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }} title="Ebene nach vorne">↑</button>
-                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }}
-                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }} title="Ebene nach hinten">↓</button>
+                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }} title="Vorne"
+                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↑</button>
+                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }} title="Hinten"
+                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↓</button>
                       </div>
                     );
                   })}

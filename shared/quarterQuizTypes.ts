@@ -321,7 +321,8 @@ export interface QQSlideTemplate {
   transitionDuration?: number;
 }
 
-export type QQSlideTemplates = Partial<Record<QQSlideTemplateType, QQSlideTemplate>>;
+// Keys: QQSlideTemplateType for category defaults, or 'q-${questionId}' for per-question overrides
+export type QQSlideTemplates = Partial<Record<string, QQSlideTemplate>>;
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────
 export interface QQDraft {

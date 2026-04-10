@@ -202,7 +202,7 @@ export default function QQBuilderPage() {
   const navigate = useNavigate();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
   const [activeDraft, setActiveDraft] = useState<QQDraft | null>(null);
-  const [activeSlot, setActiveSlot] = useState<{ phase: number; qi: number } | null>(null);
+  const [activeQId, setActiveQId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
@@ -257,11 +257,31 @@ export default function QQBuilderPage() {
     fetch('/api/qq/drafts').then(r => r.json()).then(data => { if (Array.isArray(data)) setDrafts(data); }).catch(() => {});
   }, []);
 
-  function getQuestion(draft: QQDraft, phase: number, qi: number) {
-    return draft.questions.find(q => q.phaseIndex === phase && q.questionIndexInPhase === qi);
+  function getQuestionsForCell(draft: QQDraft, phase: number, cat: QQCategory): QQQuestion[] {
+    return draft.questions.filter(q => q.phaseIndex === phase && q.category === cat);
   }
   function updateQuestion(draft: QQDraft, updated: QQQuestion): QQDraft {
-    return { ...draft, questions: draft.questions.map(q => q.phaseIndex === updated.phaseIndex && q.questionIndexInPhase === updated.questionIndexInPhase ? updated : q), updatedAt: Date.now() };
+    return { ...draft, questions: draft.questions.map(q => q.id === updated.id ? updated : q), updatedAt: Date.now() };
+  }
+  function addQuestion(draft: QQDraft, phase: number, cat: QQCategory): QQDraft {
+    const existing = draft.questions.filter(q => q.phaseIndex === phase && q.category === cat);
+    const newQ = makeEmptyQuestion(phase, draft.questions.length, cat, draft.id);
+    newQ.id = `${draft.id}-p${phase}-${cat}-${Date.now().toString(36)}`;
+    return { ...draft, questions: [...draft.questions, newQ], updatedAt: Date.now() };
+  }
+  function deleteQuestion(draft: QQDraft, id: string): QQDraft {
+    return { ...draft, questions: draft.questions.filter(q => q.id !== id), updatedAt: Date.now() };
+  }
+  function moveQuestion(draft: QQDraft, id: string, dir: 'up' | 'down'): QQDraft {
+    const qs = [...draft.questions];
+    const idx = qs.findIndex(q => q.id === id);
+    if (idx < 0) return draft;
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= qs.length) return draft;
+    // Only swap within same phase
+    if (qs[idx].phaseIndex !== qs[swapIdx].phaseIndex) return draft;
+    [qs[idx], qs[swapIdx]] = [qs[swapIdx], qs[idx]];
+    return { ...draft, questions: qs, updatedAt: Date.now() };
   }
 
   async function createDraft(phases: 3 | 4) {
@@ -411,7 +431,7 @@ export default function QQBuilderPage() {
     } catch { alert('Upload fehlgeschlagen'); }
     finally { setOptionUploadTarget(null); if (optionFileInputRef.current) optionFileInputRef.current.value = ''; }
   }
-  const activeQ = activeDraft && activeSlot ? getQuestion(activeDraft, activeSlot.phase, activeSlot.qi) : null;
+  const activeQ = activeDraft && activeQId ? activeDraft.questions.find(q => q.id === activeQId) ?? null : null;
 
   if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onDelete={deleteDraft} />;
 
@@ -533,8 +553,8 @@ export default function QQBuilderPage() {
               </div>
             ))}
             {/* Category rows */}
-            {CATEGORIES.map((cat, qi) => [
-              <div key={`cat-${cat}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 10px', borderRadius: 10, background: QQ_CATEGORY_COLORS[cat] + '11', border: `1px solid ${QQ_CATEGORY_COLORS[cat]}22` }}>
+            {CATEGORIES.map((cat) => [
+              <div key={`cat-${cat}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 10px', borderRadius: 10, background: QQ_CATEGORY_COLORS[cat] + '11', border: `1px solid ${QQ_CATEGORY_COLORS[cat]}22`, alignSelf: 'start' }}>
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{QQ_CATEGORY_LABELS[cat].emoji}</span>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 900, color: QQ_CATEGORY_COLORS[cat], lineHeight: 1.2 }}>{QQ_CATEGORY_LABELS[cat].de}</div>
@@ -543,22 +563,54 @@ export default function QQBuilderPage() {
               </div>,
               ...Array.from({ length: activeDraft.phases }, (_, pi) => {
                 const phaseNum = pi + 1;
-                const q = getQuestion(activeDraft, phaseNum, qi);
-                const isActive = activeSlot?.phase === phaseNum && activeSlot?.qi === qi;
-                const preview = cellPreview(q);
+                const cellQs = getQuestionsForCell(activeDraft, phaseNum, cat);
                 return (
-                  <div key={`${phaseNum}-${qi}`} onClick={() => setActiveSlot({ phase: phaseNum, qi })} style={{
-                    padding: '10px 12px', borderRadius: 10, cursor: 'pointer', minHeight: 72, position: 'relative',
-                    background: isActive ? `${QQ_CATEGORY_COLORS[cat]}33` : preview.text ? '#1e293b' : 'rgba(255,255,255,0.03)',
-                    border: `2px solid ${isActive ? QQ_CATEGORY_COLORS[cat] : preview.text ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
-                    transition: 'all 0.15s',
-                  }}>
-                    {q?.image?.url && <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 14 }}>🖼</div>}
-                    {preview.sub && <div style={{ fontSize: 10, fontWeight: 800, color: QQ_CATEGORY_COLORS[cat], marginBottom: 3, opacity: 0.8 }}>{preview.sub}</div>}
-                    <div style={{ fontSize: 11, color: preview.text ? '#94a3b8' : '#334155', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                      {preview.text || <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>Leer…</span>}
-                    </div>
-                    {preview.answer && <div style={{ marginTop: 4, fontSize: 10, color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{preview.answer}</div>}
+                  <div key={`${phaseNum}-${cat}`} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {cellQs.map((q) => {
+                      const isActive = activeQId === q.id;
+                      const preview = cellPreview(q);
+                      // find position in phase for move buttons
+                      const phaseQs = activeDraft.questions.filter(x => x.phaseIndex === phaseNum);
+                      const qIdx = phaseQs.findIndex(x => x.id === q.id);
+                      return (
+                        <div key={q.id} onClick={() => setActiveQId(q.id)} style={{
+                          padding: '8px 10px', borderRadius: 10, cursor: 'pointer', minHeight: 60, position: 'relative',
+                          background: isActive ? `${QQ_CATEGORY_COLORS[cat]}33` : preview.text ? '#1e293b' : 'rgba(255,255,255,0.03)',
+                          border: `2px solid ${isActive ? QQ_CATEGORY_COLORS[cat] : preview.text ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
+                          transition: 'all 0.15s',
+                        }}>
+                          {/* Move + delete controls */}
+                          <div style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 2 }} onClick={e => e.stopPropagation()}>
+                            <button title="Nach oben" onClick={() => setActiveDraft(moveQuestion(activeDraft, q.id, 'up'))}
+                              style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', color: qIdx === 0 ? '#1e293b' : '#64748b', cursor: qIdx === 0 ? 'default' : 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>▲</button>
+                            <button title="Nach unten" onClick={() => setActiveDraft(moveQuestion(activeDraft, q.id, 'down'))}
+                              style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', color: qIdx >= phaseQs.length - 1 ? '#1e293b' : '#64748b', cursor: qIdx >= phaseQs.length - 1 ? 'default' : 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>▼</button>
+                            <button title="Löschen" onClick={() => { if (confirm('Frage löschen?')) { setActiveDraft(deleteQuestion(activeDraft, q.id)); if (activeQId === q.id) setActiveQId(null); }}}
+                              style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>✕</button>
+                          </div>
+                          {q.image?.url && <div style={{ position: 'absolute', top: 4, left: 8, fontSize: 11 }}>🖼</div>}
+                          {preview.sub && <div style={{ fontSize: 10, fontWeight: 800, color: QQ_CATEGORY_COLORS[cat], marginBottom: 2, opacity: 0.8, paddingRight: 52 }}>{preview.sub}</div>}
+                          <div style={{ fontSize: 11, color: preview.text ? '#94a3b8' : '#334155', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', paddingRight: 52 }}>
+                            {preview.text || <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>Leer…</span>}
+                          </div>
+                          {preview.answer && <div style={{ marginTop: 3, fontSize: 10, color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{preview.answer}</div>}
+                        </div>
+                      );
+                    })}
+                    {/* Add button */}
+                    <button onClick={() => {
+                      const newDraft = addQuestion(activeDraft, phaseNum, cat);
+                      const newQ = newDraft.questions[newDraft.questions.length - 1];
+                      setActiveDraft(newDraft);
+                      setActiveQId(newQ.id);
+                    }} style={{
+                      padding: '6px 0', borderRadius: 8, border: `1px dashed ${QQ_CATEGORY_COLORS[cat]}44`,
+                      background: 'transparent', color: QQ_CATEGORY_COLORS[cat] + '99', cursor: 'pointer',
+                      fontSize: 13, fontFamily: 'inherit', fontWeight: 800, transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = QQ_CATEGORY_COLORS[cat] + '15'; e.currentTarget.style.color = QQ_CATEGORY_COLORS[cat]; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = QQ_CATEGORY_COLORS[cat] + '99'; }}
+                    >+ Frage</button>
                   </div>
                 );
               }),
@@ -567,35 +619,49 @@ export default function QQBuilderPage() {
 
           {/* Slide filmstrip */}
           <div style={{ marginTop: 16, paddingBottom: 4 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#475569', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Slide-Vorschau</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#475569', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Reihenfolge ({activeDraft.questions.length} Fragen) — ◀▶ zum Verschieben
+            </div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
               {activeDraft.questions.map((q, i) => {
                 const cat = q.category;
-                const isActive = activeSlot?.phase === q.phaseIndex && activeSlot?.qi === q.questionIndexInPhase;
+                const isActive = activeQId === q.id;
                 const th = activeDraft.theme ?? QQ_THEME_PRESETS.default;
+                const phaseQs = activeDraft.questions.filter(x => x.phaseIndex === q.phaseIndex);
+                const phaseIdx = phaseQs.findIndex(x => x.id === q.id);
                 return (
-                  <div key={q.id}
-                    onClick={() => setActiveSlot({ phase: q.phaseIndex, qi: q.questionIndexInPhase })}
-                    className="qq-filmstrip-thumb"
-                    style={{ flexShrink: 0, width: 128, height: 72, borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                      background: th.bgColor ?? '#0D0A06', border: isActive ? `2px solid ${QQ_CATEGORY_COLORS[cat]}` : '2px solid rgba(255,255,255,0.08)',
-                      boxShadow: isActive ? `0 0 12px ${QQ_CATEGORY_COLORS[cat]}44` : 'none', transition: 'all 0.15s',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
-                    {q.image?.url && <img src={q.image.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }} />}
-                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
-                      <div style={{ fontSize: 8, fontWeight: 900, color: QQ_CATEGORY_COLORS[cat], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {QQ_CATEGORY_LABELS[cat].emoji} P{q.phaseIndex}
+                  <div key={q.id} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
+                    <div
+                      onClick={() => setActiveQId(q.id)}
+                      className="qq-filmstrip-thumb"
+                      style={{ width: 128, height: 72, borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                        background: th.bgColor ?? '#0D0A06', border: isActive ? `2px solid ${QQ_CATEGORY_COLORS[cat]}` : '2px solid rgba(255,255,255,0.08)',
+                        boxShadow: isActive ? `0 0 12px ${QQ_CATEGORY_COLORS[cat]}44` : 'none', transition: 'all 0.15s',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+                      {q.image?.url && <img src={q.image.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }} />}
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
+                        <div style={{ fontSize: 8, fontWeight: 900, color: QQ_CATEGORY_COLORS[cat], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {QQ_CATEGORY_LABELS[cat].emoji} P{q.phaseIndex}
+                        </div>
+                        <div style={{ fontSize: 8, color: th.textColor ?? '#e2e8f0', textAlign: 'center', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3, width: '100%' }}>
+                          {q.text || '—'}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 8, color: th.textColor ?? '#e2e8f0', textAlign: 'center', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3, width: '100%' }}>
-                        {q.text || '—'}
+                      <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
+                      <div className="qq-filmstrip-design-btn"
+                        onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
+                        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
                       </div>
                     </div>
-                    <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
-                    {/* Hover: 🎨 Design button */}
-                    <div className="qq-filmstrip-design-btn"
-                      onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
-                      style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
-                      <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
+                    {/* Move left/right within phase */}
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      <button title="In Phase früher" onClick={() => setActiveDraft(moveQuestion(activeDraft, q.id, 'up'))}
+                        disabled={phaseIdx === 0}
+                        style={{ padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: phaseIdx === 0 ? '#1e293b' : '#64748b', cursor: phaseIdx === 0 ? 'default' : 'pointer', fontSize: 10, fontFamily: 'inherit' }}>◀</button>
+                      <button title="In Phase später" onClick={() => setActiveDraft(moveQuestion(activeDraft, q.id, 'down'))}
+                        disabled={phaseIdx >= phaseQs.length - 1}
+                        style={{ padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: phaseIdx >= phaseQs.length - 1 ? '#1e293b' : '#64748b', cursor: phaseIdx >= phaseQs.length - 1 ? 'default' : 'pointer', fontSize: 10, fontFamily: 'inherit' }}>▶</button>
                     </div>
                   </div>
                 );
@@ -614,6 +680,7 @@ export default function QQBuilderPage() {
             onUpload={() => uploadImage(activeQ.id)}
             onRemoveBg={() => removeBg(activeQ)}
             onChange={updated => setActiveDraft(updateQuestion(activeDraft, updated))}
+            onDelete={() => { setActiveDraft(deleteQuestion(activeDraft, activeQ.id)); setActiveQId(null); }}
             onOptionImageUpload={(optIdx: number) => { setOptionUploadTarget({ questionId: activeQ.id, optionIndex: optIdx }); setTimeout(() => optionFileInputRef.current?.click(), 0); }}
           />
         )}
@@ -631,8 +698,8 @@ export default function QQBuilderPage() {
 }
 
 // ── Question editor panel ──────────────────────────────────────────────────────
-function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload }: {
-  question: QQQuestion; onChange: (q: QQQuestion) => void; onUpload: () => void; onRemoveBg: () => void;
+function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload }: {
+  question: QQQuestion; onChange: (q: QQQuestion) => void; onUpload: () => void; onRemoveBg: () => void; onDelete: () => void;
   uploadingFor: string | null; removingBgFor: string | null; fileInputRef: React.RefObject<HTMLInputElement>;
   onOptionImageUpload: (optIdx: number) => void;
 }) {
@@ -651,10 +718,14 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, uploading
       {/* Category header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
         <span style={{ fontSize: 20 }}>{catLabel.emoji}</span>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 14, color: catColor }}>{catLabel.de} <span style={{ color: '#475569', fontWeight: 400 }}>/ {catLabel.en}</span></div>
-          <div style={{ fontSize: 11, color: '#475569' }}>Phase {q.phaseIndex} · Slot {q.questionIndexInPhase + 1}</div>
+          <div style={{ fontSize: 11, color: '#475569' }}>Phase {q.phaseIndex}</div>
         </div>
+        <button onClick={() => { if (confirm('Frage löschen?')) onDelete(); }}
+          style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 11, fontFamily: 'inherit', fontWeight: 800 }}>
+          🗑 Löschen
+        </button>
       </div>
 
       {/* Question text DE/EN — always shown */}

@@ -363,11 +363,34 @@ function applyDesignPreset(template: QQSlideTemplate, preset: DesignPreset): QQS
   };
 }
 
+// ── Shared tab bar (identical to Builder) ────────────────────────────────────
+function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
+  const navigate = useNavigate();
+  const tabs = [
+    { id: 'builder', label: '📋 Fragen',  path: '/qq-builder' },
+    { id: 'editor',  label: '🎨 Design',  path: `/qq-slides?draft=${draftId}` },
+  ] as const;
+  return (
+    <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
+      {tabs.map(t => {
+        const isActive = t.id === active;
+        return (
+          <button key={t.id} onClick={() => { if (!isActive) { onSave?.(); navigate(t.path); } }}
+            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', background: 'transparent', color: isActive ? '#e2e8f0' : '#475569', fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function QQSlideEditorPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const draftId = searchParams.get('draft');
+  const focusQuestionId = searchParams.get('focusQuestion');
 
   const [draft, setDraft] = useState<QQDraft | null>(null);
   const [templates, setTemplates] = useState<QQSlideTemplates>({});
@@ -396,8 +419,31 @@ export default function QQSlideEditorPage() {
     if (!draftId) { setLoading(false); return; }
     fetch(`/api/qq/drafts/${draftId}`)
       .then(r => r.json())
-      .then((d: QQDraft) => { setDraft(d); setTemplates(d.slideTemplates ?? {}); })
+      .then((d: QQDraft) => {
+        setDraft(d);
+        const tpls = d.slideTemplates ?? {};
+        setTemplates(tpls);
+        // If focusQuestion param is set, jump to that question's step
+        if (focusQuestionId) {
+          const q = d.questions.find(q => q.id === focusQuestionId);
+          if (q) {
+            const cat = q.category;
+            const typeMap: Record<string, QQSlideTemplateType> = {
+              SCHAETZCHEN: 'QUESTION_SCHAETZCHEN', MUCHO: 'QUESTION_MUCHO',
+              BUNTE_TUETE: 'QUESTION_BUNTE_TUETE', ZEHN_VON_ZEHN: 'QUESTION_ZEHN',
+              CHEESE: 'QUESTION_CHEESE',
+            };
+            const type = typeMap[cat] ?? 'QUESTION_MUCHO';
+            const perQKey = `q-${q.id}`;
+            const key = tpls[perQKey]?.elements?.length ? perQKey : type;
+            setActiveType(type);
+            setEditingKey(key);
+            setPreviewQuestion(q);
+          }
+        }
+      })
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId]);
 
   const rawTemplate = templates[editingKey] ?? makeDefault(activeType);
@@ -712,6 +758,9 @@ export default function QQSlideEditorPage() {
         .qqse-layer-row:hover { background: rgba(255,255,255,0.04); }
         .qqse-layer-row.selected { background: rgba(59,130,246,0.12); }
       `}</style>
+
+      {/* ── Shared tab bar ── */}
+      <QQEditorTabs active="editor" draftId={draftId ?? undefined} onSave={() => void save()} />
 
       {/* ── Header ── */}
       <div style={{ padding: '8px 20px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>

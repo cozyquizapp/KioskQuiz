@@ -1,5 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// ── Shared tab bar (Builder ↔ Editor) ─────────────────────────────────────────
+function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
+  const navigate = useNavigate();
+  const tabs = [
+    { id: 'builder', label: '📋 Fragen',  path: '/qq-builder' },
+    { id: 'editor',  label: '🎨 Design',  path: `/qq-slides?draft=${draftId}` },
+  ] as const;
+  return (
+    <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
+      {tabs.map(t => {
+        const isActive = t.id === active;
+        return (
+          <button key={t.id} onClick={() => { if (!isActive) { onSave?.(); navigate(t.path); } }}
+            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', background: 'transparent', color: isActive ? '#e2e8f0' : '#475569', fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 import {
   QQQuestion, QQCategory, QQLanguage, QQDraft,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
@@ -325,6 +347,7 @@ export default function QQBuilderPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
       <style>{`
+        .qq-filmstrip-thumb:hover .qq-filmstrip-design-btn { opacity: 1 !important; }
         @media (max-width: 800px) {
           .qq-builder-body { flex-direction: column !important; }
           .qq-builder-grid { min-width: 0 !important; }
@@ -376,6 +399,9 @@ export default function QQBuilderPage() {
           </div>
         </div>
       )}
+      {/* Shared tab bar */}
+      <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraft(activeDraft)} />
+
       {/* Header */}
       <div style={{ padding: '12px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
         <button onClick={() => setActiveDraft(null)} style={btnStyle('#475569')}>← Zurück</button>
@@ -476,7 +502,9 @@ export default function QQBuilderPage() {
                 const isActive = activeSlot?.phase === q.phaseIndex && activeSlot?.qi === q.questionIndexInPhase;
                 const th = activeDraft.theme ?? QQ_THEME_PRESETS.default;
                 return (
-                  <div key={q.id} onClick={() => setActiveSlot({ phase: q.phaseIndex, qi: q.questionIndexInPhase })}
+                  <div key={q.id}
+                    onClick={() => setActiveSlot({ phase: q.phaseIndex, qi: q.questionIndexInPhase })}
+                    className="qq-filmstrip-thumb"
                     style={{ flexShrink: 0, width: 128, height: 72, borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
                       background: th.bgColor ?? '#0D0A06', border: isActive ? `2px solid ${QQ_CATEGORY_COLORS[cat]}` : '2px solid rgba(255,255,255,0.08)',
                       boxShadow: isActive ? `0 0 12px ${QQ_CATEGORY_COLORS[cat]}44` : 'none', transition: 'all 0.15s',
@@ -491,6 +519,12 @@ export default function QQBuilderPage() {
                       </div>
                     </div>
                     <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
+                    {/* Hover: 🎨 Design button */}
+                    <div className="qq-filmstrip-design-btn"
+                      onClick={e => { e.stopPropagation(); saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
+                      style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
+                    </div>
                   </div>
                 );
               })}

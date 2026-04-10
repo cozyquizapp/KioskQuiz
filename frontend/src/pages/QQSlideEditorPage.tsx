@@ -370,8 +370,8 @@ function applyDesignPreset(template: QQSlideTemplate, preset: DesignPreset): QQS
 function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
   const navigate = useNavigate();
   const tabs = [
-    { id: 'builder', label: '📋 Fragen',  path: '/qq-builder' },
-    { id: 'editor',  label: '🎨 Design',  path: `/qq-slides?draft=${draftId}` },
+    { id: 'builder', label: '📋 Fragen',  path: '/builder' },
+    { id: 'editor',  label: '🎨 Design',  path: `/slides?draft=${draftId}` },
   ] as const;
   return (
     <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
@@ -749,7 +749,7 @@ export default function QQSlideEditorPage() {
   if (!draftId || !draft) return (
     <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: "'Nunito', sans-serif", color: '#e2e8f0' }}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>Kein Fragensatz ausgewählt</div>
-      <button onClick={() => navigate('/qq-builder')} style={btn('#3B82F6')}>← QQ Builder</button>
+      <button onClick={() => navigate('/builder')} style={btn('#3B82F6')}>← QQ Builder</button>
     </div>
   );
 
@@ -770,7 +770,7 @@ export default function QQSlideEditorPage() {
 
       {/* ── Header ── */}
       <div style={{ padding: '8px 20px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={() => navigate(`/qq-builder`)} style={btn('#475569')}>← Builder</button>
+        <button onClick={() => navigate(`/builder`)} style={btn('#475569')}>← Builder</button>
         <div style={{ fontSize: 15, fontWeight: 900 }}>{draft.title}</div>
         <div style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Folien-Editor</div>
         {/* Theme preset swatches */}

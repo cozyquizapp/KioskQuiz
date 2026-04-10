@@ -477,6 +477,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
         {/* Phase content */}
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
+        {s.phase === 'RULES'           && <RulesCard lang={lang} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
         {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
           <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
@@ -530,6 +531,40 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
             }}>
               {qqGetAvatar(t.avatarId).emoji} {t.name}
             </div>
+          ))}
+        </div>
+      </div>
+    </CozyCard>
+  );
+}
+
+function RulesCard({ lang }: { lang: 'de' | 'en' }) {
+  const [dot, setDot] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setDot(d => (d + 1) % 4), 500);
+    return () => clearInterval(id);
+  }, []);
+  const dots = '.'.repeat(dot);
+
+  return (
+    <CozyCard>
+      <div style={{ textAlign: 'center', padding: '12px 4px', animation: 'tcreveal 0.5s ease both' }}>
+        <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcwobble 1.4s ease-in-out infinite' }}>👂</div>
+        <div style={{ fontWeight: 900, fontSize: 20, color: '#F1F5F9', marginBottom: 8 }}>
+          {lang === 'de' ? 'Gut zuhören!' : 'Listen up!'}
+        </div>
+        <div style={{ fontSize: 15, color: '#94A3B8', lineHeight: 1.5 }}>
+          {lang === 'de'
+            ? 'Jetzt erklären wir die Regeln'
+            : 'We are explaining the rules now'}
+          <span style={{ display: 'inline-block', width: 24, textAlign: 'left' }}>{dots}</span>
+        </div>
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8 }}>
+          {['📖', '🗺️', '⭐'].map((e, i) => (
+            <div key={i} style={{
+              fontSize: 22,
+              animation: `tcwobble 2s ease-in-out ${i * 0.35}s infinite`,
+            }}>{e}</div>
           ))}
         </div>
       </div>

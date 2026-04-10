@@ -450,6 +450,15 @@ export default function QQModeratorPage() {
                 }}>
                   ↺ Reset
                 </Btn>
+
+                {s.phase === 'LOBBY' && (
+                  <Btn color="#475569" outline onClick={async () => {
+                    if (!window.confirm('Ewige Tabelle wirklich komplett löschen? Alle Spielergebnisse gehen verloren!')) return;
+                    await fetch('/api/qq/gameresults', { method: 'DELETE' });
+                  }}>
+                    🗑 Tabelle löschen
+                  </Btn>
+                )}
               </div>
             </div>
 
@@ -518,7 +527,7 @@ export default function QQModeratorPage() {
                 <div style={sectionLabel}>Teams einladen</div>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                   <QRCodeSVG
-                    value={`${window.location.origin}/quarterquiz-team?room=${roomCode}`}
+                    value={`${window.location.origin}/team?room=${roomCode}`}
                     size={90}
                     bgColor="#1B1510"
                     fgColor="#e2e8f0"
@@ -528,11 +537,11 @@ export default function QQModeratorPage() {
                   <div>
                     <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>Team-URL:</div>
                     <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e2e8f0', background: 'rgba(255,255,255,0.06)', padding: '4px 8px', borderRadius: 6, marginBottom: 8 }}>
-                      /quarterquiz-team?room={roomCode}
+                      /team?room={roomCode}
                     </div>
                     <div style={{ fontSize: 11, color: '#475569' }}>
                       Teams öffnen diese URL auf ihrem Handy.<br />
-                      Beamer: <span style={{ fontFamily: 'monospace' }}>/quarterquiz-beamer?room={roomCode}</span>
+                      Beamer: <span style={{ fontFamily: 'monospace' }}>/beamer?room={roomCode}</span>
                     </div>
                   </div>
                 </div>

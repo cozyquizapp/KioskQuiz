@@ -1130,7 +1130,7 @@ function CustomSlideElement({
     }
 
     case 'ph_qr_code': {
-      const joinUrl = `${window.location.origin}/quarterquiz-team`;
+      const joinUrl = `${window.location.origin}/team`;
       const qrSize = Math.min(el.w, el.h) * canvasW / 100 * 0.7;
       return (
         <div style={{ ...baseStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>

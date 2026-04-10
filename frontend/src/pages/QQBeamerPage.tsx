@@ -10,7 +10,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
-  startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal,
+  startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -263,7 +263,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
       if (s.correctTeamId) playCorrect();
       else playWrong();
     }
-    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
+    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playGameOver();
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sound: timer loop (game-show music while question is active) ──
@@ -762,7 +762,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
-  const joinUrl = `${window.location.origin}/quarterquiz-team`;
+  const joinUrl = `${window.location.origin}/team`;
   const [de, setDe] = useState(true);
   useEffect(() => {
     const id = setInterval(() => setDe(p => !p), 8000);

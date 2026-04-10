@@ -128,6 +128,8 @@ import {
   saveQQDraftToDB,
   deleteQQDraftFromDB,
   getQQGameResults,
+  deleteQQGameResult,
+  deleteAllQQGameResults,
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -8149,6 +8151,21 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Fehler beim Laden des Leaderboards' });
   }
+});
+
+// QQ Game Results — delete single entry
+app.delete('/api/qq/gameresults/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: 'id fehlt' });
+  const deleted = await deleteQQGameResult(id);
+  if (!deleted) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json({ ok: true });
+});
+
+// QQ Game Results — delete all (reset leaderboard)
+app.delete('/api/qq/gameresults', async (_req, res) => {
+  const count = await deleteAllQQGameResults();
+  res.json({ ok: true, deleted: count });
 });
 
 // Background removal via Cloudinary e_background_removal

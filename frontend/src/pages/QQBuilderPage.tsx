@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
   const navigate = useNavigate();
   const tabs = [
-    { id: 'builder', label: '📋 Fragen',  path: '/qq-builder' },
-    { id: 'editor',  label: '🎨 Design',  path: `/qq-slides?draft=${draftId}` },
+    { id: 'builder', label: '📋 Fragen',  path: '/builder' },
+    { id: 'editor',  label: '🎨 Design',  path: `/slides?draft=${draftId}` },
   ] as const;
   return (
     <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
@@ -514,7 +514,7 @@ export default function QQBuilderPage() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
-          <button onClick={async () => { await saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
+          <button onClick={async () => { await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
           <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
           <button onClick={() => saveDraft(activeDraft)} style={btnStyle('#22C55E')} disabled={saving}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
@@ -593,7 +593,7 @@ export default function QQBuilderPage() {
                     <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
                     {/* Hover: 🎨 Design button */}
                     <div className="qq-filmstrip-design-btn"
-                      onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
+                      onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
                       style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
                       <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
                     </div>

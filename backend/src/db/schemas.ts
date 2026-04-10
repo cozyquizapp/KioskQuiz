@@ -293,3 +293,23 @@ export async function getQQGameResults(limit = 50): Promise<any[]> {
     return [];
   }
 }
+
+export async function deleteQQGameResult(id: string): Promise<boolean> {
+  try {
+    const res = await QQGameResultModel.deleteOne({ id });
+    return res.deletedCount > 0;
+  } catch (err) {
+    console.error('Fehler beim Löschen des QQ Spielergebnisses:', err);
+    return false;
+  }
+}
+
+export async function deleteAllQQGameResults(): Promise<number> {
+  try {
+    const res = await QQGameResultModel.deleteMany({});
+    return res.deletedCount;
+  } catch (err) {
+    console.error('Fehler beim Löschen aller QQ Spielergebnisse:', err);
+    return 0;
+  }
+}

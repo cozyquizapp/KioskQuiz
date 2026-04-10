@@ -17,11 +17,11 @@ const cozyLinks: LinkItem[] = [
 
 // ── Quarter Quiz links ────────────────────────────────────────────────────────
 const qqLinks: LinkItem[] = [
-  { path: '/quarterquiz-moderator', label: 'Moderator',       emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
-  { path: '/quarterquiz-beamer',    label: 'Beamer',           emoji: '📽️', note: 'Grid live anzeigen' },
-  { path: '/quarterquiz-team',      label: 'Team',             emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
-  { path: '/qq-builder',            label: 'QQ Builder',       emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
-  { path: '/qq-library',             label: 'Fragenbibliothek', emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
+  { path: '/moderator', label: 'Moderator',       emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
+  { path: '/beamer',    label: 'Beamer',           emoji: '📽️', note: 'Grid live anzeigen' },
+  { path: '/team',      label: 'Team',             emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
+  { path: '/builder',            label: 'QQ Builder',       emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
+  { path: '/library',             label: 'Fragenbibliothek', emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
   { path: '/bingo-grid-test.html',  label: 'Grid Tester',      emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',       label: 'Design Sneak Peak',emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
 ];

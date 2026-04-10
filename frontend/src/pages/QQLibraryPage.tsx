@@ -262,7 +262,7 @@ export default function QQLibraryPage() {
           <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📚 QQ Fragebibliothek</h1>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#3B82F6', color: '#fff' }}>📥 Importieren</button>
-            <button onClick={() => navigate('/qq-builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#22C55E', color: '#fff' }}>+ Neuer Fragensatz</button>
+            <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#22C55E', color: '#fff' }}>+ Neuer Fragensatz</button>
           </div>
         </div>
 
@@ -469,7 +469,7 @@ export default function QQLibraryPage() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-                    <button onClick={() => navigate('/qq-builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: '#3B82F6', color: '#fff' }}>✏️ Bearbeiten</button>
+                    <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: '#3B82F6', color: '#fff' }}>✏️ Bearbeiten</button>
                     <button onClick={() => duplicateDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>📋 Duplizieren</button>
                     <button onClick={() => exportDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>📤 Export JSON</button>
                     <button onClick={() => deleteDraft(d.id)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>🗑 Löschen</button>

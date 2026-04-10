@@ -126,34 +126,56 @@ function App() {
         </div>
       }>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/welcome" element={<LandingPage />} />
-          <Route path="/menu" element={<PinGate><MenuPage /></PinGate>} />
-          <Route path="/admin" element={<PinGate><AdminPage /></PinGate>} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/beamer" element={<BeamerPage />} />
-          <Route path="/beamer/:roomCode" element={<BeamerPage />} />
-          <Route path="/creator" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-v2" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-wizard" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/creator-canvas" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/baukasten" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/baukasten_neu" element={<CreatorCanvasPage />} />
-          <Route path="/kanban-builder" element={<ImprovedCozy60BuilderPage />} />
-          <Route path="/creator-app" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/question-editor" element={<QuestionEditorPage />} />
-          <Route path="/moderator" element={<PinGate><ModeratorPage /></PinGate>} />
-          <Route path="/intro" element={<IntroSlidesPage />} />
-          <Route path="/question-catalog" element={<QuestionCatalogPage />} />
-          <Route path="/presentation-creator" element={<Navigate to="/baukasten_neu" replace />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/qrcode" element={<QrCodePage />} />
-          <Route path="/quarterquiz-moderator" element={<PinGate><QQModeratorPage /></PinGate>} />
-          <Route path="/quarterquiz-beamer"    element={<QQBeamerPage />} />
-          <Route path="/quarterquiz-team"      element={<QQTeamPage />} />
-          <Route path="/qq-builder"            element={<PinGate><QQBuilderPage /></PinGate>} />
-          <Route path="/qq-library"            element={<PinGate><QQLibraryPage /></PinGate>} />
-          <Route path="/qq-slides"             element={<PinGate><QQSlideEditorPage /></PinGate>} />
+          {/* ── Quarter Quiz (Hauptapp) ───────────────────────────── */}
+          <Route path="/" element={<Navigate to="/team" replace />} />
+          <Route path="/team"       element={<QQTeamPage />} />
+          <Route path="/beamer"     element={<QQBeamerPage />} />
+          <Route path="/moderator"  element={<PinGate><QQModeratorPage /></PinGate>} />
+          <Route path="/builder"    element={<PinGate><QQBuilderPage /></PinGate>} />
+          <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />
+          <Route path="/slides"     element={<PinGate><QQSlideEditorPage /></PinGate>} />
+          <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
+
+          {/* ── Altes CozyQuiz (Archiv) ───────────────────────────── */}
+          <Route path="/alt/team"         element={<TeamPage />} />
+          <Route path="/alt/beamer"       element={<BeamerPage />} />
+          <Route path="/alt/beamer/:roomCode" element={<BeamerPage />} />
+          <Route path="/alt/moderator"    element={<PinGate><ModeratorPage /></PinGate>} />
+          <Route path="/alt/baukasten"    element={<CreatorCanvasPage />} />
+          <Route path="/alt/builder"      element={<ImprovedCozy60BuilderPage />} />
+          <Route path="/alt/fragen"       element={<QuestionEditorPage />} />
+          <Route path="/alt/katalog"      element={<QuestionCatalogPage />} />
+          <Route path="/alt/stats"        element={<StatsPage />} />
+          <Route path="/alt/intro"        element={<IntroSlidesPage />} />
+          <Route path="/alt/menu"         element={<PinGate><MenuPage /></PinGate>} />
+          <Route path="/alt/qrcode"       element={<QrCodePage />} />
+
+          {/* ── Legacy-Redirects (alte QQ-URLs) ──────────────────── */}
+          <Route path="/quarterquiz-moderator" element={<Navigate to="/moderator" replace />} />
+          <Route path="/quarterquiz-beamer"    element={<Navigate to="/beamer" replace />} />
+          <Route path="/quarterquiz-team"      element={<Navigate to="/team" replace />} />
+          <Route path="/qq-builder"            element={<Navigate to="/builder" replace />} />
+          <Route path="/qq-library"            element={<Navigate to="/library" replace />} />
+          <Route path="/qq-slides"             element={<Navigate to="/slides" replace />} />
+
+          {/* ── Legacy-Redirects (alte CozyQuiz-URLs) ────────────── */}
+          <Route path="/welcome"               element={<Navigate to="/alt/team" replace />} />
+          <Route path="/baukasten_neu"         element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/baukasten"             element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/creator"               element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/creator-v2"            element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/creator-wizard"        element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/creator-canvas"        element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/creator-app"           element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/kanban-builder"        element={<Navigate to="/alt/builder" replace />} />
+          <Route path="/question-editor"       element={<Navigate to="/alt/fragen" replace />} />
+          <Route path="/question-catalog"      element={<Navigate to="/alt/katalog" replace />} />
+          <Route path="/stats"                 element={<Navigate to="/alt/stats" replace />} />
+          <Route path="/intro"                 element={<Navigate to="/alt/intro" replace />} />
+          <Route path="/menu"                  element={<Navigate to="/alt/menu" replace />} />
+          <Route path="/presentation-creator"  element={<Navigate to="/alt/baukasten" replace />} />
+          <Route path="/qrcode"                element={<Navigate to="/alt/qrcode" replace />} />
+
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>
       </Suspense>

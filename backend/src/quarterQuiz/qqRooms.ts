@@ -414,7 +414,12 @@ export function qqRevealAnswer(room: QQRoomState): void {
   qqStopTimer(room);
   const q = room.currentQuestion;
   room.phase          = 'QUESTION_REVEAL';
-  room.revealedAnswer = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
+  let revAns = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
+  // SCHAETZCHEN: if no answer text, fall back to formatted targetValue
+  if (!revAns && q?.category === 'SCHAETZCHEN' && q.targetValue != null) {
+    revAns = q.targetValue.toLocaleString('de-DE');
+  }
+  room.revealedAnswer = revAns;
   room.lastActivityAt = Date.now();
 }
 
@@ -1001,7 +1006,7 @@ export function qqPlaceCell(
   }
 
   cell.ownerId = teamId;
-  room.lastPlacedCell = { row, col, teamId };
+  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
 
@@ -1067,7 +1072,7 @@ export function qqStealCell(
   }
 
   cell.ownerId = teamId;
-  room.lastPlacedCell = { row, col, teamId };
+  room.lastPlacedCell = { row, col, teamId, wasSteal: true };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
 

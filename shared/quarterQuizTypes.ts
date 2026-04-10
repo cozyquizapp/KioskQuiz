@@ -316,7 +316,7 @@ export interface QQSlideElement {
 
 export type QQSlideTemplateType =
   | 'LOBBY'
-  | 'PHASE_INTRO_1' | 'PHASE_INTRO_2' | 'PHASE_INTRO_3'
+  | 'PHASE_INTRO_1' | 'PHASE_INTRO_2' | 'PHASE_INTRO_3' | 'PHASE_INTRO_4'
   | 'QUESTION_SCHAETZCHEN' | 'QUESTION_MUCHO' | 'QUESTION_BUNTE_TUETE'
   | 'QUESTION_ZEHN' | 'QUESTION_CHEESE'
   | 'REVEAL' | 'PLACEMENT' | 'COMEBACK_CHOICE' | 'GAME_OVER';
@@ -382,7 +382,7 @@ export interface QQStateUpdate {
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)
   imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
   // Last placed cell — for beamer placement animation
-  lastPlacedCell: { row: number; col: number; teamId: string } | null;
+  lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
   // Settings

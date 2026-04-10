@@ -1085,6 +1085,11 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   const touchStartY = useRef(0);
 
   const isMyTurn = s.imposterActiveTeamId === myTeamId;
+
+  // Reset submitted whenever the active team changes (new turn)
+  useEffect(() => {
+    setSubmitted(false);
+  }, [s.imposterActiveTeamId]);
   const isEliminated = s.imposterEliminated.includes(myTeamId);
   const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);
 
@@ -1158,7 +1163,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
           borderRadius: 16, height: SLOT_H * 3, overflow: 'hidden', position: 'relative',
           background: 'rgba(10,15,35,0.97)', border: '1.5px solid rgba(148,163,184,0.15)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-          userSelect: 'none',
+          userSelect: 'none', touchAction: 'none',
         }}
       >
         {/* Top slot (blurred) */}

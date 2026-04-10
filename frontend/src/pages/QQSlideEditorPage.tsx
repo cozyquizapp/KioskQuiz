@@ -117,7 +117,8 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
     };
     case 'PHASE_INTRO_1': return phaseIntro(type, '#3B82F6', 'Runde 1');
     case 'PHASE_INTRO_2': return phaseIntro(type, '#F59E0B', 'Runde 2');
-    case 'PHASE_INTRO_3': return phaseIntro(type, '#EF4444', 'Finale');
+    case 'PHASE_INTRO_3': return phaseIntro(type, '#EF4444', 'Runde 3');
+    case 'PHASE_INTRO_4': return phaseIntro(type, '#10B981', 'Finale');
     case 'QUESTION_SCHAETZCHEN': return questionTpl(type, '#F59E0B', false, 'SCHAETZCHEN');
     case 'QUESTION_MUCHO':       return questionTpl(type, '#3B82F6', true,  'MUCHO');
     case 'QUESTION_BUNTE_TUETE': return questionTpl(type, '#EF4444', false, 'BUNTE_TUETE');
@@ -162,6 +163,7 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
         { id: eid(), type: 'ph_teams', x: 58, y: 78, w: 40, h: 18, zIndex: 2 },
       ],
     };
+    default: return { type: type as QQSlideTemplateType, background: bg, elements: [] };
   }
 }
 
@@ -446,7 +448,7 @@ export default function QQSlideEditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId]);
 
-  const rawTemplate = templates[editingKey] ?? makeDefault(activeType);
+  const rawTemplate = templates[editingKey] ?? makeDefault(activeType) ?? { type: activeType, background: '#0D0A06', elements: [] as QQSlideElement[] };
   const activeTemplate: QQSlideTemplate = { ...rawTemplate, elements: rawTemplate.elements ?? [] };
 
   // Is the current question using a per-question override?
@@ -572,7 +574,8 @@ export default function QQSlideEditorPage() {
     const steps: StepItem[] = [];
     steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
     for (let p = 1; p <= draft.phases; p++) {
-      steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : '#EF4444', phase: p });
+      const phaseColor = p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : p === 3 ? '#EF4444' : '#10B981';
+      steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: phaseColor, phase: p });
       const qs = draft.questions.filter(q => q.phaseIndex === p);
       for (const q of qs) {
         const ttype = getQTemplateType(q);

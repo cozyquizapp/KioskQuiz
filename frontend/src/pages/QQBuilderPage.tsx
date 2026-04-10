@@ -204,6 +204,7 @@ export default function QQBuilderPage() {
   const [activeDraft, setActiveDraft] = useState<QQDraft | null>(null);
   const [activeSlot, setActiveSlot] = useState<{ phase: number; qi: number } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
@@ -285,6 +286,76 @@ export default function QQBuilderPage() {
       }
     } finally { setSaving(false); }
   }
+  async function translateAllToEnglish() {
+    if (!activeDraft || translating) return;
+    setTranslating(true);
+    try {
+      async function tr(text: string): Promise<string> {
+        if (!text?.trim()) return '';
+        try {
+          const res = await fetch('/api/translate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text.trim(), source: 'de', target: 'en' }),
+          });
+          if (!res.ok) return '';
+          const data = await res.json();
+          return (data.translatedText as string)?.trim() ?? '';
+        } catch { return ''; }
+      }
+
+      const translatedQuestions = await Promise.all(activeDraft.questions.map(async (q) => {
+        const updated = { ...q };
+        // Core fields
+        if (!q.textEn)   updated.textEn   = await tr(q.text);
+        if (!q.answerEn) updated.answerEn = await tr(q.answer);
+        // SCHAETZCHEN unit
+        if (q.unit && !q.unitEn) updated.unitEn = await tr(q.unit);
+        // Multiple choice options
+        if (q.options?.length && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN')) {
+          const optionsEn = [...(q.optionsEn ?? [])];
+          await Promise.all(q.options.map(async (opt, i) => {
+            if (!optionsEn[i] && opt) optionsEn[i] = await tr(opt);
+          }));
+          updated.optionsEn = optionsEn;
+        }
+        // BUNTE_TUETE sub-fields
+        if (q.bunteTuete) {
+          const bt = { ...q.bunteTuete } as any;
+          if (bt.kind === 'oneOfEight' && bt.statements?.length) {
+            const stEn = [...(bt.statementsEn ?? [])];
+            await Promise.all(bt.statements.map(async (s: string, i: number) => {
+              if (!stEn[i] && s) stEn[i] = await tr(s);
+            }));
+            bt.statementsEn = stEn;
+          }
+          if (bt.kind === 'top5' && bt.answers?.length) {
+            const ansEn = [...(bt.answersEn ?? [])];
+            await Promise.all(bt.answers.map(async (a: string, i: number) => {
+              if (!ansEn[i] && a) ansEn[i] = await tr(a);
+            }));
+            bt.answersEn = ansEn;
+          }
+          if (bt.kind === 'order' && bt.items?.length) {
+            const itemsEn = [...(bt.itemsEn ?? [])];
+            await Promise.all(bt.items.map(async (item: string, i: number) => {
+              if (!itemsEn[i] && item) itemsEn[i] = await tr(item);
+            }));
+            bt.itemsEn = itemsEn;
+            if (bt.criteria && !bt.criteriaEn) bt.criteriaEn = await tr(bt.criteria);
+          }
+          updated.bunteTuete = bt;
+        }
+        return updated;
+      }));
+
+      const newDraft = { ...activeDraft, questions: translatedQuestions };
+      setActiveDraft(newDraft);
+      await saveDraft(newDraft);
+    } finally {
+      setTranslating(false);
+    }
+  }
+
   async function deleteDraft(id: string) {
     if (!confirm('Fragensatz löschen?')) return;
     await fetch(`/api/qq/drafts/${id}`, { method: 'DELETE' });
@@ -442,7 +513,8 @@ export default function QQBuilderPage() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button onClick={() => navigate(`/qq-slides?draft=${activeDraft.id}`)} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
+          <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+          <button onClick={async () => { await saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
           <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
           <button onClick={() => saveDraft(activeDraft)} style={btnStyle('#22C55E')} disabled={saving}>{saving ? '…' : '💾 Speichern'}</button>
         </div>
@@ -521,7 +593,7 @@ export default function QQBuilderPage() {
                     <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
                     {/* Hover: 🎨 Design button */}
                     <div className="qq-filmstrip-design-btn"
-                      onClick={e => { e.stopPropagation(); saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
+                      onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/qq-slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
                       style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
                       <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
                     </div>

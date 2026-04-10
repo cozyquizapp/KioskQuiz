@@ -196,6 +196,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
           qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
         }
+        // Auto-start Imposter (oneOfEight) and stop timer (it's self-paced)
+        if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
+          qqImposterStart(room);
+          qqStopTimer(room);
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -228,7 +233,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqClearBuzz(room);
-        qqClearAnswers(room);
+        // Do NOT clear answers here — they remain visible during PLACEMENT and post-placement review.
+        // Answers are cleared in qqNextQuestion / qqActivateQuestion.
         qqMarkCorrect(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -239,7 +245,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqClearBuzz(room);
-        qqClearAnswers(room);
+        // Answers cleared naturally in qqNextQuestion (called inside qqMarkWrong)
         qqMarkWrong(room);
         broadcast(io, payload.roomCode);
         ok(ack);

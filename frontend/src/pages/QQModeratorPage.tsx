@@ -325,10 +325,10 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
-                {/* CHEESE (Picture This): moderator reveals the image before the answer */}
+                {/* CHEESE (Picture This): moderator blendet Frage ein (Bild war von Anfang an sichtbar) */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
                   <Btn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })}>
-                    📸 Bild zeigen
+                    ❓ Frage zeigen
                   </Btn>
                 )}
 

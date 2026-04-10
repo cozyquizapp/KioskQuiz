@@ -10,6 +10,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 import {
   resumeAudio, setVolume, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
+  startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -261,24 +262,42 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Sound: timer loop (game-show music while question is active) ──
+  useEffect(() => {
+    // Don't play loop if question has its own music, no timer, or muted
+    if (s.globalMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
+      stopTimerLoop();
+      return;
+    }
+    startTimerLoop();
+    return () => stopTimerLoop();
+  }, [s.timerEndsAt, s.phase, s.globalMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Sound: timer ticks ──
   useEffect(() => {
     if (s.globalMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
     const iv = setInterval(() => {
       const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
-      if (rem <= 0) { playTimesUp(); clearInterval(iv); return; }
+      if (rem <= 0) { stopTimerLoop(); playTimesUp(); clearInterval(iv); return; }
       if (rem <= 5) playUrgentTick();
       else if (rem <= 10) playTick();
     }, 1000);
     return () => clearInterval(iv);
   }, [s.timerEndsAt, s.phase, s.globalMuted]);
 
-  // ── Sound: placement → score up ──
+  // ── Sound: placement → field placed + score up ──
   const prevCorrectRef = useRef(s.correctTeamId);
   useEffect(() => {
     if (s.correctTeamId && !prevCorrectRef.current && !s.globalMuted) playScoreUp();
     prevCorrectRef.current = s.correctTeamId;
   }, [s.correctTeamId, s.globalMuted]);
+
+  // ── Sound: placement flash — stamp or steal sound ──
+  useEffect(() => {
+    if (!placementFlash || s.globalMuted) return;
+    if (placementFlash.cell.wasSteal) playSteal();
+    else playFieldPlaced();
+  }, [placementFlash]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: play question musicUrl ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -386,14 +405,13 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         <>
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
-            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase === 'QUESTION_REVEAL'} hideCutouts={false} />
+          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT') && !placementFlash && (
+            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
           )}
-          {/* Placement flash: briefly keep PlacementView after cell placed, then reveal */}
+          {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
           {placementFlash && (
             <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
           )}
-          {s.phase === 'PLACEMENT' && !placementFlash && <PlacementView state={s} />}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
         </>
@@ -680,16 +698,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             {s.teams.map((t, i) => (
               <div key={t.id} style={{
-                padding: '16px 22px', borderRadius: 20,
+                padding: '20px 28px', borderRadius: 24,
                 background: cardBg,
                 border: `2px solid ${t.color}55`,
                 boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
-                textAlign: 'center', minWidth: 120,
+                textAlign: 'center', minWidth: 150,
                 animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${i * 0.1}s both`,
               }}>
-                <div style={{ fontSize: 44, marginBottom: 6, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
-                <div style={{ fontWeight: 900, fontSize: 18, color: t.color }}>{t.name}</div>
-                <div style={{ fontSize: 11, marginTop: 4, fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
+                <div style={{ fontSize: 64, marginBottom: 8, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2.4vw, 28px)', color: t.color }}>{t.name}</div>
+                <div style={{ fontSize: 'clamp(13px, 1.4vw, 16px)', marginTop: 6, fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
                   {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
                 </div>
               </div>
@@ -697,7 +715,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         )}
 
-        <div style={{ color: '#64748b', fontSize: 14, fontWeight: 700 }}>
+        <div style={{ color: '#64748b', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
           {s.teams.length < 2
             ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
             : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
@@ -983,10 +1001,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       )}
 
       {/* Main content — revealed after intro */}
+      {/* CHEESE: hide left-column until moderator shows question (imageRevealed) */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
         flexDirection: hasImg && img.layout === 'window-left' ? 'row-reverse' : 'row',
         animation: showIntro ? 'contentReveal 0.6s ease 2.2s both' : 'contentReveal 0.35s ease both',
+        visibility: isCheese && !s.imageRevealed && !revealed ? 'hidden' : undefined,
       }}>
         {/* ── Left: question ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 44px', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
@@ -1107,11 +1127,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
-              padding: '18px 28px', borderRadius: 18,
-              background: 'rgba(34,197,94,0.08)',
-              border: '2px solid rgba(34,197,94,0.35)',
-              boxShadow: '0 0 32px rgba(34,197,94,0.12)',
-              fontSize: 'clamp(20px, 2.6vw, 40px)', fontWeight: 900,
+              padding: '20px 32px', borderRadius: 20,
+              background: 'rgba(34,197,94,0.10)',
+              border: '2px solid rgba(34,197,94,0.40)',
+              boxShadow: '0 0 40px rgba(34,197,94,0.16)',
+              fontSize: 'clamp(24px, 3.2vw, 52px)', fontWeight: 900,
               color: '#4ade80', marginBottom: 14,
               animation: 'contentReveal 0.4s ease both',
             }}>
@@ -1120,30 +1140,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
 
           {/* Schätzchen: ranked answers by distance */}
-          {revealed && q.category === 'SCHAETZCHEN' && q.targetValue != null && s.answers.length > 0 && (
+          {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (
             <div style={{ marginBottom: 14, animation: 'contentReveal 0.5s ease 0.1s both' }}>
               {[...s.answers]
                 .map(a => {
                   const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
                   const team = s.teams.find(t => t.id === a.teamId);
-                  return { ...a, num, distance: Number.isNaN(num) ? Infinity : Math.abs(num - q.targetValue!), team };
+                  const distance = Number.isNaN(num) || q.targetValue == null ? Infinity : Math.abs(num - q.targetValue);
+                  return { ...a, num, distance, team };
                 })
                 .sort((a, b) => a.distance - b.distance)
                 .map((a, i) => (
                   <div key={a.teamId} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '8px 16px', borderRadius: 12, marginBottom: 4,
-                    background: i === 0 ? 'rgba(234,179,8,0.12)' : 'rgba(255,255,255,0.03)',
-                    border: i === 0 ? '1px solid rgba(234,179,8,0.3)' : '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '10px 20px', borderRadius: 14, marginBottom: 6,
+                    background: i === 0 ? 'rgba(234,179,8,0.14)' : 'rgba(255,255,255,0.04)',
+                    border: i === 0 ? '1.5px solid rgba(234,179,8,0.35)' : '1px solid rgba(255,255,255,0.07)',
                     animation: `contentReveal 0.4s ease ${0.15 + i * 0.1}s both`,
                   }}>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: 24 }}>#{i + 1}</span>
-                    {a.team && <span style={{ fontSize: 22, lineHeight: 1 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
-                    <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1 }}>{a.team?.name ?? a.teamId}</span>
-                    <span style={{ fontSize: 'clamp(16px, 2vw, 24px)', fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
-                    <span style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: '#64748b' }}>
-                      {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
-                    </span>
+                    <span style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: 28 }}>#{i + 1}</span>
+                    {a.team && <span style={{ fontSize: 'clamp(24px, 3vw, 40px)', lineHeight: 1 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 2vw, 28px)', color: a.team?.color ?? '#e2e8f0', flex: 1 }}>{a.team?.name ?? a.teamId}</span>
+                    <span style={{ fontSize: 'clamp(18px, 2.4vw, 32px)', fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
+                    {q.targetValue != null && (
+                      <span style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#64748b' }}>
+                        {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
+                      </span>
+                    )}
                   </div>
                 ))
               }
@@ -1165,19 +1188,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
                 return (
                   <div key={optIdx} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '6px 14px', borderRadius: 10, marginBottom: 4,
-                    background: isCorrect ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-                    border: isCorrect ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '8px 16px', borderRadius: 12, marginBottom: 6,
+                    background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: isCorrect ? '1.5px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.06)',
                     animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.07}s both`,
                   }}>
-                    <span style={{ width: 22, height: 22, borderRadius: 6, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(13px, 1.4vw, 16px)', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
                       {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
                     </span>
                     {voters.map((t, vi) => (
-                      <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 4, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
-                        <span style={{ fontSize: 18 }}>{qqGetAvatar(t!.avatarId).emoji}</span>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: t!.color }}>{t!.name}</span>
+                      <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 6, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
+                        <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                        <span style={{ fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, color: t!.color }}>{t!.name}</span>
                       </span>
                     ))}
                   </div>
@@ -1194,17 +1217,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const isWinner = a.teamId === s.correctTeamId;
                 return (
                   <div key={a.teamId} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '7px 14px', borderRadius: 10, marginBottom: 4,
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '10px 18px', borderRadius: 12, marginBottom: 6,
                     background: isWinner ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-                    border: isWinner ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                    border: isWinner ? '1.5px solid rgba(34,197,94,0.30)' : '1px solid rgba(255,255,255,0.06)',
                     animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                   }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
-                    {team && <span style={{ fontSize: 20 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
-                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 14 }}>{team?.name}</span>
-                    <span style={{ fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
-                    {isWinner && <span style={{ fontSize: 14, color: '#4ade80' }}>✓</span>}
+                    <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#475569', width: 26 }}>#{i + 1}</span>
+                    {team && <span style={{ fontSize: 'clamp(22px, 2.6vw, 36px)' }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 'clamp(15px, 1.8vw, 24px)' }}>{team?.name}</span>
+                    <span style={{ fontSize: 'clamp(15px, 1.8vw, 24px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
+                    {isWinner && <span style={{ fontSize: 'clamp(16px, 2vw, 26px)', color: '#4ade80' }}>✓</span>}
                   </div>
                 );
               })}
@@ -1350,24 +1373,39 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Correct team */}
+          {/* Correct team — full-width winner banner */}
           {revealed && s.correctTeamId && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
             if (!team) return null;
             const cat = q.category;
             const isEn = lang === 'en';
             const winMsg = cat === 'SCHAETZCHEN'
-              ? (isEn ? 'was closest!' : 'war am nächsten dran!')
+              ? (isEn ? 'war am nächsten dran! 🎯' : 'war am nächsten dran! 🎯')
               : cat === 'CHEESE'
-                ? (isEn ? 'got it right!' : 'hat es erkannt!')
+                ? (isEn ? 'hat es erkannt! 🔍' : 'hat es erkannt! 🔍')
                 : cat === 'BUNTE_TUETE'
-                  ? (isEn ? 'wins this round!' : 'gewinnt die Runde!')
-                  : (isEn ? 'answered correctly!' : 'antwortet richtig!');
+                  ? (isEn ? 'gewinnt die Runde! 🏆' : 'gewinnt die Runde! 🏆')
+                  : (isEn ? 'richtig! ✅' : 'richtig! ✅');
             return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, animation: 'celebShake 0.6s ease 0.15s both' }}>
-                <span style={{ fontSize: 36, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-                <span style={{ fontWeight: 900, fontSize: 22, color: team.color }}>{team.name}</span>
-                <span style={{ color: '#475569', fontSize: 16, fontWeight: 700 }}>{winMsg}</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 20,
+                padding: '18px 28px', borderRadius: 24, marginBottom: 8,
+                background: `linear-gradient(135deg, ${team.color}22, ${team.color}0a)`,
+                border: `2px solid ${team.color}66`,
+                boxShadow: `0 0 40px ${team.color}22, 0 8px 24px rgba(0,0,0,0.4)`,
+                animation: 'winnerSlideIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+              }}>
+                <span style={{ fontSize: 'clamp(52px, 6vw, 88px)', lineHeight: 1, flexShrink: 0 }}>
+                  {qqGetAvatar(team.avatarId).emoji}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(28px, 3.8vw, 56px)', color: team.color, lineHeight: 1.1 }}>
+                    {team.name}
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 700, marginTop: 4 }}>
+                    {winMsg}
+                  </div>
+                </div>
               </div>
             );
           })()}
@@ -1552,16 +1590,16 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
         background: 'rgba(13,10,6,0.6)', backdropFilter: 'blur(12px)',
       }}>
         <div style={{
-          fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em',
+          fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em',
           color: '#475569',
         }}>
           {actionVerb(s.pendingAction, lang)}
         </div>
         {team && (
           <>
-            <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-            <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 32px)', color: team.color }}>{team.name}</span>
-            <span style={{ color: '#475569', fontSize: 14, fontWeight: 700 }}>
+            <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3.2vw, 48px)', color: team.color }}>{team.name}</span>
+            <span style={{ color: '#475569', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
               {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
             </span>
           </>
@@ -1569,9 +1607,9 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
         {/* Last answer reminder */}
         {s.revealedAnswer && (
           <div style={{
-            marginLeft: 'auto', padding: '6px 16px', borderRadius: 10,
+            marginLeft: 'auto', padding: '8px 20px', borderRadius: 12,
             background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
-            fontSize: 14, color: '#4ade80', fontWeight: 700,
+            fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#4ade80', fontWeight: 700,
           }}>
             ✓ {s.revealedAnswer}
           </div>

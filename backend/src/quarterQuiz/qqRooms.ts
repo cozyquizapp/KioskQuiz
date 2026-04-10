@@ -64,7 +64,7 @@ export interface QQRoomState {
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
   // Last placed cell for beamer animation
-  lastPlacedCell: { row: number; col: number; teamId: string } | null;
+  lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Internal round-robin index for Hot Potato (not sent to clients)
   _hotPotatoRoundRobinIdx?: number;
   // Internal: stored timer expiry callback for mid-round restarts

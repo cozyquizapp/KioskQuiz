@@ -229,7 +229,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
   const prevPhaseRef = useRef(s.phase);
-  const [placementFlash, setPlacementFlash] = useState<{ cell: { row: number; col: number; teamId: string }; state: QQStateUpdate } | null>(null);
+  const [placementFlash, setPlacementFlash] = useState<{ cell: { row: number; col: number; teamId: string; wasSteal?: boolean }; state: QQStateUpdate } | null>(null);
 
   useEffect(() => {
     if (prevPhaseRef.current === 'PLACEMENT' && s.phase === 'QUESTION_REVEAL' && s.lastPlacedCell) {

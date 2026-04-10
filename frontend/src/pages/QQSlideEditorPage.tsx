@@ -1287,7 +1287,27 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
 }
 
 // ── PropertiesPanel ───────────────────────────────────────────────────────────
-const ANIM_IN_OPTIONS: Array<QQSlideElement['animIn']> = ['none', 'fadeIn', 'fadeUp', 'pop', 'slideLeft', 'slideRight'];
+const ANIM_IN_OPTIONS: Array<{ value: QQSlideElement['animIn']; label: string }> = [
+  { value: 'none',       label: 'Keiner' },
+  { value: 'fadeIn',     label: 'Einblenden' },
+  { value: 'fadeUp',     label: 'Von unten einblenden' },
+  { value: 'pop',        label: 'Pop (aufploppen)' },
+  { value: 'slideLeft',  label: 'Von links schieben' },
+  { value: 'slideRight', label: 'Von rechts schieben' },
+  { value: 'cardFlip',   label: 'Karte umdrehen' },
+  { value: 'bounceIn',   label: 'Reinspringen' },
+  { value: 'slotDrop',   label: 'Slot-Machine Drop' },
+  { value: 'swingIn',    label: 'Einschwingen' },
+  { value: 'typewriter', label: 'Schreibmaschine (Text)' },
+];
+const ANIM_LOOP_OPTIONS: Array<{ value: QQSlideElement['animLoop']; label: string }> = [
+  { value: 'none',   label: 'Keiner' },
+  { value: 'pulse',  label: 'Pulsieren' },
+  { value: 'bounce', label: 'Hüpfen' },
+  { value: 'wiggle', label: 'Wackeln' },
+  { value: 'shake',  label: 'Zittern' },
+  { value: 'float',  label: 'Schweben' },
+];
 const FONT_OPTIONS = [
   { value: "'Nunito', sans-serif", label: 'Nunito (Standard)' },
   { value: 'Georgia, serif',       label: 'Georgia (Serif)' },
@@ -1513,17 +1533,9 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
 
       {/* Animation & Effekte */}
       <Section label="Animation & Effekte">
-        <Field label="Animationstyp">
-          <select
-            value={el.animIn ?? 'none'}
-            onChange={e => {
-              // Only allow valid animIn values
-              const val = e.target.value as QQSlideElement['animIn'];
-              onChange({ animIn: val });
-            }}
-            style={{ ...input, padding: '4px 7px' }}
-          >
-            {ANIM_IN_OPTIONS.map(a => <option key={String(a)} value={a}>{a ?? 'none'}</option>)}
+        <Field label="Eingang">
+          <select value={el.animIn ?? 'none'} onChange={e => onChange({ animIn: e.target.value as QQSlideElement['animIn'] })} style={{ ...input, padding: '4px 7px' }}>
+            {ANIM_IN_OPTIONS.map(a => <option key={String(a.value)} value={String(a.value)}>{a.label}</option>)}
           </select>
         </Field>
         {el.animIn && el.animIn !== 'none' && (
@@ -1535,6 +1547,16 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               <input type="number" value={el.animDuration ?? 0.5} step={0.1} min={0.1} onChange={e => onChange({ animDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
             </Field>
           </div>
+        )}
+        <Field label="Endlosschleife">
+          <select value={el.animLoop ?? 'none'} onChange={e => onChange({ animLoop: e.target.value as QQSlideElement['animLoop'] })} style={{ ...input, padding: '4px 7px' }}>
+            {ANIM_LOOP_OPTIONS.map(a => <option key={String(a.value)} value={String(a.value)}>{a.label}</option>)}
+          </select>
+        </Field>
+        {el.animLoop && el.animLoop !== 'none' && (
+          <Field label="Schleifendauer (s)">
+            <input type="number" value={el.animLoopDuration ?? 2} step={0.1} min={0.2} onChange={e => onChange({ animLoopDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+          </Field>
         )}
       </Section>
     </div>

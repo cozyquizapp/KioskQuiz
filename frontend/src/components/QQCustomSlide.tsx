@@ -15,9 +15,19 @@ const SLIDE_ANIM_KEYFRAMES = `
   @keyframes csElPop       { from{opacity:0;transform:scale(0.6)} to{opacity:1;transform:scale(1)} }
   @keyframes csElSlideLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
   @keyframes csElSlideRight{ from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes csElCardFlip  { from{opacity:0;transform:perspective(600px) rotateY(-90deg)} to{opacity:1;transform:perspective(600px) rotateY(0deg)} }
+  @keyframes csElBounceIn  { 0%{opacity:0;transform:scale(0.3)} 50%{opacity:1;transform:scale(1.15)} 70%{transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
+  @keyframes csElSlotDrop  { 0%{opacity:0;transform:translateY(-60px) scaleY(0.4)} 60%{opacity:1;transform:translateY(6px) scaleY(1.05)} 80%{transform:translateY(-3px) scaleY(0.97)} 100%{opacity:1;transform:translateY(0) scaleY(1)} }
+  @keyframes csElSwingIn   { 0%{opacity:0;transform:rotate(-15deg) translateX(-20px)} 60%{transform:rotate(4deg) translateX(4px)} 100%{opacity:1;transform:rotate(0deg) translateX(0)} }
   @keyframes csTransFade   { from{opacity:0} to{opacity:1} }
   @keyframes csTransSlideUp{ from{opacity:0;transform:translateY(60px)} to{opacity:1;transform:translateY(0)} }
   @keyframes csTransZoom   { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+  @keyframes csLoopPulse   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  @keyframes csLoopBounce  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes csLoopWiggle  { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-5deg)} 75%{transform:rotate(5deg)} }
+  @keyframes csLoopShake   { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  @keyframes csLoopFloat      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes csElTypewriter   { from{max-width:0;opacity:1} to{max-width:100%;opacity:1} }
 `;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -48,10 +58,35 @@ function elementAnimation(el: QQSlideElement): string | undefined {
     pop:        'csElPop',
     slideLeft:  'csElSlideLeft',
     slideRight: 'csElSlideRight',
+    cardFlip:   'csElCardFlip',
+    bounceIn:   'csElBounceIn',
+    slotDrop:   'csElSlotDrop',
+    swingIn:    'csElSwingIn',
+    typewriter: 'csElTypewriter',
   };
   const kf = map[el.animIn];
   if (!kf) return undefined;
+  if (el.animIn === 'typewriter') {
+    const chars = Math.max(1, (el.text ?? '').length || 20);
+    return `csElTypewriter ${dur}s steps(${chars}) ${del}s both`;
+  }
   return `${kf} ${dur}s ease ${del}s both`;
+}
+
+function elementLoopAnimation(el: QQSlideElement): React.CSSProperties | undefined {
+  if (!el.animLoop || el.animLoop === 'none') return undefined;
+  const dur = el.animLoopDuration ?? 2;
+  const map: Record<string, string> = {
+    pulse:  'csLoopPulse',
+    bounce: 'csLoopBounce',
+    wiggle: 'csLoopWiggle',
+    shake:  'csLoopShake',
+    float:  'csLoopFloat',
+  };
+  const kf = map[el.animLoop];
+  if (!kf) return undefined;
+  const delay = el.animIn && el.animIn !== 'none' ? `${(el.animDelay ?? 0) + (el.animDuration ?? 0.5)}s` : '0s';
+  return { animation: `${kf} ${dur}s ease-in-out ${delay} infinite` };
 }
 
 // ── Default mock state ────────────────────────────────────────────────────────
@@ -389,7 +424,7 @@ function CustomSlideElement({
     zIndex: el.zIndex ?? 1,
     opacity: el.opacity ?? 1,
     transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-    animation: elementAnimation(el),
+    animation: [elementAnimation(el), elementLoopAnimation(el)?.animation].filter(Boolean).join(', ') || undefined,
     boxSizing: 'border-box',
   };
 
@@ -398,7 +433,8 @@ function CustomSlideElement({
   const accent = cat ? (CAT_ACCENT[cat] ?? '#e2e8f0') : '#e2e8f0';
 
   switch (el.type) {
-    case 'text':
+    case 'text': {
+      const isTypewriter = el.animIn === 'typewriter';
       return (
         <div style={{
           ...baseStyle,
@@ -412,12 +448,14 @@ function CustomSlideElement({
           lineHeight:    el.lineHeight ?? 1.3,
           display:       'flex', alignItems: 'center',
           padding:       '4px 8px',
-          whiteSpace:    'pre-wrap',
-          wordBreak:     'break-word',
+          whiteSpace:    isTypewriter ? 'nowrap' : 'pre-wrap',
+          wordBreak:     isTypewriter ? 'normal' : 'break-word',
+          overflow:      isTypewriter ? 'hidden' : undefined,
         }}>
           {el.text ?? ''}
         </div>
       );
+    }
 
     case 'image':
       if (!el.imageUrl && isPreview) {

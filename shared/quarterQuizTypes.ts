@@ -295,9 +295,13 @@ export interface QQSlideElement {
   borderRadius?: number;
   border?: string;
   // Entrance animation
-  animIn?: 'none' | 'fadeUp' | 'fadeIn' | 'pop' | 'slideLeft' | 'slideRight';
+  animIn?: 'none' | 'fadeUp' | 'fadeIn' | 'pop' | 'slideLeft' | 'slideRight'
+         | 'cardFlip' | 'typewriter' | 'bounceIn' | 'slotDrop' | 'swingIn';
   animDelay?: number;
   animDuration?: number;
+  // Looping animation (applied after entrance, or independently)
+  animLoop?: 'none' | 'pulse' | 'bounce' | 'wiggle' | 'shake' | 'float';
+  animLoopDuration?: number;
   // Animated Avatar (only for type === 'animatedAvatar')
   avatarId?: string; // Which avatar to show
   animType?: 'wiggle' | 'walk' | 'bounce';

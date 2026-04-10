@@ -869,8 +869,11 @@ function CustomSlideElement({
       if (!q?.options) return null;
       const muchoLabels  = ['A', 'B', 'C', 'D'];
       const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
-      const cols = cat === 'MUCHO' ? 2 : 3;
+      const defaultCols = cat === 'MUCHO' ? 2 : 3;
+      const cols = el.columns ?? defaultCols;
+      const tileRadius = el.optionRadius ?? 14;
       const isRevealed = s.phase === 'QUESTION_REVEAL';
+      const colorScheme = el.optionColorScheme ?? 'category';
       return (
         <div style={{
           ...baseStyle,
@@ -883,7 +886,10 @@ function CustomSlideElement({
             const optImg    = q.optionImages?.[i];
             const isCorrect = isRevealed && i === q.correctOptionIndex;
             const label     = cat === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
-            const optColor  = cat === 'MUCHO' ? MUCHO_COLORS[i] : accent;
+            const rawColor  = cat === 'MUCHO' ? MUCHO_COLORS[i] : accent;
+            const optColor  = colorScheme === 'mono' ? el.color ?? accent
+                            : colorScheme === 'dark' ? '#374151'
+                            : rawColor;
             const optText   = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
             // Voter breakdown on reveal
             const voters = isRevealed && s.answers?.length
@@ -892,7 +898,7 @@ function CustomSlideElement({
             return (
               <div key={i} style={{
                 position: 'relative', overflow: 'hidden',
-                borderRadius: 14, padding: '12px 16px',
+                borderRadius: tileRadius, padding: '12px 16px',
                 background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                 border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
                 display: 'flex', flexDirection: 'column', gap: 6,

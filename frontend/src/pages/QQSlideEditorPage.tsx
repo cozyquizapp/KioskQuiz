@@ -63,6 +63,22 @@ const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
 
 const GROUPS: string[] = ['Start', 'Phasen', 'Fragen', 'Ablauf'];
 
+// Helpful style hints per placeholder type
+const PH_STYLE_HINTS: Partial<Record<QQSlideElementType, string>> = {
+  ph_question:       '🎨 Stil-Einstellungen: Schrift-Größe, -Gewicht, -Farbe und Ausrichtung werden auf den Fragetext angewendet.',
+  ph_options:        '🎨 Stil-Einstellungen: Schrift-Größe steuert die Antwort-Texte. Im Abschnitt "Antwort-Optionen" kannst du Spalten, Eckenradius und Farbschema anpassen.',
+  ph_category:       '🎨 Stil-Einstellungen: Farbe = Badge-Textfarbe; Hintergrund = Badge-Hintergundfarbe (überschreibt Kategoriefarbe); Eckenradius = Badge-Rundung.',
+  ph_answer:         '🎨 Stil-Einstellungen: Schrift-Größe und -Farbe steuern den Auflösungstext.',
+  ph_winner:         '🎨 Stil-Einstellungen: Schrift-Größe und -Farbe steuern den Gewinnernamen.',
+  ph_phase_name:     '🎨 Stil-Einstellungen: Schrift-Größe und -Farbe steuern den Phasennamen.',
+  ph_room_code:      '🎨 Stil-Einstellungen: Schrift-Größe, -Farbe und Hintergrund steuern die Code-Anzeige.',
+  ph_teams:          'Zeigt alle Teams mit Punkten. Position & Größe sind editierbar.',
+  ph_grid:           'Zeigt das Territoriums-Grid. Position & Größe sind editierbar.',
+  ph_timer:          'Zeigt den Countdown-Timer. Position & Größe sind editierbar.',
+  ph_qr_code:        'Zeigt den QR-Code für den Raumcode. Position & Größe sind editierbar.',
+  ph_question_image: 'Zeigt das Fragebild aus dem Builder. Layout (Vollbild/Fenster/Cutout) wird im Builder gesetzt.',
+};
+
 // Required placeholders per template type — warn when user tries to delete these
 const REQUIRED_PH: Partial<Record<QQSlideTemplateType, QQSlideElementType[]>> = {
   LOBBY:                ['ph_qr_code', 'ph_room_code'],
@@ -1551,7 +1567,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
 
       {isPh && (
         <div style={{ padding: '7px 9px', borderRadius: 7, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#8b7cf8', lineHeight: 1.5 }}>
-          Zeigt Live-Daten im Beamer. Position und Größe sind hier editierbar.
+          {PH_STYLE_HINTS[el.type as QQSlideElementType] ?? 'Zeigt Live-Daten im Beamer. Position und Größe sind hier editierbar.'}
         </div>
       )}
 
@@ -1641,6 +1657,40 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           <Field label="Eckenradius (px)">
             <input type="number" value={el.borderRadius ?? 0} step={2} onChange={e => onChange({ borderRadius: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
           </Field>
+        </Section>
+      )}
+
+      {/* ph_options specific */}
+      {el.type === 'ph_options' && (
+        <Section label="Antwort-Optionen">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            <Field label="Spalten">
+              <input type="number" value={el.columns ?? ''} min={1} max={5} step={1}
+                placeholder="auto"
+                onChange={e => onChange({ columns: e.target.value ? Number(e.target.value) : undefined })}
+                style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+            <Field label="Eckenradius (px)">
+              <input type="number" value={el.optionRadius ?? 14} min={0} max={50} step={2}
+                onChange={e => onChange({ optionRadius: Number(e.target.value) })}
+                style={{ ...input, padding: '4px 7px' }} />
+            </Field>
+          </div>
+          <Field label="Farbschema">
+            <select value={el.optionColorScheme ?? 'category'} onChange={e => onChange({ optionColorScheme: e.target.value as any })} style={{ ...input, padding: '4px 7px' }}>
+              <option value="category">Kategorie (Standard)</option>
+              <option value="mono">Einheitlich (Akzentfarbe)</option>
+              <option value="dark">Dunkel</option>
+            </select>
+          </Field>
+          {(el.optionColorScheme === 'mono') && (
+            <Field label="Akzentfarbe">
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input type="color" value={el.color ?? '#3B82F6'} onChange={e => onChange({ color: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
+                <input value={el.color ?? '#3B82F6'} onChange={e => onChange({ color: e.target.value })} style={{ ...input, flex: 1, padding: '4px 7px', fontFamily: 'monospace', fontSize: 12 }} />
+              </div>
+            </Field>
+          )}
         </Section>
       )}
 

@@ -302,6 +302,10 @@ export interface QQSlideElement {
   // Looping animation (applied after entrance, or independently)
   animLoop?: 'none' | 'pulse' | 'bounce' | 'wiggle' | 'shake' | 'float';
   animLoopDuration?: number;
+  // ph_options specific overrides
+  columns?: number;          // grid column count (default: 2 for MUCHO, 3 for ZEHN)
+  optionRadius?: number;     // tile border radius (default: 14)
+  optionColorScheme?: 'category' | 'mono' | 'dark'; // color scheme for option tiles
   // Animated Avatar (only for type === 'animatedAvatar')
   avatarId?: string; // Which avatar to show
   animType?: 'wiggle' | 'walk' | 'bounce';

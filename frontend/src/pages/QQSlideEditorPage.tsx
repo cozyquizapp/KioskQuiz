@@ -410,7 +410,7 @@ export default function QQSlideEditorPage() {
   const [showThemeColors, setShowThemeColors] = useState(false);
   const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds'>('props');
+  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | null>(null);
   const [soundConfig, setSoundConfigLocal] = useState<import('../../../shared/quarterQuizTypes').QQSoundConfig>({});
   const historyRef = useRef<QQSlideTemplates[]>([{}]);
   const histIdxRef = useRef(0);
@@ -763,6 +763,7 @@ export default function QQSlideEditorPage() {
         .qqse-layer-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
         .qqse-layer-row:hover { background: rgba(255,255,255,0.04); }
         .qqse-layer-row.selected { background: rgba(59,130,246,0.12); }
+        @keyframes qqse-panel-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
       `}</style>
 
       {/* ── Shared tab bar ── */}
@@ -1016,6 +1017,7 @@ export default function QQSlideEditorPage() {
                       setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev.filter(x => x !== id)]);
                     } else {
                       setSelectedIds([id]);
+                      setRightSection('props');
                     }
                     if (!shift) setEditingId(null);
                   }}
@@ -1050,107 +1052,141 @@ export default function QQSlideEditorPage() {
           </div>
         </div>
 
-        {/* Right: accordion panel */}
-        <div style={{ width: 270, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#131c2e', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Right: icon rail + floating overlay panel */}
+        <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
 
-          {/* Tab bar */}
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-            {(['add', 'props', 'layers', 'presets', 'sounds'] as const).map(s => {
-              const labels = { add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen', presets: '✨ Presets', sounds: '🔊 Sounds' };
-              const isActive = rightSection === s;
+          {/* Floating overlay panel — slides in from right */}
+          {rightSection !== null && (
+            <div style={{
+              position: 'absolute', right: 48, top: 0, bottom: 0, width: 270, zIndex: 100,
+              background: '#131c2e', borderLeft: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              boxShadow: '-8px 0 32px rgba(0,0,0,0.5)',
+              animation: 'qqse-panel-in 0.15s ease both',
+            }}>
+              {/* Panel header */}
+              <div style={{ padding: '8px 10px 8px 12px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, color: '#e2e8f0' }}>
+                  {{ add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen', presets: '✨ Presets', sounds: '🔊 Sounds' }[rightSection]}
+                </span>
+                <button onClick={() => setRightSection(null)}
+                  style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px', fontFamily: 'inherit' }}>✕</button>
+              </div>
+
+              {/* Panel content */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {rightSection === 'add' && <EmptyProperties onAdd={addElement} />}
+
+                {rightSection === 'props' && (
+                  selectedEl
+                    ? <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
+                        onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
+                    : <div style={{ padding: 16, fontSize: 12, color: '#334155', fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
+                        Kein Element ausgewählt.<br />
+                        <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
+                      </div>
+                )}
+
+                {rightSection === 'presets' && (
+                  <div style={{ padding: '10px 10px 16px' }}>
+                    <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+                      Wähle ein fertiges Design als Startpunkt. Nur Farben &amp; Hintergrund werden angepasst.
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {DESIGN_PRESETS.map(preset => (
+                        <button key={preset.id}
+                          onClick={() => {
+                            const based = makeDefault(activeType);
+                            const current = activeTemplate.elements.length > 0 ? activeTemplate : based;
+                            patchTemplate(applyDesignPreset(current, preset));
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                        >
+                          <div style={{ width: 36, height: 28, borderRadius: 6, flexShrink: 0, overflow: 'hidden', background: preset.bg, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 16, height: 4, borderRadius: 2, background: preset.accent, opacity: 0.9 }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0' }}>{preset.icon} {preset.label}</div>
+                            <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>Eingang: {preset.animIn}{preset.animLoop ? ` · Schleife: ${preset.animLoop}` : ''}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#A78BFA', fontWeight: 600, lineHeight: 1.5 }}>
+                      Tipp: Nach dem Anwenden kannst du alles im Eigenschaften-Tab weiter anpassen.
+                    </div>
+                  </div>
+                )}
+
+                {rightSection === 'layers' && (
+                  <div style={{ padding: '6px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <div style={{ padding: '4px 8px 6px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Ebenen</span>
+                      <span style={{ color: '#1e3a5f' }}>{activeTemplate.elements.length}</span>
+                    </div>
+                    {[...activeTemplate.elements]
+                      .sort((a, b) => (b.zIndex ?? 1) - (a.zIndex ?? 1))
+                      .map(el => {
+                        const isPh = el.type.startsWith('ph_');
+                        const isSelected = selectedIds.includes(el.id);
+                        const icon = el.type === 'animatedAvatar' ? '🕺' : isPh ? '⬡' : el.type === 'text' ? '📝' : el.type === 'image' ? '🖼' : '⬛';
+                        const label = isPh ? (PH_LABELS[el.type as QQSlideElementType] ?? el.type) : el.type === 'text' ? (el.text?.slice(0, 18) ?? 'Text') : el.type;
+                        return (
+                          <div key={el.id} className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
+                            onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
+                            <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
+                            <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : '#64748b', fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                            <span style={{ fontSize: 9, color: '#334155', fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
+                            <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }} title="Vorne"
+                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↑</button>
+                            <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }} title="Hinten"
+                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↓</button>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+
+                {rightSection === 'sounds' && (
+                  <SoundPanel
+                    config={soundConfig}
+                    onChange={cfg => setSoundConfigLocal(cfg)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Icon rail */}
+          <div style={{ width: 48, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 8, gap: 2, flexShrink: 0 }}>
+            {([
+              { id: 'add',     icon: '＋', label: 'Hinzufügen' },
+              { id: 'props',   icon: '⚙',  label: 'Eigenschaften' },
+              { id: 'layers',  icon: '⬡',  label: 'Ebenen' },
+              { id: 'presets', icon: '✨', label: 'Presets' },
+              { id: 'sounds',  icon: '🔊', label: 'Sounds' },
+            ] as const).map(({ id, icon, label }) => {
+              const isActive = rightSection === id;
               return (
-                <button key={s} onClick={() => setRightSection(s)}
-                  style={{ flex: 1, padding: '8px 2px', background: isActive ? '#1e293b' : 'transparent', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', color: isActive ? '#e2e8f0' : '#475569', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 9, transition: 'all 0.15s' }}>
-                  {labels[s]}
+                <button key={id} title={label}
+                  onClick={() => setRightSection(isActive ? null : id)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: isActive ? 'rgba(59,130,246,0.2)' : 'transparent',
+                    color: isActive ? '#93C5FD' : '#475569',
+                    fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s', fontFamily: 'inherit',
+                    outline: isActive ? '1px solid rgba(59,130,246,0.4)' : 'none',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e2e8f0'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isActive ? 'rgba(59,130,246,0.2)' : 'transparent'; e.currentTarget.style.color = isActive ? '#93C5FD' : '#475569'; }}
+                >
+                  {icon}
                 </button>
               );
             })}
-          </div>
-
-          {/* Panel content */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            {rightSection === 'add' && <EmptyProperties onAdd={addElement} />}
-
-            {rightSection === 'props' && (
-              selectedEl
-                ? <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
-                    onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
-                : <div style={{ padding: 16, fontSize: 12, color: '#334155', fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
-                    Kein Element ausgewählt.<br />
-                    <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
-                  </div>
-            )}
-
-            {rightSection === 'presets' && (
-              <div style={{ padding: '10px 10px 16px' }}>
-                <div style={{ fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Design-Presets</div>
-                <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-                  Wähle ein fertiges Design als Startpunkt. Dein aktuelles Layout bleibt erhalten — nur Farben &amp; Hintergrund werden angepasst.
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {DESIGN_PRESETS.map(preset => (
-                    <button key={preset.id}
-                      onClick={() => {
-                        const based = makeDefault(activeType);
-                        const current = activeTemplate.elements.length > 0 ? activeTemplate : based;
-                        patchTemplate(applyDesignPreset(current, preset));
-                      }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
-                    >
-                      {/* Color swatch */}
-                      <div style={{ width: 36, height: 28, borderRadius: 6, flexShrink: 0, overflow: 'hidden', background: preset.bg, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 16, height: 4, borderRadius: 2, background: preset.accent, opacity: 0.9 }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0' }}>{preset.icon} {preset.label}</div>
-                        <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>Eingang: {preset.animIn}{preset.animLoop ? ` · Schleife: ${preset.animLoop}` : ''}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#A78BFA', fontWeight: 600, lineHeight: 1.5 }}>
-                  Tipp: Nach dem Anwenden kannst du alles im Eigenschaften-Tab weiter anpassen.
-                </div>
-              </div>
-            )}
-
-            {rightSection === 'layers' && (
-              <div style={{ padding: '6px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <div style={{ padding: '4px 8px 6px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Ebenen</span>
-                  <span style={{ color: '#1e3a5f' }}>{activeTemplate.elements.length}</span>
-                </div>
-                {[...activeTemplate.elements]
-                  .sort((a, b) => (b.zIndex ?? 1) - (a.zIndex ?? 1))
-                  .map(el => {
-                    const isPh = el.type.startsWith('ph_');
-                    const isSelected = selectedIds.includes(el.id);
-                    const icon = el.type === 'animatedAvatar' ? '🕺' : isPh ? '⬡' : el.type === 'text' ? '📝' : el.type === 'image' ? '🖼' : '⬛';
-                    const label = isPh ? (PH_LABELS[el.type as QQSlideElementType] ?? el.type) : el.type === 'text' ? (el.text?.slice(0, 18) ?? 'Text') : el.type;
-                    return (
-                      <div key={el.id} className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
-                        onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
-                        <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
-                        <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : '#64748b', fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-                        <span style={{ fontSize: 9, color: '#334155', fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
-                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }} title="Vorne"
-                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↑</button>
-                        <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }} title="Hinten"
-                          style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↓</button>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            {rightSection === 'sounds' && (
-              <SoundPanel
-                config={soundConfig}
-                onChange={cfg => setSoundConfigLocal(cfg)}
-              />
-            )}
           </div>
         </div>
       </div>

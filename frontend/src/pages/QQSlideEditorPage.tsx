@@ -1647,8 +1647,11 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
       {(el.type === 'text' || isPh) && (
         <Section label="Text-Stil">
           {el.type === 'text' && (
-            <textarea value={el.text ?? ''} onChange={e => onChange({ text: e.target.value })}
-              style={{ ...input, resize: 'vertical', minHeight: 52, marginBottom: 6 }} placeholder="Text…" />
+            <>
+              <textarea value={el.text ?? ''} onChange={e => onChange({ text: e.target.value })}
+                style={{ ...input, resize: 'vertical', minHeight: 52, marginBottom: 4 }} placeholder="Text…" />
+              <EmojiPicker onPick={emoji => onChange({ text: (el.text ?? '') + emoji })} />
+            </>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
             <Field label="Schrift (vw)">
@@ -1864,6 +1867,70 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 3 }}>{label}</div>
       {children}
+    </div>
+  );
+}
+
+// ── Emoji Picker ──────────────────────────────────────────────────────────────
+const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
+  { label: '😊 Gefühle', emojis: ['😀','😂','😍','🥳','🤩','😎','🥸','😇','🤔','😴','😱','🤯','🥹','😭','😡','🤑','🤫','🫡','🤗','😏'] },
+  { label: '🎮 Spiel', emojis: ['🏆','🥇','🥈','🥉','🎯','🎲','🎮','🕹️','🃏','🎰','🎊','🎉','🎈','🎁','🎀','✨','⭐','🌟','💥','🔥'] },
+  { label: '💡 Symbole', emojis: ['💡','❓','❗','✅','❌','⚠️','🔔','📢','📣','💬','🔑','🔐','🔒','🔓','🛡️','⚡','💫','🌈','🎵','🎶'] },
+  { label: '🐾 Tiere', emojis: ['🦊','🐻','🐼','🦁','🐯','🦄','🦅','🐙','🦋','🦊','🐸','🐧','🦋','🐝','🐬','🦈','🦖','🐉','🦊','🐺'] },
+  { label: '🍕 Essen', emojis: ['🍕','🍔','🍟','🌮','🌯','🍣','🍜','🍦','🎂','🍰','🍩','🍪','☕','🧃','🥤','🍺','🥂','🍷','🎃','🧁'] },
+  { label: '🌍 Natur', emojis: ['🌍','🌊','🏔️','🌋','🌴','🌸','🍀','🌺','🌻','🌹','🍄','🌿','🍃','❄️','☀️','🌙','⭐','🌈','🌩️','🌪️'] },
+  { label: '🏠 Orte', emojis: ['🏠','🏰','🗼','🎡','🎢','⛪','🏟️','🕌','🌉','🎭','🎪','🏖️','🏔️','🗻','🌃','🌆','🌇','🌉','🏙️','🌁'] },
+  { label: '✍️ Text', emojis: ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','🅰️','🅱️','🆒','🆕','🆓','🔢','🔤','🔡','💯','🆗','🆙','🆚','🉐','🈹','🈲'] },
+];
+
+function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [cat, setCat] = useState(0);
+  return (
+    <div style={{ position: 'relative', marginBottom: 6 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: open ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.05)', color: '#a78bfa', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}
+      >
+        😊 Emoji einfügen {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: '110%', left: 0, zIndex: 999,
+          background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 12, padding: 10, width: 280,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+        }}>
+          {/* Category tabs */}
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+            {EMOJI_CATEGORIES.map((c, i) => (
+              <button key={i} type="button" onClick={() => setCat(i)} style={{
+                fontSize: 11, padding: '2px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                background: cat === i ? '#8B5CF6' : 'rgba(255,255,255,0.07)',
+                color: cat === i ? '#fff' : '#94a3b8', fontFamily: 'inherit', fontWeight: 700,
+              }}>
+                {c.label.split(' ')[0]}
+              </button>
+            ))}
+          </div>
+          {/* Emoji grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 2 }}>
+            {EMOJI_CATEGORIES[cat].emojis.map((emoji, i) => (
+              <button key={i} type="button" onClick={() => { onPick(emoji); setOpen(false); }} style={{
+                fontSize: 18, padding: '4px 2px', border: 'none', background: 'transparent',
+                cursor: 'pointer', borderRadius: 4, lineHeight: 1,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

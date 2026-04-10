@@ -404,6 +404,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         /* No template: built-in views */
         <>
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
+          {s.phase === 'RULES'           && <RulesView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
           {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
@@ -484,6 +485,268 @@ function ConfettiOverlay() {
           animation: `confettiFall ${p.duration}s ease-in ${p.delay}s both`,
         }} />
       ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RULES PRESENTATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const RULES_SLIDES_DE = [
+  {
+    icon: '🗺️',
+    title: 'Das Ziel',
+    color: '#3B82F6',
+    lines: [
+      'Beantwortet Fragen und erobert Felder auf dem Gitter.',
+      'Wer die größte zusammenhängende Fläche hat, gewinnt!',
+    ],
+  },
+  {
+    icon: '1️⃣',
+    title: 'Runde 1 — Besetzen',
+    color: '#3B82F6',
+    lines: [
+      'Richtige Antwort = 1 Feld besetzen.',
+      'Tipp: Baut eine zusammenhängende Fläche auf.',
+    ],
+    extra: '⭐ 2×2-Block → Joker-Bonus!',
+  },
+  {
+    icon: '2️⃣',
+    title: 'Runde 2 — Klauen',
+    color: '#F59E0B',
+    lines: [
+      'Solange freie Felder da sind: 2 Felder besetzen.',
+      'Wenn alles besetzt ist: 1 Feld klauen!',
+    ],
+    extra: '⚠️ Geklautes Feld zählt für euch.',
+  },
+  {
+    icon: '3️⃣',
+    title: 'Runde 3 — Taktik',
+    color: '#EF4444',
+    lines: [
+      '2 Felder besetzen  —  oder  —  1 Feld klauen',
+      '1 eigenes Feld einfrieren (❄️ 1 Frage lang geschützt)',
+    ],
+    extra: 'Richtig kombinieren macht den Unterschied!',
+  },
+  {
+    icon: '4️⃣',
+    title: 'Runde 4 — Finale',
+    color: '#10B981',
+    lines: [
+      'Wie Runde 3, plus zwei neue Aktionen:',
+      '🔄 Tauschen — 1 eigenes + 1 feindliches Feld wechseln',
+      '📌 Stapeln — Plus-Form aus eigenen Feldern → Mittelpunkt einfrieren (2 Punkte!)',
+    ],
+    extra: '📌 Stapeln nur möglich wenn alle 4 Nachbarn euch gehören.',
+  },
+  {
+    icon: '🏆',
+    title: 'Wertung',
+    color: '#F59E0B',
+    lines: [
+      'Größte zusammenhängende Fläche gewinnt.',
+      'Gestapelte Felder (📌) zählen doppelt.',
+      'Joker-Felder (⭐) sehen schön aus — kein Extra-Punkt.',
+    ],
+    extra: 'Viel Spaß & Quartier-Glück! 🎉',
+  },
+];
+
+const RULES_SLIDES_EN = [
+  {
+    icon: '🗺️',
+    title: 'The Goal',
+    color: '#3B82F6',
+    lines: [
+      'Answer questions and claim cells on the grid.',
+      'The team with the largest connected territory wins!',
+    ],
+  },
+  {
+    icon: '1️⃣',
+    title: 'Round 1 — Claim',
+    color: '#3B82F6',
+    lines: [
+      'Correct answer = claim 1 cell.',
+      'Tip: Build a connected territory.',
+    ],
+    extra: '⭐ 2×2 block → Joker bonus!',
+  },
+  {
+    icon: '2️⃣',
+    title: 'Round 2 — Steal',
+    color: '#F59E0B',
+    lines: [
+      'While free cells exist: claim 2 cells.',
+      'When the grid is full: steal 1 enemy cell!',
+    ],
+    extra: '⚠️ Stolen cell counts for you.',
+  },
+  {
+    icon: '3️⃣',
+    title: 'Round 3 — Tactics',
+    color: '#EF4444',
+    lines: [
+      'Claim 2 cells  —  or  —  steal 1 cell',
+      'Freeze 1 own cell (❄️ protected for 1 question)',
+    ],
+    extra: 'Smart combos make the difference!',
+  },
+  {
+    icon: '4️⃣',
+    title: 'Round 4 — Final',
+    color: '#10B981',
+    lines: [
+      'Same as Round 3, plus two new actions:',
+      '🔄 Swap — exchange 1 own + 1 enemy cell',
+      '📌 Stack — plus-shape of own cells → freeze center (2 pts!)',
+    ],
+    extra: '📌 Stack only if all 4 neighbours are yours.',
+  },
+  {
+    icon: '🏆',
+    title: 'Scoring',
+    color: '#F59E0B',
+    lines: [
+      'Largest connected territory wins.',
+      'Stacked cells (📌) count double.',
+      'Joker cells (⭐) look nice — no extra point.',
+    ],
+    extra: 'Good luck & have fun! 🎉',
+  },
+];
+
+export function RulesView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
+  const totalSlides = s.totalPhases === 3 ? slides.length - 1 : slides.length; // skip Round 4 slide if 3-phase game
+  const idx = Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1);
+  const slide = slides[idx];
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const isLast = idx === totalSlides - 1;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden', fontFamily: fontFam,
+    }}>
+      <Fireflies />
+
+      {/* Slide counter */}
+      <div style={{
+        position: 'absolute', top: 20, right: 24,
+        display: 'flex', gap: 6, zIndex: 10,
+      }}>
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <div key={i} style={{
+            width: i === idx ? 24 : 8, height: 8, borderRadius: 4,
+            background: i === idx ? slide.color : 'rgba(255,255,255,0.18)',
+            transition: 'all 0.3s ease',
+          }} />
+        ))}
+      </div>
+
+      {/* Card */}
+      <div key={idx} style={{
+        position: 'relative', zIndex: 5,
+        maxWidth: 780, width: '90%',
+        background: 'rgba(15,12,9,0.82)',
+        border: `2px solid ${slide.color}44`,
+        borderRadius: 28,
+        padding: '44px 52px',
+        boxShadow: `0 0 80px ${slide.color}22, 0 8px 32px rgba(0,0,0,0.5)`,
+        animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        backdropFilter: 'blur(8px)',
+      }}>
+        {/* Icon + title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
+          <span style={{ fontSize: 'clamp(40px,6vw,72px)', lineHeight: 1 }}>{slide.icon}</span>
+          <div>
+            <div style={{
+              fontSize: 'clamp(10px,1.1vw,14px)', fontWeight: 800, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: `${slide.color}99`, marginBottom: 4,
+            }}>
+              {lang === 'de' ? `Folie ${idx + 1} / ${totalSlides}` : `Slide ${idx + 1} / ${totalSlides}`}
+            </div>
+            <div style={{
+              fontSize: 'clamp(28px,4.5vw,56px)', fontWeight: 900, lineHeight: 1.05,
+              color: slide.color,
+              textShadow: `0 0 40px ${slide.color}44`,
+            }}>
+              {slide.title}
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          width: '100%', height: 2, borderRadius: 1,
+          background: `linear-gradient(90deg, ${slide.color}88, transparent)`,
+          marginBottom: 28,
+        }} />
+
+        {/* Lines */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {slide.lines.map((line, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 14,
+              animation: `contentReveal 0.4s ease ${0.1 + i * 0.1}s both`,
+            }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: slide.color, marginTop: 8, flexShrink: 0,
+              }} />
+              <span style={{
+                fontSize: 'clamp(16px,2.2vw,28px)', fontWeight: 700,
+                color: '#e2e8f0', lineHeight: 1.4,
+              }}>{line}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Extra callout */}
+        {slide.extra && (
+          <div style={{
+            marginTop: 28, padding: '14px 20px', borderRadius: 14,
+            background: `${slide.color}18`, border: `1px solid ${slide.color}33`,
+            fontSize: 'clamp(14px,1.8vw,22px)', fontWeight: 800,
+            color: slide.color,
+            animation: 'contentReveal 0.5s ease 0.4s both',
+          }}>
+            {slide.extra}
+          </div>
+        )}
+
+        {/* Last slide: "Los geht's!" hint */}
+        {isLast && (
+          <div style={{
+            marginTop: 24, textAlign: 'center',
+            fontSize: 'clamp(13px,1.6vw,20px)', fontWeight: 700,
+            color: 'rgba(255,255,255,0.35)',
+            animation: 'contentReveal 0.5s ease 0.6s both',
+          }}>
+            {lang === 'de' ? '← Moderator startet das Spiel →' : '← Moderator starts the game →'}
+          </div>
+        )}
+      </div>
+
+      {/* Navigation hint at bottom */}
+      <div style={{
+        position: 'absolute', bottom: 20, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 40,
+        zIndex: 10, opacity: 0.4, fontSize: 13, fontWeight: 700, color: '#94a3b8',
+        letterSpacing: '0.08em', textTransform: 'uppercase',
+      }}>
+        {idx > 0 && <span>◀ {lang === 'de' ? 'Zurück' : 'Back'}</span>}
+        <span>{lang === 'de' ? 'Moderator steuert' : 'Moderator controls'}</span>
+        {!isLast && <span>{lang === 'de' ? 'Weiter' : 'Next'} ▶</span>}
+      </div>
     </div>
   );
 }
@@ -1872,6 +2135,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const isFlash = flashCellKey === `${r}-${c}`;
             const isAccent = isNew || isFlash;
             const showStar = showJoker && cell.jokerFormed;
+            const isFrozen = cell.frozen;
+            const isStuck = cell.stuck;
             const cellRadius = Math.max(4, cellSize * 0.16);
             return (
               <div key={`${r}-${c}`} style={{
@@ -1891,19 +2156,45 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {team && (
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: cellRadius,
-                    background: `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`,
-                    border: showStar
-                      ? '2px solid rgba(251,191,36,0.9)'
-                      : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
-                    animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
-                    boxShadow: isAccent
-                      ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                    background: isStuck
+                      ? `linear-gradient(135deg, ${team.color}ff, ${team.color}bb)`
+                      : `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`,
+                    border: isStuck
+                      ? '2px solid rgba(251,191,36,0.95)'
                       : showStar
-                        ? '0 0 10px rgba(251,191,36,0.5)'
-                        : isHighlighted
-                          ? `0 0 12px ${team.color}66`
-                          : 'none',
+                        ? '2px solid rgba(251,191,36,0.9)'
+                        : isFrozen
+                          ? '2px solid rgba(147,210,255,0.9)'
+                          : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
+                    animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    boxShadow: isStuck
+                      ? `0 0 14px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.4)`
+                      : isAccent
+                        ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                        : showStar
+                          ? '0 0 10px rgba(251,191,36,0.5)'
+                          : isFrozen
+                            ? `0 0 10px rgba(147,210,255,0.5)`
+                            : isHighlighted
+                              ? `0 0 12px ${team.color}66`
+                              : 'none',
                     transition: 'box-shadow 0.4s ease',
+                  }} />
+                )}
+                {/* Frozen overlay — ice tint */}
+                {isFrozen && (
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: cellRadius,
+                    background: 'rgba(147,210,255,0.18)',
+                    pointerEvents: 'none', zIndex: 1,
+                  }} />
+                )}
+                {/* Stuck overlay — golden shimmer */}
+                {isStuck && (
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: cellRadius,
+                    background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
+                    pointerEvents: 'none', zIndex: 1,
                   }} />
                 )}
                 {/* Shockwave rings on new cells */}
@@ -1954,9 +2245,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 <div style={{
                   position: 'relative', zIndex: 2,
                   animation: isNew ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
+                  fontSize: (isFrozen || isStuck) ? Math.max(8, cellSize * 0.52) : undefined,
                 }}>
-                  {showStar && '⭐'}
-                  {!showStar && team && qqGetAvatar(team.avatarId).emoji}
+                  {isStuck ? '📌' : isFrozen ? '❄️' : showStar ? '⭐' : (team && qqGetAvatar(team.avatarId).emoji)}
                 </div>
               </div>
             );

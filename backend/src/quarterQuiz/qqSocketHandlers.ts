@@ -11,12 +11,16 @@ import {
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
   QQSetMutedPayload, QQSetVolumePayload,
   QQSubmitAnswerPayload, QQAck,
+  QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
+  QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
 } from '../../../shared/quarterQuizTypes';
 import {
   ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
+  qqSwapOneCell, qqFreezeCell, qqStuckCell,
+  qqStartRules, qqRulesNext, qqRulesPrev,
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam,
@@ -624,6 +628,75 @@ export function registerQQHandlers(io: SocketIOServer): void {
           payload.rowA, payload.colA,
           payload.rowB, payload.colB
         );
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 4: Tauschen (1 own + 1 enemy, 2-step)
+    socket.on('qq:swapOneCell', (payload: QQSwapOneCellPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const result = qqSwapOneCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 3/4: Einfrieren (1 own cell, 1 question)
+    socket.on('qq:freezeCell', (payload: QQFreezeCellPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqFreezeCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 4: Stapeln (plus-center, permanent)
+    socket.on('qq:stapelCell', (payload: QQStapelCellPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqStuckCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Rules presentation ──────────────────────────────────────────────────
+    socket.on('qq:startRules', (payload: QQStartRulesPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqStartRules(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:rulesNext', (payload: QQRulesNextPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqRulesNext(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:rulesPrev', (payload: QQRulesPrevPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqRulesPrev(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:rulesFinish', (payload: QQRulesFinishPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        // rulesFinish → back to LOBBY so moderator can start game normally
+        room.phase = 'LOBBY';
+        room.rulesSlideIndex = 0;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

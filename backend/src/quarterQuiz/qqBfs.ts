@@ -56,7 +56,8 @@ function bfsComponent(
 
   while (queue.length > 0) {
     const [r, c] = queue.shift()!;
-    size++;
+    // Stuck cells count as 2 points
+    size += grid[r][c].stuck ? 2 : 1;
 
     const neighbors: [number, number][] = [
       [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
@@ -156,6 +157,41 @@ export function markJokerCells(
   grid[topLeftR][topLeftC + 1].jokerFormed     = true;
   grid[topLeftR + 1][topLeftC].jokerFormed     = true;
   grid[topLeftR + 1][topLeftC + 1].jokerFormed = true;
+}
+
+/**
+ * Detect all valid Stucken candidates for a team in Phase 4.
+ * A candidate is a cell NOT owned by the team (free or enemy) whose
+ * 4 orthogonal neighbors are ALL owned by the team.
+ * Returns array of center-cell coordinates.
+ */
+export function detectPlusForStuck(
+  grid: QQGrid,
+  gridSize: number,
+  teamId: string
+): Array<{ r: number; c: number }> {
+  const candidates: Array<{ r: number; c: number }> = [];
+  for (let r = 1; r < gridSize - 1; r++) {
+    for (let c = 1; c < gridSize - 1; c++) {
+      const center = grid[r][c];
+      // Center must NOT already be owned by the team or stuck
+      if (center.ownerId === teamId || center.stuck) continue;
+      // All 4 orthogonal neighbors must be owned by team
+      const up    = grid[r - 1][c];
+      const down  = grid[r + 1][c];
+      const left  = grid[r][c - 1];
+      const right = grid[r][c + 1];
+      if (
+        up.ownerId === teamId &&
+        down.ownerId === teamId &&
+        left.ownerId === teamId &&
+        right.ownerId === teamId
+      ) {
+        candidates.push({ r, c });
+      }
+    }
+  }
+  return candidates;
 }
 
 /**

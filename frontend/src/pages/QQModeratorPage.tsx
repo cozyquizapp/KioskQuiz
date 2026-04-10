@@ -110,6 +110,10 @@ export default function QQModeratorPage() {
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
       e.preventDefault();
+      if (s.phase === 'RULES') {
+        emitRef.current('qq:rulesNext', { roomCode });
+        return;
+      }
       if (s.phase === 'LOBBY')                                           startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
@@ -174,6 +178,7 @@ export default function QQModeratorPage() {
     // F13 — Nächste Aktion (= Space)
     if (e.code === 'F13') {
       e.preventDefault();
+      if (s.phase === 'RULES') { emitRef.current('qq:rulesNext', { roomCode }); return; }
       if (s.phase === 'LOBBY')                                                    startGameRef.current();
       else if (s.phase === 'PHASE_INTRO')                                         emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
@@ -309,8 +314,20 @@ export default function QQModeratorPage() {
                         </option>
                       ))}
                     </select>
+                    <Btn color="#8B5CF6" onClick={() => emit('qq:startRules', { roomCode })}>
+                      📖 Regeln zeigen
+                    </Btn>
                     <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
                   </>
+                )}
+
+                {s.phase === 'RULES' && (
+                  <RulesControls
+                    state={s}
+                    roomCode={roomCode}
+                    emit={emit}
+                    onStartGame={startGame}
+                  />
                 )}
 
                 {s.phase === 'PHASE_INTRO' && (
@@ -956,6 +973,37 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
       <Btn small color="#22C55E" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'PLACE_2' })}>📍 2 Felder</Btn>
       <Btn small color="#EF4444" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'STEAL_1' })}>⚡ Klauen</Btn>
       <Btn small color="#8B5CF6" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'SWAP_2' })}>🔄 Tauschen</Btn>
+    </div>
+  );
+}
+
+function RulesControls({ state: s, roomCode, emit, onStartGame }: {
+  state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
+}) {
+  const totalSlides = s.totalPhases === 3 ? 5 : 6; // 5 slides for 3-phase, 6 for 4-phase
+  const idx = s.rulesSlideIndex ?? 0;
+  const isFirst = idx === 0;
+  const isLast = idx >= totalSlides - 1;
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
+        📖 Folie {idx + 1} / {totalSlides}
+      </span>
+      <Btn small color="#64748b" onClick={() => emit('qq:rulesPrev', { roomCode })} outline={isFirst}>
+        ◀ Zurück
+      </Btn>
+      {!isLast ? (
+        <Btn small color="#8B5CF6" onClick={() => emit('qq:rulesNext', { roomCode })}>
+          Weiter ▶
+        </Btn>
+      ) : (
+        <Btn small color="#22C55E" onClick={() => emit('qq:rulesFinish', { roomCode })}>
+          ✓ Regeln fertig
+        </Btn>
+      )}
+      <Btn small color="#EF4444" outline onClick={() => emit('qq:rulesFinish', { roomCode })}>
+        Überspringen
+      </Btn>
     </div>
   );
 }

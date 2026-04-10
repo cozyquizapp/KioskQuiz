@@ -1350,28 +1350,53 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
   );
 }
 
+type FreeAction = 'PLACE' | 'STEAL' | 'FREEZE' | 'SWAP' | 'STAPEL';
+
 function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'de' }: {
   state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
 }) {
   const [selecting, setSelecting] = useState(false);
-  const [freeMode, setFreeMode] = useState<'PLACE' | 'STEAL' | null>(null);
+  const [freeMode, setFreeMode] = useState<FreeAction | null>(null);
   const [swapFirst, setSwapFirst] = useState<{ r: number; c: number } | null>(null);
   const [tappedCell, setTappedCell] = useState<string | null>(null);
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
-  const isFree = s.pendingAction === 'FREE';
-  const isPhase2Choice = s.pendingAction === 'PLACE_2' && s.gamePhaseIndex === 2 && !freeMode;
-  const isSwap = s.comebackAction === 'SWAP_2' && s.pendingAction === 'COMEBACK';
-  const isSteal = s.pendingAction === 'STEAL_1'
+
+  const pa = s.pendingAction;
+  const phase = s.gamePhaseIndex;
+  const hasFreeCell = s.grid.some(row => row.some(cell => cell.ownerId === null));
+  const hasStuckCandidate = (s.stuckCandidates?.length ?? 0) > 0;
+
+  // Derived mode flags
+  const isFree      = pa === 'FREE';
+  const isFreeze    = pa === 'FREEZE_1' || (isFree && freeMode === 'FREEZE');
+  const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
+  const isStuck     = pa === 'STAPEL_1' || (isFree && freeMode === 'STAPEL');
+  const isSwapComeback = s.comebackAction === 'SWAP_2' && pa === 'COMEBACK';
+  const isSteal     = pa === 'STEAL_1'
+    || (pa === 'COMEBACK' && s.comebackAction === 'STEAL_1')
     || (isFree && freeMode === 'STEAL')
-    || (s.pendingAction === 'PLACE_2' && freeMode === 'STEAL')
-    || (s.pendingAction === 'COMEBACK' && s.comebackAction === 'STEAL_1');
+    || (pa === 'PLACE_2' && freeMode === 'STEAL');
+
+  // Phase 2: show place/steal choice before choosing
+  const isPhase2Choice = pa === 'PLACE_2' && phase === 2 && !freeMode;
+
+  // Phase 3/4 FREE: show action menu before choosing
+  const showFreeMenu = isFree && !freeMode && !selecting;
+
   const cellSize = Math.min(60, Math.floor(340 / s.gridSize));
 
-  useEffect(() => { if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); } }, [isMyTurn]);
+  useEffect(() => {
+    if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); }
+  }, [isMyTurn]);
 
-  async function chooseFree(action: 'PLACE' | 'STEAL') {
+  async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
-    await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+    if (action === 'FREEZE' || action === 'SWAP' || action === 'STAPEL') {
+      await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+      setSelecting(true);
+    } else {
+      await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+    }
   }
 
   async function handleCell(r: number, c: number) {
@@ -1381,28 +1406,57 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     setTappedCell(cellKey);
     setTimeout(() => setTappedCell(null), 300);
     if (typeof navigator.vibrate === 'function') navigator.vibrate(20);
-    if (isSwap) {
-      // SWAP_2: select two opponent cells from different teams
+
+    // COMEBACK SWAP_2: two opponent cells from different teams
+    if (isSwapComeback) {
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
-      if (!swapFirst) {
-        setSwapFirst({ r, c });
-        return;
-      }
+      if (!swapFirst) { setSwapFirst({ r, c }); return; }
       if (r === swapFirst.r && c === swapFirst.c) return;
       const firstCell = s.grid[swapFirst.r][swapFirst.c];
-      if (firstCell.ownerId === cell.ownerId) return; // must be different teams
+      if (firstCell.ownerId === cell.ownerId) return;
       await emit('qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
-      setSelecting(false);
-      setSwapFirst(null);
-      return;
+      setSelecting(false); setSwapFirst(null); return;
     }
+
+    // Phase 4 SWAP_1: pick own cell first, then enemy
+    if (isSwapOne) {
+      if (!swapFirst) {
+        if (cell.ownerId !== myTeamId) return;
+        setSwapFirst({ r, c });
+        await emit('qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
+        return;
+      } else {
+        if (!cell.ownerId || cell.ownerId === myTeamId) return;
+        await emit('qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
+        setSelecting(false); setSwapFirst(null); return;
+      }
+    }
+
+    // FREEZE: pick own cell
+    if (isFreeze) {
+      if (cell.ownerId !== myTeamId || cell.stuck) return;
+      await emit('qq:freezeCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      setSelecting(false); return;
+    }
+
+    // STAPEL: pick a valid plus-center
+    if (isStuck) {
+      const isCandidate = s.stuckCandidates?.some(sc => sc.row === r && sc.col === c);
+      if (!isCandidate) return;
+      await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      setSelecting(false); return;
+    }
+
+    // STEAL
     if (isSteal) {
-      if (!cell.ownerId || cell.ownerId === myTeamId) return;
+      if (!cell.ownerId || cell.ownerId === myTeamId || cell.frozen || cell.stuck) return;
       await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
-    } else {
-      if (cell.ownerId) return;
-      await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      setSelecting(false); return;
     }
+
+    // PLACE
+    if (cell.ownerId) return;
+    await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
     setSelecting(false);
   }
 
@@ -1426,69 +1480,138 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     );
   }
 
-  const actionColor = isSwap ? '#8B5CF6' : isSteal ? '#EF4444' : '#22C55E';
+  const actionColor = isSwapComeback || isSwapOne ? '#8B5CF6'
+    : isFreeze ? '#60A5FA'
+    : isStuck ? '#F59E0B'
+    : isSteal  ? '#EF4444'
+    : '#22C55E';
+
+  // Cell clickability per mode
+  function isCellClickable(r: number, c: number): boolean {
+    const cell = s.grid[r][c];
+    if (isSwapComeback) return !!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || s.grid[swapFirst.r][swapFirst.c].ownerId !== cell.ownerId);
+    if (isSwapOne) return swapFirst ? (!!cell.ownerId && cell.ownerId !== myTeamId) : cell.ownerId === myTeamId;
+    if (isFreeze) return cell.ownerId === myTeamId && !cell.stuck;
+    if (isStuck)  return !!(s.stuckCandidates?.some(sc => sc.row === r && sc.col === c));
+    if (isSteal)  return !!cell.ownerId && cell.ownerId !== myTeamId && !cell.frozen && !cell.stuck;
+    return !cell.ownerId;
+  }
+
+  const phaseLabel = (() => {
+    if (isSwapComeback || isSwapOne) return lang === 'de' ? '🔄 Tauschen' : '🔄 Swap';
+    if (isFreeze) return lang === 'de' ? '❄️ Einfrieren' : '❄️ Freeze';
+    if (isStuck)  return lang === 'de' ? '📌 Stucken' : '📌 Stuck';
+    if (isSteal)  return t.placement.titleSteal[lang];
+    if (isPhase2Choice) return t.placement.titlePhase2[lang];
+    return t.placement.titlePlace[lang];
+  })();
+
+  const instructionText = (() => {
+    if (isSwapComeback) return swapFirst ? t.placement.swap2nd[lang] : t.placement.tapOpponent12[lang];
+    if (isSwapOne) return swapFirst
+      ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
+      : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
+    if (isFreeze) return lang === 'de' ? 'Eigenes Feld einfrieren (1 Frage)' : 'Freeze one of your cells (1 question)';
+    if (isStuck) return lang === 'de' ? 'Plus-Zentrum wählen (📌 markiert)' : 'Select the plus center (📌 marked)';
+    if (isSteal) return t.placement.tapOpponent[lang];
+    return t.placement.tapEmpty[lang];
+  })();
 
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
-        {isSwap ? t.placement.titleSwap[lang] : isSteal ? t.placement.titleSteal[lang] : isPhase2Choice ? t.placement.titlePhase2[lang] : t.placement.titlePlace[lang]}
+        {phaseLabel}
       </div>
 
-      {/* Phase 2 choice: place 2 OR steal 1 */}
+      {/* Phase 2: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>{t.placement.place2[lang]}</CozyBtn>
-          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>{t.placement.steal1[lang]}</CozyBtn>
+          <CozyBtn color="#22C55E" onClick={() => chooseFreeAction('PLACE')}>{t.placement.place2[lang]}</CozyBtn>
+          <CozyBtn color="#EF4444" onClick={() => chooseFreeAction('STEAL')}>{t.placement.steal1[lang]}</CozyBtn>
         </div>
       )}
 
-      {/* Phase 3 FREE action choice */}
-      {isFree && !freeMode && !selecting && (
-        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color="#22C55E" onClick={() => chooseFree('PLACE')}>{t.placement.placeBtn[lang]}</CozyBtn>
-          <CozyBtn color="#EF4444" onClick={() => chooseFree('STEAL')}>{t.placement.stealBtn[lang]}</CozyBtn>
+      {/* Phase 3/4 FREE: action menu */}
+      {showFreeMenu && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {hasFreeCell && (
+            <CozyBtn color="#22C55E" onClick={() => chooseFreeAction('PLACE')}>
+              {lang === 'de' ? '📍 2 Felder setzen' : '📍 Place 2 cells'}
+            </CozyBtn>
+          )}
+          <CozyBtn color="#EF4444" onClick={() => chooseFreeAction('STEAL')}>
+            {lang === 'de' ? '⚡ Feld klauen' : '⚡ Steal a cell'}
+          </CozyBtn>
+          {phase >= 3 && (
+            <CozyBtn color="#60A5FA" onClick={() => chooseFreeAction('FREEZE')}>
+              {lang === 'de' ? '❄️ Einfrieren' : '❄️ Freeze a cell'}
+            </CozyBtn>
+          )}
+          {phase >= 4 && (
+            <CozyBtn color="#8B5CF6" onClick={() => chooseFreeAction('SWAP')}>
+              {lang === 'de' ? '🔄 Tauschen' : '🔄 Swap cells'}
+            </CozyBtn>
+          )}
+          {phase >= 4 && hasStuckCandidate && (
+            <CozyBtn color="#F59E0B" onClick={() => chooseFreeAction('STAPEL')}>
+              {lang === 'de' ? '📌 Stapeln!' : '📌 Stack!'}
+            </CozyBtn>
+          )}
         </div>
       )}
 
-      {(!isFree || freeMode) && !isPhase2Choice && !selecting ? (
+      {/* Confirm button before grid appears */}
+      {!showFreeMenu && !isPhase2Choice && !selecting && (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
-          {isSwap ? t.placement.swapBtn[lang] : isSteal ? t.placement.confirmSteal[lang] : t.placement.confirmPlace[lang]}
+          {isSwapComeback || isSwapOne ? t.placement.swapBtn[lang]
+            : isFreeze ? (lang === 'de' ? '❄️ Feld auswählen' : '❄️ Select cell')
+            : isStuck  ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
+            : isSteal  ? t.placement.confirmSteal[lang]
+            : t.placement.confirmPlace[lang]}
         </CozyBtn>
-      ) : (
+      )}
+
+      {/* Grid */}
+      {selecting && (
         <>
           <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12 }}>
-            {isSwap
-              ? (swapFirst ? t.placement.swap2nd[lang] : t.placement.tapOpponent12[lang])
-              : isSteal ? t.placement.tapOpponent[lang] : t.placement.tapEmpty[lang]}
+            {instructionText}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`, gap: 4, justifyContent: 'center' }}>
             {s.grid.flatMap((row, r) =>
               row.map((cell, c) => {
                 const team = s.teams.find(t => t.id === cell.ownerId);
-                const isSwapFirst = swapFirst && swapFirst.r === r && swapFirst.c === c;
-                const clickable = isSwap
-                  ? (!!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || (cell.ownerId !== s.grid[swapFirst.r][swapFirst.c].ownerId)))
-                  : isSteal ? (!!cell.ownerId && cell.ownerId !== myTeamId) : !cell.ownerId;
+                const isSwapSelected = swapFirst && swapFirst.r === r && swapFirst.c === c;
+                const clickable = isCellClickable(r, c);
+                const isFrozenCell = cell.frozen && !cell.stuck;
+                const isStuckCell = cell.stuck;
+                const isStuckCandidate = isStuck && s.stuckCandidates?.some(sc => sc.row === r && sc.col === c);
                 return (
                   <div key={`${r}-${c}`} onClick={() => handleCell(r, c)} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
-                    background: isSwapFirst ? `${actionColor}66` : team ? `${team.color}88` : 'rgba(255,255,255,0.05)',
-                    border: isSwapFirst ? `3px solid ${actionColor}` : clickable ? `2px solid ${actionColor}` : '1px solid rgba(255,255,255,0.07)',
+                    background: isSwapSelected ? `${actionColor}66`
+                      : isStuckCell ? `${team?.color ?? '#F59E0B'}cc`
+                      : team ? `${team.color}88` : 'rgba(255,255,255,0.05)',
+                    border: isSwapSelected ? `3px solid ${actionColor}`
+                      : isStuckCandidate ? `2px solid #F59E0B`
+                      : clickable ? `2px solid ${actionColor}` : '1px solid rgba(255,255,255,0.07)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
-                    cursor: clickable || isSwapFirst ? 'pointer' : 'default',
-                    opacity: clickable || isSwapFirst ? 1 : 0.35,
+                    cursor: clickable || isSwapSelected ? 'pointer' : 'default',
+                    opacity: clickable || isSwapSelected ? 1 : 0.3,
                     transition: 'all 0.15s',
-                    boxShadow: isSwapFirst ? `0 0 14px ${actionColor}88` : clickable ? `0 0 8px ${actionColor}44` : 'none',
+                    boxShadow: isSwapSelected ? `0 0 14px ${actionColor}88`
+                      : isStuckCandidate ? '0 0 10px #F59E0B88'
+                      : clickable ? `0 0 8px ${actionColor}44` : 'none',
                     animation: tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
                   }}>
-                    {team ? qqGetAvatar(team.avatarId).emoji : ''}
+                    {isStuckCell ? '📌' : isFrozenCell ? '❄️' : team ? qqGetAvatar(team.avatarId).emoji : ''}
                   </div>
                 );
               })
             )}
           </div>
-          <button onClick={() => { setSelecting(false); setSwapFirst(null); }} style={{
+          <button onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); }} style={{
             marginTop: 12, width: '100%', padding: '8px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
             color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,

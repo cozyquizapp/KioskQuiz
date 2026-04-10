@@ -142,6 +142,9 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   totalPhases: 3,
   globalMuted: false,
   volume: 0.8,
+  frozenCells: [],
+  stuckCandidates: [],
+  rulesSlideIndex: 0,
 };
 
 const MOCK_QUESTION_BASE = {

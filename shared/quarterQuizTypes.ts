@@ -77,6 +77,7 @@ export function qqGridSize(teamCount: number): number {
 // ── Phase flow ────────────────────────────────────────────────────────────────
 export type QQPhase =
   | 'LOBBY'             // Waiting for teams to join + avatar selection
+  | 'RULES'             // Rules presentation (moderator-controlled, before game start)
   | 'PHASE_INTRO'       // Animated intro for each phase (1/2/3)
   | 'QUESTION_ACTIVE'   // Question visible, teams answering
   | 'QUESTION_REVEAL'   // Answer shown, winning team about to place
@@ -92,6 +93,8 @@ export interface QQCell {
   col: number;
   ownerId: string | null;  // teamId or null = unclaimed
   jokerFormed: boolean;    // this cell is part of a 2×2 already triggered
+  frozen?: boolean;        // frozen for 1 question (cannot be stolen)
+  stuck?: boolean;         // permanently frozen via Stapeln (counts 2 pts, cannot be stolen)
 }
 
 export type QQGrid = QQCell[][];  // [row][col]
@@ -383,6 +386,10 @@ export interface QQStateUpdate {
   imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
   // Last placed cell — for beamer placement animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
+  // Cells temporarily frozen (expire after next placement), already reflected in grid.frozen
+  frozenCells: { row: number; col: number }[];
+  // Cells available to Stucken for pendingFor team (plus-centers)
+  stuckCandidates: { row: number; col: number }[];
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
   // Settings
@@ -395,14 +402,18 @@ export interface QQStateUpdate {
   // Sound
   globalMuted: boolean;
   volume: number; // 0–1
+  rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
 }
 
 export type QQPendingAction =
   | 'PLACE_1'    // Phase 1: place 1 cell
-  | 'PLACE_2'    // Phase 2: still placing 2 cells (placementsLeft = 1 or 2)
-  | 'STEAL_1'    // Phase 2 steal or Phase 3 steal
-  | 'FREE'       // Phase 3: place OR steal, team/moderator decides
-  | 'COMEBACK';  // before Phase 3: comeback team acts
+  | 'PLACE_2'    // Phase 2+: place 2 cells (placementsLeft = 1 or 2)
+  | 'STEAL_1'    // Phase 2 steal or Phase 3/4 steal
+  | 'FREE'       // Phase 3/4: team picks action (place/steal/freeze/swap/stapel)
+  | 'FREEZE_1'   // Phase 3/4: freeze 1 own cell for next question
+  | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
+  | 'STAPEL_1'   // Phase 4: stapeln - center of plus-shape (permanently frozen, 2 pts)
+  | 'COMEBACK';  // before final phase: comeback team acts
 
 // ── Socket event payloads (client → server) ───────────────────────────────────
 export interface QQJoinModeratorPayload  { roomCode: string; }
@@ -416,9 +427,16 @@ export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }
 export interface QQPlaceCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQStealCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
-export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL'; }
+export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SWAP' | 'STAPEL'; }
 export interface QQComebackChoicePayload { roomCode: string; teamId: string; action: QQComebackAction; }
 export interface QQSwapCellsPayload      { roomCode: string; teamId: string; rowA: number; colA: number; rowB: number; colB: number; }
+export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)
+export interface QQFreezeCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
+export interface QQStapelCellPayload     { roomCode: string; teamId: string; row: number; col: number; }  // center of plus (Stapeln)
+export interface QQStartRulesPayload     { roomCode: string; }
+export interface QQRulesNextPayload      { roomCode: string; }
+export interface QQRulesPrevPayload      { roomCode: string; }
+export interface QQRulesFinishPayload    { roomCode: string; }  // end rules → start game
 export interface QQNextQuestionPayload   { roomCode: string; }
 export interface QQSetLanguagePayload    { roomCode: string; language: QQLanguage; }
 export interface QQResetRoomPayload      { roomCode: string; }

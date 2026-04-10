@@ -943,7 +943,16 @@ function CustomSlideElement({
 
     case 'animatedAvatar': {
       const emoji = el.text ?? '✨';
-      const animName = el.animType === 'bounce' ? 'cfloata' : 'cfloat';
+      const animName = (
+        el.animType === 'bounce' ? 'cfloata' :
+        el.animType === 'spin'   ? 'cavspin' :
+        el.animType === 'pulse'  ? 'cavpulse' :
+        el.animType === 'shake'  ? 'cavshake' :
+        el.animType === 'dance'  ? 'cavdance' :
+        el.animType === 'peek'   ? 'cavpeek' :
+        el.animType === 'flip'   ? 'cavflip' :
+        'cfloat' // float / wiggle / walk / default
+      );
       const dur = el.avatarAnimDuration ?? 4;
       const del = el.avatarAnimDelay ?? 0;
       return (

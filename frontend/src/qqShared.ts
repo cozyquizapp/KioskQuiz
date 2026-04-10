@@ -3,6 +3,12 @@
 export const QQ_BEAMER_CSS = `
   @keyframes cfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-12px) rotate(var(--r,0deg))} }
   @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
+  @keyframes cavspin  { from{transform:rotate(var(--r,0deg))} to{transform:rotate(calc(var(--r,0deg) + 360deg))} }
+  @keyframes cavpulse { 0%,100%{transform:scale(1) rotate(var(--r,0deg))} 50%{transform:scale(1.22) rotate(var(--r,0deg))} }
+  @keyframes cavshake { 0%,100%{transform:translateX(0) rotate(var(--r,0deg))} 20%{transform:translateX(-7px) rotate(calc(var(--r,0deg) - 5deg))} 40%{transform:translateX(7px) rotate(calc(var(--r,0deg) + 5deg))} 60%{transform:translateX(-4px) rotate(calc(var(--r,0deg) - 3deg))} 80%{transform:translateX(4px) rotate(calc(var(--r,0deg) + 3deg))} }
+  @keyframes cavdance { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 25%{transform:translateY(-10px) rotate(calc(var(--r,0deg) - 8deg))} 75%{transform:translateY(-10px) rotate(calc(var(--r,0deg) + 8deg))} }
+  @keyframes cavpeek  { 0%,40%,100%{transform:translateY(0) rotate(var(--r,0deg))} 15%{transform:translateY(-18px) rotate(var(--r,0deg))} 30%{transform:translateY(-14px) rotate(calc(var(--r,0deg) + 5deg))} }
+  @keyframes cavflip  { 0%,100%{transform:rotateY(0deg) rotate(var(--r,0deg))} 50%{transform:rotateY(180deg) rotate(var(--r,0deg))} }
   @keyframes ffmove {
     0%{transform:translate(0,0) scale(1);opacity:0}
     10%{opacity:0.85}

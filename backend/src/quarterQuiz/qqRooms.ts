@@ -83,6 +83,8 @@ export interface QQRoomState {
   _placementQueue?: string[];
   // Sound
   globalMuted: boolean;
+  musicMuted: boolean;
+  sfxMuted: boolean;
   volume: number; // 0–1
   // Rules presentation
   rulesSlideIndex: number;
@@ -163,6 +165,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       totalPhases: 3,
       lastActivityAt: Date.now(),
       globalMuted: false,
+      musicMuted: false,
+      sfxMuted: false,
       volume: 0.8,
       rulesSlideIndex: 0,
       questionHistory: [],
@@ -1523,6 +1527,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     draftId:          room.draftId,
     slideTemplates:   room.slideTemplates,
     globalMuted:      room.globalMuted,
+    musicMuted:       room.musicMuted,
+    sfxMuted:         room.sfxMuted,
     volume:           room.volume,
     soundConfig:      room.soundConfig,
     rulesSlideIndex:  room.rulesSlideIndex,

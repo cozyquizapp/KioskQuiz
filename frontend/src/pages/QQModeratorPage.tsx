@@ -3,8 +3,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  qqGetAvatar, QQStateUpdate,
+  qqGetAvatar, QQStateUpdate, QQSoundConfig,
 } from '../../../shared/quarterQuizTypes';
+import { QQSoundPanel } from '../components/QQSoundPanel';
 
 const QQ_ROOM = 'default';
 
@@ -23,6 +24,8 @@ export default function QQModeratorPage() {
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
+  const [showSoundPanel, setShowSoundPanel] = useState(false);
+  const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
@@ -44,6 +47,15 @@ export default function QQModeratorPage() {
   useEffect(() => {
     if (state) setTimerInput(state.timerDurationSec);
   }, [state?.timerDurationSec]);
+
+  // Sync sound config from server state (e.g. after game start loads draft config)
+  const prevSoundConfigRef = useRef<QQSoundConfig | undefined>(undefined);
+  useEffect(() => {
+    if (state?.soundConfig && state.soundConfig !== prevSoundConfigRef.current) {
+      prevSoundConfigRef.current = state.soundConfig;
+      setLocalSoundConfig(state.soundConfig);
+    }
+  }, [state?.soundConfig]);
 
   // Load available drafts once (Cozy60 + QQ Builder)
   useEffect(() => {
@@ -224,7 +236,7 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // M — Toggle mute
+    // M — Toggle mute all (music + sfx)
     if (e.code === 'KeyM') {
       e.preventDefault();
       emitRef.current('qq:setMuted', { roomCode, muted: !(stateRef.current?.globalMuted ?? false) });
@@ -764,33 +776,78 @@ export default function QQModeratorPage() {
                 </div>
               </div>
 
-              {/* Sound — mute + volume */}
+              {/* Sound — mute buttons + volume + upload panel */}
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🔊 Sound</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+
+                {/* Row 1: Mute toggles + volume */}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  {/* Musik mute */}
                   <button
-                    onClick={() => emit('qq:setMuted', { roomCode, muted: !s.globalMuted })}
+                    onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
                     style={{
-                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                      fontWeight: 800, fontSize: 13,
-                      border: `1px solid ${s.globalMuted ? '#EF4444' : '#22C55E'}`,
-                      background: s.globalMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-                      color: s.globalMuted ? '#EF4444' : '#22C55E',
+                      padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 800, fontSize: 12,
+                      border: `1px solid ${s.musicMuted ? '#EF4444' : '#22C55E'}`,
+                      background: s.musicMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+                      color: s.musicMuted ? '#EF4444' : '#22C55E',
                     }}>
-                    {s.globalMuted ? '🔇 Stumm' : '🔊 Ton an'}
+                    {s.musicMuted ? '🔇 Musik' : '🎵 Musik'}
                   </button>
+                  {/* SFX mute */}
+                  <button
+                    onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
+                    style={{
+                      padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 800, fontSize: 12,
+                      border: `1px solid ${s.sfxMuted ? '#EF4444' : '#22C55E'}`,
+                      background: s.sfxMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+                      color: s.sfxMuted ? '#EF4444' : '#22C55E',
+                    }}>
+                    {s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}
+                  </button>
+                  {/* Volume slider */}
                   <input
                     type="range" min={0} max={100} step={5}
                     value={Math.round((s.volume ?? 0.8) * 100)}
                     onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
-                    style={{ flex: 1, maxWidth: 120, accentColor: '#3B82F6' }}
-                    disabled={s.globalMuted}
+                    style={{ flex: 1, maxWidth: 100, accentColor: '#3B82F6' }}
                   />
-                  <span style={{ fontSize: 11, color: '#475569', minWidth: 30 }}>
-                    {s.globalMuted ? '0%' : `${Math.round((s.volume ?? 0.8) * 100)}%`}
+                  <span style={{ fontSize: 11, color: '#475569', minWidth: 28 }}>
+                    {Math.round((s.volume ?? 0.8) * 100)}%
                   </span>
                 </div>
-                <span style={{ fontSize: 10, color: '#475569' }}>M-Taste = Mute-Toggle</span>
+
+                {/* Row 2: Sound upload toggle */}
+                <button
+                  onClick={() => setShowSoundPanel(v => !v)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: 800, fontSize: 11,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: showSoundPanel ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                    color: showSoundPanel ? '#93c5fd' : '#64748b',
+                  }}>
+                  🎵 Custom Sounds {showSoundPanel ? '▲' : '▼'}
+                </button>
+                <div style={{ fontSize: 10, color: '#475569', marginTop: 3 }}>M-Taste = alles muten</div>
+
+                {/* Sound upload panel */}
+                {showSoundPanel && (
+                  <div style={{
+                    marginTop: 8, padding: 10,
+                    background: 'rgba(0,0,0,0.25)', borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.07)',
+                  }}>
+                    <QQSoundPanel
+                      config={localSoundConfig}
+                      onChange={cfg => {
+                        setLocalSoundConfig(cfg);
+                        emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

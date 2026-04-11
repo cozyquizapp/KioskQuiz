@@ -241,10 +241,11 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     prevPhaseRef.current = s.phase;
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sound: sync volume, mute & custom sound config from server state ──
+  // ── Sound: sync volume & config from server state ──
+  // Volume only applies to SFX (music has its own volume handling)
   useEffect(() => {
-    setVolume(s.globalMuted ? 0 : s.volume);
-  }, [s.globalMuted, s.volume]);
+    setVolume(s.sfxMuted ? 0 : s.volume);
+  }, [s.sfxMuted, s.volume]);
 
   useEffect(() => {
     setSoundConfig(s.soundConfig);
@@ -255,7 +256,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   useEffect(() => {
     const prev = prevSfxPhaseRef.current;
     prevSfxPhaseRef.current = s.phase;
-    if (s.globalMuted) return;
+    if (s.sfxMuted) return;
     resumeAudio();
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') playFanfare();
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') playReveal();
@@ -266,20 +267,19 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playGameOver();
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sound: timer loop (game-show music while question is active) ──
+  // ── Music: timer loop (game-show music while question is active) ──
   useEffect(() => {
-    // Don't play loop if question has its own music, no timer, or muted
-    if (s.globalMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
+    if (s.musicMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
       stopTimerLoop();
       return;
     }
     startTimerLoop();
     return () => stopTimerLoop();
-  }, [s.timerEndsAt, s.phase, s.globalMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sound: timer ticks ──
+  // ── Sound: timer ticks (SFX — not music) ──
   useEffect(() => {
-    if (s.globalMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
+    if (s.sfxMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
     const iv = setInterval(() => {
       const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
       if (rem <= 0) { stopTimerLoop(); playTimesUp(); clearInterval(iv); return; }
@@ -287,18 +287,18 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
       else if (rem <= 10) playTick();
     }, 1000);
     return () => clearInterval(iv);
-  }, [s.timerEndsAt, s.phase, s.globalMuted]);
+  }, [s.timerEndsAt, s.phase, s.sfxMuted]);
 
-  // ── Sound: placement → field placed + score up ──
+  // ── Sound: placement → score up (SFX) ──
   const prevCorrectRef = useRef(s.correctTeamId);
   useEffect(() => {
-    if (s.correctTeamId && !prevCorrectRef.current && !s.globalMuted) playScoreUp();
+    if (s.correctTeamId && !prevCorrectRef.current && !s.sfxMuted) playScoreUp();
     prevCorrectRef.current = s.correctTeamId;
-  }, [s.correctTeamId, s.globalMuted]);
+  }, [s.correctTeamId, s.sfxMuted]);
 
-  // ── Sound: placement flash — stamp or steal sound ──
+  // ── Sound: placement flash — stamp or steal sound (SFX) ──
   useEffect(() => {
-    if (!placementFlash || s.globalMuted) return;
+    if (!placementFlash || s.sfxMuted) return;
     if (placementFlash.cell.wasSteal) playSteal();
     else playFieldPlaced();
   }, [placementFlash]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -316,17 +316,17 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
       return;
     }
     if (audioRef.current?.src?.endsWith(url)) {
-      audioRef.current.volume = s.globalMuted ? 0 : Math.min(1, s.volume * 0.5);
+      audioRef.current.volume = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5);
       return;
     }
     if (audioRef.current) audioRef.current.pause();
     const a = new Audio(url);
     a.loop = true;
-    a.volume = s.globalMuted ? 0 : Math.min(1, s.volume * 0.5);
+    a.volume = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5);
     a.play().catch(() => {});
     audioRef.current = a;
     return () => { a.pause(); };
-  }, [s.currentQuestion?.musicUrl, s.phase, s.globalMuted, s.volume]);
+  }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume]);
 
   // Fullscreen toggle
   const [isFullscreen, setIsFullscreen] = useState(false);

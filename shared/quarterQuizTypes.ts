@@ -433,7 +433,9 @@ export interface QQStateUpdate {
   draftId?: string;
   slideTemplates?: QQSlideTemplates;
   // Sound
-  globalMuted: boolean;
+  globalMuted: boolean;  // legacy: true = musicMuted + sfxMuted
+  musicMuted: boolean;   // mutes: timerLoop, lobbyWelcome, question musicUrl
+  sfxMuted: boolean;     // mutes: all SFX (correct, wrong, reveal, fanfare, fieldPlaced, steal, ticks, gameOver)
   volume: number; // 0–1
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
@@ -479,7 +481,10 @@ export interface QQBuzzInPayload         { roomCode: string; teamId: string; }
 export interface QQSetTimerPayload       { roomCode: string; durationSec: number; }
 export interface QQSetAvatarsPayload     { roomCode: string; enabled: boolean; }
 export interface QQSetMutedPayload       { roomCode: string; muted: boolean; }
-export interface QQSetVolumePayload      { roomCode: string; volume: number; }
+export interface QQSetMusicMutedPayload  { roomCode: string; muted: boolean; }
+export interface QQSetSfxMutedPayload    { roomCode: string; muted: boolean; }
+export interface QQSetVolumePayload        { roomCode: string; volume: number; }
+export interface QQUpdateSoundConfigPayload { roomCode: string; soundConfig: QQSoundConfig; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

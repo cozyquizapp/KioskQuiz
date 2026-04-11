@@ -141,6 +141,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   avatarsEnabled: true,
   totalPhases: 3,
   globalMuted: false,
+  musicMuted: false,
+  sfxMuted: false,
   volume: 0.8,
   frozenCells: [],
   stuckCandidates: [],

@@ -9,7 +9,7 @@ import {
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
-  QQSetMutedPayload, QQSetVolumePayload,
+  QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload,
   QQSubmitAnswerPayload, QQAck,
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
@@ -569,6 +569,28 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.globalMuted = payload.muted;
+        room.musicMuted  = payload.muted;
+        room.sfxMuted    = payload.muted;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setMusicMuted', (payload: QQSetMusicMutedPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.musicMuted  = payload.muted;
+        room.globalMuted = room.musicMuted && room.sfxMuted;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setSfxMuted', (payload: QQSetSfxMutedPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.sfxMuted    = payload.muted;
+        room.globalMuted = room.musicMuted && room.sfxMuted;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -578,6 +600,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.volume = Math.max(0, Math.min(1, payload.volume));
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:updateSoundConfig', (payload: QQUpdateSoundConfigPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.soundConfig = payload.soundConfig;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

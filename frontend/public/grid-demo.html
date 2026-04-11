@@ -232,19 +232,19 @@ function renderCell(r,c,animate=false){
   const glowBase = isHome
     ? `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 20px ${rc(team,.75*inten)},0 0 40px ${rc(team,.32*inten)}`
     : interior
-      ? `inset 0 2px 4px rgba(255,255,255,.02),inset 0 -3px 8px rgba(0,0,0,.55),inset 0 0 8px ${rc(team,.15*inten)}`
+      ? `inset 0 2px 4px rgba(255,255,255,.015),inset 0 -3px 8px rgba(0,0,0,.6)`
       : n===0
         ? `inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.48),0 0 10px ${rc(team,.5*inten)}`
         : `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 16px ${rc(team,.7*inten)},0 0 32px ${rc(team,.28*inten)}`;
 
   const glowStrong=`inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 26px ${rc(team,.9*inten)},0 0 52px ${rc(team,.42*inten)}`;
 
-  // Interior tiles: very dark/muted — makes the gap between them nearly invisible
-  const tileBg = isHome ? rc(team,.18) : interior ? rc(team,.07) : rc(team,.07);
+  // Interior tiles: completely dark — no color, no border, blends into territory mass
+  const tileBg = isHome ? rc(team,.18) : interior ? 'rgba(255,255,255,.012)' : rc(team,.07);
   const tileBorder = isHome
     ? `2px solid ${rc(team,.65)}`
     : interior
-      ? `1px solid ${rc(team,.04)}` // nearly invisible border for interior
+      ? `1px solid rgba(255,255,255,.03)` // neutral dark — no team color at all
       : `1px solid ${rc(team,.4*inten)}`;
 
   tTop.style.cssText=`
@@ -319,38 +319,56 @@ function drawBuilding(el,sh,team,animate,interior){
     return;
   }
 
-  // 1 ── BASE PLATE (z=4) — slight elevation, same footprint
-  const base=document.createElement('div');
-  base.style.cssText=`
-    position:absolute;left:${bx}px;top:${by}px;
-    width:${bw}px;height:${bd}px;border-radius:2px;
-    transform:translateZ(4px);
-    background:rgba(${cr},${cg},${cb},${.12*inten});
-    border:1px solid rgba(${cr},${cg},${cb},${.35*inten});
-    box-shadow:0 0 ${Math.round(10*inten)}px rgba(${cr},${cg},${cb},${.4*inten});
-  `;
-  if(animate) base.style.animation='floorIn .2s ease-out both';
-  bld.appendChild(base);
+  // 1 ── VERTICAL EDGE LINES (neon walls)
+  // Three edges of the roof footprint have a vertical "wall" line running from
+  // z=4 up to z=dimH. We render each as a series of stacked thin divs at
+  // incremental Z values — this is the only way to draw a vertical line in CSS 3D iso.
+  // The 3 visible edges in our rotateX(52) rotateZ(-45) view:
+  //   Left edge:   x=bx,        y=by..by+bd  (left column)
+  //   Front-left:  x=bx..bx+bw, y=by+bd      (bottom row, left half — the "front" wall)
+  //   Front-right: x=bx+bw,     y=by..by+bd  (right column)
+  //
+  // Each edge is a 1-2px wide div repeated at multiple Z steps to form a continuous line.
+  const WALL_STEPS=Math.max(4, Math.round(dimH/6));
+  const wStep=dimH/WALL_STEPS;
+  const edgeW=2; // wall thickness in px
+  const edgeColor=`rgba(${cr},${cg},${cb},${.65*inten})`;
+  const edgeGlow=`rgba(${cr},${cg},${cb},${.35*inten})`;
 
-  // 2 ── SHAFT (z=dimH/2) — transparent box, only glow, creates column of light
-  const shaftZ=Math.round(dimH*.45);
-  // Slightly narrower than roof for tapered look
-  const sw=Math.max(4,Math.round(bw*.7)), sd=Math.max(4,Math.round(bd*.7));
-  const sx=Math.round((CELL-sw)/2), sy=Math.round((CELL-sd)/2);
-  const shaft=document.createElement('div');
-  shaft.style.cssText=`
-    position:absolute;left:${sx}px;top:${sy}px;
-    width:${sw}px;height:${sd}px;border-radius:2px;
-    transform:translateZ(${shaftZ}px);
-    background:rgba(${cr},${cg},${cb},${.06*inten});
-    border:1px solid rgba(${cr},${cg},${cb},${.5*inten});
-    box-shadow:
-      0 0 ${Math.round(8*inten)}px  rgba(${cr},${cg},${cb},${.55*inten}),
-      0 0 ${Math.round(20*inten)}px rgba(${cr},${cg},${cb},${.22*inten}),
-      inset 0 0 6px rgba(${cr},${cg},${cb},${.15*inten});
-  `;
-  if(animate) shaft.style.animation=`floorIn .25s ease-out .12s both`;
-  bld.appendChild(shaft);
+  for(let wi=0;wi<=WALL_STEPS;wi++){
+    const wz=Math.round(4+wStep*wi*(dimH-4)/dimH);
+    const delayMs=animate?`${(wi/WALL_STEPS*0.3).toFixed(2)}s`:'0s';
+
+    // Left edge vertical line
+    const eL=document.createElement('div');
+    eL.style.cssText=`position:absolute;left:${bx}px;top:${by}px;
+      width:${edgeW}px;height:${bd}px;
+      transform:translateZ(${wz}px);
+      background:${edgeColor};
+      box-shadow:0 0 4px ${edgeGlow};`;
+    if(animate) eL.style.animation=`floorIn .15s ease-out ${delayMs} both`;
+    bld.appendChild(eL);
+
+    // Front-bottom edge horizontal line
+    const eB=document.createElement('div');
+    eB.style.cssText=`position:absolute;left:${bx}px;top:${by+bd-edgeW}px;
+      width:${bw}px;height:${edgeW}px;
+      transform:translateZ(${wz}px);
+      background:${edgeColor};
+      box-shadow:0 0 4px ${edgeGlow};`;
+    if(animate) eB.style.animation=`floorIn .15s ease-out ${delayMs} both`;
+    bld.appendChild(eB);
+
+    // Right edge vertical line
+    const eR=document.createElement('div');
+    eR.style.cssText=`position:absolute;left:${bx+bw-edgeW}px;top:${by}px;
+      width:${edgeW}px;height:${bd}px;
+      transform:translateZ(${wz}px);
+      background:${edgeColor};
+      box-shadow:0 0 4px ${edgeGlow};`;
+    if(animate) eR.style.animation=`floorIn .15s ease-out ${delayMs} both`;
+    bld.appendChild(eR);
+  }
 
   // 3 ── ROOF (z=dimH) — brightest face, sharp border, windows
   const roof=document.createElement('div');

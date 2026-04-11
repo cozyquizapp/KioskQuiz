@@ -3,520 +3,893 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quarter Quiz — Grid Design Demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<title>Quarter Quiz — City Design Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #0f172a;
-    color: white;
-    font-family: 'Nunito', sans-serif;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 60px;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  h1 { font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .section-label {
-    font-size: 11px;
-    color: #334155;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 800;
-    margin-bottom: 16px;
-  }
+:root {
+  --cat-amber: #F59E0B;
+  --cat-blue: #3B82F6;
+  --cat-red: #EF4444;
+  --cat-green: #22C55E;
+  --cat-purple: #8B5CF6;
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: rgba(255,255,255,0.06);
+  --text: #f1f5f9;
+  --muted: #475569;
+}
 
-  /* ── AUSSCHNITT 1: Das Grid (Stadtplan-Stil) ── */
-  .grid-wrap {
-    background: #1e293b;
-    border-radius: 20px;
-    padding: 24px;
-    display: inline-block;
-  }
-  .grid-title {
-    font-size: 11px;
-    color: #64748b;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
-  }
-  .grid {
-    display: grid;
-    gap: 5px;
-    background: rgba(255,255,255,0.02);
-    padding: 10px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.04);
-  }
-  .cell {
-    width: 54px;
-    height: 54px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    position: relative;
-    transition: transform 0.15s ease;
-  }
-  .cell:hover { transform: scale(1.08); }
-  .cell.empty {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-  }
-  .cell.owned {
-    border: 1px solid transparent;
-  }
-  /* Team colors */
-  .cell.t-blue   { background: linear-gradient(135deg, #3B82F6cc, #3B82F688); border-color: #3B82F666; box-shadow: 0 0 8px #3B82F633; }
-  .cell.t-red    { background: linear-gradient(135deg, #EF4444cc, #EF444488); border-color: #EF444466; box-shadow: 0 0 8px #EF444433; }
-  .cell.t-orange { background: linear-gradient(135deg, #F97316cc, #F9731688); border-color: #F9731666; box-shadow: 0 0 8px #F9731633; }
-  .cell.t-green  { background: linear-gradient(135deg, #22C55Ecc, #22C55E88); border-color: #22C55E66; box-shadow: 0 0 8px #22C55E33; }
-  /* Frozen */
-  .cell.frozen { border-color: rgba(147,210,255,0.7) !important; box-shadow: 0 0 12px rgba(147,210,255,0.4) !important; }
-  .cell.frozen::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: rgba(147,210,255,0.15);
-    border-radius: 8px;
-  }
-  /* Stuck / permanent */
-  .cell.stuck { border: 2px solid rgba(251,191,36,0.9) !important; box-shadow: 0 0 16px rgba(251,191,36,0.6) !important; }
-  /* Home base */
-  .cell.home { border: 2px solid rgba(255,255,255,0.6) !important; }
-  /* Border between territories — thicker shared edge simulation via outline */
-  .cell.border-right { box-shadow: inset -3px 0 0 rgba(15,23,42,0.8); }
-  .cell.border-bottom { box-shadow: inset 0 -3px 0 rgba(15,23,42,0.8); }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+}
 
-  /* ── AUSSCHNITT 2: Team-Leiste ── */
-  .teams-row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .team-chip {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 14px;
-    padding: 10px 16px;
-    border: 1px solid rgba(255,255,255,0.07);
-  }
-  .team-dot {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .team-name {
-    font-size: 14px;
-    font-weight: 800;
-    color: #f1f5f9;
-  }
-  .team-cells {
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 700;
-  }
-  .team-rank {
-    font-size: 11px;
-    color: #94a3b8;
-    background: rgba(255,255,255,0.07);
-    border-radius: 6px;
-    padding: 2px 7px;
-    font-weight: 700;
-  }
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-  /* ── AUSSCHNITT 3: Kategorie-Badge ── */
-  .cat-grid {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .cat-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 800;
-    border: none;
-    cursor: default;
-  }
-  .cat-badge .cat-icon {
-    font-size: 20px;
-  }
-  .cat-badge.active {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 3px solid rgba(255,255,255,0.15);
+  padding-left: 14px;
+}
+.section-title {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.section-desc {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
 
-  /* ── AUSSCHNITT 4: Placement Phase ── */
-  .placement-grid {
-    display: grid;
-    gap: 5px;
-    padding: 10px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.04);
-    background: rgba(255,255,255,0.02);
-    position: relative;
-  }
-  .cell.placeable {
-    cursor: pointer;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  .cell.placeable::after {
-    content: '+';
-    position: absolute;
-    font-size: 20px;
-    font-weight: 900;
-    color: rgba(255,255,255,0.5);
-  }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.2); }
-    50% { box-shadow: 0 0 0 6px rgba(255,255,255,0.0); }
-  }
+/* ═══════════════════════════════════════════════
+   SECTION 1 — 3D CITY GRID
+═══════════════════════════════════════════════ */
 
-  .demo-row {
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  .demo-block {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+.city-scene {
+  perspective: 900px;
+  perspective-origin: 50% 30%;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0 60px;
+}
 
-  /* ── Beamer-ähnlicher Vollbild-Kontext ── */
-  .beamer-preview {
-    background: #111827;
-    border-radius: 20px;
-    padding: 28px 32px;
-    display: flex;
-    gap: 24px;
-    align-items: center;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .beamer-left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .question-card {
-    background: #1e293b;
-    border-radius: 16px;
-    padding: 24px 28px;
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .question-cat {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #F59E0B22;
-    color: #F59E0B;
-    border-radius: 8px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 12px;
-  }
-  .question-text {
-    font-size: 28px;
-    font-weight: 800;
-    color: #f1f5f9;
-    line-height: 1.3;
-  }
-  .answer-chips {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .answer-chip {
-    padding: 12px 16px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .answer-chip .letter {
-    width: 24px; height: 24px;
-    border-radius: 6px;
-    background: rgba(0,0,0,0.25);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    font-weight: 900;
-  }
-  .beamer-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-  }
-  .score-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 180px;
-  }
-  .score-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-  }
-  .score-rank {
-    font-size: 11px;
-    color: #475569;
-    font-weight: 700;
-    width: 16px;
-  }
-  .score-name {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 800;
-    color: #e2e8f0;
-  }
-  .score-val {
-    font-size: 13px;
-    font-weight: 900;
-  }
+.city-grid-3d {
+  transform: rotateX(48deg) rotateZ(-4deg);
+  transform-style: preserve-3d;
+  display: grid;
+  grid-template-columns: repeat(5, 72px);
+  grid-template-rows: repeat(5, 72px);
+  gap: 6px;
+  position: relative;
+}
+
+/* Ground plane shadow */
+.city-grid-3d::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(ellipse at 50% 80%, rgba(0,0,0,0.6) 0%, transparent 70%);
+  transform: translateZ(-2px);
+  pointer-events: none;
+}
+
+.block {
+  width: 72px;
+  height: 72px;
+  position: relative;
+  transform-style: preserve-3d;
+  cursor: default;
+  transition: transform 0.3s ease;
+}
+.block:hover { transform: translateZ(8px); }
+
+/* Top face */
+.block-top {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+/* Front face (3D depth illusion via box-shadow) */
+.block-top::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 2px;
+  right: -2px;
+  height: 8px;
+  border-radius: 0 0 4px 4px;
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+/* Side face */
+.block-top::before {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 2px;
+  bottom: -2px;
+  width: 8px;
+  border-radius: 0 4px 4px 0;
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+/* EMPTY block */
+.block.empty .block-top {
+  background: #141c2e;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.block.empty .block-top::after { background: #0d1320; }
+.block.empty .block-top::before { background: #111828; }
+
+/* Street lines on empty */
+.block.empty .block-top .street-h {
+  position: absolute;
+  width: 100%; height: 1px;
+  background: rgba(255,255,255,0.04);
+  top: 50%;
+}
+.block.empty .block-top .street-v {
+  position: absolute;
+  height: 100%; width: 1px;
+  background: rgba(255,255,255,0.04);
+  left: 50%;
+}
+
+/* OWNED blocks — lit up */
+.block.t1 .block-top { background: linear-gradient(135deg, #1e3a5f, #1a3050); border: 1px solid #2563eb44; box-shadow: 0 0 20px #1d4ed840, inset 0 1px 0 rgba(96,165,250,0.3); }
+.block.t1 .block-top::after { background: #0f1f3d; box-shadow: 0 4px 8px #1d4ed822; }
+.block.t1 .block-top::before { background: #122040; }
+
+.block.t2 .block-top { background: linear-gradient(135deg, #1e3d28, #1a3322); border: 1px solid #16a34a44; box-shadow: 0 0 20px #15803d40, inset 0 1px 0 rgba(74,222,128,0.3); }
+.block.t2 .block-top::after { background: #0f2018; box-shadow: 0 4px 8px #15803d22; }
+.block.t2 .block-top::before { background: #122019; }
+
+.block.t3 .block-top { background: linear-gradient(135deg, #3d1e1e, #331a1a); border: 1px solid #dc262644; box-shadow: 0 0 20px #b91c1c40, inset 0 1px 0 rgba(252,165,165,0.3); }
+.block.t3 .block-top::after { background: #200f0f; box-shadow: 0 4px 8px #b91c1c22; }
+.block.t3 .block-top::before { background: #201212; }
+
+.block.t4 .block-top { background: linear-gradient(135deg, #3d2a1a, #33231a); border: 1px solid #ea580c44; box-shadow: 0 0 20px #c2410c40, inset 0 1px 0 rgba(253,186,116,0.3); }
+.block.t4 .block-top::after { background: #201508; box-shadow: 0 4px 8px #c2410c22; }
+.block.t4 .block-top::before { background: #201208; }
+
+/* HOME base — taller, glowing */
+.block.home .block-top {
+  border-width: 2px !important;
+  box-shadow: 0 0 30px currentColor, inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+.block.home .block-top::after { height: 14px !important; bottom: -14px !important; }
+.block.home .block-top::before { width: 14px !important; right: -14px !important; }
+
+.block.t1.home .block-top { color: #60a5fa; border-color: #3b82f6 !important; }
+.block.t2.home .block-top { color: #4ade80; border-color: #22c55e !important; }
+.block.t3.home .block-top { color: #f87171; border-color: #ef4444 !important; }
+.block.t4.home .block-top { color: #fb923c; border-color: #f97316 !important; }
+
+/* FROZEN */
+.block.frozen .block-top {
+  border-color: rgba(147,210,255,0.6) !important;
+  box-shadow: 0 0 16px rgba(147,210,255,0.4), inset 0 0 12px rgba(147,210,255,0.1) !important;
+}
+
+/* STUCK */
+.block.stuck .block-top {
+  border-color: rgba(251,191,36,0.8) !important;
+  box-shadow: 0 0 20px rgba(251,191,36,0.5), inset 0 0 12px rgba(251,191,36,0.1) !important;
+}
+
+/* JOKER star glow */
+.block.joker .block-top {
+  box-shadow: 0 0 24px rgba(251,191,36,0.6), inset 0 1px 0 rgba(251,191,36,0.4) !important;
+}
+
+/* Wappen badge */
+.wappen {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  position: relative;
+  z-index: 3;
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION 2 — TEAM WAPPEN
+═══════════════════════════════════════════════ */
+
+.teams-showcase {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  min-width: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.team-card.t1::before { background: #3b82f6; }
+.team-card.t2::before { background: #22c55e; }
+.team-card.t3::before { background: #ef4444; }
+.team-card.t4::before { background: #f97316; }
+.team-card.t5::before { background: #8b5cf6; }
+.team-card.t6::before { background: #ec4899; }
+
+.team-wappen-big {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  position: relative;
+}
+
+.team-card.t1 .team-wappen-big { background: #1e3a5f; box-shadow: 0 0 16px #3b82f633; border: 1px solid #3b82f644; }
+.team-card.t2 .team-wappen-big { background: #1e3d28; box-shadow: 0 0 16px #22c55e33; border: 1px solid #22c55e44; }
+.team-card.t3 .team-wappen-big { background: #3d1e1e; box-shadow: 0 0 16px #ef444433; border: 1px solid #ef444444; }
+.team-card.t4 .team-wappen-big { background: #3d2a1a; box-shadow: 0 0 16px #f9731633; border: 1px solid #f9731644; }
+.team-card.t5 .team-wappen-big { background: #2d1e3d; box-shadow: 0 0 16px #8b5cf633; border: 1px solid #8b5cf644; }
+.team-card.t6 .team-wappen-big { background: #3d1e30; box-shadow: 0 0 16px #ec489933; border: 1px solid #ec489944; }
+
+.team-name-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+.team-cells-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* All wappen options */
+.wappen-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wappen-option {
+  width: 48px; height: 48px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.wappen-option:hover { background: var(--surface); border-color: rgba(255,255,255,0.2); transform: scale(1.1); }
+.wappen-option.selected { border-color: #3b82f6; background: #1e3a5f; box-shadow: 0 0 12px #3b82f644; }
+
+/* ═══════════════════════════════════════════════
+   SECTION 3 — KATEGORIE ORTE
+═══════════════════════════════════════════════ */
+
+.categories-showcase {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.cat-place {
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 3/4;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+.cat-place:hover { transform: translateY(-4px); }
+
+.cat-place-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  opacity: 0.12;
+  filter: blur(2px);
+  transform: scale(1.2);
+}
+
+.cat-place-gradient {
+  position: absolute;
+  inset: 0;
+}
+
+.cat-place-content {
+  position: relative;
+  z-index: 2;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cat-place-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.cat-place-name {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.cat-place-location {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cat-place-mechanic {
+  font-size: 11px;
+  opacity: 0.55;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Amber — Markt */
+.cat-amber {
+  background: linear-gradient(160deg, #1a1200 0%, #2d1f00 40%, #3d2800 100%);
+  border: 1px solid rgba(245,158,11,0.2);
+  box-shadow: 0 8px 32px rgba(245,158,11,0.15);
+}
+.cat-amber .cat-place-gradient {
+  background: linear-gradient(to top, rgba(245,158,11,0.25) 0%, transparent 60%);
+}
+.cat-amber .cat-place-name { color: #fbbf24; }
+
+/* Blue — Club */
+.cat-blue {
+  background: linear-gradient(160deg, #050d1a 0%, #0a1628 40%, #0f1e38 100%);
+  border: 1px solid rgba(59,130,246,0.2);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.15);
+}
+.cat-blue .cat-place-gradient {
+  background: linear-gradient(to top, rgba(59,130,246,0.25) 0%, transparent 60%);
+}
+.cat-blue .cat-place-name { color: #60a5fa; }
+
+/* Red — Bahnhof */
+.cat-red {
+  background: linear-gradient(160deg, #1a0505 0%, #280a0a 40%, #380f0f 100%);
+  border: 1px solid rgba(239,68,68,0.2);
+  box-shadow: 0 8px 32px rgba(239,68,68,0.15);
+}
+.cat-red .cat-place-gradient {
+  background: linear-gradient(to top, rgba(239,68,68,0.25) 0%, transparent 60%);
+}
+.cat-red .cat-place-name { color: #f87171; }
+
+/* Green — Kasino */
+.cat-green {
+  background: linear-gradient(160deg, #03100a 0%, #051a0d 40%, #082310 100%);
+  border: 1px solid rgba(34,197,94,0.2);
+  box-shadow: 0 8px 32px rgba(34,197,94,0.15);
+}
+.cat-green .cat-place-gradient {
+  background: linear-gradient(to top, rgba(34,197,94,0.25) 0%, transparent 60%);
+}
+.cat-green .cat-place-name { color: #4ade80; }
+
+/* Purple — Galerie */
+.cat-purple {
+  background: linear-gradient(160deg, #0d0516 0%, #160a24 40%, #1e0f30 100%);
+  border: 1px solid rgba(139,92,246,0.2);
+  box-shadow: 0 8px 32px rgba(139,92,246,0.15);
+}
+.cat-purple .cat-place-gradient {
+  background: linear-gradient(to top, rgba(139,92,246,0.25) 0%, transparent 60%);
+}
+.cat-purple .cat-place-name { color: #a78bfa; }
+
+/* ═══════════════════════════════════════════════
+   SECTION 4 — VOLLBILD BEAMER PREVIEW
+═══════════════════════════════════════════════ */
+
+.beamer-full {
+  background: #080c16;
+  border-radius: 24px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+  border: 1px solid rgba(255,255,255,0.05);
+  min-height: 480px;
+}
+
+.beamer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: #4ade80;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  width: fit-content;
+}
+
+.question-hero {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  width: fit-content;
+}
+
+.q-text {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.option-tile {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opt-letter {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: rgba(0,0,0,0.28);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+  flex-shrink: 0;
+}
+
+.beamer-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+/* Mini 3D grid in beamer */
+.mini-city-scene {
+  perspective: 500px;
+  perspective-origin: 50% 25%;
+}
+.mini-city-grid {
+  transform: rotateX(42deg) rotateZ(-3deg);
+  transform-style: preserve-3d;
+  display: grid;
+  grid-template-columns: repeat(5, 44px);
+  grid-template-rows: repeat(5, 44px);
+  gap: 4px;
+}
+.mini-block { width: 44px; height: 44px; position: relative; }
+.mini-top {
+  position: absolute; inset: 0;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.mini-top::after {
+  content: '';
+  position: absolute;
+  bottom: -5px; left: 1px; right: -1px; height: 5px;
+  border-radius: 0 0 3px 3px;
+  z-index: -1;
+}
+.mini-top::before {
+  content: '';
+  position: absolute;
+  right: -5px; top: 1px; bottom: -1px; width: 5px;
+  border-radius: 0 3px 3px 0;
+  z-index: -1;
+}
+.mini-block.empty .mini-top { background: #141c2e; border: 1px solid rgba(255,255,255,0.05); }
+.mini-block.empty .mini-top::after { background: #0d1320; }
+.mini-block.empty .mini-top::before { background: #0f1520; }
+.mini-block.t1 .mini-top { background: #1e3a5f; border: 1px solid #2563eb33; box-shadow: 0 0 10px #1d4ed830; }
+.mini-block.t1 .mini-top::after { background: #0f1f3d; }
+.mini-block.t1 .mini-top::before { background: #122040; }
+.mini-block.t2 .mini-top { background: #1e3d28; border: 1px solid #16a34a33; box-shadow: 0 0 10px #15803d30; }
+.mini-block.t2 .mini-top::after { background: #0f2018; }
+.mini-block.t2 .mini-top::before { background: #122019; }
+.mini-block.t3 .mini-top { background: #3d1e1e; border: 1px solid #dc262633; box-shadow: 0 0 10px #b91c1c30; }
+.mini-block.t3 .mini-top::after { background: #200f0f; }
+.mini-block.t3 .mini-top::before { background: #201212; }
+.mini-block.t4 .mini-top { background: #3d2a1a; border: 1px solid #ea580c33; box-shadow: 0 0 10px #c2410c30; }
+.mini-block.t4 .mini-top::after { background: #201508; }
+.mini-block.t4 .mini-top::before { background: #201208; }
+
+.score-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.score-rank { font-size: 11px; color: var(--muted); font-weight: 700; width: 18px; }
+.score-wappen { font-size: 16px; }
+.score-name { flex: 1; font-size: 13px; font-weight: 700; }
+.score-cells { font-size: 13px; font-weight: 800; }
+
 </style>
 </head>
 <body>
 
-<div class="section-label">Ausschnitt 1 — Das Grid (5×5, 4 Teams)</div>
-<div class="demo-row">
-  <div class="demo-block">
-    <h1>Aktueller Stand (Mitte des Spiels)</h1>
-    <div class="grid-wrap">
-      <div class="grid-title">5×5 Quartier</div>
-      <div class="grid" style="grid-template-columns: repeat(5, 54px)">
-        <!-- Row 0 -->
-        <div class="cell t-blue home owned">🏠</div>
-        <div class="cell t-blue owned">🦊</div>
-        <div class="cell t-blue owned">🦊</div>
-        <div class="cell empty"></div>
-        <div class="cell t-red owned">🐺</div>
-        <!-- Row 1 -->
-        <div class="cell t-blue owned">🦊</div>
-        <div class="cell t-blue owned">⭐</div>
-        <div class="cell empty"></div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-red home owned">🏠</div>
-        <!-- Row 2 -->
-        <div class="cell empty"></div>
-        <div class="cell t-blue owned frozen">❄️</div>
-        <div class="cell empty"></div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-red owned">🐺</div>
-        <!-- Row 3 -->
-        <div class="cell t-green home owned">🏠</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-orange owned stuck">📌</div>
-        <div class="cell t-orange owned">🦁</div>
-        <div class="cell t-orange owned">🦁</div>
-        <!-- Row 4 -->
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-orange owned">🦁</div>
-        <div class="cell t-orange home owned">🏠</div>
-      </div>
-    </div>
+<!-- ═══ SECTION 1: 3D CITY GRID ═══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Idee 1</div>
+    <div class="section-desc">Das Grid — 3D Stadtansicht von oben</div>
   </div>
 
-  <div class="demo-block">
-    <h1>Legende</h1>
-    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#94a3b8;">
-      <div>🏠 = Startfeld (Home Base, unentnehmbar)</div>
-      <div>⭐ = Joker (2×2 Block erreicht)</div>
-      <div>❄️ = Eingefroren (1 Runde sicher)</div>
-      <div>📌 = Dauerhaft gesichert (Stapeln)</div>
-      <div style="height:1px;background:#1e293b;margin:4px 0"></div>
-      <div style="color:#475569">Dicke Innenkanten = Gebietsgrenze</div>
-      <div style="color:#475569">Felder ohne Rand = zusammenhängendes Revier</div>
+  <div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:12px;color:#475569;margin-bottom:16px;font-weight:600;">Mitte des Spiels — 4 Teams, 5×5</div>
+      <div class="city-scene">
+        <div class="city-grid-3d">
+          <!-- Row 0 -->
+          <div class="block t1 home"><div class="block-top"><span class="wappen">⚓</span></div></div>
+          <div class="block t1"><div class="block-top"><span class="wappen">⚓</span></div></div>
+          <div class="block t1"><div class="block-top"><span class="wappen">⚓</span></div></div>
+          <div class="block empty"><div class="block-top"><div class="street-h"></div><div class="street-v"></div></div></div>
+          <div class="block t3"><div class="block-top"><span class="wappen">🔺</span></div></div>
+          <!-- Row 1 -->
+          <div class="block t1"><div class="block-top"><span class="wappen">⚓</span></div></div>
+          <div class="block t1 joker"><div class="block-top"><span class="wappen">⭐</span></div></div>
+          <div class="block empty"><div class="block-top"><div class="street-h"></div><div class="street-v"></div></div></div>
+          <div class="block t3"><div class="block-top"><span class="wappen">🔺</span></div></div>
+          <div class="block t3 home"><div class="block-top"><span class="wappen">🔺</span></div></div>
+          <!-- Row 2 -->
+          <div class="block empty"><div class="block-top"><div class="street-h"></div><div class="street-v"></div></div></div>
+          <div class="block t1 frozen"><div class="block-top">❄️</div></div>
+          <div class="block empty"><div class="block-top"><div class="street-h"></div><div class="street-v"></div></div></div>
+          <div class="block t3"><div class="block-top"><span class="wappen">🔺</span></div></div>
+          <div class="block t3"><div class="block-top"><span class="wappen">🔺</span></div></div>
+          <!-- Row 3 -->
+          <div class="block t2 home"><div class="block-top"><span class="wappen">🌿</span></div></div>
+          <div class="block t2"><div class="block-top"><span class="wappen">🌿</span></div></div>
+          <div class="block t4 stuck"><div class="block-top">📌</div></div>
+          <div class="block t4"><div class="block-top"><span class="wappen">⚡</span></div></div>
+          <div class="block t4"><div class="block-top"><span class="wappen">⚡</span></div></div>
+          <!-- Row 4 -->
+          <div class="block t2"><div class="block-top"><span class="wappen">🌿</span></div></div>
+          <div class="block t2"><div class="block-top"><span class="wappen">🌿</span></div></div>
+          <div class="block t2"><div class="block-top"><span class="wappen">🌿</span></div></div>
+          <div class="block t4"><div class="block-top"><span class="wappen">⚡</span></div></div>
+          <div class="block t4 home"><div class="block-top"><span class="wappen">⚡</span></div></div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<div class="section-label">Ausschnitt 2 — Team-Leiste (Score + Feldanzahl)</div>
-<div class="teams-row">
-  <div class="team-chip">
-    <div class="team-dot" style="background:#3B82F6"></div>
-    <div>
-      <div class="team-name">Die Clique</div>
-      <div class="team-cells">7 Felder · verbunden: 5</div>
-    </div>
-    <div class="team-rank">#1</div>
-  </div>
-  <div class="team-chip">
-    <div class="team-dot" style="background:#22C55E"></div>
-    <div>
-      <div class="team-name">Grüne Hölle</div>
-      <div class="team-cells">6 Felder · verbunden: 4</div>
-    </div>
-    <div class="team-rank">#2</div>
-  </div>
-  <div class="team-chip">
-    <div class="team-dot" style="background:#EF4444"></div>
-    <div>
-      <div class="team-name">Rote Karte</div>
-      <div class="team-cells">5 Felder · verbunden: 5</div>
-    </div>
-    <div class="team-rank">#3</div>
-  </div>
-  <div class="team-chip">
-    <div class="team-dot" style="background:#F97316"></div>
-    <div>
-      <div class="team-name">Orange Is The Win</div>
-      <div class="team-cells">4 Felder · verbunden: 3</div>
-    </div>
-    <div class="team-rank">#4</div>
-  </div>
-</div>
-
-<div class="section-label">Ausschnitt 3 — Kategorie-Badges</div>
-<div class="cat-grid">
-  <div class="cat-badge active" style="background:#F59E0B22; color:#F59E0B;">
-    <span class="cat-icon">🍯</span> Schätzchen
-  </div>
-  <div class="cat-badge active" style="background:#3B82F622; color:#3B82F6;">
-    <span class="cat-icon">🎵</span> Mu-Cho
-  </div>
-  <div class="cat-badge active" style="background:#EF444422; color:#EF4444;">
-    <span class="cat-icon">🎁</span> Bunte Tüte
-  </div>
-  <div class="cat-badge active" style="background:#22C55E22; color:#22C55E;">
-    <span class="cat-icon">🎰</span> All In
-  </div>
-  <div class="cat-badge active" style="background:#8B5CF622; color:#8B5CF6;">
-    <span class="cat-icon">📸</span> Picture This
-  </div>
-</div>
-
-<div class="section-label">Ausschnitt 4 — Beamer Gesamtansicht (Frage aktiv)</div>
-<div class="beamer-preview">
-  <div class="beamer-left">
-    <div class="question-card">
-      <div class="question-cat">🎵 Mu-Cho · Phase 2 · Frage 3</div>
-      <div class="question-text">Welches Land hat die meisten UNESCO-Welterbestätten?</div>
-    </div>
-    <div class="answer-chips">
-      <div class="answer-chip" style="background:#3B82F6cc; color:white;">
-        <span class="letter">A</span> Italien
-      </div>
-      <div class="answer-chip" style="background:#22C55Ecc; color:white;">
-        <span class="letter">B</span> China
-      </div>
-      <div class="answer-chip" style="background:#EF4444cc; color:white;">
-        <span class="letter">C</span> Spanien
-      </div>
-      <div class="answer-chip" style="background:#F97316cc; color:white;">
-        <span class="letter">D</span> Deutschland
-      </div>
-    </div>
-  </div>
-  <div class="beamer-right">
-    <!-- Mini Grid -->
-    <div class="grid-wrap" style="padding:16px; background:#0f172a;">
-      <div class="grid" style="grid-template-columns: repeat(5, 36px); gap: 3px; padding: 6px;">
-        <div class="cell t-blue home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
-        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
-        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
-        <div class="cell empty" style="width:36px;height:36px;"></div>
-        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
-        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
-        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">⭐</div>
-        <div class="cell empty" style="width:36px;height:36px;"></div>
-        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
-        <div class="cell t-red home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
-        <div class="cell empty" style="width:36px;height:36px;"></div>
-        <div class="cell t-blue owned frozen" style="width:36px;height:36px;font-size:14px;">❄️</div>
-        <div class="cell empty" style="width:36px;height:36px;"></div>
-        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
-        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
-        <div class="cell t-green home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
-        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
-        <div class="cell t-orange owned stuck" style="width:36px;height:36px;font-size:14px;">📌</div>
-        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
-        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
-        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
-        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
-        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
-        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
-        <div class="cell t-orange home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
-      </div>
-    </div>
-    <!-- Scores -->
-    <div class="score-list">
-      <div class="score-row">
-        <div class="score-rank">#1</div>
-        <div class="score-name">Die Clique</div>
-        <div class="score-val" style="color:#3B82F6">7</div>
-      </div>
-      <div class="score-row">
-        <div class="score-rank">#2</div>
-        <div class="score-name">Grüne Hölle</div>
-        <div class="score-val" style="color:#22C55E">6</div>
-      </div>
-      <div class="score-row">
-        <div class="score-rank">#3</div>
-        <div class="score-name">Rote Karte</div>
-        <div class="score-val" style="color:#EF4444">5</div>
-      </div>
-      <div class="score-row">
-        <div class="score-rank">#4</div>
-        <div class="score-name">Orange Is The Win</div>
-        <div class="score-val" style="color:#F97316">4</div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding-top:20px;">
+      <div style="font-size:12px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Legende</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#94a3b8;">
+        <div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;background:#1e3a5f;border:1px solid #3b82f644;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;">⚓</div> Hafenviertel — Team 1</div>
+        <div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;background:#1e3d28;border:1px solid #22c55e44;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;">🌿</div> Grünviertel — Team 2</div>
+        <div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;background:#3d1e1e;border:1px solid #ef444444;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;">🔺</div> Neubau — Team 3</div>
+        <div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;background:#3d2a1a;border:1px solid #f9731644;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;">⚡</div> Industrieviertel — Team 4</div>
+        <div style="height:1px;background:#1e293b;"></div>
+        <div>❄️ Eingefroren (1 Runde)</div>
+        <div>📌 Dauerhaft gesichert</div>
+        <div>⭐ Joker (2×2 Block)</div>
+        <div style="color:#475569;font-size:12px;margin-top:4px;">Dunkle Felder = unbesetzt (Straßen)</div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="section-label">Ausschnitt 5 — Placement Phase (Team wählt ein Feld)</div>
-<div class="demo-row">
-  <div class="demo-block">
-    <h1>"Die Clique" darf ein Feld setzen</h1>
-    <div style="font-size:13px;color:#64748b;margin-bottom:12px;">Wählbare Felder leuchten auf (angrenzend an blaues Territorium)</div>
-    <div class="grid-wrap">
-      <div class="placement-grid" style="grid-template-columns: repeat(5, 54px); display:grid; gap:5px;">
-        <div class="cell t-blue home owned">🏠</div>
-        <div class="cell t-blue owned">🦊</div>
-        <div class="cell t-blue owned">🦊</div>
-        <!-- placeable: adjacent to blue -->
-        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-blue owned">🦊</div>
-        <div class="cell t-blue owned">⭐</div>
-        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-red home owned">🏠</div>
-        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
-        <div class="cell t-blue owned frozen">❄️</div>
-        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-red owned">🐺</div>
-        <div class="cell t-green home owned">🏠</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-orange owned stuck">📌</div>
-        <div class="cell t-orange owned">🦁</div>
-        <div class="cell t-orange owned">🦁</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-green owned">🦝</div>
-        <div class="cell t-orange owned">🦁</div>
-        <div class="cell t-orange home owned">🏠</div>
+<!-- ═══ SECTION 2: TEAM WAPPEN ═══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Idee 2</div>
+    <div class="section-desc">Team-Wappen — urbane Symbole für Stadtteile</div>
+  </div>
+
+  <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Teams wählen beim Join ein Wappen. Farbe wird automatisch zugewiesen.</div>
+
+  <div class="teams-showcase">
+    <div class="team-card t1">
+      <div class="team-wappen-big">⚓</div>
+      <div class="team-name-label">Die Clique</div>
+      <div class="team-cells-label">7 Felder · #1</div>
+    </div>
+    <div class="team-card t2">
+      <div class="team-wappen-big">🌿</div>
+      <div class="team-name-label">Grüne Hölle</div>
+      <div class="team-cells-label">6 Felder · #2</div>
+    </div>
+    <div class="team-card t3">
+      <div class="team-wappen-big">🔺</div>
+      <div class="team-name-label">Rote Karte</div>
+      <div class="team-cells-label">5 Felder · #3</div>
+    </div>
+    <div class="team-card t4">
+      <div class="team-wappen-big">⚡</div>
+      <div class="team-name-label">Orange Is The Win</div>
+      <div class="team-cells-label">4 Felder · #4</div>
+    </div>
+    <div class="team-card t5">
+      <div class="team-wappen-big">👁</div>
+      <div class="team-name-label">Kunstprojekt</div>
+      <div class="team-cells-label">3 Felder · #5</div>
+    </div>
+    <div class="team-card t6">
+      <div class="team-wappen-big">☽</div>
+      <div class="team-name-label">Nachtschicht</div>
+      <div class="team-cells-label">2 Felder · #6</div>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;">
+    <div style="font-size:12px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">Alle verfügbaren Wappen</div>
+    <div class="wappen-picker">
+      <div class="wappen-option selected">⚓</div>
+      <div class="wappen-option">⚡</div>
+      <div class="wappen-option">👑</div>
+      <div class="wappen-option">🌿</div>
+      <div class="wappen-option">🔺</div>
+      <div class="wappen-option">☽</div>
+      <div class="wappen-option">⚙</div>
+      <div class="wappen-option">◆</div>
+      <div class="wappen-option">👁</div>
+      <div class="wappen-option">✦</div>
+      <div class="wappen-option">🛡</div>
+      <div class="wappen-option">🔥</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 3: KATEGORIE ORTE ═══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Idee 3</div>
+    <div class="section-desc">Kategorien als Orte in der Stadt</div>
+  </div>
+
+  <div class="categories-showcase">
+
+    <div class="cat-place cat-amber">
+      <div class="cat-place-bg">🏛</div>
+      <div class="cat-place-gradient"></div>
+      <div class="cat-place-content">
+        <div class="cat-place-icon">🍯</div>
+        <div class="cat-place-name">Schätzchen</div>
+        <div class="cat-place-location">Der Marktplatz</div>
+        <div class="cat-place-mechanic">Schätze den Wert — wer am nächsten dran ist gewinnt</div>
+      </div>
+    </div>
+
+    <div class="cat-place cat-blue">
+      <div class="cat-place-bg">🎵</div>
+      <div class="cat-place-gradient"></div>
+      <div class="cat-place-content">
+        <div class="cat-place-icon">🎵</div>
+        <div class="cat-place-name">Mu-Cho</div>
+        <div class="cat-place-location">Das Musikviertel</div>
+        <div class="cat-place-mechanic">4 Optionen — eine ist richtig. Schnellste richtige Antwort gewinnt</div>
+      </div>
+    </div>
+
+    <div class="cat-place cat-red">
+      <div class="cat-place-bg">🎁</div>
+      <div class="cat-place-gradient"></div>
+      <div class="cat-place-content">
+        <div class="cat-place-icon">🎁</div>
+        <div class="cat-place-name">Bunte Tüte</div>
+        <div class="cat-place-location">Der Bahnhof</div>
+        <div class="cat-place-mechanic">Alles möglich — Top 5, Imposter, Reihenfolge, Karte oder Heiße Kartoffel</div>
+      </div>
+    </div>
+
+    <div class="cat-place cat-green">
+      <div class="cat-place-bg">🎰</div>
+      <div class="cat-place-gradient"></div>
+      <div class="cat-place-content">
+        <div class="cat-place-icon">🎰</div>
+        <div class="cat-place-name">All In</div>
+        <div class="cat-place-location">Das Kasino</div>
+        <div class="cat-place-mechanic">3 Optionen — volles Risiko, alles oder nichts</div>
+      </div>
+    </div>
+
+    <div class="cat-place cat-purple">
+      <div class="cat-place-bg">📸</div>
+      <div class="cat-place-gradient"></div>
+      <div class="cat-place-content">
+        <div class="cat-place-icon">📸</div>
+        <div class="cat-place-name">Picture This</div>
+        <div class="cat-place-location">Das Kunstviertel</div>
+        <div class="cat-place-mechanic">Bild wird schrittweise aufgedeckt — erkenne es als Erstes</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SECTION 4: BEAMER VOLLANSICHT ═══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Idee 4</div>
+    <div class="section-desc">Beamer-Ansicht — Frage aktiv (Mu-Cho)</div>
+  </div>
+
+  <div class="beamer-full">
+    <div class="beamer-left">
+      <div class="phase-badge">⬡ Phase 2 · Frage 3 von 5</div>
+      <div class="question-hero">
+        <div class="cat-pill" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+          🎵 Mu-Cho · Musikviertel
+        </div>
+        <div class="q-text">Welches Land hat die meisten UNESCO-Welterbestätten?</div>
+        <div class="options-grid">
+          <div class="option-tile" style="background:#1e3a5f;color:#93c5fd;">
+            <span class="opt-letter">A</span> Italien
+          </div>
+          <div class="option-tile" style="background:#1e3d28;color:#86efac;">
+            <span class="opt-letter">B</span> China
+          </div>
+          <div class="option-tile" style="background:#3d1e1e;color:#fca5a5;">
+            <span class="opt-letter">C</span> Spanien
+          </div>
+          <div class="option-tile" style="background:#3d2a1a;color:#fdba74;">
+            <span class="opt-letter">D</span> Deutschland
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="beamer-right">
+      <div style="font-size:11px;color:#334155;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;align-self:flex-start;">5×5 Quartier</div>
+      <div class="mini-city-scene">
+        <div class="mini-city-grid">
+          <div class="mini-block t1"><div class="mini-top">⚓</div></div>
+          <div class="mini-block t1"><div class="mini-top">⚓</div></div>
+          <div class="mini-block t1"><div class="mini-top">⚓</div></div>
+          <div class="mini-block empty"><div class="mini-top"></div></div>
+          <div class="mini-block t3"><div class="mini-top">🔺</div></div>
+          <div class="mini-block t1"><div class="mini-top">⚓</div></div>
+          <div class="mini-block t1"><div class="mini-top">⭐</div></div>
+          <div class="mini-block empty"><div class="mini-top"></div></div>
+          <div class="mini-block t3"><div class="mini-top">🔺</div></div>
+          <div class="mini-block t3"><div class="mini-top">🔺</div></div>
+          <div class="mini-block empty"><div class="mini-top"></div></div>
+          <div class="mini-block t1"><div class="mini-top">❄️</div></div>
+          <div class="mini-block empty"><div class="mini-top"></div></div>
+          <div class="mini-block t3"><div class="mini-top">🔺</div></div>
+          <div class="mini-block t3"><div class="mini-top">🔺</div></div>
+          <div class="mini-block t2"><div class="mini-top">🌿</div></div>
+          <div class="mini-block t2"><div class="mini-top">🌿</div></div>
+          <div class="mini-block t4"><div class="mini-top">📌</div></div>
+          <div class="mini-block t4"><div class="mini-top">⚡</div></div>
+          <div class="mini-block t4"><div class="mini-top">⚡</div></div>
+          <div class="mini-block t2"><div class="mini-top">🌿</div></div>
+          <div class="mini-block t2"><div class="mini-top">🌿</div></div>
+          <div class="mini-block t2"><div class="mini-top">🌿</div></div>
+          <div class="mini-block t4"><div class="mini-top">⚡</div></div>
+          <div class="mini-block t4"><div class="mini-top">⚡</div></div>
+        </div>
+      </div>
+
+      <div class="score-panel">
+        <div class="score-row">
+          <div class="score-rank">#1</div>
+          <div class="score-wappen">⚓</div>
+          <div class="score-name">Die Clique</div>
+          <div class="score-cells" style="color:#60a5fa">7</div>
+        </div>
+        <div class="score-row">
+          <div class="score-rank">#2</div>
+          <div class="score-wappen">🌿</div>
+          <div class="score-name">Grüne Hölle</div>
+          <div class="score-cells" style="color:#4ade80">6</div>
+        </div>
+        <div class="score-row">
+          <div class="score-rank">#3</div>
+          <div class="score-wappen">🔺</div>
+          <div class="score-name">Rote Karte</div>
+          <div class="score-cells" style="color:#f87171">5</div>
+        </div>
+        <div class="score-row">
+          <div class="score-rank">#4</div>
+          <div class="score-wappen">⚡</div>
+          <div class="score-name">Orange Is The Win</div>
+          <div class="score-cells" style="color:#fb923c">4</div>
+        </div>
       </div>
     </div>
   </div>

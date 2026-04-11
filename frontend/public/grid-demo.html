@@ -20,11 +20,27 @@ h2 { font-size:11px; color:#1a2236; text-transform:uppercase; letter-spacing:.2e
 /* The board-wrap is the reference for the SVG overlay */
 .board-wrap { position:relative; }
 
-.iso-scene { perspective:1400px; perspective-origin:50% 10%; position:relative; z-index:2; }
+.iso-scene {
+  perspective:2200px; perspective-origin:50% 50%;
+  position:relative; z-index:2;
+  transition: perspective .9s cubic-bezier(.4,0,.2,1);
+}
 .iso-grid {
-  transform:rotateX(52deg) rotateZ(-45deg);
+  transform: rotateX(0deg) rotateZ(0deg) scale(1);
   transform-style:preserve-3d;
+  transform-origin: center center;
   display:grid; gap:3px; position:relative;
+  transition: transform 1s cubic-bezier(.4,0,.2,1);
+  will-change: transform;
+}
+
+/* Iso state — camera pulled back and tilted */
+.iso-scene.is-iso {
+  perspective: 1400px;
+  perspective-origin: 50% 10%;
+}
+.iso-grid.is-iso {
+  transform: rotateX(52deg) rotateZ(-45deg) scale(0.9);
 }
 
 /* Tiles — flat, no 3D buildings inside */
@@ -35,6 +51,8 @@ h2 { font-size:11px; color:#1a2236; text-transform:uppercase; letter-spacing:.2e
 }
 .cell.owned  { cursor:default; }
 .cell.empty:hover { transform:translateZ(4px); }
+/* In top-down mode, no Z hover */
+.iso-grid:not(.is-iso) .cell.empty:hover { transform:scale(1.04); }
 
 .tile-top {
   position:absolute; inset:0; z-index:2; border-radius:2px;
@@ -401,12 +419,11 @@ function drawBuildingSVG(svg, corners, H, team, ghost, animate) {
     }));
   });
 
-  // ── WINDOW DOTS on LEFT FACE ──
-  // Bilinear interpolation across the left face parallelogram
-  // Left face corners: cLeft(bottom-left), cBottom(bottom-right), tBottom(top-right), tLeft(top-left)
+  // ── WINDOW DOTS — only on left face (the one visible from our viewpoint) ──
+  // Left face corners: cLeft(bl), cBottom(br), tBottom(tr), tLeft(tl)
   const wRows=3, wCols=2;
   for(let wi=0;wi<wRows;wi++) for(let wj=0;wj<wCols;wj++){
-    const u=(wj+.5)/wCols, v=(wi+.5)/wRows; // u=left→right, v=bottom→top
+    const u=(wj+.5)/wCols, v=(wi+.5)/wRows;
     const px = cLeft.x*(1-u)*(1-v) + cBottom.x*u*(1-v) + tBottom.x*u*v + tLeft.x*(1-u)*v;
     const py = cLeft.y*(1-u)*(1-v) + cBottom.y*u*(1-v) + tBottom.y*u*v + tLeft.y*(1-u)*v;
     const dot = mkEl('circle',{
@@ -414,20 +431,6 @@ function drawBuildingSVG(svg, corners, H, team, ghost, animate) {
       fill:`rgba(${cr},${cg},${cb},${.9*inten})`,
     });
     dot.style.animation=`winFlicker ${1.8+Math.random()*2.5}s ease-in-out ${(wi*wCols+wj)*.18+Math.random()*.3}s infinite`;
-    svg.appendChild(dot);
-  }
-
-  // ── WINDOW DOTS on RIGHT FACE ──
-  // Right face corners: cBottom(bl), cRight(br), tRight(tr), tBottom(tl)
-  for(let wi=0;wi<wRows;wi++) for(let wj=0;wj<wCols;wj++){
-    const u=(wj+.5)/wCols, v=(wi+.5)/wRows;
-    const px = cBottom.x*(1-u)*(1-v) + cRight.x*u*(1-v) + tRight.x*u*v + tBottom.x*(1-u)*v;
-    const py = cBottom.y*(1-u)*(1-v) + cRight.y*u*(1-v) + tRight.y*u*v + tBottom.y*(1-u)*v;
-    const dot = mkEl('circle',{
-      cx:px.toFixed(1), cy:py.toFixed(1), r:'1.8',
-      fill:`rgba(${cr},${cg},${cb},${.7*inten})`,
-    });
-    dot.style.animation=`winFlicker ${1.8+Math.random()*2.5}s ease-in-out ${(wi*wCols+wj)*.18+Math.random()*.35}s infinite`;
     svg.appendChild(dot);
   }
 }
@@ -625,19 +628,57 @@ for(let r=0;r<SIZE;r++){
     });
     el.addEventListener('click',()=>{
       if(state[r][c]) return;
+      if(cameraAnimating) return; // block clicks during animation
       state[r][c]={teamIdx:activeTeam,hi:Math.floor(Math.random()*3),home:false,new:true};
-      renderCell(r,c,true);
+      renderCell(r,c,false); // render tile immediately, no bounce yet
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;
         if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE) renderCell(nr,nc,false);
       });
       updateTerritoryOutlines();
-      updateBuildingSVG({r,c});
       updateScores();
+      triggerCameraSequence(r,c);
     });
     gridEl.appendChild(el);
     renderCell(r,c);
   }
+}
+
+// ── CAMERA SEQUENCE ──
+// Top-Down (default) → tilt to Iso → building rises → return to Top-Down
+let cameraAnimating = false;
+
+function triggerCameraSequence(r, c) {
+  cameraAnimating = true;
+  const scene = document.getElementById('iso-scene');
+  const grid  = document.getElementById('grid');
+
+  // Phase 1: tilt into iso (0 → 900ms)
+  scene.classList.add('is-iso');
+  grid.classList.add('is-iso');
+
+  // Phase 2: rebuild corner cache after tilt (iso transform changes positions)
+  // then show building rising (at 700ms — mid-tilt, enough to see depth)
+  setTimeout(()=>{
+    buildCornerCache();
+    updateBuildingSVG({r, c});
+  }, 700);
+
+  // Phase 3: hold at iso while building rises (animation is 1.1s)
+  // Total iso hold: 700ms tilt + 1100ms rise + 300ms pause = ~2100ms
+
+  // Phase 4: return to top-down (at 2200ms)
+  setTimeout(()=>{
+    scene.classList.remove('is-iso');
+    grid.classList.remove('is-iso');
+  }, 2200);
+
+  // Phase 5: rebuild SVG in top-down positions, unlock clicks (at 3200ms)
+  setTimeout(()=>{
+    buildCornerCache();
+    updateBuildingSVG();
+    cameraAnimating = false;
+  }, 3200);
 }
 
 // Wait for layout then build corner cache + draw buildings

@@ -314,37 +314,65 @@ function drawBuilding(el, H, team, animate){
   bld.appendChild(roof);
 
   // ── VERTICAL EDGE LINES ──
-  // 4 edges: left col, right col, top row, bottom row — each 2px wide
-  // Stacked at STEPS z-levels from 0 to H
-  const STEPS=Math.max(4, Math.round(H/7));
-  const edgeA = ghost ? .06 : .7*inten;
-  const edgeGlowA = ghost ? .02 : .28*inten;
-  // [left, top, width, height]
-  const EDGES=[
-    [0,     0,     2,    CELL], // left
-    [CELL-2,0,     2,    CELL], // right
-    [0,     0,     CELL, 2   ], // top
-    [0,     CELL-2,CELL, 2   ], // bottom
+  // Only 3 z-levels: ground (z=0), mid (z=H/2), roof (z=H)
+  // This gives clean corner pillars without the "venetian blind" effect
+  const ZLEVELS = ghost ? [Math.round(H*.5)] : [0, Math.round(H*.5), H];
+  const edgeGlowA = ghost ? .02 : .3*inten;
+  // Corner pillars: 4 corners, each is a tiny square
+  const P=3; // pillar thickness px
+  const CORNERS=[
+    [0,        0       ], // top-left
+    [CELL-P,   0       ], // top-right
+    [0,        CELL-P  ], // bottom-left
+    [CELL-P,   CELL-P  ], // bottom-right
   ];
-  for(let si=0;si<=STEPS;si++){
-    const z=Math.round((si/STEPS)*H);
-    const t=si/STEPS;
-    // Brightness: dim at base, bright at roof
-    const a = ghost ? edgeA : (.25+t*.55)*inten;
-    const glowSz = ghost ? 0 : Math.round(2+t*5);
-    const delay = animate&&!ghost ? `${(t*.4).toFixed(2)}s` : '0s';
 
-    EDGES.forEach(([ex,ey,ew,eh])=>{
+  ZLEVELS.forEach((z,zi)=>{
+    const t = z/H;
+    const a = ghost ? .07 : (.3+t*.6)*inten;
+    const delay = animate&&!ghost ? `${(t*.45).toFixed(2)}s` : '0s';
+
+    // Corner pillars at this Z
+    CORNERS.forEach(([cx,cy])=>{
       const e=document.createElement('div');
-      e.style.cssText=`position:absolute;left:${ex}px;top:${ey}px;
-        width:${ew}px;height:${eh}px;
+      e.style.cssText=`position:absolute;left:${cx}px;top:${cy}px;
+        width:${P}px;height:${P}px;
         transform:translateZ(${z}px);
         background:rgba(${cr},${cg},${cb},${a});
-        ${glowSz?`box-shadow:0 0 ${glowSz}px rgba(${cr},${cg},${cb},${edgeGlowA});`:''}`;
-      if(animate&&!ghost) e.style.animation=`edgeIn .12s ease-out ${delay} both`;
+        box-shadow:0 0 ${Math.round(3+t*6)}px rgba(${cr},${cg},${cb},${edgeGlowA});`;
+      if(animate&&!ghost) e.style.animation=`edgeIn .15s ease-out ${delay} both`;
       bld.appendChild(e);
     });
-  }
+
+    // Edge lines connecting corners at this Z (only at ground and roof)
+    if(!ghost && (zi===0 || zi===ZLEVELS.length-1)){
+      const lineA = zi===0 ? .2*inten : .55*inten;
+      // top edge
+      const eT=document.createElement('div');
+      eT.style.cssText=`position:absolute;left:${P}px;top:0;width:${CELL-P*2}px;height:${P}px;
+        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
+      if(animate) eT.style.animation=`edgeIn .15s ease-out ${delay} both`;
+      bld.appendChild(eT);
+      // bottom edge
+      const eB=document.createElement('div');
+      eB.style.cssText=`position:absolute;left:${P}px;top:${CELL-P}px;width:${CELL-P*2}px;height:${P}px;
+        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
+      if(animate) eB.style.animation=`edgeIn .15s ease-out ${delay} both`;
+      bld.appendChild(eB);
+      // left edge
+      const eL=document.createElement('div');
+      eL.style.cssText=`position:absolute;left:0;top:${P}px;width:${P}px;height:${CELL-P*2}px;
+        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
+      if(animate) eL.style.animation=`edgeIn .15s ease-out ${delay} both`;
+      bld.appendChild(eL);
+      // right edge
+      const eR=document.createElement('div');
+      eR.style.cssText=`position:absolute;left:${CELL-P}px;top:${P}px;width:${P}px;height:${CELL-P*2}px;
+        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
+      if(animate) eR.style.animation=`edgeIn .15s ease-out ${delay} both`;
+      bld.appendChild(eR);
+    }
+  });
 
   el.appendChild(bld);
 }

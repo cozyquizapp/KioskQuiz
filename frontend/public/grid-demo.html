@@ -15,20 +15,9 @@ body {
   align-items: center; justify-content: center;
   gap: 36px; padding: 40px; overflow: hidden;
 }
-h2 { font-size:11px; color:#161d2e; text-transform:uppercase; letter-spacing:.2em; font-weight:700; }
+h2 { font-size:11px; color:#1a2236; text-transform:uppercase; letter-spacing:.2em; font-weight:700; }
 
 .board-wrap { position:relative; padding:36px 40px 56px; }
-.board-wrap::before {
-  content:''; position:absolute; inset:0; border-radius:24px;
-  background:radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.026) 0%, transparent 68%);
-  pointer-events:none;
-}
-.board-wrap::after {
-  content:''; position:absolute; inset:0; border-radius:24px;
-  background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
-  background-size:20px 20px; pointer-events:none;
-  mask-image:radial-gradient(ellipse at 50% 45%, black 28%, transparent 72%);
-}
 
 .iso-scene { perspective:1400px; perspective-origin:50% 10%; position:relative; z-index:2; }
 .iso-grid {
@@ -45,96 +34,61 @@ h2 { font-size:11px; color:#161d2e; text-transform:uppercase; letter-spacing:.2e
   transition: transform .18s cubic-bezier(.34,1.56,.64,1);
 }
 .cell.owned  { cursor: default; }
-.cell.empty:hover { transform: translateZ(5px); }
-.cell.owned:hover { transform: translateZ(3px); }
+.cell.empty:hover { transform: translateZ(4px); }
 
-/* Tile ground */
+/* ── TILE FACES ── */
 .tile-top {
-  position: absolute; inset: 0; z-index: 2; border-radius: 2px;
-  box-shadow: inset 0 4px 8px rgba(255,255,255,.04), inset 0 -5px 10px rgba(0,0,0,.5);
-  transition: all .28s ease;
-}
-.tile-top::before {
-  content:''; position:absolute; inset:0; border-radius:2px;
-  border-top: 1px solid rgba(255,255,255,.15);
-  border-left: 1px solid rgba(255,255,255,.08);
-  pointer-events:none; z-index:3;
-}
-.tile-top::after {
-  content:''; position:absolute; inset:0; border-radius:2px;
-  background: radial-gradient(circle at 28% 26%, rgba(0,0,0,.22), transparent 60%);
-  pointer-events:none; z-index:1;
+  position:absolute; inset:0; z-index:2; border-radius:2px;
+  transition: background .25s ease, border-color .25s ease, box-shadow .3s ease;
 }
 .tile-front {
   position:absolute; top:100%; left:0; right:0;
   transform-origin:top center; transform:rotateX(-90deg); z-index:1;
-  transition:all .28s ease;
 }
 .tile-right {
   position:absolute; top:0; bottom:0; left:100%;
   transform-origin:left center; transform:rotateY(90deg); z-index:1;
-  transition:all .28s ease;
 }
 
-/* ── BUILDING — pure CSS 3D block, no rotateX tricks ── */
-/* We render buildings as stacked absolute divs that simulate 3D via
-   translateZ inside the already-transformed grid context              */
+/* ── BUILDING wrapper — lives inside the iso cell, preserve-3d ── */
 .building {
-  position: absolute;
-  transform-style: preserve-3d;
-  pointer-events: none;
-  z-index: 10;
-}
-/* The "extruded" block: top-face + two visible side faces */
-.b-body {
-  position: absolute;
-  transform-style: preserve-3d;
-}
-/* Top face of building */
-.b-face-top {
-  position: absolute; border-radius: 2px;
-}
-/* Front face — translateZ trick: push down by height amount */
-.b-face-front {
-  position: absolute; border-radius: 0 0 2px 2px;
-  transform-origin: top center;
-}
-/* Right face */
-.b-face-right {
-  position: absolute; border-radius: 0 2px 2px 0;
-  transform-origin: left center;
+  position:absolute; inset:0;
+  pointer-events:none; z-index:10;
+  transform-style:preserve-3d;
 }
 
-/* Territory outline SVG overlay */
+/* ── Territory outline SVG ── */
 .territory-svg {
-  position: absolute; inset: 0;
-  pointer-events: none; z-index: 50;
-  overflow: visible;
+  position:absolute; inset:0;
+  pointer-events:none; z-index:50;
+  overflow:visible;
 }
 
 /* ── ANIMATIONS ── */
-@keyframes floorIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-@keyframes roofRise {
-  0%   { transform: translateZ(0px) scale(.92); opacity:0; }
-  18%  { opacity:1; }
-  88%  { transform: translateZ(var(--rz)) scale(1.03); }
-  100% { transform: translateZ(var(--rz)) scale(1); opacity:1; }
-}
 @keyframes claimPop {
-  0%   { transform: translateZ(0); }
-  30%  { transform: translateZ(14px); }
-  65%  { transform: translateZ(-2px); }
-  100% { transform: translateZ(0); }
+  0%  { transform:translateZ(0); }
+  35% { transform:translateZ(16px); }
+  65% { transform:translateZ(-3px); }
+  100%{ transform:translateZ(0); }
 }
 @keyframes dominantPulse {
   0%,100% { box-shadow: var(--gs-base); }
-  50%      { box-shadow: var(--gs-strong); }
+  50%     { box-shadow: var(--gs-peak); }
 }
 @keyframes winFlicker {
-  0%,100%{opacity:1;} 44%{opacity:1;} 47%{opacity:.2;} 50%{opacity:1;} 79%{opacity:.65;}
+  0%,100%{opacity:1;} 44%{opacity:1;} 47%{opacity:.15;} 52%{opacity:1;} 80%{opacity:.6;}
+}
+/* Building rise — translateZ from 0 to target stored in --bh */
+@keyframes bldRise {
+  0%   { transform:translateZ(0)   scaleX(.94) scaleY(.94); opacity:0; }
+  15%  { opacity:1; }
+  82%  { transform:translateZ(var(--bh)) scaleX(1.02) scaleY(1.02); }
+  100% { transform:translateZ(var(--bh)) scaleX(1)    scaleY(1);    opacity:1; }
+}
+/* Edge lines fade in staggered */
+@keyframes edgeIn {
+  0%  { opacity:0; }
+  100%{ opacity:1; }
 }
 
 /* Score bar */
@@ -163,34 +117,35 @@ h2 { font-size:11px; color:#161d2e; text-transform:uppercase; letter-spacing:.2e
 <div class="hint">Team auswählen → leeres Feld anklicken</div>
 
 <script>
-const SIZE=6, CELL=72, GAP=3, GD=10;
+const SIZE=6, CELL=72, GAP=3, GD=8;
 
 const TEAMS=[
-  {color:'#5aadff',r:90, g:173,b:255,name:'Die Clique',  wappen:'⚓',inten:.75},
+  {color:'#5aadff',r:90, g:173,b:255,name:'Die Clique',  wappen:'⚓',inten:.80},
   {color:'#ff5050',r:255,g:80, b:80, name:'Rote Karte',  wappen:'🔺',inten:1.0},
-  {color:'#3ddc84',r:61, g:220,b:132,name:'Grüne Hölle', wappen:'🌿',inten:.82},
-  {color:'#ffaa3c',r:255,g:170,b:60, name:'Oranje',      wappen:'⚡',inten:.9},
-  {color:'#c084fc',r:192,g:132,b:252,name:'Nachtschicht',wappen:'☽', inten:.78},
-  {color:'#2dd4bf',r:45, g:212,b:191,name:'Tiefsee',     wappen:'🐋',inten:.8},
+  {color:'#3ddc84',r:61, g:220,b:132,name:'Grüne Hölle', wappen:'🌿',inten:.85},
+  {color:'#ffaa3c',r:255,g:170,b:60, name:'Oranje',      wappen:'⚡',inten:.92},
+  {color:'#c084fc',r:192,g:132,b:252,name:'Nachtschicht',wappen:'☽', inten:.80},
+  {color:'#2dd4bf',r:45, g:212,b:191,name:'Tiefsee',     wappen:'🐋',inten:.82},
 ];
 
-// Heights per team — the tile itself is always CELL×CELL, height = how tall the building is
-// Each team has 3 height variants (for visual variety across tiles)
+// Building height variants per team — tile is always CELL×CELL, only H differs
+// Heights in px before iso compression (~55% visible)
+// Team personality: blue=slim towers, red=squat blocks, green=medium, orange=tall, purple=spires, teal=low
 const HEIGHTS={
-  0:[80,96,68],   // Blue:   tall towers
-  1:[28,34,24],   // Red:    squat wide blocks
-  2:[52,44,60],   // Green:  medium organic
-  3:[62,72,48],   // Orange: tall-ish asymmetric
-  4:[108,120,92], // Purple: super tall spires
-  5:[22,28,18],   // Teal:   low flat docks
+  0:[56,70,48],   // Blue: tall-ish towers
+  1:[22,28,18],   // Red: squat wide blocks
+  2:[38,44,32],   // Green: medium
+  3:[50,60,42],   // Orange: tall
+  4:[80,92,68],   // Purple: tallest spires
+  5:[18,22,14],   // Teal: low flat docks
 };
-const GHOST_HEIGHTS=[36,52,28,44,32,60,20,48];
+const GHOST_H=[28,42,20,36,24,50,18,44];
 
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 let activeTeam=0;
 
 function seed(r,c,t,home=false){
-  state[r][c]={teamIdx:t,si:Math.floor(Math.random()*HEIGHTS[t].length),home,new:false};
+  state[r][c]={teamIdx:t,hi:Math.floor(Math.random()*3),home,new:false};
 }
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);seed(2,0,0);
 seed(0,5,1,true);seed(0,4,1);seed(1,5,1);seed(1,4,1);
@@ -207,7 +162,7 @@ function renderCell(r,c,animate=false){
   const cell=state[r][c];
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
   if(!el) return;
-  el.querySelectorAll('.building,.b-icon').forEach(e=>e.remove());
+  el.querySelectorAll('.building').forEach(e=>e.remove());
   el.className='cell '+(cell?'owned':'empty');
 
   const tTop=el.querySelector('.tile-top');
@@ -215,10 +170,18 @@ function renderCell(r,c,animate=false){
   const tRight=el.querySelector('.tile-right');
 
   if(!cell){
-    tTop.style.cssText='position:absolute;inset:0;z-index:2;border-radius:2px;background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.5);transition:all .2s ease;';
-    tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:#050710;border:1px solid rgba(255,255,255,.04);border-top:none;`;
-    tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:#040610;border:1px solid rgba(255,255,255,.03);border-left:none;`;
-    drawBuilding(el,GHOST_HEIGHTS[(r*SIZE+c)%GHOST_HEIGHTS.length],null,false);
+    // Empty tile — dark, subtle
+    tTop.style.cssText=`position:absolute;inset:0;z-index:2;border-radius:2px;
+      background:rgba(255,255,255,.022);
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:inset 0 3px 6px rgba(255,255,255,.03),inset 0 -4px 8px rgba(0,0,0,.5);`;
+    tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;
+      transform-origin:top center;transform:rotateX(-90deg);z-index:1;
+      background:#050710;border:1px solid rgba(255,255,255,.03);border-top:none;`;
+    tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;
+      transform-origin:left center;transform:rotateY(90deg);z-index:1;
+      background:#040610;border:1px solid rgba(255,255,255,.025);border-left:none;`;
+    drawBuilding(el, GHOST_H[(r*SIZE+c)%GHOST_H.length], null, false);
     return;
   }
 
@@ -229,160 +192,156 @@ function renderCell(r,c,animate=false){
   const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
   const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
 
-  const glowBase = isHome
-    ? `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 20px ${rc(team,.75*inten)},0 0 40px ${rc(team,.32*inten)}`
+  // ── TILE GROUND (always dark — building carries the color identity) ──
+  const tileBg = interior
+    ? 'rgba(12,16,26,.92)'
+    : `rgba(${team.r},${team.g},${team.b},.06)`;
+  const tileBorder = interior
+    ? '1px solid rgba(255,255,255,.03)'
+    : isHome
+      ? `2px solid ${rc(team,.55*inten)}`
+      : `1px solid ${rc(team,.3*inten)}`;
+
+  const gsBase = isHome
+    ? `inset 0 3px 6px rgba(255,255,255,.04),0 0 18px ${rc(team,.6*inten)},0 0 36px ${rc(team,.25*inten)}`
     : interior
       ? `inset 0 2px 4px rgba(255,255,255,.015),inset 0 -3px 8px rgba(0,0,0,.6)`
-      : n===0
-        ? `inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.48),0 0 10px ${rc(team,.5*inten)}`
-        : `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 16px ${rc(team,.7*inten)},0 0 32px ${rc(team,.28*inten)}`;
+      : `inset 0 3px 6px rgba(255,255,255,.04),0 0 12px ${rc(team,.5*inten)},0 0 24px ${rc(team,.2*inten)}`;
+  const gsPeak = `inset 0 3px 6px rgba(255,255,255,.05),0 0 22px ${rc(team,.8*inten)},0 0 44px ${rc(team,.35*inten)}`;
 
-  const glowStrong=`inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 26px ${rc(team,.9*inten)},0 0 52px ${rc(team,.42*inten)}`;
-
-  // Interior tiles: completely dark — no color, no border, blends into territory mass
-  const tileBg = isHome ? rc(team,.18) : interior ? 'rgba(255,255,255,.012)' : rc(team,.07);
-  const tileBorder = isHome
-    ? `2px solid ${rc(team,.65)}`
-    : interior
-      ? `1px solid rgba(255,255,255,.03)` // neutral dark — no team color at all
-      : `1px solid ${rc(team,.4*inten)}`;
-
-  // Tile ground — just dark base, building/roof is handled by drawBuilding
-  tTop.style.cssText=`
-    position:absolute;inset:0;z-index:2;border-radius:2px;
-    background:${interior?'rgba(20,24,36,.85)':'rgba(14,18,30,.9)'};
-    border:1px solid rgba(255,255,255,.04);
+  tTop.style.cssText=`position:absolute;inset:0;z-index:2;border-radius:2px;
+    background:${tileBg};border:${tileBorder};
+    --gs-base:${gsBase};--gs-peak:${gsPeak};
+    box-shadow:${gsBase};
     transform:translateZ(1px);
-    transition:background .3s ease;
-  `;
-  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rc(team,.06)};border-left:1px solid ${rc(team,.18)};border-right:1px solid ${rc(team,.12)};border-bottom:1px solid ${rc(team,.1)};`;
-  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rc(team,.04)};border-top:1px solid ${rc(team,.12)};border-right:1px solid ${rc(team,.1)};border-bottom:1px solid ${rc(team,.07)};`;
+    transition:box-shadow .35s ease;
+    ${(n>=3||isHome)?`animation:dominantPulse ${isHome?2.2:3}s ease-in-out infinite;`:''}`;
+
+  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;
+    transform-origin:top center;transform:rotateX(-90deg);z-index:1;
+    background:${interior?'#080c18':rc(team,.08)};
+    border-left:1px solid ${rc(team,.14)};border-right:1px solid ${rc(team,.1)};border-bottom:1px solid ${rc(team,.08)};`;
+  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;
+    transform-origin:left center;transform:rotateY(90deg);z-index:1;
+    background:${interior?'#060a16':rc(team,.05)};
+    border-top:1px solid ${rc(team,.1)};border-right:1px solid ${rc(team,.08)};border-bottom:1px solid ${rc(team,.06)};`;
 
   const heights=HEIGHTS[cell.teamIdx];
-  const bh=heights[cell.si%heights.length];
-  const finalH=isHome?Math.round(bh*1.6):interior?Math.round(bh*.55):bh;
-  drawBuilding(el,finalH,team,animate||cell.new);
+  const bh=heights[cell.hi%3];
+  const finalH=isHome?Math.round(bh*1.55):interior?Math.round(bh*.5):bh;
+  drawBuilding(el, finalH, team, animate||cell.new);
   if(cell.new) cell.new=false;
 
-  if(isHome||cell.joker||cell.stuck){
+  if(isHome){
     const icon=document.createElement('div');
-    icon.className='b-icon';
-    icon.style.cssText=`position:absolute;bottom:4px;right:5px;font-size:10px;z-index:30;filter:drop-shadow(0 0 6px ${team.color});line-height:1;`;
-    icon.textContent=cell.stuck?'📌':cell.joker?'⭐':team.wappen;
+    icon.className='building'; // reuse class for positioning
+    icon.style.cssText=`position:absolute;bottom:5px;right:6px;font-size:10px;
+      z-index:30;filter:drop-shadow(0 0 5px ${team.color});line-height:1;pointer-events:none;`;
+    icon.textContent=team.wappen;
     el.appendChild(icon);
   }
   if(animate){
-    el.style.animation='claimPop .72s cubic-bezier(.34,1.56,.64,1) both';
-    setTimeout(()=>el.style.animation='',800);
+    el.style.animation='claimPop .65s cubic-bezier(.34,1.56,.64,1) both';
+    setTimeout(()=>el.style.animation='',750);
   }
 }
 
 // ── DRAW BUILDING ──
-// The tile itself IS the roof — full CELL×CELL footprint, lifted to translateZ(H).
-// Vertical neon edges connect roof corners to the ground.
-// Ghost = faint outline only, no glow.
+// Structure:
+//   - Roof: full-tile rect at translateZ(H) — glowing neon face
+//   - 4 vertical edges: stacked thin divs from z=0 to z=H — the wireframe walls
+//   - Ghost: same structure, very faint, no glow
+//
+// Why stacked divs for edges: in the iso CSS 3D context (rotateX+rotateZ),
+// translateZ moves elements straight "up" in screen space, so a series of
+// thin rects at z=0,8,16... appear as a continuous vertical line from ground to roof.
 
-function drawBuilding(el, dimH, team, animate){
-  const ghost = !team;
-  const cr = team?team.r:30, cg = team?team.g:40, cb = team?team.b:64;
-  const inten = team?team.inten:1;
+function drawBuilding(el, H, team, animate){
+  const ghost=!team;
+  const cr=team?team.r:28, cg=team?team.g:36, cb=team?team.b:58;
+  const inten=team?team.inten:1;
 
-  const bld = document.createElement('div');
-  bld.className = 'building';
-  bld.style.cssText = `position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;`;
+  const bld=document.createElement('div');
+  bld.className='building';
+  bld.style.transformStyle='preserve-3d';
 
-  // ── ROOF: the entire tile face lifted to dimH ──
-  const roof = document.createElement('div');
+  // ── ROOF ──
+  const roof=document.createElement('div');
   if(ghost){
-    roof.style.cssText = `
-      position:absolute;inset:0;border-radius:2px;
-      transform:translateZ(${dimH}px);
-      background:rgba(255,255,255,.018);
-      border:1px solid rgba(255,255,255,.09);
-      box-shadow:0 0 5px rgba(255,255,255,.04);
-    `;
+    roof.style.cssText=`position:absolute;inset:2px;border-radius:2px;
+      transform:translateZ(${H}px);
+      background:rgba(255,255,255,.015);
+      border:1px solid rgba(255,255,255,.07);`;
   } else {
-    roof.style.cssText = `
-      position:absolute;inset:0;border-radius:3px;
-      transform:translateZ(${dimH}px);
+    roof.style.cssText=`position:absolute;inset:0;border-radius:2px;
+      transform:translateZ(${H}px);
       background:linear-gradient(135deg,
-        rgba(255,255,255,${.22*inten}) 0%,
-        rgba(${cr},${cg},${cb},${.14*inten}) 50%,
-        rgba(0,0,0,.2) 100%);
-      border-top:  2px solid rgba(255,255,255,${.7*inten});
-      border-left: 2px solid rgba(255,255,255,${.4*inten});
-      border-right:1px solid rgba(${cr},${cg},${cb},${.5*inten});
-      border-bottom:1px solid rgba(${cr},${cg},${cb},${.4*inten});
+        rgba(255,255,255,${.18*inten}) 0%,
+        rgba(${cr},${cg},${cb},${.12*inten}) 55%,
+        rgba(0,0,0,.18) 100%);
+      border-top:  2px solid rgba(255,255,255,${.65*inten});
+      border-left: 1.5px solid rgba(255,255,255,${.38*inten});
+      border-right:1px solid rgba(${cr},${cg},${cb},${.55*inten});
+      border-bottom:1px solid rgba(${cr},${cg},${cb},${.45*inten});
       box-shadow:
-        0 0 ${Math.round(12*inten)}px rgba(${cr},${cg},${cb},${.7*inten}),
-        0 0 ${Math.round(28*inten)}px rgba(${cr},${cg},${cb},${.28*inten}),
-        inset 0 0 10px rgba(255,255,255,${.08*inten});
-    `;
-    // inner glow
-    const fill = document.createElement('div');
-    fill.style.cssText = `position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-      background:radial-gradient(circle at 30% 30%,rgba(${cr},${cg},${cb},${.28*inten}),transparent 65%);`;
+        0 0 ${Math.round(10*inten)}px rgba(${cr},${cg},${cb},${.65*inten}),
+        0 0 ${Math.round(24*inten)}px rgba(${cr},${cg},${cb},${.25*inten}),
+        inset 0 0 8px rgba(255,255,255,${.07*inten});`;
+    // inner radial glow
+    const fill=document.createElement('div');
+    fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+      background:radial-gradient(ellipse at 35% 35%,
+        rgba(${cr},${cg},${cb},${.22*inten}) 0%,transparent 65%);`;
     roof.appendChild(fill);
     // window dots
-    const wc = Math.max(3, Math.round(CELL/16)), wr = Math.max(2, Math.round(CELL/20));
+    const wc=Math.max(3,Math.round(CELL/15)), wr=Math.max(2,Math.round(CELL/18));
     for(let wi=0;wi<wr;wi++) for(let wj=0;wj<wc;wj++){
-      const w = document.createElement('div');
-      w.style.cssText = `position:absolute;
+      const w=document.createElement('div');
+      w.style.cssText=`position:absolute;
         left:${Math.round(CELL*(wj+.5)/wc)-1}px;
         top:${Math.round(CELL*(wi+.5)/wr)-1}px;
-        width:2px;height:2px;border-radius:1px;
-        background:rgba(${cr},${cg},${cb},${.9*inten});
-        box-shadow:0 0 3px rgba(${cr},${cg},${cb},.8);
-        animation:winFlicker ${2+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.14+Math.random()*.4}s infinite;`;
+        width:2px;height:2px;border-radius:50%;
+        background:rgba(${cr},${cg},${cb},${.85*inten});
+        box-shadow:0 0 3px rgba(${cr},${cg},${cb},.75);
+        animation:winFlicker ${1.8+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.12+Math.random()*.35}s infinite;`;
       roof.appendChild(w);
     }
   }
-  if(animate){
-    roof.style.setProperty('--rz', `${dimH}px`);
-    roof.style.animation = `roofRise .65s cubic-bezier(.22,1.4,.6,1) both`;
+  if(animate && !ghost){
+    roof.style.setProperty('--bh', H+'px');
+    roof.style.animation='bldRise .7s cubic-bezier(.22,1.3,.6,1) both';
   }
   bld.appendChild(roof);
 
   // ── VERTICAL EDGE LINES ──
-  // 4 corners of the tile, each gets a vertical neon line from z=0 to z=dimH.
-  // Rendered as STEPS stacked divs so they appear as a continuous column in iso view.
-  if(!ghost && dimH > 8){
-    const STEPS = Math.max(5, Math.round(dimH/8));
-    const ec = `rgba(${cr},${cg},${cb},${.7*inten})`;
-    const eg = `rgba(${cr},${cg},${cb},${.3*inten})`;
-    const EW = 2; // edge line width px
-    // Corner positions: [left, top, width, height] for each of 4 edges
-    const edges = [
-      [0,       0,       EW,      CELL],  // left edge
-      [CELL-EW, 0,       EW,      CELL],  // right edge
-      [0,       0,       CELL,    EW  ],  // top edge
-      [0,       CELL-EW, CELL,    EW  ],  // bottom edge
-    ];
-    for(let si=0;si<=STEPS;si++){
-      const z = Math.round((si/STEPS)*dimH);
-      const t = si/STEPS; // 0=ground, 1=roof
-      const a = (.3 + t*.5)*inten; // brighter near roof
-      const delay = animate ? `${(t*.45).toFixed(2)}s` : '0s';
-      edges.forEach(([ex,ey,ew,eh])=>{
-        const e = document.createElement('div');
-        e.style.cssText = `position:absolute;left:${ex}px;top:${ey}px;
-          width:${ew}px;height:${eh}px;
-          transform:translateZ(${z}px);
-          background:rgba(${cr},${cg},${cb},${a});
-          box-shadow:0 0 ${Math.round(3+t*4)}px ${eg};`;
-        if(animate) e.style.animation = `floorIn .12s ease-out ${delay} both`;
-        bld.appendChild(e);
-      });
-    }
-  } else if(ghost && dimH > 6){
-    // Ghost: just outline edges at mid-height
-    const gz = Math.round(dimH*.55);
-    [[0,0,2,CELL],[CELL-2,0,2,CELL],[0,0,CELL,2],[0,CELL-2,CELL,2]].forEach(([ex,ey,ew,eh])=>{
-      const e = document.createElement('div');
-      e.style.cssText = `position:absolute;left:${ex}px;top:${ey}px;
+  // 4 edges: left col, right col, top row, bottom row — each 2px wide
+  // Stacked at STEPS z-levels from 0 to H
+  const STEPS=Math.max(4, Math.round(H/7));
+  const edgeA = ghost ? .06 : .7*inten;
+  const edgeGlowA = ghost ? .02 : .28*inten;
+  // [left, top, width, height]
+  const EDGES=[
+    [0,     0,     2,    CELL], // left
+    [CELL-2,0,     2,    CELL], // right
+    [0,     0,     CELL, 2   ], // top
+    [0,     CELL-2,CELL, 2   ], // bottom
+  ];
+  for(let si=0;si<=STEPS;si++){
+    const z=Math.round((si/STEPS)*H);
+    const t=si/STEPS;
+    // Brightness: dim at base, bright at roof
+    const a = ghost ? edgeA : (.25+t*.55)*inten;
+    const glowSz = ghost ? 0 : Math.round(2+t*5);
+    const delay = animate&&!ghost ? `${(t*.4).toFixed(2)}s` : '0s';
+
+    EDGES.forEach(([ex,ey,ew,eh])=>{
+      const e=document.createElement('div');
+      e.style.cssText=`position:absolute;left:${ex}px;top:${ey}px;
         width:${ew}px;height:${eh}px;
-        transform:translateZ(${gz}px);
-        background:rgba(255,255,255,.08);`;
+        transform:translateZ(${z}px);
+        background:rgba(${cr},${cg},${cb},${a});
+        ${glowSz?`box-shadow:0 0 ${glowSz}px rgba(${cr},${cg},${cb},${edgeGlowA});`:''}`;
+      if(animate&&!ghost) e.style.animation=`edgeIn .12s ease-out ${delay} both`;
       bld.appendChild(e);
     });
   }
@@ -397,47 +356,38 @@ function updateTerritoryOutlines(){
   const totalW=(CELL+GAP)*SIZE-GAP;
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.className='territory-svg';
-  svg.setAttribute('width',totalW);
-  svg.setAttribute('height',totalW);
+  svg.setAttribute('width',totalW);svg.setAttribute('height',totalW);
   svg.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:50;overflow:visible;';
 
-  // For each team, trace the outer boundary
   TEAMS.forEach((team,ti)=>{
     const cells=[];
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(state[r][c]?.teamIdx===ti) cells.push([r,c]);
     if(!cells.length) return;
 
-    // Draw border segments on each outer edge
     const segs=[];
+    const pad=3;
     cells.forEach(([r,c])=>{
       const x=c*(CELL+GAP), y=r*(CELL+GAP);
-      const pad=2;
-      // Top edge
       if(!same(r-1,c,ti)) segs.push([x-pad,y-pad,x+CELL+pad,y-pad]);
-      // Bottom edge
       if(!same(r+1,c,ti)) segs.push([x-pad,y+CELL+pad,x+CELL+pad,y+CELL+pad]);
-      // Left edge
       if(!same(r,c-1,ti)) segs.push([x-pad,y-pad,x-pad,y+CELL+pad]);
-      // Right edge
       if(!same(r,c+1,ti)) segs.push([x+CELL+pad,y-pad,x+CELL+pad,y+CELL+pad]);
     });
 
     segs.forEach(([x1,y1,x2,y2])=>{
-      // Glow layer
       const glow=document.createElementNS('http://www.w3.org/2000/svg','line');
       glow.setAttribute('x1',x1);glow.setAttribute('y1',y1);
       glow.setAttribute('x2',x2);glow.setAttribute('y2',y2);
       glow.setAttribute('stroke',team.color);
-      glow.setAttribute('stroke-width','6');
-      glow.setAttribute('stroke-opacity',String(.35*team.inten));
+      glow.setAttribute('stroke-width','7');
+      glow.setAttribute('stroke-opacity',String(.28*team.inten));
       glow.setAttribute('stroke-linecap','round');
       svg.appendChild(glow);
-      // Sharp line
       const line=document.createElementNS('http://www.w3.org/2000/svg','line');
       line.setAttribute('x1',x1);line.setAttribute('y1',y1);
       line.setAttribute('x2',x2);line.setAttribute('y2',y2);
       line.setAttribute('stroke',team.color);
-      line.setAttribute('stroke-width','2');
+      line.setAttribute('stroke-width','1.8');
       line.setAttribute('stroke-opacity',String(.9*team.inten));
       line.setAttribute('stroke-linecap','round');
       svg.appendChild(line);
@@ -466,17 +416,17 @@ for(let r=0;r<SIZE;r++){
     el.addEventListener('mouseenter',()=>{
       if(state[r][c]) return;
       const t=TEAMS[activeTeam];
-      el.querySelector('.tile-top').style.background=`rgba(${t.r},${t.g},${t.b},.07)`;
-      el.querySelector('.tile-top').style.borderColor=`rgba(${t.r},${t.g},${t.b},.38)`;
+      el.querySelector('.tile-top').style.background=`rgba(${t.r},${t.g},${t.b},.06)`;
+      el.querySelector('.tile-top').style.borderColor=`rgba(${t.r},${t.g},${t.b},.32)`;
     });
     el.addEventListener('mouseleave',()=>{
       if(state[r][c]) return;
-      el.querySelector('.tile-top').style.background='rgba(255,255,255,.024)';
-      el.querySelector('.tile-top').style.borderColor='rgba(255,255,255,.07)';
+      el.querySelector('.tile-top').style.background='rgba(255,255,255,.022)';
+      el.querySelector('.tile-top').style.borderColor='rgba(255,255,255,.06)';
     });
     el.addEventListener('click',()=>{
       if(state[r][c]) return;
-      state[r][c]={teamIdx:activeTeam,si:Math.floor(Math.random()*HEIGHTS[activeTeam].length),home:false,new:true};
+      state[r][c]={teamIdx:activeTeam,hi:Math.floor(Math.random()*3),home:false,new:true};
       renderCell(r,c,true);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;

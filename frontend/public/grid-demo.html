@@ -289,7 +289,7 @@ function drawBuilding(el,sh,team,animate,interior){
     position:absolute;
     left:${bx}px;top:${by}px;
     width:${bw}px;height:${bd}px;
-    border-radius:${team?.inten?.5?'3px':'1px'};
+    border-radius:${team?'3px':'1px'};
     transform:translateZ(${dimH}px);
     z-index:${20+dimH};
     ${ghost?`

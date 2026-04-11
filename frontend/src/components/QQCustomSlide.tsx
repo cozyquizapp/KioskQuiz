@@ -882,8 +882,9 @@ function CustomSlideElement({
           ...baseStyle,
           display: 'grid',
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridAutoRows: '1fr',
           gap: 10, padding: 8,
-          alignContent: 'start',
+          alignItems: 'stretch',
         }}>
           {q.options.map((opt, i) => {
             const optImg    = q.optionImages?.[i];
@@ -904,7 +905,7 @@ function CustomSlideElement({
                 borderRadius: tileRadius, padding: '12px 16px',
                 background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                 border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
-                display: 'flex', flexDirection: 'column', gap: 6,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6,
               }}>
                 {optImg?.url && (
                   <img src={optImg.url} alt="" style={{

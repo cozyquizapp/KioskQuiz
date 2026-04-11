@@ -113,15 +113,15 @@ h2 { font-size:11px; color:#161d2e; text-transform:uppercase; letter-spacing:.2e
 }
 
 /* ── ANIMATIONS ── */
-@keyframes growUp {
-  0%   { opacity: 0; transform: scale(.05); }
-  50%  { opacity: 1; }
-  85%  { transform: scale(1.04); }
-  100% { opacity: 1; transform: scale(1); }
-}
 @keyframes floorIn {
   0%   { opacity: 0; }
   100% { opacity: 1; }
+}
+@keyframes roofRise {
+  0%   { transform: translateZ(0px) scale(.92); opacity:0; }
+  18%  { opacity:1; }
+  88%  { transform: translateZ(var(--rz)) scale(1.03); }
+  100% { transform: translateZ(var(--rz)) scale(1); opacity:1; }
 }
 @keyframes claimPop {
   0%   { transform: translateZ(0); }
@@ -174,23 +174,23 @@ const TEAMS=[
   {color:'#2dd4bf',r:45, g:212,b:191,name:'Tiefsee',     wappen:'🐋',inten:.8},
 ];
 
-// Building shapes: [widthRatio, depthRatio, heightPx]
-// Heights are large — the iso transform compresses them visually to ~55%
-const SHAPES={
-  0:[[.26,.26,72],[.22,.22,88],[.30,.30,64]],  // Blue: slim towers
-  1:[[.56,.40,32],[.52,.38,38],[.60,.42,28]],  // Red: wide blocks
-  2:[[.44,.44,48],[.48,.40,42],[.38,.38,56]],  // Green: organic medium
-  3:[[.34,.50,54],[.26,.54,64],[.42,.42,44]],  // Orange: asymmetric
-  4:[[.18,.18,96],[.16,.16,110],[.22,.22,80]], // Purple: spires
-  5:[[.60,.32,26],[.56,.34,32],[.64,.30,22]],  // Teal: docks
+// Heights per team — the tile itself is always CELL×CELL, height = how tall the building is
+// Each team has 3 height variants (for visual variety across tiles)
+const HEIGHTS={
+  0:[80,96,68],   // Blue:   tall towers
+  1:[28,34,24],   // Red:    squat wide blocks
+  2:[52,44,60],   // Green:  medium organic
+  3:[62,72,48],   // Orange: tall-ish asymmetric
+  4:[108,120,92], // Purple: super tall spires
+  5:[22,28,18],   // Teal:   low flat docks
 };
-const GHOST_H=[[.36,.36,38],[.24,.24,56],[.50,.34,28],[.28,.28,48],[.42,.42,32],[.20,.20,66]];
+const GHOST_HEIGHTS=[36,52,28,44,32,60,20,48];
 
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 let activeTeam=0;
 
 function seed(r,c,t,home=false){
-  state[r][c]={teamIdx:t,si:Math.floor(Math.random()*SHAPES[t].length),home,new:false};
+  state[r][c]={teamIdx:t,si:Math.floor(Math.random()*HEIGHTS[t].length),home,new:false};
 }
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);seed(2,0,0);
 seed(0,5,1,true);seed(0,4,1);seed(1,5,1);seed(1,4,1);
@@ -218,7 +218,7 @@ function renderCell(r,c,animate=false){
     tTop.style.cssText='position:absolute;inset:0;z-index:2;border-radius:2px;background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.5);transition:all .2s ease;';
     tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:#050710;border:1px solid rgba(255,255,255,.04);border-top:none;`;
     tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:#040610;border:1px solid rgba(255,255,255,.03);border-left:none;`;
-    drawBuilding(el,GHOST_H[(r*SIZE+c)%GHOST_H.length],null,false,false);
+    drawBuilding(el,GHOST_HEIGHTS[(r*SIZE+c)%GHOST_HEIGHTS.length],null,false);
     return;
   }
 
@@ -247,23 +247,21 @@ function renderCell(r,c,animate=false){
       ? `1px solid rgba(255,255,255,.03)` // neutral dark — no team color at all
       : `1px solid ${rc(team,.4*inten)}`;
 
+  // Tile ground — just dark base, building/roof is handled by drawBuilding
   tTop.style.cssText=`
     position:absolute;inset:0;z-index:2;border-radius:2px;
-    background:${tileBg};
-    border:${tileBorder};
-    --gs-base:${glowBase};--gs-strong:${glowStrong};
-    box-shadow:${glowBase};
+    background:${interior?'rgba(20,24,36,.85)':'rgba(14,18,30,.9)'};
+    border:1px solid rgba(255,255,255,.04);
     transform:translateZ(1px);
-    transition:box-shadow .35s ease,border-color .35s ease;
-    ${(n>=3||isHome)?`animation:dominantPulse ${isHome?2.4:3.2}s ease-in-out infinite;`:''}
+    transition:background .3s ease;
   `;
   tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rc(team,.06)};border-left:1px solid ${rc(team,.18)};border-right:1px solid ${rc(team,.12)};border-bottom:1px solid ${rc(team,.1)};`;
   tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rc(team,.04)};border-top:1px solid ${rc(team,.12)};border-right:1px solid ${rc(team,.1)};border-bottom:1px solid ${rc(team,.07)};`;
 
-  const shapes=SHAPES[cell.teamIdx];
-  const sh=shapes[cell.si%shapes.length];
-  const bs=isHome?[sh[0]*1.1,sh[1]*1.1,Math.round(sh[2]*1.7)]:sh;
-  drawBuilding(el,bs,team,animate||cell.new,interior);
+  const heights=HEIGHTS[cell.teamIdx];
+  const bh=heights[cell.si%heights.length];
+  const finalH=isHome?Math.round(bh*1.6):interior?Math.round(bh*.55):bh;
+  drawBuilding(el,finalH,team,animate||cell.new);
   if(cell.new) cell.new=false;
 
   if(isHome||cell.joker||cell.stuck){
@@ -280,134 +278,114 @@ function renderCell(r,c,animate=false){
 }
 
 // ── DRAW BUILDING ──
-// Approach: 3 elements per building —
-//   1. BASE: slightly raised plate at z=4, same footprint as roof (solid color, faint)
-//   2. SHAFT: a glow beam — just box-shadow, no fill — at z=dimH/2 that creates
-//             the illusion of a vertical glowing column between base and roof
-//   3. ROOF:  the bright top face at z=dimH with sharp border + windows
-//
-// This avoids the "stacked boxes" problem while still reading as a 3D building.
-// The shaft is transparent with only a colored box-shadow — in the iso view this
-// appears as a column of light, not a solid shape.
+// The tile itself IS the roof — full CELL×CELL footprint, lifted to translateZ(H).
+// Vertical neon edges connect roof corners to the ground.
+// Ghost = faint outline only, no glow.
 
-function drawBuilding(el,sh,team,animate,interior){
-  const [wr,dr,bh]=sh;
-  const bw=Math.round(CELL*wr), bd=Math.round(CELL*dr);
-  const bx=Math.round((CELL-bw)/2), by=Math.round((CELL-bd)/2);
-  const ghost=!team;
-  const cr=team?team.r:30, cg=team?team.g:40, cb=team?team.b:64;
-  const inten=team?(team.inten*(interior?.48:1)):1;
-  const dimH=interior?Math.round(bh*.6):bh;
+function drawBuilding(el, dimH, team, animate){
+  const ghost = !team;
+  const cr = team?team.r:30, cg = team?team.g:40, cb = team?team.b:64;
+  const inten = team?team.inten:1;
 
-  const bld=document.createElement('div');
-  bld.className='building';
-  bld.style.cssText=`position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;z-index:${ghost?1:5};`;
+  const bld = document.createElement('div');
+  bld.className = 'building';
+  bld.style.cssText = `position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;`;
 
+  // ── ROOF: the entire tile face lifted to dimH ──
+  const roof = document.createElement('div');
   if(ghost){
-    // Ghost: single faint outline at mid-height — just a silhouette hint
-    const f=document.createElement('div');
-    f.style.cssText=`
-      position:absolute;left:${bx}px;top:${by}px;
-      width:${bw}px;height:${bd}px;border-radius:2px;
-      transform:translateZ(${Math.round(dimH*.6)}px);
-      background:transparent;
-      border:1px solid rgba(255,255,255,.1);
-      box-shadow:0 0 6px rgba(255,255,255,.04),inset 0 0 4px rgba(255,255,255,.02);
+    roof.style.cssText = `
+      position:absolute;inset:0;border-radius:2px;
+      transform:translateZ(${dimH}px);
+      background:rgba(255,255,255,.018);
+      border:1px solid rgba(255,255,255,.09);
+      box-shadow:0 0 5px rgba(255,255,255,.04);
     `;
-    bld.appendChild(f);
-    el.appendChild(bld);
-    return;
+  } else {
+    roof.style.cssText = `
+      position:absolute;inset:0;border-radius:3px;
+      transform:translateZ(${dimH}px);
+      background:linear-gradient(135deg,
+        rgba(255,255,255,${.22*inten}) 0%,
+        rgba(${cr},${cg},${cb},${.14*inten}) 50%,
+        rgba(0,0,0,.2) 100%);
+      border-top:  2px solid rgba(255,255,255,${.7*inten});
+      border-left: 2px solid rgba(255,255,255,${.4*inten});
+      border-right:1px solid rgba(${cr},${cg},${cb},${.5*inten});
+      border-bottom:1px solid rgba(${cr},${cg},${cb},${.4*inten});
+      box-shadow:
+        0 0 ${Math.round(12*inten)}px rgba(${cr},${cg},${cb},${.7*inten}),
+        0 0 ${Math.round(28*inten)}px rgba(${cr},${cg},${cb},${.28*inten}),
+        inset 0 0 10px rgba(255,255,255,${.08*inten});
+    `;
+    // inner glow
+    const fill = document.createElement('div');
+    fill.style.cssText = `position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+      background:radial-gradient(circle at 30% 30%,rgba(${cr},${cg},${cb},${.28*inten}),transparent 65%);`;
+    roof.appendChild(fill);
+    // window dots
+    const wc = Math.max(3, Math.round(CELL/16)), wr = Math.max(2, Math.round(CELL/20));
+    for(let wi=0;wi<wr;wi++) for(let wj=0;wj<wc;wj++){
+      const w = document.createElement('div');
+      w.style.cssText = `position:absolute;
+        left:${Math.round(CELL*(wj+.5)/wc)-1}px;
+        top:${Math.round(CELL*(wi+.5)/wr)-1}px;
+        width:2px;height:2px;border-radius:1px;
+        background:rgba(${cr},${cg},${cb},${.9*inten});
+        box-shadow:0 0 3px rgba(${cr},${cg},${cb},.8);
+        animation:winFlicker ${2+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.14+Math.random()*.4}s infinite;`;
+      roof.appendChild(w);
+    }
   }
-
-  // 1 ── VERTICAL EDGE LINES (neon walls)
-  // Three edges of the roof footprint have a vertical "wall" line running from
-  // z=4 up to z=dimH. We render each as a series of stacked thin divs at
-  // incremental Z values — this is the only way to draw a vertical line in CSS 3D iso.
-  // The 3 visible edges in our rotateX(52) rotateZ(-45) view:
-  //   Left edge:   x=bx,        y=by..by+bd  (left column)
-  //   Front-left:  x=bx..bx+bw, y=by+bd      (bottom row, left half — the "front" wall)
-  //   Front-right: x=bx+bw,     y=by..by+bd  (right column)
-  //
-  // Each edge is a 1-2px wide div repeated at multiple Z steps to form a continuous line.
-  const WALL_STEPS=Math.max(4, Math.round(dimH/6));
-  const wStep=dimH/WALL_STEPS;
-  const edgeW=2; // wall thickness in px
-  const edgeColor=`rgba(${cr},${cg},${cb},${.65*inten})`;
-  const edgeGlow=`rgba(${cr},${cg},${cb},${.35*inten})`;
-
-  for(let wi=0;wi<=WALL_STEPS;wi++){
-    const wz=Math.round(4+wStep*wi*(dimH-4)/dimH);
-    const delayMs=animate?`${(wi/WALL_STEPS*0.3).toFixed(2)}s`:'0s';
-
-    // Left edge vertical line
-    const eL=document.createElement('div');
-    eL.style.cssText=`position:absolute;left:${bx}px;top:${by}px;
-      width:${edgeW}px;height:${bd}px;
-      transform:translateZ(${wz}px);
-      background:${edgeColor};
-      box-shadow:0 0 4px ${edgeGlow};`;
-    if(animate) eL.style.animation=`floorIn .15s ease-out ${delayMs} both`;
-    bld.appendChild(eL);
-
-    // Front-bottom edge horizontal line
-    const eB=document.createElement('div');
-    eB.style.cssText=`position:absolute;left:${bx}px;top:${by+bd-edgeW}px;
-      width:${bw}px;height:${edgeW}px;
-      transform:translateZ(${wz}px);
-      background:${edgeColor};
-      box-shadow:0 0 4px ${edgeGlow};`;
-    if(animate) eB.style.animation=`floorIn .15s ease-out ${delayMs} both`;
-    bld.appendChild(eB);
-
-    // Right edge vertical line
-    const eR=document.createElement('div');
-    eR.style.cssText=`position:absolute;left:${bx+bw-edgeW}px;top:${by}px;
-      width:${edgeW}px;height:${bd}px;
-      transform:translateZ(${wz}px);
-      background:${edgeColor};
-      box-shadow:0 0 4px ${edgeGlow};`;
-    if(animate) eR.style.animation=`floorIn .15s ease-out ${delayMs} both`;
-    bld.appendChild(eR);
+  if(animate){
+    roof.style.setProperty('--rz', `${dimH}px`);
+    roof.style.animation = `roofRise .65s cubic-bezier(.22,1.4,.6,1) both`;
   }
-
-  // 3 ── ROOF (z=dimH) — brightest face, sharp border, windows
-  const roof=document.createElement('div');
-  roof.style.cssText=`
-    position:absolute;left:${bx}px;top:${by}px;
-    width:${bw}px;height:${bd}px;border-radius:3px;
-    transform:translateZ(${dimH}px);
-    background:linear-gradient(135deg,
-      rgba(255,255,255,${.24*inten}) 0%,
-      rgba(${cr},${cg},${cb},${.16*inten}) 48%,
-      rgba(0,0,0,.22) 100%);
-    border-top:2px solid rgba(255,255,255,${.72*inten});
-    border-left:1.5px solid rgba(255,255,255,${.40*inten});
-    border-right:1px solid rgba(0,0,0,.4);
-    border-bottom:1px solid rgba(0,0,0,.45);
-    box-shadow:
-      0 0 ${Math.round(14*inten)}px rgba(${cr},${cg},${cb},${.8*inten}),
-      0 0 ${Math.round(32*inten)}px rgba(${cr},${cg},${cb},${.35*inten}),
-      inset 0 0 8px rgba(255,255,255,${.1*inten});
-  `;
-  // inner radial glow
-  const fill=document.createElement('div');
-  fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:radial-gradient(circle at 30% 30%,rgba(${cr},${cg},${cb},${.32*inten}),transparent 60%);`;
-  roof.appendChild(fill);
-  // window dots
-  const wc=Math.max(2,Math.round(bw/9)), wr2=Math.max(1,Math.round(bd/13));
-  for(let wi=0;wi<wr2;wi++) for(let wj=0;wj<wc;wj++){
-    const w=document.createElement('div');
-    w.style.cssText=`position:absolute;
-      left:${Math.round(bw*(wj+.5)/wc)-1}px;top:${Math.round(bd*(wi+.5)/wr2)-1}px;
-      width:2px;height:2px;border-radius:1px;
-      background:rgba(${cr},${cg},${cb},${.95*inten});
-      box-shadow:0 0 3px rgba(${cr},${cg},${cb},.85);
-      animation:winFlicker ${2+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.16+Math.random()*.4}s infinite;`;
-    roof.appendChild(w);
-  }
-  if(animate) roof.style.animation=`floorIn .3s ease-out .28s both`;
   bld.appendChild(roof);
+
+  // ── VERTICAL EDGE LINES ──
+  // 4 corners of the tile, each gets a vertical neon line from z=0 to z=dimH.
+  // Rendered as STEPS stacked divs so they appear as a continuous column in iso view.
+  if(!ghost && dimH > 8){
+    const STEPS = Math.max(5, Math.round(dimH/8));
+    const ec = `rgba(${cr},${cg},${cb},${.7*inten})`;
+    const eg = `rgba(${cr},${cg},${cb},${.3*inten})`;
+    const EW = 2; // edge line width px
+    // Corner positions: [left, top, width, height] for each of 4 edges
+    const edges = [
+      [0,       0,       EW,      CELL],  // left edge
+      [CELL-EW, 0,       EW,      CELL],  // right edge
+      [0,       0,       CELL,    EW  ],  // top edge
+      [0,       CELL-EW, CELL,    EW  ],  // bottom edge
+    ];
+    for(let si=0;si<=STEPS;si++){
+      const z = Math.round((si/STEPS)*dimH);
+      const t = si/STEPS; // 0=ground, 1=roof
+      const a = (.3 + t*.5)*inten; // brighter near roof
+      const delay = animate ? `${(t*.45).toFixed(2)}s` : '0s';
+      edges.forEach(([ex,ey,ew,eh])=>{
+        const e = document.createElement('div');
+        e.style.cssText = `position:absolute;left:${ex}px;top:${ey}px;
+          width:${ew}px;height:${eh}px;
+          transform:translateZ(${z}px);
+          background:rgba(${cr},${cg},${cb},${a});
+          box-shadow:0 0 ${Math.round(3+t*4)}px ${eg};`;
+        if(animate) e.style.animation = `floorIn .12s ease-out ${delay} both`;
+        bld.appendChild(e);
+      });
+    }
+  } else if(ghost && dimH > 6){
+    // Ghost: just outline edges at mid-height
+    const gz = Math.round(dimH*.55);
+    [[0,0,2,CELL],[CELL-2,0,2,CELL],[0,0,CELL,2],[0,CELL-2,CELL,2]].forEach(([ex,ey,ew,eh])=>{
+      const e = document.createElement('div');
+      e.style.cssText = `position:absolute;left:${ex}px;top:${ey}px;
+        width:${ew}px;height:${eh}px;
+        transform:translateZ(${gz}px);
+        background:rgba(255,255,255,.08);`;
+      bld.appendChild(e);
+    });
+  }
 
   el.appendChild(bld);
 }
@@ -498,7 +476,7 @@ for(let r=0;r<SIZE;r++){
     });
     el.addEventListener('click',()=>{
       if(state[r][c]) return;
-      state[r][c]={teamIdx:activeTeam,si:Math.floor(Math.random()*SHAPES[activeTeam].length),home:false,new:true};
+      state[r][c]={teamIdx:activeTeam,si:Math.floor(Math.random()*HEIGHTS[activeTeam].length),home:false,new:true};
       renderCell(r,c,true);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;

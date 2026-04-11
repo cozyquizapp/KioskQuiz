@@ -114,10 +114,10 @@ h2 { font-size:11px; color:#161d2e; text-transform:uppercase; letter-spacing:.2e
 
 /* ── ANIMATIONS ── */
 @keyframes growUp {
-  0%   { transform: translateZ(0) scaleZ(.02); opacity: 0; }
+  0%   { opacity: 0; transform: scaleZ(.02) translateZ(0); }
   40%  { opacity: 1; }
-  80%  { transform: translateZ(0) scaleZ(1.06); }
-  100% { transform: translateZ(0) scaleZ(1); opacity: 1; }
+  80%  { transform: scaleZ(1.06) translateZ(0); }
+  100% { transform: scaleZ(1) translateZ(0); opacity: 1; }
 }
 @keyframes claimPop {
   0%   { transform: translateZ(0); }
@@ -228,17 +228,25 @@ function renderCell(r,c,animate=false){
   const glowBase = isHome
     ? `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 20px ${rc(team,.75*inten)},0 0 40px ${rc(team,.32*inten)}`
     : interior
-      ? `inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.48),inset 0 0 10px ${rc(team,.22*inten)}`
+      ? `inset 0 2px 4px rgba(255,255,255,.02),inset 0 -3px 8px rgba(0,0,0,.55),inset 0 0 8px ${rc(team,.15*inten)}`
       : n===0
         ? `inset 0 4px 8px rgba(255,255,255,.04),inset 0 -5px 10px rgba(0,0,0,.48),0 0 10px ${rc(team,.5*inten)}`
         : `inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 16px ${rc(team,.7*inten)},0 0 32px ${rc(team,.28*inten)}`;
 
   const glowStrong=`inset 0 4px 8px rgba(255,255,255,.05),inset 0 -5px 10px rgba(0,0,0,.5),0 0 26px ${rc(team,.9*inten)},0 0 52px ${rc(team,.42*inten)}`;
 
+  // Interior tiles: very dark/muted — makes the gap between them nearly invisible
+  const tileBg = isHome ? rc(team,.18) : interior ? rc(team,.07) : rc(team,.07);
+  const tileBorder = isHome
+    ? `2px solid ${rc(team,.65)}`
+    : interior
+      ? `1px solid ${rc(team,.04)}` // nearly invisible border for interior
+      : `1px solid ${rc(team,.4*inten)}`;
+
   tTop.style.cssText=`
     position:absolute;inset:0;z-index:2;border-radius:2px;
-    background:${rc(team,isHome?.18:interior?.1:.07)};
-    border:${isHome?'2px':'1px'} solid ${interior?'transparent':rc(team,isHome?.65:.4*inten)};
+    background:${tileBg};
+    border:${tileBorder};
     --gs-base:${glowBase};--gs-strong:${glowStrong};
     box-shadow:${glowBase};
     transform:translateZ(1px);
@@ -268,20 +276,48 @@ function renderCell(r,c,animate=false){
 }
 
 // ── DRAW BUILDING ──
-// Uses translateZ to extrude above the tile — works correctly in iso transform context
+// Each building is a single CSS div using translateZ (works in the iso transform context).
+// The top face floats at height H. To visually "connect" it to the tile:
+//   - A vertical shadow div (no 3D) fades from team color at top to transparent at ground
+//   - This simulates the wall in a way that's always correct regardless of view angle
+// This approach works because the shadow div is in local 2D and just reads as a glow column.
+
 function drawBuilding(el,sh,team,animate,interior){
   const [wr,dr,bh]=sh;
-  const bw=CELL*wr, bd=CELL*dr;
-  const bx=(CELL-bw)/2, by=(CELL-bd)/2;
+  const bw=Math.round(CELL*wr), bd=Math.round(CELL*dr);
+  const bx=Math.round((CELL-bw)/2), by=Math.round((CELL-bd)/2);
   const ghost=!team;
-  const color=team?team.color:'#1e2840';
-  const inten=team?(team.inten*(interior?.55:1)):1;
+  const cr=team?team.r:30, cg=team?team.g:40, cb=team?team.b:64;
+  const inten=team?(team.inten*(interior?.5:1)):1;
   const dimH=interior?Math.round(bh*.7):bh;
 
   const bld=document.createElement('div');
   bld.className='building';
-  bld.style.transformOrigin=`${bx+bw/2}px ${by+bd/2}px`;
+  bld.style.cssText=`position:absolute;inset:0;pointer-events:none;z-index:${10+dimH};transform-style:preserve-3d;`;
   if(animate) bld.style.animation='growUp .85s cubic-bezier(.34,1.5,.64,1) both';
+
+  // ── GLOW PILLAR (2D, no 3D — creates visual connection between top face and tile) ──
+  // Slightly wider/taller than top face; radiates the team color downward
+  if(!ghost && dimH>6){
+    const pillar=document.createElement('div');
+    const pw=Math.round(bw*1.3), pd=Math.round(bd*1.3);
+    const px=Math.round((CELL-pw)/2), py=Math.round((CELL-pd)/2);
+    pillar.style.cssText=`
+      position:absolute;
+      left:${px}px;top:${py}px;
+      width:${pw}px;height:${pd}px;
+      background:radial-gradient(ellipse at 50% 50%,
+        rgba(${cr},${cg},${cb},${.35*inten}) 0%,
+        rgba(${cr},${cg},${cb},${.15*inten}) 40%,
+        transparent 70%);
+      border-radius:4px;
+      transform:translateZ(${dimH*0.4}px);
+      z-index:${8+dimH};
+      pointer-events:none;
+      filter:blur(${Math.round(dimH*0.18)}px);
+    `;
+    bld.appendChild(pillar);
+  }
 
   // ── TOP FACE (translateZ = building height) ──
   const top=document.createElement('div');
@@ -293,94 +329,48 @@ function drawBuilding(el,sh,team,animate,interior){
     transform:translateZ(${dimH}px);
     z-index:${20+dimH};
     ${ghost?`
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.15);
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 0 6px rgba(255,255,255,.06);
     `:`
       background:linear-gradient(135deg,
-        rgba(255,255,255,${.14*inten}) 0%,
-        ${`rgba(${team.r},${team.g},${team.b},${.1*inten})`} 45%,
-        rgba(0,0,0,.3) 100%);
-      border-top:  2px solid rgba(255,255,255,${.5*inten});
-      border-left: 1.5px solid rgba(255,255,255,${.28*inten});
+        rgba(255,255,255,${.18*inten}) 0%,
+        rgba(${cr},${cg},${cb},${.12*inten}) 45%,
+        rgba(0,0,0,.28) 100%);
+      border-top:  2px solid rgba(255,255,255,${.6*inten});
+      border-left: 1.5px solid rgba(255,255,255,${.32*inten});
       border-right:1px solid rgba(0,0,0,.5);
       border-bottom:1px solid rgba(0,0,0,.55);
-      box-shadow:0 0 ${Math.round(12*inten)}px ${`rgba(${team.r},${team.g},${team.b},${.6*inten})`},
-                 inset 0 0 8px rgba(255,255,255,${.06*inten});
+      box-shadow:
+        0 0 ${Math.round(14*inten)}px rgba(${cr},${cg},${cb},${.7*inten}),
+        0 0 ${Math.round(28*inten)}px rgba(${cr},${cg},${cb},${.3*inten}),
+        inset 0 0 8px rgba(255,255,255,${.08*inten});
     `}
   `;
-  // Inner glow fill
   if(!ghost){
     const fill=document.createElement('div');
     fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-      background:radial-gradient(circle at 30% 30%,${`rgba(${team.r},${team.g},${team.b},${.2*inten})`},transparent 68%);`;
+      background:radial-gradient(circle at 30% 30%,rgba(${cr},${cg},${cb},${.25*inten}),transparent 65%);`;
     top.appendChild(fill);
-  }
-
-  // ── FRONT FACE (left-right vertical wall) ──
-  // Extrudes downward from the top face edge
-  const front=document.createElement('div');
-  front.style.cssText=`
-    position:absolute;
-    left:${bx}px;top:${by+bd}px;
-    width:${bw}px;height:${dimH}px;
-    transform-origin:top center;
-    transform:rotateX(-90deg) translateZ(0px);
-    z-index:${10+dimH};
-    ${ghost?`
-      border-left:1px solid rgba(255,255,255,.1);
-      border-right:1px solid rgba(255,255,255,.07);
-      border-bottom:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.012);
-    `:`
-      border-left:  1.5px solid rgba(255,255,255,${.32*inten});
-      border-right: 1px   solid rgba(0,0,0,.45);
-      border-bottom:1px   solid rgba(0,0,0,.55);
-      background:linear-gradient(to bottom,${`rgba(${team.r},${team.g},${team.b},${.16*inten})`},${`rgba(${team.r},${team.g},${team.b},${.05*inten})`});
-      box-shadow:0 8px 20px ${`rgba(${team.r},${team.g},${team.b},${.22*inten})`};
-    `}
-    display:flex;flex-direction:column;justify-content:space-evenly;
-    align-items:center;padding:2px 4px;gap:2px;overflow:hidden;
-  `;
-  if(!ghost&&team){
-    const rows=interior?Math.max(1,Math.round((sh[2]>30?3:2)*.6)):Math.round(dimH>40?3:dimH>24?2:1);
-    const cols=Math.round(bw/10);
-    for(let wi=0;wi<rows;wi++){
-      const row=document.createElement('div');
-      row.style.cssText='display:flex;gap:2px;justify-content:center;width:100%;';
-      for(let wj=0;wj<Math.max(1,cols);wj++){
+    // Flicker windows — tiny dots on the face surface
+    const winCount=Math.max(2,Math.round(bw/10));
+    const winRows=Math.max(1,Math.round(bd/14));
+    for(let wi=0;wi<winRows;wi++){
+      for(let wj=0;wj<winCount;wj++){
         const w=document.createElement('div');
-        w.style.cssText=`width:3px;height:3px;border-radius:1px;flex-shrink:0;
-          background:${color};box-shadow:0 0 4px rgba(${team.r},${team.g},${team.b},.8);
-          animation:winFlicker ${2.2+Math.random()*2.5}s ease-in-out ${(wi*cols+wj)*.22+Math.random()*.5}s infinite;`;
-        row.appendChild(w);
+        const wx=Math.round(bw*(wj+0.5)/winCount)-1;
+        const wy=Math.round(bd*(wi+0.5)/winRows)-1;
+        w.style.cssText=`position:absolute;left:${wx}px;top:${wy}px;
+          width:2px;height:2px;border-radius:1px;
+          background:rgba(${cr},${cg},${cb},${.95*inten});
+          box-shadow:0 0 3px rgba(${cr},${cg},${cb},.9);
+          animation:winFlicker ${2.2+Math.random()*2.5}s ease-in-out ${(wi*winCount+wj)*.22+Math.random()*.5}s infinite;`;
+        top.appendChild(w);
       }
-      front.appendChild(row);
     }
   }
 
-  // ── RIGHT FACE ──
-  const right=document.createElement('div');
-  right.style.cssText=`
-    position:absolute;
-    left:${bx+bw}px;top:${by}px;
-    width:${dimH}px;height:${bd}px;
-    transform-origin:left center;
-    transform:rotateY(90deg) translateZ(0px);
-    z-index:${10+dimH};
-    ${ghost?`
-      border-top:1px solid rgba(255,255,255,.08);
-      border-right:1px solid rgba(255,255,255,.08);
-      border-bottom:1px solid rgba(255,255,255,.05);
-      background:rgba(255,255,255,.008);
-    `:`
-      border-top:   1.5px solid rgba(255,255,255,${.16*inten});
-      border-right: 1px   solid rgba(0,0,0,.4);
-      border-bottom:1px   solid rgba(0,0,0,.5);
-      background:linear-gradient(to right,${`rgba(${team.r},${team.g},${team.b},${.08*inten})`},rgba(0,0,0,.28));
-    `}
-  `;
-
-  bld.appendChild(top);bld.appendChild(front);bld.appendChild(right);
+  bld.appendChild(top);
   el.appendChild(bld);
 }
 

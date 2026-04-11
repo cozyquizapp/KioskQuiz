@@ -311,7 +311,7 @@ export interface QQSlideElement {
   optionColorScheme?: 'category' | 'mono' | 'dark'; // color scheme for option tiles
   // Animated Avatar (only for type === 'animatedAvatar')
   avatarId?: string; // Which avatar to show
-  animType?: 'wiggle' | 'walk' | 'bounce';
+  animType?: 'wiggle' | 'walk' | 'bounce' | 'float' | 'spin' | 'pulse' | 'shake' | 'dance' | 'peek' | 'flip';
   // Animation type for avatar
   avatarAnimDuration?: number; // seconds
   avatarAnimDelay?: number; // seconds

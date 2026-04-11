@@ -1158,9 +1158,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const lang = useLangFlip(s.language);
 
   // ── CHEESE staged flow ──────────────────────────────────────────────────
-  // Phase 1 ('question'): question text + grid visible, no image
-  // Phase 2 ('image'): moderator reveals image → goes fullscreen
-  // Phase 3 (revealed=true): image shrinks to right window panel, answer visible
+  // Phase 1: question text visible, no image
+  // Phase 2 (imageRevealed): fullscreen image, question text hidden
+  // Phase 3 (revealed): image as side panel, answer + grid visible
   const cheeseFullscreen = isCheese && hasImg && s.imageRevealed && !revealed;
   // In CHEESE reveal: treat image as a proper window-right panel (not absolute clip)
   const isCheeseReveal = isCheese && hasImg && revealed;
@@ -1268,12 +1268,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       )}
 
       {/* Main content — revealed after intro */}
-      {/* CHEESE: hide left-column until moderator shows question (imageRevealed) */}
+      {/* CHEESE: hide when fullscreen image is showing (imageRevealed but not yet revealed) */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
         flexDirection: hasImg && img.layout === 'window-left' ? 'row-reverse' : 'row',
         animation: showIntro ? 'contentReveal 0.6s ease 2.2s both' : 'contentReveal 0.35s ease both',
-        visibility: isCheese && !s.imageRevealed && !revealed ? 'hidden' : undefined,
+        visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
         {/* ── Left: question ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 44px', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
@@ -1733,15 +1733,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
         {/* ── Right: grid + scores ── */}
         <div style={{
-          width: (isWindow || cheeseFullscreen || isCheeseReveal) ? 0 : 480,
+          width: (isWindow || cheeseFullscreen) ? 0 : isCheeseReveal ? 360 : 480,
           overflow: 'hidden',
-          flexShrink: 0, padding: (isWindow || cheeseFullscreen || isCheeseReveal) ? 0 : '28px 28px 28px 16px',
+          flexShrink: 0, padding: (isWindow || cheeseFullscreen) ? 0 : isCheeseReveal ? '20px 20px 20px 12px' : '28px 28px 28px 16px',
           display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center',
           position: 'relative', zIndex: 5,
           transition: 'width 0.5s ease, padding 0.5s ease',
         }}>
           {/* Mini-grid overlay when image panel hides the main grid */}
-          {(isWindow || cheeseFullscreen || isCheeseReveal) && (
+          {(isWindow || cheeseFullscreen) && (
             <div style={{
               position: 'fixed', bottom: 16, right: 16, zIndex: 10,
               opacity: 0.6, pointerEvents: 'none',

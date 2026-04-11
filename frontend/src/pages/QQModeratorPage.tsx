@@ -344,10 +344,10 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
-                {/* CHEESE (Picture This): moderator blendet Frage ein (Bild war von Anfang an sichtbar) */}
+                {/* CHEESE (Picture This): reveal image fullscreen */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
                   <Btn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })}>
-                    ❓ Frage zeigen
+                    🖼 Bild aufdecken
                   </Btn>
                 )}
 

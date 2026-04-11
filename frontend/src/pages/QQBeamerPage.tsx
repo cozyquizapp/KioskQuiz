@@ -17,6 +17,7 @@ const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
+import { loadUsedFonts } from '../utils/fonts';
 
 export const BEAMER_CSS = QQ_BEAMER_CSS;
 export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
@@ -189,6 +190,10 @@ export default function QQBeamerPage() {
   useEffect(() => {
     if (state?.slideTemplates && Object.keys(state.slideTemplates).length > 0) {
       setSlideTemplates(state.slideTemplates);
+      // Load any Google Fonts used in slide elements
+      const fonts = Object.values(state.slideTemplates)
+        .flatMap(t => (t?.elements ?? []).map(el => el.fontFamily));
+      loadUsedFonts(fonts);
     }
   }, [state?.slideTemplates]);
 
@@ -205,7 +210,12 @@ export default function QQBeamerPage() {
     fetch(`${API_BASE}/qq/drafts/${encodeURIComponent(draftId)}`)
       .then(r => r.ok ? r.json() : null)
       .then(draft => {
-        if (draft?.slideTemplates) setSlideTemplates(draft.slideTemplates);
+        if (draft?.slideTemplates) {
+          setSlideTemplates(draft.slideTemplates);
+          const fonts = Object.values(draft.slideTemplates as QQSlideTemplates)
+            .flatMap((t: any) => (t?.elements ?? []).map((el: any) => el.fontFamily));
+          loadUsedFonts(fonts);
+        }
       })
       .catch(() => {/* ignore — fallback to hardcoded components */});
   }, [state?.draftId]);

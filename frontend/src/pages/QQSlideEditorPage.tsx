@@ -421,6 +421,9 @@ export default function QQSlideEditorPage() {
   // Derived: primary selected id (for properties panel)
   const selectedId = selectedIds[0] ?? null;
 
+  // Pre-load all Google Fonts so they're ready in editor + canvas
+  useEffect(() => { loadAllFonts(); }, []);
+
   useEffect(() => {
     if (!draftId) { setLoading(false); return; }
     fetch(`/api/qq/drafts/${draftId}`)
@@ -1598,12 +1601,7 @@ const ANIM_LOOP_OPTIONS: Array<{ value: QQSlideElement['animLoop']; label: strin
   { value: 'shake',  label: 'Zittern' },
   { value: 'float',  label: 'Schweben' },
 ];
-const FONT_OPTIONS = [
-  { value: "'Nunito', sans-serif", label: 'Nunito (Standard)' },
-  { value: 'Georgia, serif',       label: 'Georgia (Serif)' },
-  { value: 'monospace',            label: 'Monospace' },
-  { value: "'Impact', sans-serif", label: 'Impact' },
-];
+import { FONT_OPTIONS, loadAllFonts } from '../utils/fonts';
 // Avatar/Animation options for animatedAvatar
 const AVATAR_OPTIONS = [
   { id: 'avatar1', label: 'Avatar 1', icon: '🧑' },
@@ -1633,6 +1631,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
   const isPh = el.type.startsWith('ph_');
   const uploadRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [fontDropOpen, setFontDropOpen] = useState(false);
   const fontFamily = el.fontFamily ?? '';
 
   async function handleUpload(file: File) {
@@ -1737,10 +1736,52 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
             </Field>
           </div>
           <Field label="Schriftart">
-            <select value={fontFamily} onChange={e => onChange({ fontFamily: e.target.value })} style={{ ...input, padding: '4px 7px' }}>
-              <option value="">Standard (Nunito)</option>
-              {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            <div style={{ position: 'relative' }}>
+              {/* Trigger button — shows current font in its own typeface */}
+              <button
+                type="button"
+                onClick={() => setFontDropOpen(v => !v)}
+                style={{
+                  ...input, padding: '5px 10px', cursor: 'pointer', textAlign: 'left',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  fontFamily: fontFamily || "'Nunito', sans-serif",
+                }}>
+                <span>{fontFamily ? (FONT_OPTIONS.find(o => o.value === fontFamily)?.label ?? fontFamily) : 'Standard (Nunito)'}</span>
+                <span style={{ opacity: 0.5, fontSize: 10 }}>{fontDropOpen ? '▲' : '▼'}</span>
+              </button>
+              {/* Dropdown list */}
+              {fontDropOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 9999,
+                  background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 8, marginTop: 3, maxHeight: 260, overflowY: 'auto',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                }}>
+                  {/* "Standard" option */}
+                  <button type="button" onClick={() => { onChange({ fontFamily: '' }); setFontDropOpen(false); }} style={{
+                    width: '100%', padding: '7px 12px', background: fontFamily === '' ? 'rgba(59,130,246,0.2)' : 'transparent',
+                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#e2e8f0',
+                    cursor: 'pointer', textAlign: 'left', fontFamily: "'Nunito', sans-serif", fontSize: 13,
+                  }}>
+                    Standard (Nunito)
+                  </button>
+                  {FONT_OPTIONS.map(o => (
+                    <button key={o.value} type="button"
+                      onClick={() => { onChange({ fontFamily: o.value }); setFontDropOpen(false); }}
+                      style={{
+                        width: '100%', padding: '7px 12px',
+                        background: fontFamily === o.value ? 'rgba(59,130,246,0.2)' : 'transparent',
+                        border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        color: fontFamily === o.value ? '#93c5fd' : '#e2e8f0',
+                        cursor: 'pointer', textAlign: 'left',
+                        fontFamily: o.value, fontSize: 15, fontWeight: 700,
+                      }}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </Field>
           <Field label="Farbe">
             <div style={{ display: 'flex', gap: 6 }}>

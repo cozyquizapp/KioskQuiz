@@ -29,6 +29,10 @@
       "source": "/socket.io/:path*",
       "destination": "https://cozyquiz-backend.onrender.com/socket.io/:path*"
     },
+    {
+      "source": "/grid-demo.html",
+      "destination": "/grid-demo.html"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

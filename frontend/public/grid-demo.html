@@ -6,92 +6,76 @@
 <title>Quarter Quiz — City Grid</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing:border-box; margin:0; padding:0; }
 body {
-  background: radial-gradient(ellipse at 50% 35%, #0c1018 0%, #03040a 100%);
-  min-height: 100vh; color: #f1f5f9;
-  font-family: 'Space Grotesk', sans-serif;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 36px; padding: 40px; overflow: hidden;
+  background:radial-gradient(ellipse at 50% 35%, #0c1018 0%, #03040a 100%);
+  min-height:100vh; color:#f1f5f9;
+  font-family:'Space Grotesk',sans-serif;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:36px; padding:40px; overflow:hidden;
 }
 h2 { font-size:11px; color:#1a2236; text-transform:uppercase; letter-spacing:.2em; font-weight:700; }
 
-.board-wrap { position:relative; padding:36px 40px 56px; }
+/* The board-wrap is the reference for the SVG overlay */
+.board-wrap { position:relative; }
 
 .iso-scene { perspective:1400px; perspective-origin:50% 10%; position:relative; z-index:2; }
 .iso-grid {
-  transform: rotateX(52deg) rotateZ(-45deg);
-  transform-style: preserve-3d;
-  display: grid; gap: 3px;
-  position: relative;
+  transform:rotateX(52deg) rotateZ(-45deg);
+  transform-style:preserve-3d;
+  display:grid; gap:3px; position:relative;
 }
 
-/* ── CELL ── */
+/* Tiles — flat, no 3D buildings inside */
 .cell {
-  position: relative; transform-style: preserve-3d;
-  cursor: pointer;
-  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+  position:relative; transform-style:preserve-3d;
+  cursor:pointer;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1);
 }
-.cell.owned  { cursor: default; }
-.cell.empty:hover { transform: translateZ(4px); }
+.cell.owned  { cursor:default; }
+.cell.empty:hover { transform:translateZ(4px); }
 
-/* ── TILE FACES ── */
 .tile-top {
   position:absolute; inset:0; z-index:2; border-radius:2px;
-  transition: background .25s ease, border-color .25s ease, box-shadow .3s ease;
+  transition:background .25s ease, border-color .25s ease, box-shadow .3s ease;
 }
 .tile-front {
-  position:absolute; top:100%; left:0; right:0;
+  position:absolute; top:100%; left:0; right:0; height:8px;
   transform-origin:top center; transform:rotateX(-90deg); z-index:1;
 }
 .tile-right {
-  position:absolute; top:0; bottom:0; left:100%;
+  position:absolute; top:0; bottom:0; left:100%; width:8px;
   transform-origin:left center; transform:rotateY(90deg); z-index:1;
 }
 
-/* ── BUILDING wrapper — lives inside the iso cell, preserve-3d ── */
-.building {
+/* SVG overlay — sits on top of the board-wrap in screen space */
+#bld-svg {
   position:absolute; inset:0;
-  pointer-events:none; z-index:10;
-  transform-style:preserve-3d;
-}
-
-/* ── Territory outline SVG ── */
-.territory-svg {
-  position:absolute; inset:0;
-  pointer-events:none; z-index:50;
+  pointer-events:none; z-index:100;
   overflow:visible;
 }
 
-/* ── ANIMATIONS ── */
-@keyframes claimPop {
-  0%  { transform:translateZ(0); }
-  35% { transform:translateZ(16px); }
-  65% { transform:translateZ(-3px); }
-  100%{ transform:translateZ(0); }
-}
-@keyframes dominantPulse {
-  0%,100% { box-shadow: var(--gs-base); }
-  50%     { box-shadow: var(--gs-peak); }
-}
-@keyframes winFlicker {
-  0%,100%{opacity:1;} 44%{opacity:1;} 47%{opacity:.15;} 52%{opacity:1;} 80%{opacity:.6;}
-}
-/* Building rise — translateZ from 0 to target stored in --bh */
-@keyframes bldRise {
-  0%   { transform:translateZ(0)   scaleX(.94) scaleY(.94); opacity:0; }
-  15%  { opacity:1; }
-  82%  { transform:translateZ(var(--bh)) scaleX(1.02) scaleY(1.02); }
-  100% { transform:translateZ(var(--bh)) scaleX(1)    scaleY(1);    opacity:1; }
-}
-/* Edge lines fade in staggered */
-@keyframes edgeIn {
-  0%  { opacity:0; }
-  100%{ opacity:1; }
+/* Territory outline SVG */
+.territory-svg {
+  position:absolute; inset:0;
+  pointer-events:none; z-index:50; overflow:visible;
 }
 
-/* Score bar */
+@keyframes dominantPulse {
+  0%,100% { box-shadow:var(--gs-base); }
+  50%     { box-shadow:var(--gs-peak); }
+}
+@keyframes winFlicker {
+  0%,100%{opacity:1;} 44%{opacity:1;} 47%{opacity:.12;} 52%{opacity:1;} 80%{opacity:.55;}
+}
+@keyframes claimPop {
+  0%  { transform:translateZ(0); }
+  35% { transform:translateZ(14px); }
+  65% { transform:translateZ(-2px); }
+  100%{ transform:translateZ(0); }
+}
+
 .score-bar { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 .team-pill {
   display:flex; align-items:center; gap:9px; padding:8px 16px; border-radius:10px;
@@ -100,24 +84,26 @@ h2 { font-size:11px; color:#1a2236; text-transform:uppercase; letter-spacing:.2e
 }
 .team-pill:hover { transform:translateY(-2px); }
 .team-pill.active { background:var(--tc-bg); border-color:var(--tc-border); box-shadow:0 0 18px var(--tc-glow); }
-.tp-dot  { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-.tp-name { font-size:13px; font-weight:700; }
-.tp-count{ font-size:11px; color:#253040; font-weight:600; }
-.hint    { font-size:11px; color:#111822; letter-spacing:.05em; }
+.tp-dot   { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.tp-name  { font-size:13px; font-weight:700; }
+.tp-count { font-size:11px; color:#253040; font-weight:600; }
+.hint     { font-size:11px; color:#111822; letter-spacing:.05em; }
 </style>
 </head>
 <body>
 <h2>Quarter Quiz — City Grid</h2>
-<div class="board-wrap">
-  <div class="iso-scene">
+<div class="board-wrap" id="board-wrap">
+  <div class="iso-scene" id="iso-scene">
     <div class="iso-grid" id="grid"></div>
   </div>
+  <!-- SVG overlay for buildings, rendered in screen-space -->
+  <svg id="bld-svg" xmlns="http://www.w3.org/2000/svg"></svg>
 </div>
 <div class="score-bar" id="scorebar"></div>
 <div class="hint">Team auswählen → leeres Feld anklicken</div>
 
 <script>
-const SIZE=6, CELL=72, GAP=3, GD=8;
+const SIZE=6, CELL=72, GAP=3;
 
 const TEAMS=[
   {color:'#5aadff',r:90, g:173,b:255,name:'Die Clique',  wappen:'⚓',inten:.80},
@@ -128,18 +114,17 @@ const TEAMS=[
   {color:'#2dd4bf',r:45, g:212,b:191,name:'Tiefsee',     wappen:'🐋',inten:.82},
 ];
 
-// Building height variants per team — tile is always CELL×CELL, only H differs
-// Heights in px before iso compression (~55% visible)
-// Team personality: blue=slim towers, red=squat blocks, green=medium, orange=tall, purple=spires, teal=low
+// Building height per team (screen pixels after iso projection)
+// Wide teams = low, slim teams = tall
 const HEIGHTS={
-  0:[56,70,48],   // Blue: tall-ish towers
-  1:[22,28,18],   // Red: squat wide blocks
-  2:[38,44,32],   // Green: medium
-  3:[50,60,42],   // Orange: tall
-  4:[80,92,68],   // Purple: tallest spires
-  5:[18,22,14],   // Teal: low flat docks
+  0:[38,48,30],   // Blue: tall towers
+  1:[14,18,12],   // Red: squat blocks
+  2:[22,28,18],   // Green: medium
+  3:[30,38,24],   // Orange: tall-ish
+  4:[52,62,42],   // Purple: spires
+  5:[10,14, 8],   // Teal: flat docks
 };
-const GHOST_H=[28,42,20,36,24,50,18,44];
+const GHOST_H=[14,22,10,18,12,28,8,20];
 
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 let activeTeam=0;
@@ -157,12 +142,358 @@ function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===
 function adjN(r,c,ti){return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length;}
 function isEdge(r,c,dr,dc){return!same(r+dr,c+dc,state[r][c]?.teamIdx);}
 
-// ── RENDER CELL ──
+// ══════════════════════════════════════════════════════════════
+// ISOMETRIC PROJECTION MATH
+// Our CSS transform: rotateX(52deg) rotateZ(-45deg)
+// We need to find the screen-space position of grid cells to
+// draw SVG buildings at the correct location.
+//
+// The iso-grid element has a known CSS transform. We use
+// getBoundingClientRect of each cell to find exact screen coords,
+// then draw SVG polygons in the board-wrap's local coordinate space.
+// ══════════════════════════════════════════════════════════════
+
+function getCellScreenRect(r, c) {
+  const el = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if(!el) return null;
+  const wrapRect = document.getElementById('board-wrap').getBoundingClientRect();
+  const cellRect = el.getBoundingClientRect();
+  // Return center in board-wrap local coords
+  return {
+    x: cellRect.left - wrapRect.left,
+    y: cellRect.top  - wrapRect.top,
+    w: cellRect.width,
+    h: cellRect.height,
+    cx: cellRect.left - wrapRect.left + cellRect.width/2,
+    cy: cellRect.top  - wrapRect.top  + cellRect.height/2,
+  };
+}
+
+// Get the 4 corners of a cell in screen space
+// The iso transform turns a square into a rhombus/parallelogram.
+// getBoundingClientRect gives us the bounding box, not the actual corners.
+// We need the actual transformed corners — use getClientRects or DOMMatrix.
+function getCellCorners(r, c) {
+  const el = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if(!el) return null;
+  const wrap = document.getElementById('board-wrap');
+  const wrapRect = wrap.getBoundingClientRect();
+
+  // Use DOMMatrix to get actual transformed corner positions
+  // The cell's local corners in its own space
+  const localCorners = [
+    {x:0,    y:0   },  // top-left
+    {x:CELL, y:0   },  // top-right
+    {x:CELL, y:CELL},  // bottom-right
+    {x:0,    y:CELL},  // bottom-left
+  ];
+
+  // Get the cumulative transform matrix of the cell element
+  const matrix = new DOMMatrix(getComputedStyle(el).transform);
+  // Walk up to iso-grid and accumulate transforms
+  let m = new DOMMatrix();
+  let node = el;
+  const stop = wrap;
+  const matrices = [];
+  while(node && node !== stop) {
+    const t = getComputedStyle(node).transform;
+    if(t && t !== 'none') matrices.unshift(new DOMMatrix(t));
+    node = node.parentElement;
+  }
+  matrices.forEach(mx => m = m.multiply(mx));
+
+  return localCorners.map(({x,y}) => {
+    const pt = m.transformPoint(new DOMPoint(x, y));
+    return {
+      x: pt.x - wrapRect.left + wrap.getBoundingClientRect().left - wrapRect.left,
+      y: pt.y - wrapRect.top  + wrap.getBoundingClientRect().top  - wrapRect.top,
+    };
+  });
+}
+
+// Simpler: just use getBoundingClientRect of a 1px point element at each corner
+// by temporarily placing marker elements. Actually the simplest correct approach:
+// query the actual screen-space position using element.getClientRects() on sub-divs.
+
+// BEST approach: place a tiny absolute div at each corner of the cell,
+// read its getBoundingClientRect. Do this once at init.
+let cellCornerCache = {};
+
+function buildCornerCache() {
+  cellCornerCache = {};
+  const wrap = document.getElementById('board-wrap');
+  const wrapRect = wrap.getBoundingClientRect();
+
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) {
+    const el = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    if(!el) continue;
+
+    // Place 4 marker divs at corners
+    const markers = [[0,0],[CELL,0],[CELL,CELL],[0,CELL]].map(([lx,ly])=>{
+      const m = document.createElement('div');
+      m.style.cssText = `position:absolute;left:${lx}px;top:${ly}px;width:1px;height:1px;pointer-events:none;`;
+      el.appendChild(m);
+      return m;
+    });
+
+    cellCornerCache[`${r},${c}`] = markers.map(m => {
+      const mr = m.getBoundingClientRect();
+      return { x: mr.left - wrapRect.left, y: mr.top - wrapRect.top };
+    });
+
+    markers.forEach(m => m.remove());
+  }
+}
+
+// ── SVG BUILDING DRAWING ──
+// Given the 4 screen-space corners of a tile (rhombus after iso transform),
+// we draw an isometric box of height H pixels (in screen space, going UP).
+//
+// The 4 corners after rotateX(52)+rotateZ(-45) form a diamond/rhombus:
+//   corners[0] = top     (grid top-left)
+//   corners[1] = right   (grid top-right)
+//   corners[2] = bottom  (grid bottom-right)
+//   corners[3] = left    (grid bottom-left)
+//
+// "Up" in screen space = subtract from Y.
+// The box has:
+//   TOP face:   corners shifted up by H → parallelogram
+//   LEFT face:  left half of bottom + left half of top (visible left wall)
+//   RIGHT face: right half of bottom + right half of top (visible right wall)
+
+const NS = 'http://www.w3.org/2000/svg';
+function mkEl(tag, attrs) {
+  const el = document.createElementNS(NS, tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v));
+  return el;
+}
+function pts(arr) { return arr.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '); }
+
+function drawBuildingSVG(svg, corners, H, team, ghost, animate) {
+  const cr = team?team.r:28, cg = team?team.g:36, cb = team?team.b:58;
+  const inten = team?team.inten:1;
+
+  // corners[0]=top, [1]=right, [2]=bottom, [3]=left (diamond orientation)
+  const [cTop, cRight, cBottom, cLeft] = corners;
+
+  // Shift each corner UP by H pixels
+  const up = (p, h=H) => ({x:p.x, y:p.y - h});
+  const tTop    = up(cTop);
+  const tRight  = up(cRight);
+  const tBottom = up(cBottom);
+  const tLeft   = up(cLeft);
+
+  const id = `b${Math.random().toString(36).slice(2,7)}`;
+
+  if(ghost) {
+    // Ghost: just the top face outline + two faint side edges
+    const topFace = mkEl('polygon', {
+      points: pts([tTop, tRight, tBottom, tLeft]),
+      fill: `rgba(${cr},${cg},${cb},.04)`,
+      stroke: `rgba(${cr},${cg},${cb},.18)`,
+      'stroke-width': '1',
+    });
+    svg.appendChild(topFace);
+
+    // Two vertical edges going down to ground
+    [[tLeft,cLeft],[tBottom,cBottom]].forEach(([a,b])=>{
+      svg.appendChild(mkEl('line',{
+        x1:a.x, y1:a.y, x2:b.x, y2:b.y,
+        stroke:`rgba(${cr},${cg},${cb},.12)`, 'stroke-width':'1',
+      }));
+    });
+    return;
+  }
+
+  const defs = mkEl('defs',{});
+
+  // ── GLOW FILTER ──
+  const filtId = `gf_${id}`;
+  const filt = mkEl('filter',{id:filtId, x:'-40%', y:'-40%', width:'180%', height:'180%'});
+  const feBlur = mkEl('feGaussianBlur',{in:'SourceGraphic', stdDeviation:`${3*inten}`});
+  filt.appendChild(feBlur);
+  defs.appendChild(filt);
+
+  // ── GRADIENTS ──
+  // Left face gradient (medium bright)
+  const lgLeft = `lg_l_${id}`;
+  const gradLeft = mkEl('linearGradient',{id:lgLeft, x1:'0%',y1:'0%',x2:'0%',y2:'100%'});
+  const ls1 = mkEl('stop',{offset:'0%'}); ls1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.35*inten})`);
+  const ls2 = mkEl('stop',{offset:'100%'}); ls2.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.08*inten})`);
+  gradLeft.appendChild(ls1); gradLeft.appendChild(ls2);
+  defs.appendChild(gradLeft);
+
+  // Right face gradient (darker — shadow side)
+  const lgRight = `lg_r_${id}`;
+  const gradRight = mkEl('linearGradient',{id:lgRight, x1:'0%',y1:'0%',x2:'0%',y2:'100%'});
+  const rs1 = mkEl('stop',{offset:'0%'}); rs1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.18*inten})`);
+  const rs2 = mkEl('stop',{offset:'100%'}); rs2.setAttribute('stop-color',`rgba(0,0,0,.3)`);
+  gradRight.appendChild(rs1); gradRight.appendChild(rs2);
+  defs.appendChild(gradRight);
+
+  // Top face gradient (brightest)
+  const lgTop = `lg_t_${id}`;
+  const gradTop = mkEl('linearGradient',{id:lgTop, x1:'0%',y1:'0%',x2:'100%',y2:'100%'});
+  const ts1 = mkEl('stop',{offset:'0%'}); ts1.setAttribute('stop-color',`rgba(255,255,255,${.2*inten})`);
+  const ts2 = mkEl('stop',{offset:'60%'}); ts2.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.15*inten})`);
+  const ts3 = mkEl('stop',{offset:'100%'}); ts3.setAttribute('stop-color',`rgba(0,0,0,.15)`);
+  gradTop.appendChild(ts1); gradTop.appendChild(ts2); gradTop.appendChild(ts3);
+  defs.appendChild(gradTop);
+
+  svg.appendChild(defs);
+
+  // ── LEFT FACE (ground-left → ground-bottom → top-bottom → top-left) ──
+  // Visible left wall: left + bottom edges of the rhombus
+  const leftFace = mkEl('polygon',{
+    points: pts([cLeft, cBottom, tBottom, tLeft]),
+    fill: `url(#${lgLeft})`,
+    stroke: `rgba(${cr},${cg},${cb},${.6*inten})`,
+    'stroke-width': '1.2',
+    'stroke-linejoin': 'round',
+  });
+  svg.appendChild(leftFace);
+
+  // ── RIGHT FACE (ground-bottom → ground-right → top-right → top-bottom) ──
+  const rightFace = mkEl('polygon',{
+    points: pts([cBottom, cRight, tRight, tBottom]),
+    fill: `url(#${lgRight})`,
+    stroke: `rgba(${cr},${cg},${cb},${.45*inten})`,
+    'stroke-width': '1',
+    'stroke-linejoin': 'round',
+  });
+  svg.appendChild(rightFace);
+
+  // ── TOP FACE GLOW (blurred copy underneath) ──
+  const topGlow = mkEl('polygon',{
+    points: pts([tTop, tRight, tBottom, tLeft]),
+    fill: `rgba(${cr},${cg},${cb},${.5*inten})`,
+    filter: `url(#${filtId})`,
+  });
+  svg.appendChild(topGlow);
+
+  // ── TOP FACE ──
+  const topFace = mkEl('polygon',{
+    points: pts([tTop, tRight, tBottom, tLeft]),
+    fill: `url(#${lgTop})`,
+    stroke: `rgba(255,255,255,${.7*inten})`,
+    'stroke-width': '1.5',
+    'stroke-linejoin': 'round',
+  });
+  svg.appendChild(topFace);
+
+  // ── NEON EDGE LINES (sharp, on top of faces) ──
+  // Vertical edges: all 4 corners ground→roof
+  const vertEdges = [
+    [cTop,tTop], [cRight,tRight], [cBottom,tBottom], [cLeft,tLeft]
+  ];
+  vertEdges.forEach(([a,b])=>{
+    // glow
+    svg.appendChild(mkEl('line',{
+      x1:a.x,y1:a.y, x2:b.x,y2:b.y,
+      stroke:`rgba(${cr},${cg},${cb},${.4*inten})`,
+      'stroke-width':'3', 'stroke-linecap':'round',
+    }));
+    // sharp
+    svg.appendChild(mkEl('line',{
+      x1:a.x,y1:a.y, x2:b.x,y2:b.y,
+      stroke:`rgba(${cr},${cg},${cb},${.9*inten})`,
+      'stroke-width':'1', 'stroke-linecap':'round',
+    }));
+  });
+
+  // ── WINDOW DOTS on top face ──
+  // Evenly spaced dots across the rhombus top face
+  const rows=3, cols=3;
+  for(let wi=0;wi<rows;wi++) for(let wj=0;wj<cols;wj++){
+    const u=(wj+.5)/cols, v=(wi+.5)/rows;
+    // Bilinear interpolation across rhombus
+    const px = tTop.x*(1-u)*(1-v) + tRight.x*u*(1-v) + tBottom.x*u*v + tLeft.x*(1-u)*v;
+    const py = tTop.y*(1-u)*(1-v) + tRight.y*u*(1-v) + tBottom.y*u*v + tLeft.y*(1-u)*v;
+    const dot = mkEl('circle',{
+      cx: px.toFixed(1), cy: py.toFixed(1), r:'1.5',
+      fill: `rgba(${cr},${cg},${cb},${.85*inten})`,
+    });
+    dot.style.animation=`winFlicker ${1.8+Math.random()*3}s ease-in-out ${(wi*cols+wj)*.15+Math.random()*.3}s infinite`;
+    svg.appendChild(dot);
+  }
+
+  // ── ANIMATE: buildings grow up ──
+  if(animate) {
+    // We animate by changing the clipPath or using SMIL
+    // Simple approach: animate opacity + translateY on the group
+    const g = document.createElementNS(NS,'g');
+    g.style.cssText = `animation: bldAppear .65s cubic-bezier(.22,1.3,.6,1) both`;
+    // Move all children into g — we need to do this before appending
+    // Instead, tag all building elements with a class and animate the whole group
+    // Since SVG SMIL is complex, we use CSS animation on a wrapper g
+  }
+}
+
+// ── BUILD SVG BUILDINGS OVERLAY ──
+function updateBuildingSVG(animateCell=null) {
+  const svg = document.getElementById('bld-svg');
+  // Size the SVG to match board-wrap
+  const wrap = document.getElementById('board-wrap');
+  const wr = wrap.getBoundingClientRect();
+  svg.setAttribute('width', wr.width);
+  svg.setAttribute('height', wr.height);
+
+  // Add rise animation style if needed
+  if(!document.getElementById('bld-svg-style')) {
+    const st = document.createElement('style');
+    st.id = 'bld-svg-style';
+    st.textContent = `
+      @keyframes bldAppear {
+        0%   { opacity:0; transform:translateY(12px) scale(.92); }
+        18%  { opacity:1; }
+        85%  { transform:translateY(-3px) scale(1.02); }
+        100% { transform:translateY(0) scale(1); opacity:1; }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  svg.innerHTML = '';
+
+  // Draw ghost buildings first (behind owned), then owned
+  for(let ghost=1;ghost>=0;ghost--) {
+    for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) {
+      const cell = state[r][c];
+      const isGhost = !cell;
+      if(isGhost !== !!ghost) continue;
+
+      const corners = cellCornerCache[`${r},${c}`];
+      if(!corners) continue;
+
+      let H, team;
+      if(isGhost) {
+        H = GHOST_H[(r*SIZE+c)%GHOST_H.length];
+        team = null;
+      } else {
+        team = TEAMS[cell.teamIdx];
+        const heights = HEIGHTS[cell.teamIdx];
+        const bh = heights[cell.hi%3];
+        const isHome = cell.home;
+        const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
+        const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
+        H = isHome ? Math.round(bh*1.6) : interior ? Math.round(bh*.45) : bh;
+      }
+
+      const g = document.createElementNS(NS, 'g');
+      if(animateCell && animateCell.r===r && animateCell.c===c) {
+        g.style.cssText = 'animation:bldAppear .65s cubic-bezier(.22,1.3,.6,1) both';
+      }
+      drawBuildingSVG(g, corners, H, team, isGhost, animateCell?.r===r && animateCell?.c===c);
+      svg.appendChild(g);
+    }
+  }
+}
+
+// ── RENDER CELL (tile only, no building div) ──
 function renderCell(r,c,animate=false){
   const cell=state[r][c];
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
   if(!el) return;
-  el.querySelectorAll('.building').forEach(e=>e.remove());
   el.className='cell '+(cell?'owned':'empty');
 
   const tTop=el.querySelector('.tile-top');
@@ -170,18 +501,16 @@ function renderCell(r,c,animate=false){
   const tRight=el.querySelector('.tile-right');
 
   if(!cell){
-    // Empty tile — dark, subtle
     tTop.style.cssText=`position:absolute;inset:0;z-index:2;border-radius:2px;
-      background:rgba(255,255,255,.022);
-      border:1px solid rgba(255,255,255,.06);
-      box-shadow:inset 0 3px 6px rgba(255,255,255,.03),inset 0 -4px 8px rgba(0,0,0,.5);`;
-    tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;
+      background:rgba(255,255,255,.02);
+      border:1px solid rgba(255,255,255,.055);
+      box-shadow:inset 0 2px 5px rgba(255,255,255,.03),inset 0 -4px 8px rgba(0,0,0,.5);`;
+    tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:8px;
       transform-origin:top center;transform:rotateX(-90deg);z-index:1;
       background:#050710;border:1px solid rgba(255,255,255,.03);border-top:none;`;
-    tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;
+    tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:8px;
       transform-origin:left center;transform:rotateY(90deg);z-index:1;
       background:#040610;border:1px solid rgba(255,255,255,.025);border-left:none;`;
-    drawBuilding(el, GHOST_H[(r*SIZE+c)%GHOST_H.length], null, false);
     return;
   }
 
@@ -192,10 +521,7 @@ function renderCell(r,c,animate=false){
   const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
   const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
 
-  // ── TILE GROUND (always dark — building carries the color identity) ──
-  const tileBg = interior
-    ? 'rgba(12,16,26,.92)'
-    : `rgba(${team.r},${team.g},${team.b},.06)`;
+  const tileBg = interior ? 'rgba(12,16,26,.92)' : `rgba(${team.r},${team.g},${team.b},.07)`;
   const tileBorder = interior
     ? '1px solid rgba(255,255,255,.03)'
     : isHome
@@ -212,188 +538,38 @@ function renderCell(r,c,animate=false){
   tTop.style.cssText=`position:absolute;inset:0;z-index:2;border-radius:2px;
     background:${tileBg};border:${tileBorder};
     --gs-base:${gsBase};--gs-peak:${gsPeak};
-    box-shadow:${gsBase};
-    transform:translateZ(1px);
+    box-shadow:${gsBase};transform:translateZ(1px);
     transition:box-shadow .35s ease;
     ${(n>=3||isHome)?`animation:dominantPulse ${isHome?2.2:3}s ease-in-out infinite;`:''}`;
 
-  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;
+  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:8px;
     transform-origin:top center;transform:rotateX(-90deg);z-index:1;
     background:${interior?'#080c18':rc(team,.08)};
-    border-left:1px solid ${rc(team,.14)};border-right:1px solid ${rc(team,.1)};border-bottom:1px solid ${rc(team,.08)};`;
-  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;
+    border-left:1px solid ${rc(team,.14)};border-right:1px solid ${rc(team,.1)};border-bottom:1px solid ${rc(team,.07)};`;
+  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:8px;
     transform-origin:left center;transform:rotateY(90deg);z-index:1;
     background:${interior?'#060a16':rc(team,.05)};
     border-top:1px solid ${rc(team,.1)};border-right:1px solid ${rc(team,.08)};border-bottom:1px solid ${rc(team,.06)};`;
 
-  const heights=HEIGHTS[cell.teamIdx];
-  const bh=heights[cell.hi%3];
-  const finalH=isHome?Math.round(bh*1.55):interior?Math.round(bh*.5):bh;
-  drawBuilding(el, finalH, team, animate||cell.new);
-  if(cell.new) cell.new=false;
-
-  if(isHome){
-    const icon=document.createElement('div');
-    icon.className='building'; // reuse class for positioning
-    icon.style.cssText=`position:absolute;bottom:5px;right:6px;font-size:10px;
-      z-index:30;filter:drop-shadow(0 0 5px ${team.color});line-height:1;pointer-events:none;`;
-    icon.textContent=team.wappen;
-    el.appendChild(icon);
-  }
   if(animate){
     el.style.animation='claimPop .65s cubic-bezier(.34,1.56,.64,1) both';
     setTimeout(()=>el.style.animation='',750);
   }
 }
 
-// ── DRAW BUILDING ──
-// Structure:
-//   - Roof: full-tile rect at translateZ(H) — glowing neon face
-//   - 4 vertical edges: stacked thin divs from z=0 to z=H — the wireframe walls
-//   - Ghost: same structure, very faint, no glow
-//
-// Why stacked divs for edges: in the iso CSS 3D context (rotateX+rotateZ),
-// translateZ moves elements straight "up" in screen space, so a series of
-// thin rects at z=0,8,16... appear as a continuous vertical line from ground to roof.
-
-function drawBuilding(el, H, team, animate){
-  const ghost=!team;
-  const cr=team?team.r:28, cg=team?team.g:36, cb=team?team.b:58;
-  const inten=team?team.inten:1;
-
-  const bld=document.createElement('div');
-  bld.className='building';
-  bld.style.transformStyle='preserve-3d';
-
-  // ── ROOF ──
-  const roof=document.createElement('div');
-  if(ghost){
-    roof.style.cssText=`position:absolute;inset:2px;border-radius:2px;
-      transform:translateZ(${H}px);
-      background:rgba(255,255,255,.015);
-      border:1px solid rgba(255,255,255,.07);`;
-  } else {
-    roof.style.cssText=`position:absolute;inset:0;border-radius:2px;
-      transform:translateZ(${H}px);
-      background:linear-gradient(135deg,
-        rgba(255,255,255,${.18*inten}) 0%,
-        rgba(${cr},${cg},${cb},${.12*inten}) 55%,
-        rgba(0,0,0,.18) 100%);
-      border-top:  2px solid rgba(255,255,255,${.65*inten});
-      border-left: 1.5px solid rgba(255,255,255,${.38*inten});
-      border-right:1px solid rgba(${cr},${cg},${cb},${.55*inten});
-      border-bottom:1px solid rgba(${cr},${cg},${cb},${.45*inten});
-      box-shadow:
-        0 0 ${Math.round(10*inten)}px rgba(${cr},${cg},${cb},${.65*inten}),
-        0 0 ${Math.round(24*inten)}px rgba(${cr},${cg},${cb},${.25*inten}),
-        inset 0 0 8px rgba(255,255,255,${.07*inten});`;
-    // inner radial glow
-    const fill=document.createElement('div');
-    fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-      background:radial-gradient(ellipse at 35% 35%,
-        rgba(${cr},${cg},${cb},${.22*inten}) 0%,transparent 65%);`;
-    roof.appendChild(fill);
-    // window dots
-    const wc=Math.max(3,Math.round(CELL/15)), wr=Math.max(2,Math.round(CELL/18));
-    for(let wi=0;wi<wr;wi++) for(let wj=0;wj<wc;wj++){
-      const w=document.createElement('div');
-      w.style.cssText=`position:absolute;
-        left:${Math.round(CELL*(wj+.5)/wc)-1}px;
-        top:${Math.round(CELL*(wi+.5)/wr)-1}px;
-        width:2px;height:2px;border-radius:50%;
-        background:rgba(${cr},${cg},${cb},${.85*inten});
-        box-shadow:0 0 3px rgba(${cr},${cg},${cb},.75);
-        animation:winFlicker ${1.8+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.12+Math.random()*.35}s infinite;`;
-      roof.appendChild(w);
-    }
-  }
-  if(animate && !ghost){
-    roof.style.setProperty('--bh', H+'px');
-    roof.style.animation='bldRise .7s cubic-bezier(.22,1.3,.6,1) both';
-  }
-  bld.appendChild(roof);
-
-  // ── VERTICAL EDGE LINES ──
-  // Only 3 z-levels: ground (z=0), mid (z=H/2), roof (z=H)
-  // This gives clean corner pillars without the "venetian blind" effect
-  const ZLEVELS = ghost ? [Math.round(H*.5)] : [0, Math.round(H*.5), H];
-  const edgeGlowA = ghost ? .02 : .3*inten;
-  // Corner pillars: 4 corners, each is a tiny square
-  const P=3; // pillar thickness px
-  const CORNERS=[
-    [0,        0       ], // top-left
-    [CELL-P,   0       ], // top-right
-    [0,        CELL-P  ], // bottom-left
-    [CELL-P,   CELL-P  ], // bottom-right
-  ];
-
-  ZLEVELS.forEach((z,zi)=>{
-    const t = z/H;
-    const a = ghost ? .07 : (.3+t*.6)*inten;
-    const delay = animate&&!ghost ? `${(t*.45).toFixed(2)}s` : '0s';
-
-    // Corner pillars at this Z
-    CORNERS.forEach(([cx,cy])=>{
-      const e=document.createElement('div');
-      e.style.cssText=`position:absolute;left:${cx}px;top:${cy}px;
-        width:${P}px;height:${P}px;
-        transform:translateZ(${z}px);
-        background:rgba(${cr},${cg},${cb},${a});
-        box-shadow:0 0 ${Math.round(3+t*6)}px rgba(${cr},${cg},${cb},${edgeGlowA});`;
-      if(animate&&!ghost) e.style.animation=`edgeIn .15s ease-out ${delay} both`;
-      bld.appendChild(e);
-    });
-
-    // Edge lines connecting corners at this Z (only at ground and roof)
-    if(!ghost && (zi===0 || zi===ZLEVELS.length-1)){
-      const lineA = zi===0 ? .2*inten : .55*inten;
-      // top edge
-      const eT=document.createElement('div');
-      eT.style.cssText=`position:absolute;left:${P}px;top:0;width:${CELL-P*2}px;height:${P}px;
-        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
-      if(animate) eT.style.animation=`edgeIn .15s ease-out ${delay} both`;
-      bld.appendChild(eT);
-      // bottom edge
-      const eB=document.createElement('div');
-      eB.style.cssText=`position:absolute;left:${P}px;top:${CELL-P}px;width:${CELL-P*2}px;height:${P}px;
-        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
-      if(animate) eB.style.animation=`edgeIn .15s ease-out ${delay} both`;
-      bld.appendChild(eB);
-      // left edge
-      const eL=document.createElement('div');
-      eL.style.cssText=`position:absolute;left:0;top:${P}px;width:${P}px;height:${CELL-P*2}px;
-        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
-      if(animate) eL.style.animation=`edgeIn .15s ease-out ${delay} both`;
-      bld.appendChild(eL);
-      // right edge
-      const eR=document.createElement('div');
-      eR.style.cssText=`position:absolute;left:${CELL-P}px;top:${P}px;width:${P}px;height:${CELL-P*2}px;
-        transform:translateZ(${z}px);background:rgba(${cr},${cg},${cb},${lineA});`;
-      if(animate) eR.style.animation=`edgeIn .15s ease-out ${delay} both`;
-      bld.appendChild(eR);
-    }
-  });
-
-  el.appendChild(bld);
-}
-
 // ── TERRITORY OUTLINE SVG ──
 function updateTerritoryOutlines(){
   document.querySelectorAll('.territory-svg').forEach(s=>s.remove());
-
   const totalW=(CELL+GAP)*SIZE-GAP;
-  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  const svg=document.createElementNS(NS,'svg');
   svg.className='territory-svg';
   svg.setAttribute('width',totalW);svg.setAttribute('height',totalW);
   svg.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:50;overflow:visible;';
-
   TEAMS.forEach((team,ti)=>{
     const cells=[];
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(state[r][c]?.teamIdx===ti) cells.push([r,c]);
     if(!cells.length) return;
-
-    const segs=[];
-    const pad=3;
+    const segs=[]; const pad=3;
     cells.forEach(([r,c])=>{
       const x=c*(CELL+GAP), y=r*(CELL+GAP);
       if(!same(r-1,c,ti)) segs.push([x-pad,y-pad,x+CELL+pad,y-pad]);
@@ -401,27 +577,12 @@ function updateTerritoryOutlines(){
       if(!same(r,c-1,ti)) segs.push([x-pad,y-pad,x-pad,y+CELL+pad]);
       if(!same(r,c+1,ti)) segs.push([x+CELL+pad,y-pad,x+CELL+pad,y+CELL+pad]);
     });
-
     segs.forEach(([x1,y1,x2,y2])=>{
-      const glow=document.createElementNS('http://www.w3.org/2000/svg','line');
-      glow.setAttribute('x1',x1);glow.setAttribute('y1',y1);
-      glow.setAttribute('x2',x2);glow.setAttribute('y2',y2);
-      glow.setAttribute('stroke',team.color);
-      glow.setAttribute('stroke-width','7');
-      glow.setAttribute('stroke-opacity',String(.28*team.inten));
-      glow.setAttribute('stroke-linecap','round');
-      svg.appendChild(glow);
-      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-      line.setAttribute('x1',x1);line.setAttribute('y1',y1);
-      line.setAttribute('x2',x2);line.setAttribute('y2',y2);
-      line.setAttribute('stroke',team.color);
-      line.setAttribute('stroke-width','1.8');
-      line.setAttribute('stroke-opacity',String(.9*team.inten));
-      line.setAttribute('stroke-linecap','round');
-      svg.appendChild(line);
+      const glow=mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'7','stroke-opacity':String(.28*team.inten),'stroke-linecap':'round'});
+      const line=mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'1.8','stroke-opacity':String(.9*team.inten),'stroke-linecap':'round'});
+      svg.appendChild(glow);svg.appendChild(line);
     });
   });
-
   document.querySelector('.iso-grid').appendChild(svg);
 }
 
@@ -437,8 +598,6 @@ for(let r=0;r<SIZE;r++){
     el.style.cssText=`width:${CELL}px;height:${CELL}px;`;
     ['tile-top','tile-front','tile-right'].forEach(cn=>{
       const d=document.createElement('div');d.className=cn;
-      if(cn==='tile-front') d.style.height=GD+'px';
-      if(cn==='tile-right') d.style.width=GD+'px';
       el.appendChild(d);
     });
     el.addEventListener('mouseenter',()=>{
@@ -449,8 +608,8 @@ for(let r=0;r<SIZE;r++){
     });
     el.addEventListener('mouseleave',()=>{
       if(state[r][c]) return;
-      el.querySelector('.tile-top').style.background='rgba(255,255,255,.022)';
-      el.querySelector('.tile-top').style.borderColor='rgba(255,255,255,.06)';
+      el.querySelector('.tile-top').style.background='rgba(255,255,255,.02)';
+      el.querySelector('.tile-top').style.borderColor='rgba(255,255,255,.055)';
     });
     el.addEventListener('click',()=>{
       if(state[r][c]) return;
@@ -458,16 +617,23 @@ for(let r=0;r<SIZE;r++){
       renderCell(r,c,true);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;
-        if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&state[nr][nc]) renderCell(nr,nc,false);
+        if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE) renderCell(nr,nc,false);
       });
       updateTerritoryOutlines();
+      updateBuildingSVG({r,c});
       updateScores();
     });
     gridEl.appendChild(el);
     renderCell(r,c);
   }
 }
-updateTerritoryOutlines();
+
+// Wait for layout then build corner cache + draw buildings
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  buildCornerCache();
+  updateTerritoryOutlines();
+  updateBuildingSVG();
+}));
 
 function updateScores(){
   const bar=document.getElementById('scorebar');

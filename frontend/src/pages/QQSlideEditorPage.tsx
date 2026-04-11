@@ -1811,7 +1811,7 @@ const ANIM_LOOP_OPTIONS: Array<{ value: QQSlideElement['animLoop']; label: strin
   { value: 'shake',  label: 'Zittern' },
   { value: 'float',  label: 'Schweben' },
 ];
-import { FONT_OPTIONS, loadAllFonts } from '../utils/fonts';
+import { FONT_OPTIONS, loadAllFonts, loadGoogleFont } from '../utils/fonts';
 // Avatar/Animation options for animatedAvatar
 const AVATAR_OPTIONS = [
   { id: 'avatar1', label: 'Avatar 1', icon: '🧑' },
@@ -2063,7 +2063,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                   boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                 }}>
                   {/* "Standard" option */}
-                  <button type="button" onClick={() => { onChange({ fontFamily: '' }); setFontDropOpen(false); }} style={{
+                  <button type="button" onClick={() => { onChange({ fontFamily: undefined }); setFontDropOpen(false); }} style={{
                     width: '100%', padding: '7px 12px', background: fontFamily === '' ? 'rgba(59,130,246,0.2)' : 'transparent',
                     border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#e2e8f0',
                     cursor: 'pointer', textAlign: 'left', fontFamily: "'Nunito', sans-serif", fontSize: 13,
@@ -2072,7 +2072,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                   </button>
                   {FONT_OPTIONS.map(o => (
                     <button key={o.value} type="button"
-                      onClick={() => { onChange({ fontFamily: o.value }); setFontDropOpen(false); }}
+                      onClick={() => { if (o.googleName) loadGoogleFont(o.googleName); onChange({ fontFamily: o.value }); setFontDropOpen(false); }}
                       style={{
                         width: '100%', padding: '7px 12px',
                         background: fontFamily === o.value ? 'rgba(59,130,246,0.2)' : 'transparent',

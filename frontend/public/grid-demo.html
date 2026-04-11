@@ -280,119 +280,116 @@ function renderCell(r,c,animate=false){
 }
 
 // ── DRAW BUILDING ──
-// Strategy: stack multiple translateZ "floors" to simulate a real building.
-// Each floor is a flat rect at a different Z height — the iso transform stacks them
-// visually so they form a column. A glow halo at each floor level fakes the wall.
+// Approach: 3 elements per building —
+//   1. BASE: slightly raised plate at z=4, same footprint as roof (solid color, faint)
+//   2. SHAFT: a glow beam — just box-shadow, no fill — at z=dimH/2 that creates
+//             the illusion of a vertical glowing column between base and roof
+//   3. ROOF:  the bright top face at z=dimH with sharp border + windows
 //
-// Floors from bottom to top:
-//   floor 0: Z=0 (ground, same as tile — a slightly larger base footprint)
-//   floor 1..N: Z = step*i (stacked faces, each slightly smaller = tapered tower)
-//   roof:       Z = dimH (top face, brightest, with windows)
+// This avoids the "stacked boxes" problem while still reading as a 3D building.
+// The shaft is transparent with only a colored box-shadow — in the iso view this
+// appears as a column of light, not a solid shape.
 
 function drawBuilding(el,sh,team,animate,interior){
   const [wr,dr,bh]=sh;
+  const bw=Math.round(CELL*wr), bd=Math.round(CELL*dr);
+  const bx=Math.round((CELL-bw)/2), by=Math.round((CELL-bd)/2);
   const ghost=!team;
   const cr=team?team.r:30, cg=team?team.g:40, cb=team?team.b:64;
-  const inten=team?(team.inten*(interior?.52:1)):1;
-  const dimH=interior?Math.round(bh*.65):bh;
+  const inten=team?(team.inten*(interior?.48:1)):1;
+  const dimH=interior?Math.round(bh*.6):bh;
 
   const bld=document.createElement('div');
   bld.className='building';
-  bld.style.cssText=`position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;`;
+  bld.style.cssText=`position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;z-index:${ghost?1:5};`;
 
   if(ghost){
-    // Ghost: just one faint outline floor at z=dimH
-    const bw=Math.round(CELL*wr), bd=Math.round(CELL*dr);
-    const bx=Math.round((CELL-bw)/2), by=Math.round((CELL-bd)/2);
+    // Ghost: single faint outline at mid-height — just a silhouette hint
     const f=document.createElement('div');
     f.style.cssText=`
       position:absolute;left:${bx}px;top:${by}px;
       width:${bw}px;height:${bd}px;border-radius:2px;
-      transform:translateZ(${dimH}px);
-      background:rgba(255,255,255,.025);
-      border:1px solid rgba(255,255,255,.13);
-      box-shadow:0 0 8px rgba(255,255,255,.04);
+      transform:translateZ(${Math.round(dimH*.6)}px);
+      background:transparent;
+      border:1px solid rgba(255,255,255,.1);
+      box-shadow:0 0 6px rgba(255,255,255,.04),inset 0 0 4px rgba(255,255,255,.02);
     `;
     bld.appendChild(f);
     el.appendChild(bld);
     return;
   }
 
-  // ── STACKED FLOORS ──
-  // Number of intermediate glow floors (more = smoother column)
-  const FLOORS=Math.max(2, Math.round(dimH/14));
-  const step=dimH/FLOORS;
+  // 1 ── BASE PLATE (z=4) — slight elevation, same footprint
+  const base=document.createElement('div');
+  base.style.cssText=`
+    position:absolute;left:${bx}px;top:${by}px;
+    width:${bw}px;height:${bd}px;border-radius:2px;
+    transform:translateZ(4px);
+    background:rgba(${cr},${cg},${cb},${.12*inten});
+    border:1px solid rgba(${cr},${cg},${cb},${.35*inten});
+    box-shadow:0 0 ${Math.round(10*inten)}px rgba(${cr},${cg},${cb},${.4*inten});
+  `;
+  if(animate) base.style.animation='floorIn .2s ease-out both';
+  bld.appendChild(base);
 
-  for(let i=0;i<=FLOORS;i++){
-    const z=Math.round(step*i);
-    const t=i/FLOORS; // 0=ground, 1=roof
-    // Taper: base is slightly wider, roof is tighter (team-specific profile)
-    const taper=ghost?0:0.08; // how much the building tapers
-    const wr_i=wr*(1+taper*(1-t));
-    const dr_i=dr*(1+taper*(1-t));
-    const bw=Math.round(CELL*wr_i), bd=Math.round(CELL*dr_i);
-    const bx=Math.round((CELL-bw)/2), by=Math.round((CELL-bd)/2);
-    const isRoof=(i===FLOORS);
+  // 2 ── SHAFT (z=dimH/2) — transparent box, only glow, creates column of light
+  const shaftZ=Math.round(dimH*.45);
+  // Slightly narrower than roof for tapered look
+  const sw=Math.max(4,Math.round(bw*.7)), sd=Math.max(4,Math.round(bd*.7));
+  const sx=Math.round((CELL-sw)/2), sy=Math.round((CELL-sd)/2);
+  const shaft=document.createElement('div');
+  shaft.style.cssText=`
+    position:absolute;left:${sx}px;top:${sy}px;
+    width:${sw}px;height:${sd}px;border-radius:2px;
+    transform:translateZ(${shaftZ}px);
+    background:rgba(${cr},${cg},${cb},${.06*inten});
+    border:1px solid rgba(${cr},${cg},${cb},${.5*inten});
+    box-shadow:
+      0 0 ${Math.round(8*inten)}px  rgba(${cr},${cg},${cb},${.55*inten}),
+      0 0 ${Math.round(20*inten)}px rgba(${cr},${cg},${cb},${.22*inten}),
+      inset 0 0 6px rgba(${cr},${cg},${cb},${.15*inten});
+  `;
+  if(animate) shaft.style.animation=`floorIn .25s ease-out .12s both`;
+  bld.appendChild(shaft);
 
-    const f=document.createElement('div');
-
-    if(isRoof){
-      // Roof: bright, glowing, with windows
-      f.style.cssText=`
-        position:absolute;left:${bx}px;top:${by}px;
-        width:${bw}px;height:${bd}px;border-radius:3px;
-        transform:translateZ(${z}px);
-        background:linear-gradient(135deg,
-          rgba(255,255,255,${.22*inten}) 0%,
-          rgba(${cr},${cg},${cb},${.14*inten}) 50%,
-          rgba(0,0,0,.25) 100%);
-        border-top:2px solid rgba(255,255,255,${.7*inten});
-        border-left:1.5px solid rgba(255,255,255,${.38*inten});
-        border-right:1px solid rgba(0,0,0,.45);
-        border-bottom:1px solid rgba(0,0,0,.5);
-        box-shadow:
-          0 0 ${Math.round(16*inten)}px rgba(${cr},${cg},${cb},${.75*inten}),
-          0 0 ${Math.round(36*inten)}px rgba(${cr},${cg},${cb},${.32*inten}),
-          inset 0 0 10px rgba(255,255,255,${.1*inten});
-        z-index:${30+z};
-      `;
-      // inner glow
-      const fill=document.createElement('div');
-      fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-        background:radial-gradient(circle at 32% 32%,rgba(${cr},${cg},${cb},${.3*inten}),transparent 62%);`;
-      f.appendChild(fill);
-      // Window dots
-      const wc=Math.max(2,Math.round(bw/9)), wr2=Math.max(1,Math.round(bd/13));
-      for(let wi=0;wi<wr2;wi++) for(let wj=0;wc&&wi<wr2&&wj<wc;wj++){
-        const w=document.createElement('div');
-        const wx=Math.round(bw*(wj+.5)/wc)-1, wy=Math.round(bd*(wi+.5)/wr2)-1;
-        w.style.cssText=`position:absolute;left:${wx}px;top:${wy}px;
-          width:2px;height:2px;border-radius:1px;
-          background:rgba(${cr},${cg},${cb},${.98*inten});
-          box-shadow:0 0 4px rgba(${cr},${cg},${cb},.9);
-          animation:winFlicker ${2+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.18+Math.random()*.4}s infinite;`;
-        f.appendChild(w);
-      }
-    } else {
-      // Intermediate floor: glow halo that creates the "wall" illusion
-      const alpha=(0.08+t*0.12)*inten;
-      const glowR=Math.round(8+t*10);
-      f.style.cssText=`
-        position:absolute;left:${bx-2}px;top:${by-2}px;
-        width:${bw+4}px;height:${bd+4}px;border-radius:4px;
-        transform:translateZ(${z}px);
-        background:rgba(${cr},${cg},${cb},${alpha});
-        box-shadow:0 0 ${glowR}px rgba(${cr},${cg},${cb},${alpha*1.8});
-        border:1px solid rgba(${cr},${cg},${cb},${(0.15+t*0.2)*inten});
-        z-index:${10+z};
-      `;
-    }
-    if(animate){
-      const delay=(t*0.5).toFixed(2);
-      f.style.animation=`floorIn .3s ease-out ${delay}s both`;
-    }
-    bld.appendChild(f);
+  // 3 ── ROOF (z=dimH) — brightest face, sharp border, windows
+  const roof=document.createElement('div');
+  roof.style.cssText=`
+    position:absolute;left:${bx}px;top:${by}px;
+    width:${bw}px;height:${bd}px;border-radius:3px;
+    transform:translateZ(${dimH}px);
+    background:linear-gradient(135deg,
+      rgba(255,255,255,${.24*inten}) 0%,
+      rgba(${cr},${cg},${cb},${.16*inten}) 48%,
+      rgba(0,0,0,.22) 100%);
+    border-top:2px solid rgba(255,255,255,${.72*inten});
+    border-left:1.5px solid rgba(255,255,255,${.40*inten});
+    border-right:1px solid rgba(0,0,0,.4);
+    border-bottom:1px solid rgba(0,0,0,.45);
+    box-shadow:
+      0 0 ${Math.round(14*inten)}px rgba(${cr},${cg},${cb},${.8*inten}),
+      0 0 ${Math.round(32*inten)}px rgba(${cr},${cg},${cb},${.35*inten}),
+      inset 0 0 8px rgba(255,255,255,${.1*inten});
+  `;
+  // inner radial glow
+  const fill=document.createElement('div');
+  fill.style.cssText=`position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(circle at 30% 30%,rgba(${cr},${cg},${cb},${.32*inten}),transparent 60%);`;
+  roof.appendChild(fill);
+  // window dots
+  const wc=Math.max(2,Math.round(bw/9)), wr2=Math.max(1,Math.round(bd/13));
+  for(let wi=0;wi<wr2;wi++) for(let wj=0;wj<wc;wj++){
+    const w=document.createElement('div');
+    w.style.cssText=`position:absolute;
+      left:${Math.round(bw*(wj+.5)/wc)-1}px;top:${Math.round(bd*(wi+.5)/wr2)-1}px;
+      width:2px;height:2px;border-radius:1px;
+      background:rgba(${cr},${cg},${cb},${.95*inten});
+      box-shadow:0 0 3px rgba(${cr},${cg},${cb},.85);
+      animation:winFlicker ${2+Math.random()*3}s ease-in-out ${(wi*wc+wj)*.16+Math.random()*.4}s infinite;`;
+    roof.appendChild(w);
   }
+  if(animate) roof.style.animation=`floorIn .3s ease-out .28s both`;
+  bld.appendChild(roof);
 
   el.appendChild(bld);
 }

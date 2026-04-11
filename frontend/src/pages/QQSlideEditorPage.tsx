@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { CustomSlide, makePreviewState } from '../components/QQCustomSlide';
+import { CustomSlide, makePreviewState, SLIDE_ANIM_KEYFRAMES } from '../components/QQCustomSlide';
 import { QQBuiltinSlide } from '../components/QQBuiltinSlide';
 import { Fireflies } from './QQBeamerPage';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -408,9 +408,12 @@ export default function QQSlideEditorPage() {
   const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }>({});
   const [previewMode, setPreviewMode] = useState(false);
   const [showThemeColors, setShowThemeColors] = useState(false);
+  const [transPreviewKey, setTransPreviewKey] = useState(0);
   const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | 'slide' | 'theme' | null>(null);
+  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | 'slide' | 'theme' | 'timeline' | null>(null);
+  const [elAnimPreviewKey, setElAnimPreviewKey] = useState(0);
+  const [timelinePreviewKey, setTimelinePreviewKey] = useState(0);
   const [soundConfig, setSoundConfigLocal] = useState<import('../../../shared/quarterQuizTypes').QQSoundConfig>({});
   const [zoom, setZoom] = useState(1);
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
@@ -769,7 +772,7 @@ export default function QQSlideEditorPage() {
         .qqse-layer-row:hover { background: rgba(255,255,255,0.04); }
         .qqse-layer-row.selected { background: rgba(59,130,246,0.12); }
         @keyframes qqse-panel-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
-      `}</style>
+      `}{SLIDE_ANIM_KEYFRAMES}</style>
 
       {/* ── Shared tab bar ── */}
       <QQEditorTabs active="editor" draftId={draftId ?? undefined} onSave={() => void save()} />
@@ -1006,7 +1009,7 @@ export default function QQSlideEditorPage() {
                 <span style={{ fontSize: 11, fontWeight: 900, color: '#e2e8f0' }}>
                   {({
                     add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen',
-                    presets: '✨ Presets', sounds: '🔊 Sounds', slide: '🎬 Folie', theme: '🎨 Theme',
+                    presets: '✨ Presets', sounds: '🔊 Sounds', slide: '🎬 Folie', theme: '🎨 Theme', timeline: '⏱ Animations-Timeline',
                   } as Record<string, string>)[rightSection!]}
                 </span>
                 <button onClick={() => setRightSection(null)}
@@ -1020,7 +1023,9 @@ export default function QQSlideEditorPage() {
                 {rightSection === 'props' && (
                   selectedEl
                     ? <PropertiesPanel element={selectedEl} onChange={patchElement} onDelete={deleteSelected} onDuplicate={duplicateSelected}
-                        onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })} />
+                        onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })}
+                        animPreviewKey={elAnimPreviewKey}
+                        onAnimPreview={() => setElAnimPreviewKey(k => k + 1)} />
                     : <div style={{ padding: 16, fontSize: 12, color: '#334155', fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
                         Kein Element ausgewählt.<br />
                         <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
@@ -1118,22 +1123,217 @@ export default function QQSlideEditorPage() {
                             placeholder="#000 oder CSS gradient…" />
                         </div>
                       </Field>
-                      <Field label="Übergang">
-                        <select value={activeTemplate.transitionIn || ''} onChange={e => patchTemplate({ ...activeTemplate, transitionIn: (e.target.value || undefined) as any })}
-                          style={{ ...input, padding: '4px 7px' }}>
-                          <option value="">Keiner</option>
-                          <option value="fade">Einblenden</option>
-                          <option value="slideUp">Hochschieben</option>
-                          <option value="zoom">Zoom</option>
-                        </select>
-                      </Field>
-                      {activeTemplate.transitionIn && (
-                        <Field label="Dauer (s)">
-                          <input type="number" min={0.1} max={2} step={0.1} value={activeTemplate.transitionDuration ?? 0.5}
-                            onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
-                            style={{ ...input, padding: '4px 7px' }} />
-                        </Field>
-                      )}
+                      {/* Transition picker */}
+                      {(() => {
+                        const TRANS_OPTIONS: { value: string; label: string; icon: string }[] = [
+                          { value: '',          label: 'Keiner',      icon: '✗' },
+                          { value: 'fade',      label: 'Einblenden',  icon: '🌫' },
+                          { value: 'slideUp',   label: 'Von unten',   icon: '⬆' },
+                          { value: 'slideDown', label: 'Von oben',    icon: '⬇' },
+                          { value: 'slideLeft', label: 'Von rechts',  icon: '⬅' },
+                          { value: 'slideRight',label: 'Von links',   icon: '➡' },
+                          { value: 'zoom',      label: 'Zoom ein',    icon: '🔍' },
+                          { value: 'zoomOut',   label: 'Zoom aus',    icon: '🔎' },
+                          { value: 'flip',      label: 'Flip',        icon: '🔄' },
+                          { value: 'drop',      label: 'Drop',        icon: '💧' },
+                          { value: 'swirl',     label: 'Swirl',       icon: '🌀' },
+                        ];
+                        const cur = activeTemplate.transitionIn || '';
+                        return (
+                          <>
+                            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>Übergang</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+                              {TRANS_OPTIONS.map(opt => {
+                                const active = cur === opt.value;
+                                return (
+                                  <button key={opt.value} onClick={() => {
+                                    patchTemplate({ ...activeTemplate, transitionIn: (opt.value || undefined) as any });
+                                    if (opt.value) setTransPreviewKey(k => k + 1);
+                                  }} style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                                    padding: '7px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                                    background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                                    outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
+                                    color: active ? '#93c5fd' : '#94a3b8',
+                                    transition: 'all 0.12s',
+                                  }}>
+                                    <span style={{ fontSize: 16 }}>{opt.icon}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>{opt.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Live preview strip */}
+                            {cur && (() => {
+                              const dur = activeTemplate.transitionDuration ?? 0.5;
+                              const TRANS_MAP: Record<string, string> = {
+                                fade: 'csTransFade', slideUp: 'csTransSlideUp', slideDown: 'csTransSlideDown',
+                                slideLeft: 'csTransSlideLeft', slideRight: 'csTransSlideRight',
+                                zoom: 'csTransZoom', zoomOut: 'csTransZoomOut',
+                                flip: 'csTransFlip', drop: 'csTransDrop', swirl: 'csTransSwirl',
+                              };
+                              const animName = TRANS_MAP[cur] ?? 'csTransFade';
+                              // Preview dimensions: 280×157.5 (16:9)
+                              const PW = 280, PH = 157.5;
+                              return (
+                                <div style={{ marginTop: 6 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                                    <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Vorschau</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <label style={{ fontSize: 10, color: '#64748b' }}>
+                                        Dauer&nbsp;
+                                        <input type="number" min={0.1} max={2} step={0.1} value={dur}
+                                          onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
+                                          style={{ ...input, width: 46, padding: '2px 5px', fontSize: 11, display: 'inline-block' }} />
+                                        &nbsp;s
+                                      </label>
+                                      <button onClick={() => setTransPreviewKey(k => k + 1)}
+                                        style={{ ...btn('#3B82F6', true), padding: '3px 9px', fontSize: 11 }}>
+                                        ▶ Nochmal
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {/* Scaled-down live slide */}
+                                  <div style={{
+                                    width: PW, height: PH, borderRadius: 8, overflow: 'hidden',
+                                    border: '1.5px solid rgba(255,255,255,0.1)',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                    position: 'relative', background: activeTemplate.background || '#0d0a06',
+                                  }}>
+                                    <div key={transPreviewKey} style={{
+                                      position: 'absolute', inset: 0,
+                                      animation: `${animName} ${dur}s ease-out both`,
+                                      width: '100%', height: '100%',
+                                    }}>
+                                      <CustomSlide
+                                        template={activeTemplate}
+                                        previewState={makePreviewState(activeType, undefined, previewQuestion ?? undefined)}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  );
+                })()}
+
+                {rightSection === 'timeline' && (() => {
+                  // Sort elements by animDelay for timeline display
+                  const els = [...activeTemplate.elements].sort((a, b) => (a.animDelay ?? 0) - (b.animDelay ?? 0));
+                  // Max time for timeline scale
+                  const maxTime = Math.max(2, ...els.map(e => (e.animDelay ?? 0) + (e.animDuration ?? 0.5)));
+                  const EL_ICONS: Record<string, string> = { text: '📝', image: '🖼', rect: '⬛', animatedAvatar: '🕺', emojiStack: '🎭' };
+                  const ANIM_COLORS: Record<string, string> = {
+                    fadeIn: '#3B82F6', fadeUp: '#6366F1', pop: '#EC4899',
+                    slideLeft: '#F59E0B', slideRight: '#F97316',
+                    cardFlip: '#8B5CF6', bounceIn: '#22C55E', slotDrop: '#14B8A6',
+                    swingIn: '#EF4444', typewriter: '#64748b',
+                  };
+                  return (
+                    <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {/* Play all preview */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Alle Animationen</span>
+                        <button onClick={() => setTimelinePreviewKey(k => k + 1)}
+                          style={{ background: '#3B82F6', border: 'none', borderRadius: 7, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit' }}>
+                          ▶ Abspielen
+                        </button>
+                      </div>
+                      {/* Full-slide preview */}
+                      <div style={{
+                        position: 'relative', width: '100%', paddingBottom: '56.25%',
+                        borderRadius: 8, overflow: 'hidden',
+                        border: '1.5px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                        background: activeTemplate.background || '#0d0a06',
+                      }}>
+                        <div key={timelinePreviewKey} style={{ position: 'absolute', inset: 0 }}>
+                          <CustomSlide
+                            template={activeTemplate}
+                            previewState={makePreviewState(activeType, undefined, previewQuestion ?? undefined)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Timeline */}
+                      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginTop: 4 }}>Reihenfolge &amp; Timing</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {els.map(el => {
+                          const isPh = el.type.startsWith('ph_');
+                          const label = isPh ? (PH_LABELS[el.type as QQSlideElementType] ?? el.type)
+                            : el.type === 'text' ? (el.text?.slice(0, 20) ?? 'Text')
+                            : el.type === 'animatedAvatar' ? (el.text ?? '🕺')
+                            : el.type;
+                          const icon = isPh ? '⬡' : (EL_ICONS[el.type] ?? '⬛');
+                          const delay = el.animDelay ?? 0;
+                          const dur = el.animDuration ?? 0.5;
+                          const animIn = el.animIn ?? 'none';
+                          const barColor = animIn !== 'none' ? (ANIM_COLORS[animIn] ?? '#3B82F6') : '#334155';
+                          const isSelected = selectedIds.includes(el.id);
+                          return (
+                            <div key={el.id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                              {/* Row header */}
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
+                                borderRadius: 6, background: isSelected ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.03)',
+                                cursor: 'pointer',
+                              }} onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
+                                <span style={{ fontSize: 12, flexShrink: 0 }}>{icon}</span>
+                                <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93c5fd' : '#94a3b8', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                                <span style={{ fontSize: 9, color: barColor, fontWeight: 800, flexShrink: 0 }}>{animIn !== 'none' ? animIn : '—'}</span>
+                              </div>
+                              {/* Timeline bar */}
+                              <div style={{ position: 'relative', height: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 4, margin: '0 4px' }}>
+                                {animIn !== 'none' && (
+                                  <div style={{
+                                    position: 'absolute', top: 2, bottom: 2,
+                                    left: `${(delay / maxTime) * 100}%`,
+                                    width: `${(dur / maxTime) * 100}%`,
+                                    minWidth: 6,
+                                    background: barColor, borderRadius: 3, opacity: 0.85,
+                                  }} title={`Delay: ${delay}s  Dauer: ${dur}s`} />
+                                )}
+                                {/* tick marks at 0, 0.5, 1s etc */}
+                                {Array.from({ length: Math.ceil(maxTime * 2) + 1 }, (_, i) => i * 0.5).map(t => (
+                                  <div key={t} style={{
+                                    position: 'absolute', top: 0, bottom: 0,
+                                    left: `${(t / maxTime) * 100}%`,
+                                    width: 1, background: 'rgba(255,255,255,0.07)',
+                                  }} />
+                                ))}
+                              </div>
+                              {/* Inline delay/dur editors only for selected */}
+                              {isSelected && animIn !== 'none' && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, margin: '0 4px 4px' }}>
+                                  <label style={{ fontSize: 9, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    Delay (s)
+                                    <input type="number" value={delay} step={0.1} min={0}
+                                      onChange={e => patchElement({ animDelay: Number(e.target.value) })}
+                                      style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: '#e2e8f0', padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
+                                  </label>
+                                  <label style={{ fontSize: 9, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    Dauer (s)
+                                    <input type="number" value={dur} step={0.1} min={0.1}
+                                      onChange={e => patchElement({ animDuration: Number(e.target.value) })}
+                                      style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: '#e2e8f0', padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
+                                  </label>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Time ruler */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '0 4px', fontSize: 8, color: '#334155', fontWeight: 700 }}>
+                        {Array.from({ length: Math.ceil(maxTime) + 1 }, (_, i) => (
+                          <span key={i}>{i}s</span>
+                        ))}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1198,8 +1398,9 @@ export default function QQSlideEditorPage() {
               { id: 'layers',  icon: '⬡',  label: 'Ebenen' },
               { id: 'presets', icon: '✨', label: 'Presets' },
               { id: 'sounds',  icon: '🔊', label: 'Sounds' },
-              { id: 'slide',   icon: '🎬', label: 'Folie' },
-              { id: 'theme',   icon: '🎨', label: 'Theme' },
+              { id: 'slide',    icon: '🎬', label: 'Folie' },
+              { id: 'timeline', icon: '⏱', label: 'Timeline' },
+              { id: 'theme',    icon: '🎨', label: 'Theme' },
             ] as const).map(({ id, icon, label }) => {
               const isActive = rightSection === id;
               return (
@@ -1589,18 +1790,18 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
 }
 
 // ── PropertiesPanel ───────────────────────────────────────────────────────────
-const ANIM_IN_OPTIONS: Array<{ value: QQSlideElement['animIn']; label: string }> = [
-  { value: 'none',       label: 'Keiner' },
-  { value: 'fadeIn',     label: 'Einblenden' },
-  { value: 'fadeUp',     label: 'Von unten einblenden' },
-  { value: 'pop',        label: 'Pop (aufploppen)' },
-  { value: 'slideLeft',  label: 'Von links schieben' },
-  { value: 'slideRight', label: 'Von rechts schieben' },
-  { value: 'cardFlip',   label: 'Karte umdrehen' },
-  { value: 'bounceIn',   label: 'Reinspringen' },
-  { value: 'slotDrop',   label: 'Slot-Machine Drop' },
-  { value: 'swingIn',    label: 'Einschwingen' },
-  { value: 'typewriter', label: 'Schreibmaschine (Text)' },
+const ANIM_IN_OPTIONS: Array<{ value: QQSlideElement['animIn']; label: string; icon: string }> = [
+  { value: 'none',       label: 'Keiner',        icon: '✗'  },
+  { value: 'fadeIn',     label: 'Einblenden',    icon: '🌫' },
+  { value: 'fadeUp',     label: 'Von unten',     icon: '⬆'  },
+  { value: 'pop',        label: 'Pop',           icon: '💥' },
+  { value: 'slideLeft',  label: 'Von links',     icon: '◀'  },
+  { value: 'slideRight', label: 'Von rechts',    icon: '▶'  },
+  { value: 'cardFlip',   label: 'Flip',          icon: '🔄' },
+  { value: 'bounceIn',   label: 'Springen',      icon: '🏀' },
+  { value: 'slotDrop',   label: 'Drop',          icon: '💧' },
+  { value: 'swingIn',    label: 'Schwingen',     icon: '🎷' },
+  { value: 'typewriter', label: 'Tippen',        icon: '⌨'  },
 ];
 const ANIM_LOOP_OPTIONS: Array<{ value: QQSlideElement['animLoop']; label: string }> = [
   { value: 'none',   label: 'Keiner' },
@@ -1630,12 +1831,14 @@ const ANIM_TYPE_OPTIONS = [
   { value: 'flip',   label: '🔄 Flippen' },
 ];
 
-function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAsBackground }: {
+function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAsBackground, animPreviewKey, onAnimPreview }: {
   element: QQSlideElement;
   onChange: (p: Partial<QQSlideElement>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onSetAsBackground?: (url: string) => void;
+  animPreviewKey: number;
+  onAnimPreview: () => void;
 }) {
   const isPh = el.type.startsWith('ph_');
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -2009,29 +2212,128 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
 
       {/* Animation & Effekte */}
       <Section label="Animation & Effekte">
-        <Field label="Eingang">
-          <select value={el.animIn ?? 'none'} onChange={e => onChange({ animIn: e.target.value as QQSlideElement['animIn'] })} style={{ ...input, padding: '4px 7px' }}>
-            {ANIM_IN_OPTIONS.map(a => <option key={String(a.value)} value={String(a.value)}>{a.label}</option>)}
-          </select>
-        </Field>
+        {/* Eingangs-Animation chips */}
+        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginBottom: 5 }}>Eingang</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+          {ANIM_IN_OPTIONS.map(opt => {
+            const active = (el.animIn ?? 'none') === opt.value;
+            return (
+              <button key={String(opt.value)} onClick={() => {
+                onChange({ animIn: opt.value });
+                if (opt.value && opt.value !== 'none') onAnimPreview();
+              }} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                padding: '6px 3px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
+                color: active ? '#93c5fd' : '#94a3b8',
+                transition: 'all 0.12s',
+              }}>
+                <span style={{ fontSize: 15 }}>{opt.icon}</span>
+                <span style={{ fontSize: 8, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Delay + Duration when an animation is chosen */}
         {el.animIn && el.animIn !== 'none' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
-            <Field label="Verzögerung (s)">
-              <input type="number" value={el.animDelay ?? 0} step={0.1} min={0} onChange={e => onChange({ animDelay: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
-            </Field>
-            <Field label="Dauer (s)">
-              <input type="number" value={el.animDuration ?? 0.5} step={0.1} min={0.1} onChange={e => onChange({ animDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
-            </Field>
+          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <Field label="Verzögerung (s)">
+                <input type="number" value={el.animDelay ?? 0} step={0.1} min={0}
+                  onChange={e => { onChange({ animDelay: Number(e.target.value) }); onAnimPreview(); }}
+                  style={{ ...input, padding: '4px 7px' }} />
+              </Field>
+              <Field label="Dauer (s)">
+                <input type="number" value={el.animDuration ?? 0.5} step={0.1} min={0.1}
+                  onChange={e => { onChange({ animDuration: Number(e.target.value) }); onAnimPreview(); }}
+                  style={{ ...input, padding: '4px 7px' }} />
+              </Field>
+            </div>
+            {/* Inline element preview */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>Vorschau</span>
+              <button onClick={onAnimPreview} style={{ ...btn('#3B82F6', true), padding: '2px 8px', fontSize: 10 }}>▶ Nochmal</button>
+            </div>
+            <div style={{
+              position: 'relative', width: '100%', paddingBottom: '56.25%',
+              borderRadius: 8, overflow: 'hidden',
+              border: '1.5px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              background: '#0d0a06',
+            }}>
+              <div key={animPreviewKey} style={{ position: 'absolute', inset: 0 }}>
+                {/* We show the element isolated on dark bg so the animation is clearly visible */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <div style={{
+                    animation: (() => {
+                      const ANIM_MAP: Record<string, string> = {
+                        fadeIn: 'csElFadeIn', fadeUp: 'csElFadeUp', pop: 'csElPop',
+                        slideLeft: 'csElSlideLeft', slideRight: 'csElSlideRight',
+                        cardFlip: 'csElCardFlip', bounceIn: 'csElBounceIn',
+                        slotDrop: 'csElSlotDrop', swingIn: 'csElSwingIn',
+                        typewriter: 'csElTypewriter',
+                      };
+                      const kf = ANIM_MAP[el.animIn!];
+                      if (!kf) return undefined;
+                      const dur = el.animDuration ?? 0.5;
+                      const del = el.animDelay ?? 0;
+                      if (el.animIn === 'typewriter') {
+                        const chars = Math.max(1, (el.text ?? 'Beispiel').length);
+                        return `${kf} ${dur}s steps(${chars}) ${del}s both`;
+                      }
+                      return `${kf} ${dur}s ease ${del}s both`;
+                    })(),
+                    padding: '8px 14px', borderRadius: 8,
+                    background: 'rgba(255,255,255,0.06)',
+                    fontSize: 18, fontWeight: 800, color: el.color ?? '#e2e8f0',
+                    fontFamily: el.fontFamily || "'Nunito', sans-serif",
+                    maxWidth: '80%', textAlign: 'center',
+                    overflow: el.animIn === 'typewriter' ? 'hidden' : undefined,
+                    whiteSpace: el.animIn === 'typewriter' ? 'nowrap' : undefined,
+                  }}>
+                    {el.type === 'text' ? (el.text || 'Beispiel-Text') :
+                     el.type === 'image' ? '🖼 Bild' :
+                     el.type === 'animatedAvatar' ? (el.text || '🧑') :
+                     el.type === 'emojiStack' ? (el.emojiLayers?.[0]?.emoji ?? '✨') :
+                     el.type === 'rect' ? '⬛ Form' : `[${el.type}]`}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-        <Field label="Endlosschleife">
-          <select value={el.animLoop ?? 'none'} onChange={e => onChange({ animLoop: e.target.value as QQSlideElement['animLoop'] })} style={{ ...input, padding: '4px 7px' }}>
-            {ANIM_LOOP_OPTIONS.map(a => <option key={String(a.value)} value={String(a.value)}>{a.label}</option>)}
-          </select>
-        </Field>
+
+        {/* Loop animation */}
+        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginTop: 8, marginBottom: 5 }}>Endlosschleife</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+          {ANIM_LOOP_OPTIONS.map(opt => {
+            const active = (el.animLoop ?? 'none') === opt.value;
+            const LOOP_ICONS: Record<string, string> = { none: '✗', pulse: '💓', bounce: '🏀', wiggle: '〰️', shake: '📳', float: '🌊' };
+            return (
+              <button key={String(opt.value)} onClick={() => onChange({ animLoop: opt.value })} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                padding: '6px 3px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
+                color: active ? '#93c5fd' : '#94a3b8',
+                transition: 'all 0.12s',
+              }}>
+                <span style={{ fontSize: 15 }}>{LOOP_ICONS[String(opt.value)] ?? '?'}</span>
+                <span style={{ fontSize: 8, fontWeight: 700, textAlign: 'center' }}>{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
         {el.animLoop && el.animLoop !== 'none' && (
           <Field label="Schleifendauer (s)">
-            <input type="number" value={el.animLoopDuration ?? 2} step={0.1} min={0.2} onChange={e => onChange({ animLoopDuration: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+            <input type="number" value={el.animLoopDuration ?? 2} step={0.1} min={0.2}
+              onChange={e => onChange({ animLoopDuration: Number(e.target.value) })}
+              style={{ ...input, padding: '4px 7px', marginTop: 6 }} />
           </Field>
         )}
       </Section>

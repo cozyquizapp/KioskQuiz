@@ -9,7 +9,7 @@ import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG as CAT_BADGE_BG, QQ_CAT_ACCENT as CAT_AC
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
 
-const SLIDE_ANIM_KEYFRAMES = `
+export const SLIDE_ANIM_KEYFRAMES = `
   @keyframes csElFadeUp    { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
   @keyframes csElFadeIn    { from{opacity:0} to{opacity:1} }
   @keyframes csElPop       { from{opacity:0;transform:scale(0.6)} to{opacity:1;transform:scale(1)} }
@@ -19,9 +19,16 @@ const SLIDE_ANIM_KEYFRAMES = `
   @keyframes csElBounceIn  { 0%{opacity:0;transform:scale(0.3)} 50%{opacity:1;transform:scale(1.15)} 70%{transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
   @keyframes csElSlotDrop  { 0%{opacity:0;transform:translateY(-60px) scaleY(0.4)} 60%{opacity:1;transform:translateY(6px) scaleY(1.05)} 80%{transform:translateY(-3px) scaleY(0.97)} 100%{opacity:1;transform:translateY(0) scaleY(1)} }
   @keyframes csElSwingIn   { 0%{opacity:0;transform:rotate(-15deg) translateX(-20px)} 60%{transform:rotate(4deg) translateX(4px)} 100%{opacity:1;transform:rotate(0deg) translateX(0)} }
-  @keyframes csTransFade   { from{opacity:0} to{opacity:1} }
-  @keyframes csTransSlideUp{ from{opacity:0;transform:translateY(60px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes csTransZoom   { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+  @keyframes csTransFade      { from{opacity:0} to{opacity:1} }
+  @keyframes csTransSlideUp   { from{opacity:0;transform:translateY(60px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes csTransSlideDown { from{opacity:0;transform:translateY(-60px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes csTransSlideLeft { from{opacity:0;transform:translateX(80px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes csTransSlideRight{ from{opacity:0;transform:translateX(-80px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes csTransZoom      { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+  @keyframes csTransZoomOut   { from{opacity:0;transform:scale(1.35)} to{opacity:1;transform:scale(1)} }
+  @keyframes csTransFlip      { from{opacity:0;transform:perspective(800px) rotateY(-90deg)} to{opacity:1;transform:perspective(800px) rotateY(0deg)} }
+  @keyframes csTransDrop      { 0%{opacity:0;transform:translateY(-80px) scaleY(0.6)} 60%{opacity:1;transform:translateY(8px) scaleY(1.04)} 80%{transform:translateY(-4px) scaleY(0.98)} 100%{opacity:1;transform:translateY(0) scaleY(1)} }
+  @keyframes csTransSwirl     { from{opacity:0;transform:scale(0.5) rotate(-15deg)} to{opacity:1;transform:scale(1) rotate(0deg)} }
   @keyframes csLoopPulse   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
   @keyframes csLoopBounce  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
   @keyframes csLoopWiggle  { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-5deg)} 75%{transform:rotate(5deg)} }
@@ -1449,7 +1456,13 @@ export function CustomSlide({
       const t = template?.transitionIn;
       if (t) {
         const dur = template?.transitionDuration ?? 0.5;
-        const name = t === 'fade' ? 'csTransFade' : t === 'slideUp' ? 'csTransSlideUp' : 'csTransZoom';
+        const TRANS_MAP: Record<string, string> = {
+          fade: 'csTransFade', slideUp: 'csTransSlideUp', slideDown: 'csTransSlideDown',
+          slideLeft: 'csTransSlideLeft', slideRight: 'csTransSlideRight',
+          zoom: 'csTransZoom', zoomOut: 'csTransZoomOut',
+          flip: 'csTransFlip', drop: 'csTransDrop', swirl: 'csTransSwirl',
+        };
+        const name = TRANS_MAP[t] ?? 'csTransFade';
         setTransAnim(`${name} ${dur}s ease-out both`);
         const timer = setTimeout(() => setTransAnim(''), dur * 1000 + 50);
         return () => clearTimeout(timer);

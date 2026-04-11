@@ -340,7 +340,7 @@ export interface QQSlideTemplate {
   type: QQSlideTemplateType;
   background: string;
   elements: QQSlideElement[];
-  transitionIn?: 'fade' | 'slideUp' | 'zoom';
+  transitionIn?: 'fade' | 'slideUp' | 'slideDown' | 'slideLeft' | 'slideRight' | 'zoom' | 'zoomOut' | 'flip' | 'drop' | 'swirl';
   transitionDuration?: number;
 }
 

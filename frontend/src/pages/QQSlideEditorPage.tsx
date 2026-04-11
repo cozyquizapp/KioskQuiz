@@ -410,7 +410,7 @@ export default function QQSlideEditorPage() {
   const [showThemeColors, setShowThemeColors] = useState(false);
   const [previewQuestion, setPreviewQuestion] = useState<QQQuestion | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | null>(null);
+  const [rightSection, setRightSection] = useState<'add' | 'props' | 'layers' | 'presets' | 'sounds' | 'slide' | 'theme' | null>(null);
   const [soundConfig, setSoundConfigLocal] = useState<import('../../../shared/quarterQuizTypes').QQSoundConfig>({});
   const [zoom, setZoom] = useState(1);
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
@@ -484,6 +484,7 @@ export default function QQSlideEditorPage() {
       ...(type === 'rect'  ? { background: 'rgba(30,41,59,0.8)', borderRadius: 12 } : {}),
       ...(type === 'image' ? { imageUrl: '', objectFit: 'contain' as const } : {}),
           ...(type === 'animatedAvatar' ? { text: '🧑', animType: 'wiggle', avatarAnimDuration: 4, avatarAnimDelay: 0 } : {}),
+      ...(type === 'emojiStack' ? { fontSize: 8, emojiLayers: [{ emoji: '🧑', offsetX: 0, offsetY: 0, scale: 1, rotation: 0, animType: 'float' as const }] } : {}),
     };
     patchTemplate({ ...activeTemplate, elements: [...(activeTemplate.elements || []), newEl] });
     setSelectedIds([newEl.id]);
@@ -746,7 +747,6 @@ export default function QQSlideEditorPage() {
   }, [selectedIds, editingId, activeTemplate, activeType, previewMode, currentStepIdx]);
 
   const selectedEl = (activeTemplate.elements ?? []).find(e => e.id === selectedId) ?? null;
-  const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: "'Nunito', sans-serif", fontSize: 18, fontWeight: 800 }}>Lädt…</div>
@@ -773,87 +773,6 @@ export default function QQSlideEditorPage() {
 
       {/* ── Shared tab bar ── */}
       <QQEditorTabs active="editor" draftId={draftId ?? undefined} onSave={() => void save()} />
-
-      {/* ── Header ── */}
-      <div style={{ padding: '8px 20px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={() => navigate(`/builder`)} style={btn('#475569')}>← Builder</button>
-        <div style={{ fontSize: 15, fontWeight: 900 }}>{draft.title}</div>
-        <div style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Folien-Editor</div>
-        {/* Theme preset swatches */}
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 16 }}>
-          <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginRight: 2 }}>Theme:</span>
-          {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
-            const th = QQ_THEME_PRESETS[t];
-            const active = (draft.theme?.preset ?? 'default') === t;
-            return (
-              <button
-                key={t}
-                title={t.charAt(0).toUpperCase() + t.slice(1)}
-                onClick={() => setDraft({ ...draft, theme: { ...th }, updatedAt: Date.now() })}
-                style={{
-                  width: active ? 26 : 20, height: active ? 26 : 20,
-                  borderRadius: '50%', border: active ? '2px solid #fff' : '2px solid transparent',
-                  background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`,
-                  cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                }}
-              />
-            );
-          })}
-          <button
-            title="Farben anpassen"
-            onClick={() => setShowThemeColors(p => !p)}
-            style={{
-              width: 22, height: 22, borderRadius: '50%', border: showThemeColors ? '2px solid #fff' : '2px solid transparent',
-              background: 'conic-gradient(#EF4444, #F59E0B, #22C55E, #3B82F6, #8B5CF6, #EF4444)',
-              cursor: 'pointer', flexShrink: 0, marginLeft: 4,
-            }}
-          />
-        </div>
-        {/* Custom color pickers */}
-        {showThemeColors && (
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginLeft: 8 }}>
-            {([
-              { key: 'bgColor', label: 'BG', fallback: '#0D0A06' },
-              { key: 'accentColor', label: 'Akzent', fallback: '#F59E0B' },
-              { key: 'textColor', label: 'Text', fallback: '#e2e8f0' },
-              { key: 'cardBg', label: 'Karte', fallback: '#1B1510' },
-            ] as const).map(({ key, label, fallback }) => (
-              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#64748b', fontWeight: 700, cursor: 'pointer' }}>
-                {label}
-                <input
-                  type="color"
-                  value={(draft.theme as any)?.[key] ?? fallback}
-                  onChange={e => setDraft({ ...draft, theme: { ...(draft.theme ?? { preset: 'custom' as const }), preset: 'custom' as const, [key]: e.target.value }, updatedAt: Date.now() })}
-                  style={{ width: 22, height: 22, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent', padding: 0 }}
-                />
-              </label>
-            ))}
-          </div>
-        )}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-          {/* Per-question design controls */}
-          {previewQuestion && (
-            isIndividual ? (
-              <button onClick={resetToCategory} title="Zurück zum Kategorie-Standard"
-                style={{ ...btn('#8B5CF6', true), fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
-                ✦ Individuell <span style={{ opacity: 0.6, fontSize: 10 }}>× zurücksetzen</span>
-              </button>
-            ) : (
-              <button onClick={individualizeQuestion} title="Eigenes Design für diese Frage erstellen"
-                style={{ ...btn('#A78BFA', true), fontSize: 11 }}>
-                ✦ Individualisieren
-              </button>
-            )
-          )}
-          <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', alignSelf: 'center' }} />
-          <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={btn('#475569', true)}>↩</button>
-          <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={btn('#475569', true)}>↪</button>
-          <button onClick={resetTemplate} style={btn('#475569', true)}>↺</button>
-          <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={btn('#6366F1', true)}>⎘</button>
-          <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={btn('#EF4444', true)}>🗑</button>
-          <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={btn('#22C55E')}>{saving ? '…' : '💾 Speichern'}</button>
-        </div>
-      </div>
 
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
@@ -896,92 +815,88 @@ export default function QQSlideEditorPage() {
           </div>
         </div>
 
-        {/* Center: canvas + toolbar */}
+        {/* Center: canvas */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-
-          {/* Toolbar */}
-          <div style={{ padding: '7px 14px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 18 }}>{spec.icon}</span>
-            <span style={{ fontWeight: 900, fontSize: 13, color: spec.color }}>{spec.label}</span>
-            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
-            <span style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Hintergrund:</span>
-            <input type="color" value={activeTemplate.background.startsWith('#') ? activeTemplate.background : '#0d0a06'}
-              onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
-              style={{ width: 28, height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0 }} />
-            <input value={activeTemplate.background} onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
-              style={{ ...input, width: 260, fontSize: 11, padding: '4px 8px' }} placeholder="#000 oder CSS gradient…" />
-            <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)' }} />
-            <span style={{ fontSize: 11, color: '#475569', fontWeight: 700 }}>Übergang:</span>
-            <select value={activeTemplate.transitionIn || ''} onChange={e => patchTemplate({ ...activeTemplate, transitionIn: (e.target.value || undefined) as any })}
-              style={{ ...input, width: 90, fontSize: 11, padding: '3px 6px' }}>
-              <option value="">Keiner</option>
-              <option value="fade">Einblenden</option>
-              <option value="slideUp">Hochschieben</option>
-              <option value="zoom">Zoom</option>
-            </select>
-            {activeTemplate.transitionIn && (
-              <>
-                <span style={{ fontSize: 10, color: '#475569' }}>Dauer:</span>
-                <input type="number" min={0.1} max={2} step={0.1} value={activeTemplate.transitionDuration ?? 0.5}
-                  onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
-                  style={{ ...input, width: 52, fontSize: 11, padding: '3px 6px', textAlign: 'center' }} />
-                <span style={{ fontSize: 10, color: '#475569' }}>s</span>
-              </>
-            )}
-          </div>
-
-          {/* Alignment toolbar (visible when selection exists) */}
-          {selectedIds.length > 0 && (
-            <div style={{ padding: '5px 14px', background: '#162032', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10, color: '#475569', fontWeight: 800, marginRight: 4 }}>Ausrichten:</span>
-              {[
-                { action: 'left',    icon: '⬛←', title: 'Linksbündig' },
-                { action: 'centerH', icon: '↔',  title: 'Horizontal zentrieren' },
-                { action: 'right',   icon: '→⬛', title: 'Rechtsbündig' },
-                { action: 'top',     icon: '⬛↑', title: 'Oben ausrichten' },
-                { action: 'centerV', icon: '↕',  title: 'Vertikal zentrieren' },
-                { action: 'bottom',  icon: '↓⬛', title: 'Unten ausrichten' },
-                { action: 'distH',   icon: '⫞⫟', title: 'Horizontal verteilen' },
-                { action: 'distV',   icon: '⫠⫡', title: 'Vertikal verteilen' },
-              ].map(({ action, icon, title }) => (
-                <button key={action} className="qqse-align-btn" onClick={() => alignElements(action)} title={title}>{icon}</button>
-              ))}
-            </div>
-          )}
 
           {/* Canvas area */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden', position: 'relative' }}>
-            {/* Left sidebar toggle button */}
-            <button onClick={() => setLeftOpen(p => !p)}
-              title={leftOpen ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
-              style={{ position: 'absolute', left: leftOpen ? -1 : 6, top: 8, zIndex: 10, padding: '4px 6px', borderRadius: '0 6px 6px 0', border: '1px solid rgba(255,255,255,0.1)', borderLeft: leftOpen ? 'none' : undefined, background: '#1e293b', color: '#64748b', cursor: 'pointer', fontSize: 12, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900 }}>
-              {leftOpen ? '◀' : '▶'}
-            </button>
 
-            {/* Toolbar: zoom + preview */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 6px 40px', background: '#0a0f1a', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-              <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))}
-                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>−</button>
-              <button onClick={() => setZoom(1)}
-                style={{ padding: '2px 10px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, minWidth: 46, textAlign: 'center' }}>
-                {Math.round(zoom * 100)}%
+            {/* ── Floating top bar: title + actions ── */}
+            <div style={{
+              position: 'absolute', top: 8, left: leftOpen ? 8 : 36, right: 8, zIndex: 20,
+              display: 'flex', alignItems: 'center', gap: 5, pointerEvents: 'none',
+            }}>
+              {/* Left-sidebar toggle */}
+              <button onClick={() => setLeftOpen(p => !p)}
+                title={leftOpen ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
+                style={{ pointerEvents: 'all', padding: '4px 7px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: '#475569', cursor: 'pointer', fontSize: 11, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900, backdropFilter: 'blur(6px)' }}>
+                {leftOpen ? '◀' : '▶'}
               </button>
-              <button onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))}
-                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>+</button>
-              <button onClick={() => setZoom(0.5)} title="Einpassen"
-                style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>⊡ Fit</button>
+              {/* Back + title */}
+              <button onClick={() => navigate('/builder')}
+                style={{ pointerEvents: 'all', padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,17,23,0.85)', color: '#64748b', cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', backdropFilter: 'blur(6px)', whiteSpace: 'nowrap' }}>
+                ← Builder
+              </button>
+              <div style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(13,17,23,0.7)', fontSize: 12, fontWeight: 900, color: '#e2e8f0', backdropFilter: 'blur(6px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                {draft.title}
+              </div>
               <div style={{ flex: 1 }} />
-              <button onClick={() => setPreviewMode(p => !p)}
-                style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${previewMode ? '#FBBF24' : 'rgba(255,255,255,0.1)'}`, background: previewMode ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)', color: previewMode ? '#FBBF24' : '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
-                {previewMode ? '🖉 Bearbeiten' : '👁 Vorschau'}
+              {/* Action buttons */}
+              {(() => {
+                const ab: React.CSSProperties = { pointerEvents: 'all', padding: '4px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: '#94a3b8', cursor: 'pointer', fontSize: 13, fontWeight: 900, fontFamily: 'inherit', backdropFilter: 'blur(6px)', lineHeight: 1 };
+                return (<>
+                  {previewQuestion && (isIndividual
+                    ? <button onClick={resetToCategory} title="Zurück zum Kategorie-Standard" style={{ ...ab, color: '#A78BFA', fontSize: 11, whiteSpace: 'nowrap' }}>✦ ×Reset</button>
+                    : <button onClick={individualizeQuestion} title="Eigenes Design für diese Frage" style={{ ...ab, color: '#A78BFA', fontSize: 11, whiteSpace: 'nowrap' }}>✦ Individuell</button>
+                  )}
+                  <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={{ ...ab, opacity: histIdxRef.current <= 0 ? 0.3 : 1 }}>↩</button>
+                  <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={{ ...ab, opacity: histIdxRef.current >= historyRef.current.length - 1 ? 0.3 : 1 }}>↪</button>
+                  <button onClick={resetTemplate} title="Zurücksetzen" style={ab}>↺</button>
+                  <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={{ ...ab, opacity: selectedIds.length === 0 ? 0.3 : 1, color: '#818cf8' }}>⎘</button>
+                  <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={{ ...ab, opacity: selectedIds.length === 0 ? 0.3 : 1, color: '#f87171' }}>🗑</button>
+                  <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={{ ...ab, background: saving ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.2)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>{saving ? '…' : '💾'}</button>
+                </>);
+              })()}
+            </div>
+
+            {/* ── Floating bottom bar: zoom + view controls ── */}
+            <div style={{
+              position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 20,
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: 'rgba(13,17,23,0.88)', borderRadius: 10, padding: '4px 8px',
+              border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)',
+              pointerEvents: 'all',
+            }}>
+              <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>−</button>
+              <button onClick={() => setZoom(1)} style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, minWidth: 42, textAlign: 'center' }}>{Math.round(zoom * 100)}%</button>
+              <button onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>+</button>
+              <button onClick={() => setZoom(0.5)} style={{ padding: '2px 7px', borderRadius: 5, border: 'none', background: 'transparent', color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>Fit</button>
+              <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 3px' }} />
+              <button onClick={() => setPreviewMode(p => !p)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: previewMode ? 'rgba(251,191,36,0.18)' : 'transparent', color: previewMode ? '#FBBF24' : '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
+                {previewMode ? '🖉 Edit' : '👁 Preview'}
               </button>
               {previewMode && (
-                <button onClick={() => setFullscreenPreview(true)}
-                  style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
-                  ⛶ Vollbild
-                </button>
+                <button onClick={() => setFullscreenPreview(true)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>⛶</button>
               )}
             </div>
+
+            {/* ── Floating alignment bar (shows when elements selected) ── */}
+            {selectedIds.length > 1 && (
+              <div style={{
+                position: 'absolute', bottom: 52, left: '50%', transform: 'translateX(-50%)', zIndex: 20,
+                display: 'flex', alignItems: 'center', gap: 3,
+                background: 'rgba(13,17,23,0.88)', borderRadius: 9, padding: '3px 6px',
+                border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)',
+              }}>
+                {[
+                  { action: 'left',    icon: '⬛←' }, { action: 'centerH', icon: '↔' }, { action: 'right',   icon: '→⬛' },
+                  { action: 'top',     icon: '⬛↑' }, { action: 'centerV', icon: '↕' }, { action: 'bottom',  icon: '↓⬛' },
+                  { action: 'distH',   icon: '⫞⫟' }, { action: 'distV',   icon: '⫠⫡' },
+                ].map(({ action, icon }) => (
+                  <button key={action} className="qqse-align-btn" onClick={() => alignElements(action)} title={action} style={{ fontSize: 12, padding: '3px 5px' }}>{icon}</button>
+                ))}
+              </div>
+            )}
 
             {/* Scrollable canvas workspace */}
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 32px' }}
@@ -1089,7 +1004,10 @@ export default function QQSlideEditorPage() {
               {/* Panel header */}
               <div style={{ padding: '8px 10px 8px 12px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <span style={{ fontSize: 11, fontWeight: 900, color: '#e2e8f0' }}>
-                  {{ add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen', presets: '✨ Presets', sounds: '🔊 Sounds' }[rightSection]}
+                  {({
+                    add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen',
+                    presets: '✨ Presets', sounds: '🔊 Sounds', slide: '🎬 Folie', theme: '🎨 Theme',
+                  } as Record<string, string>)[rightSection!]}
                 </span>
                 <button onClick={() => setRightSection(null)}
                   style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px', fontFamily: 'inherit' }}>✕</button>
@@ -1179,6 +1097,95 @@ export default function QQSlideEditorPage() {
                     />
                   </div>
                 )}
+
+                {rightSection === 'slide' && (() => {
+                  const spec = TEMPLATE_SPECS.find(s => s.type === activeType)!;
+                  return (
+                    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <span style={{ fontSize: 20 }}>{spec?.icon}</span>
+                        <span style={{ fontWeight: 900, fontSize: 13, color: spec?.color ?? '#e2e8f0' }}>{spec?.label}</span>
+                      </div>
+                      <Field label="Hintergrund">
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input type="color"
+                            value={activeTemplate.background.startsWith('#') ? activeTemplate.background : '#0d0a06'}
+                            onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
+                            style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
+                          <input value={activeTemplate.background}
+                            onChange={e => patchTemplate({ ...activeTemplate, background: e.target.value })}
+                            style={{ ...input, flex: 1, fontSize: 11, padding: '4px 7px' }}
+                            placeholder="#000 oder CSS gradient…" />
+                        </div>
+                      </Field>
+                      <Field label="Übergang">
+                        <select value={activeTemplate.transitionIn || ''} onChange={e => patchTemplate({ ...activeTemplate, transitionIn: (e.target.value || undefined) as any })}
+                          style={{ ...input, padding: '4px 7px' }}>
+                          <option value="">Keiner</option>
+                          <option value="fade">Einblenden</option>
+                          <option value="slideUp">Hochschieben</option>
+                          <option value="zoom">Zoom</option>
+                        </select>
+                      </Field>
+                      {activeTemplate.transitionIn && (
+                        <Field label="Dauer (s)">
+                          <input type="number" min={0.1} max={2} step={0.1} value={activeTemplate.transitionDuration ?? 0.5}
+                            onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
+                            style={{ ...input, padding: '4px 7px' }} />
+                        </Field>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {rightSection === 'theme' && (
+                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 2 }}>Quiz-Theme (gilt für alle Folien)</div>
+                    {/* Preset swatches */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
+                        const th = QQ_THEME_PRESETS[t];
+                        const active = (draft.theme?.preset ?? 'default') === t;
+                        return (
+                          <button key={t} title={t} onClick={() => setDraft({ ...draft, theme: { ...th }, updatedAt: Date.now() })}
+                            style={{
+                              width: active ? 32 : 26, height: active ? 32 : 26, borderRadius: '50%',
+                              border: active ? '2px solid #fff' : '2px solid rgba(255,255,255,0.15)',
+                              background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`,
+                              cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                              boxShadow: active ? `0 0 10px ${th.accentColor}66` : 'none',
+                            }} />
+                        );
+                      })}
+                      <button title="Farben anpassen" onClick={() => setShowThemeColors(p => !p)}
+                        style={{
+                          width: showThemeColors ? 32 : 26, height: showThemeColors ? 32 : 26, borderRadius: '50%',
+                          border: showThemeColors ? '2px solid #fff' : '2px solid rgba(255,255,255,0.15)',
+                          background: 'conic-gradient(#EF4444, #F59E0B, #22C55E, #3B82F6, #8B5CF6, #EF4444)',
+                          cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                        }} />
+                    </div>
+                    {/* Custom color pickers */}
+                    {showThemeColors && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {([
+                          { key: 'bgColor',     label: 'Hintergrund', fallback: '#0D0A06' },
+                          { key: 'accentColor', label: 'Akzent',      fallback: '#F59E0B' },
+                          { key: 'textColor',   label: 'Text',        fallback: '#e2e8f0' },
+                          { key: 'cardBg',      label: 'Karte',       fallback: '#1B1510' },
+                        ] as const).map(({ key, label, fallback }) => (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <input type="color"
+                              value={(draft.theme as any)?.[key] ?? fallback}
+                              onChange={e => setDraft({ ...draft, theme: { ...(draft.theme ?? { preset: 'custom' as const }), preset: 'custom' as const, [key]: e.target.value }, updatedAt: Date.now() })}
+                              style={{ width: 28, height: 24, border: 'none', borderRadius: 5, cursor: 'pointer', background: 'transparent', padding: 0, flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1191,6 +1198,8 @@ export default function QQSlideEditorPage() {
               { id: 'layers',  icon: '⬡',  label: 'Ebenen' },
               { id: 'presets', icon: '✨', label: 'Presets' },
               { id: 'sounds',  icon: '🔊', label: 'Sounds' },
+              { id: 'slide',   icon: '🎬', label: 'Folie' },
+              { id: 'theme',   icon: '🎨', label: 'Theme' },
             ] as const).map(({ id, icon, label }) => {
               const isActive = rightSection === id;
               return (
@@ -1655,7 +1664,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
         <div style={{ flex: 1, fontSize: 12, fontWeight: 900, color: isPh ? '#A78BFA' : '#93C5FD' }}>
-          {isPh ? `[${PH_LABELS[el.type]}]` : el.type === 'text' ? '📝 Text' : el.type === 'image' ? '🖼 Bild' : el.type === 'animatedAvatar' ? '🕺 Avatar' : '⬛ Form'}
+          {isPh ? `[${PH_LABELS[el.type]}]` : el.type === 'text' ? '📝 Text' : el.type === 'image' ? '🖼 Bild' : el.type === 'animatedAvatar' ? '🕺 Avatar' : el.type === 'emojiStack' ? '🎭 Emoji-Kompositor' : '⬛ Form'}
         </div>
         <button onClick={onDuplicate} style={{ ...btn('#6366F1', true), padding: '2px 7px', fontSize: 11 }}>⎘</button>
         <button onClick={onDelete} style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
@@ -1686,6 +1695,99 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               <input type="number" value={el.avatarAnimDelay ?? 0} step={0.1} min={0} onChange={e => onChange({ avatarAnimDelay: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
             </Field>
           </div>
+        </Section>
+      )}
+
+      {/* Emoji-Kompositor */}
+      {el.type === 'emojiStack' && (
+        <Section label="Emoji-Kompositor">
+          <Field label="Basis-Größe (vw)">
+            <input type="number" value={el.fontSize ?? 6} step={0.5} min={1} onChange={e => onChange({ fontSize: Number(e.target.value) })} style={{ ...input, padding: '4px 7px' }} />
+          </Field>
+          {/* Layer list */}
+          {(el.emojiLayers ?? []).map((layer, i) => (
+            <div key={i} style={{ padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>{layer.emoji}</span>
+                <span style={{ flex: 1, fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>Ebene {i + 1}</span>
+                <button
+                  onClick={() => {
+                    const layers = [...(el.emojiLayers ?? [])];
+                    layers.splice(i, 1);
+                    onChange({ emojiLayers: layers });
+                  }}
+                  style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
+              </div>
+              {/* Emoji text + picker */}
+              <Field label="Emoji">
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <input
+                    value={layer.emoji}
+                    onChange={e => {
+                      const layers = [...(el.emojiLayers ?? [])];
+                      layers[i] = { ...layers[i], emoji: e.target.value };
+                      onChange({ emojiLayers: layers });
+                    }}
+                    style={{ ...input, padding: '4px 7px', width: 54, fontSize: 18, textAlign: 'center' }}
+                  />
+                  <EmojiPicker onPick={emoji => {
+                    const layers = [...(el.emojiLayers ?? [])];
+                    layers[i] = { ...layers[i], emoji };
+                    onChange({ emojiLayers: layers });
+                  }} />
+                </div>
+              </Field>
+              {/* Offset + Scale in grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+                <Field label="X-Offset %">
+                  <input type="number" value={layer.offsetX} step={1}
+                    onChange={e => { const ls = [...(el.emojiLayers ?? [])]; ls[i] = { ...ls[i], offsetX: Number(e.target.value) }; onChange({ emojiLayers: ls }); }}
+                    style={{ ...input, padding: '4px 5px', fontSize: 11 }} />
+                </Field>
+                <Field label="Y-Offset %">
+                  <input type="number" value={layer.offsetY} step={1}
+                    onChange={e => { const ls = [...(el.emojiLayers ?? [])]; ls[i] = { ...ls[i], offsetY: Number(e.target.value) }; onChange({ emojiLayers: ls }); }}
+                    style={{ ...input, padding: '4px 5px', fontSize: 11 }} />
+                </Field>
+                <Field label="Skalierung">
+                  <input type="number" value={layer.scale} step={0.1} min={0.1}
+                    onChange={e => { const ls = [...(el.emojiLayers ?? [])]; ls[i] = { ...ls[i], scale: Number(e.target.value) }; onChange({ emojiLayers: ls }); }}
+                    style={{ ...input, padding: '4px 5px', fontSize: 11 }} />
+                </Field>
+              </div>
+              {/* Rotation */}
+              <Field label={`Drehung (${layer.rotation}°)`}>
+                <input type="range" min={-180} max={180} value={layer.rotation}
+                  onChange={e => { const ls = [...(el.emojiLayers ?? [])]; ls[i] = { ...ls[i], rotation: Number(e.target.value) }; onChange({ emojiLayers: ls }); }}
+                  style={{ width: '100%' }} />
+              </Field>
+              {/* Anim type */}
+              <Field label="Animation">
+                <select value={layer.animType ?? 'none'}
+                  onChange={e => { const ls = [...(el.emojiLayers ?? [])]; ls[i] = { ...ls[i], animType: e.target.value as any }; onChange({ emojiLayers: ls }); }}
+                  style={{ ...input, padding: '4px 7px' }}>
+                  <option value="none">Keine</option>
+                  <option value="float">🌊 Schweben</option>
+                  <option value="bounce">🏀 Hüpfen</option>
+                  <option value="spin">🌀 Drehen</option>
+                  <option value="pulse">💓 Pulsieren</option>
+                  <option value="shake">📳 Schütteln</option>
+                  <option value="wiggle">〰️ Wackeln</option>
+                </select>
+              </Field>
+            </div>
+          ))}
+          {/* Add layer button */}
+          <button
+            onClick={() => {
+              const layers = [...(el.emojiLayers ?? [])];
+              layers.push({ emoji: '✨', offsetX: 0, offsetY: 0, scale: 1, rotation: 0, animType: 'none' });
+              onChange({ emojiLayers: layers });
+            }}
+            style={{ ...btn('#3B82F6', true), width: '100%', padding: '6px 10px', fontSize: 12, textAlign: 'center' }}>
+            ＋ Emoji-Ebene hinzufügen
+          </button>
         </Section>
       )}
 
@@ -1944,7 +2046,7 @@ function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) 
       <div style={{ fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Element hinzufügen</div>
       <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, fontWeight: 700 }}>Statische Elemente:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-          {([['text', '📝 Text — statischer Text'], ['image', '🖼 Bild — URL oder hochladen'], ['rect', '⬛ Form — Hintergrund, Overlay'], ['animatedAvatar', '🕺 Avatar — animiert']] as const).map(([t, label]) => (
+          {([['text', '📝 Text — statischer Text'], ['image', '🖼 Bild — URL oder hochladen'], ['rect', '⬛ Form — Hintergrund, Overlay'], ['animatedAvatar', '🕺 Avatar — animiert'], ['emojiStack', '🎭 Emoji-Kompositor — mehrere Emojis stapeln']] as const).map(([t, label]) => (
           <button key={t} onClick={() => onAdd(t)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.06)', color: '#93C5FD', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, textAlign: 'left' }}>{label}</button>
         ))}
       </div>

@@ -973,6 +973,38 @@ function CustomSlideElement({
       );
     }
 
+    case 'emojiStack': {
+      const layers = el.emojiLayers ?? [];
+      const baseSize = `${(el.fontSize ?? 6) * canvasW / 100}px`;
+      const animMap: Record<string, string> = {
+        float: 'cfloat', bounce: 'cfloata', spin: 'cavspin', pulse: 'cavpulse',
+        shake: 'cavshake', wiggle: 'cfloat',
+      };
+      return (
+        <div style={{ ...baseStyle, overflow: 'visible', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {layers.map((layer, i) => {
+            const anim = layer.animType && layer.animType !== 'none' ? animMap[layer.animType] : undefined;
+            return (
+              <div key={i} style={{
+                position: 'absolute',
+                fontSize: `calc(${baseSize} * ${layer.scale ?? 1})`,
+                transform: `translate(${layer.offsetX ?? 0}%, ${layer.offsetY ?? 0}%) rotate(${layer.rotation ?? 0}deg)`,
+                lineHeight: 1, userSelect: 'none',
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))',
+                ['--r' as string]: `${layer.rotation ?? 0}deg`,
+                animation: anim ? `${anim} ${3 + i * 0.5}s ease-in-out ${i * 0.3}s infinite` : undefined,
+              }}>
+                {layer.emoji}
+              </div>
+            );
+          })}
+          {layers.length === 0 && (
+            <div style={{ fontSize: baseSize, opacity: 0.3, userSelect: 'none' }}>🎭</div>
+          )}
+        </div>
+      );
+    }
+
     case 'ph_question_image': {
       const img = q?.image;
       // Editor preview: show placeholder box when no image or layout='none'

@@ -268,7 +268,8 @@ export type QQSlideElementType =
   | 'ph_qr_code' | 'ph_counter'
   | 'ph_hot_potato' | 'ph_imposter' | 'ph_answer_count'
   | 'ph_mini_grid' | 'ph_placement_banner' | 'ph_phase_scores'
-  | 'animatedAvatar';
+  | 'animatedAvatar'
+  | 'emojiStack';
 
 export interface QQSlideElement {
   id: string;
@@ -315,6 +316,17 @@ export interface QQSlideElement {
   // Animation type for avatar
   avatarAnimDuration?: number; // seconds
   avatarAnimDelay?: number; // seconds
+  // Emoji Stack Compositor (only for type === 'emojiStack')
+  emojiLayers?: EmojiLayer[];
+}
+
+export interface EmojiLayer {
+  emoji: string;
+  offsetX: number;  // % relative to element size (−50 to +50)
+  offsetY: number;
+  scale: number;    // 1 = normal
+  rotation: number; // degrees
+  animType?: 'none' | 'float' | 'bounce' | 'spin' | 'pulse' | 'shake' | 'wiggle';
 }
 
 export type QQSlideTemplateType =

@@ -635,16 +635,27 @@ for(let r=0;r<SIZE;r++){
     });
     el.addEventListener('click',()=>{
       if(state[r][c]) return;
-      if(cameraAnimating) return; // block clicks during animation
+      if(cameraAnimating) return;
       state[r][c]={teamIdx:activeTeam,hi:Math.floor(Math.random()*3),home:false,new:true};
-      renderCell(r,c,false); // render tile immediately, no bounce yet
+      renderCell(r,c,false);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;
         if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE) renderCell(nr,nc,false);
       });
       updateTerritoryOutlines();
       updateScores();
-      triggerCameraSequence(r,c);
+      if(!isIsoMode){
+        // First placement — epic tilt sequence
+        triggerCameraSequence(r,c);
+      } else {
+        // Already in 3D — just animate the new building directly
+        cameraAnimating = true;
+        setTimeout(()=>{
+          buildCornerCache();
+          updateBuildingSVG({r,c});
+        }, 80);
+        setTimeout(()=>{ cameraAnimating = false; }, 1400);
+      }
     });
     gridEl.appendChild(el);
     renderCell(r,c);
@@ -657,42 +668,34 @@ let isIsoMode = false;
 
 function triggerCameraSequence(r, c) {
   cameraAnimating = true;
-  const scene = document.getElementById('iso-scene');
-  const grid  = document.getElementById('grid');
+  const scene  = document.getElementById('iso-scene');
+  const grid   = document.getElementById('grid');
   const bldSvg = document.getElementById('bld-svg');
 
-  // Phase 1: hide SVG, tilt into iso
-  bldSvg.style.opacity = '0';
+  // Phase 1: hide existing SVG buildings, tilt into iso
   bldSvg.style.transition = 'opacity 0.15s ease';
+  bldSvg.style.opacity = '0';
   scene.classList.add('is-iso');
   grid.classList.add('is-iso');
   isIsoMode = true;
 
-  // Phase 2: tilt done (~900ms), rebuild corners in iso space, show building rising
+  // Phase 2: camera tilt done (1s) — show all existing buildings first
   setTimeout(()=>{
     buildCornerCache();
-    updateBuildingSVG({r, c});
+    updateBuildingSVG(null); // show all buildings, no animation yet
+    bldSvg.style.transition = 'opacity 0.4s ease';
     bldSvg.style.opacity = '1';
-    bldSvg.style.transition = 'opacity 0.3s ease';
-  }, 950);
+  }, 1050);
 
-  // Phase 3: hold — building rise animation plays (1.1s)
-  // Phase 4: at 2400ms hide SVG again, tilt back to top-down
+  // Phase 3: short pause so player sees the scene, then NEW building rises
   setTimeout(()=>{
-    bldSvg.style.opacity = '0';
-    bldSvg.style.transition = 'opacity 0.2s ease';
-    scene.classList.remove('is-iso');
-    grid.classList.remove('is-iso');
-    isIsoMode = false;
-  }, 2400);
+    updateBuildingSVG({r, c}); // redraw with animation on new building
+  }, 1500);
 
-  // Phase 5: transition done (~3400ms), rebuild SVG flat, show, unlock
+  // Phase 4: animation done, unlock clicks — stay in 3D
   setTimeout(()=>{
-    buildCornerCache();
-    updateBuildingSVG(); // no animation, no buildings shown in top-down
-    bldSvg.style.opacity = '1';
     cameraAnimating = false;
-  }, 3450);
+  }, 2800);
 }
 
 // Wait for layout then build corner cache + draw buildings

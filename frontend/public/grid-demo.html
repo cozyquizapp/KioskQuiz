@@ -333,19 +333,19 @@ function drawBuildingSVG(svg, corners, H, team, ghost, animate) {
   defs.appendChild(filt);
 
   // ── GRADIENTS ──
-  // Left face gradient (medium bright)
+  // Left face — very transparent fill, glow near top
   const lgLeft = `lg_l_${id}`;
   const gradLeft = mkEl('linearGradient',{id:lgLeft, x1:'0%',y1:'0%',x2:'0%',y2:'100%'});
-  const ls1 = mkEl('stop',{offset:'0%'}); ls1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.35*inten})`);
-  const ls2 = mkEl('stop',{offset:'100%'}); ls2.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.08*inten})`);
+  const ls1 = mkEl('stop',{offset:'0%'}); ls1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.18*inten})`);
+  const ls2 = mkEl('stop',{offset:'100%'}); ls2.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.03*inten})`);
   gradLeft.appendChild(ls1); gradLeft.appendChild(ls2);
   defs.appendChild(gradLeft);
 
-  // Right face gradient (darker — shadow side)
+  // Right face — nearly invisible, just edge lines carry the shape
   const lgRight = `lg_r_${id}`;
   const gradRight = mkEl('linearGradient',{id:lgRight, x1:'0%',y1:'0%',x2:'0%',y2:'100%'});
-  const rs1 = mkEl('stop',{offset:'0%'}); rs1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.18*inten})`);
-  const rs2 = mkEl('stop',{offset:'100%'}); rs2.setAttribute('stop-color',`rgba(0,0,0,.3)`);
+  const rs1 = mkEl('stop',{offset:'0%'}); rs1.setAttribute('stop-color',`rgba(${cr},${cg},${cb},${.08*inten})`);
+  const rs2 = mkEl('stop',{offset:'100%'}); rs2.setAttribute('stop-color',`rgba(0,0,0,.05)`);
   gradRight.appendChild(rs1); gradRight.appendChild(rs2);
   defs.appendChild(gradRight);
 
@@ -360,24 +360,25 @@ function drawBuildingSVG(svg, corners, H, team, ghost, animate) {
 
   svg.appendChild(defs);
 
-  // ── LEFT FACE (ground-left → ground-bottom → top-bottom → top-left) ──
-  // Visible left wall: left + bottom edges of the rhombus
+  // ── LEFT FACE — semi-transparent wireframe ──
   const leftFace = mkEl('polygon',{
     points: pts([cLeft, cBottom, tBottom, tLeft]),
     fill: `url(#${lgLeft})`,
-    stroke: `rgba(${cr},${cg},${cb},${.6*inten})`,
+    stroke: `rgba(${cr},${cg},${cb},${.55*inten})`,
     'stroke-width': '1.2',
     'stroke-linejoin': 'round',
+    opacity: '0.55',
   });
   svg.appendChild(leftFace);
 
-  // ── RIGHT FACE (ground-bottom → ground-right → top-right → top-bottom) ──
+  // ── RIGHT FACE — darker, more transparent ──
   const rightFace = mkEl('polygon',{
     points: pts([cBottom, cRight, tRight, tBottom]),
     fill: `url(#${lgRight})`,
-    stroke: `rgba(${cr},${cg},${cb},${.45*inten})`,
+    stroke: `rgba(${cr},${cg},${cb},${.4*inten})`,
     'stroke-width': '1',
     'stroke-linejoin': 'round',
+    opacity: '0.4',
   });
   svg.appendChild(rightFace);
 
@@ -470,6 +471,11 @@ function updateBuildingSVG(animateCell=null) {
         const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
         H = isHome ? Math.round(bh*1.6) : interior ? Math.round(bh*.45) : bh;
       }
+
+      // Perspective scale: rows further back (lower r index) = taller buildings
+      // Row 0 = back = scale 1.7, Row SIZE-1 = front = scale 0.6
+      const perspScale = isGhost ? 1 : (1.7 - (r/(SIZE-1)) * 1.1);
+      H = Math.round(H * perspScale);
 
       const doAnim = !isGhost && animateCell && animateCell.r===r && animateCell.c===c;
       const g = document.createElementNS(NS, 'g');

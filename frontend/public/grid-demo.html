@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarter Quiz — Grid Design Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f172a;
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+  }
+
+  h1 { font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .section-label {
+    font-size: 11px;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+
+  /* ── AUSSCHNITT 1: Das Grid (Stadtplan-Stil) ── */
+  .grid-wrap {
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 24px;
+    display: inline-block;
+  }
+  .grid-title {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .grid {
+    display: grid;
+    gap: 5px;
+    background: rgba(255,255,255,0.02);
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .cell {
+    width: 54px;
+    height: 54px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    position: relative;
+    transition: transform 0.15s ease;
+  }
+  .cell:hover { transform: scale(1.08); }
+  .cell.empty {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .cell.owned {
+    border: 1px solid transparent;
+  }
+  /* Team colors */
+  .cell.t-blue   { background: linear-gradient(135deg, #3B82F6cc, #3B82F688); border-color: #3B82F666; box-shadow: 0 0 8px #3B82F633; }
+  .cell.t-red    { background: linear-gradient(135deg, #EF4444cc, #EF444488); border-color: #EF444466; box-shadow: 0 0 8px #EF444433; }
+  .cell.t-orange { background: linear-gradient(135deg, #F97316cc, #F9731688); border-color: #F9731666; box-shadow: 0 0 8px #F9731633; }
+  .cell.t-green  { background: linear-gradient(135deg, #22C55Ecc, #22C55E88); border-color: #22C55E66; box-shadow: 0 0 8px #22C55E33; }
+  /* Frozen */
+  .cell.frozen { border-color: rgba(147,210,255,0.7) !important; box-shadow: 0 0 12px rgba(147,210,255,0.4) !important; }
+  .cell.frozen::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(147,210,255,0.15);
+    border-radius: 8px;
+  }
+  /* Stuck / permanent */
+  .cell.stuck { border: 2px solid rgba(251,191,36,0.9) !important; box-shadow: 0 0 16px rgba(251,191,36,0.6) !important; }
+  /* Home base */
+  .cell.home { border: 2px solid rgba(255,255,255,0.6) !important; }
+  /* Border between territories — thicker shared edge simulation via outline */
+  .cell.border-right { box-shadow: inset -3px 0 0 rgba(15,23,42,0.8); }
+  .cell.border-bottom { box-shadow: inset 0 -3px 0 rgba(15,23,42,0.8); }
+
+  /* ── AUSSCHNITT 2: Team-Leiste ── */
+  .teams-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .team-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 10px 16px;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .team-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .team-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: #f1f5f9;
+  }
+  .team-cells {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
+  }
+  .team-rank {
+    font-size: 11px;
+    color: #94a3b8;
+    background: rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-weight: 700;
+  }
+
+  /* ── AUSSCHNITT 3: Kategorie-Badge ── */
+  .cat-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cat-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    border: none;
+    cursor: default;
+  }
+  .cat-badge .cat-icon {
+    font-size: 20px;
+  }
+  .cat-badge.active {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  /* ── AUSSCHNITT 4: Placement Phase ── */
+  .placement-grid {
+    display: grid;
+    gap: 5px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02);
+    position: relative;
+  }
+  .cell.placeable {
+    cursor: pointer;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .cell.placeable::after {
+    content: '+';
+    position: absolute;
+    font-size: 20px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.5);
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(255,255,255,0.0); }
+  }
+
+  .demo-row {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .demo-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Beamer-ähnlicher Vollbild-Kontext ── */
+  .beamer-preview {
+    background: #111827;
+    border-radius: 20px;
+    padding: 28px 32px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .beamer-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .question-card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 24px 28px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .question-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #F59E0B22;
+    color: #F59E0B;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .question-text {
+    font-size: 28px;
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1.3;
+  }
+  .answer-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .answer-chip {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .answer-chip .letter {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .beamer-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .score-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 180px;
+  }
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+  }
+  .score-rank {
+    font-size: 11px;
+    color: #475569;
+    font-weight: 700;
+    width: 16px;
+  }
+  .score-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 800;
+    color: #e2e8f0;
+  }
+  .score-val {
+    font-size: 13px;
+    font-weight: 900;
+  }
+</style>
+</head>
+<body>
+
+<div class="section-label">Ausschnitt 1 — Das Grid (5×5, 4 Teams)</div>
+<div class="demo-row">
+  <div class="demo-block">
+    <h1>Aktueller Stand (Mitte des Spiels)</h1>
+    <div class="grid-wrap">
+      <div class="grid-title">5×5 Quartier</div>
+      <div class="grid" style="grid-template-columns: repeat(5, 54px)">
+        <!-- Row 0 -->
+        <div class="cell t-blue home owned">🏠</div>
+        <div class="cell t-blue owned">🦊</div>
+        <div class="cell t-blue owned">🦊</div>
+        <div class="cell empty"></div>
+        <div class="cell t-red owned">🐺</div>
+        <!-- Row 1 -->
+        <div class="cell t-blue owned">🦊</div>
+        <div class="cell t-blue owned">⭐</div>
+        <div class="cell empty"></div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-red home owned">🏠</div>
+        <!-- Row 2 -->
+        <div class="cell empty"></div>
+        <div class="cell t-blue owned frozen">❄️</div>
+        <div class="cell empty"></div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-red owned">🐺</div>
+        <!-- Row 3 -->
+        <div class="cell t-green home owned">🏠</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-orange owned stuck">📌</div>
+        <div class="cell t-orange owned">🦁</div>
+        <div class="cell t-orange owned">🦁</div>
+        <!-- Row 4 -->
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-orange owned">🦁</div>
+        <div class="cell t-orange home owned">🏠</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-block">
+    <h1>Legende</h1>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#94a3b8;">
+      <div>🏠 = Startfeld (Home Base, unentnehmbar)</div>
+      <div>⭐ = Joker (2×2 Block erreicht)</div>
+      <div>❄️ = Eingefroren (1 Runde sicher)</div>
+      <div>📌 = Dauerhaft gesichert (Stapeln)</div>
+      <div style="height:1px;background:#1e293b;margin:4px 0"></div>
+      <div style="color:#475569">Dicke Innenkanten = Gebietsgrenze</div>
+      <div style="color:#475569">Felder ohne Rand = zusammenhängendes Revier</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Ausschnitt 2 — Team-Leiste (Score + Feldanzahl)</div>
+<div class="teams-row">
+  <div class="team-chip">
+    <div class="team-dot" style="background:#3B82F6"></div>
+    <div>
+      <div class="team-name">Die Clique</div>
+      <div class="team-cells">7 Felder · verbunden: 5</div>
+    </div>
+    <div class="team-rank">#1</div>
+  </div>
+  <div class="team-chip">
+    <div class="team-dot" style="background:#22C55E"></div>
+    <div>
+      <div class="team-name">Grüne Hölle</div>
+      <div class="team-cells">6 Felder · verbunden: 4</div>
+    </div>
+    <div class="team-rank">#2</div>
+  </div>
+  <div class="team-chip">
+    <div class="team-dot" style="background:#EF4444"></div>
+    <div>
+      <div class="team-name">Rote Karte</div>
+      <div class="team-cells">5 Felder · verbunden: 5</div>
+    </div>
+    <div class="team-rank">#3</div>
+  </div>
+  <div class="team-chip">
+    <div class="team-dot" style="background:#F97316"></div>
+    <div>
+      <div class="team-name">Orange Is The Win</div>
+      <div class="team-cells">4 Felder · verbunden: 3</div>
+    </div>
+    <div class="team-rank">#4</div>
+  </div>
+</div>
+
+<div class="section-label">Ausschnitt 3 — Kategorie-Badges</div>
+<div class="cat-grid">
+  <div class="cat-badge active" style="background:#F59E0B22; color:#F59E0B;">
+    <span class="cat-icon">🍯</span> Schätzchen
+  </div>
+  <div class="cat-badge active" style="background:#3B82F622; color:#3B82F6;">
+    <span class="cat-icon">🎵</span> Mu-Cho
+  </div>
+  <div class="cat-badge active" style="background:#EF444422; color:#EF4444;">
+    <span class="cat-icon">🎁</span> Bunte Tüte
+  </div>
+  <div class="cat-badge active" style="background:#22C55E22; color:#22C55E;">
+    <span class="cat-icon">🎰</span> All In
+  </div>
+  <div class="cat-badge active" style="background:#8B5CF622; color:#8B5CF6;">
+    <span class="cat-icon">📸</span> Picture This
+  </div>
+</div>
+
+<div class="section-label">Ausschnitt 4 — Beamer Gesamtansicht (Frage aktiv)</div>
+<div class="beamer-preview">
+  <div class="beamer-left">
+    <div class="question-card">
+      <div class="question-cat">🎵 Mu-Cho · Phase 2 · Frage 3</div>
+      <div class="question-text">Welches Land hat die meisten UNESCO-Welterbestätten?</div>
+    </div>
+    <div class="answer-chips">
+      <div class="answer-chip" style="background:#3B82F6cc; color:white;">
+        <span class="letter">A</span> Italien
+      </div>
+      <div class="answer-chip" style="background:#22C55Ecc; color:white;">
+        <span class="letter">B</span> China
+      </div>
+      <div class="answer-chip" style="background:#EF4444cc; color:white;">
+        <span class="letter">C</span> Spanien
+      </div>
+      <div class="answer-chip" style="background:#F97316cc; color:white;">
+        <span class="letter">D</span> Deutschland
+      </div>
+    </div>
+  </div>
+  <div class="beamer-right">
+    <!-- Mini Grid -->
+    <div class="grid-wrap" style="padding:16px; background:#0f172a;">
+      <div class="grid" style="grid-template-columns: repeat(5, 36px); gap: 3px; padding: 6px;">
+        <div class="cell t-blue home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
+        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
+        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
+        <div class="cell empty" style="width:36px;height:36px;"></div>
+        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
+        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">🦊</div>
+        <div class="cell t-blue owned" style="width:36px;height:36px;font-size:14px;">⭐</div>
+        <div class="cell empty" style="width:36px;height:36px;"></div>
+        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
+        <div class="cell t-red home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
+        <div class="cell empty" style="width:36px;height:36px;"></div>
+        <div class="cell t-blue owned frozen" style="width:36px;height:36px;font-size:14px;">❄️</div>
+        <div class="cell empty" style="width:36px;height:36px;"></div>
+        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
+        <div class="cell t-red owned" style="width:36px;height:36px;font-size:14px;">🐺</div>
+        <div class="cell t-green home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
+        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
+        <div class="cell t-orange owned stuck" style="width:36px;height:36px;font-size:14px;">📌</div>
+        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
+        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
+        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
+        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
+        <div class="cell t-green owned" style="width:36px;height:36px;font-size:14px;">🦝</div>
+        <div class="cell t-orange owned" style="width:36px;height:36px;font-size:14px;">🦁</div>
+        <div class="cell t-orange home owned" style="width:36px;height:36px;font-size:14px;">🏠</div>
+      </div>
+    </div>
+    <!-- Scores -->
+    <div class="score-list">
+      <div class="score-row">
+        <div class="score-rank">#1</div>
+        <div class="score-name">Die Clique</div>
+        <div class="score-val" style="color:#3B82F6">7</div>
+      </div>
+      <div class="score-row">
+        <div class="score-rank">#2</div>
+        <div class="score-name">Grüne Hölle</div>
+        <div class="score-val" style="color:#22C55E">6</div>
+      </div>
+      <div class="score-row">
+        <div class="score-rank">#3</div>
+        <div class="score-name">Rote Karte</div>
+        <div class="score-val" style="color:#EF4444">5</div>
+      </div>
+      <div class="score-row">
+        <div class="score-rank">#4</div>
+        <div class="score-name">Orange Is The Win</div>
+        <div class="score-val" style="color:#F97316">4</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Ausschnitt 5 — Placement Phase (Team wählt ein Feld)</div>
+<div class="demo-row">
+  <div class="demo-block">
+    <h1>"Die Clique" darf ein Feld setzen</h1>
+    <div style="font-size:13px;color:#64748b;margin-bottom:12px;">Wählbare Felder leuchten auf (angrenzend an blaues Territorium)</div>
+    <div class="grid-wrap">
+      <div class="placement-grid" style="grid-template-columns: repeat(5, 54px); display:grid; gap:5px;">
+        <div class="cell t-blue home owned">🏠</div>
+        <div class="cell t-blue owned">🦊</div>
+        <div class="cell t-blue owned">🦊</div>
+        <!-- placeable: adjacent to blue -->
+        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-blue owned">🦊</div>
+        <div class="cell t-blue owned">⭐</div>
+        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-red home owned">🏠</div>
+        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
+        <div class="cell t-blue owned frozen">❄️</div>
+        <div class="cell empty placeable" style="border:2px dashed rgba(59,130,246,0.6);box-shadow:0 0 16px #3B82F655;"></div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-red owned">🐺</div>
+        <div class="cell t-green home owned">🏠</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-orange owned stuck">📌</div>
+        <div class="cell t-orange owned">🦁</div>
+        <div class="cell t-orange owned">🦁</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-green owned">🦝</div>
+        <div class="cell t-orange owned">🦁</div>
+        <div class="cell t-orange home owned">🏠</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

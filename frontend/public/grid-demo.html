@@ -3,468 +3,405 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quarter Quiz — City Grid Demo</title>
+<title>Quarter Quiz — City Grid</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: #080a0f;
+  background: radial-gradient(ellipse at 40% 30%, #0d1020 0%, #050608 100%);
+  min-height: 100vh;
   color: #f1f5f9;
   font-family: 'Space Grotesk', sans-serif;
-  padding: 48px 40px;
   display: flex;
   flex-direction: column;
-  gap: 80px;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 40px;
 }
 
-.label {
-  font-size: 11px;
+h2 {
+  font-size: 13px;
   color: #1e293b;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   font-weight: 700;
-  margin-bottom: 24px;
 }
 
-/* ═══════════════════════════════════════
-   ISOMETRIC CITY GRID
-═══════════════════════════════════════ */
-
+/* ── ISO SCENE ── */
 .iso-scene {
-  perspective: 1200px;
-  perspective-origin: 50% 20%;
-  padding: 60px 0 100px;
-  display: flex;
-  justify-content: center;
+  perspective: 1400px;
+  perspective-origin: 50% 15%;
 }
 
 .iso-grid {
-  transform: rotateX(55deg) rotateZ(-45deg);
+  transform: rotateX(52deg) rotateZ(-45deg);
   transform-style: preserve-3d;
   display: grid;
-  gap: 4px;
+  gap: 3px;
   position: relative;
 }
 
-/* ── BASE BLOCK (empty) ── */
-.b {
+/* ── CELL ── */
+.cell {
   position: relative;
   transform-style: preserve-3d;
 }
 
-/* Top face */
-.b-top {
+/* Ground tile top */
+.tile-top {
   position: absolute;
   inset: 0;
-  background: #0d1117;
-  border: 1px solid #1a1f2e;
-  border-radius: 2px;
   z-index: 2;
+  border-radius: 1px;
 }
 
-/* Front face */
-.b-front {
+/* Ground front */
+.tile-front {
   position: absolute;
-  left: 0; right: -1px;
-  top: 100%;
-  background: #090c12;
-  border: 1px solid #141824;
-  border-top: none;
-  transform-origin: top;
+  top: 100%; left: 0; right: 0;
+  transform-origin: top center;
   transform: rotateX(-90deg);
   z-index: 1;
+  border-radius: 0 0 1px 1px;
 }
 
-/* Right face */
-.b-right {
+/* Ground right */
+.tile-right {
   position: absolute;
-  top: 0; bottom: -1px;
-  left: 100%;
-  background: #0b0e16;
-  border: 1px solid #141824;
-  border-left: none;
-  transform-origin: left;
+  top: 0; bottom: 0; left: 100%;
+  transform-origin: left center;
   transform: rotateY(90deg);
   z-index: 1;
+  border-radius: 0 1px 1px 0;
 }
 
-/* ── BUILDING (owned) ── */
-.b-building {
+/* ── BUILDING WRAPPER ── */
+.building {
   position: absolute;
   transform-style: preserve-3d;
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.4s ease;
+  z-index: 20;
   pointer-events: none;
 }
-.b.owned .b-building { opacity: 1; }
 
-/* Building top */
-.bb-top {
+/* Building faces */
+.bld-top, .bld-front, .bld-right {
   position: absolute;
-  border-radius: 2px;
-  background: transparent;
-  z-index: 3;
 }
 
-/* Building front */
-.bb-front {
-  position: absolute;
-  top: 100%;
-  left: 0; right: 0;
-  background: transparent;
-  transform-origin: top;
-  transform: rotateX(-90deg);
-  z-index: 2;
+/* ── GROW ANIMATION ── */
+@keyframes growUp {
+  0%   { transform: scaleZ(0) translateZ(0); opacity: 0; }
+  30%  { opacity: 1; }
+  70%  { transform: scaleZ(1.08) translateZ(0); }
+  100% { transform: scaleZ(1) translateZ(0); opacity: 1; }
+}
+
+@keyframes glowPulse {
+  0%,100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+/* ── SCORE BAR ── */
+.score-bar {
   display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  overflow: hidden;
-}
-
-/* Building right */
-.bb-right {
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 100%;
-  background: transparent;
-  transform-origin: left;
-  transform: rotateY(90deg);
-  z-index: 2;
-}
-
-/* Window row */
-.win-row {
-  display: flex;
-  gap: 2px;
-  width: 100%;
+  gap: 10px;
+  flex-wrap: wrap;
   justify-content: center;
 }
-.win {
-  border-radius: 1px;
-  background: rgba(255,255,255,0.9);
-  animation: winFlicker 4s ease-in-out infinite;
-  flex-shrink: 0;
+.team-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #0a0c14;
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  user-select: none;
 }
-@keyframes winFlicker {
-  0%,100% { opacity:1; }
-  45% { opacity:1; }
-  48% { opacity:0.4; }
-  51% { opacity:1; }
-  75% { opacity:0.8; }
+.team-pill:hover { transform: scale(1.04); }
+.team-pill:active { transform: scale(0.97); }
+.tp-dot { width: 10px; height: 10px; border-radius: 50%; }
+.tp-name { font-size: 13px; font-weight: 700; }
+.tp-count { font-size: 11px; color: #334155; font-weight: 600; }
+
+.hint {
+  font-size: 12px;
+  color: #1e293b;
+  text-align: center;
+  letter-spacing: 0.04em;
 }
-
-/* Place animation */
-@keyframes blockIn {
-  0% { opacity:0; transform: translateZ(40px) scale(0.7); }
-  60% { transform: translateZ(-4px) scale(1.04); }
-  100% { opacity:1; transform: translateZ(0) scale(1); }
-}
-.b.new .b-building { animation: blockIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both; }
-
-/* HOME — extra tall, brighter */
-.b.home .b-building { filter: brightness(1.4); }
-.b.home .b-top { border-color: rgba(255,255,255,0.15) !important; }
-
-/* FROZEN */
-.b.frozen .b-top {
-  background: #0d1a2e !important;
-  border-color: rgba(147,210,255,0.4) !important;
-  box-shadow: inset 0 0 8px rgba(147,210,255,0.2);
-}
-.b.frozen .b-building { opacity: 0.4 !important; filter: hue-rotate(180deg) brightness(1.5); }
-
-/* STUCK */
-.b.stuck .b-top {
-  box-shadow: inset 0 0 12px rgba(251,191,36,0.3) !important;
-  border-color: rgba(251,191,36,0.4) !important;
-}
-
-/* Territory outer border glow */
-.b.border-edge .b-top {
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.18);
-}
-
-/* Wappen */
-.b-wappen {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  font-size: 10px;
-  z-index: 20;
-  filter: drop-shadow(0 0 4px currentColor);
-  line-height: 1;
-}
-
-/* Glow pulse on newly placed */
-@keyframes glowPulse {
-  0%,100% { box-shadow: none; }
-  50% { box-shadow: 0 0 24px var(--glow), 0 0 48px var(--glow-soft); }
-}
-.b.new .b-top { animation: glowPulse 1.2s ease-in-out 2; }
-
 </style>
 </head>
 <body>
 
-<div class="label">Quarter Quiz — City Grid · Isometrisch · CSS 3D</div>
-
-<div class="iso-scene" id="scene"></div>
+<h2>Quarter Quiz — City Grid Demo</h2>
+<div class="iso-scene"><div class="iso-grid" id="grid"></div></div>
+<div class="score-bar" id="scorebar"></div>
+<div class="hint">Klicke auf ein leeres Feld um es zu besetzen · Klicke auf ein Team um es auszuwählen</div>
 
 <script>
-// ── Team definitions ──
-const TEAMS = [
-  { id: 't1', color: '#3b82f6', glow: 'rgba(59,130,246,0.6)',  glowSoft: 'rgba(59,130,246,0.2)',  wappen: '⚓', name: 'Die Clique' },
-  { id: 't2', color: '#22c55e', glow: 'rgba(34,197,94,0.6)',   glowSoft: 'rgba(34,197,94,0.2)',   wappen: '🌿', name: 'Grüne Hölle' },
-  { id: 't3', color: '#ef4444', glow: 'rgba(239,68,68,0.6)',   glowSoft: 'rgba(239,68,68,0.2)',   wappen: '🔺', name: 'Rote Karte' },
-  { id: 't4', color: '#f97316', glow: 'rgba(249,115,22,0.6)',  glowSoft: 'rgba(249,115,22,0.2)',  wappen: '⚡', name: 'Oranje' },
-  { id: 't5', color: '#8b5cf6', glow: 'rgba(139,92,246,0.6)',  glowSoft: 'rgba(139,92,246,0.2)',  wappen: '👁', name: 'Kunstprojekt' },
-  { id: 't6', color: '#0d9488', glow: 'rgba(13,148,136,0.6)',  glowSoft: 'rgba(13,148,136,0.2)',  wappen: '☽', name: 'Nachtschicht' },
+// ── CONFIG ──
+const SIZE = 6;
+const CELL = 70;
+const GROUND_DEPTH = 10;
+
+// Building shapes: [widthRatio, depthRatio, heightPx, windowRows, windowCols]
+const SHAPES = [
+  { w: 0.45, d: 0.45, h: 32, wr: 2, wc: 2 }, // small cube
+  { w: 0.35, d: 0.35, h: 52, wr: 3, wc: 2 }, // tall tower
+  { w: 0.55, d: 0.38, h: 24, wr: 2, wc: 3 }, // wide low
+  { w: 0.40, d: 0.40, h: 44, wr: 3, wc: 2 }, // medium
+  { w: 0.30, d: 0.30, h: 60, wr: 4, wc: 2 }, // skyscraper
 ];
 
-// ── 6×6 grid state ──
-// null = empty, { teamIdx, home, frozen, stuck, joker }
-const SIZE = 6;
-const CELL_PX = 72;
-const DEPTH_PX = 18;
-const BUILD_H = 28; // building height in px
+const TEAMS = [
+  { color: '#3b82f6', name: 'Die Clique',   wappen: '⚓' },
+  { color: '#ef4444', name: 'Rote Karte',   wappen: '🔺' },
+  { color: '#22c55e', name: 'Grüne Hölle',  wappen: '🌿' },
+  { color: '#f97316', name: 'Oranje',       wappen: '⚡' },
+  { color: '#8b5cf6', name: 'Nachtschicht', wappen: '☽' },
+  { color: '#0d9488', name: 'Tiefsee',      wappen: '🐋' },
+];
 
-const grid = Array.from({length: SIZE}, () => Array(SIZE).fill(null));
+// Grid state: null = empty, { teamIdx, shapeIdx, home }
+const state = Array.from({length:SIZE}, (_,r) =>
+  Array.from({length:SIZE}, (_,c) => null)
+);
 
-// Place some teams
-function place(r, c, teamIdx, opts = {}) {
-  grid[r][c] = { teamIdx, ...opts };
+let activeTeam = 0;
+
+// Seed some initial cells
+function seed(r,c,t,home=false) {
+  const si = Math.floor(Math.random() * SHAPES.length);
+  state[r][c] = { teamIdx: t, shapeIdx: si, home };
 }
+seed(0,0,0,true); seed(0,1,0); seed(1,0,0); seed(1,1,0);
+seed(0,4,1); seed(0,5,1,true); seed(1,5,1); seed(1,4,1);
+seed(5,0,2,true); seed(5,1,2); seed(4,0,2);
+seed(5,5,3,true); seed(5,4,3); seed(4,5,3);
 
-// Team 0 (blue) — top-left
-place(0,0,0,{home:true}); place(0,1,0); place(0,2,0);
-place(1,0,0); place(1,1,0,{joker:true}); place(1,2,0);
-place(2,0,0); place(2,1,0,{frozen:true});
-
-// Team 1 (green) — bottom-left
-place(3,0,1,{home:true}); place(3,1,1);
-place(4,0,1); place(4,1,1); place(4,2,1);
-place(5,0,1); place(5,1,1); place(5,2,1);
-
-// Team 2 (red) — top-right
-place(0,4,2); place(0,5,2);
-place(1,3,2); place(1,4,2); place(1,5,2,{home:true});
-place(2,4,2); place(2,5,2);
-
-// Team 3 (orange) — bottom-right
-place(3,3,3); place(3,4,3); place(3,5,3,{home:true});
-place(4,3,3,{stuck:true}); place(4,4,3); place(4,5,3);
-place(5,3,3); place(5,4,3); place(5,5,3);
-
-// ── Compute territory borders ──
-function isSameTeam(r, c, teamIdx) {
-  if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return false;
-  return grid[r][c]?.teamIdx === teamIdx;
+// ── HELPERS ──
+function hexRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
 }
+function rgba(hex, a) {
+  const [r,g,b] = hexRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
-// ── Render ──
-const scene = document.getElementById('scene');
-const isoGrid = document.createElement('div');
-isoGrid.className = 'iso-grid';
-isoGrid.style.gridTemplateColumns = `repeat(${SIZE}, ${CELL_PX}px)`;
-isoGrid.style.gridTemplateRows = `repeat(${SIZE}, ${CELL_PX}px)`;
-scene.appendChild(isoGrid);
+// ── RENDER CELL ──
+function renderCell(r, c) {
+  const cell = state[r][c];
+  const el = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if (!el) return;
 
-for (let r = 0; r < SIZE; r++) {
-  for (let c = 0; c < SIZE; c++) {
-    const cell = grid[r][c];
-    const team = cell ? TEAMS[cell.teamIdx] : null;
+  // Clear previous building
+  el.querySelectorAll('.building,.b-icon').forEach(e => e.remove());
+  el.classList.remove('owned');
 
-    const b = document.createElement('div');
-    b.className = 'b';
-    b.style.width = CELL_PX + 'px';
-    b.style.height = CELL_PX + 'px';
-    if (cell) {
-      b.classList.add('owned', 'new');
-      if (cell.home) b.classList.add('home');
-      if (cell.frozen) b.classList.add('frozen');
-      if (cell.stuck) b.classList.add('stuck');
-      if (cell.joker) b.classList.add('joker');
-      b.style.setProperty('--glow', team.glow);
-      b.style.setProperty('--glow-soft', team.glowSoft);
+  const tileTop   = el.querySelector('.tile-top');
+  const tileFront = el.querySelector('.tile-front');
+  const tileRight = el.querySelector('.tile-right');
 
-      // border-edge: any side adjacent to different team or empty
-      const top    = !isSameTeam(r-1, c, cell.teamIdx);
-      const bottom = !isSameTeam(r+1, c, cell.teamIdx);
-      const left   = !isSameTeam(r, c-1, cell.teamIdx);
-      const right  = !isSameTeam(r, c+1, cell.teamIdx);
-      if (top || bottom || left || right) b.classList.add('border-edge');
+  if (!cell) {
+    // Empty — grey ghost buildings
+    tileTop.style.background   = '#0c0e18';
+    tileTop.style.border       = '1px solid #151825';
+    tileFront.style.background = '#090b14';
+    tileRight.style.background = '#0a0c16';
+
+    // Random ghost building
+    const si = (r * SIZE + c) % SHAPES.length;
+    const s  = SHAPES[si];
+    renderBuilding(el, s, null, true);
+  } else {
+    const team = TEAMS[cell.teamIdx];
+    const s    = SHAPES[cell.shapeIdx];
+    const isHome = cell.home;
+
+    tileTop.style.background   = rgba(team.color, isHome ? 0.14 : 0.08);
+    tileTop.style.border       = `1px solid ${rgba(team.color, 0.35)}`;
+    tileTop.style.boxShadow    = `inset 0 0 ${isHome?20:10}px ${rgba(team.color, isHome?0.3:0.15)}`;
+    tileFront.style.background = rgba(team.color, 0.04);
+    tileFront.style.borderLeft = `1px solid ${rgba(team.color,0.12)}`;
+    tileFront.style.borderBottom = `1px solid ${rgba(team.color,0.12)}`;
+    tileRight.style.background = rgba(team.color, 0.03);
+
+    renderBuilding(el, isHome ? {...s, h: s.h*1.5, w: s.w*1.1, d: s.d*1.1} : s, team, false, cell.new);
+    cell.new = false;
+
+    // Wappen on home
+    if (isHome) {
+      const icon = document.createElement('div');
+      icon.className = 'b-icon';
+      icon.style.cssText = `position:absolute;bottom:4px;right:5px;font-size:11px;z-index:30;filter:drop-shadow(0 0 6px ${team.color});`;
+      icon.textContent = team.wappen;
+      el.appendChild(icon);
     }
-
-    // Top face
-    const bTop = document.createElement('div');
-    bTop.className = 'b-top';
-    if (team) {
-      bTop.style.background = hexToRgba(team.color, cell.frozen ? 0.05 : 0.08);
-      bTop.style.borderColor = hexToRgba(team.color, 0.3);
-      if (!cell.frozen) {
-        bTop.style.boxShadow = `inset 0 0 ${cell.home ? 24 : 12}px ${hexToRgba(team.color, cell.home ? 0.35 : 0.18)}`;
-      }
-    }
-
-    // Front face
-    const bFront = document.createElement('div');
-    bFront.className = 'b-front';
-    bFront.style.height = DEPTH_PX + 'px';
-    if (team) {
-      bFront.style.background = hexToRgba(team.color, 0.04);
-      bFront.style.borderColor = hexToRgba(team.color, 0.15);
-    } else {
-      bFront.style.background = '#090c12';
-      bFront.style.borderColor = '#141824';
-    }
-
-    // Right face
-    const bRight = document.createElement('div');
-    bRight.className = 'b-right';
-    bRight.style.width = DEPTH_PX + 'px';
-    if (team) {
-      bRight.style.background = hexToRgba(team.color, 0.04);
-      bRight.style.borderColor = hexToRgba(team.color, 0.15);
-    } else {
-      bRight.style.background = '#0b0e16';
-      bRight.style.borderColor = '#141824';
-    }
-
-    b.appendChild(bTop);
-    b.appendChild(bFront);
-    b.appendChild(bRight);
-
-    // Building
-    if (team && !cell.frozen) {
-      const bldg = document.createElement('div');
-      bldg.className = 'b-building';
-      const bh = cell.home ? BUILD_H * 1.5 : BUILD_H;
-      const bw = cell.home ? CELL_PX * 0.55 : CELL_PX * 0.48;
-      const bx = (CELL_PX - bw) / 2;
-      const by = (CELL_PX - bw) / 2;
-
-      // Building top
-      const bbTop = document.createElement('div');
-      bbTop.className = 'bb-top';
-      bbTop.style.cssText = `
-        left:${bx}px; top:${by}px;
-        width:${bw}px; height:${bw}px;
-        border: ${cell.home ? '2px' : '1.5px'} solid ${team.color};
-        box-shadow: 0 0 ${cell.home ? 20 : 12}px ${team.glow}, inset 0 0 ${cell.home ? 12 : 6}px ${team.glowSoft};
-        background: ${hexToRgba(team.color, cell.home ? 0.12 : 0.06)};
-      `;
-
-      // Building front face
-      const bbFront = document.createElement('div');
-      bbFront.className = 'bb-front';
-      bbFront.style.cssText = `
-        left:${bx}px; width:${bw}px; top:${by + bw}px;
-        height:${bh}px;
-        border-left: 1.5px solid ${hexToRgba(team.color, 0.7)};
-        border-right: 1.5px solid ${hexToRgba(team.color, 0.7)};
-        border-bottom: 1.5px solid ${hexToRgba(team.color, 0.7)};
-        background: linear-gradient(to bottom, ${hexToRgba(team.color, 0.08)}, ${hexToRgba(team.color, 0.04)});
-        box-shadow: 0 0 12px ${team.glowSoft};
-      `;
-
-      // Windows on front face
-      const winCount = cell.home ? 3 : 2;
-      for (let wi = 0; wi < winCount; wi++) {
-        const row = document.createElement('div');
-        row.className = 'win-row';
-        const winsPerRow = cell.home ? 3 : 2;
-        for (let wj = 0; wj < winsPerRow; wj++) {
-          const win = document.createElement('div');
-          win.className = 'win';
-          win.style.cssText = `
-            width:${cell.home ? 5 : 4}px;
-            height:${cell.home ? 4 : 3}px;
-            background: ${team.color};
-            box-shadow: 0 0 4px ${team.glow};
-            animation-delay: ${(wi * winsPerRow + wj) * 0.3}s;
-          `;
-          row.appendChild(win);
-        }
-        bbFront.appendChild(row);
-      }
-
-      // Building right face
-      const bbRight = document.createElement('div');
-      bbRight.className = 'bb-right';
-      bbRight.style.cssText = `
-        top:${by}px; left:${bx + bw}px;
-        width:${bh}px; height:${bw}px;
-        border-top: 1.5px solid ${hexToRgba(team.color, 0.5)};
-        border-right: 1.5px solid ${hexToRgba(team.color, 0.5)};
-        border-bottom: 1.5px solid ${hexToRgba(team.color, 0.5)};
-        background: ${hexToRgba(team.color, 0.04)};
-      `;
-
-      bldg.appendChild(bbTop);
-      bldg.appendChild(bbFront);
-      bldg.appendChild(bbRight);
-      b.appendChild(bldg);
-
-      // Special icons
-      if (cell.joker || cell.stuck || cell.home) {
-        const wappen = document.createElement('div');
-        wappen.className = 'b-wappen';
-        wappen.style.color = team.color;
-        wappen.textContent = cell.stuck ? '📌' : cell.joker ? '⭐' : team.wappen;
-        b.appendChild(wappen);
-      }
-    }
-
-    // Frozen icon
-    if (cell?.frozen) {
-      const ice = document.createElement('div');
-      ice.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;z-index:20;';
-      ice.textContent = '❄️';
-      b.appendChild(ice);
-    }
-
-    isoGrid.appendChild(b);
   }
 }
 
-function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${alpha})`;
+function renderBuilding(el, s, team, ghost, animate) {
+  const bw = CELL * s.w;
+  const bd = CELL * s.d;
+  const bh = s.h;
+  const bx = (CELL - bw) / 2;
+  const by = (CELL - bd) / 2;
+
+  const color    = team ? team.color : '#2a3048';
+  const borderA  = ghost ? 0.18 : 0.85;
+  const bgA      = ghost ? 0.0  : 0.07;
+  const glowA    = ghost ? 0.0  : 0.5;
+  const glowSize = ghost ? 0    : 14;
+
+  const bld = document.createElement('div');
+  bld.className = 'building';
+  bld.style.transformOrigin = 'bottom center';
+  if (animate) {
+    bld.style.animation = 'growUp 0.9s cubic-bezier(0.34,1.4,0.64,1) both';
+  }
+
+  // Top face
+  const top = document.createElement('div');
+  top.className = 'bld-top';
+  top.style.cssText = `
+    left:${bx}px; top:${by}px;
+    width:${bw}px; height:${bd}px;
+    border:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA)};
+    background:${rgba(color, bgA)};
+    ${!ghost ? `box-shadow: 0 0 ${glowSize}px ${rgba(color, glowA)}, inset 0 0 8px ${rgba(color,0.12)};` : ''}
+    border-radius:1px;
+    z-index:3;
+  `;
+
+  // Front face
+  const front = document.createElement('div');
+  front.className = 'bld-front';
+  front.style.cssText = `
+    left:${bx}px; top:${by+bd}px;
+    width:${bw}px; height:${bh}px;
+    border-left:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA)};
+    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA)};
+    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA*0.7)};
+    background:linear-gradient(to bottom, ${rgba(color, bgA*1.5)}, ${rgba(color, bgA*0.5)});
+    ${!ghost ? `box-shadow: 0 0 10px ${rgba(color, glowA*0.4)};` : ''}
+    transform-origin:top center;
+    transform:rotateX(-90deg);
+    overflow:hidden;
+    display:flex; flex-direction:column; justify-content:space-evenly; align-items:center;
+    padding:3px 4px; gap:2px;
+  `;
+
+  // Windows on front
+  if (!ghost) {
+    for (let wi=0; wi<s.wr; wi++) {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;gap:3px;`;
+      for (let wj=0; wj<s.wc; wj++) {
+        const win = document.createElement('div');
+        win.style.cssText = `
+          width:4px;height:3px;border-radius:1px;
+          background:${color};
+          box-shadow:0 0 5px ${rgba(color,0.8)};
+          animation:glowPulse ${2+Math.random()*2}s ease-in-out ${Math.random()*2}s infinite;
+          flex-shrink:0;
+        `;
+        row.appendChild(win);
+      }
+      front.appendChild(row);
+    }
+  }
+
+  // Right face
+  const right = document.createElement('div');
+  right.className = 'bld-right';
+  right.style.cssText = `
+    left:${bx+bw}px; top:${by}px;
+    width:${bh}px; height:${bd}px;
+    border-top:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA*0.6)};
+    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA*0.6)};
+    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color, borderA*0.4)};
+    background:${rgba(color, bgA*0.5)};
+    transform-origin:left center;
+    transform:rotateY(90deg);
+    border-radius:0 1px 1px 0;
+  `;
+
+  bld.appendChild(top);
+  bld.appendChild(front);
+  bld.appendChild(right);
+  el.appendChild(bld);
 }
 
-// ── Score bar ──
-const scoreWrap = document.createElement('div');
-scoreWrap.innerHTML = `
-  <div class="label">Teams</div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;">
-    ${TEAMS.map((t,i) => {
-      const count = grid.flat().filter(c => c?.teamIdx === i).length;
-      if (!count) return '';
-      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#0d1117;border-radius:10px;border:1px solid ${hexToRgba(t.color,0.2)};box-shadow:0 0 12px ${hexToRgba(t.color,0.08)};">
-        <span style="font-size:16px;">${t.wappen}</span>
+// ── BUILD DOM ──
+const gridEl = document.getElementById('grid');
+gridEl.style.gridTemplateColumns = `repeat(${SIZE}, ${CELL}px)`;
+gridEl.style.gridTemplateRows    = `repeat(${SIZE}, ${CELL}px)`;
+
+for (let r=0; r<SIZE; r++) {
+  for (let c=0; c<SIZE; c++) {
+    const el = document.createElement('div');
+    el.className = 'cell';
+    el.dataset.r = r;
+    el.dataset.c = c;
+    el.style.width  = CELL + 'px';
+    el.style.height = CELL + 'px';
+
+    const tileTop   = document.createElement('div'); tileTop.className   = 'tile-top';
+    const tileFront = document.createElement('div'); tileFront.className = 'tile-front';
+    const tileRight = document.createElement('div'); tileRight.className = 'tile-right';
+
+    tileFront.style.height = GROUND_DEPTH + 'px';
+    tileRight.style.width  = GROUND_DEPTH + 'px';
+
+    el.appendChild(tileTop);
+    el.appendChild(tileFront);
+    el.appendChild(tileRight);
+
+    el.addEventListener('click', () => {
+      if (state[r][c]) return; // already owned
+      const si = Math.floor(Math.random() * SHAPES.length);
+      state[r][c] = { teamIdx: activeTeam, shapeIdx: si, home: false, new: true };
+      renderCell(r, c);
+      updateScores();
+    });
+
+    gridEl.appendChild(el);
+    renderCell(r, c);
+  }
+}
+
+// ── SCORE BAR ──
+function updateScores() {
+  const bar = document.getElementById('scorebar');
+  bar.innerHTML = TEAMS.map((t,i) => {
+    const count = state.flat().filter(c => c?.teamIdx === i).length;
+    const active = i === activeTeam;
+    return `
+      <div class="team-pill" onclick="selectTeam(${i})" style="
+        border-color:${active ? rgba(t.color,0.5) : 'rgba(255,255,255,0.06)'};
+        box-shadow:${active ? `0 0 16px ${rgba(t.color,0.2)}` : 'none'};
+      ">
+        <div class="tp-dot" style="background:${t.color};box-shadow:0 0 6px ${rgba(t.color,0.6)};"></div>
         <div>
-          <div style="font-size:13px;font-weight:700;color:${t.color};">${t.name}</div>
-          <div style="font-size:11px;color:#334155;">${count} Felder</div>
+          <div class="tp-name" style="color:${active?t.color:'#cbd5e1'}">${t.wappen} ${t.name}</div>
+          <div class="tp-count">${count} Felder${active?' · aktiv':''}</div>
         </div>
       </div>`;
-    }).join('')}
-  </div>
-`;
-document.body.appendChild(scoreWrap);
-
-function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${alpha})`;
+  }).join('');
 }
+
+function selectTeam(i) {
+  activeTeam = i;
+  updateScores();
+}
+
+updateScores();
 </script>
 </body>
 </html>

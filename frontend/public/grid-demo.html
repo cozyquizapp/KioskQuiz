@@ -8,775 +8,463 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --bg: #08090f;
-  --t1: #2563eb;
-  --t2: #16a34a;
-  --t3: #dc2626;
-  --t4: #ea580c;
-  --t5: #7c3aed;
-  --t6: #0d9488;
-  --t7: #d97706;
-  --t8: #4f46e5;
-}
-
 body {
-  background: var(--bg);
+  background: #080a0f;
   color: #f1f5f9;
   font-family: 'Space Grotesk', sans-serif;
-  padding: 40px;
+  padding: 48px 40px;
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: 80px;
 }
 
-.section-label {
+.label {
   font-size: 11px;
-  color: #334155;
+  color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-/* ═══════════════════════════════════
-   CITY GRID
-═══════════════════════════════════ */
+/* ═══════════════════════════════════════
+   ISOMETRIC CITY GRID
+═══════════════════════════════════════ */
 
-.city-grid-wrap {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.grid-label {
-  font-size: 11px;
-  color: #334155;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.city-grid {
-  display: grid;
-  gap: 3px;
-  padding: 3px;
-  background: #0a0b12;
-  border-radius: 6px;
-  position: relative;
-}
-
-/* Each cell */
-.c {
-  width: 80px;
-  height: 80px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 3px;
-  cursor: default;
-}
-
-/* ── EMPTY cell: dark cobblestone ── */
-.c.empty {
-  background:
-    /* cobblestone pattern via radial gradients */
-    radial-gradient(ellipse 18px 12px at 20px 20px, #141520 60%, transparent 100%),
-    radial-gradient(ellipse 16px 11px at 60px 15px, #131421 60%, transparent 100%),
-    radial-gradient(ellipse 20px 13px at 40px 45px, #12131e 60%, transparent 100%),
-    radial-gradient(ellipse 15px 10px at 70px 55px, #141521 60%, transparent 100%),
-    radial-gradient(ellipse 18px 12px at 10px 60px, #131420 60%, transparent 100%),
-    radial-gradient(ellipse 16px 11px at 50px 70px, #12131f 60%, transparent 100%),
-    #0e0f1a;
-  border: 1px solid #1a1b28;
-}
-
-/* Subtle street lines on empty */
-.c.empty::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* ── OWNED cell base ── */
-.c.owned {
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Team color light overlay */
-.c-light {
-  position: absolute;
-  inset: 0;
-  opacity: 0.22;
-  transition: opacity 0.4s ease;
-}
-.c.owned .c-light { opacity: 0.35; }
-.c.home .c-light { opacity: 0.5; }
-
-/* Cobblestone texture on owned (same but tinted) */
-.c-stone {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 18px 12px at 20px 20px, rgba(0,0,0,0.5) 60%, transparent 100%),
-    radial-gradient(ellipse 16px 11px at 60px 15px, rgba(0,0,0,0.4) 60%, transparent 100%),
-    radial-gradient(ellipse 20px 13px at 40px 45px, rgba(0,0,0,0.5) 60%, transparent 100%),
-    radial-gradient(ellipse 15px 10px at 70px 55px, rgba(0,0,0,0.4) 60%, transparent 100%),
-    radial-gradient(ellipse 18px 12px at 10px 60px, rgba(0,0,0,0.45) 60%, transparent 100%),
-    radial-gradient(ellipse 16px 11px at 50px 70px, rgba(0,0,0,0.4) 60%, transparent 100%);
-  mix-blend-mode: multiply;
-}
-
-/* Buildings via CSS — top-down roof view */
-.c-building {
-  position: absolute;
-  inset: 10px;
-  border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.c.owned .c-building { opacity: 1; }
-
-/* Windows glow */
-.c-windows {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.8s ease 0.2s;
-  pointer-events: none;
-}
-.c.owned .c-windows { opacity: 1; }
-
-.win {
-  position: absolute;
-  width: 5px;
-  height: 4px;
-  border-radius: 1px;
-  background: #fbbf24;
-  box-shadow: 0 0 6px #fbbf24, 0 0 12px #f59e0b88;
-  animation: winFlicker 3s ease-in-out infinite;
-}
-
-@keyframes winFlicker {
-  0%, 100% { opacity: 1; }
-  47% { opacity: 1; }
-  50% { opacity: 0.7; }
-  53% { opacity: 1; }
-  80% { opacity: 0.85; }
-}
-
-/* HOME cell — brighter, special */
-.c.home .c-building { opacity: 1; }
-.c.home::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 3px;
-  border: 2px solid rgba(255,255,255,0.3);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Territory border — thick outer edge of connected region */
-.c.border-top    { box-shadow: inset 0 3px 0 rgba(255,255,255,0.25); }
-.c.border-bottom { box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25); }
-.c.border-left   { box-shadow: inset 3px 0 0 rgba(255,255,255,0.25); }
-.c.border-right  { box-shadow: inset -3px 0 0 rgba(255,255,255,0.25); }
-.c.border-top.border-left { box-shadow: inset 0 3px 0 rgba(255,255,255,0.25), inset 3px 0 0 rgba(255,255,255,0.25); }
-.c.border-top.border-right { box-shadow: inset 0 3px 0 rgba(255,255,255,0.25), inset -3px 0 0 rgba(255,255,255,0.25); }
-.c.border-bottom.border-left { box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25), inset 3px 0 0 rgba(255,255,255,0.25); }
-.c.border-bottom.border-right { box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25), inset -3px 0 0 rgba(255,255,255,0.25); }
-
-/* Wappen badge */
-.c-wappen {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  font-size: 14px;
-  opacity: 0.7;
-  z-index: 5;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
-}
-
-/* Special states */
-.c.frozen .c-light { background: #93c5fd !important; opacity: 0.3; }
-.c.frozen::before {
-  content: '❄️';
-  position: absolute;
-  inset: 0;
+.iso-scene {
+  perspective: 1200px;
+  perspective-origin: 50% 20%;
+  padding: 60px 0 100px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 22px;
-  z-index: 6;
-  background: rgba(147,210,255,0.1);
 }
-.c.stuck::after {
-  content: '📌';
+
+.iso-grid {
+  transform: rotateX(55deg) rotateZ(-45deg);
+  transform-style: preserve-3d;
+  display: grid;
+  gap: 4px;
+  position: relative;
+}
+
+/* ── BASE BLOCK (empty) ── */
+.b {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+/* Top face */
+.b-top {
   position: absolute;
-  top: 4px; left: 4px;
-  font-size: 14px;
-  z-index: 7;
+  inset: 0;
+  background: #0d1117;
+  border: 1px solid #1a1f2e;
+  border-radius: 2px;
+  z-index: 2;
+}
+
+/* Front face */
+.b-front {
+  position: absolute;
+  left: 0; right: -1px;
+  top: 100%;
+  background: #090c12;
+  border: 1px solid #141824;
+  border-top: none;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+  z-index: 1;
+}
+
+/* Right face */
+.b-right {
+  position: absolute;
+  top: 0; bottom: -1px;
+  left: 100%;
+  background: #0b0e16;
+  border: 1px solid #141824;
+  border-left: none;
+  transform-origin: left;
+  transform: rotateY(90deg);
+  z-index: 1;
+}
+
+/* ── BUILDING (owned) ── */
+.b-building {
+  position: absolute;
+  transform-style: preserve-3d;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.b.owned .b-building { opacity: 1; }
+
+/* Building top */
+.bb-top {
+  position: absolute;
+  border-radius: 2px;
+  background: transparent;
+  z-index: 3;
+}
+
+/* Building front */
+.bb-front {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: transparent;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+/* Building right */
+.bb-right {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 100%;
+  background: transparent;
+  transform-origin: left;
+  transform: rotateY(90deg);
+  z-index: 2;
+}
+
+/* Window row */
+.win-row {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  justify-content: center;
+}
+.win {
+  border-radius: 1px;
+  background: rgba(255,255,255,0.9);
+  animation: winFlicker 4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes winFlicker {
+  0%,100% { opacity:1; }
+  45% { opacity:1; }
+  48% { opacity:0.4; }
+  51% { opacity:1; }
+  75% { opacity:0.8; }
 }
 
 /* Place animation */
-@keyframes cellPlace {
-  0% { transform: scale(0.6); opacity: 0; }
-  60% { transform: scale(1.08); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+@keyframes blockIn {
+  0% { opacity:0; transform: translateZ(40px) scale(0.7); }
+  60% { transform: translateZ(-4px) scale(1.04); }
+  100% { opacity:1; transform: translateZ(0) scale(1); }
 }
-.c.new { animation: cellPlace 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }
+.b.new .b-building { animation: blockIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both; }
 
-/* ── Building shapes per team (top-down roof silhouettes) ── */
+/* HOME — extra tall, brighter */
+.b.home .b-building { filter: brightness(1.4); }
+.b.home .b-top { border-color: rgba(255,255,255,0.15) !important; }
 
-/* T1 Blue — gothic, pointed roofs */
-.c.t1 .c-building {
-  background: linear-gradient(135deg, #1e3a6e88, #1a306088);
-  border: 1px solid #3b82f633;
-  clip-path: polygon(50% 0%, 95% 20%, 95% 80%, 50% 100%, 5% 80%, 5% 20%);
+/* FROZEN */
+.b.frozen .b-top {
+  background: #0d1a2e !important;
+  border-color: rgba(147,210,255,0.4) !important;
+  box-shadow: inset 0 0 8px rgba(147,210,255,0.2);
 }
-/* T2 Green — organic, rounded */
-.c.t2 .c-building {
-  background: #1a3d2288;
-  border: 1px solid #22c55e33;
-  border-radius: 40% 20% 40% 20%;
-}
-/* T3 Red — angular, brutalist */
-.c.t3 .c-building {
-  background: #3d1a1a88;
-  border: 1px solid #ef444433;
-  border-radius: 0;
-  clip-path: polygon(0% 15%, 15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%);
-}
-/* T4 Orange — industrial, asymmetric */
-.c.t4 .c-building {
-  background: #3d2a1088;
-  border: 1px solid #f9731633;
-  clip-path: polygon(0% 0%, 70% 0%, 100% 30%, 100% 100%, 30% 100%, 0% 70%);
-}
-/* T5 Purple — mystical, diamond */
-.c.t5 .c-building {
-  background: #2d1a4488;
-  border: 1px solid #8b5cf633;
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-  inset: 8px;
-}
-/* T6 Teal — harbour, rectangular dock */
-.c.t6 .c-building {
-  background: #0f2d2d88;
-  border: 1px solid #0d948833;
-  border-radius: 4px 4px 12px 12px;
-}
-/* T7 Amber — market, cross shape */
-.c.t7 .c-building {
-  background: #3d2d0a88;
-  border: 1px solid #d9770633;
-  clip-path: polygon(33% 0%, 67% 0%, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0% 67%, 0% 33%, 33% 33%);
-}
-/* T8 Indigo — tech, grid pattern */
-.c.t8 .c-building {
-  background: #1a1a4488;
-  border: 1px solid #4f46e533;
-  border-radius: 6px;
-  outline: 2px solid #4f46e522;
-  outline-offset: 4px;
+.b.frozen .b-building { opacity: 0.4 !important; filter: hue-rotate(180deg) brightness(1.5); }
+
+/* STUCK */
+.b.stuck .b-top {
+  box-shadow: inset 0 0 12px rgba(251,191,36,0.3) !important;
+  border-color: rgba(251,191,36,0.4) !important;
 }
 
-/* ═══════════════════════════════════
-   TEAM SCORE BAR
-═══════════════════════════════════ */
-.score-bar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+/* Territory outer border glow */
+.b.border-edge .b-top {
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.18);
 }
-.team-score {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: #111827;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.05);
-  position: relative;
-  overflow: hidden;
-}
-.team-score::before {
-  content: '';
+
+/* Wappen */
+.b-wappen {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
+  bottom: 4px;
+  right: 4px;
+  font-size: 10px;
+  z-index: 20;
+  filter: drop-shadow(0 0 4px currentColor);
+  line-height: 1;
 }
-.team-score.t1::before { background: var(--t1); }
-.team-score.t2::before { background: var(--t2); }
-.team-score.t3::before { background: var(--t3); }
-.team-score.t4::before { background: var(--t4); }
-.ts-wappen { font-size: 16px; }
-.ts-name { font-size: 13px; font-weight: 700; color: #e2e8f0; }
-.ts-cells { font-size: 12px; color: #475569; font-weight: 600; }
-.ts-rank { font-size: 11px; color: #334155; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 7px; border-radius: 5px; }
 
-/* ═══════════════════════════════════
-   CATEGORY CARDS
-═══════════════════════════════════ */
-.cat-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+/* Glow pulse on newly placed */
+@keyframes glowPulse {
+  0%,100% { box-shadow: none; }
+  50% { box-shadow: 0 0 24px var(--glow), 0 0 48px var(--glow-soft); }
 }
-.cat-card {
-  width: 160px;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-  padding: 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.cat-card-icon { font-size: 28px; margin-bottom: 4px; }
-.cat-card-name { font-size: 15px; font-weight: 800; }
-.cat-card-place { font-size: 11px; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-.cat-card-desc { font-size: 11px; opacity: 0.45; line-height: 1.5; margin-top: 4px; }
-
-.cat-card.amber { background: linear-gradient(160deg, #1c1400, #2d2000); }
-.cat-card.amber .cat-card-name { color: #fbbf24; }
-.cat-card.blue { background: linear-gradient(160deg, #050d1f, #0a1830); }
-.cat-card.blue .cat-card-name { color: #60a5fa; }
-.cat-card.red { background: linear-gradient(160deg, #1f0505, #2d0a0a); }
-.cat-card.red .cat-card-name { color: #f87171; }
-.cat-card.green { background: linear-gradient(160deg, #031008, #051a0d); }
-.cat-card.green .cat-card-name { color: #4ade80; }
-.cat-card.purple { background: linear-gradient(160deg, #0d0518, #160a24); }
-.cat-card.purple .cat-card-name { color: #a78bfa; }
-
-/* ═══════════════════════════════════
-   FULL BEAMER PREVIEW
-═══════════════════════════════════ */
-.beamer {
-  background: #07080f;
-  border-radius: 20px;
-  padding: 28px;
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 24px;
-  border: 1px solid rgba(255,255,255,0.04);
-}
-.bq-cat { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-.bq-text { font-size: 28px; font-weight: 800; line-height: 1.3; margin-bottom: 16px; }
-.bq-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.bq-opt { padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.bq-opt-letter { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; }
-.br-title { font-size: 11px; color: #1e293b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+.b.new .b-top { animation: glowPulse 1.2s ease-in-out 2; }
 
 </style>
 </head>
 <body>
 
-<!-- ═══ SECTION 1: GRID VARIANTEN ═══ -->
-<div>
-  <div class="section-label">Das Grid — Stadt bei Nacht</div>
-  <div style="display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start;">
+<div class="label">Quarter Quiz — City Grid · Isometrisch · CSS 3D</div>
 
-    <!-- 5x5 mid game -->
-    <div class="city-grid-wrap">
-      <div class="grid-label">5×5 · 4 Teams · Mitte des Spiels</div>
-      <div class="city-grid" style="grid-template-columns:repeat(5,80px)">
+<div class="iso-scene" id="scene"></div>
 
-        <!-- Row 0 -->
-        <div class="c t1 owned home border-top border-left new">
-          <div class="c-light" style="background:var(--t1)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:18px;left:14px;animation-delay:0s"></div>
-            <div class="win" style="top:18px;left:26px;animation-delay:0.4s"></div>
-            <div class="win" style="top:30px;left:20px;animation-delay:0.8s"></div>
-          </div>
-          <div class="c-wappen">⚓</div>
-        </div>
-        <div class="c t1 owned border-top new">
-          <div class="c-light" style="background:var(--t1)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:22px;left:18px;animation-delay:0.3s"></div>
-            <div class="win" style="top:34px;left:30px;animation-delay:0.9s"></div>
-          </div>
-          <div class="c-wappen">⚓</div>
-        </div>
-        <div class="c t1 owned border-top border-right new">
-          <div class="c-light" style="background:var(--t1)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:20px;left:16px;animation-delay:0.5s"></div>
-            <div class="win" style="top:32px;left:28px;animation-delay:1.1s"></div>
-          </div>
-          <div class="c-wappen">⚓</div>
-        </div>
-        <div class="c empty"></div>
-        <div class="c t3 owned border-top border-right new">
-          <div class="c-light" style="background:var(--t3)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:24px;left:20px;animation-delay:0.2s"></div>
-            <div class="win" style="top:36px;left:32px;animation-delay:0.7s"></div>
-          </div>
-          <div class="c-wappen">🔺</div>
-        </div>
+<script>
+// ── Team definitions ──
+const TEAMS = [
+  { id: 't1', color: '#3b82f6', glow: 'rgba(59,130,246,0.6)',  glowSoft: 'rgba(59,130,246,0.2)',  wappen: '⚓', name: 'Die Clique' },
+  { id: 't2', color: '#22c55e', glow: 'rgba(34,197,94,0.6)',   glowSoft: 'rgba(34,197,94,0.2)',   wappen: '🌿', name: 'Grüne Hölle' },
+  { id: 't3', color: '#ef4444', glow: 'rgba(239,68,68,0.6)',   glowSoft: 'rgba(239,68,68,0.2)',   wappen: '🔺', name: 'Rote Karte' },
+  { id: 't4', color: '#f97316', glow: 'rgba(249,115,22,0.6)',  glowSoft: 'rgba(249,115,22,0.2)',  wappen: '⚡', name: 'Oranje' },
+  { id: 't5', color: '#8b5cf6', glow: 'rgba(139,92,246,0.6)',  glowSoft: 'rgba(139,92,246,0.2)',  wappen: '👁', name: 'Kunstprojekt' },
+  { id: 't6', color: '#0d9488', glow: 'rgba(13,148,136,0.6)',  glowSoft: 'rgba(13,148,136,0.2)',  wappen: '☽', name: 'Nachtschicht' },
+];
 
-        <!-- Row 1 -->
-        <div class="c t1 owned border-left new">
-          <div class="c-light" style="background:var(--t1)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:20px;left:18px;animation-delay:0.6s"></div>
-            <div class="win" style="top:32px;left:30px;animation-delay:1.2s"></div>
-          </div>
-          <div class="c-wappen">⭐</div>
-        </div>
-        <div class="c t1 owned new" style="box-shadow:inset 0 0 20px rgba(251,191,36,0.15)">
-          <div class="c-light" style="background:var(--t1)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:16px;left:14px;animation-delay:0s"></div>
-            <div class="win" style="top:16px;left:26px;animation-delay:0.3s"></div>
-            <div class="win" style="top:28px;left:20px;animation-delay:0.6s"></div>
-            <div class="win" style="top:28px;left:32px;animation-delay:0.9s"></div>
-          </div>
-          <div class="c-wappen">⚓</div>
-        </div>
-        <div class="c empty"></div>
-        <div class="c t3 owned border-right new">
-          <div class="c-light" style="background:var(--t3)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:22px;left:16px;animation-delay:0.4s"></div>
-            <div class="win" style="top:34px;left:28px;animation-delay:1s"></div>
-          </div>
-          <div class="c-wappen">🔺</div>
-        </div>
-        <div class="c t3 owned home border-right new">
-          <div class="c-light" style="background:var(--t3)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:18px;left:14px;animation-delay:0.1s"></div>
-            <div class="win" style="top:18px;left:26px;animation-delay:0.5s"></div>
-            <div class="win" style="top:30px;left:20px;animation-delay:0.9s"></div>
-          </div>
-          <div class="c-wappen">🔺</div>
-        </div>
+// ── 6×6 grid state ──
+// null = empty, { teamIdx, home, frozen, stuck, joker }
+const SIZE = 6;
+const CELL_PX = 72;
+const DEPTH_PX = 18;
+const BUILD_H = 28; // building height in px
 
-        <!-- Row 2 -->
-        <div class="c empty"></div>
-        <div class="c t1 owned frozen border-left border-right">
-          <div class="c-light" style="background:#93c5fd"></div>
-          <div class="c-stone"></div>
-        </div>
-        <div class="c empty"></div>
-        <div class="c t3 owned border-right new">
-          <div class="c-light" style="background:var(--t3)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:26px;left:22px;animation-delay:0.3s"></div>
-          </div>
-          <div class="c-wappen">🔺</div>
-        </div>
-        <div class="c t3 owned border-right new">
-          <div class="c-light" style="background:var(--t3)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:20px;left:18px;animation-delay:0.7s"></div>
-            <div class="win" style="top:32px;left:30px;animation-delay:1.3s"></div>
-          </div>
-          <div class="c-wappen">🔺</div>
-        </div>
+const grid = Array.from({length: SIZE}, () => Array(SIZE).fill(null));
 
-        <!-- Row 3 -->
-        <div class="c t2 owned home border-left border-bottom new">
-          <div class="c-light" style="background:var(--t2)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:18px;left:14px;animation-delay:0.2s"></div>
-            <div class="win" style="top:18px;left:26px;animation-delay:0.6s"></div>
-            <div class="win" style="top:30px;left:20px;animation-delay:1s"></div>
-          </div>
-          <div class="c-wappen">🌿</div>
-        </div>
-        <div class="c t2 owned border-bottom new">
-          <div class="c-light" style="background:var(--t2)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:24px;left:20px;animation-delay:0.4s"></div>
-            <div class="win" style="top:36px;left:32px;animation-delay:0.8s"></div>
-          </div>
-          <div class="c-wappen">🌿</div>
-        </div>
-        <div class="c t4 owned stuck new">
-          <div class="c-light" style="background:var(--t4)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:20px;left:16px;animation-delay:0.5s"></div>
-            <div class="win" style="top:32px;left:28px;animation-delay:1.1s"></div>
-          </div>
-          <div class="c-wappen">⚡</div>
-        </div>
-        <div class="c t4 owned border-bottom new">
-          <div class="c-light" style="background:var(--t4)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:22px;left:18px;animation-delay:0.3s"></div>
-          </div>
-          <div class="c-wappen">⚡</div>
-        </div>
-        <div class="c t4 owned border-bottom border-right new">
-          <div class="c-light" style="background:var(--t4)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:18px;left:14px;animation-delay:0.7s"></div>
-            <div class="win" style="top:30px;left:26px;animation-delay:1.2s"></div>
-          </div>
-          <div class="c-wappen">⚡</div>
-        </div>
+// Place some teams
+function place(r, c, teamIdx, opts = {}) {
+  grid[r][c] = { teamIdx, ...opts };
+}
 
-        <!-- Row 4 -->
-        <div class="c t2 owned border-left border-bottom new">
-          <div class="c-light" style="background:var(--t2)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:24px;left:20px;animation-delay:0.1s"></div>
-            <div class="win" style="top:36px;left:32px;animation-delay:0.5s"></div>
-          </div>
-          <div class="c-wappen">🌿</div>
-        </div>
-        <div class="c t2 owned border-bottom new">
-          <div class="c-light" style="background:var(--t2)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:20px;left:16px;animation-delay:0.9s"></div>
-          </div>
-          <div class="c-wappen">🌿</div>
-        </div>
-        <div class="c t2 owned border-bottom new">
-          <div class="c-light" style="background:var(--t2)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:22px;left:18px;animation-delay:0.4s"></div>
-            <div class="win" style="top:34px;left:30px;animation-delay:0.8s"></div>
-          </div>
-          <div class="c-wappen">🌿</div>
-        </div>
-        <div class="c t4 owned border-bottom new">
-          <div class="c-light" style="background:var(--t4)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:26px;left:22px;animation-delay:0.6s"></div>
-          </div>
-          <div class="c-wappen">⚡</div>
-        </div>
-        <div class="c t4 owned home border-bottom border-right new">
-          <div class="c-light" style="background:var(--t4)"></div>
-          <div class="c-stone"></div>
-          <div class="c-building"></div>
-          <div class="c-windows">
-            <div class="win" style="top:16px;left:14px;animation-delay:0s"></div>
-            <div class="win" style="top:16px;left:26px;animation-delay:0.4s"></div>
-            <div class="win" style="top:28px;left:20px;animation-delay:0.8s"></div>
-            <div class="win" style="top:28px;left:32px;animation-delay:1.2s"></div>
-          </div>
-          <div class="c-wappen">⚡</div>
-        </div>
+// Team 0 (blue) — top-left
+place(0,0,0,{home:true}); place(0,1,0); place(0,2,0);
+place(1,0,0); place(1,1,0,{joker:true}); place(1,2,0);
+place(2,0,0); place(2,1,0,{frozen:true});
 
-      </div>
-    </div>
+// Team 1 (green) — bottom-left
+place(3,0,1,{home:true}); place(3,1,1);
+place(4,0,1); place(4,1,1); place(4,2,1);
+place(5,0,1); place(5,1,1); place(5,2,1);
 
-    <!-- Legende -->
-    <div style="display:flex;flex-direction:column;gap:12px;padding-top:28px;">
-      <div style="font-size:11px;color:#334155;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">Legende</div>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#64748b;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:20px;height:20px;background:#0e0f1a;border:1px solid #1a1b28;border-radius:3px;"></div>
-          Leer — dunkle Stadt
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:20px;height:20px;background:#1e3a6e;border:1px solid #3b82f633;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;">⚓</div>
-          Besetzt — leuchtet auf
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:20px;height:20px;background:#1e3a6e;border:2px solid rgba(255,255,255,0.3);border-radius:3px;"></div>
-          Home Base
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:20px;height:20px;background:#1e3a6e;border:1px solid rgba(255,255,255,0.06);border-radius:3px;box-shadow:inset 0 3px 0 rgba(255,255,255,0.25),inset 3px 0 0 rgba(255,255,255,0.25);"></div>
-          Territorium-Rand
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">❄️ Eingefroren</div>
-        <div style="display:flex;align-items:center;gap:8px;">📌 Dauerhaft gesichert</div>
-        <div style="display:flex;align-items:center;gap:8px;">⭐ Joker (2×2)</div>
-      </div>
-    </div>
+// Team 2 (red) — top-right
+place(0,4,2); place(0,5,2);
+place(1,3,2); place(1,4,2); place(1,5,2,{home:true});
+place(2,4,2); place(2,5,2);
 
+// Team 3 (orange) — bottom-right
+place(3,3,3); place(3,4,3); place(3,5,3,{home:true});
+place(4,3,3,{stuck:true}); place(4,4,3); place(4,5,3);
+place(5,3,3); place(5,4,3); place(5,5,3);
+
+// ── Compute territory borders ──
+function isSameTeam(r, c, teamIdx) {
+  if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return false;
+  return grid[r][c]?.teamIdx === teamIdx;
+}
+
+// ── Render ──
+const scene = document.getElementById('scene');
+const isoGrid = document.createElement('div');
+isoGrid.className = 'iso-grid';
+isoGrid.style.gridTemplateColumns = `repeat(${SIZE}, ${CELL_PX}px)`;
+isoGrid.style.gridTemplateRows = `repeat(${SIZE}, ${CELL_PX}px)`;
+scene.appendChild(isoGrid);
+
+for (let r = 0; r < SIZE; r++) {
+  for (let c = 0; c < SIZE; c++) {
+    const cell = grid[r][c];
+    const team = cell ? TEAMS[cell.teamIdx] : null;
+
+    const b = document.createElement('div');
+    b.className = 'b';
+    b.style.width = CELL_PX + 'px';
+    b.style.height = CELL_PX + 'px';
+    if (cell) {
+      b.classList.add('owned', 'new');
+      if (cell.home) b.classList.add('home');
+      if (cell.frozen) b.classList.add('frozen');
+      if (cell.stuck) b.classList.add('stuck');
+      if (cell.joker) b.classList.add('joker');
+      b.style.setProperty('--glow', team.glow);
+      b.style.setProperty('--glow-soft', team.glowSoft);
+
+      // border-edge: any side adjacent to different team or empty
+      const top    = !isSameTeam(r-1, c, cell.teamIdx);
+      const bottom = !isSameTeam(r+1, c, cell.teamIdx);
+      const left   = !isSameTeam(r, c-1, cell.teamIdx);
+      const right  = !isSameTeam(r, c+1, cell.teamIdx);
+      if (top || bottom || left || right) b.classList.add('border-edge');
+    }
+
+    // Top face
+    const bTop = document.createElement('div');
+    bTop.className = 'b-top';
+    if (team) {
+      bTop.style.background = hexToRgba(team.color, cell.frozen ? 0.05 : 0.08);
+      bTop.style.borderColor = hexToRgba(team.color, 0.3);
+      if (!cell.frozen) {
+        bTop.style.boxShadow = `inset 0 0 ${cell.home ? 24 : 12}px ${hexToRgba(team.color, cell.home ? 0.35 : 0.18)}`;
+      }
+    }
+
+    // Front face
+    const bFront = document.createElement('div');
+    bFront.className = 'b-front';
+    bFront.style.height = DEPTH_PX + 'px';
+    if (team) {
+      bFront.style.background = hexToRgba(team.color, 0.04);
+      bFront.style.borderColor = hexToRgba(team.color, 0.15);
+    } else {
+      bFront.style.background = '#090c12';
+      bFront.style.borderColor = '#141824';
+    }
+
+    // Right face
+    const bRight = document.createElement('div');
+    bRight.className = 'b-right';
+    bRight.style.width = DEPTH_PX + 'px';
+    if (team) {
+      bRight.style.background = hexToRgba(team.color, 0.04);
+      bRight.style.borderColor = hexToRgba(team.color, 0.15);
+    } else {
+      bRight.style.background = '#0b0e16';
+      bRight.style.borderColor = '#141824';
+    }
+
+    b.appendChild(bTop);
+    b.appendChild(bFront);
+    b.appendChild(bRight);
+
+    // Building
+    if (team && !cell.frozen) {
+      const bldg = document.createElement('div');
+      bldg.className = 'b-building';
+      const bh = cell.home ? BUILD_H * 1.5 : BUILD_H;
+      const bw = cell.home ? CELL_PX * 0.55 : CELL_PX * 0.48;
+      const bx = (CELL_PX - bw) / 2;
+      const by = (CELL_PX - bw) / 2;
+
+      // Building top
+      const bbTop = document.createElement('div');
+      bbTop.className = 'bb-top';
+      bbTop.style.cssText = `
+        left:${bx}px; top:${by}px;
+        width:${bw}px; height:${bw}px;
+        border: ${cell.home ? '2px' : '1.5px'} solid ${team.color};
+        box-shadow: 0 0 ${cell.home ? 20 : 12}px ${team.glow}, inset 0 0 ${cell.home ? 12 : 6}px ${team.glowSoft};
+        background: ${hexToRgba(team.color, cell.home ? 0.12 : 0.06)};
+      `;
+
+      // Building front face
+      const bbFront = document.createElement('div');
+      bbFront.className = 'bb-front';
+      bbFront.style.cssText = `
+        left:${bx}px; width:${bw}px; top:${by + bw}px;
+        height:${bh}px;
+        border-left: 1.5px solid ${hexToRgba(team.color, 0.7)};
+        border-right: 1.5px solid ${hexToRgba(team.color, 0.7)};
+        border-bottom: 1.5px solid ${hexToRgba(team.color, 0.7)};
+        background: linear-gradient(to bottom, ${hexToRgba(team.color, 0.08)}, ${hexToRgba(team.color, 0.04)});
+        box-shadow: 0 0 12px ${team.glowSoft};
+      `;
+
+      // Windows on front face
+      const winCount = cell.home ? 3 : 2;
+      for (let wi = 0; wi < winCount; wi++) {
+        const row = document.createElement('div');
+        row.className = 'win-row';
+        const winsPerRow = cell.home ? 3 : 2;
+        for (let wj = 0; wj < winsPerRow; wj++) {
+          const win = document.createElement('div');
+          win.className = 'win';
+          win.style.cssText = `
+            width:${cell.home ? 5 : 4}px;
+            height:${cell.home ? 4 : 3}px;
+            background: ${team.color};
+            box-shadow: 0 0 4px ${team.glow};
+            animation-delay: ${(wi * winsPerRow + wj) * 0.3}s;
+          `;
+          row.appendChild(win);
+        }
+        bbFront.appendChild(row);
+      }
+
+      // Building right face
+      const bbRight = document.createElement('div');
+      bbRight.className = 'bb-right';
+      bbRight.style.cssText = `
+        top:${by}px; left:${bx + bw}px;
+        width:${bh}px; height:${bw}px;
+        border-top: 1.5px solid ${hexToRgba(team.color, 0.5)};
+        border-right: 1.5px solid ${hexToRgba(team.color, 0.5)};
+        border-bottom: 1.5px solid ${hexToRgba(team.color, 0.5)};
+        background: ${hexToRgba(team.color, 0.04)};
+      `;
+
+      bldg.appendChild(bbTop);
+      bldg.appendChild(bbFront);
+      bldg.appendChild(bbRight);
+      b.appendChild(bldg);
+
+      // Special icons
+      if (cell.joker || cell.stuck || cell.home) {
+        const wappen = document.createElement('div');
+        wappen.className = 'b-wappen';
+        wappen.style.color = team.color;
+        wappen.textContent = cell.stuck ? '📌' : cell.joker ? '⭐' : team.wappen;
+        b.appendChild(wappen);
+      }
+    }
+
+    // Frozen icon
+    if (cell?.frozen) {
+      const ice = document.createElement('div');
+      ice.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;z-index:20;';
+      ice.textContent = '❄️';
+      b.appendChild(ice);
+    }
+
+    isoGrid.appendChild(b);
+  }
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ── Score bar ──
+const scoreWrap = document.createElement('div');
+scoreWrap.innerHTML = `
+  <div class="label">Teams</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    ${TEAMS.map((t,i) => {
+      const count = grid.flat().filter(c => c?.teamIdx === i).length;
+      if (!count) return '';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#0d1117;border-radius:10px;border:1px solid ${hexToRgba(t.color,0.2)};box-shadow:0 0 12px ${hexToRgba(t.color,0.08)};">
+        <span style="font-size:16px;">${t.wappen}</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${t.color};">${t.name}</div>
+          <div style="font-size:11px;color:#334155;">${count} Felder</div>
+        </div>
+      </div>`;
+    }).join('')}
   </div>
-</div>
+`;
+document.body.appendChild(scoreWrap);
 
-<!-- ═══ SECTION 2: SCORE BAR ═══ -->
-<div>
-  <div class="section-label">Team Score</div>
-  <div class="score-bar">
-    <div class="team-score t1">
-      <span class="ts-wappen">⚓</span>
-      <div><div class="ts-name">Die Clique</div><div class="ts-cells">7 Felder</div></div>
-      <div class="ts-rank">#1</div>
-    </div>
-    <div class="team-score t2">
-      <span class="ts-wappen">🌿</span>
-      <div><div class="ts-name">Grüne Hölle</div><div class="ts-cells">6 Felder</div></div>
-      <div class="ts-rank">#2</div>
-    </div>
-    <div class="team-score t3">
-      <span class="ts-wappen">🔺</span>
-      <div><div class="ts-name">Rote Karte</div><div class="ts-cells">5 Felder</div></div>
-      <div class="ts-rank">#3</div>
-    </div>
-    <div class="team-score t4">
-      <span class="ts-wappen">⚡</span>
-      <div><div class="ts-name">Orange Is The Win</div><div class="ts-cells">4 Felder</div></div>
-      <div class="ts-rank">#4</div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SECTION 3: KATEGORIEN ═══ -->
-<div>
-  <div class="section-label">Kategorien</div>
-  <div class="cat-row">
-    <div class="cat-card amber">
-      <div class="cat-card-icon">🍯</div>
-      <div class="cat-card-name">Schätzchen</div>
-      <div class="cat-card-place">Der Markt</div>
-      <div class="cat-card-desc">Schätze den Wert — wer am nächsten dran ist gewinnt</div>
-    </div>
-    <div class="cat-card blue">
-      <div class="cat-card-icon">🎵</div>
-      <div class="cat-card-name">Mu-Cho</div>
-      <div class="cat-card-place">Die Bühne</div>
-      <div class="cat-card-desc">4 Optionen, eine ist richtig — schnellste Antwort gewinnt</div>
-    </div>
-    <div class="cat-card red">
-      <div class="cat-card-icon">🎁</div>
-      <div class="cat-card-name">Bunte Tüte</div>
-      <div class="cat-card-place">Der Bahnhof</div>
-      <div class="cat-card-desc">Alles möglich — jede Runde eine Überraschung</div>
-    </div>
-    <div class="cat-card green">
-      <div class="cat-card-icon">🎰</div>
-      <div class="cat-card-name">All In</div>
-      <div class="cat-card-place">Das Kasino</div>
-      <div class="cat-card-desc">3 Optionen — alles oder nichts</div>
-    </div>
-    <div class="cat-card purple">
-      <div class="cat-card-icon">📸</div>
-      <div class="cat-card-name">Picture This</div>
-      <div class="cat-card-place">Die Galerie</div>
-      <div class="cat-card-desc">Bild wird enthüllt — erkenne es als Erstes</div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SECTION 4: BEAMER ═══ -->
-<div>
-  <div class="section-label">Beamer — Frage aktiv</div>
-  <div class="beamer">
-    <div>
-      <div class="bq-cat" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);">🎵 Mu-Cho · Die Bühne</div>
-      <div class="bq-text">Welches Land hat die meisten UNESCO-Welterbestätten?</div>
-      <div class="bq-options">
-        <div class="bq-opt" style="background:#1e3a5f;color:#93c5fd;"><span class="bq-opt-letter">A</span>Italien</div>
-        <div class="bq-opt" style="background:#1e3d28;color:#86efac;"><span class="bq-opt-letter">B</span>China</div>
-        <div class="bq-opt" style="background:#3d1e1e;color:#fca5a5;"><span class="bq-opt-letter">C</span>Spanien</div>
-        <div class="bq-opt" style="background:#3d2a1a;color:#fdba74;"><span class="bq-opt-letter">D</span>Deutschland</div>
-      </div>
-    </div>
-    <div>
-      <div class="br-title">5×5 Quartier</div>
-      <div class="city-grid" style="grid-template-columns:repeat(5,44px)">
-        <div class="c t1 owned home border-top border-left" style="width:44px;height:44px"><div class="c-light" style="background:var(--t1)"></div><div class="c-windows"><div class="win" style="top:10px;left:8px;width:3px;height:3px"></div></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚓</div></div>
-        <div class="c t1 owned border-top" style="width:44px;height:44px"><div class="c-light" style="background:var(--t1)"></div><div class="c-windows"><div class="win" style="top:12px;left:10px;width:3px;height:3px"></div></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚓</div></div>
-        <div class="c t1 owned border-top border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t1)"></div><div class="c-windows"><div class="win" style="top:11px;left:9px;width:3px;height:3px"></div></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚓</div></div>
-        <div class="c empty" style="width:44px;height:44px"></div>
-        <div class="c t3 owned border-top border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t3)"></div><div class="c-windows"><div class="win" style="top:13px;left:11px;width:3px;height:3px"></div></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🔺</div></div>
-        <div class="c t1 owned border-left" style="width:44px;height:44px"><div class="c-light" style="background:var(--t1)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚓</div></div>
-        <div class="c t1 owned" style="width:44px;height:44px"><div class="c-light" style="background:var(--t1)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⭐</div></div>
-        <div class="c empty" style="width:44px;height:44px"></div>
-        <div class="c t3 owned border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t3)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🔺</div></div>
-        <div class="c t3 owned home border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t3)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🔺</div></div>
-        <div class="c empty" style="width:44px;height:44px"></div>
-        <div class="c t1 owned frozen" style="width:44px;height:44px"><div class="c-light" style="background:#93c5fd"></div></div>
-        <div class="c empty" style="width:44px;height:44px"></div>
-        <div class="c t3 owned border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t3)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🔺</div></div>
-        <div class="c t3 owned border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t3)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🔺</div></div>
-        <div class="c t2 owned home border-left border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t2)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🌿</div></div>
-        <div class="c t2 owned border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t2)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🌿</div></div>
-        <div class="c t4 owned stuck" style="width:44px;height:44px"><div class="c-light" style="background:var(--t4)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚡</div></div>
-        <div class="c t4 owned border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t4)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚡</div></div>
-        <div class="c t4 owned border-bottom border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t4)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚡</div></div>
-        <div class="c t2 owned border-left border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t2)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🌿</div></div>
-        <div class="c t2 owned border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t2)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🌿</div></div>
-        <div class="c t2 owned border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t2)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">🌿</div></div>
-        <div class="c t4 owned border-bottom" style="width:44px;height:44px"><div class="c-light" style="background:var(--t4)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚡</div></div>
-        <div class="c t4 owned home border-bottom border-right" style="width:44px;height:44px"><div class="c-light" style="background:var(--t4)"></div><div class="c-wappen" style="font-size:9px;bottom:3px;right:3px">⚡</div></div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px;">
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111827;border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-          <span style="font-size:11px;color:#475569;width:16px;">#1</span>
-          <span style="font-size:13px;">⚓</span>
-          <span style="flex:1;font-size:12px;font-weight:700;">Die Clique</span>
-          <span style="font-size:13px;font-weight:800;color:#60a5fa;">7</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111827;border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-          <span style="font-size:11px;color:#475569;width:16px;">#2</span>
-          <span style="font-size:13px;">🌿</span>
-          <span style="flex:1;font-size:12px;font-weight:700;">Grüne Hölle</span>
-          <span style="font-size:13px;font-weight:800;color:#4ade80;">6</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111827;border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-          <span style="font-size:11px;color:#475569;width:16px;">#3</span>
-          <span style="font-size:13px;">🔺</span>
-          <span style="flex:1;font-size:12px;font-weight:700;">Rote Karte</span>
-          <span style="font-size:13px;font-weight:800;color:#f87171;">5</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111827;border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-          <span style="font-size:11px;color:#475569;width:16px;">#4</span>
-          <span style="font-size:13px;">⚡</span>
-          <span style="flex:1;font-size:12px;font-weight:700;">Orange Is The Win</span>
-          <span style="font-size:13px;font-weight:800;color:#fb923c;">4</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+</script>
 </body>
 </html>

@@ -9,7 +9,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: radial-gradient(ellipse at 50% 40%, #0e1220 0%, #04050a 100%);
+  background: radial-gradient(ellipse at 50% 35%, #0c1018 0%, #03040a 100%);
   min-height: 100vh;
   color: #f1f5f9;
   font-family: 'Space Grotesk', sans-serif;
@@ -24,7 +24,7 @@ body {
 
 h2 {
   font-size: 11px;
-  color: #1a2035;
+  color: #161d2e;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 700;
@@ -33,39 +33,35 @@ h2 {
 /* ── BOARD BASE ── */
 .board-wrap {
   position: relative;
-  padding: 32px;
+  padding: 36px 40px 56px;
 }
+/* radial board light */
 .board-wrap::before {
   content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.025) 0%, transparent 70%);
-  pointer-events: none;
+  position: absolute; inset: 0;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.028) 0%, transparent 68%);
+  pointer-events: none; z-index: 0;
 }
-/* Subtle global grid pattern behind everything */
+/* micro grid pattern */
 .board-wrap::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
+  position: absolute; inset: 0;
+  border-radius: 24px;
   background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
-  mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none; z-index: 0;
+  mask-image: radial-gradient(ellipse at 50% 45%, black 30%, transparent 75%);
 }
 
 /* ── ISO SCENE ── */
 .iso-scene {
   perspective: 1400px;
-  perspective-origin: 50% 12%;
-  position: relative;
-  z-index: 2;
+  perspective-origin: 50% 10%;
+  position: relative; z-index: 2;
 }
-
 .iso-grid {
   transform: rotateX(52deg) rotateZ(-45deg);
   transform-style: preserve-3d;
@@ -80,97 +76,126 @@ h2 {
   cursor: pointer;
   transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
 }
+.cell.owned { cursor: default; }
+.cell.empty:hover  { transform: translateZ(5px); }
+.cell.owned:hover  { transform: translateZ(3px); }
 
-/* ── TILE FACES ── */
+/* ── TILE TOP ── */
 .tile-top {
   position: absolute; inset: 0; z-index: 2;
-  border-radius: 1px;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.06);
+  /* Depth: inner shadow top-light + bottom-dark */
+  box-shadow:
+    inset 0  5px  8px rgba(255,255,255,0.04),
+    inset 0 -6px 12px rgba(0,0,0,0.45);
   transition: all 0.25s ease;
 }
-/* Inner depth shadow */
+/* Top-left isometric light edge */
+.tile-top::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 2px;
+  border-top:  1px solid rgba(255,255,255,0.13);
+  border-left: 1px solid rgba(255,255,255,0.07);
+  pointer-events: none; z-index: 3;
+}
+/* Inner radial depth */
 .tile-top::after {
   content: '';
-  position: absolute; inset: 0; border-radius: 1px;
-  background: radial-gradient(circle at 28% 28%, rgba(0,0,0,0.32), transparent 65%);
+  position: absolute; inset: 0; border-radius: 2px;
+  background: radial-gradient(circle at 28% 26%, rgba(0,0,0,0.22), transparent 62%);
   pointer-events: none; z-index: 1;
 }
 
+/* ── TILE FRONT ── */
 .tile-front {
   position: absolute; top: 100%; left: 0; right: 0;
   transform-origin: top center; transform: rotateX(-90deg);
-  z-index: 1; transition: all 0.25s ease;
+  z-index: 1;
+  background: #050710;
+  border-left:   1px solid rgba(255,255,255,0.04);
+  border-right:  1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.25s ease;
 }
+/* ── TILE RIGHT ── */
 .tile-right {
   position: absolute; top: 0; bottom: 0; left: 100%;
   transform-origin: left center; transform: rotateY(90deg);
-  z-index: 1; transition: all 0.25s ease;
+  z-index: 1;
+  background: #040610;
+  border-top:    1px solid rgba(255,255,255,0.03);
+  border-right:  1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  transition: all 0.25s ease;
 }
 
-/* ── EMPTY CELL ── */
+/* ── EMPTY TILE ── */
 .cell.empty .tile-top {
-  background: rgba(255,255,255,0.022);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.025);
 }
-.cell.empty .tile-front { background: #060810; border: 1px solid rgba(255,255,255,0.04); border-top: none; }
-.cell.empty .tile-right { background: #050710; border: 1px solid rgba(255,255,255,0.03); border-left: none; }
-
-/* hover on empty — preview active team color */
-.cell.empty:hover { transform: translateZ(5px); }
 .cell.empty:hover .tile-top {
   background: var(--preview-bg, rgba(255,255,255,0.04));
-  border-color: var(--preview-border, rgba(255,255,255,0.15));
-  box-shadow: var(--preview-glow, 0 0 14px rgba(255,255,255,0.1));
+  border-color: var(--preview-border, rgba(255,255,255,0.14));
+}
+.cell.empty:hover .tile-top::before {
+  border-top-color:  var(--preview-top, rgba(255,255,255,0.16));
+  border-left-color: var(--preview-top, rgba(255,255,255,0.09));
 }
 
-/* ── OWNED CELL ── */
-.cell.owned { cursor: default; }
-.cell.owned:hover { transform: translateZ(3px); }
+/* ── OWNED TILE — slight lift ── */
+.cell.owned .tile-top {
+  transform: translateZ(1px);
+}
 
-/* ── EDGE BORDERS — outer territory stronger, inner weaker ── */
-/* Applied via JS: data-edges="top,left" etc */
-.cell[data-edge-top]    .tile-top { box-shadow: inset 0  3px 0 var(--edge-color) !important; }
-.cell[data-edge-bottom] .tile-top { box-shadow: inset 0 -3px 0 var(--edge-color) !important; }
-.cell[data-edge-left]   .tile-top { box-shadow: inset  3px 0 0 var(--edge-color) !important; }
-.cell[data-edge-right]  .tile-top { box-shadow: inset -3px 0 0 var(--edge-color) !important; }
+/* ── OUTER GLOW LAYER (territory edge only) ── */
+.tile-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.cell.owned .tile-glow { opacity: 1; }
 
 /* ── BUILDING ── */
 .building {
-  position: absolute; transform-style: preserve-3d;
-  z-index: 20; pointer-events: none;
+  position: absolute;
+  transform-style: preserve-3d;
+  z-index: 20;
+  pointer-events: none;
 }
 .bld-top, .bld-front, .bld-right { position: absolute; }
 
 /* ── ANIMATIONS ── */
 @keyframes growUp {
-  0%   { transform: scaleZ(0) translateZ(-10px); opacity: 0; }
-  50%  { opacity: 1; }
-  80%  { transform: scaleZ(1.07) translateZ(0); }
-  100% { transform: scaleZ(1) translateZ(0); }
+  0%   { transform: scaleZ(0) translateZ(-8px); opacity: 0; }
+  45%  { opacity: 1; }
+  78%  { transform: scaleZ(1.08); }
+  100% { transform: scaleZ(1); }
 }
-
 @keyframes claimPop {
-  0%   { transform: translateZ(0) scale(1); }
-  25%  { transform: translateZ(12px) scale(1.04); }
-  60%  { transform: translateZ(-2px) scale(0.99); }
-  100% { transform: translateZ(0) scale(1); }
+  0%   { transform: translateZ(0); }
+  28%  { transform: translateZ(14px); }
+  65%  { transform: translateZ(-2px); }
+  100% { transform: translateZ(0); }
 }
-
-@keyframes idlePulse {
-  0%,100% { opacity: 0.82; }
-  50%      { opacity: 1; }
-}
-
-@keyframes winFlicker {
-  0%,100% { opacity: 1; }
-  44% { opacity: 1; }
-  47% { opacity: 0.25; }
-  50% { opacity: 1; }
-  78% { opacity: 0.7; }
-}
-
 @keyframes dominantPulse {
   0%,100% { box-shadow: var(--glow-base); }
   50%      { box-shadow: var(--glow-strong); }
+}
+@keyframes winFlicker {
+  0%,100% { opacity: 1; }
+  44% { opacity: 1; }
+  47% { opacity: 0.2; }
+  50% { opacity: 1; }
+  79% { opacity: 0.65; }
+}
+@keyframes glowEdgePulse {
+  0%,100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
 }
 
 /* ── SCORE BAR ── */
@@ -180,7 +205,7 @@ h2 {
 .team-pill {
   display: flex; align-items: center; gap: 9px;
   padding: 8px 16px; border-radius: 10px;
-  background: rgba(255,255,255,0.025);
+  background: rgba(255,255,255,0.02);
   border: 1px solid rgba(255,255,255,0.05);
   cursor: pointer; transition: all 0.15s ease; user-select: none;
 }
@@ -192,102 +217,70 @@ h2 {
 }
 .tp-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .tp-name  { font-size: 13px; font-weight: 700; }
-.tp-count { font-size: 11px; color: #2d3748; font-weight: 600; }
-
-.hint { font-size: 11px; color: #141b28; letter-spacing: 0.05em; }
+.tp-count { font-size: 11px; color: #253040; font-weight: 600; }
+.hint { font-size: 11px; color: #111822; letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
 
 <h2>Quarter Quiz — City Grid</h2>
-
 <div class="board-wrap">
   <div class="iso-scene">
     <div class="iso-grid" id="grid"></div>
   </div>
 </div>
-
 <div class="score-bar" id="scorebar"></div>
 <div class="hint">Team auswählen → leeres Feld anklicken</div>
 
 <script>
-const SIZE = 6, CELL = 72, GD = 10;
+const SIZE=6, CELL=72, GD=11;
 
-const TEAMS = [
-  { color:'#5aadff', glow:'rgba(90,173,255,0.6)',  soft:'rgba(90,173,255,0.18)',  name:'Die Clique',   wappen:'⚓', intensity:0.75 },
-  { color:'#ff4f4f', glow:'rgba(255,79,79,0.7)',   soft:'rgba(255,79,79,0.2)',    name:'Rote Karte',   wappen:'🔺', intensity:1.0  },
-  { color:'#3ddc84', glow:'rgba(61,220,132,0.6)',  soft:'rgba(61,220,132,0.18)',  name:'Grüne Hölle',  wappen:'🌿', intensity:0.82 },
-  { color:'#ffaa3c', glow:'rgba(255,170,60,0.7)',  soft:'rgba(255,170,60,0.2)',   name:'Oranje',       wappen:'⚡', intensity:0.9  },
-  { color:'#c084fc', glow:'rgba(192,132,252,0.6)', soft:'rgba(192,132,252,0.18)', name:'Nachtschicht', wappen:'☽', intensity:0.78 },
-  { color:'#2dd4bf', glow:'rgba(45,212,191,0.6)',  soft:'rgba(45,212,191,0.18)',  name:'Tiefsee',      wappen:'🐋', intensity:0.8  },
+const TEAMS=[
+  {color:'#5aadff',glow:'rgba(90,173,255,0.55)',  soft:'rgba(90,173,255,0.16)',  name:'Die Clique',   wappen:'⚓',inten:0.75},
+  {color:'#ff5050',glow:'rgba(255,80,80,0.7)',    soft:'rgba(255,80,80,0.2)',    name:'Rote Karte',   wappen:'🔺',inten:1.0},
+  {color:'#3ddc84',glow:'rgba(61,220,132,0.6)',   soft:'rgba(61,220,132,0.18)', name:'Grüne Hölle',  wappen:'🌿',inten:0.82},
+  {color:'#ffaa3c',glow:'rgba(255,170,60,0.68)',  soft:'rgba(255,170,60,0.2)',   name:'Oranje',       wappen:'⚡',inten:0.9},
+  {color:'#c084fc',glow:'rgba(192,132,252,0.58)', soft:'rgba(192,132,252,0.16)',name:'Nachtschicht', wappen:'☽',inten:0.78},
+  {color:'#2dd4bf',glow:'rgba(45,212,191,0.58)',  soft:'rgba(45,212,191,0.16)', name:'Tiefsee',      wappen:'🐋',inten:0.8},
 ];
 
-// Per-team shape personalities
-const SHAPES = {
-  0: [ // Blue — narrow towers
-    {w:.26,d:.26,h:60,wr:4,wc:1}, {w:.30,d:.30,h:50,wr:3,wc:2}, {w:.20,d:.20,h:72,wr:5,wc:1}
-  ],
-  1: [ // Red — wide brutal blocks
-    {w:.60,d:.44,h:20,wr:1,wc:4}, {w:.54,d:.40,h:26,wr:2,wc:3}, {w:.62,d:.42,h:18,wr:1,wc:5}
-  ],
-  2: [ // Green — organic medium, rounded
-    {w:.46,d:.46,h:34,wr:2,wc:2,rnd:true}, {w:.52,d:.42,h:28,wr:2,wc:2,rnd:true}, {w:.40,d:.40,h:42,wr:3,wc:2,rnd:true}
-  ],
-  3: [ // Orange — asymmetric industrial
-    {w:.36,d:.54,h:38,wr:2,wc:2}, {w:.28,d:.60,h:44,wr:3,wc:1}, {w:.46,d:.46,h:30,wr:2,wc:3}
-  ],
-  4: [ // Purple — slim spires
-    {w:.22,d:.22,h:68,wr:5,wc:1}, {w:.18,d:.18,h:78,wr:6,wc:1}, {w:.26,d:.26,h:58,wr:4,wc:1}
-  ],
-  5: [ // Teal — wide flat docks
-    {w:.64,d:.34,h:18,wr:1,wc:5}, {w:.58,d:.38,h:22,wr:2,wc:4}, {w:.66,d:.32,h:16,wr:1,wc:6}
-  ],
+// Shape personalities per team
+const SHAPES={
+  0:[{w:.26,d:.26,h:58,wr:4,wc:1},{w:.30,d:.30,h:48,wr:3,wc:2},{w:.22,d:.22,h:70,wr:5,wc:1}],  // Blue: slim towers
+  1:[{w:.60,d:.42,h:20,wr:1,wc:4},{w:.54,d:.40,h:26,wr:2,wc:3},{w:.62,d:.44,h:18,wr:1,wc:5}],  // Red: wide blocks
+  2:[{w:.46,d:.46,h:32,wr:2,wc:2,rnd:true},{w:.50,d:.42,h:28,wr:2,wc:2,rnd:true},{w:.40,d:.40,h:40,wr:3,wc:2,rnd:true}], // Green: organic
+  3:[{w:.36,d:.54,h:38,wr:2,wc:2},{w:.28,d:.58,h:44,wr:3,wc:1},{w:.46,d:.44,h:30,wr:2,wc:3}],  // Orange: asymmetric
+  4:[{w:.22,d:.22,h:66,wr:5,wc:1},{w:.18,d:.18,h:76,wr:6,wc:1},{w:.26,d:.26,h:56,wr:4,wc:1}],  // Purple: spires
+  5:[{w:.64,d:.34,h:18,wr:1,wc:5},{w:.58,d:.38,h:22,wr:2,wc:4},{w:.66,d:.32,h:16,wr:1,wc:6}],  // Teal: docks
 };
-
-const GHOST = [
-  {w:.38,d:.38,h:28}, {w:.26,d:.26,h:46}, {w:.54,d:.36,h:20},
-  {w:.30,d:.30,h:40}, {w:.44,d:.44,h:26}, {w:.22,d:.22,h:54},
+const GHOST=[
+  {w:.38,d:.38,h:26},{w:.26,d:.26,h:44},{w:.52,d:.36,h:20},
+  {w:.30,d:.30,h:38},{w:.44,d:.44,h:24},{w:.22,d:.22,h:52},
 ];
 
-const state = Array.from({length:SIZE}, ()=>Array(SIZE).fill(null));
-let activeTeam = 0;
+const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+let activeTeam=0;
 
-function seed(r,c,t,home=false) {
-  const sh = SHAPES[t]; state[r][c]={teamIdx:t,si:Math.floor(Math.random()*sh.length),home,new:false};
+function seed(r,c,t,home=false){
+  const sh=SHAPES[t];
+  state[r][c]={teamIdx:t,si:Math.floor(Math.random()*sh.length),home,new:false};
 }
-seed(0,0,0,true); seed(0,1,0); seed(1,0,0); seed(1,1,0); seed(2,0,0);
-seed(0,5,1,true); seed(0,4,1); seed(1,5,1); seed(1,4,1);
-seed(5,0,2,true); seed(4,0,2); seed(5,1,2); seed(4,1,2);
-seed(5,5,3,true); seed(4,5,3); seed(5,4,3);
+seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);seed(2,0,0);
+seed(0,5,1,true);seed(0,4,1);seed(1,5,1);seed(1,4,1);
+seed(5,0,2,true);seed(4,0,2);seed(5,1,2);seed(4,1,2);
+seed(5,5,3,true);seed(4,5,3);seed(5,4,3);
 
-// ── HELPERS ──
-function rgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
-function rgba(hex,a){const[r,g,b]=rgb(hex);return`rgba(${r},${g},${b},${a})`;}
+function rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function rgba(h,a){const[r,g,b]=rgb(h);return`rgba(${r},${g},${b},${a})`;}
+function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti;}
+function adj(r,c,ti){return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length;}
+function isEdge(r,c,dr,dc){return!same(r+dr,c+dc,state[r][c]?.teamIdx);}
 
-function sameTeam(r,c,ti){ return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti; }
-function adjCount(r,c,ti){ return [[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>sameTeam(r+dr,c+dc,ti)).length; }
-function isEdge(r,c,dr,dc){ return !sameTeam(r+dr,c+dc,state[r][c]?.teamIdx); }
-
-// ── UPDATE CELL EDGES ──
-function updateEdges(el,r,c){
-  const cell=state[r][c]; if(!cell) return;
-  const team=TEAMS[cell.teamIdx];
-  const edgeColor = rgba(team.color, 0.55);
-  el.style.setProperty('--edge-color', edgeColor);
-  el.removeAttribute('data-edge-top'); el.removeAttribute('data-edge-bottom');
-  el.removeAttribute('data-edge-left'); el.removeAttribute('data-edge-right');
-  if(isEdge(r,c,-1,0)) el.setAttribute('data-edge-top','');
-  if(isEdge(r,c,1,0))  el.setAttribute('data-edge-bottom','');
-  if(isEdge(r,c,0,-1)) el.setAttribute('data-edge-left','');
-  if(isEdge(r,c,0,1))  el.setAttribute('data-edge-right','');
-}
-
-// ── RENDER CELL ──
 function renderCell(r,c,animate=false){
   const cell=state[r][c];
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
   if(!el) return;
-  el.querySelectorAll('.building,.b-icon').forEach(e=>e.remove());
+  el.querySelectorAll('.building,.b-icon,.tile-glow').forEach(e=>e.remove());
   el.className='cell '+(cell?'owned':'empty');
 
   const tTop=el.querySelector('.tile-top');
@@ -295,54 +288,82 @@ function renderCell(r,c,animate=false){
   const tRight=el.querySelector('.tile-right');
 
   if(!cell){
-    tTop.style.cssText='position:absolute;inset:0;z-index:2;border-radius:1px;background:rgba(255,255,255,0.022);border:1px solid rgba(255,255,255,0.07);transition:all 0.2s ease;';
-    tFront.style.cssText='position:absolute;top:100%;left:0;right:0;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:#060810;border:1px solid rgba(255,255,255,0.04);border-top:none;';
-    tRight.style.cssText='position:absolute;top:0;bottom:0;left:100%;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:#050710;border:1px solid rgba(255,255,255,0.03);border-left:none;';
-    tFront.style.height=GD+'px'; tRight.style.width=GD+'px';
+    tTop.style.cssText='position:absolute;inset:0;z-index:2;border-radius:2px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);box-shadow:inset 0 5px 8px rgba(255,255,255,0.04),inset 0 -6px 12px rgba(0,0,0,0.45);transition:all 0.2s ease;';
+    tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:#050710;border:1px solid rgba(255,255,255,0.04);border-top:none;`;
+    tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:#040610;border:1px solid rgba(255,255,255,0.03);border-left:none;`;
     buildGhost(el,(r*SIZE+c)%GHOST.length);
     return;
   }
 
   const team=TEAMS[cell.teamIdx];
-  const adj=adjCount(r,c,cell.teamIdx);
+  const adjN=adj(r,c,cell.teamIdx);
   const isHome=cell.home;
-  const inten=team.intensity;
+  const inten=team.inten;
 
-  // Glow strength based on adjacency + home
-  const glowBase   = isHome
-    ? `0 0 22px ${rgba(team.color,0.75*inten)}, 0 0 44px ${rgba(team.color,0.35*inten)}`
-    : adj===0
-      ? `0 0 8px ${rgba(team.color,0.45*inten)}`
-      : adj<=2
-        ? `0 0 14px ${rgba(team.color,0.6*inten)}, 0 0 28px ${rgba(team.color,0.25*inten)}`
-        : `0 0 20px ${rgba(team.color,0.75*inten)}, 0 0 40px ${rgba(team.color,0.35*inten)}, 0 0 64px ${rgba(team.color,0.12*inten)}`;
+  // Edge detection — which sides are territory boundary
+  const edgeTop=isEdge(r,c,-1,0),edgeBot=isEdge(r,c,1,0);
+  const edgeL=isEdge(r,c,0,-1),edgeR=isEdge(r,c,0,1);
 
-  const glowStrong = isHome
-    ? `0 0 32px ${rgba(team.color,0.9*inten)}, 0 0 64px ${rgba(team.color,0.5*inten)}`
-    : `0 0 28px ${rgba(team.color,0.9*inten)}, 0 0 56px ${rgba(team.color,0.45*inten)}, 0 0 80px ${rgba(team.color,0.18*inten)}`;
+  // Glow: outer edges get strong glow, interior gets weak ambient
+  const outerEdge=(edgeTop||edgeBot||edgeL||edgeR);
+  const isInterior=!outerEdge;
 
+  const baseGlow = isHome
+    ? `0 0 20px ${rgba(team.color,.75*inten)}, 0 0 40px ${rgba(team.color,.32*inten)}`
+    : isInterior
+      ? `0 0 6px ${rgba(team.color,.3*inten)}`          // inner — weak ambient
+      : adjN===0
+        ? `0 0 10px ${rgba(team.color,.5*inten)}`        // solo
+        : `0 0 16px ${rgba(team.color,.65*inten)}, 0 0 32px ${rgba(team.color,.25*inten)}`; // outer edge
+
+  const strongGlow = isHome
+    ? `0 0 28px ${rgba(team.color,.9*inten)}, 0 0 56px ${rgba(team.color,.45*inten)}, 0 0 80px ${rgba(team.color,.15*inten)}`
+    : `0 0 22px ${rgba(team.color,.85*inten)}, 0 0 44px ${rgba(team.color,.38*inten)}`;
+
+  // Tile top — depth shadows + team color
   tTop.style.cssText=`
-    position:absolute;inset:0;z-index:2;border-radius:1px;
-    background:${rgba(team.color,isHome?0.18:adj>2?0.13:0.07)};
-    border:${isHome?'2px':'1px'} solid ${rgba(team.color,isHome?0.65:0.38)};
-    --glow-base:${glowBase};
-    --glow-strong:${glowStrong};
-    box-shadow:${glowBase};
-    transition:box-shadow 0.4s ease;
-    ${(adj>=3||isHome)?`animation:dominantPulse ${isHome?2.5:3.5}s ease-in-out infinite;`:''}
+    position:absolute;inset:0;z-index:2;border-radius:2px;
+    background:${rgba(team.color,isHome?.18:adjN>2?.12:.07)};
+    border:${isHome?'2px':'1px'} solid ${rgba(team.color,isHome?.65:.32)};
+    box-shadow:
+      inset 0 5px 8px rgba(255,255,255,0.05),
+      inset 0 -6px 12px rgba(0,0,0,0.5),
+      ${baseGlow};
+    --glow-base:inset 0 5px 8px rgba(255,255,255,0.05),inset 0 -6px 12px rgba(0,0,0,0.5),${baseGlow};
+    --glow-strong:inset 0 5px 8px rgba(255,255,255,0.05),inset 0 -6px 12px rgba(0,0,0,0.5),${strongGlow};
+    transform:translateZ(1px);
+    transition:box-shadow 0.35s ease;
+    ${(adjN>=3||isHome)?`animation:dominantPulse ${isHome?2.4:3.2}s ease-in-out infinite;`:''}
   `;
 
-  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rgba(team.color,0.04)};border-left:1px solid ${rgba(team.color,0.14)};border-bottom:1px solid ${rgba(team.color,0.1)};`;
-  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rgba(team.color,0.03)};border-top:1px solid ${rgba(team.color,0.1)};border-right:1px solid ${rgba(team.color,0.08)};`;
+  // Tile front + right
+  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:${GD}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rgba(team.color,.055)};border-left:1px solid ${rgba(team.color,.18)};border-right:1px solid ${rgba(team.color,.12)};border-bottom:1px solid ${rgba(team.color,.1)};`;
+  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:${GD}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rgba(team.color,.04)};border-top:1px solid ${rgba(team.color,.12)};border-right:1px solid ${rgba(team.color,.1)};border-bottom:1px solid ${rgba(team.color,.08)};`;
 
-  updateEdges(el,r,c);
+  // Outer glow halo — only on territory edges
+  if(outerEdge){
+    const glow=document.createElement('div');
+    glow.className='tile-glow';
+    glow.style.cssText=`
+      position:absolute;inset:-3px;border-radius:3px;pointer-events:none;z-index:1;
+      box-shadow:
+        ${edgeTop?`0 -8px 18px ${rgba(team.color,.55*inten)}`:''},
+        ${edgeBot?`0 8px 18px ${rgba(team.color,.55*inten)}`:''},
+        ${edgeL?`-8px 0 18px ${rgba(team.color,.55*inten)}`:''},
+        ${edgeR?`8px 0 18px ${rgba(team.color,.55*inten)}`:''};
+      animation: glowEdgePulse ${2.8+Math.random()*.8}s ease-in-out ${Math.random()*.5}s infinite;
+    `;
+    el.appendChild(glow);
+  }
 
+  // Building
   const shapes=SHAPES[cell.teamIdx];
   const s=shapes[cell.si%shapes.length];
   const bs=isHome?{...s,h:Math.round(s.h*1.65),w:s.w*1.15,d:s.d*1.15}:s;
   buildBuilding(el,bs,team,animate||cell.new);
   if(cell.new) cell.new=false;
 
+  // Icon (home/joker/stuck)
   if(isHome||cell.joker||cell.stuck){
     const icon=document.createElement('div');
     icon.className='b-icon';
@@ -351,8 +372,9 @@ function renderCell(r,c,animate=false){
     el.appendChild(icon);
   }
 
+  // Claim pop
   if(animate){
-    el.style.animation='claimPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both';
+    el.style.animation='claimPop 0.72s cubic-bezier(0.34,1.56,0.64,1) both';
     setTimeout(()=>el.style.animation='',800);
   }
 }
@@ -362,54 +384,64 @@ function buildGhost(el,gi){
 }
 
 function buildBuilding(el,s,team,animate){
-  const bw=CELL*s.w, bd=CELL*s.d, bh=s.h;
-  const bx=(CELL-bw)/2, by=(CELL-bd)/2;
+  const bw=CELL*s.w,bd=CELL*s.d,bh=s.h;
+  const bx=(CELL-bw)/2,by=(CELL-bd)/2;
   const rr=s.rnd?'5px':'1px';
   const ghost=!team;
-  const color=team?team.color:'#253050';
-  const bA=ghost?0.14:0.92;
-  const bgA=ghost?0:0.08;
-  const inten=team?team.intensity:1;
+  const color=team?team.color:'#1e2840';
+  const bA=ghost?.13:.9;
+  const bgA=ghost?0:.08;
+  const inten=team?team.inten:1;
 
   const bld=document.createElement('div');
   bld.className='building';
-  if(animate){bld.style.transformOrigin='center bottom';bld.style.animation='growUp 0.9s cubic-bezier(0.34,1.5,0.64,1) both';}
-  if(!ghost&&!animate){bld.style.animation=`idlePulse ${3+Math.random()*2}s ease-in-out ${Math.random()*2}s infinite`;}
+  if(animate){
+    bld.style.transformOrigin='center bottom';
+    bld.style.animation='growUp 0.88s cubic-bezier(0.34,1.5,0.64,1) both';
+  }
+  // drop-shadow filter for building presence
+  if(!ghost){
+    bld.style.filter=`drop-shadow(0 0 5px ${rgba(color,.55*inten)}) drop-shadow(0 0 10px ${rgba(color,.28*inten)})`;
+  }
 
   // Top face
   const top=document.createElement('div');
-  top.className='bld-top';
   top.style.cssText=`
-    left:${bx}px;top:${by}px;width:${bw}px;height:${bd}px;
+    position:absolute;left:${bx}px;top:${by}px;
+    width:${bw}px;height:${bd}px;border-radius:${rr};z-index:3;
     border:${ghost?'1px':'1.5px'} solid ${rgba(color,bA)};
-    background:${rgba(color,bgA)};border-radius:${rr};z-index:3;
-    ${!ghost?`box-shadow:0 0 ${Math.round(14*inten)}px ${team.glow},inset 0 0 8px ${rgba(color,0.12)};`:''}
+    background:${rgba(color,bgA)};
+    ${!ghost?`box-shadow:0 0 ${Math.round(12*inten)}px ${team.glow},inset 0 0 6px ${rgba(color,.1)};
+    /* isometric top-light */
+    border-top:1.5px solid ${rgba(color,bA*1.3)};
+    border-left:1.5px solid ${rgba(color,bA*1.1)};`:''}
   `;
 
   // Front face
   const front=document.createElement('div');
-  front.className='bld-front';
   front.style.cssText=`
-    left:${bx}px;top:${by+bd}px;width:${bw}px;height:${bh}px;
-    border-left:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.85)};
-    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.85)};
-    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.55)};
-    background:linear-gradient(to bottom,${rgba(color,bgA*1.8)},${rgba(color,bgA*0.5)});
-    ${!ghost?`box-shadow:0 6px 18px ${team.soft};`:''}
+    position:absolute;left:${bx}px;top:${by+bd}px;
+    width:${bw}px;height:${bh}px;overflow:hidden;
+    border-left:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.85)};
+    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.85)};
+    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.55)};
+    background:linear-gradient(to bottom,${rgba(color,bgA*1.9)},${rgba(color,bgA*.5)});
+    ${!ghost?`box-shadow:0 6px 16px ${team.soft};`:''}
     transform-origin:top center;transform:rotateX(-90deg);
-    overflow:hidden;display:flex;flex-direction:column;
-    justify-content:space-evenly;align-items:center;padding:3px 4px;gap:2px;
+    display:flex;flex-direction:column;justify-content:space-evenly;
+    align-items:center;padding:3px 4px;gap:2px;
   `;
 
+  // Windows
   if(!ghost&&team&&s.wr){
     for(let wi=0;wi<s.wr;wi++){
       const row=document.createElement('div');
       row.style.cssText='display:flex;gap:2px;justify-content:center;width:100%;';
       for(let wj=0;wj<s.wc;wj++){
         const w=document.createElement('div');
-        const delay=(wi*(s.wc||1)+wj)*0.22+Math.random()*0.6;
+        const delay=(wi*(s.wc||1)+wj)*.22+Math.random()*.55;
         w.style.cssText=`width:${(s.wc||1)>4?3:4}px;height:3px;border-radius:1px;flex-shrink:0;
-          background:${color};box-shadow:0 0 5px ${team.glow};
+          background:${color};box-shadow:0 0 4px ${team.glow};
           animation:winFlicker ${2.2+Math.random()*2.5}s ease-in-out ${delay}s infinite;`;
         row.appendChild(w);
       }
@@ -419,14 +451,14 @@ function buildBuilding(el,s,team,animate){
 
   // Right face
   const right=document.createElement('div');
-  right.className='bld-right';
   right.style.cssText=`
-    left:${bx+bw}px;top:${by}px;width:${bh}px;height:${bd}px;
-    border-top:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.5)};
-    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.5)};
-    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*0.32)};
-    background:${rgba(color,bgA*0.4)};
-    transform-origin:left center;transform:rotateY(90deg);border-radius:0 ${rr} ${rr} 0;
+    position:absolute;left:${bx+bw}px;top:${by}px;
+    width:${bh}px;height:${bd}px;border-radius:0 ${rr} ${rr} 0;
+    border-top:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.48)};
+    border-right:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.48)};
+    border-bottom:${ghost?'1px':'1.5px'} solid ${rgba(color,bA*.3)};
+    background:${rgba(color,bgA*.4)};
+    transform-origin:left center;transform:rotateY(90deg);
   `;
 
   bld.appendChild(top);bld.appendChild(front);bld.appendChild(right);
@@ -441,25 +473,26 @@ gridEl.style.gridTemplateRows=`repeat(${SIZE},${CELL}px)`;
 for(let r=0;r<SIZE;r++){
   for(let c=0;c<SIZE;c++){
     const el=document.createElement('div');
-    el.className='cell'; el.dataset.r=r; el.dataset.c=c;
-    el.style.width=CELL+'px'; el.style.height=CELL+'px';
+    el.className='cell';el.dataset.r=r;el.dataset.c=c;
+    el.style.width=CELL+'px';el.style.height=CELL+'px';
 
-    const tTop=document.createElement('div');   tTop.className='tile-top';
-    const tFront=document.createElement('div'); tFront.className='tile-front'; tFront.style.height=GD+'px';
-    const tRight=document.createElement('div'); tRight.className='tile-right'; tRight.style.width=GD+'px';
-    el.appendChild(tTop); el.appendChild(tFront); el.appendChild(tRight);
+    ['tile-top','tile-front','tile-right'].forEach((cn,i)=>{
+      const d=document.createElement('div');d.className=cn;
+      if(cn==='tile-front') d.style.height=GD+'px';
+      if(cn==='tile-right') d.style.width=GD+'px';
+      el.appendChild(d);
+    });
 
+    // Hover preview — show active team color
     el.addEventListener('mouseenter',()=>{
       if(state[r][c]) return;
       const t=TEAMS[activeTeam];
-      el.style.setProperty('--preview-bg',rgba(t.color,0.06));
-      el.style.setProperty('--preview-border',rgba(t.color,0.35));
-      el.style.setProperty('--preview-glow',`0 0 16px ${rgba(t.color,0.3)}`);
+      el.style.setProperty('--preview-bg',   rgba(t.color,.07));
+      el.style.setProperty('--preview-border',rgba(t.color,.38));
+      el.style.setProperty('--preview-top',  rgba(t.color,.25));
     });
     el.addEventListener('mouseleave',()=>{
-      el.style.removeProperty('--preview-bg');
-      el.style.removeProperty('--preview-border');
-      el.style.removeProperty('--preview-glow');
+      ['--preview-bg','--preview-border','--preview-top'].forEach(p=>el.style.removeProperty(p));
     });
 
     el.addEventListener('click',()=>{
@@ -467,7 +500,6 @@ for(let r=0;r<SIZE;r++){
       const sh=SHAPES[activeTeam];
       state[r][c]={teamIdx:activeTeam,si:Math.floor(Math.random()*sh.length),home:false,new:true};
       renderCell(r,c,true);
-      // Re-render neighbours — update their glow + edges
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc;
         if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&state[nr][nc]) renderCell(nr,nc,false);
@@ -480,18 +512,17 @@ for(let r=0;r<SIZE;r++){
   }
 }
 
-// ── SCORES ──
 function updateScores(){
   const bar=document.getElementById('scorebar');
   bar.innerHTML=TEAMS.map((t,i)=>{
     const count=state.flat().filter(c=>c?.teamIdx===i).length;
     const active=i===activeTeam;
     return `<div class="team-pill${active?' active':''}"
-      style="--tc-bg:${rgba(t.color,0.07)};--tc-border:${rgba(t.color,0.35)};--tc-glow:${rgba(t.color,0.15)};"
+      style="--tc-bg:${rgba(t.color,.07)};--tc-border:${rgba(t.color,.35)};--tc-glow:${rgba(t.color,.15)};"
       onclick="selectTeam(${i})">
       <div class="tp-dot" style="background:${t.color};box-shadow:0 0 8px ${t.glow};"></div>
       <div>
-        <div class="tp-name" style="color:${active?t.color:'#4a5568'}">${t.wappen} ${t.name}</div>
+        <div class="tp-name" style="color:${active?t.color:'#3a4560'}">${t.wappen} ${t.name}</div>
         <div class="tp-count">${count} Felder${active?' · aktiv':''}</div>
       </div>
     </div>`;

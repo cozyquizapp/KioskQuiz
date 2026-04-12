@@ -1496,10 +1496,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   }
 
   if (!isMyTurn) {
+    const miniCellSize = Math.min(44, Math.floor(280 / s.gridSize));
+    const myTeam = s.teams.find(tm => tm.id === myTeamId);
     return (
       <CozyCard>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
-          {pendingTeam && (
+          {pendingTeam ? (
             <>
               <div style={{ fontSize: 40, marginBottom: 8, animation: 'tcfloat 2s ease-in-out infinite' }}>
                 {qqGetAvatar(pendingTeam.avatarId).emoji}
@@ -1507,6 +1509,44 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
               <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
                 {t.placement.otherChoosing[lang].replace('…', '')}<AnimatedDots />
+              </div>
+            </>
+          ) : (
+            /* Placement done — show mini grid + score summary */
+            <>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                {lang === 'de' ? 'Aktueller Stand' : 'Current Score'}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${miniCellSize}px)`, gap: 3, justifyContent: 'center', marginBottom: 14 }}>
+                {s.grid.flatMap((row, r) =>
+                  row.map((cell, c) => {
+                    const cellTeam = s.teams.find(tm => tm.id === cell.ownerId);
+                    return (
+                      <div key={`${r}-${c}`} style={{
+                        width: miniCellSize, height: miniCellSize, borderRadius: 6,
+                        background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${cellTeam ? cellTeam.color + '88' : 'rgba(255,255,255,0.08)'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: miniCellSize * 0.5,
+                      }}>
+                        {cellTeam && (cell.ownerId === myTeamId ? '' : '')}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map(tm => (
+                  <div key={tm.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '4px 10px', borderRadius: 999,
+                    background: tm.id === myTeamId ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${tm.id === myTeamId ? tm.color + '55' : 'rgba(255,255,255,0.08)'}`,
+                  }}>
+                    <span style={{ fontSize: 18 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: tm.color }}>{tm.largestConnected}</span>
+                  </div>
+                ))}
               </div>
             </>
           )}

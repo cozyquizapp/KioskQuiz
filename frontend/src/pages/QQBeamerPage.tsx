@@ -1629,12 +1629,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const cat = q.category;
             const isEn = lang === 'en';
             const winMsg = cat === 'SCHAETZCHEN'
-              ? (isEn ? 'war am nächsten dran!' : 'war am nächsten dran!')
+              ? (isEn ? 'was closest!' : 'war am nächsten dran!')
               : cat === 'CHEESE'
-                ? (isEn ? 'hat es erkannt!' : 'hat es erkannt!')
+                ? (isEn ? 'got it right!' : 'hat es erkannt!')
                 : cat === 'BUNTE_TUETE'
-                  ? (isEn ? 'gewinnt die Runde!' : 'gewinnt die Runde!')
-                  : (isEn ? 'richtig!' : 'richtig!');
+                  ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
+                  : cat === 'ZEHN_VON_ZEHN'
+                    ? (isEn ? 'nailed it!' : 'hat am meisten gewusst!')
+                    : (isEn ? 'correct!' : 'richtig!');
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
@@ -1986,22 +1988,41 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
   const color = urgent ? '#EF4444' : accent;
   const secs = Math.ceil(remaining);
 
+  const radius = 52;
+  const stroke = 6;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - pct / 100);
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+    <div style={{ position: 'relative', width: radius * 2 + stroke * 2, height: radius * 2 + stroke * 2 }}>
+      {/* SVG ring */}
+      <svg width={radius * 2 + stroke * 2} height={radius * 2 + stroke * 2}
+        style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+        {/* Background ring */}
+        <circle cx={radius + stroke} cy={radius + stroke} r={radius}
+          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        {/* Progress ring */}
+        <circle cx={radius + stroke} cy={radius + stroke} r={radius}
+          fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{
+            transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s ease',
+            filter: `drop-shadow(0 0 ${urgent ? 12 : 6}px ${color}88)`,
+          }}
+        />
+      </svg>
+      {/* Number in center */}
       <div style={{
-        fontWeight: 900, fontSize: 'clamp(40px, 5vw, 64px)', minWidth: 70, textAlign: 'center',
-        color, textShadow: urgent ? '0 0 24px rgba(239,68,68,0.6)' : `0 0 16px ${color}44`,
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontWeight: 900, fontSize: 'clamp(36px, 4.5vw, 56px)',
+        color, textShadow: urgent ? '0 0 20px rgba(239,68,68,0.6)' : `0 0 12px ${color}44`,
         fontVariantNumeric: 'tabular-nums',
         animation: critical && secs > 0 ? 'timerUrgent 0.5s ease-in-out infinite' : undefined,
       }}>
         {secs}
-      </div>
-      <div style={{ width: 200, height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: 6, background: color,
-          width: `${pct}%`, transition: 'width 0.1s linear',
-          boxShadow: `0 0 12px ${color}88`,
-        }} />
       </div>
     </div>
   );

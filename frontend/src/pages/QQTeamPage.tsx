@@ -783,7 +783,18 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
-  if (myAnswer) return <SubmittedBadge text={myAnswer.text} lang={lang} />;
+  if (myAnswer) {
+    let displayText = myAnswer.text;
+    // MUCHO: answer is option index ("0","1",...) — resolve to actual option text
+    if (q && q.category === 'MUCHO' && q.options) {
+      const idx = parseInt(myAnswer.text, 10);
+      if (!isNaN(idx) && q.options[idx]) {
+        const optText = lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx];
+        displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
+      }
+    }
+    return <SubmittedBadge text={displayText} lang={lang} />;
+  }
   if (!q) return null;
 
   // Hot Potato — team text input (only active team, not eliminated)

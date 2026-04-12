@@ -357,7 +357,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
   // These phases always use built-in views — custom templates not supported
-  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES';
+  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'PLACEMENT';
   // Per-question override takes priority over category template
   const perQKey = !builtinOnly && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
   const rawPerQ = perQKey ? slideTemplates[perQKey] : undefined;
@@ -422,9 +422,10 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
           {s.phase === 'RULES'           && <RulesView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT') && !placementFlash && (
+          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
           )}
+          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
           {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
           {placementFlash && (
             <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />

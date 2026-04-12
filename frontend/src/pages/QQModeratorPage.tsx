@@ -376,16 +376,15 @@ export default function QQModeratorPage() {
                   );
                 })()}
 
-                {s.phase === 'QUESTION_ACTIVE' && (
-                  <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
-                    Antwort aufdecken
-                  </Btn>
-                )}
-
-                {/* CHEESE (Picture This): reveal image fullscreen */}
+                {/* CHEESE: show image first, then reveal answer */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
                   <Btn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })}>
-                    🖼 Bild aufdecken
+                    🖼 Bild zeigen
+                  </Btn>
+                )}
+                {s.phase === 'QUESTION_ACTIVE' && !(s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed) && (
+                  <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
+                    Antwort aufdecken
                   </Btn>
                 )}
 

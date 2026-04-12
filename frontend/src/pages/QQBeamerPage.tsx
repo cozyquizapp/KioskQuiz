@@ -1532,9 +1532,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const lang = useLangFlip(s.language);
 
   // ── CHEESE staged flow ──────────────────────────────────────────────────
-  // Phase 1: question text visible, no image
-  // Phase 2 (imageRevealed): fullscreen image, question text hidden
+  // Phase 1: question text visible, no image, no timer (waiting for moderator to show image)
+  // Phase 2 (imageRevealed): fullscreen image + timer starts
   // Phase 3 (revealed): image as side panel, answer + grid visible
+  const cheeseWaiting = isCheese && hasImg && !s.imageRevealed && !revealed;
   const cheeseFullscreen = isCheese && hasImg && s.imageRevealed && !revealed;
   // In CHEESE reveal: treat image as a proper window-right panel (not absolute clip)
   const isCheeseReveal = isCheese && hasImg && revealed;

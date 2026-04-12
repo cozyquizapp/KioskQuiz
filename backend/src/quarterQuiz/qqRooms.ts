@@ -441,13 +441,20 @@ export function qqActivateQuestion(
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.imageRevealed  = false;
   room.lastActivityAt = Date.now();
-  qqStartTimer(room, onTimerExpire);
+  // CHEESE: don't start timer yet — timer starts when image is revealed (showImage)
+  if (room.currentQuestion?.category !== 'CHEESE') {
+    qqStartTimer(room, onTimerExpire);
+  }
 }
 
-export function qqShowImage(room: QQRoomState): void {
+export function qqShowImage(room: QQRoomState, onTimerExpire?: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   room.imageRevealed  = true;
   room.lastActivityAt = Date.now();
+  // CHEESE: start timer now that the image is shown
+  if (onTimerExpire) {
+    qqStartTimer(room, onTimerExpire);
+  }
 }
 
 export function qqRevealAnswer(room: QQRoomState): void {

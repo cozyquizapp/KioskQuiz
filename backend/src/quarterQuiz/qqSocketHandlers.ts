@@ -210,7 +210,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:showImage', (payload: QQShowImagePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqShowImage(room);
+        qqShowImage(room, () => {
+          // Timer expired after image reveal — broadcast update
+          broadcast(io, payload.roomCode);
+        });
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

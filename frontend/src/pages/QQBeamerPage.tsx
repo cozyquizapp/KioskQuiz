@@ -536,7 +536,7 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'Eine Frage erscheint — alle Teams antworten gleichzeitig.',
-      'Das schnellste richtige Team darf ein Feld setzen!',
+      'Alle richtigen Teams dürfen ein Feld setzen — das schnellste zuerst!',
     ],
   },
   {
@@ -625,7 +625,7 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'A question appears — all teams answer at once.',
-      'The fastest correct team gets to place a cell!',
+      'All correct teams get to place a cell — fastest goes first!',
     ],
   },
   {

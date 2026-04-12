@@ -366,6 +366,13 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   // Only use custom template if it has actual elements to render
   const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;
 
+  // Debug: log phase transitions so we can see if PHASE_INTRO is ever reached
+  const prevPhaseRef = useRef(s.phase);
+  if (prevPhaseRef.current !== s.phase) {
+    console.log(`[QQ-BEAMER] Phase: ${prevPhaseRef.current} → ${s.phase} | templateType=${templateType} | hasCustom=${!!activeTemplate} | builtinOnly=${builtinOnly}`);
+    prevPhaseRef.current = s.phase;
+  }
+
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',

@@ -1435,7 +1435,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Auto-size: shorter fontSize for long questions
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const qFontSize = revealed
-    ? 'clamp(18px, 2vw, 30px)'    // compact on reveal but still readable
+    ? (qText.length > 200 ? 'clamp(20px, 2.4vw, 34px)'
+      : qText.length > 120 ? 'clamp(24px, 3vw, 44px)'
+      : 'clamp(28px, 3.5vw, 52px)')
     : qText.length > 200 ? 'clamp(22px, 2.6vw, 38px)'
     : qText.length > 120 ? 'clamp(26px, 3.2vw, 48px)'
     : qText.length > 60 ? 'clamp(30px, 3.8vw, 58px)'
@@ -1545,7 +1547,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
         {/* ── Left: question ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: revealed ? '20px 32px' : '36px 44px', justifyContent: revealed ? 'flex-start' : 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: revealed ? '48px 80px' : '36px 44px', justifyContent: 'center', alignItems: revealed ? 'center' : undefined, position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
           {/* Category badge — hidden on reveal to save space */}
           <div style={{ display: revealed ? 'none' : 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -1598,14 +1600,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             )}
           </div>
 
-          {/* Question card */}
+          {/* Question card — centered and wide on reveal */}
           <div style={{
             background: cardBg,
             border: `1px solid rgba(255,255,255,0.08)`,
-            borderRadius: revealed ? 14 : 22,
+            borderRadius: 22,
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            padding: revealed ? '16px 24px' : '32px 40px',
-            marginBottom: revealed ? 12 : 20,
+            padding: revealed ? '36px 52px' : '32px 40px',
+            marginBottom: 24,
+            width: revealed ? '100%' : undefined,
+            maxWidth: revealed ? 1200 : undefined,
+            textAlign: revealed ? 'center' : undefined,
           }}>
             <div key={lang} style={{
               fontSize: qFontSize, fontWeight: 900, lineHeight: 1.22,
@@ -1621,7 +1626,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div style={{
               display: 'grid',
               gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : '1fr 1fr 1fr',
-              gap: 12, marginBottom: 16,
+              gap: revealed ? 16 : 12, marginBottom: 16,
+              width: revealed ? '100%' : undefined,
+              maxWidth: revealed ? 1200 : undefined,
               animation: showIntro ? 'contentReveal 0.5s ease 2.5s both' : 'contentReveal 0.35s ease 0.15s both',
             }}>
               {q.options.map((opt, i) => {
@@ -1635,12 +1642,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 return (
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
-                    borderRadius: 16, padding: '16px 20px',
+                    borderRadius: 18, padding: revealed ? '20px 24px' : '16px 20px',
                     background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}44`,
                     boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 14,
-                    minHeight: optImg?.url ? 90 : 60,
+                    minHeight: optImg?.url ? 90 : revealed ? 70 : 60,
                     transition: 'all 0.3s ease',
                     animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                   }}>
@@ -1656,15 +1663,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     )}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      width: 44, height: 44, borderRadius: 12,
+                      width: revealed ? 52 : 44, height: revealed ? 52 : 44, borderRadius: 14,
                       background: isCorrect ? '#22C55E' : optColor,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 22, fontWeight: 900, color: '#fff', flexShrink: 0,
+                      fontSize: revealed ? 26 : 22, fontWeight: 900, color: '#fff', flexShrink: 0,
                       boxShadow: `0 2px 8px ${(isCorrect ? '#22C55E' : optColor)}66`,
                     }}>{isCorrect ? '✓' : label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      fontSize: 'clamp(20px, 2.4vw, 34px)', fontWeight: 800,
+                      fontSize: revealed ? 'clamp(22px, 2.8vw, 38px)' : 'clamp(20px, 2.4vw, 34px)', fontWeight: 800,
                       color: '#F1F5F9', lineHeight: 1.3,
                       textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                     }}>{optText}</div>
@@ -1677,12 +1684,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
-              padding: '16px 28px', borderRadius: 18,
+              padding: '24px 40px', borderRadius: 22,
               background: 'rgba(34,197,94,0.10)',
               border: '2px solid rgba(34,197,94,0.40)',
               boxShadow: '0 0 40px rgba(34,197,94,0.16)',
-              fontSize: 'clamp(22px, 2.8vw, 44px)', fontWeight: 900,
-              color: '#4ade80', marginBottom: 10,
+              fontSize: 'clamp(30px, 4vw, 60px)', fontWeight: 900,
+              color: '#4ade80', marginBottom: 20,
+              width: '100%', maxWidth: 1200, textAlign: 'center',
               animation: 'contentReveal 0.4s ease both',
             }}>
               ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
@@ -1696,29 +1704,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const cat = q.category;
             const isEn = lang === 'en';
             const winMsg = cat === 'SCHAETZCHEN'
-              ? (isEn ? 'war am nächsten dran! 🎯' : 'war am nächsten dran! 🎯')
+              ? (isEn ? 'war am nächsten dran!' : 'war am nächsten dran!')
               : cat === 'CHEESE'
-                ? (isEn ? 'hat es erkannt! 🔍' : 'hat es erkannt! 🔍')
+                ? (isEn ? 'hat es erkannt!' : 'hat es erkannt!')
                 : cat === 'BUNTE_TUETE'
-                  ? (isEn ? 'gewinnt die Runde! 🏆' : 'gewinnt die Runde! 🏆')
-                  : (isEn ? 'richtig! ✅' : 'richtig! ✅');
+                  ? (isEn ? 'gewinnt die Runde!' : 'gewinnt die Runde!')
+                  : (isEn ? 'richtig!' : 'richtig!');
             return (
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 20,
-                padding: '18px 28px', borderRadius: 24, marginBottom: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
+                padding: '28px 44px', borderRadius: 28, marginBottom: 12,
+                width: '100%', maxWidth: 1200,
                 background: `linear-gradient(135deg, ${team.color}22, ${team.color}0a)`,
                 border: `2px solid ${team.color}66`,
                 boxShadow: `0 0 40px ${team.color}22, 0 8px 24px rgba(0,0,0,0.4)`,
                 animation: 'winnerSlideIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
               }}>
-                <span style={{ fontSize: 'clamp(52px, 6vw, 88px)', lineHeight: 1, flexShrink: 0 }}>
+                <span style={{ fontSize: 'clamp(64px, 8vw, 110px)', lineHeight: 1, flexShrink: 0 }}>
                   {qqGetAvatar(team.avatarId).emoji}
                 </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(28px, 3.8vw, 56px)', color: team.color, lineHeight: 1.1 }}>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team.color, lineHeight: 1.1 }}>
                     {team.name}
                   </div>
-                  <div style={{ color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 700, marginTop: 4 }}>
+                  <div style={{ color: '#94a3b8', fontSize: 'clamp(18px, 2.4vw, 32px)', fontWeight: 700, marginTop: 6 }}>
                     {winMsg}
                   </div>
                 </div>
@@ -1891,45 +1900,36 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Fireflies />
 
-      {/* Top banner */}
+      {/* Top banner — team + action info */}
       <div style={{
-        padding: '20px 44px', borderBottom: '1px solid rgba(255,255,255,0.05)',
-        display: 'flex', alignItems: 'center', gap: 20, position: 'relative', zIndex: 5,
+        padding: '16px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+        position: 'relative', zIndex: 5,
         background: 'rgba(13,10,6,0.6)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        <div style={{
-          fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: '#475569',
-        }}>
-          {actionVerb(s.pendingAction, lang)}
-        </div>
         {team && (
           <>
-            <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-            <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3.2vw, 48px)', color: team.color }}>{team.name}</span>
-            <span style={{ color: '#475569', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
-              {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
-            </span>
+            <span style={{ fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            <span style={{ fontWeight: 900, fontSize: 'clamp(24px, 3vw, 44px)', color: team.color }}>{team.name}</span>
           </>
         )}
-        {/* Last answer reminder */}
-        {s.revealedAnswer && (
-          <div style={{
-            marginLeft: 'auto', padding: '8px 20px', borderRadius: 12,
-            background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
-            fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#4ade80', fontWeight: 700,
-          }}>
-            ✓ {s.revealedAnswer}
-          </div>
+        <span style={{
+          fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: '#94a3b8',
+        }}>
+          {actionVerb(s.pendingAction, lang)}
+        </span>
+        {team && s.teamPhaseStats[team.id] && (
+          <span style={{ color: '#64748b', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700 }}>
+            {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
+          </span>
         )}
       </div>
 
-      {/* Center: large grid + scores */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '20px 44px', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={600} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 240 }}>
-          <ScoreBar teams={s.teams} />
-        </div>
+      {/* Center: large grid centered with score below */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
+        <GridDisplay state={s} maxSize={Math.min(700, typeof window !== 'undefined' ? window.innerHeight * 0.65 : 600)} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+        <ScoreBar teams={s.teams} />
       </div>
     </div>
   );

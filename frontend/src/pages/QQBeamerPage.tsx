@@ -1556,7 +1556,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
       {/* Fullscreen background image (explicit fullscreen layout OR CHEESE staged reveal — not CHEESE reveal which uses window panel) */}
-      {((hasImg && img.layout === 'fullscreen') || cheeseFullscreen) && !isCheeseReveal && (
+      {/* CHEESE: only show fullscreen image after imageRevealed (cheeseFullscreen), not from layout alone */}
+      {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && !isCheeseReveal && (
         <>
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,

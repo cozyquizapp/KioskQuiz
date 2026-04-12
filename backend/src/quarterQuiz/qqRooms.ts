@@ -1505,8 +1505,9 @@ function finishPlacement(room: QQRoomState): void {
 
   room.pendingFor    = null;
   room.pendingAction = null;
-  // Keep correctTeamId so moderator UI shows "Nächste Frage" instead of confirm buttons
-  room.phase         = 'QUESTION_REVEAL'; // Stay on reveal, moderator advances
+  // Stay in PLACEMENT with pendingFor=null so moderator sees "Nächste Frage"
+  // (NOT QUESTION_REVEAL — that would loop back to "Felder setzen")
+  room.phase         = 'PLACEMENT';
   room.lastActivityAt = Date.now();
 }
 

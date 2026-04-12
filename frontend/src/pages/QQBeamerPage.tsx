@@ -1119,7 +1119,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         <>
           <div style={{
             fontFamily: fontFam,
-            fontSize: 'clamp(90px, 16vw, 220px)', fontWeight: 900, lineHeight: 0.9,
+            fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
             color,
             textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
             textAlign: 'center',
@@ -1139,7 +1139,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
           <div style={{
             fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700,
+            fontSize: 'clamp(32px, 4.5vw, 60px)', fontWeight: 700,
             color: `${color}88`,
             animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both',
             position: 'relative', zIndex: 5,
@@ -1152,9 +1152,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         <>
           <div style={{
             fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 700,
+            fontSize: 'clamp(26px, 3.5vw, 44px)', fontWeight: 700,
             color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 20,
+            marginBottom: 24,
             animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
             position: 'relative', zIndex: 5,
           }}>
@@ -1164,14 +1164,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           {cat && (
             <>
               <div style={{
-                fontSize: 'clamp(72px, 12vw, 150px)',
+                fontSize: 'clamp(80px, 14vw, 180px)',
                 animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both',
                 position: 'relative', zIndex: 5,
               }}>{catEmoji}</div>
 
               <div style={{
                 fontFamily: fontFam,
-                fontSize: 'clamp(60px, 11vw, 160px)', fontWeight: 900, lineHeight: 1,
+                fontSize: 'clamp(68px, 13vw, 200px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
                 textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
                 marginTop: 12,
@@ -1435,9 +1435,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Auto-size: shorter fontSize for long questions
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const qFontSize = revealed
-    ? (qText.length > 200 ? 'clamp(20px, 2.4vw, 34px)'
-      : qText.length > 120 ? 'clamp(24px, 3vw, 44px)'
-      : 'clamp(28px, 3.5vw, 52px)')
+    ? (qText.length > 200 ? 'clamp(24px, 2.8vw, 40px)'
+      : qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)'
+      : 'clamp(34px, 4.5vw, 64px)')
     : qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
     : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
     : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
@@ -1799,7 +1799,7 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 
       {/* Center: large grid centered with score below */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
-        <GridDisplay state={s} maxSize={Math.min(700, typeof window !== 'undefined' ? window.innerHeight * 0.65 : 600)} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+        <GridDisplay state={s} maxSize={Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 700)} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
         <ScoreBar teams={s.teams} />
       </div>
     </div>
@@ -2032,9 +2032,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
 
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-        {s.gridSize}×{s.gridSize} {bt.grid.label[lang]}
-      </div>
+      {/* Grid size label removed — not needed on beamer */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
@@ -2220,23 +2218,23 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   }, [teams]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 800 }}>
       {sorted.map((t, i) => (
         <div key={t.id} style={{
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', alignItems: 'center', gap: 14,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
         }}>
-          <span style={{ fontSize: 22, width: 30, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+          <span style={{ fontSize: 32, width: 40, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
           <div style={{ flex: 1, position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 16, color: '#64748b', fontWeight: 700 }}>
-                {t.largestConnected}<span style={{ opacity: 0.5 }}> / {t.totalCells}</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: t.color }}>{t.name}</span>
+              <span style={{ fontSize: 20, color: '#94a3b8', fontWeight: 800 }}>
+                {t.largestConnected}<span style={{ opacity: 0.5, fontSize: 16 }}> / {t.totalCells}</span>
               </span>
             </div>
-            <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 4,
+                height: '100%', borderRadius: 5,
                 background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
                 width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
                 transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',

@@ -41,55 +41,57 @@ body {
   transition:transform .35s cubic-bezier(.34,1.56,.64,1);
   will-change:transform;
 }
-.cell.owned   { cursor:default; }
-.cell.popping { animation:cellPop .55s cubic-bezier(.34,1.56,.64,1) forwards; }
+.cell.owned { cursor:default; }
 
-@keyframes cellPop {
-  0%   { transform:translateZ(var(--tz)) }
-  40%  { transform:translateZ(calc(var(--tz) + 18px)) }
-  70%  { transform:translateZ(calc(var(--tz) - 4px)) }
-  100% { transform:translateZ(var(--tz)) }
+/* Dim all tiles of non-active teams */
+.cell.owned.dim    { filter:brightness(.45) saturate(.6); transition:filter .3s ease, transform .35s cubic-bezier(.34,1.56,.64,1); }
+.cell.owned.bright { filter:brightness(1.25); transition:filter .3s ease, transform .35s cubic-bezier(.34,1.56,.64,1); }
+
+/* Claim animation: tile flashes + expands then settles */
+@keyframes claimFlash {
+  0%   { transform:translateZ(var(--tz)); filter:brightness(1); }
+  20%  { transform:translateZ(calc(var(--tz) + 22px)); filter:brightness(2.5); }
+  55%  { transform:translateZ(calc(var(--tz) - 3px)); filter:brightness(1.1); }
+  100% { transform:translateZ(var(--tz)); filter:brightness(1); }
 }
+.cell.claiming { animation:claimFlash .65s cubic-bezier(.34,1.56,.64,1) forwards; }
 
 /* Top face */
 .tile-top {
   position:absolute; inset:0; border-radius:3px; z-index:2;
   transition:background .3s, box-shadow .3s, border-color .3s;
 }
-/* Front face (south wall) */
+/* Side faces */
 .tile-front {
   position:absolute; left:0; right:0; top:100%;
-  transform-origin:top center; transform:rotateX(-90deg);
-  z-index:1; border-radius:0 0 2px 2px;
+  transform-origin:top center; transform:rotateX(-90deg); z-index:1;
 }
-/* Right face (east wall) */
 .tile-right {
   position:absolute; top:0; bottom:0; left:100%;
-  transform-origin:left center; transform:rotateY(90deg);
-  z-index:1; border-radius:0 2px 2px 0;
+  transform-origin:left center; transform:rotateY(90deg); z-index:1;
 }
 
-/* ── SYMBOL OVERLAY (2D + 3D) ── */
-.symbol-layer {
-  position:absolute; inset:0; pointer-events:none;
-  z-index:200; overflow:visible;
+/* ── OVERLAYS ── */
+.territory-svg, .symbol-layer {
+  position:absolute; inset:0; pointer-events:none; overflow:visible;
 }
+.territory-svg { z-index:100; }
+.symbol-layer  { z-index:200; }
 
 /* ── SCORE BAR ── */
 .score-bar {
-  position:absolute; bottom:-48px; left:0; right:0;
+  position:absolute; bottom:-52px; left:0; right:0;
   display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
 }
 .team-pill {
   display:flex; align-items:center; gap:7px; padding:6px 14px; border-radius:8px;
   background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.05);
-  cursor:pointer; transition:all .15s ease; user-select:none; font-size:12px;
+  cursor:pointer; transition:all .2s ease; user-select:none; font-size:12px;
 }
-.team-pill:hover { transform:translateY(-1px); }
-.team-pill.active { background:var(--tc-bg); border-color:var(--tc-border); box-shadow:0 0 14px var(--tc-glow); }
+.team-pill.active { background:var(--tc-bg); border-color:var(--tc-border); box-shadow:0 0 16px var(--tc-glow); }
 .tp-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 .tp-name { font-weight:700; }
-.tp-count { color:#253040; font-weight:600; }
+.tp-count { color:#253040; font-weight:600; margin-left:2px; }
 
 /* ── AVATAR PANEL ── */
 .avatar-panel {
@@ -146,7 +148,6 @@ body {
 </head>
 <body>
 
-<!-- LEFT: Grid -->
 <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
   <div class="board-wrap" id="board-wrap">
     <div class="iso-scene" id="iso-scene">
@@ -154,11 +155,10 @@ body {
     </div>
     <div class="score-bar" id="scorebar"></div>
   </div>
-  <div style="height:48px"></div>
+  <div style="height:52px"></div>
   <div style="font-size:11px;color:#1a2236;letter-spacing:.05em;">Team wählen → Feld klicken</div>
 </div>
 
-<!-- RIGHT: Avatar Builder -->
 <div class="avatar-panel">
   <div>
     <h3>Team Builder</h3>
@@ -172,7 +172,7 @@ body {
     <div style="font-size:11px;color:#3a4a68;margin-bottom:8px;font-weight:600;">SYMBOL</div>
     <div class="shape-grid" id="shape-grid"></div>
   </div>
-  <div class="team-preview" id="team-preview">
+  <div class="team-preview">
     <div class="preview-icon" id="preview-icon" style="border-color:#333;background:rgba(255,255,255,.03);">
       <svg id="preview-svg" viewBox="0 0 24 24" fill="none"></svg>
     </div>
@@ -197,7 +197,6 @@ body {
 const SIZE=6, CELL=72, GAP=4;
 const NS='http://www.w3.org/2000/svg';
 
-// ── NEON COLORS ──
 const NEON_COLORS=[
   {hex:'#00f5ff',r:0,  g:245,b:255,name:'Cyan'},
   {hex:'#ff0080',r:255,g:0,  b:128,name:'Pink'},
@@ -211,7 +210,6 @@ const NEON_COLORS=[
   {hex:'#ff99ff',r:255,g:153,b:255,name:'Rosa'},
 ];
 
-// ── SHAPES ──
 const SHAPES=[
   {id:'circle',   name:'Kreis',   path:'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z'},
   {id:'triangle', name:'Dreieck', path:'M12 3L22 21H2L12 3z'},
@@ -231,13 +229,17 @@ const SHAPES=[
 ];
 
 // ── TEAMS ──
-const TEAMS=Array(6).fill(null).map(()=>null);
-let registeredTeams=[];
-let activeTeam=0;
+const TEAMS=Array(6).fill(null);
+let registeredTeams=[], activeTeam=0;
 
-// ── TILE HEIGHT LEVELS (translateZ px) ──
-// home=40, edge=20, interior=6
-const TZ_HOME=40, TZ_EDGE=20, TZ_INTERIOR=6;
+function mkTeam(colorIdx,shapeIdx,name){
+  const nc=NEON_COLORS[colorIdx], sh=SHAPES[shapeIdx];
+  return{color:nc.hex,r:nc.r,g:nc.g,b:nc.b,name,shapeId:sh.id,shapePath:sh.path};
+}
+TEAMS[0]=mkTeam(6,8,'Die Clique');
+TEAMS[1]=mkTeam(1,1,'Rote Karte');
+TEAMS[2]=mkTeam(2,2,'Grüne Hölle');
+TEAMS[3]=mkTeam(3,7,'Oranje');
 
 // ── STATE ──
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
@@ -247,29 +249,31 @@ seed(0,5,1,true);seed(0,4,1);seed(1,5,1);seed(1,4,1);
 seed(5,0,2,true);seed(4,0,2);seed(5,1,2);seed(4,1,2);
 seed(5,5,3,true);seed(4,5,3);seed(5,4,3);
 
-// Seed demo teams
-function mkTeam(colorIdx, shapeIdx, name){
-  const nc=NEON_COLORS[colorIdx], sh=SHAPES[shapeIdx];
-  return {color:nc.hex,r:nc.r,g:nc.g,b:nc.b,name,inten:.88,shapeId:sh.id,shapePath:sh.path};
-}
-TEAMS[0]=mkTeam(6,8,'Die Clique');   // Blau + Schild
-TEAMS[1]=mkTeam(1,1,'Rote Karte');   // Pink + Dreieck
-TEAMS[2]=mkTeam(2,2,'Grüne Hölle');  // Grün + Hexagon
-TEAMS[3]=mkTeam(3,7,'Oranje');       // Gelb + Blitz
-
 // ── HELPERS ──
-function rc(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`;}
+function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`;}
 function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti;}
 function isEdgeCell(r,c){
-  const ti=state[r][c]?.teamIdx;
-  if(ti==null) return false;
-  return [[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>!same(r+dr,c+dc,ti));
+  const ti=state[r][c]?.teamIdx; if(ti==null) return false;
+  return[[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>!same(r+dr,c+dc,ti));
 }
+function adjCount(r,c){
+  const ti=state[r][c]?.teamIdx; if(ti==null) return 0;
+  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length;
+}
+
+// Height = Stärke:
+// home (HQ)  → 44px  "stark / HQ"
+// connected interior (adj=4) → 10px  "normales Feld, tief verbunden"
+// edge (1-3 neighbours) → 24px  "verbunden aber exponiert"
+// lone (adj=0) → 16px  "einzeln, mittel"
 function getTZ(r,c){
   const cell=state[r][c]; if(!cell) return 0;
-  if(cell.home) return TZ_HOME;
-  if(isEdgeCell(r,c)) return TZ_EDGE;
-  return TZ_INTERIOR;
+  if(cell.home) return 44;
+  const adj=adjCount(r,c);
+  if(adj===4) return 10;   // fully interior
+  if(adj>=2)  return 22;   // connected
+  if(adj===1) return 18;   // weakly connected
+  return 15;               // lone
 }
 
 // ── CONNECTED BLOCKS ──
@@ -277,11 +281,10 @@ function getBlocks(teamIdx){
   const visited=Array.from({length:SIZE},()=>Array(SIZE).fill(false));
   const blocks=[];
   for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
-    if(state[r][c]?.teamIdx===teamIdx && !visited[r][c]){
-      const block=[], q=[[r,c]];
-      visited[r][c]=true;
+    if(state[r][c]?.teamIdx===teamIdx&&!visited[r][c]){
+      const block=[],q=[[r,c]]; visited[r][c]=true;
       while(q.length){
-        const [cr,cc]=q.shift(); block.push([cr,cc]);
+        const[cr,cc]=q.shift(); block.push([cr,cc]);
         [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
           const nr=cr+dr,nc=cc+dc;
           if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&!visited[nr][nc]&&state[nr][nc]?.teamIdx===teamIdx){
@@ -295,6 +298,18 @@ function getBlocks(teamIdx){
   return blocks;
 }
 
+// Find the tile closest to the geometric center of the block
+function blockCenterTile(block){
+  const cx=block.reduce((s,[,c])=>s+c,0)/block.length;
+  const cy=block.reduce((s,[r])=>s+r,0)/block.length;
+  let best=block[0], bestD=Infinity;
+  block.forEach(([r,c])=>{
+    const d=(r-cy)**2+(c-cx)**2;
+    if(d<bestD){bestD=d;best=[r,c];}
+  });
+  return best;
+}
+
 // ── RENDER CELL ──
 let isIsoMode=false;
 
@@ -302,7 +317,6 @@ function renderCell(r,c){
   const cell=state[r][c];
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
   if(!el) return;
-
   const tTop=el.querySelector('.tile-top');
   const tFront=el.querySelector('.tile-front');
   const tRight=el.querySelector('.tile-right');
@@ -311,64 +325,62 @@ function renderCell(r,c){
     el.className='cell empty';
     el.style.setProperty('--tz','0px');
     el.style.transform='translateZ(0px)';
-    tTop.style.cssText='position:absolute;inset:0;border-radius:3px;z-index:2;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);';
+    tTop.style.cssText='position:absolute;inset:0;border-radius:3px;z-index:2;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);';
     tFront.style.cssText='display:none;';
     tRight.style.cssText='display:none;';
     return;
   }
 
-  el.className='cell owned';
   const team=TEAMS[cell.teamIdx];
+  const isHome=cell.home;
+  const isEdge=isEdgeCell(r,c);
   const tz=getTZ(r,c);
-  const wallH=Math.max(6, tz);
+  const wallH=Math.max(6,tz);
+
   el.style.setProperty('--tz',`${tz}px`);
   el.style.transform=`translateZ(${tz}px)`;
 
-  // Top face
-  const isHome=cell.home;
-  const isEdge=isEdgeCell(r,c);
-  const bgA=isHome?.32:isEdge?.22:.14;
-  const borderA=isHome?.85:isEdge?.6:.35;
-  const borderW=isHome?'2px':'1.5px';
-  const glow=isHome
-    ? `0 0 20px ${rc(team,.65)}, 0 0 40px ${rc(team,.25)}`
+  // ── TOP FACE ──
+  // Inner tiles: very subtle border (only show colour, not glow)
+  // Edge tiles: full-colour border + glow → makes territory boundary obvious
+  const bgA   = isHome?.30 : isEdge?.18 : .10;
+  const brdA  = isHome?.90 : isEdge?.70 : .08;  // ← key: inner almost invisible
+  const brdW  = isHome?'2px':isEdge?'1.5px':'1px';
+  const glow  = isHome
+    ? `0 0 18px ${rca(team,.7)}, 0 0 38px ${rca(team,.28)}`
     : isEdge
-      ? `0 0 12px ${rc(team,.45)}`
-      : `0 0 6px ${rc(team,.2)}`;
+      ? `0 0 10px ${rca(team,.5)}`
+      : 'none';
 
   tTop.style.cssText=`
     position:absolute;inset:0;border-radius:3px;z-index:2;
-    background:${rc(team,bgA)};
-    border:${borderW} solid ${rc(team,borderA)};
+    background:${rca(team,bgA)};
+    border:${brdW} solid ${rca(team,brdA)};
     box-shadow:${glow};
-    ${isHome?`animation:homePulse 2.4s ease-in-out infinite;--glow-base:${glow};--glow-peak:0 0 28px ${rc(team,.9)},0 0 56px ${rc(team,.35)};`:''}
+    ${isHome?`animation:homePulse 2.4s ease-in-out infinite;--glow-b:${glow};--glow-p:0 0 26px ${rca(team,.9)},0 0 52px ${rca(team,.38)};`:''}
   `;
 
-  // Front wall (south)
-  tFront.style.cssText=`
-    display:block;position:absolute;left:0;right:0;top:100%;
-    height:${wallH}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;
-    background:${rc(team,isHome?.28:isEdge?.18:.09)};
-    border-left:${borderW} solid ${rc(team,borderA*.7)};
-    border-bottom:${borderW} solid ${rc(team,borderA*.5)};
-    border-right:${borderW} solid ${rc(team,borderA*.4)};
-  `;
-  // Right wall (east)
-  tRight.style.cssText=`
-    display:block;position:absolute;top:0;bottom:0;left:100%;
-    width:${wallH}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;
-    background:${rc(team,isHome?.20:isEdge?.12:.06)};
-    border-top:${borderW} solid ${rc(team,borderA*.6)};
-    border-right:${borderW} solid ${rc(team,borderA*.5)};
-    border-bottom:${borderW} solid ${rc(team,borderA*.35)};
-  `;
+  // ── SIDE FACES ──
+  const wallBg = isHome?rca(team,.26):isEdge?rca(team,.15):rca(team,.06);
+  const wallBrd = `1px solid ${rca(team, isHome?.55:isEdge?.35:.05)}`; // inner walls nearly invisible
+  tFront.style.cssText=`display:block;position:absolute;left:0;right:0;top:100%;height:${wallH}px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;border-radius:0 0 2px 2px;background:${wallBg};border-left:${wallBrd};border-bottom:${wallBrd};border-right:${wallBrd};`;
+  tRight.style.cssText=`display:block;position:absolute;top:0;bottom:0;left:100%;width:${wallH}px;transform-origin:left center;transform:rotateY(90deg);z-index:1;border-radius:0 2px 2px 0;background:${wallBg};border-top:${wallBrd};border-right:${wallBrd};border-bottom:${wallBrd};`;
 }
 
-// ── SYMBOL OVERLAY ──
-// One symbol per connected block, centered, same in 2D and 3D
+// Apply dim/bright classes based on active team
+function applyTeamFocus(){
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    const cell=state[r][c]; if(!cell) continue;
+    const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    if(!el) continue;
+    el.classList.remove('dim','bright');
+    el.classList.add(cell.teamIdx===activeTeam?'bright':'dim');
+  }
+}
+
+// ── SYMBOL OVERLAY — one per block, on center tile ──
 function updateSymbols(){
   document.querySelectorAll('.symbol-layer').forEach(s=>s.remove());
-  const gridEl=document.getElementById('grid');
   const totalW=(CELL+GAP)*SIZE-GAP;
   const svg=document.createElementNS(NS,'svg');
   svg.className='symbol-layer';
@@ -378,32 +390,51 @@ function updateSymbols(){
   TEAMS.forEach((team,ti)=>{
     if(!team?.shapePath) return;
     getBlocks(ti).forEach(block=>{
+      const[cr,cc]=blockCenterTile(block);
+      const cx=cc*(CELL+GAP)+CELL/2;
+      const cy=cr*(CELL+GAP)+CELL/2;
       const n=block.length;
-      // Pixel center of block
-      const cx=block.reduce((s,[,c])=>s+c*(CELL+GAP)+CELL/2,0)/n;
-      const cy=block.reduce((s,[r])=>s+r*(CELL+GAP)+CELL/2,0)/n;
-      const sz=Math.min(16+n*3, 30); // scales with block size
+      const sz=Math.min(14+n*2,24); // small but grows slightly with territory
       const sc=(sz/24).toFixed(2);
       const g=document.createElementNS(NS,'g');
       g.setAttribute('transform',`translate(${cx.toFixed(1)},${cy.toFixed(1)}) scale(${sc})`);
-      // glow
+      // glow pass
       const pg=document.createElementNS(NS,'path');
       pg.setAttribute('d',team.shapePath); pg.setAttribute('fill','none');
       pg.setAttribute('stroke',team.color); pg.setAttribute('stroke-width','5');
       pg.setAttribute('stroke-linecap','round'); pg.setAttribute('stroke-linejoin','round');
-      pg.setAttribute('transform','translate(-12,-12)'); pg.setAttribute('opacity','.2');
-      // sharp
+      pg.setAttribute('transform','translate(-12,-12)'); pg.setAttribute('opacity','.18');
+      // sharp pass
       const ps=document.createElementNS(NS,'path');
       ps.setAttribute('d',team.shapePath); ps.setAttribute('fill','none');
       ps.setAttribute('stroke',team.color); ps.setAttribute('stroke-width','1.8');
       ps.setAttribute('stroke-linecap','round'); ps.setAttribute('stroke-linejoin','round');
-      ps.setAttribute('transform','translate(-12,-12)'); ps.setAttribute('opacity','1');
+      ps.setAttribute('transform','translate(-12,-12)'); ps.setAttribute('opacity','.95');
       g.appendChild(pg); g.appendChild(ps);
       svg.appendChild(g);
     });
   });
 
-  gridEl.appendChild(svg);
+  document.getElementById('grid').appendChild(svg);
+}
+
+// Animate symbol flash on claim (pulse once)
+function flashSymbol(teamIdx){
+  const svgEl=document.querySelector('.symbol-layer');
+  if(!svgEl) return;
+  // find group matching team center tile
+  // simpler: re-render with a brief opacity keyframe via animate element
+  svgEl.querySelectorAll('g').forEach(g=>{
+    const pathEl=g.querySelector('path:last-child');
+    if(!pathEl) return;
+    if(pathEl.getAttribute('stroke')!==TEAMS[teamIdx]?.color) return;
+    const anim=document.createElementNS(NS,'animate');
+    anim.setAttribute('attributeName','opacity');
+    anim.setAttribute('values','1;0;1;0.95');
+    anim.setAttribute('dur','0.5s');
+    anim.setAttribute('fill','freeze');
+    pathEl.appendChild(anim);
+  });
 }
 
 // ── TERRITORY OUTLINES ──
@@ -422,16 +453,20 @@ function updateOutlines(){
     if(!cells.length) return;
     const pad=3;
     cells.forEach(([r,c])=>{
-      const x=c*(CELL+GAP), y=r*(CELL+GAP);
+      const x=c*(CELL+GAP),y=r*(CELL+GAP);
       const mkLine=(x1,y1,x2,y2)=>{
-        [[5,.18],[1.6,.9]].forEach(([w,op])=>{
-          const l=document.createElementNS(NS,'line');
-          l.setAttribute('x1',x1);l.setAttribute('y1',y1);
-          l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-          l.setAttribute('stroke',team.color);l.setAttribute('stroke-width',w);
-          l.setAttribute('stroke-opacity',op);l.setAttribute('stroke-linecap','round');
-          svg.appendChild(l);
-        });
+        // outer glow
+        const lg=document.createElementNS(NS,'line');
+        lg.setAttribute('x1',x1);lg.setAttribute('y1',y1);lg.setAttribute('x2',x2);lg.setAttribute('y2',y2);
+        lg.setAttribute('stroke',team.color);lg.setAttribute('stroke-width','5');
+        lg.setAttribute('stroke-opacity','.15');lg.setAttribute('stroke-linecap','round');
+        svg.appendChild(lg);
+        // sharp line
+        const ls=document.createElementNS(NS,'line');
+        ls.setAttribute('x1',x1);ls.setAttribute('y1',y1);ls.setAttribute('x2',x2);ls.setAttribute('y2',y2);
+        ls.setAttribute('stroke',team.color);ls.setAttribute('stroke-width','1.8');
+        ls.setAttribute('stroke-opacity','.9');ls.setAttribute('stroke-linecap','round');
+        svg.appendChild(ls);
       };
       if(!same(r-1,c,ti)) mkLine(x-pad,y-pad,x+CELL+pad,y-pad);
       if(!same(r+1,c,ti)) mkLine(x-pad,y+CELL+pad,x+CELL+pad,y+CELL+pad);
@@ -445,28 +480,24 @@ function updateOutlines(){
 // ── CAMERA ──
 let cameraAnimating=false;
 function triggerCamera(newR,newC){
-  if(isIsoMode){ animatePop(newR,newC); return; }
+  if(isIsoMode){ claimPop(newR,newC); return; }
   cameraAnimating=true;
-  const scene=document.getElementById('iso-scene');
-  const grid=document.getElementById('grid');
-  scene.classList.add('is-iso');
-  grid.classList.add('is-iso');
+  document.getElementById('iso-scene').classList.add('is-iso');
+  document.getElementById('grid').classList.add('is-iso');
   isIsoMode=true;
-  // After tilt, re-render all cells with correct heights
   setTimeout(()=>{
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) renderCell(r,c);
-    animatePop(newR,newC);
+    claimPop(newR,newC);
     cameraAnimating=false;
   },900);
 }
 
-function animatePop(r,c){
+function claimPop(r,c){
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
   if(!el) return;
-  el.classList.remove('popping');
-  void el.offsetWidth; // reflow
-  el.classList.add('popping');
-  setTimeout(()=>el.classList.remove('popping'),600);
+  el.classList.remove('claiming'); void el.offsetWidth;
+  el.classList.add('claiming');
+  setTimeout(()=>el.classList.remove('claiming'),700);
 }
 
 // ── BUILD DOM ──
@@ -485,30 +516,31 @@ for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
   el.addEventListener('mouseenter',()=>{
     if(state[r][c]||!TEAMS[activeTeam]) return;
     const t=TEAMS[activeTeam];
-    el.querySelector('.tile-top').style.background=`rgba(${t.r},${t.g},${t.b},.10)`;
-    el.querySelector('.tile-top').style.borderColor=`rgba(${t.r},${t.g},${t.b},.45)`;
-    el.querySelector('.tile-top').style.boxShadow=`0 0 14px rgba(${t.r},${t.g},${t.b},.35)`;
-    if(isIsoMode) el.style.transform=`translateZ(${TZ_EDGE+6}px)`;
+    el.querySelector('.tile-top').style.cssText=`
+      position:absolute;inset:0;border-radius:3px;z-index:2;
+      background:rgba(${t.r},${t.g},${t.b},.12);
+      border:1.5px solid rgba(${t.r},${t.g},${t.b},.6);
+      box-shadow:0 0 14px rgba(${t.r},${t.g},${t.b},.4), inset 0 0 8px rgba(${t.r},${t.g},${t.b},.08);
+      outline:none;
+    `;
+    if(isIsoMode) el.style.transform=`translateZ(${TZ_HOVER}px)`;
   });
   el.addEventListener('mouseleave',()=>{
     if(state[r][c]) return;
-    el.querySelector('.tile-top').style.background='rgba(255,255,255,.025)';
-    el.querySelector('.tile-top').style.borderColor='rgba(255,255,255,.06)';
-    el.querySelector('.tile-top').style.boxShadow='';
+    el.querySelector('.tile-top').style.cssText='position:absolute;inset:0;border-radius:3px;z-index:2;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);';
     if(isIsoMode) el.style.transform='translateZ(0px)';
   });
   el.addEventListener('click',()=>{
     if(state[r][c]||cameraAnimating||!TEAMS[activeTeam]) return;
     state[r][c]={teamIdx:activeTeam,home:false,new:true};
     renderCell(r,c);
-    // Re-render neighbours (edge status changes)
     [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
       const nr=r+dr,nc=c+dc;
       if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE) renderCell(nr,nc);
     });
-    updateOutlines();
-    updateSymbols();
-    updateScores();
+    updateOutlines(); updateSymbols(); updateScores();
+    applyTeamFocus();
+    flashSymbol(activeTeam);
     triggerCamera(r,c);
   });
 
@@ -516,28 +548,22 @@ for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
   renderCell(r,c);
 }
 
-// home pulse keyframe injected dynamically
+const TZ_HOVER=10;
+
+// Inject keyframes
 const style=document.createElement('style');
-style.textContent=`
-  @keyframes homePulse {
-    0%,100% { box-shadow:var(--glow-base); }
-    50%      { box-shadow:var(--glow-peak); }
-  }
-`;
+style.textContent=`@keyframes homePulse{0%,100%{box-shadow:var(--glow-b);}50%{box-shadow:var(--glow-p);}}`;
 document.head.appendChild(style);
 
 // ── AVATAR BUILDER ──
 let selColor=null, selShape=null;
 const takenColors=new Set(), takenShapes=new Set();
-
-// Pre-seed taken from demo teams
 [TEAMS[0],TEAMS[1],TEAMS[2],TEAMS[3]].filter(Boolean).forEach(t=>{
   takenColors.add(t.color); takenShapes.add(t.shapeId);
 });
 
 function buildAvatarUI(){
-  const cg=document.getElementById('color-grid');
-  cg.innerHTML='';
+  const cg=document.getElementById('color-grid'); cg.innerHTML='';
   NEON_COLORS.forEach(nc=>{
     const sw=document.createElement('div');
     sw.className='color-swatch'+(takenColors.has(nc.hex)?' taken':'');
@@ -546,8 +572,7 @@ function buildAvatarUI(){
     if(!takenColors.has(nc.hex)) sw.addEventListener('click',()=>selectColor(nc));
     cg.appendChild(sw);
   });
-  const sg=document.getElementById('shape-grid');
-  sg.innerHTML='';
+  const sg=document.getElementById('shape-grid'); sg.innerHTML='';
   SHAPES.forEach(sh=>{
     const btn=document.createElement('div');
     btn.className='shape-btn'+(takenShapes.has(sh.id)?' taken':'');
@@ -565,15 +590,14 @@ function selectColor(nc){
     if(!takenColors.has(NEON_COLORS[i].hex))
       sw.style.boxShadow=NEON_COLORS[i].hex===nc.hex?`0 0 16px ${nc.hex},0 0 32px ${nc.hex}55`:`0 0 8px ${NEON_COLORS[i].hex}55`;
   });
-  // update shape strokes
-  document.querySelectorAll('.shape-btn:not(.taken)').forEach((btn,i)=>{
-    const active=btn.classList.contains('selected');
-    btn.querySelector('svg').setAttribute('stroke',active?nc.hex:'rgba(255,255,255,.4)');
-    if(active) btn.style.setProperty('--sel-color',nc.hex);
+  document.querySelectorAll('.shape-btn:not(.taken)').forEach(btn=>{
+    if(btn.classList.contains('selected')){
+      btn.querySelector('svg').setAttribute('stroke',nc.hex);
+      btn.style.setProperty('--sel-color',nc.hex);
+    }
   });
   updatePreview();
 }
-
 function selectShape(sh){
   selShape=sh;
   document.querySelectorAll('.shape-btn:not(.taken)').forEach((btn,i)=>{
@@ -585,52 +609,36 @@ function selectShape(sh){
   });
   updatePreview();
 }
-
 function updatePreview(){
   const icon=document.getElementById('preview-icon');
-  const svg=document.getElementById('preview-svg');
+  const svgEl=document.getElementById('preview-svg');
   const name=document.getElementById('preview-name');
   const btn=document.getElementById('confirm-btn');
-  if(selColor){
-    icon.style.borderColor=selColor.hex;
-    icon.style.background=`${selColor.hex}18`;
-    icon.style.boxShadow=`0 0 14px ${selColor.hex}55`;
-  }
-  if(selShape){
-    svg.innerHTML=`<path d="${selShape.path}" stroke="${selColor?.hex||'white'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
-  }
+  if(selColor){ icon.style.borderColor=selColor.hex; icon.style.background=`${selColor.hex}18`; icon.style.boxShadow=`0 0 14px ${selColor.hex}55`; }
+  if(selShape){ svgEl.innerHTML=`<path d="${selShape.path}" stroke="${selColor?.hex||'white'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`; }
   if(selColor&&selShape){
-    name.textContent=`${selColor.name} · ${selShape.name}`;
-    name.style.color=selColor.hex;
+    name.textContent=`${selColor.name} · ${selShape.name}`; name.style.color=selColor.hex;
     btn.disabled=false;
     btn.style.cssText=`background:${selColor.hex}22;border:1.5px solid ${selColor.hex}88;color:${selColor.hex};box-shadow:0 0 14px ${selColor.hex}44;padding:11px 0;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;transition:all .15s ease;`;
   } else {
-    name.textContent='— wähle Farbe & Symbol';
-    name.style.color='#3a4a68';
+    name.textContent='— wähle Farbe & Symbol'; name.style.color='#3a4a68';
     btn.disabled=true;
     btn.style.cssText='padding:11px 0;border-radius:10px;border:1.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#2a3550;cursor:not-allowed;font-family:inherit;font-size:14px;font-weight:700;';
   }
 }
-
 document.getElementById('confirm-btn').addEventListener('click',()=>{
   if(!selColor||!selShape) return;
-  const idx=registeredTeams.length+4; // start after 4 demo teams
-  if(idx>=6) return;
+  const idx=4+registeredTeams.length; if(idx>=6) return;
   takenColors.add(selColor.hex); takenShapes.add(selShape.id);
   const team={color:selColor.hex,r:selColor.r,g:selColor.g,b:selColor.b,
-    name:`${selColor.name} ${selShape.name}`,inten:.88,shapeId:selShape.id,shapePath:selShape.path};
-  registeredTeams.push(team);
-  TEAMS[idx]=team;
-  renderRegisteredList();
-  selColor=null; selShape=null;
+    name:`${selColor.name} ${selShape.name}`,shapeId:selShape.id,shapePath:selShape.path};
+  registeredTeams.push(team); TEAMS[idx]=team;
+  renderRegisteredList(); selColor=null; selShape=null;
   buildAvatarUI(); updatePreview(); updateScores();
 });
-
 function renderRegisteredList(){
   const list=document.getElementById('registered-list');
-  if(!registeredTeams.length){
-    list.innerHTML='<div style="font-size:12px;color:#1e2840;">Noch keine Teams</div>'; return;
-  }
+  if(!registeredTeams.length){ list.innerHTML='<div style="font-size:12px;color:#1e2840;">Noch keine Teams</div>'; return; }
   list.innerHTML=registeredTeams.map((t,i)=>`
     <div class="reg-item">
       <div class="reg-dot" style="background:${t.color};box-shadow:0 0 6px ${t.color}88;"></div>
@@ -640,32 +648,31 @@ function renderRegisteredList(){
     </div>`).join('');
 }
 
-// ── SCORE BAR ──
+// ── SCORES ──
 function updateScores(){
   const bar=document.getElementById('scorebar');
   bar.innerHTML=TEAMS.map((t,i)=>{
     if(!t) return '';
-    const hasFields=state.flat().some(c=>c?.teamIdx===i);
-    const isReg=i<4||registeredTeams[i-4];
-    if(!hasFields&&!isReg) return '';
     const count=state.flat().filter(c=>c?.teamIdx===i).length;
+    if(!count&&i>=4&&!registeredTeams[i-4]) return '';
     const active=i===activeTeam;
     return`<div class="team-pill${active?' active':''}"
-      style="--tc-bg:rgba(${t.r},${t.g},${t.b},.08);--tc-border:rgba(${t.r},${t.g},${t.b},.4);--tc-glow:rgba(${t.r},${t.g},${t.b},.2);"
+      style="--tc-bg:rgba(${t.r},${t.g},${t.b},.09);--tc-border:rgba(${t.r},${t.g},${t.b},.45);--tc-glow:rgba(${t.r},${t.g},${t.b},.22);"
       onclick="selectTeam(${i})">
-      <div class="tp-dot" style="background:${t.color};box-shadow:0 0 6px rgba(${t.r},${t.g},${t.b},.8);"></div>
+      <div class="tp-dot" style="background:${t.color};box-shadow:0 0 6px rgba(${t.r},${t.g},${t.b},.9);"></div>
       <span class="tp-name" style="color:${active?t.color:'#3a4560'}">${t.name}</span>
       <span class="tp-count">${count}F</span>
     </div>`;
   }).join('');
 }
-window.selectTeam=i=>{activeTeam=i;updateScores();};
+window.selectTeam=i=>{activeTeam=i;updateScores();applyTeamFocus();};
 
 // ── INIT ──
 buildAvatarUI();
 updateOutlines();
 updateSymbols();
 updateScores();
+applyTeamFocus();
 renderRegisteredList();
 </script>
 </body>

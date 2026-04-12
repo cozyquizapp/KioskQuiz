@@ -1438,10 +1438,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     ? (qText.length > 200 ? 'clamp(20px, 2.4vw, 34px)'
       : qText.length > 120 ? 'clamp(24px, 3vw, 44px)'
       : 'clamp(28px, 3.5vw, 52px)')
-    : qText.length > 200 ? 'clamp(28px, 3.2vw, 48px)'
-    : qText.length > 120 ? 'clamp(32px, 4vw, 60px)'
-    : qText.length > 60 ? 'clamp(38px, 5vw, 76px)'
-    : 'clamp(44px, 6vw, 92px)'; // big short questions fill the space
+    : qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
+    : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
+    : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
+    : 'clamp(52px, 7vw, 108px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -1517,8 +1517,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         animation: 'contentReveal 0.35s ease both',
         visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
-        {/* ── Main content — full width, centered ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
+        {/* ── Main content — full width, vertically + horizontally centered ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
           {/* Timer — large, centered (active only) */}
           {!revealed && s.timerEndsAt && (
@@ -1666,7 +1666,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {!revealed && s.teams.length > 0 && (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
-              marginTop: 'auto', paddingTop: 20,
+              position: 'absolute', bottom: 20, left: 0, right: 0,
             }}>
               {s.teams.map(t => {
                 const answered = s.answers.some(a => a.teamId === t.id);

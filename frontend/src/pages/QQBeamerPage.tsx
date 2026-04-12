@@ -1088,110 +1088,74 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {isFirstOfRound && (
-        /* ── Round title — fades up, then shrinks to top to make room for category ── */
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          animation: 'introRoundReveal 3s ease both',
-          position: 'relative', zIndex: 5,
-        }}>
+      {isFirstOfRound ? (
+        /* ── First question: Round announcement only (category shown small) ── */
+        <>
           <div style={{
             fontFamily: fontFam,
-            fontSize: 'clamp(80px, 14vw, 200px)', fontWeight: 900, lineHeight: 0.95,
+            fontSize: 'clamp(90px, 16vw, 220px)', fontWeight: 900, lineHeight: 0.9,
             color,
-            textShadow: `0 0 100px ${color}44, 0 10px 0 ${color}33`,
+            textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
             textAlign: 'center',
+            animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, floatNum 3.5s ease-in-out 1s infinite',
+            position: 'relative', zIndex: 5,
           }}>
             {phaseName}
           </div>
+
           <div style={{
-            width: 'clamp(200px, 30vw, 420px)', height: 4, borderRadius: 2,
-            background: color, marginTop: 16, marginBottom: 12,
+            width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
+            background: color, marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: 'phaseLineGrow 0.6s cubic-bezier(0.34,1.2,0.64,1) 0.4s both',
+            animation: 'phaseLineGrow 0.6s cubic-bezier(0.34,1.2,0.64,1) 0.5s both',
+            position: 'relative', zIndex: 5,
           }} />
+
           <div style={{
             fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(22px, 3vw, 36px)', fontWeight: 700,
+            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700,
             color: `${color}88`,
-            animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
+            animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both',
+            position: 'relative', zIndex: 5,
           }}>
             {phaseDesc}
           </div>
-        </div>
-      )}
-
-      {/* ── Category reveal — hero element ── */}
-      {cat && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          marginTop: isFirstOfRound ? 32 : 0,
-          animation: isFirstOfRound
-            ? 'phasePop 0.8s cubic-bezier(0.34,1.56,0.64,1) 2.6s both'
-            : 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
-          position: 'relative', zIndex: 5,
-        }}>
-          {/* "Frage X" label */}
+        </>
+      ) : (
+        /* ── Question 2+: Big category reveal ── */
+        <>
           <div style={{
             fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 700,
+            fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 700,
             color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 14,
+            marginBottom: 20,
+            animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
+            position: 'relative', zIndex: 5,
           }}>
             {lang === 'de' ? `Frage ${questionInPhase}` : `Question ${questionInPhase}`}
           </div>
 
-          {/* Big emoji */}
-          <div style={{
-            fontSize: 'clamp(60px, 10vw, 130px)',
-            animation: isFirstOfRound
-              ? 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 2.9s both'
-              : 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both',
-          }}>{catEmoji}</div>
+          {cat && (
+            <>
+              <div style={{
+                fontSize: 'clamp(72px, 12vw, 150px)',
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both',
+                position: 'relative', zIndex: 5,
+              }}>{catEmoji}</div>
 
-          {/* Category name — big & bold */}
-          <div style={{
-            fontFamily: fontFam,
-            fontSize: 'clamp(52px, 9vw, 140px)', fontWeight: 900, lineHeight: 1,
-            color: catColor,
-            textShadow: `0 0 80px ${catColor}44, 0 6px 0 ${catColor}33`,
-            marginTop: 8,
-            animation: isFirstOfRound
-              ? 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 3.1s both, floatNum 3.5s ease-in-out 4s infinite'
-              : 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both, floatNum 3.5s ease-in-out 1.2s infinite',
-            textAlign: 'center',
-          }}>{catLabel}</div>
-        </div>
-      )}
-
-      {/* Mini grid preview */}
-      <div style={{
-        marginTop: 40, opacity: 0.45, position: 'relative', zIndex: 5,
-        animation: isFirstOfRound ? 'contentReveal 0.6s ease 3.4s both' : 'contentReveal 0.6s ease 0.8s both',
-      }}>
-        <MiniGrid state={s} size={100} />
-      </div>
-
-      {/* Score chips */}
-      {s.teams.length > 0 && (
-        <div style={{
-          display: 'flex', gap: 14, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center',
-          position: 'relative', zIndex: 5,
-          animation: isFirstOfRound ? 'contentReveal 0.6s ease 3.6s both' : 'contentReveal 0.6s ease 1s both',
-        }}>
-          {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map(tm => (
-            <div key={tm.id} style={{
-              padding: '8px 18px', borderRadius: 50,
-              border: `2px solid ${tm.color}55`,
-              background: `${tm.color}14`,
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <span style={{ fontSize: 18 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-              <span style={{ fontWeight: 800, color: tm.color, fontSize: 14 }}>{tm.name}</span>
-              <span style={{ color: '#64748b', fontSize: 12, fontWeight: 700 }}>{tm.largestConnected} {bt.phase.fields[lang]}</span>
-            </div>
-          ))}
-        </div>
+              <div style={{
+                fontFamily: fontFam,
+                fontSize: 'clamp(60px, 11vw, 160px)', fontWeight: 900, lineHeight: 1,
+                color: catColor,
+                textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
+                marginTop: 12,
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both, floatNum 3.5s ease-in-out 1.2s infinite',
+                position: 'relative', zIndex: 5,
+                textAlign: 'center',
+              }}>{catLabel}</div>
+            </>
+          )}
+        </>
       )}
     </div>
   );

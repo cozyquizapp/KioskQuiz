@@ -17,8 +17,8 @@ export const QQ_CATEGORIES: QQCategory[] = [
 ];
 
 export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; emoji: string }> = {
-  SCHAETZCHEN:   { de: 'Schätzchen',   en: 'Close Call',    emoji: '🍯' },
-  MUCHO:         { de: 'Mu-Cho',       en: 'Mu-Cho',        emoji: '🎵' },
+  SCHAETZCHEN:   { de: 'Schätzchen',   en: 'Close Call',    emoji: '🎯' },
+  MUCHO:         { de: 'Mu-Cho',       en: 'Mu-Cho',        emoji: '🅰️' },
   BUNTE_TUETE:   { de: 'Bunte Tüte',   en: 'Lucky Bag',     emoji: '🎁' },
   ZEHN_VON_ZEHN: { de: 'All In',       en: 'All In',        emoji: '🎰' },
   CHEESE:        { de: 'Picture This', en: 'Picture This',  emoji: '📸' },

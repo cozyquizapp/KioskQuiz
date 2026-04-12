@@ -25,8 +25,8 @@ const TEMPLATE_SPECS: TemplateSpec[] = [
   { type: 'PHASE_INTRO_1',        label: 'Runde 1 Intro',  icon: '1️⃣', color: '#3B82F6', group: 'Phasen' },
   { type: 'PHASE_INTRO_2',        label: 'Runde 2 Intro',  icon: '2️⃣', color: '#F59E0B', group: 'Phasen' },
   { type: 'PHASE_INTRO_3',        label: 'Finale Intro',   icon: '3️⃣', color: '#EF4444', group: 'Phasen' },
-  { type: 'QUESTION_SCHAETZCHEN', label: 'Schätzchen',     icon: '🍯', color: '#F59E0B', group: 'Fragen' },
-  { type: 'QUESTION_MUCHO',       label: 'Mu-Cho',         icon: '🎵', color: '#3B82F6', group: 'Fragen' },
+  { type: 'QUESTION_SCHAETZCHEN', label: 'Schätzchen',     icon: '🎯', color: '#F59E0B', group: 'Fragen' },
+  { type: 'QUESTION_MUCHO',       label: 'Mu-Cho',         icon: '🅰️', color: '#3B82F6', group: 'Fragen' },
   { type: 'QUESTION_BUNTE_TUETE', label: 'Bunte Tüte',    icon: '🎁', color: '#EF4444', group: 'Fragen' },
   { type: 'QUESTION_ZEHN',        label: 'All In',         icon: '🎰', color: '#22C55E', group: 'Fragen' },
   { type: 'QUESTION_CHEESE',      label: 'Picture This',   icon: '📸', color: '#8B5CF6', group: 'Fragen' },
@@ -186,11 +186,11 @@ function phaseIntro(type: QQSlideTemplateType, color: string, label: string): QQ
 interface CutoutSpec { text: string; top?: number; bottom?: number; left?: number; right?: number; rot: number; alt?: boolean }
 
 const CAT_CUTOUT_ELEMENTS: Record<string, CutoutSpec[]> = {
-  SCHAETZCHEN:   [{ text: '🍯', top: 6,  right: 11, rot: -12 }, { text: '✨', bottom: 14, left: 7,  rot: 8   }, { text: '💛', top: 30, right: 5,  rot: 16  }],
-  MUCHO:         [{ text: '🤔', top: 8,  right: 13, rot: -8  }, { text: '💡', bottom: 18, left: 6,  rot: 12  }, { text: '🅰️', top: 38, right: 6,  rot: -14, alt: true }],
+  SCHAETZCHEN:   [{ text: '🎯', top: 6,  right: 11, rot: -12 }, { text: '✨', bottom: 14, left: 7,  rot: 8   }, { text: '🔮', top: 30, right: 5,  rot: 16  }],
+  MUCHO:         [{ text: '🅰️', top: 8,  right: 13, rot: -8  }, { text: '💡', bottom: 18, left: 6,  rot: 12  }, { text: '🤔', top: 38, right: 6,  rot: -14, alt: true }],
   BUNTE_TUETE:   [{ text: '🎁', top: 7,  right: 10, rot: -10 }, { text: '🎲', bottom: 16, left: 8,  rot: 14  }, { text: '⭐', top: 42, right: 5,  rot: 20  }],
-  ZEHN_VON_ZEHN: [{ text: '🔟', top: 10, right: 12, rot: -6  }, { text: '✅', bottom: 20, left: 7,  rot: 10  }, { text: '📊', top: 32, right: 7,  rot: -12, alt: true }],
-  CHEESE:        [{ text: '🧀', top: 9,  right: 11, rot: -11 }, { text: '🎭', bottom: 15, left: 7,  rot: 8   }, { text: '👑', top: 36, right: 6,  rot: -9,  alt: true }],
+  ZEHN_VON_ZEHN: [{ text: '🎰', top: 10, right: 12, rot: -6  }, { text: '⚡', bottom: 20, left: 7,  rot: 10  }, { text: '💪', top: 32, right: 7,  rot: -12, alt: true }],
+  CHEESE:        [{ text: '📸', top: 9,  right: 11, rot: -11 }, { text: '🔍', bottom: 15, left: 7,  rot: 8   }, { text: '👁️', top: 36, right: 6,  rot: -9,  alt: true }],
 };
 
 function cutoutElements(cat: string): QQSlideElement[] {

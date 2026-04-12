@@ -702,8 +702,8 @@ const RULES_SLIDES_EN: RulesSlide[] = [
 function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string }) {
   const rows = grid.cells.length;
   const cols = grid.cells[0].length;
-  const cellSz = Math.min(64, Math.floor(260 / Math.max(rows, cols)));
-  const gap = 4;
+  const cellSz = Math.min(84, Math.floor(340 / Math.max(rows, cols)));
+  const gap = 5;
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
@@ -745,7 +745,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
       </div>
       {grid.label && (
         <div style={{
-          fontSize: 'clamp(14px,1.6vw,22px)', fontWeight: 800,
+          fontSize: 'clamp(18px,2.2vw,30px)', fontWeight: 800,
           color: slideColor, letterSpacing: '0.02em',
         }}>{grid.label}</div>
       )}
@@ -773,50 +773,35 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* Progress dots */}
-      <div style={{
-        position: 'absolute', top: 24, right: 28,
-        display: 'flex', gap: 8, zIndex: 10,
-      }}>
-        {Array.from({ length: totalSlides }).map((_, i) => (
-          <div key={i} style={{
-            width: i === idx ? 28 : 10, height: 10, borderRadius: 5,
-            background: i === idx ? slide.color : 'rgba(255,255,255,0.18)',
-            transition: 'all 0.35s ease',
-            boxShadow: i === idx ? `0 0 10px ${slide.color}66` : 'none',
-          }} />
-        ))}
-      </div>
-
-      {/* Main card */}
+      {/* Main card — full-width for beamer readability */}
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
-        maxWidth: hasGrid ? 960 : 840, width: '92%',
+        maxWidth: 1200, width: '94%',
         background: 'rgba(15,12,9,0.85)',
         border: `2px solid ${slide.color}44`,
-        borderRadius: 32,
-        padding: hasGrid ? '40px 48px' : '48px 56px',
-        boxShadow: `0 0 100px ${slide.color}22, 0 12px 40px rgba(0,0,0,0.6)`,
+        borderRadius: 36,
+        padding: hasGrid ? '52px 64px' : '60px 72px',
+        boxShadow: `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
         animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
         backdropFilter: 'blur(10px)',
       }}>
         {/* Icon + title row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginBottom: 32 }}>
           <span style={{
-            fontSize: 'clamp(48px,7vw,84px)', lineHeight: 1,
-            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))',
+            fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
+            filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
           }}>{slide.icon}</span>
           <div style={{ flex: 1 }}>
             <div style={{
-              fontSize: 'clamp(11px,1.2vw,15px)', fontWeight: 800, letterSpacing: '0.16em',
-              textTransform: 'uppercase', color: `${slide.color}88`, marginBottom: 4,
+              fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 800, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: `${slide.color}88`, marginBottom: 6,
             }}>
               {lang === 'de' ? `Spielregeln` : `Game Rules`}
             </div>
             <div style={{
-              fontSize: 'clamp(34px,5.5vw,68px)', fontWeight: 900, lineHeight: 1.05,
+              fontSize: 'clamp(44px,7vw,88px)', fontWeight: 900, lineHeight: 1.05,
               color: slide.color,
-              textShadow: `0 0 50px ${slide.color}44, 0 2px 0 rgba(0,0,0,0.3)`,
+              textShadow: `0 0 60px ${slide.color}44, 0 3px 0 rgba(0,0,0,0.3)`,
             }}>
               {slide.title}
             </div>
@@ -827,28 +812,28 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         <div style={{
           width: '100%', height: 3, borderRadius: 2,
           background: `linear-gradient(90deg, ${slide.color}aa, ${slide.color}22, transparent)`,
-          marginBottom: 28,
+          marginBottom: 32,
         }} />
 
         {/* Content: text left, grid right (if grid exists) */}
         <div style={{
-          display: 'flex', gap: 36, alignItems: 'center',
+          display: 'flex', gap: 48, alignItems: 'center',
           flexDirection: hasGrid ? 'row' : 'column',
         }}>
           {/* Text lines */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
             {slide.lines.map((line, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 16,
+                display: 'flex', alignItems: 'flex-start', gap: 18,
                 animation: `contentReveal 0.4s ease ${0.1 + i * 0.12}s both`,
               }}>
                 <div style={{
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: slide.color, marginTop: 10, flexShrink: 0,
-                  boxShadow: `0 0 8px ${slide.color}66`,
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: slide.color, marginTop: 14, flexShrink: 0,
+                  boxShadow: `0 0 10px ${slide.color}66`,
                 }} />
                 <span style={{
-                  fontSize: 'clamp(20px,2.8vw,36px)', fontWeight: 700,
+                  fontSize: 'clamp(26px,3.5vw,48px)', fontWeight: 700,
                   color: '#e2e8f0', lineHeight: 1.35,
                 }}>{line}</span>
               </div>
@@ -862,12 +847,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Extra callout */}
         {slide.extra && (
           <div style={{
-            marginTop: 28, padding: '16px 24px', borderRadius: 16,
+            marginTop: 32, padding: '20px 28px', borderRadius: 18,
             background: `${slide.color}15`, border: `2px solid ${slide.color}33`,
-            fontSize: 'clamp(18px,2.2vw,30px)', fontWeight: 800,
+            fontSize: 'clamp(22px,2.8vw,38px)', fontWeight: 800,
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.4s both',
-            textShadow: `0 0 20px ${slide.color}33`,
+            textShadow: `0 0 24px ${slide.color}33`,
           }}>
             {slide.extra}
           </div>
@@ -876,26 +861,15 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Last slide hint */}
         {isLast && (
           <div style={{
-            marginTop: 28, textAlign: 'center',
-            fontSize: 'clamp(16px,2vw,26px)', fontWeight: 800,
+            marginTop: 32, textAlign: 'center',
+            fontSize: 'clamp(22px,3vw,40px)', fontWeight: 800,
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.6s both',
-            textShadow: `0 0 20px ${slide.color}33`,
+            textShadow: `0 0 24px ${slide.color}33`,
           }}>
             {lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!'}
           </div>
         )}
-      </div>
-
-      {/* Bottom nav hint */}
-      <div style={{
-        position: 'absolute', bottom: 22, left: 0, right: 0,
-        display: 'flex', justifyContent: 'center', gap: 48,
-        zIndex: 10, opacity: 0.35, fontSize: 14, fontWeight: 700, color: '#94a3b8',
-        letterSpacing: '0.1em', textTransform: 'uppercase',
-      }}>
-        {idx > 0 && <span>◀ {lang === 'de' ? 'Zurück' : 'Back'}</span>}
-        {!isLast && <span>{lang === 'de' ? 'Weiter' : 'Next'} ▶</span>}
       </div>
     </div>
   );

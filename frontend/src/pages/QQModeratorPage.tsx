@@ -26,6 +26,7 @@ export default function QQModeratorPage() {
   const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
   const [showSoundPanel, setShowSoundPanel] = useState(false);
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
+  const startingRef = useRef(false); // prevent double-fire on startGame
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
@@ -74,6 +75,8 @@ export default function QQModeratorPage() {
   }, []);
 
   async function startGame() {
+    if (startingRef.current) return;
+    startingRef.current = true;
     let questions: QQQuestion[];
     let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
     let slideTemplates: undefined | import('../../../shared/quarterQuizTypes').QQSlideTemplates;
@@ -100,6 +103,8 @@ export default function QQModeratorPage() {
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }
+    // Keep lock for 1.5s so Space doesn't immediately trigger activateQuestion
+    setTimeout(() => { startingRef.current = false; }, 1500);
   }
 
   function applyTimer() {
@@ -120,6 +125,7 @@ export default function QQModeratorPage() {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const s = stateRef.current;
     if (!s) return;
+    if (startingRef.current && e.code !== 'KeyM') return; // blocked during game start
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {

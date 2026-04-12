@@ -74,6 +74,17 @@ body {
   transition:opacity .6s ease;
 }
 
+/* Camera toggle */
+#cam-toggle {
+  position:fixed; top:16px; right:16px; z-index:999;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  color:#8899aa; font-family:inherit; font-size:12px; font-weight:700;
+  letter-spacing:.08em; padding:7px 14px; border-radius:8px;
+  cursor:pointer; transition:all .2s; user-select:none;
+}
+#cam-toggle:hover { background:rgba(255,255,255,.1); color:#fff; }
+#cam-toggle.is-3d { color:#00f5ff; border-color:rgba(0,245,255,.35); background:rgba(0,245,255,.06); }
+
 /* Score bar */
 .score-bar {
   display:flex; gap:10px; flex-wrap:wrap;
@@ -102,6 +113,8 @@ body {
 </style>
 </head>
 <body>
+
+<button id="cam-toggle" onclick="toggleCamera()">2D</button>
 
 <div id="grid-area" style="flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0;padding:32px 32px 16px;">
   <div class="board-wrap" id="board-wrap">
@@ -348,45 +361,79 @@ function renderCell(r,c){
   right.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:10px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${wf};border-top:${wb};border-right:${wb};border-bottom:${wb};`;
 }
 
-// ── CAMERA — epic tilt ──
+// ── CAMERA ──
 let cameraAnimating=false;
 
-function triggerCamera(r,c){
+function updateToggleBtn(){
+  const btn=document.getElementById('cam-toggle');
+  if(isIsoMode){ btn.textContent='2D'; btn.classList.add('is-3d'); }
+  else          { btn.textContent='3D'; btn.classList.remove('is-3d'); }
+}
+
+function goTo3D(animateCell=null){
   if(isIsoMode){
-    cameraAnimating=true;
-    setTimeout(()=>{ buildCornerCache(); updateBuildings({r,c}); },80);
-    setTimeout(()=>{ cameraAnimating=false; }, 1800);
+    if(animateCell){
+      cameraAnimating=true;
+      setTimeout(()=>{ buildCornerCache(); updateBuildings(animateCell); },80);
+      setTimeout(()=>{ cameraAnimating=false; },1800);
+    }
     return;
   }
-
   cameraAnimating=true;
   isIsoMode=true;
+  updateToggleBtn();
 
   const scene=document.getElementById('iso-scene');
   const grid=document.getElementById('grid');
   const bldSvg=document.getElementById('bld-svg');
 
-  // Hide buildings during tilt
   bldSvg.style.transition='none';
   bldSvg.style.opacity='0';
-
-  // Start tilt immediately
   scene.classList.add('is-iso');
   grid.classList.add('is-iso');
 
-  // After tilt completes (1.6s), rebuild corners + show buildings
   setTimeout(()=>{
     buildCornerCache();
     for(let r2=0;r2<SIZE;r2++) for(let c2=0;c2<SIZE;c2++) renderCell(r2,c2);
-    updateBuildings(null); // draw all existing without animation
+    updateBuildings(null);
     bldSvg.style.transition='opacity .5s ease';
     bldSvg.style.opacity='1';
   }, 1650);
 
-  // New building rises after everything is visible
-  setTimeout(()=>{ updateBuildings({r,c}); }, 2300);
-  setTimeout(()=>{ cameraAnimating=false; }, 4000);
+  if(animateCell){
+    setTimeout(()=>{ updateBuildings(animateCell); }, 2300);
+    setTimeout(()=>{ cameraAnimating=false; }, 4000);
+  } else {
+    setTimeout(()=>{ cameraAnimating=false; }, 2000);
+  }
 }
+
+function goTo2D(){
+  if(!isIsoMode) return;
+  isIsoMode=false;
+  updateToggleBtn();
+
+  const scene=document.getElementById('iso-scene');
+  const grid=document.getElementById('grid');
+  const bldSvg=document.getElementById('bld-svg');
+
+  bldSvg.style.transition='opacity .2s ease';
+  bldSvg.style.opacity='0';
+  scene.classList.remove('is-iso');
+  grid.classList.remove('is-iso');
+
+  setTimeout(()=>{
+    for(let r2=0;r2<SIZE;r2++) for(let c2=0;c2<SIZE;c2++) renderCell(r2,c2);
+    updateBuildings(); // clears in 2D mode
+  }, 400);
+}
+
+function toggleCamera(){
+  if(cameraAnimating) return;
+  if(isIsoMode) goTo2D(); else goTo3D();
+}
+
+function triggerCamera(r,c){ goTo3D({r,c}); }
 
 // ── BUILD DOM ──
 const gridEl=document.getElementById('grid');

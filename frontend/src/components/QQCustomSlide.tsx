@@ -509,6 +509,8 @@ function CustomSlideElement({
       );
 
     case 'ph_question':
+      // Don't render question text during phase intros — currentQuestion is set but not yet active
+      if (s.phase === 'PHASE_INTRO') return null;
       return (
         <div style={{
           ...baseStyle,

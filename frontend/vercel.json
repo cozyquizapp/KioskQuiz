@@ -37,6 +37,10 @@
       "source": "/grid-demo-v2.html",
       "destination": "/grid-demo-v2.html"
     },
+    {
+      "source": "/grid-demo-v3.html",
+      "destination": "/grid-demo-v3.html"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

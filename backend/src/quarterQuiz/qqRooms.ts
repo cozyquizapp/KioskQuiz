@@ -919,39 +919,39 @@ export function qqImposterChoose(
   return { eliminated: false, allWin: false };
 }
 
-// Enhanced: Allow all correct teams to place, fastest first
-export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]): void {
+// Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
+// correctTeamId that was already set by applyAutoEval during reveal.
+export function qqStartPlacement(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_REVEAL']);
-
-  // If a list is provided, queue all correct teams (fastest first)
-  if (Array.isArray(teamIdOrList)) {
-    // Store the queue in room state
-    room["_placementQueue"] = [...teamIdOrList];
-    // Start with the first team
-    const first = room["_placementQueue"].shift();
-    if (!first) return;
-    room.correctTeamId = first;
-    room.pendingFor    = first;
-    room.phase         = 'PLACEMENT';
-    const action = pendingActionForPhase(room, first);
-    room.pendingAction = action;
-    if (action === 'PLACE_2') {
-      room.teamPhaseStats[first].placementsLeft = 2;
-    }
-    room.lastActivityAt = Date.now();
+  if (!room.correctTeamId) {
+    // No winner — skip placement, go to next question intro
+    qqNextQuestion(room);
     return;
   }
-
-  // Single team (legacy/manual)
-  const teamId = teamIdOrList;
-  assertTeam(room, teamId);
-  room.correctTeamId = teamId;
-  room.pendingFor    = teamId;
-  room.phase         = 'PLACEMENT';
+  const teamId = room.correctTeamId;
+  room.pendingFor = teamId;
+  room.phase = 'PLACEMENT';
   const action = pendingActionForPhase(room, teamId);
   room.pendingAction = action;
   if (action === 'PLACE_2') {
     room.teamPhaseStats[teamId].placementsLeft = 2;
+  }
+  room.lastActivityAt = Date.now();
+}
+
+// Mark correct: only sets correctTeamId + placement queue, stays in QUESTION_REVEAL.
+// Moderator triggers PLACEMENT separately via qq:startPlacement.
+export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]): void {
+  assertPhase(room, ['QUESTION_REVEAL']);
+
+  if (Array.isArray(teamIdOrList)) {
+    const sorted = [...teamIdOrList];
+    room.correctTeamId = sorted[0];
+    room['_placementQueue'] = sorted.slice(1);
+  } else {
+    assertTeam(room, teamIdOrList);
+    room.correctTeamId = teamIdOrList;
+    room['_placementQueue'] = [];
   }
   room.lastActivityAt = Date.now();
 }

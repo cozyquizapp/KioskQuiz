@@ -143,9 +143,9 @@ export default function QQModeratorPage() {
         else
           emitRef.current('qq:revealAnswer', { roomCode });
       }
-      // QUESTION_REVEAL: if winner known and no pending placement → go to PLACEMENT
-      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-        emitRef.current('qq:nextQuestion', { roomCode });
+      // QUESTION_REVEAL: start placement (show grid)
+      else if (s.phase === 'QUESTION_REVEAL')
+        emitRef.current('qq:startPlacement', { roomCode });
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
@@ -167,12 +167,10 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // N — Next question (mirrors CozyQuiz N)
+    // N — Next question (only from PLACEMENT, not QUESTION_REVEAL)
     if (e.code === 'KeyN') {
       e.preventDefault();
-      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-        emitRef.current('qq:nextQuestion', { roomCode });
-      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
+      if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -180,9 +178,7 @@ export default function QQModeratorPage() {
     // ArrowRight — Next question (extra StreamDeck option)
     if (e.code === 'ArrowRight') {
       e.preventDefault();
-      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-        emitRef.current('qq:nextQuestion', { roomCode });
-      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
+      if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -216,8 +212,8 @@ export default function QQModeratorPage() {
         else
           emitRef.current('qq:revealAnswer', { roomCode });
       }
-      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
-        emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'QUESTION_REVEAL')
+        emitRef.current('qq:startPlacement', { roomCode });
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
@@ -246,10 +242,10 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // F17 — Nächste Frage (= N)
+    // F17 — Nächste Frage (= N) — only from PLACEMENT
     if (e.code === 'F17') {
       e.preventDefault();
-      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+      if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -452,15 +448,26 @@ export default function QQModeratorPage() {
                   </div>
                 )}
 
+                {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && (
+                  <Btn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })}>
+                    📍 Felder setzen
+                  </Btn>
+                )}
+
                 {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
-                  <span style={{ fontSize: 12, color: '#475569' }}>↓ Antwort bestätigen in Team-Liste</span>
+                  <>
+                    <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner — manuell markieren oder überspringen</span>
+                    <Btn color="#64748b" onClick={() => emit('qq:startPlacement', { roomCode })}>
+                      → Überspringen
+                    </Btn>
+                  </>
                 )}
 
                 {s.phase === 'PLACEMENT' && s.pendingAction && (
                   <PlacementControls state={s} roomCode={roomCode} emit={emit} />
                 )}
 
-                {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor && (
+                {s.phase === 'PLACEMENT' && !s.pendingFor && (
                   <Btn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })}>
                     → Nächste Frage
                   </Btn>

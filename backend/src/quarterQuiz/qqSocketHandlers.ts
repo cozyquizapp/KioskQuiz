@@ -23,7 +23,7 @@ import {
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqNextQuestion, qqResetRoom, qqTriggerComeback,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
-  qqSubmitAnswer, qqClearAnswers, qqKickTeam,
+  qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
   qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer,
@@ -96,17 +96,11 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
 }
 
 /**
- * Run full auto-evaluation for the current question and, if there is exactly
- * one deterministic winner, immediately call qqMarkCorrect so the moderator
- * only needs to advance — they can still override via qq:markCorrect/Wrong.
- *
- * Categories with a single clear winner (MUCHO, ZEHN_VON_ZEHN with 1 best bet,
- * SCHAETZCHEN, CHEESE exact match, BUNTE_TUETE sub-mechanics) are resolved here.
- * When there are multiple tied winners or no winner, the moderator decides.
+ * Evaluate answers and set correctTeamId + placement queue, but stay in
+ * QUESTION_REVEAL. The moderator triggers PLACEMENT separately via
+ * qq:startPlacement. This gives players time to see the reveal screen
+ * (solution + team answers + winner highlighted) before the grid appears.
  */
-// For all question types: if multiple teams are correct (as determined by evaluation),
-// all correct teams get to place a field, sorted by answer time (fastest first).
-// This includes ties in Schätzchen (closest), All In (max points on correct), etc.
 function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   const q = room.currentQuestion;
   if (!q) return;
@@ -115,27 +109,24 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') return;
 
   const result = qqEvaluateAnswers(room);
+  qqClearBuzz(room);
+
   if (result.winnerTeamIds.length === 1) {
-    // Single deterministic winner → auto-mark correct
-    try {
-      qqClearBuzz(room);
-      qqMarkCorrect(room, result.winnerTeamIds[0]);
-    } catch { /* ignore if phase already advanced */ }
+    room.correctTeamId = result.winnerTeamIds[0];
   } else if (result.winnerTeamIds.length > 1) {
     // Multiple correct teams: sort by answer time, fastest first
-    try {
-      qqClearBuzz(room);
-      const sorted = result.winnerTeamIds
-        .map(tid => {
-          const ans = room.answers.find(a => a.teamId === tid);
-          return { tid, submittedAt: ans?.submittedAt ?? Infinity };
-        })
-        .sort((a, b) => a.submittedAt - b.submittedAt)
-        .map(e => e.tid);
-      qqMarkCorrect(room, sorted);
-    } catch { /* ignore if phase already advanced */ }
+    const sorted = result.winnerTeamIds
+      .map(tid => {
+        const ans = room.answers.find(a => a.teamId === tid);
+        return { tid, submittedAt: ans?.submittedAt ?? Infinity };
+      })
+      .sort((a, b) => a.submittedAt - b.submittedAt)
+      .map(e => e.tid);
+    // Store first as correctTeamId, rest in placement queue for startPlacement
+    room.correctTeamId = sorted[0];
+    room['_placementQueue'] = sorted.slice(1);
   }
-  // No winner: leave in QUESTION_REVEAL for moderator
+  // No winner: correctTeamId stays null — moderator can manually mark or mark wrong
 }
 
 export function registerQQHandlers(io: SocketIOServer): void {
@@ -248,6 +239,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // Moderator triggers placement after reviewing the reveal screen
+    socket.on('qq:startPlacement', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqStartPlacement(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     socket.on('qq:nextQuestion', (payload: QQNextQuestionPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
@@ -272,8 +273,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (typeof payload.answer !== 'string' || payload.answer.length > 1000) throw new QQError('INVALID_ANSWER', 'Antwort zu lang (max 1000 Zeichen).');
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitAnswer(room, payload.teamId, payload.answer);
-        // allAnswered is now stored in room.allAnswered and broadcast via state
         // No auto-reveal — moderator controls when to reveal
+        broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

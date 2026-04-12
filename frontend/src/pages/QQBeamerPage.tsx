@@ -1443,8 +1443,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     : qText.length > 60 ? 'clamp(30px, 3.8vw, 58px)'
     : 'clamp(36px, 4.5vw, 72px)'; // big short questions fill the space
 
-  // Intro overlay only during QUESTION_ACTIVE (first mount via key=q.id)
-  const showIntro = !revealed;
+  // Category intro overlay removed — category is already shown in PHASE_INTRO
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
@@ -1458,7 +1457,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             clipPath: revealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
             animation: cheeseFullscreen
               ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
-              : (revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both'),
+              : (revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s both'),
             transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
             transform: `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
             opacity: img!.opacity ?? 1,
@@ -1510,40 +1509,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* Fireflies */}
       <Fireflies />
 
-      {/* Intro overlay — CSS-animated, fades out after 2s */}
-      {showIntro && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20,
-          background: `radial-gradient(ellipse at center, ${glow.replace('0.45', '0.55')} 0%, rgba(13,10,6,0.95) 65%)`,
-          animation: 'introFadeOut 0.5s ease 2s forwards',
-        }}>
-          <div style={{
-            padding: '14px 32px', borderRadius: 999,
-            background: badgeBg,
-            boxShadow: `0 0 48px ${glow}, 0 4px 16px rgba(0,0,0,0.5)`,
-            fontSize: 'clamp(24px, 5vw, 60px)', fontWeight: 900,
-            letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff',
-            animation: 'introBadgePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
-          }}>
-            {catLabel.emoji} {lang === 'en' ? catLabel.en : catLabel.de}
-          </div>
-          <div style={{
-            fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(18px, 2.5vw, 32px)', color: `${accent}88`, fontWeight: 700,
-            animation: 'introBadgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.4s both',
-          }}>
-            {bt.question.introLabel[lang].replace('{n}', String((s.questionIndex % 5) + 1))}
-          </div>
-        </div>
-      )}
-
-      {/* Main content — revealed after intro */}
+      {/* Main content */}
       {/* CHEESE: hide when fullscreen image is showing (imageRevealed but not yet revealed) */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
         flexDirection: hasImg && img.layout === 'window-left' ? 'row-reverse' : 'row',
-        animation: showIntro ? 'contentReveal 0.6s ease 2.2s both' : 'contentReveal 0.35s ease both',
+        animation: 'contentReveal 0.35s ease both',
         visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
         {/* ── Left: question ── */}
@@ -1629,7 +1600,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               gap: revealed ? 16 : 12, marginBottom: 16,
               width: revealed ? '100%' : undefined,
               maxWidth: revealed ? 1200 : undefined,
-              animation: showIntro ? 'contentReveal 0.5s ease 2.5s both' : 'contentReveal 0.35s ease 0.15s both',
+              animation: 'contentReveal 0.35s ease 0.15s both',
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];

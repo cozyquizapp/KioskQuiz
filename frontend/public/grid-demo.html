@@ -29,8 +29,8 @@ body {
              perspective-origin 1.6s cubic-bezier(.4,0,.15,1);
 }
 .iso-scene.is-iso {
-  perspective:900px;
-  perspective-origin:50% -20%;
+  perspective:1100px;
+  perspective-origin:50% 10%;
 }
 
 .iso-grid {
@@ -42,7 +42,7 @@ body {
   will-change:transform;
 }
 .iso-grid.is-iso {
-  transform:rotateX(52deg) rotateZ(0deg) scale(.78);
+  transform:rotateX(55deg) rotateZ(-45deg) scale(.62);
 }
 
 /* ── CELL ── */
@@ -202,33 +202,40 @@ function drawBuildingSVG(parent, corners, H, team, isHQ){
   const up=p=>({x:p.x, y:p.y-H});
   const T0=up(C0),T1=up(C1),T2=up(C2),T3=up(C3);
 
-  // Subtle filled faces
-  const face=(pts,a)=>{
+  // Filled faces — more opaque so each building reads as a distinct solid object
+  const face=(pts,a,dark=false)=>{
+    // Dark fill first (background), then colored fill on top
+    parent.appendChild(mkEl('polygon',{
+      points:pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+      fill:`rgba(5,8,20,${dark?a*1.8:a*.6})`, stroke:'none'
+    }));
     parent.appendChild(mkEl('polygon',{
       points:pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
       fill:`rgba(${team.r},${team.g},${team.b},${a})`, stroke:'none'
     }));
   };
-  face([T0,T1,T2,T3], .20); // top
-  face([C1,C2,T2,T1],  .11); // right wall
-  face([C3,C2,T2,T3],  .07); // left wall
+  face([T0,T1,T2,T3], .38);        // top (brightest)
+  face([C1,C2,T2,T1], .22, true);  // right wall (mid shade)
+  face([C3,C2,T2,T3], .14, true);  // left wall (darkest)
 
-  // Edges
+  // Only draw the visible silhouette edges — top face + vertical corners
+  // Skip bottom edges (hidden behind tile, just clutter)
   const edges=[
-    [T0,T1],[T1,T2],[T2,T3],[T3,T0],
-    [C0,T0],[C1,T1],[C2,T2],[C3,T3],
-    [C3,C0],[C3,C2],
+    [T0,T1],[T1,T2],[T2,T3],[T3,T0], // top face
+    [C0,T0],[C1,T1],[C2,T2],[C3,T3], // vertical pillars only
   ];
   edges.forEach(([a,b])=>{
+    // Glow pass
     parent.appendChild(mkEl('line',{
       x1:a.x.toFixed(1),y1:a.y.toFixed(1),
       x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:col,'stroke-width':'4.5','stroke-linecap':'round',opacity:'.20'
+      stroke:col,'stroke-width':'5','stroke-linecap':'round',opacity:'.18'
     }));
+    // Sharp pass
     parent.appendChild(mkEl('line',{
       x1:a.x.toFixed(1),y1:a.y.toFixed(1),
       x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:col,'stroke-width':'1.8','stroke-linecap':'round',opacity:'1'
+      stroke:col,'stroke-width':'1.6','stroke-linecap':'round',opacity:'.9'
     }));
   });
 
@@ -296,21 +303,21 @@ function spawnBuilding(svg, r, c, beginSec=0, isNew=false){
 
   const g=document.createElementNS(NS,'g');
 
-  const dur = isNew ? '1.6s' : '1.0s';
-  const overshoot = isNew ? 16 : 8;
+  const dur = isNew ? '2.4s' : '1.4s';
+  const overshoot = isNew ? 24 : 12;
 
   const anim=mkEl('animateTransform',{
     attributeName:'transform', type:'translate',
-    values:`0,${H+overshoot}; 0,-8; 0,2; 0,0`,
-    keyTimes:'0;0.62;0.82;1',
+    values:`0,${H+overshoot}; 0,-10; 0,3; 0,0`,
+    keyTimes:'0;0.65;0.83;1',
     dur, begin:`${beginSec.toFixed(2)}s`,
     calcMode:'spline',
-    keySplines:'0.05 0.85 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1',
+    keySplines:'0.04 0.9 0.15 1;0.4 0 0.6 1;0.4 0 0.6 1',
     fill:'freeze'
   });
   const animOp=mkEl('animate',{
     attributeName:'opacity', values:'0;0;1;1',
-    keyTimes:'0;0.05;0.25;1',
+    keyTimes:'0;0.04;0.22;1',
     dur, begin:`${beginSec.toFixed(2)}s`, fill:'freeze'
   });
   g.appendChild(anim); g.appendChild(animOp);
@@ -335,15 +342,15 @@ function updateBuildings(newCell=null){
   }
 
   // Stagger existing buildings back-to-front (row 0 = back)
-  // Each gets a small stagger so they rise one after another
-  const staggerStep=0.12; // seconds between each
+  // Slower stagger for epic sequential city build-up
+  const staggerStep=0.22; // seconds between each
   existing.forEach(([r,c],i)=>{
     spawnBuilding(svg, r, c, i*staggerStep, false);
   });
 
   // New cell spawns last — after all existing are done
   if(newCell){
-    const newBegin = existing.length * staggerStep + 0.3;
+    const newBegin = existing.length * staggerStep + 0.5;
     spawnBuilding(svg, newCell.r, newCell.c, newBegin, true);
   }
 }
@@ -395,9 +402,9 @@ function goTo3D(animateCell=null){
   if(isIsoMode){
     cameraAnimating=true;
     setTimeout(()=>{ buildCornerCache(); updateBuildings(animateCell); },80);
-    // New building: stagger of existing + 1.6s rise
+    // New building: stagger of existing + 2.4s rise
     const existingCount=state.flat().filter(Boolean).length;
-    setTimeout(()=>{ cameraAnimating=false; }, 80 + existingCount*120 + 2000);
+    setTimeout(()=>{ cameraAnimating=false; }, 80 + existingCount*220 + 3000);
     return;
   }
   cameraAnimating=true;
@@ -424,7 +431,7 @@ function goTo3D(animateCell=null){
 
   // Unlock after tilt + max stagger time
   const maxExisting=SIZE*SIZE;
-  setTimeout(()=>{ cameraAnimating=false; }, 1650 + maxExisting*120 + 2200);
+  setTimeout(()=>{ cameraAnimating=false; }, 1650 + maxExisting*220 + 3000);
 }
 
 function goTo2D(){

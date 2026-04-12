@@ -1765,18 +1765,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'relative', zIndex: 5, overflowY: revealed ? 'auto' : 'hidden',
           transition: 'width 0.5s ease, padding 0.5s ease',
         }}>
-          {/* Mini-grid overlay when image panel hides the main grid */}
-          {(isWindow || cheeseFullscreen) && (
-            <div style={{
-              position: 'fixed', bottom: 16, right: 16, zIndex: 10,
-              opacity: 0.6, pointerEvents: 'none',
-              background: 'rgba(13,10,6,0.5)', borderRadius: 10, padding: 6,
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}>
-              <MiniGrid state={s} size={90} />
-            </div>
-          )}
+          {/* Grid is only shown during PLACEMENT — not during active questions */}
           {/* Imposter (oneOfEight): active team + remaining statements count */}
           {!revealed && s.imposterActiveTeamId && (() => {
             const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);

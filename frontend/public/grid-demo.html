@@ -129,28 +129,41 @@ body {
 <div style="height:20px;flex-shrink:0;"></div>
 
 <script>
-const SIZE=6, CELL=80, GAP=4;
+const SIZE=8, CELL=72, GAP=4;
 const NS='http://www.w3.org/2000/svg';
 
 // ── TEAMS ──
-const TEAMS=Array(6).fill(null);
+const TEAMS=Array(8).fill(null);
 let activeTeam=0;
 
 function mkTeam(color,r,g,b,name,shapePath){
   return{color,r,g,b,name,shapePath};
 }
-TEAMS[0]=mkTeam('#00aaff',0,170,255,'Die Clique',   'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z');
-TEAMS[1]=mkTeam('#ff0080',255,0,128,'Rote Karte',   'M12 3L22 21H2L12 3z');
-TEAMS[2]=mkTeam('#00ee66',0,238,102,'Grüne Hölle',  'M12 2l8.66 5v10L12 22l-8.66-5V7z');
-TEAMS[3]=mkTeam('#ffcc00',255,204,0,'Oranje',        'M12 2l10 10-10 10L2 12z');
+// 8 teams — distinct neon colors
+TEAMS[0]=mkTeam('#00aaff',0,170,255,'Die Clique',    'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z');
+TEAMS[1]=mkTeam('#ff0080',255,0,128,'Rote Karte',    'M12 3L22 21H2L12 3z');
+TEAMS[2]=mkTeam('#00ee66',0,238,102,'Grüne Hölle',   'M12 2l8.66 5v10L12 22l-8.66-5V7z');
+TEAMS[3]=mkTeam('#ffcc00',255,204,0,'Oranje',         'M12 2l10 10-10 10L2 12z');
+TEAMS[4]=mkTeam('#ff6600',255,102,0,'Feuerwerk',      'M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07');
+TEAMS[5]=mkTeam('#cc44ff',204,68,255,'Lila Gang',     'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z');
+TEAMS[6]=mkTeam('#00ffee',0,255,238,'Aqua Force',     'M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z');
+TEAMS[7]=mkTeam('#ff4444',255,68,68,'Rote Flut',      'M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm1 14h-2v-6h2v6zm0-8h-2V7h2v2z');
 
 // ── STATE ──
+// 8x8 grid — 8 teams start in corners + edge midpoints
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 function seed(r,c,t,home=false){state[r][c]={teamIdx:t,home};}
-seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);seed(2,0,0);
-seed(0,5,1,true);seed(0,4,1);seed(1,5,1);seed(1,4,1);
-seed(5,0,2,true);seed(4,0,2);seed(5,1,2);seed(4,1,2);
-seed(5,5,3,true);seed(4,5,3);seed(5,4,3);
+const S=SIZE-1, M=Math.floor(SIZE/2)-1; // S=7, M=3
+// Corners
+seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);
+seed(0,S,1,true);seed(0,S-1,1);seed(1,S,1);seed(1,S-1,1);
+seed(S,0,2,true);seed(S-1,0,2);seed(S,1,2);seed(S-1,1,2);
+seed(S,S,3,true);seed(S-1,S,3);seed(S,S-1,3);seed(S-1,S-1,3);
+// Edge midpoints
+seed(0,M,4,true);seed(0,M+1,4);seed(1,M,4);seed(1,M+1,4);
+seed(S,M,5,true);seed(S,M+1,5);seed(S-1,M,5);seed(S-1,M+1,5);
+seed(M,0,6,true);seed(M+1,0,6);seed(M,1,6);seed(M+1,1,6);
+seed(M,S,7,true);seed(M+1,S,7);seed(M,S-1,7);seed(M+1,S-1,7);
 
 // ── HELPERS ──
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`;}
@@ -525,6 +538,8 @@ function updateScores(){
   }).join('');
 }
 window.selectTeam=i=>{activeTeam=i;updateScores();};
+// make sure activeTeam references a valid team on load
+activeTeam=0;
 updateScores();
 </script>
 </body>

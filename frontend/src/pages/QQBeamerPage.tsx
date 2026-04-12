@@ -813,21 +813,21 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   if (leaderboard.length > 0) {
     panels.push({ key: 'leaderboard', node: (
       <div>
-        <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
           🏆 {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+          {totalGames > 0 && <span style={{ fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {leaderboard.slice(0, 5).map((entry, i) => (
           <div key={entry.name} style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0',
-            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0',
+            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
           }}>
-            <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
+            <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 36, textAlign: 'center' }}>
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
             </span>
-            <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#e2e8f0' }}>{entry.name}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
-            <span style={{ fontSize: 11, color: '#475569' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(17px, 1.8vw, 24px)', color: '#e2e8f0' }}>{entry.name}</span>
+            <span style={{ fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+            <span style={{ fontSize: 'clamp(12px, 1.2vw, 16px)', color: '#64748b' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
           </div>
         ))}
       </div>
@@ -838,13 +838,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     const records: React.ReactNode[] = [];
     if (funStats.highestScore) {
       records.push(
-        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <span style={{ fontSize: 22 }}>🔥</span>
+        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🔥</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
               {de ? 'Höchster Score' : 'Highest Score'}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
               <strong style={{ color: '#F59E0B' }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
@@ -853,14 +853,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }
     if (funStats.closestGame) {
       records.push(
-        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <span style={{ fontSize: 22 }}>⚔️</span>
+        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>⚔️</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
               {de ? 'Knappster Sieg' : 'Closest Game'}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
-              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Punkte Unterschied` : `only ${funStats.closestGame.gap} pts apart`}
+            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
+              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
         </div>
@@ -868,13 +868,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }
     if (funStats.winStreak) {
       records.push(
-        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <span style={{ fontSize: 22 }}>🔥</span>
+        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🔥</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
               {de ? 'Siegesserie' : 'Win Streak'}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
               <strong style={{ color: '#F59E0B' }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
@@ -883,13 +883,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }
     if (funStats.mostGames) {
       records.push(
-        <div key="mg" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <span style={{ fontSize: 22 }}>🎮</span>
+        <div key="mg" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🎮</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
               {de ? 'Meiste Spiele' : 'Most Games'}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
               <strong style={{ color: '#F59E0B' }}>{funStats.mostGames.teamName}</strong> — {funStats.mostGames.games} {de ? 'Spiele' : 'games'}
             </div>
           </div>
@@ -899,13 +899,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     if (funStats.fastestAnswer) {
       const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
       records.push(
-        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <span style={{ fontSize: 22 }}>⚡</span>
+        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
+          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>⚡</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#e2e8f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
               {de ? 'Schnellste Antwort' : 'Fastest Answer'}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
               <strong style={{ color: '#F59E0B' }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
@@ -915,7 +915,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
             📊 {de ? 'Rekorde' : 'Records'}
           </div>
           {records}
@@ -927,13 +927,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
     panels.push({ key: 'funny', node: (
       <div>
-        <div style={{ fontSize: 15, fontWeight: 900, color: '#e2e8f0', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
           😂 {de ? 'Lustigste Antworten' : 'Funniest Answers'}
         </div>
         {funStats.funnyAnswers.map((fa, i) => (
-          <div key={i} style={{ padding: '6px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>— {fa.teamName}</div>
+          <div key={i} style={{ padding: '8px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <div style={{ fontSize: 'clamp(17px, 1.8vw, 24px)', fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
+            <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#64748b', marginTop: 3 }}>— {fa.teamName}</div>
           </div>
         ))}
       </div>
@@ -951,101 +951,127 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', padding: '40px 48px', gap: 40, position: 'relative' }}>
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'space-between',
+      padding: '48px 56px 40px', position: 'relative', overflow: 'hidden',
+    }}>
       <Fireflies />
 
-      {/* Left: title + teams */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 32, position: 'relative', zIndex: 5 }}>
-        <div>
+      {/* ── Top: Title centered ── */}
+      <div style={{
+        textAlign: 'center', position: 'relative', zIndex: 5,
+        animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
+      }}>
+        <div style={{
+          fontFamily: fontFam,
+          fontSize: 'clamp(56px, 9vw, 120px)', fontWeight: 900, lineHeight: 1,
+          background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.02em',
+        }}>
+          {de ? 'Quartier Quiz' : 'Quarter Quiz'}
+        </div>
+      </div>
+
+      {/* ── Middle: QR + rotating stats side by side ── */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(40px, 6vw, 100px)', position: 'relative', zIndex: 5,
+        width: '100%', maxWidth: 1200,
+      }}>
+        {/* QR Code */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          flexShrink: 0,
+          animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
+        }}>
           <div style={{
-            fontFamily: fontFam,
-            fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
-            background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.02em',
-            transition: 'opacity 0.4s',
+            background: '#ffffff', borderRadius: 24, padding: 24,
+            animation: 'qrGlow 3s ease-in-out infinite',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
           }}>
-            {de ? 'Quartier Quiz' : 'Quarter Quiz'}
+            <QRCodeSVG value={joinUrl} size={320} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', color: '#e2e8f0', fontWeight: 800, marginBottom: 4 }}>
+              {de ? 'Jetzt mitspielen' : 'Join now'}
+            </div>
+            <div style={{
+              fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#64748b', fontFamily: 'monospace',
+              background: cardBg, padding: '8px 18px', borderRadius: 10,
+            }}>
+              {joinUrl.replace('https://', '').replace('http://', '')}
+            </div>
           </div>
         </div>
 
-        {/* Teams */}
-        {s.teams.length === 0 ? (
-          <div style={{ color: '#334155', fontSize: 18, fontWeight: 700 }}>
-            {de ? 'Warte auf alle Teams…' : 'Waiting for all teams…'}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {s.teams.map((t, i) => (
-              <div key={t.id} style={{
-                padding: '20px 28px', borderRadius: 24,
-                background: cardBg,
-                border: `2px solid ${t.color}55`,
-                boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.04)`,
-                textAlign: 'center', minWidth: 150,
-                animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${i * 0.1}s both`,
-              }}>
-                <div style={{ fontSize: 64, marginBottom: 8, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</div>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2.4vw, 28px)', color: t.color }}>{t.name}</div>
-                <div style={{ fontSize: 'clamp(13px, 1.4vw, 16px)', marginTop: 6, fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
-                  {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ color: '#64748b', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
-          {s.teams.length < 2
-            ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
-            : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
-        </div>
-
-        {/* Rotating stats panels */}
+        {/* Rotating stats/records panels — big center */}
         {activePanel && (
           <div style={{
-            background: cardBg, borderRadius: 16, padding: '16px 20px',
-            border: '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-            maxWidth: 420,
-            transition: 'opacity 0.4s',
+            flex: 1, maxWidth: 520,
+            animation: 'contentReveal 0.5s ease both',
           }}>
-            {activePanel.node}
-            {panels.length > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-                {panels.map((_, i) => (
-                  <div key={i} style={{
-                    width: 6, height: 6, borderRadius: '50%',
-                    background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
-                    transition: 'background 0.3s',
-                  }} />
-                ))}
-              </div>
-            )}
+            <div style={{
+              background: cardBg, borderRadius: 20, padding: 'clamp(20px, 2.5vw, 32px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            }}>
+              {activePanel.node}
+              {panels.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
+                  {panels.map((_, i) => (
+                    <div key={i} style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
+                      transition: 'background 0.3s',
+                    }} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Right: QR code */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 18, position: 'relative', zIndex: 5, flexShrink: 0,
-      }}>
-        <div style={{
-          background: '#ffffff', borderRadius: 20, padding: 20,
-          animation: 'qrGlow 3s ease-in-out infinite',
-        }}>
-          <QRCodeSVG value={joinUrl} size={260} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{de ? 'Jetzt mitspielen' : 'Join now'}</div>
-          <div style={{
-            fontSize: 13, color: '#475569', fontFamily: 'monospace',
-            background: cardBg, padding: '6px 14px', borderRadius: 8,
-          }}>
-            {joinUrl.replace('https://', '').replace('http://', '')}
+      {/* ── Bottom: Teams row + status ── */}
+      <div style={{ position: 'relative', zIndex: 5, textAlign: 'center', width: '100%' }}>
+        {s.teams.length === 0 ? (
+          <div style={{ color: '#475569', fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 700 }}>
+            {de ? 'Warte auf Teams…' : 'Waiting for teams…'}
           </div>
-        </div>
+        ) : (
+          <>
+            <div style={{
+              display: 'flex', gap: 'clamp(12px, 1.5vw, 20px)', justifyContent: 'center', flexWrap: 'wrap',
+              marginBottom: 14,
+            }}>
+              {s.teams.map((t, i) => (
+                <div key={t.id} style={{
+                  padding: 'clamp(12px, 1.4vw, 20px) clamp(18px, 2vw, 30px)', borderRadius: 18,
+                  background: cardBg,
+                  border: `2px solid ${t.color}55`,
+                  boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
+                  display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 16px)',
+                  animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.08}s both`,
+                }}>
+                  <span style={{ fontSize: 'clamp(32px, 4vw, 48px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: 'clamp(16px, 2vw, 24px)', color: t.color }}>{t.name}</div>
+                    <div style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
+                      {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ color: '#64748b', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
+              {s.teams.length < 2
+                ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
+                : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

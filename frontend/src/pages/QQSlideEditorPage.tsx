@@ -584,7 +584,8 @@ export default function QQSlideEditorPage() {
   const gameSteps: StepItem[] = useMemo(() => {
     if (!draft) return [];
     const steps: StepItem[] = [];
-    steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
+    // Lobby uses built-in view (stats/leaderboard) — not editable via slide editor
+    // steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
     for (let p = 1; p <= draft.phases; p++) {
       const phaseColor = p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : p === 3 ? '#EF4444' : '#10B981';
       steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: phaseColor, phase: p });

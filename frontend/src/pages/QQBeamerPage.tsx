@@ -356,10 +356,12 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
 
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
+  // These phases always use built-in views — custom templates not supported
+  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES';
   // Per-question override takes priority over category template
-  const perQKey = s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
+  const perQKey = !builtinOnly && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
   const rawPerQ = perQKey ? slideTemplates[perQKey] : undefined;
-  const rawCategoryTemplate = templateType ? slideTemplates[templateType] : undefined;
+  const rawCategoryTemplate = !builtinOnly && templateType ? slideTemplates[templateType] : undefined;
   const rawActiveTemplate = rawPerQ?.elements?.length ? rawPerQ : rawCategoryTemplate;
   // Only use custom template if it has actual elements to render
   const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;

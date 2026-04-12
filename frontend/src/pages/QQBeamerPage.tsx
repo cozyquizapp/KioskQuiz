@@ -1438,10 +1438,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     ? (qText.length > 200 ? 'clamp(20px, 2.4vw, 34px)'
       : qText.length > 120 ? 'clamp(24px, 3vw, 44px)'
       : 'clamp(28px, 3.5vw, 52px)')
-    : qText.length > 200 ? 'clamp(22px, 2.6vw, 38px)'
-    : qText.length > 120 ? 'clamp(26px, 3.2vw, 48px)'
-    : qText.length > 60 ? 'clamp(30px, 3.8vw, 58px)'
-    : 'clamp(36px, 4.5vw, 72px)'; // big short questions fill the space
+    : qText.length > 200 ? 'clamp(28px, 3.2vw, 48px)'
+    : qText.length > 120 ? 'clamp(32px, 4vw, 60px)'
+    : qText.length > 60 ? 'clamp(38px, 5vw, 76px)'
+    : 'clamp(44px, 6vw, 92px)'; // big short questions fill the space
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -1518,7 +1518,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
         {/* ── Left: question ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: revealed ? '48px 80px' : '36px 44px', justifyContent: 'center', alignItems: revealed ? 'center' : undefined, position: 'relative', zIndex: 5, overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: revealed ? '48px 80px' : '32px 56px', justifyContent: 'center', alignItems: revealed ? 'center' : undefined, position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
           {/* Category badge — hidden on reveal to save space */}
           <div style={{ display: revealed ? 'none' : 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -1577,7 +1577,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             border: `1px solid rgba(255,255,255,0.08)`,
             borderRadius: 22,
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            padding: revealed ? '36px 52px' : '32px 40px',
+            padding: revealed ? '36px 52px' : '36px 48px',
             marginBottom: 24,
             width: revealed ? '100%' : undefined,
             maxWidth: revealed ? 1200 : undefined,
@@ -1597,7 +1597,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div style={{
               display: 'grid',
               gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : '1fr 1fr 1fr',
-              gap: revealed ? 16 : 12, marginBottom: 16,
+              gap: revealed ? 16 : 16, marginBottom: 16,
               width: revealed ? '100%' : undefined,
               maxWidth: revealed ? 1200 : undefined,
               animation: 'contentReveal 0.35s ease 0.15s both',
@@ -1613,12 +1613,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 return (
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
-                    borderRadius: 18, padding: revealed ? '20px 24px' : '16px 20px',
+                    borderRadius: 18, padding: revealed ? '20px 24px' : '20px 24px',
                     background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}44`,
                     boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 14,
-                    minHeight: optImg?.url ? 90 : revealed ? 70 : 60,
+                    minHeight: optImg?.url ? 90 : 76,
                     transition: 'all 0.3s ease',
                     animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                   }}>
@@ -1634,15 +1634,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     )}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      width: revealed ? 52 : 44, height: revealed ? 52 : 44, borderRadius: 14,
+                      width: 52, height: 52, borderRadius: 14,
                       background: isCorrect ? '#22C55E' : optColor,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: revealed ? 26 : 22, fontWeight: 900, color: '#fff', flexShrink: 0,
+                      fontSize: 26, fontWeight: 900, color: '#fff', flexShrink: 0,
                       boxShadow: `0 2px 8px ${(isCorrect ? '#22C55E' : optColor)}66`,
                     }}>{isCorrect ? '✓' : label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      fontSize: revealed ? 'clamp(22px, 2.8vw, 38px)' : 'clamp(20px, 2.4vw, 34px)', fontWeight: 800,
+                      fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800,
                       color: '#F1F5F9', lineHeight: 1.3,
                       textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                     }}>{optText}</div>
@@ -1707,6 +1707,45 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           })()}
           {/* Confetti overlay on correct answer */}
           {revealed && s.correctTeamId && <ConfettiOverlay />}
+
+          {/* Bottom: team answer status (active questions only) */}
+          {!revealed && s.teams.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+              marginTop: 'auto', paddingTop: 16,
+            }}>
+              {s.teams.map(t => {
+                const answered = s.answers.some(a => a.teamId === t.id);
+                return (
+                  <div key={t.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 14px', borderRadius: 999,
+                    background: answered ? `${t.color}22` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${answered ? t.color + '55' : 'rgba(255,255,255,0.08)'}`,
+                    transition: 'all 0.4s ease',
+                    opacity: answered ? 1 : 0.5,
+                  }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                    <span style={{
+                      fontSize: 14, fontWeight: 800, color: answered ? t.color : '#64748b',
+                    }}>
+                      {answered ? '✓' : '…'}
+                    </span>
+                  </div>
+                );
+              })}
+              {s.allAnswered && (
+                <div style={{
+                  padding: '6px 16px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
+                  fontSize: 14, fontWeight: 800, color: '#86EFAC',
+                  animation: 'contentReveal 0.4s ease both',
+                }}>
+                  Alle Teams haben geantwortet
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Image window panel (window-left / window-right / CHEESE reveal) ── */}
@@ -1760,100 +1799,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         )}
 
-        {/* ── Right: team answers (on reveal) + grid + scores ── */}
-        <div style={{
-          width: (isWindow || cheeseFullscreen) ? 0 : isCheeseReveal ? 380 : revealed ? 520 : 480,
-          overflow: 'hidden',
-          flexShrink: 0,
-          padding: (isWindow || cheeseFullscreen) ? 0 : isCheeseReveal ? '16px 20px 16px 12px' : revealed ? '16px 20px 16px 12px' : '28px 28px 28px 16px',
-          display: 'flex', flexDirection: 'column', gap: revealed ? 10 : 16,
-          justifyContent: revealed ? 'flex-start' : 'center',
-          position: 'relative', zIndex: 5, overflowY: revealed ? 'auto' : 'hidden',
-          transition: 'width 0.5s ease, padding 0.5s ease',
-        }}>
-          {/* Grid is only shown during PLACEMENT — not during active questions */}
-          {/* Imposter (oneOfEight): active team + remaining statements count */}
-          {!revealed && s.imposterActiveTeamId && (() => {
-            const activeTeam = s.teams.find(t => t.id === s.imposterActiveTeamId);
-            if (!activeTeam) return null;
-            const totalStmts = (s.currentQuestion?.bunteTuete as any)?.statements?.length ?? 8;
-            const remaining = totalStmts - s.imposterChosenIndices.length;
-            return (
-              <div style={{
-                borderRadius: 16, padding: '14px 20px', textAlign: 'center',
-                background: cardBg, border: `2px solid ${activeTeam.color}88`,
-                boxShadow: `0 0 28px ${activeTeam.color}44`,
-                animation: 'contentReveal 0.4s ease both',
-              }}>
-                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
-                  {bt.question.imposterTitle[lang]}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 28 }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
-                  <span style={{ fontWeight: 900, fontSize: 20, color: activeTeam.color }}>{activeTeam.name}</span>
-                </div>
-                <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                  {remaining} {bt.question.statementsLeft[lang]}
-                  {s.imposterEliminated.length > 0 && (
-                    <span> · {bt.question.out[lang]}: {s.imposterEliminated.map(id => s.teams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}</span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Hot Potato: active team highlight */}
-          {!revealed && s.hotPotatoActiveTeamId && (() => {
-            const activeTeam = s.teams.find(t => t.id === s.hotPotatoActiveTeamId);
-            if (!activeTeam) return null;
-            return (
-              <div style={{
-                background: activeTeam.color, borderRadius: 16,
-                padding: '14px 24px', textAlign: 'center',
-                boxShadow: `0 0 32px ${activeTeam.color}88`,
-                animation: 'imgFloat 2s ease-in-out infinite',
-              }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>🥔 {activeTeam.name}</div>
-                {s.hotPotatoEliminated.length > 0 && (
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-                    {bt.question.out[lang]}: {s.hotPotatoEliminated.map(id => s.teams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}
-                  </div>
-                )}
-                {s.hotPotatoUsedAnswers && s.hotPotatoUsedAnswers.length > 0 && (
-                  <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 8, padding: '6px 12px', background: 'rgba(0,0,0,0.25)', borderRadius: 10, maxWidth: 500 }}>
-                    <span style={{ fontWeight: 700 }}>{lang === 'en' ? 'Used' : 'Genannt'}:</span>{' '}
-                    {s.hotPotatoUsedAnswers.join(', ')}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-          {/* Live answer count */}
-          {!revealed && s.answers.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4,
-              background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 12, padding: '8px 16px',
-            }}>
-              <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{bt.question.answers[lang]}:</span>
-              {s.teams.map(t => {
-                const answered = s.answers.some(a => a.teamId === t.id);
-                return (
-                  <span key={t.id} style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: answered ? t.color : 'rgba(255,255,255,0.1)',
-                    boxShadow: answered ? `0 0 6px ${t.color}` : 'none',
-                    display: 'inline-block',
-                    transition: 'all 0.3s',
-                  }} />
-                );
-              })}
-            </div>
-          )}
-          {/* Team answer rankings — shown in right panel on reveal */}
-          {revealed && <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />}
-          <ScoreBar teams={s.teams} />
-        </div>
+        {/* ── Right side panel — only for reveal (team answer breakdown) ── */}
+        {revealed && (
+          <div style={{
+            width: 480, flexShrink: 0,
+            padding: '16px 20px 16px 12px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+            justifyContent: 'flex-start',
+            position: 'relative', zIndex: 5, overflowY: 'auto',
+          }}>
+            <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />
+            <ScoreBar teams={s.teams} />
+          </div>
+        )}
       </div>
     </div>
   );

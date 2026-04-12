@@ -147,6 +147,10 @@ const TEAM_CSS = `
     50%  { transform: scale(0.88); }
     100% { transform: scale(1); }
   }
+  @keyframes frostPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(147,210,255,0.3), inset 0 0 4px rgba(147,210,255,0.1); border-color: rgba(147,210,255,0.6); }
+    50%      { box-shadow: 0 0 12px rgba(147,210,255,0.6), inset 0 0 8px rgba(147,210,255,0.25); border-color: rgba(147,210,255,1); }
+  }
 
   button:focus-visible, input:focus-visible {
     outline: 2px solid #F59E0B;
@@ -1688,10 +1692,34 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     transition: 'all 0.15s',
                     boxShadow: isSwapSelected ? `0 0 14px ${actionColor}88`
                       : isStuckCandidate ? '0 0 10px #F59E0B88'
+                      : isFrozenCell ? '0 0 8px rgba(147,210,255,0.5)'
                       : clickable ? `0 0 8px ${actionColor}44` : 'none',
                     animation: tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
+                    position: 'relative' as const, overflow: 'visible' as const,
                   }}>
-                    {isStuckCell ? '📌' : isFrozenCell ? '❄️' : team ? qqGetAvatar(team.avatarId).emoji : ''}
+                    {isFrozenCell && (
+                      <>
+                        <div style={{
+                          position: 'absolute', inset: 0, borderRadius: 6,
+                          border: '2px solid rgba(147,210,255,0.7)',
+                          background: 'rgba(147,210,255,0.2)',
+                          animation: 'frostPulse 2.5s ease-in-out infinite',
+                          pointerEvents: 'none', zIndex: 1,
+                        }} />
+                        <div style={{
+                          position: 'absolute', top: -2, right: -2,
+                          fontSize: Math.max(6, cellSize * 0.24),
+                          zIndex: 3, lineHeight: 1,
+                        }}>❄️</div>
+                      </>
+                    )}
+                    <span style={{
+                      position: 'relative', zIndex: 2,
+                      opacity: isFrozenCell ? 0.5 : undefined,
+                      filter: isFrozenCell ? 'saturate(0.4) brightness(1.2)' : undefined,
+                    }}>
+                      {isStuckCell ? '📌' : team ? qqGetAvatar(team.avatarId).emoji : ''}
+                    </span>
                   </div>
                 );
               })

@@ -510,14 +510,33 @@ function ConfettiOverlay() {
 // RULES PRESENTATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const RULES_SLIDES_DE = [
+type RulesSlide = {
+  icon: string;
+  title: string;
+  color: string;
+  lines: string[];
+  extra?: string;
+  /** Mini grid example: 2D array — 'A' = team A, 'B' = team B, '⭐' = joker star, '📌' = stacked, null = empty */
+  grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
+};
+
+const RULES_SLIDES_DE: RulesSlide[] = [
   {
-    icon: '🗺️',
-    title: 'Das Ziel',
+    icon: '🎮',
+    title: 'Willkommen!',
     color: '#3B82F6',
     lines: [
-      'Beantwortet Fragen und erobert Felder auf dem Gitter.',
-      'Wer die größte zusammenhängende Fläche hat, gewinnt!',
+      'Beantwortet Quizfragen und erobert Felder auf dem Spielfeld.',
+      'Das Team mit dem größten zusammenhängenden Gebiet gewinnt!',
+    ],
+  },
+  {
+    icon: '⚡',
+    title: 'So läuft eine Runde',
+    color: '#8B5CF6',
+    lines: [
+      'Eine Frage erscheint — alle Teams antworten gleichzeitig.',
+      'Das schnellste richtige Team darf ein Feld setzen!',
     ],
   },
   {
@@ -525,30 +544,39 @@ const RULES_SLIDES_DE = [
     title: 'Runde 1 — Besetzen',
     color: '#3B82F6',
     lines: [
-      'Richtige Antwort = 1 Feld besetzen.',
-      'Tipp: Baut eine zusammenhängende Fläche auf.',
+      'Richtig beantwortet? Setzt 1 Feld auf dem Spielfeld.',
+      'Baut ein zusammenhängendes Gebiet auf!',
     ],
-    extra: '⭐ 2×2-Block → Joker-Bonus!',
+    extra: '⭐ Bildet ihr ein 2×2-Quadrat, gibt es ein Joker-Feld dazu!',
+    grid: {
+      cells: [
+        ['A','A',null,null],
+        ['A','⭐',null,null],
+        [null,null,null,null],
+        [null,null,null,null],
+      ],
+      colorA: '#3B82F6', colorB: '#EF4444',
+      label: '2×2 → ⭐ Bonus!',
+    },
   },
   {
     icon: '2️⃣',
     title: 'Runde 2 — Klauen',
     color: '#F59E0B',
     lines: [
-      'Solange freie Felder da sind: 2 Felder besetzen.',
-      'Wenn alles besetzt ist: 1 Feld klauen!',
+      'Freie Felder da? Setzt gleich 2 Felder!',
+      'Alles besetzt? Klaut 1 Feld vom Gegner!',
     ],
-    extra: '⚠️ Geklautes Feld zählt für euch.',
   },
   {
     icon: '3️⃣',
     title: 'Runde 3 — Taktik',
     color: '#EF4444',
     lines: [
-      '2 Felder besetzen  —  oder  —  1 Feld klauen',
-      '1 eigenes Feld einfrieren (❄️ 1 Frage lang geschützt)',
+      'Wählt: 2 Felder setzen ODER 1 Feld klauen.',
+      'Neu: Friert 1 eigenes Feld ein — es ist 1 Frage lang geschützt! ❄️',
     ],
-    extra: 'Richtig kombinieren macht den Unterschied!',
+    extra: 'Die richtige Kombination macht den Unterschied!',
   },
   {
     icon: '4️⃣',
@@ -556,32 +584,48 @@ const RULES_SLIDES_DE = [
     color: '#10B981',
     lines: [
       'Wie Runde 3, plus zwei neue Aktionen:',
-      '🔄 Tauschen — 1 eigenes + 1 feindliches Feld wechseln',
-      '📌 Stapeln — Plus-Form aus eigenen Feldern → Mittelpunkt einfrieren (2 Punkte!)',
+      '🔄 Tauschen — tauscht 1 eigenes gegen 1 feindliches Feld.',
+      '📌 Stapeln — Plus-Form → Mittelpunkt einfrieren & doppelte Punkte!',
     ],
-    extra: '📌 Stapeln nur möglich wenn alle 4 Nachbarn euch gehören.',
+    grid: {
+      cells: [
+        [null,'A',null],
+        ['A','📌','A'],
+        [null,'A',null],
+      ],
+      colorA: '#10B981', colorB: '#EF4444',
+      label: '+ Form → 📌 Stapeln!',
+    },
   },
   {
     icon: '🏆',
     title: 'Wertung',
     color: '#F59E0B',
     lines: [
-      'Größte zusammenhängende Fläche gewinnt.',
-      'Gestapelte Felder (📌) zählen doppelt.',
-      'Joker-Felder (⭐) sehen schön aus — kein Extra-Punkt.',
+      'Größtes zusammenhängendes Gebiet = Gewinner!',
+      'Gestapelte Felder 📌 zählen doppelt.',
     ],
-    extra: 'Viel Spaß & Quartier-Glück! 🎉',
+    extra: 'Viel Spaß und möge das beste Team gewinnen! 🎉',
   },
 ];
 
-const RULES_SLIDES_EN = [
+const RULES_SLIDES_EN: RulesSlide[] = [
   {
-    icon: '🗺️',
-    title: 'The Goal',
+    icon: '🎮',
+    title: 'Welcome!',
     color: '#3B82F6',
     lines: [
-      'Answer questions and claim cells on the grid.',
+      'Answer quiz questions and conquer cells on the grid.',
       'The team with the largest connected territory wins!',
+    ],
+  },
+  {
+    icon: '⚡',
+    title: 'How a Round Works',
+    color: '#8B5CF6',
+    lines: [
+      'A question appears — all teams answer at once.',
+      'The fastest correct team gets to place a cell!',
     ],
   },
   {
@@ -589,63 +633,137 @@ const RULES_SLIDES_EN = [
     title: 'Round 1 — Claim',
     color: '#3B82F6',
     lines: [
-      'Correct answer = claim 1 cell.',
-      'Tip: Build a connected territory.',
+      'Correct answer? Place 1 cell on the grid.',
+      'Build a connected territory!',
     ],
-    extra: '⭐ 2×2 block → Joker bonus!',
+    extra: '⭐ Form a 2×2 square and get a bonus Joker cell!',
+    grid: {
+      cells: [
+        ['A','A',null,null],
+        ['A','⭐',null,null],
+        [null,null,null,null],
+        [null,null,null,null],
+      ],
+      colorA: '#3B82F6', colorB: '#EF4444',
+      label: '2×2 → ⭐ Bonus!',
+    },
   },
   {
     icon: '2️⃣',
     title: 'Round 2 — Steal',
     color: '#F59E0B',
     lines: [
-      'While free cells exist: claim 2 cells.',
-      'When the grid is full: steal 1 enemy cell!',
+      'Free cells left? Place 2 cells at once!',
+      'Grid full? Steal 1 cell from your opponent!',
     ],
-    extra: '⚠️ Stolen cell counts for you.',
   },
   {
     icon: '3️⃣',
     title: 'Round 3 — Tactics',
     color: '#EF4444',
     lines: [
-      'Claim 2 cells  —  or  —  steal 1 cell',
-      'Freeze 1 own cell (❄️ protected for 1 question)',
+      'Choose: place 2 cells OR steal 1 cell.',
+      'New: Freeze 1 of your cells — protected for 1 question! ❄️',
     ],
-    extra: 'Smart combos make the difference!',
+    extra: 'The right combo makes all the difference!',
   },
   {
     icon: '4️⃣',
     title: 'Round 4 — Final',
     color: '#10B981',
     lines: [
-      'Same as Round 3, plus two new actions:',
-      '🔄 Swap — exchange 1 own + 1 enemy cell',
-      '📌 Stack — plus-shape of own cells → freeze center (2 pts!)',
+      'Same as Round 3, plus two new moves:',
+      '🔄 Swap — trade 1 of yours for 1 of theirs.',
+      '📌 Stack — plus-shape → freeze the center & score double!',
     ],
-    extra: '📌 Stack only if all 4 neighbours are yours.',
+    grid: {
+      cells: [
+        [null,'A',null],
+        ['A','📌','A'],
+        [null,'A',null],
+      ],
+      colorA: '#10B981', colorB: '#EF4444',
+      label: '+ Shape → 📌 Stack!',
+    },
   },
   {
     icon: '🏆',
     title: 'Scoring',
     color: '#F59E0B',
     lines: [
-      'Largest connected territory wins.',
-      'Stacked cells (📌) count double.',
-      'Joker cells (⭐) look nice — no extra point.',
+      'Largest connected territory = winner!',
+      'Stacked cells 📌 count double.',
     ],
-    extra: 'Good luck & have fun! 🎉',
+    extra: 'Good luck and may the best team win! 🎉',
   },
 ];
 
+/** Mini grid example for rules slides */
+function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string }) {
+  const rows = grid.cells.length;
+  const cols = grid.cells[0].length;
+  const cellSz = Math.min(64, Math.floor(260 / Math.max(rows, cols)));
+  const gap = 4;
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+      animation: 'contentReveal 0.5s ease 0.35s both',
+    }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, ${cellSz}px)`,
+        gridTemplateRows: `repeat(${rows}, ${cellSz}px)`,
+        gap,
+      }}>
+        {grid.cells.flatMap((row, r) => row.map((cell, c) => {
+          const isTeamA = cell === 'A';
+          const isStar = cell === '⭐';
+          const isPin = cell === '📌';
+          const filled = isTeamA || isStar || isPin;
+          const bg = isStar
+            ? `linear-gradient(135deg, ${grid.colorA}cc, #F59E0Bcc)`
+            : isPin
+              ? `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`
+              : isTeamA
+                ? `${grid.colorA}aa`
+                : 'rgba(255,255,255,0.06)';
+          return (
+            <div key={`${r}-${c}`} style={{
+              width: cellSz, height: cellSz,
+              borderRadius: Math.max(4, cellSz * 0.18),
+              background: bg,
+              border: filled ? `2px solid ${isStar ? '#F59E0B' : isPin ? '#10B981' : grid.colorA}` : '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: cellSz * 0.5,
+              boxShadow: filled ? `0 0 12px ${isStar ? '#F59E0B44' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
+              animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
+            }}>
+              {isStar ? '⭐' : isPin ? '📌' : ''}
+            </div>
+          );
+        }))}
+      </div>
+      {grid.label && (
+        <div style={{
+          fontSize: 'clamp(14px,1.6vw,22px)', fontWeight: 800,
+          color: slideColor, letterSpacing: '0.02em',
+        }}>{grid.label}</div>
+      )}
+    </div>
+  );
+}
+
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
-  const totalSlides = s.totalPhases === 3 ? slides.length - 1 : slides.length; // skip Round 4 slide if 3-phase game
+  const allSlides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
+  // For 3-phase games, filter out "Round 4" slide (icon 4️⃣)
+  const slides = s.totalPhases === 3 ? allSlides.filter(sl => sl.icon !== '4️⃣') : allSlides;
+  const totalSlides = slides.length;
   const idx = Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1);
   const slide = slides[idx];
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const isLast = idx === totalSlides - 1;
+  const hasGrid = !!slide.grid;
 
   return (
     <div style={{
@@ -655,46 +773,50 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* Slide counter */}
+      {/* Progress dots */}
       <div style={{
-        position: 'absolute', top: 20, right: 24,
-        display: 'flex', gap: 6, zIndex: 10,
+        position: 'absolute', top: 24, right: 28,
+        display: 'flex', gap: 8, zIndex: 10,
       }}>
         {Array.from({ length: totalSlides }).map((_, i) => (
           <div key={i} style={{
-            width: i === idx ? 24 : 8, height: 8, borderRadius: 4,
+            width: i === idx ? 28 : 10, height: 10, borderRadius: 5,
             background: i === idx ? slide.color : 'rgba(255,255,255,0.18)',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.35s ease',
+            boxShadow: i === idx ? `0 0 10px ${slide.color}66` : 'none',
           }} />
         ))}
       </div>
 
-      {/* Card */}
+      {/* Main card */}
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
-        maxWidth: 780, width: '90%',
-        background: 'rgba(15,12,9,0.82)',
+        maxWidth: hasGrid ? 960 : 840, width: '92%',
+        background: 'rgba(15,12,9,0.85)',
         border: `2px solid ${slide.color}44`,
-        borderRadius: 28,
-        padding: '44px 52px',
-        boxShadow: `0 0 80px ${slide.color}22, 0 8px 32px rgba(0,0,0,0.5)`,
+        borderRadius: 32,
+        padding: hasGrid ? '40px 48px' : '48px 56px',
+        boxShadow: `0 0 100px ${slide.color}22, 0 12px 40px rgba(0,0,0,0.6)`,
         animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-        backdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(10px)',
       }}>
-        {/* Icon + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
-          <span style={{ fontSize: 'clamp(40px,6vw,72px)', lineHeight: 1 }}>{slide.icon}</span>
-          <div>
+        {/* Icon + title row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 28 }}>
+          <span style={{
+            fontSize: 'clamp(48px,7vw,84px)', lineHeight: 1,
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))',
+          }}>{slide.icon}</span>
+          <div style={{ flex: 1 }}>
             <div style={{
-              fontSize: 'clamp(10px,1.1vw,14px)', fontWeight: 800, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: `${slide.color}99`, marginBottom: 4,
+              fontSize: 'clamp(11px,1.2vw,15px)', fontWeight: 800, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: `${slide.color}88`, marginBottom: 4,
             }}>
-              {lang === 'de' ? `Folie ${idx + 1} / ${totalSlides}` : `Slide ${idx + 1} / ${totalSlides}`}
+              {lang === 'de' ? `Spielregeln` : `Game Rules`}
             </div>
             <div style={{
-              fontSize: 'clamp(28px,4.5vw,56px)', fontWeight: 900, lineHeight: 1.05,
+              fontSize: 'clamp(34px,5.5vw,68px)', fontWeight: 900, lineHeight: 1.05,
               color: slide.color,
-              textShadow: `0 0 40px ${slide.color}44`,
+              textShadow: `0 0 50px ${slide.color}44, 0 2px 0 rgba(0,0,0,0.3)`,
             }}>
               {slide.title}
             </div>
@@ -703,65 +825,76 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 
         {/* Divider */}
         <div style={{
-          width: '100%', height: 2, borderRadius: 1,
-          background: `linear-gradient(90deg, ${slide.color}88, transparent)`,
+          width: '100%', height: 3, borderRadius: 2,
+          background: `linear-gradient(90deg, ${slide.color}aa, ${slide.color}22, transparent)`,
           marginBottom: 28,
         }} />
 
-        {/* Lines */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {slide.lines.map((line, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-              animation: `contentReveal 0.4s ease ${0.1 + i * 0.1}s both`,
-            }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: slide.color, marginTop: 8, flexShrink: 0,
-              }} />
-              <span style={{
-                fontSize: 'clamp(16px,2.2vw,28px)', fontWeight: 700,
-                color: '#e2e8f0', lineHeight: 1.4,
-              }}>{line}</span>
-            </div>
-          ))}
+        {/* Content: text left, grid right (if grid exists) */}
+        <div style={{
+          display: 'flex', gap: 36, alignItems: 'center',
+          flexDirection: hasGrid ? 'row' : 'column',
+        }}>
+          {/* Text lines */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+            {slide.lines.map((line, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 16,
+                animation: `contentReveal 0.4s ease ${0.1 + i * 0.12}s both`,
+              }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: slide.color, marginTop: 10, flexShrink: 0,
+                  boxShadow: `0 0 8px ${slide.color}66`,
+                }} />
+                <span style={{
+                  fontSize: 'clamp(20px,2.8vw,36px)', fontWeight: 700,
+                  color: '#e2e8f0', lineHeight: 1.35,
+                }}>{line}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Mini grid example */}
+          {slide.grid && <RulesMiniGrid grid={slide.grid} slideColor={slide.color} />}
         </div>
 
         {/* Extra callout */}
         {slide.extra && (
           <div style={{
-            marginTop: 28, padding: '14px 20px', borderRadius: 14,
-            background: `${slide.color}18`, border: `1px solid ${slide.color}33`,
-            fontSize: 'clamp(14px,1.8vw,22px)', fontWeight: 800,
+            marginTop: 28, padding: '16px 24px', borderRadius: 16,
+            background: `${slide.color}15`, border: `2px solid ${slide.color}33`,
+            fontSize: 'clamp(18px,2.2vw,30px)', fontWeight: 800,
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.4s both',
+            textShadow: `0 0 20px ${slide.color}33`,
           }}>
             {slide.extra}
           </div>
         )}
 
-        {/* Last slide: "Los geht's!" hint */}
+        {/* Last slide hint */}
         {isLast && (
           <div style={{
-            marginTop: 24, textAlign: 'center',
-            fontSize: 'clamp(13px,1.6vw,20px)', fontWeight: 700,
-            color: 'rgba(255,255,255,0.35)',
+            marginTop: 28, textAlign: 'center',
+            fontSize: 'clamp(16px,2vw,26px)', fontWeight: 800,
+            color: slide.color,
             animation: 'contentReveal 0.5s ease 0.6s both',
+            textShadow: `0 0 20px ${slide.color}33`,
           }}>
-            {lang === 'de' ? '← Moderator startet das Spiel →' : '← Moderator starts the game →'}
+            {lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!'}
           </div>
         )}
       </div>
 
-      {/* Navigation hint at bottom */}
+      {/* Bottom nav hint */}
       <div style={{
-        position: 'absolute', bottom: 20, left: 0, right: 0,
-        display: 'flex', justifyContent: 'center', gap: 40,
-        zIndex: 10, opacity: 0.4, fontSize: 13, fontWeight: 700, color: '#94a3b8',
-        letterSpacing: '0.08em', textTransform: 'uppercase',
+        position: 'absolute', bottom: 22, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 48,
+        zIndex: 10, opacity: 0.35, fontSize: 14, fontWeight: 700, color: '#94a3b8',
+        letterSpacing: '0.1em', textTransform: 'uppercase',
       }}>
         {idx > 0 && <span>◀ {lang === 'de' ? 'Zurück' : 'Back'}</span>}
-        <span>{lang === 'de' ? 'Moderator steuert' : 'Moderator controls'}</span>
         {!isLast && <span>{lang === 'de' ? 'Weiter' : 'Next'} ▶</span>}
       </div>
     </div>
@@ -2099,7 +2232,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       : showStar
                         ? '2px solid rgba(251,191,36,0.9)'
                         : isFrozen
-                          ? '2px solid rgba(147,210,255,0.9)'
+                          ? 'none'
                           : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
                     animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
                     boxShadow: isStuck
@@ -2108,21 +2241,51 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                         : showStar
                           ? '0 0 10px rgba(251,191,36,0.5)'
-                          : isFrozen
-                            ? `0 0 10px rgba(147,210,255,0.5)`
-                            : isHighlighted
+                          : isHighlighted
                               ? `0 0 12px ${team.color}66`
                               : 'none',
                     transition: 'box-shadow 0.4s ease',
                   }} />
                 )}
-                {/* Frozen overlay — ice tint */}
+                {/* Frozen overlay — ice tint + shimmer + frost corners */}
                 {isFrozen && (
-                  <div style={{
-                    position: 'absolute', inset: 0, borderRadius: cellRadius,
-                    background: 'rgba(147,210,255,0.18)',
-                    pointerEvents: 'none', zIndex: 1,
-                  }} />
+                  <>
+                    {/* Base ice tint */}
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      background: 'rgba(147,210,255,0.22)',
+                      border: '2px solid rgba(147,210,255,0.8)',
+                      animation: 'frostPulse 2.5s ease-in-out infinite',
+                      pointerEvents: 'none', zIndex: 2,
+                    }} />
+                    {/* Shimmer streak */}
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      background: 'linear-gradient(105deg, transparent 30%, rgba(200,230,255,0.35) 45%, rgba(255,255,255,0.45) 50%, rgba(200,230,255,0.35) 55%, transparent 70%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'frostShimmer 3s ease-in-out infinite',
+                      pointerEvents: 'none', zIndex: 3,
+                    }} />
+                    {/* Frost corner accents */}
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      background: `
+                        radial-gradient(circle at 10% 10%, rgba(200,230,255,0.5) 0%, transparent 35%),
+                        radial-gradient(circle at 90% 10%, rgba(200,230,255,0.4) 0%, transparent 30%),
+                        radial-gradient(circle at 10% 90%, rgba(200,230,255,0.4) 0%, transparent 30%),
+                        radial-gradient(circle at 90% 90%, rgba(200,230,255,0.5) 0%, transparent 35%)
+                      `,
+                      pointerEvents: 'none', zIndex: 3,
+                    }} />
+                    {/* Small ❄️ badge top-right */}
+                    <div style={{
+                      position: 'absolute', top: -3, right: -3,
+                      fontSize: Math.max(8, cellSize * 0.28),
+                      zIndex: 5, lineHeight: 1,
+                      animation: 'frostCrystal 3s ease-in-out infinite',
+                      filter: 'drop-shadow(0 0 3px rgba(147,210,255,0.8))',
+                    }}>❄️</div>
+                  </>
                 )}
                 {/* Stuck overlay — golden shimmer */}
                 {isStuck && (
@@ -2178,11 +2341,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 )}
                 {/* Emoji / star content */}
                 <div style={{
-                  position: 'relative', zIndex: 2,
+                  position: 'relative', zIndex: 4,
                   animation: isNew ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
-                  fontSize: (isFrozen || isStuck) ? Math.max(8, cellSize * 0.52) : undefined,
+                  fontSize: isStuck ? Math.max(8, cellSize * 0.52) : undefined,
+                  opacity: isFrozen ? 0.55 : undefined,
+                  filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {isStuck ? '📌' : isFrozen ? '❄️' : showStar ? '⭐' : (team && qqGetAvatar(team.avatarId).emoji)}
+                  {isStuck ? '📌' : showStar ? '⭐' : (team && qqGetAvatar(team.avatarId).emoji)}
                 </div>
               </div>
             );

@@ -281,7 +281,8 @@ export function qqStartGame(
   room.language  = language;
   room.questionIndex  = 0;
   room.gamePhaseIndex = 1;
-  room.phase          = 'PHASE_INTRO';
+  room.phase          = 'RULES';
+  room.rulesSlideIndex = 0;
   room.introStep      = 0;
   room.currentQuestion = questions[0];
   room.revealedAnswer  = null;

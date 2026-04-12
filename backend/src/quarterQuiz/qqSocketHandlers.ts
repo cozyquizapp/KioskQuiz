@@ -709,8 +709,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:rulesFinish', (payload: QQRulesFinishPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        // rulesFinish → back to LOBBY so moderator can start game normally
-        room.phase = 'LOBBY';
+        // rulesFinish → advance to PHASE_INTRO (rules are now part of the game flow)
+        room.phase = 'PHASE_INTRO';
+        room.introStep = 0;
         room.rulesSlideIndex = 0;
         broadcast(io, payload.roomCode);
         ok(ack);

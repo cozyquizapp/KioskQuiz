@@ -131,7 +131,12 @@ export default function QQModeratorPage() {
     if (e.code === 'Space') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        emitRef.current('qq:rulesNext', { roomCode });
+        const totalSlides = s.totalPhases === 3 ? 6 : 7;
+        if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
+          emitRef.current('qq:rulesFinish', { roomCode });
+        } else {
+          emitRef.current('qq:rulesNext', { roomCode });
+        }
         return;
       }
       if (s.phase === 'LOBBY')           startGameRef.current();
@@ -203,7 +208,12 @@ export default function QQModeratorPage() {
     // F13 — Nächste Aktion (= Space)
     if (e.code === 'F13') {
       e.preventDefault();
-      if (s.phase === 'RULES') { emitRef.current('qq:rulesNext', { roomCode }); return; }
+      if (s.phase === 'RULES') {
+        const totalSlides = s.totalPhases === 3 ? 6 : 7;
+        if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
+        else emitRef.current('qq:rulesNext', { roomCode });
+        return;
+      }
       if (s.phase === 'LOBBY')            startGameRef.current();
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
@@ -342,9 +352,6 @@ export default function QQModeratorPage() {
                         </option>
                       ))}
                     </select>
-                    <Btn color="#8B5CF6" onClick={() => emit('qq:startRules', { roomCode })}>
-                      📖 Regeln zeigen
-                    </Btn>
                     <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
                   </>
                 )}
@@ -1078,7 +1085,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = s.totalPhases === 3 ? 5 : 6; // 5 slides for 3-phase, 6 for 4-phase
+  const totalSlides = s.totalPhases === 3 ? 6 : 7; // 6 slides for 3-phase (skip Round 4), 7 for 4-phase
   const idx = s.rulesSlideIndex ?? 0;
   const isFirst = idx === 0;
   const isLast = idx >= totalSlides - 1;
@@ -1096,11 +1103,11 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
         </Btn>
       ) : (
         <Btn small color="#22C55E" onClick={() => emit('qq:rulesFinish', { roomCode })}>
-          ✓ Regeln fertig
+          ▶ Runde 1 starten
         </Btn>
       )}
       <Btn small color="#EF4444" outline onClick={() => emit('qq:rulesFinish', { roomCode })}>
-        Überspringen
+        ⏭ Überspringen
       </Btn>
     </div>
   );

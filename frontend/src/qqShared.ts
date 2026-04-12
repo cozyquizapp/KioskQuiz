@@ -105,6 +105,18 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 1; transform: translateY(0) scale(1); }
     100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
   }
+  @keyframes frostShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes frostPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(147,210,255,0.4), inset 0 0 6px rgba(147,210,255,0.15); border-color: rgba(147,210,255,0.7); }
+    50%      { box-shadow: 0 0 18px rgba(147,210,255,0.7), inset 0 0 12px rgba(147,210,255,0.3); border-color: rgba(147,210,255,1); }
+  }
+  @keyframes frostCrystal {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.15); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

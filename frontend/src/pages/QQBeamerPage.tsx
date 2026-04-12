@@ -366,11 +366,6 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   // Only use custom template if it has actual elements to render
   const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;
 
-  // Debug: log phase transitions
-  useEffect(() => {
-    console.log(`[QQ-BEAMER] phase=${s.phase} templateType=${templateType} hasCustom=${!!activeTemplate} builtinOnly=${builtinOnly}`);
-  }, [s.phase]);
-
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
@@ -1118,6 +1113,44 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       }}>
         {phaseDesc}
       </div>
+
+      {/* Category announcement */}
+      {s.currentQuestion && (() => {
+        const cat = s.currentQuestion.category as QQCategory;
+        const catInfo = QQ_CATEGORY_LABELS[cat];
+        const catLabel = catInfo ? catInfo[lang] : cat;
+        const catEmoji = catInfo?.emoji ?? '';
+        const questionNum = (s.questionIndex % 5) + 1;
+        const catColor = {
+          SCHAETZCHEN: '#EAB308', MUCHO: '#3B82F6', BUNTE_TUETE: '#EF4444',
+          ZEHN_VON_ZEHN: '#10B981', CHEESE: '#8B5CF6',
+        }[cat] ?? color;
+        return (
+          <div style={{
+            marginTop: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            position: 'relative', zIndex: 5,
+            animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.8s both',
+          }}>
+            <div style={{
+              fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 700,
+              color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase',
+            }}>
+              {lang === 'de' ? `Frage ${questionNum}` : `Question ${questionNum}`}
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 28px', borderRadius: 50,
+              background: `${catColor}20`, border: `2px solid ${catColor}44`,
+            }}>
+              <span style={{ fontSize: 'clamp(28px, 3.5vw, 48px)' }}>{catEmoji}</span>
+              <span style={{
+                fontFamily: fontFam, fontSize: 'clamp(24px, 3vw, 44px)', fontWeight: 900,
+                color: catColor,
+              }}>{catLabel}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Mini grid preview */}
       <div style={{ marginTop: 48, opacity: 0.5, position: 'relative', zIndex: 5, animation: 'contentReveal 0.6s ease 0.9s both' }}>

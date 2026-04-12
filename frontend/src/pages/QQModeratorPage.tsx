@@ -363,7 +363,7 @@ export default function QQModeratorPage() {
                 )}
 
                 {s.phase === 'PHASE_INTRO' && (
-                  <Btn color="#22C55E" onClick={() => emit('qq:activateQuestion', { roomCode })}>
+                  <Btn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }}>
                     ▶ Frage aktivieren
                   </Btn>
                 )}

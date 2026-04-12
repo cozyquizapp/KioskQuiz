@@ -358,11 +358,16 @@ export default function QQModeratorPage() {
                   />
                 )}
 
-                {s.phase === 'PHASE_INTRO' && (
-                  <Btn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }}>
-                    ▶ Frage aktivieren
-                  </Btn>
-                )}
+                {s.phase === 'PHASE_INTRO' && (() => {
+                  const isFirstOfRound = (s.questionIndex % 5) === 0;
+                  const showingRoundTitle = isFirstOfRound && s.introStep === 0;
+                  const label = showingRoundTitle ? '🎯 Kategorie zeigen' : '▶ Frage aktivieren';
+                  return (
+                    <Btn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }}>
+                      {label}
+                    </Btn>
+                  );
+                })()}
 
                 {s.phase === 'QUESTION_ACTIVE' && (
                   <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>

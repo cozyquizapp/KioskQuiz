@@ -1114,8 +1114,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {isFirstOfRound ? (
-        /* ── First question: Round announcement only (category shown small) ── */
+      {isFirstOfRound && s.introStep === 0 ? (
+        /* ── Step 0: Round announcement (first question only) ── */
         <>
           <div style={{
             fontFamily: fontFam,
@@ -1148,7 +1148,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </>
       ) : (
-        /* ── Question 2+: Big category reveal ── */
+        /* ── Category reveal (step 1 for first Q, step 0 for Q2+) ── */
         <>
           <div style={{
             fontFamily: "'Caveat', cursive",
@@ -1872,8 +1872,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
           {/* Team answer rankings — shown in right panel on reveal */}
           {revealed && <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />}
-          {revealed && <GridDisplay state={s} maxSize={isCheeseReveal ? 320 : 400} showJoker={false} />}
-          {!revealed && <GridDisplay state={s} maxSize={440} showJoker={false} />}
           <ScoreBar teams={s.teams} />
         </div>
       </div>

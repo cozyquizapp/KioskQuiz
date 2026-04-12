@@ -89,6 +89,8 @@ export interface QQRoomState {
   volume: number; // 0–1
   // Rules presentation
   rulesSlideIndex: number;
+  // Phase intro sub-step: 0 = round title (first Q) or category (Q2+), 1 = category (first Q only)
+  introStep: number;
   // Fun stats — accumulated across questions
   questionHistory: Array<{
     questionText: string;
@@ -171,6 +173,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       sfxMuted: false,
       volume: 0.8,
       rulesSlideIndex: 0,
+      introStep: 0,
       questionHistory: [],
       funnyAnswers: [],
     };
@@ -279,6 +282,7 @@ export function qqStartGame(
   room.questionIndex  = 0;
   room.gamePhaseIndex = 1;
   room.phase          = 'PHASE_INTRO';
+  room.introStep      = 0;
   room.currentQuestion = questions[0];
   room.revealedAnswer  = null;
   room.correctTeamId   = null;
@@ -358,6 +362,10 @@ export function qqSubmitAnswer(
   const connectedTeams = room.joinOrder.filter(id => room.teams[id]?.connected);
   const allAnswered = connectedTeams.every(id => room.answers.some(a => a.teamId === id));
   room.allAnswered = allAnswered;
+  // Stop timer when all teams have answered
+  if (allAnswered) {
+    qqStopTimer(room);
+  }
   return { allAnswered };
 }
 
@@ -389,8 +397,19 @@ export function qqActivateQuestion(
 ): void {
   assertPhase(room, ['PHASE_INTRO', 'PLACEMENT', 'COMEBACK_CHOICE']);
   // Prevent ghost-activation right after game start (button swap race condition)
-  if (room.phase === 'PHASE_INTRO' && room.questionIndex === 0 && Date.now() - room.lastActivityAt < 1500) {
+  if (room.phase === 'PHASE_INTRO' && room.questionIndex === 0 && room.introStep === 0 && Date.now() - room.lastActivityAt < 1500) {
     return; // silently ignore — game just started
+  }
+  // Phase intro sub-steps: first question of round has 2 steps (round title → category)
+  if (room.phase === 'PHASE_INTRO' && room.introStep === 0) {
+    const questionInPhase = (room.questionIndex % QQ_QUESTIONS_PER_PHASE);
+    if (questionInPhase === 0) {
+      // First question of round: advance to category reveal (step 1)
+      room.introStep = 1;
+      room.lastActivityAt = Date.now();
+      return; // don't activate yet — show category first
+    }
+    // Question 2+: category is already shown at step 0, activate directly
   }
   // Accumulate previous question's answers into history before clearing
   if (room.currentQuestion && room.answers.length > 0) {
@@ -1336,6 +1355,7 @@ export function qqApplyComebackChoice(
 export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): void {
   room.gamePhaseIndex = phaseIndex;
   room.phase          = 'PHASE_INTRO';
+  room.introStep      = 0;
   room.questionIndex  = (phaseIndex - 1) * QQ_QUESTIONS_PER_PHASE;
   room.currentQuestion = room.questions[room.questionIndex] ?? null;
   room.revealedAnswer  = null;
@@ -1404,6 +1424,7 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.imposterEliminated    = [];
   delete room._placementQueue;
   room.phase           = 'PHASE_INTRO';
+  room.introStep       = 0;
   room.lastActivityAt  = Date.now();
 }
 
@@ -1541,6 +1562,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     volume:           room.volume,
     soundConfig:      room.soundConfig,
     rulesSlideIndex:  room.rulesSlideIndex,
+    introStep:        room.introStep,
   };
 }
 

@@ -62,6 +62,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   frozenCells: [],
   stuckCandidates: [],
   rulesSlideIndex: 0,
+  introStep: 0,
   allAnswered: false,
 };
 

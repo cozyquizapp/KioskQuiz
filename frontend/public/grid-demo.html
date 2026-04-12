@@ -4,68 +4,59 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quarter Quiz — City Grid</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 html,body {
-  width:100%; height:100%;
-  background:#07090f;
-  color:#f1f5f9;
+  width:100%; height:100%; overflow:hidden;
+  background:#07090f; color:#f1f5f9;
   font-family:'Space Grotesk',sans-serif;
-  overflow:hidden;
 }
-
-/* ── LAYOUT: full screen, grid top 75%, builder bottom 25% ── */
 body {
   display:flex; flex-direction:column;
-  align-items:center; justify-content:flex-start;
+  align-items:center; justify-content:center;
+  gap:0;
 }
 
-#grid-area {
-  flex:1; width:100%;
-  display:flex; align-items:center; justify-content:center;
-  position:relative;
-  min-height:0;
-}
-
-#builder-area {
-  width:100%; flex-shrink:0;
-  padding:16px 32px 20px;
-  border-top:1px solid rgba(255,255,255,.06);
-  background:rgba(0,0,0,.35);
-  display:flex; flex-direction:column; gap:12px;
-}
-
-/* ── ISO SCENE ── */
+/* ── SCENE ── */
 .board-wrap { position:relative; }
+
 .iso-scene {
-  perspective:1600px; perspective-origin:50% 30%;
+  perspective:2000px;
+  perspective-origin:50% 50%;
   position:relative; z-index:2;
-  transition:perspective .9s cubic-bezier(.4,0,.2,1),
-             perspective-origin .9s cubic-bezier(.4,0,.2,1);
+  transition:perspective 1.6s cubic-bezier(.4,0,.15,1),
+             perspective-origin 1.6s cubic-bezier(.4,0,.15,1);
 }
-.iso-scene.is-iso { perspective:1100px; perspective-origin:50% -15%; }
+.iso-scene.is-iso {
+  perspective:900px;
+  perspective-origin:50% -40%;
+}
+
 .iso-grid {
-  transform:rotateX(0deg) rotateZ(0deg);
-  transform-style:preserve-3d; transform-origin:center center;
+  transform:rotateX(0deg) rotateZ(0deg) scale(1);
+  transform-style:preserve-3d;
+  transform-origin:center center;
   display:grid; gap:4px; position:relative;
-  transition:transform 1s cubic-bezier(.4,0,.2,1);
+  transition:transform 1.6s cubic-bezier(.4,0,.15,1);
   will-change:transform;
 }
-.iso-grid.is-iso { transform:rotateX(52deg) rotateZ(-45deg) scale(.9); }
+.iso-grid.is-iso {
+  transform:rotateX(54deg) rotateZ(-45deg) scale(.82);
+}
 
 /* ── CELL ── */
 .cell {
   position:relative; transform-style:preserve-3d; cursor:pointer;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+  transition:transform .2s ease;
 }
 .cell.owned { cursor:default; }
-.cell.empty:hover { transform:translateZ(5px) scale(1.03); }
 .iso-grid:not(.is-iso) .cell.empty:hover { transform:scale(1.06); }
+.iso-grid.is-iso .cell.empty:hover { transform:translateZ(6px); }
 
 .tile-top {
   position:absolute; inset:0; border-radius:3px; z-index:2;
-  transition:background .25s, border-color .25s, box-shadow .3s;
+  transition:background .3s, border-color .3s, box-shadow .3s;
 }
 .tile-front {
   position:absolute; top:100%; left:0; right:0; height:10px;
@@ -76,86 +67,33 @@ body {
   transform-origin:left center; transform:rotateY(90deg); z-index:1;
 }
 
-/* Building + territory SVG overlays */
-#bld-svg, #out-svg {
-  position:absolute; inset:0; pointer-events:none; overflow:visible;
+/* Building SVG */
+#bld-svg {
+  position:absolute; inset:0;
+  pointer-events:none; z-index:200; overflow:visible;
+  transition:opacity .6s ease;
 }
-#bld-svg { z-index:200; }
-#out-svg  { z-index:100; }
 
-/* ── SCORE BAR (inside builder area) ── */
+/* Score bar */
 .score-bar {
-  display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+  display:flex; gap:10px; flex-wrap:wrap;
+  justify-content:center; padding:16px 24px 0;
 }
 .team-pill {
-  display:flex; align-items:center; gap:8px; padding:8px 18px; border-radius:10px;
-  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+  display:flex; align-items:center; gap:8px;
+  padding:8px 20px; border-radius:10px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07);
   cursor:pointer; transition:all .2s; user-select:none; font-size:14px;
 }
-.team-pill.active { background:var(--tc-bg); border-color:var(--tc-border); box-shadow:0 0 20px var(--tc-glow); }
+.team-pill.active {
+  background:var(--tc-bg);
+  border-color:var(--tc-border);
+  box-shadow:0 0 20px var(--tc-glow);
+}
 .tp-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
 .tp-name { font-weight:700; }
 .tp-count { color:#2a3550; font-weight:700; margin-left:2px; }
-
-/* ── TEAM BUILDER ── */
-.builder-inner {
-  display:flex; gap:32px; align-items:flex-start; justify-content:center; flex-wrap:wrap;
-}
-.builder-section { display:flex; flex-direction:column; gap:8px; }
-.builder-label {
-  font-size:10px; font-weight:700; color:#3a4a68;
-  text-transform:uppercase; letter-spacing:.12em;
-}
-
-/* Color swatches */
-.color-row { display:flex; gap:8px; flex-wrap:wrap; }
-.color-swatch {
-  width:36px; height:36px; border-radius:50%; cursor:pointer;
-  border:2.5px solid transparent;
-  transition:transform .15s, box-shadow .15s, border-color .15s;
-  flex-shrink:0;
-}
-.color-swatch:hover { transform:scale(1.18); }
-.color-swatch.taken { opacity:.2; cursor:not-allowed; }
-.color-swatch.selected { border-color:white; transform:scale(1.22); }
-
-/* Shape buttons */
-.shape-row { display:flex; gap:7px; flex-wrap:wrap; }
-.shape-btn {
-  width:40px; height:40px; border-radius:10px; cursor:pointer;
-  background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.09);
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s;
-}
-.shape-btn:hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.25); }
-.shape-btn.selected { border-color:var(--sel-c,white); box-shadow:0 0 12px var(--sel-c,white); }
-.shape-btn.taken { opacity:.18; cursor:not-allowed; pointer-events:none; }
-.shape-btn svg { width:22px; height:22px; }
-
-/* Preview + confirm */
-.preview-row { display:flex; align-items:center; gap:14px; }
-.preview-icon {
-  width:52px; height:52px; border-radius:10px; border:2.5px solid #333;
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-  background:rgba(255,255,255,.03);
-}
-.preview-icon svg { width:30px; height:30px; }
-.confirm-btn {
-  padding:12px 28px; border-radius:10px; border:none; cursor:pointer;
-  font-family:inherit; font-size:15px; font-weight:800; letter-spacing:.04em;
-  transition:all .15s; white-space:nowrap;
-}
-.confirm-btn:hover:not(:disabled) { transform:translateY(-2px); filter:brightness(1.2); }
-.confirm-btn:disabled { opacity:.3; cursor:not-allowed; }
-
-/* Registered list */
-.reg-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-.reg-chip {
-  display:flex; align-items:center; gap:7px; padding:6px 12px; border-radius:8px;
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
-  font-size:13px;
-}
-.reg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
 @keyframes homeGlow {
   0%,100% { box-shadow:var(--gb); }
@@ -165,110 +103,33 @@ body {
 </head>
 <body>
 
-<!-- TOP: Grid -->
-<div id="grid-area">
+<div id="grid-area" style="flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0;padding:32px 32px 16px;">
   <div class="board-wrap" id="board-wrap">
     <div class="iso-scene" id="iso-scene">
       <div class="iso-grid" id="grid"></div>
     </div>
     <svg id="bld-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-    <svg id="out-svg"  xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 </div>
 
-<!-- BOTTOM: Builder -->
-<div id="builder-area">
-  <!-- Score bar -->
-  <div class="score-bar" id="scorebar"></div>
-
-  <!-- Builder -->
-  <div class="builder-inner">
-
-    <!-- Color -->
-    <div class="builder-section">
-      <div class="builder-label">Farbe</div>
-      <div class="color-row" id="color-grid"></div>
-    </div>
-
-    <!-- Shape -->
-    <div class="builder-section">
-      <div class="builder-label">Symbol</div>
-      <div class="shape-row" id="shape-grid"></div>
-    </div>
-
-    <!-- Preview + Confirm -->
-    <div class="builder-section">
-      <div class="builder-label">Vorschau</div>
-      <div class="preview-row">
-        <div class="preview-icon" id="preview-icon">
-          <svg id="preview-svg" viewBox="0 0 24 24" fill="none"></svg>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <div id="preview-name" style="font-size:14px;font-weight:700;color:#3a4a68;">— wähle Farbe & Symbol</div>
-          <button class="confirm-btn" id="confirm-btn" disabled
-            style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);color:#2a3550;">
-            Registrieren
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Registered -->
-    <div class="builder-section">
-      <div class="builder-label">Teams</div>
-      <div class="reg-row" id="reg-list">
-        <span style="font-size:12px;color:#1e2840;">Noch keine Teams</span>
-      </div>
-    </div>
-
-  </div>
-</div>
+<div class="score-bar" id="scorebar"></div>
+<div style="height:20px;flex-shrink:0;"></div>
 
 <script>
-const SIZE=6, CELL=82, GAP=4;
+const SIZE=6, CELL=80, GAP=4;
 const NS='http://www.w3.org/2000/svg';
-
-// ── NEON COLORS ──
-const NEON_COLORS=[
-  {hex:'#00f5ff',r:0,  g:245,b:255,name:'Cyan'},
-  {hex:'#ff0080',r:255,g:0,  b:128,name:'Pink'},
-  {hex:'#00ff88',r:0,  g:255,b:136,name:'Grün'},
-  {hex:'#ffee00',r:255,g:238,b:0,  name:'Gelb'},
-  {hex:'#bf5fff',r:191,g:95, b:255,name:'Lila'},
-  {hex:'#ff6600',r:255,g:102,b:0,  name:'Orange'},
-  {hex:'#00aaff',r:0,  g:170,b:255,name:'Blau'},
-  {hex:'#ff3333',r:255,g:51, b:51, name:'Rot'},
-  {hex:'#44ffaa',r:68, g:255,b:170,name:'Mint'},
-  {hex:'#ff99ff',r:255,g:153,b:255,name:'Rosa'},
-];
-
-// ── SHAPES ──
-const SHAPES=[
-  {id:'circle',   name:'Kreis',   path:'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z'},
-  {id:'triangle', name:'Dreieck', path:'M12 3L22 21H2L12 3z'},
-  {id:'hex',      name:'Hexagon', path:'M12 2l8.66 5v10L12 22l-8.66-5V7z'},
-  {id:'star4',    name:'Stern',   path:'M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'},
-  {id:'diamond',  name:'Raute',   path:'M12 2l10 10-10 10L2 12z'},
-  {id:'bolt',     name:'Blitz',   path:'M13 2L4.5 13.5H11L11 22L19.5 10.5H13z'},
-  {id:'shield',   name:'Schild',  path:'M12 2l8 3v6c0 5-4 9-8 11C8 20 4 16 4 11V5z'},
-  {id:'crown',    name:'Krone',   path:'M2 19h20M2 19l3-9 4 5 3-9 3 9 4-5 3 9'},
-  {id:'flame',    name:'Feuer',   path:'M12 2c0 6-6 8-6 14a6 6 0 0 0 12 0c0-6-6-8-6-14z'},
-  {id:'eye',      name:'Auge',    path:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'},
-];
 
 // ── TEAMS ──
 const TEAMS=Array(6).fill(null);
-let registeredTeams=[], activeTeam=0;
+let activeTeam=0;
 
-function mkTeam(ci,si,name){
-  const nc=NEON_COLORS[ci],sh=SHAPES[si];
-  return{color:nc.hex,r:nc.r,g:nc.g,b:nc.b,name,shapeId:sh.id,shapePath:sh.path};
+function mkTeam(color,r,g,b,name,shapePath){
+  return{color,r,g,b,name,shapePath};
 }
-// Demo seeds
-TEAMS[0]=mkTeam(6,0,'Die Clique');
-TEAMS[1]=mkTeam(1,1,'Rote Karte');
-TEAMS[2]=mkTeam(2,2,'Grüne Hölle');
-TEAMS[3]=mkTeam(3,4,'Oranje');
+TEAMS[0]=mkTeam('#00aaff',0,170,255,'Die Clique',   'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z');
+TEAMS[1]=mkTeam('#ff0080',255,0,128,'Rote Karte',   'M12 3L22 21H2L12 3z');
+TEAMS[2]=mkTeam('#00ee66',0,238,102,'Grüne Hölle',  'M12 2l8.66 5v10L12 22l-8.66-5V7z');
+TEAMS[3]=mkTeam('#ffcc00',255,204,0,'Oranje',        'M12 2l10 10-10 10L2 12z');
 
 // ── STATE ──
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
@@ -282,19 +143,17 @@ seed(5,5,3,true);seed(4,5,3);seed(5,4,3);
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`;}
 function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti;}
 function adjCount(r,c){
-  const ti=state[r][c]?.teamIdx;if(ti==null)return 0;
+  const ti=state[r][c]?.teamIdx; if(ti==null)return 0;
   return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length;
 }
 function isEdge(r,c){
-  const ti=state[r][c]?.teamIdx;if(ti==null)return false;
+  const ti=state[r][c]?.teamIdx; if(ti==null)return false;
   return[[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>!same(r+dr,c+dc,ti));
 }
-
-// ── BUILDING HEIGHT ──
 function getBH(r,c){
-  const cell=state[r][c];if(!cell)return 0;
-  const base=cell.home?88:adjCount(r,c)>=3?50:adjCount(r,c)>=1?34:22;
-  const persp=1.55-(r/(SIZE-1))*.9;
+  const cell=state[r][c]; if(!cell)return 0;
+  const base=cell.home?90:adjCount(r,c)>=3?52:adjCount(r,c)>=1?36:24;
+  const persp=1.5-(r/(SIZE-1))*.85;
   return Math.round(base*persp);
 }
 
@@ -303,128 +162,154 @@ let cornerCache={};
 function buildCornerCache(){
   cornerCache={};
   const wr=document.getElementById('board-wrap').getBoundingClientRect();
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
     const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-    if(!el)continue;
+    if(!el) continue;
     cornerCache[`${r},${c}`]=[[0,0],[CELL,0],[CELL,CELL],[0,CELL]].map(([lx,ly])=>{
       const m=document.createElement('div');
       m.style.cssText=`position:absolute;left:${lx}px;top:${ly}px;width:1px;height:1px;`;
       el.appendChild(m);
       const mr=m.getBoundingClientRect();
       m.remove();
-      return{x:mr.left-wr.left,y:mr.top-wr.top};
+      return{x:mr.left-wr.left, y:mr.top-wr.top};
     });
   }
 }
-function tileCenter(r,c){
-  const cc=cornerCache[`${r},${c}`];if(!cc)return null;
-  return{x:(cc[0].x+cc[1].x+cc[2].x+cc[3].x)/4,y:(cc[0].y+cc[1].y+cc[2].y+cc[3].y)/4};
-}
-function tileScreenW(r,c){
-  const cc=cornerCache[`${r},${c}`];if(!cc)return CELL;
-  return Math.abs(cc[1].x-cc[0].x)*1.6;
-}
 
-// ── SVG HELPERS ──
 function mkEl(tag,attrs){
   const el=document.createElementNS(NS,tag);
   Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
   return el;
 }
 
-// ── DRAW BUILDING (neon wireframe + solid roof glow) ──
-function drawBuildingSVG(parent,corners,H,team){
+// ── DRAW ONE BUILDING ──
+function drawBuildingSVG(parent, corners, H, team, isHQ){
   const col=team.color;
-  const[C0,C1,C2,C3]=corners;
-  const up=p=>({x:p.x,y:p.y-H});
+  const[C0,C1,C2,C3]=corners; // TL,TR,BR,BL in screen space
+  const up=p=>({x:p.x, y:p.y-H});
   const T0=up(C0),T1=up(C1),T2=up(C2),T3=up(C3);
 
-  // Subtle filled faces for solidity (very low alpha)
-  const faceAttrs=(pts,alpha)=>({
-    points:pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
-    fill:`rgba(${team.r},${team.g},${team.b},${alpha})`,
-    stroke:'none',
-  });
-  // Top face fill
-  parent.appendChild(mkEl('polygon',faceAttrs([T0,T1,T2,T3],.18)));
-  // Right face fill
-  parent.appendChild(mkEl('polygon',faceAttrs([C1,C2,T2,T1],.10)));
-  // Left face fill
-  parent.appendChild(mkEl('polygon',faceAttrs([C3,C2,T2,T3],.07)));
+  // Subtle filled faces
+  const face=(pts,a)=>{
+    parent.appendChild(mkEl('polygon',{
+      points:pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+      fill:`rgba(${team.r},${team.g},${team.b},${a})`, stroke:'none'
+    }));
+  };
+  face([T0,T1,T2,T3], .20); // top
+  face([C1,C2,T2,T1],  .11); // right wall
+  face([C3,C2,T2,T3],  .07); // left wall
 
-  // Edges — glow layer then sharp layer
+  // Edges
   const edges=[
-    [T0,T1],[T1,T2],[T2,T3],[T3,T0],  // top face
-    [C0,T0],[C1,T1],[C2,T2],[C3,T3],  // verticals
-    [C3,C0],[C3,C2],                   // visible base edges
+    [T0,T1],[T1,T2],[T2,T3],[T3,T0],
+    [C0,T0],[C1,T1],[C2,T2],[C3,T3],
+    [C3,C0],[C3,C2],
   ];
   edges.forEach(([a,b])=>{
     parent.appendChild(mkEl('line',{
-      x1:a.x.toFixed(1),y1:a.y.toFixed(1),x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:col,'stroke-width':'4','stroke-linecap':'round',opacity:'.22',
+      x1:a.x.toFixed(1),y1:a.y.toFixed(1),
+      x2:b.x.toFixed(1),y2:b.y.toFixed(1),
+      stroke:col,'stroke-width':'4.5','stroke-linecap':'round',opacity:'.20'
     }));
     parent.appendChild(mkEl('line',{
-      x1:a.x.toFixed(1),y1:a.y.toFixed(1),x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:col,'stroke-width':'1.6','stroke-linecap':'round',opacity:'1',
+      x1:a.x.toFixed(1),y1:a.y.toFixed(1),
+      x2:b.x.toFixed(1),y2:b.y.toFixed(1),
+      stroke:col,'stroke-width':'1.8','stroke-linecap':'round',opacity:'1'
     }));
   });
 
-  // ── SYMBOL ON ROOF — large, filling the roof face ──
-  if(team.shapePath && H>14){
-    const rcx=((T0.x+T1.x+T2.x+T3.x)/4).toFixed(1);
-    const rcy=((T0.y+T1.y+T2.y+T3.y)/4).toFixed(1);
-    // Scale symbol to fill ~80% of the roof face width
-    const roofW=Math.sqrt((T1.x-T0.x)**2+(T1.y-T0.y)**2)*1.4;
-    const sz=Math.min(roofW*.8, H*.9);
-    const sc=(sz/24).toFixed(2);
-    const sg=mkEl('g',{transform:`translate(${rcx},${rcy}) scale(${sc})`});
-    // Big glow
-    sg.appendChild(mkEl('path',{d:team.shapePath,stroke:col,'stroke-width':'6',
-      'stroke-linecap':'round','stroke-linejoin':'round',fill:'none',
-      transform:'translate(-12,-12)',opacity:'.3'}));
+  // Symbol ON ROOF — only for HQ
+  // Carefully placed at the visual center of the top face parallelogram
+  if(isHQ && team.shapePath){
+    // Center of top face
+    const cx = (T0.x+T1.x+T2.x+T3.x)/4;
+    const cy = (T0.y+T1.y+T2.y+T3.y)/4;
+
+    // Measure the roof face size to scale symbol correctly
+    // Width of top face (T0→T1 distance)
+    const roofW = Math.sqrt((T1.x-T0.x)**2+(T1.y-T0.y)**2);
+    // Height of top face (T0→T3 distance)
+    const roofH = Math.sqrt((T3.x-T0.x)**2+(T3.y-T0.y)**2);
+    const roofSize = Math.min(roofW, roofH);
+
+    // Scale so symbol fits inside the roof face (80% of smaller dimension)
+    const sc = (roofSize * 0.80 / 24).toFixed(3);
+
+    // The roof face is a parallelogram — we need to apply the same
+    // shear/rotation as the roof face itself so the symbol "lies flat"
+    // Compute the transform that maps the unit square to the parallelogram
+    // Basis vectors of the roof: right = T1-T0, down = T3-T0
+    const bRx = T1.x-T0.x, bRy = T1.y-T0.y;
+    const bDx = T3.x-T0.x, bDy = T3.y-T0.y;
+    // Normalize by tile size so the symbol fills correctly
+    const norm = CELL;
+    // SVG matrix: a=bRx/norm, b=bRy/norm, c=bDx/norm, d=bDy/norm
+    // Applied to a symbol centered at 0,0 (after translate(-12,-12))
+    // Then translate to roof center
+    const a=(bRx/norm).toFixed(4), b2=(bRy/norm).toFixed(4);
+    const cc2=(bDx/norm).toFixed(4), d=(bDy/norm).toFixed(4);
+    const tx=cx.toFixed(1), ty=cy.toFixed(1);
+
+    const sg=mkEl('g',{
+      transform:`matrix(${a},${b2},${cc2},${d},${tx},${ty}) scale(${sc}) translate(-12,-12)`
+    });
+    // Glow
+    sg.appendChild(mkEl('path',{
+      d:team.shapePath, stroke:col,'stroke-width':'5',
+      'stroke-linecap':'round','stroke-linejoin':'round',
+      fill:'none', opacity:'.35'
+    }));
     // Sharp white
-    sg.appendChild(mkEl('path',{d:team.shapePath,stroke:'white','stroke-width':'1.8',
-      'stroke-linecap':'round','stroke-linejoin':'round',fill:'none',
-      transform:'translate(-12,-12)',opacity:'.95'}));
+    sg.appendChild(mkEl('path',{
+      d:team.shapePath, stroke:'white','stroke-width':'1.8',
+      'stroke-linecap':'round','stroke-linejoin':'round',
+      fill:'none', opacity:'.95'
+    }));
     parent.appendChild(sg);
   }
 }
 
-// ── UPDATE BUILDINGS ──
+// ── UPDATE ALL BUILDINGS ──
 let isIsoMode=false;
 function updateBuildings(animateCell=null){
   const svg=document.getElementById('bld-svg');
   const wr=document.getElementById('board-wrap').getBoundingClientRect();
-  svg.setAttribute('width',wr.width);svg.setAttribute('height',wr.height);
+  svg.setAttribute('width',wr.width); svg.setAttribute('height',wr.height);
   svg.innerHTML='';
-  if(!isIsoMode)return;
+  if(!isIsoMode) return;
 
-  // Painter's order: back rows first (r=0 first, then r=SIZE-1)
-  // Within same r: c=0..SIZE-1
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const cell=state[r][c];if(!cell)continue;
-    const corners=cornerCache[`${r},${c}`];if(!corners)continue;
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    const cell=state[r][c]; if(!cell) continue;
+    const corners=cornerCache[`${r},${c}`]; if(!corners) continue;
     const team=TEAMS[cell.teamIdx];
-    const H=getBH(r,c);if(H<4)continue;
+    const H=getBH(r,c); if(H<4) continue;
+    const isHQ=cell.home;
 
     const g=document.createElementNS(NS,'g');
 
     const doAnim=animateCell&&animateCell.r===r&&animateCell.c===c;
     if(doAnim){
+      // Rise from below — slow and epic
       const anim=mkEl('animateTransform',{
-        attributeName:'transform',type:'translate',
-        values:`0,${H}; 0,-10; 0,0`,
-        keyTimes:'0;0.72;1',dur:'0.8s',
-        calcMode:'spline',keySplines:'0.1 0.8 0.2 1;0.4 0 0.6 1',fill:'freeze'
+        attributeName:'transform', type:'translate',
+        values:`0,${H+20}; 0,-12; 0,2; 0,0`,
+        keyTimes:'0;0.65;0.85;1',
+        dur:'1.4s',
+        calcMode:'spline',
+        keySplines:'0.05 0.9 0.2 1; 0.4 0 0.6 1; 0.4 0 0.6 1',
+        fill:'freeze'
       });
       const animOp=mkEl('animate',{
-        attributeName:'opacity',values:'0;1;1',
-        keyTimes:'0;0.2;1',dur:'0.8s',fill:'freeze'
+        attributeName:'opacity',
+        values:'0;0;1;1',
+        keyTimes:'0;0.08;0.28;1',
+        dur:'1.4s', fill:'freeze'
       });
-      g.appendChild(anim);g.appendChild(animOp);
+      g.appendChild(anim); g.appendChild(animOp);
     }
 
-    drawBuildingSVG(g,corners,H,team);
+    drawBuildingSVG(g, corners, H, team, isHQ);
     svg.appendChild(g);
   }
 }
@@ -433,7 +318,7 @@ function updateBuildings(animateCell=null){
 function renderCell(r,c){
   const cell=state[r][c];
   const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-  if(!el)return;
+  if(!el) return;
   const top=el.querySelector('.tile-top');
   const front=el.querySelector('.tile-front');
   const right=el.querySelector('.tile-right');
@@ -445,110 +330,99 @@ function renderCell(r,c){
     return;
   }
   const team=TEAMS[cell.teamIdx];
-  const home=cell.home;
-  const edge=isEdge(r,c);
+  const home=cell.home, edge=isEdge(r,c);
   const bgA =home?.22:edge?.15:.08;
-  const brdA=home?.9:edge?.6:.15;
+  const brdA=home?.90:edge?.60:.15;
   const brdW=home?'2px':edge?'1.5px':'1px';
-  const glow=home?`0 0 20px ${rca(team,.7)},0 0 40px ${rca(team,.25)}`
+  const glow=home
+    ?`0 0 20px ${rca(team,.7)},0 0 40px ${rca(team,.25)}`
     :edge?`0 0 12px ${rca(team,.45)}`:'none';
 
   top.style.cssText=`position:absolute;inset:0;border-radius:3px;z-index:2;
     background:${rca(team,bgA)};border:${brdW} solid ${rca(team,brdA)};
     box-shadow:${glow};
     ${home?`animation:homeGlow 2.4s ease-in-out infinite;--gb:${glow};--gp:0 0 28px ${rca(team,.9)},0 0 56px ${rca(team,.35)};`:''}`;
-  const wf=`rgba(${team.r},${team.g},${team.b},${home?.18:edge?.11:.05})`;
-  const wb=`1px solid rgba(${team.r},${team.g},${team.b},${home?.4:edge?.22:.07})`;
+  const wf=`rgba(${team.r},${team.g},${team.b},${home?.18:edge?.10:.05})`;
+  const wb=`1px solid rgba(${team.r},${team.g},${team.b},${home?.4:edge?.20:.06})`;
   front.style.cssText=`position:absolute;top:100%;left:0;right:0;height:10px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${wf};border-left:${wb};border-bottom:${wb};border-right:${wb};`;
   right.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:10px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${wf};border-top:${wb};border-right:${wb};border-bottom:${wb};`;
 }
 
-// ── OUTLINES (2D only) ──
-function updateOutlines(){
-  const svg=document.getElementById('out-svg');
-  if(isIsoMode){svg.innerHTML='';return;}
-  const W=(CELL+GAP)*SIZE-GAP;
-  svg.setAttribute('width',W);svg.setAttribute('height',W);svg.innerHTML='';
-  TEAMS.forEach((team,ti)=>{
-    if(!team)return;
-    for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-      if(state[r][c]?.teamIdx!==ti)continue;
-      const x=c*(CELL+GAP),y=r*(CELL+GAP),pad=3;
-      const ln=(x1,y1,x2,y2)=>{
-        [[6,.14],[2,.95]].forEach(([w,op])=>{
-          const l=mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':w,'stroke-opacity':op,'stroke-linecap':'round'});
-          svg.appendChild(l);
-        });
-      };
-      if(!same(r-1,c,ti))ln(x-pad,y-pad,x+CELL+pad,y-pad);
-      if(!same(r+1,c,ti))ln(x-pad,y+CELL+pad,x+CELL+pad,y+CELL+pad);
-      if(!same(r,c-1,ti))ln(x-pad,y-pad,x-pad,y+CELL+pad);
-      if(!same(r,c+1,ti))ln(x+CELL+pad,y-pad,x+CELL+pad,y+CELL+pad);
-    }
-  });
-}
-
-// ── CAMERA ──
+// ── CAMERA — epic tilt ──
 let cameraAnimating=false;
+
 function triggerCamera(r,c){
   if(isIsoMode){
     cameraAnimating=true;
-    setTimeout(()=>{buildCornerCache();updateBuildings({r,c});cameraAnimating=false;},60);
+    setTimeout(()=>{ buildCornerCache(); updateBuildings({r,c}); },80);
+    setTimeout(()=>{ cameraAnimating=false; }, 1800);
     return;
   }
+
   cameraAnimating=true;
+  isIsoMode=true;
+
   const scene=document.getElementById('iso-scene');
   const grid=document.getElementById('grid');
   const bldSvg=document.getElementById('bld-svg');
+
+  // Hide buildings during tilt
+  bldSvg.style.transition='none';
   bldSvg.style.opacity='0';
-  scene.classList.add('is-iso');grid.classList.add('is-iso');
-  isIsoMode=true;
+
+  // Start tilt immediately
+  scene.classList.add('is-iso');
+  grid.classList.add('is-iso');
+
+  // After tilt completes (1.6s), rebuild corners + show buildings
   setTimeout(()=>{
     buildCornerCache();
-    for(let r2=0;r2<SIZE;r2++)for(let c2=0;c2<SIZE;c2++)renderCell(r2,c2);
-    updateOutlines();
-    updateBuildings(null);
-    bldSvg.style.transition='opacity .5s ease';bldSvg.style.opacity='1';
-  },1000);
-  setTimeout(()=>{updateBuildings({r,c});},1450);
-  setTimeout(()=>{cameraAnimating=false;},2500);
+    for(let r2=0;r2<SIZE;r2++) for(let c2=0;c2<SIZE;c2++) renderCell(r2,c2);
+    updateBuildings(null); // draw all existing without animation
+    bldSvg.style.transition='opacity .5s ease';
+    bldSvg.style.opacity='1';
+  }, 1650);
+
+  // New building rises after everything is visible
+  setTimeout(()=>{ updateBuildings({r,c}); }, 2300);
+  setTimeout(()=>{ cameraAnimating=false; }, 4000);
 }
 
 // ── BUILD DOM ──
 const gridEl=document.getElementById('grid');
 gridEl.style.gridTemplateColumns=`repeat(${SIZE},${CELL}px)`;
 gridEl.style.gridTemplateRows=`repeat(${SIZE},${CELL}px)`;
-for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+
+for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
   const el=document.createElement('div');
   el.className='cell'+(state[r][c]?' owned':'');
-  el.dataset.r=r;el.dataset.c=c;
+  el.dataset.r=r; el.dataset.c=c;
   el.style.cssText=`width:${CELL}px;height:${CELL}px;`;
   ['tile-top','tile-front','tile-right'].forEach(cn=>{
-    const d=document.createElement('div');d.className=cn;el.appendChild(d);
+    const d=document.createElement('div'); d.className=cn; el.appendChild(d);
   });
+
   el.addEventListener('mouseenter',()=>{
-    if(state[r][c]||!TEAMS[activeTeam])return;
+    if(state[r][c]||!TEAMS[activeTeam]) return;
     const t=TEAMS[activeTeam];
     el.querySelector('.tile-top').style.background=`rgba(${t.r},${t.g},${t.b},.12)`;
-    el.querySelector('.tile-top').style.borderColor=`rgba(${t.r},${t.g},${t.b},.65)`;
-    el.querySelector('.tile-top').style.boxShadow=`0 0 18px rgba(${t.r},${t.g},${t.b},.4)`;
+    el.querySelector('.tile-top').style.borderColor=`rgba(${t.r},${t.g},${t.b},.7)`;
+    el.querySelector('.tile-top').style.boxShadow=`0 0 20px rgba(${t.r},${t.g},${t.b},.45)`;
   });
-  el.addEventListener('mouseleave',()=>{
-    if(state[r][c])return;
-    renderCell(r,c);
-  });
+  el.addEventListener('mouseleave',()=>{ if(!state[r][c]) renderCell(r,c); });
   el.addEventListener('click',()=>{
-    if(state[r][c]||cameraAnimating||!TEAMS[activeTeam])return;
+    if(state[r][c]||cameraAnimating||!TEAMS[activeTeam]) return;
     state[r][c]={teamIdx:activeTeam,home:false};
     el.classList.add('owned');
     renderCell(r,c);
     [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
       const nr=r+dr,nc=c+dc;
-      if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderCell(nr,nc);
+      if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE) renderCell(nr,nc);
     });
-    updateOutlines();updateScores();
+    updateScores();
     triggerCamera(r,c);
   });
+
   gridEl.appendChild(el);
   renderCell(r,c);
 }
@@ -557,115 +431,16 @@ document.head.insertAdjacentHTML('beforeend',
   `<style>@keyframes homeGlow{0%,100%{box-shadow:var(--gb);}50%{box-shadow:var(--gp);}}</style>`);
 
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  buildCornerCache();updateOutlines();updateBuildings();
+  buildCornerCache(); updateBuildings();
 }));
-
-// ── AVATAR BUILDER ──
-let selColor=null,selShape=null;
-const takenColors=new Set(),takenShapes=new Set();
-[TEAMS[0],TEAMS[1],TEAMS[2],TEAMS[3]].filter(Boolean).forEach(t=>{
-  takenColors.add(t.color);takenShapes.add(t.shapeId);
-});
-
-function buildAvatarUI(){
-  const cg=document.getElementById('color-grid');cg.innerHTML='';
-  NEON_COLORS.forEach(nc=>{
-    const sw=document.createElement('div');
-    sw.className='color-swatch'+(takenColors.has(nc.hex)?' taken':'');
-    sw.style.cssText=`background:${nc.hex};box-shadow:0 0 8px ${nc.hex}55;`;
-    sw.title=nc.name;
-    if(!takenColors.has(nc.hex))sw.addEventListener('click',()=>selectColor(nc));
-    cg.appendChild(sw);
-  });
-  const sg=document.getElementById('shape-grid');sg.innerHTML='';
-  SHAPES.forEach(sh=>{
-    const btn=document.createElement('div');
-    btn.className='shape-btn'+(takenShapes.has(sh.id)?' taken':'');
-    btn.title=sh.name;
-    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${sh.path}"/></svg>`;
-    if(!takenShapes.has(sh.id))btn.addEventListener('click',()=>selectShape(sh));
-    sg.appendChild(btn);
-  });
-}
-
-function selectColor(nc){
-  selColor=nc;
-  document.querySelectorAll('.color-swatch').forEach((sw,i)=>{
-    const isSel=NEON_COLORS[i].hex===nc.hex;
-    sw.classList.toggle('selected',isSel);
-    if(!takenColors.has(NEON_COLORS[i].hex))
-      sw.style.boxShadow=isSel?`0 0 18px ${nc.hex},0 0 36px ${nc.hex}55`:`0 0 8px ${NEON_COLORS[i].hex}55`;
-  });
-  document.querySelectorAll('.shape-btn.selected').forEach(btn=>{
-    btn.querySelector('svg').setAttribute('stroke',nc.hex);
-    btn.style.setProperty('--sel-c',nc.hex);
-  });
-  updatePreview();
-}
-function selectShape(sh){
-  selShape=sh;
-  document.querySelectorAll('.shape-btn:not(.taken)').forEach((btn,i)=>{
-    const s=SHAPES.filter(s=>!takenShapes.has(s.id))[i];
-    if(!s)return;
-    btn.classList.toggle('selected',s.id===sh.id);
-    btn.querySelector('svg').setAttribute('stroke',s.id===sh.id?(selColor?.hex||'white'):'rgba(255,255,255,.45)');
-    if(s.id===sh.id)btn.style.setProperty('--sel-c',selColor?.hex||'white');
-  });
-  updatePreview();
-}
-function updatePreview(){
-  const icon=document.getElementById('preview-icon');
-  const psvg=document.getElementById('preview-svg');
-  const name=document.getElementById('preview-name');
-  const btn=document.getElementById('confirm-btn');
-  if(selColor){
-    icon.style.borderColor=selColor.hex;
-    icon.style.background=`${selColor.hex}18`;
-    icon.style.boxShadow=`0 0 16px ${selColor.hex}55`;
-  }
-  if(selShape)
-    psvg.innerHTML=`<path d="${selShape.path}" stroke="${selColor?.hex||'white'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
-  if(selColor&&selShape){
-    name.textContent=`${selColor.name} · ${selShape.name}`;name.style.color=selColor.hex;
-    btn.disabled=false;
-    btn.style.cssText=`background:${selColor.hex}22;border:2px solid ${selColor.hex}99;color:${selColor.hex};box-shadow:0 0 16px ${selColor.hex}44;padding:12px 28px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.04em;transition:all .15s;white-space:nowrap;`;
-  } else {
-    name.textContent='— wähle Farbe & Symbol';name.style.color='#3a4a68';
-    btn.disabled=true;
-    btn.style.cssText='background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);color:#2a3550;padding:12px 28px;border-radius:10px;cursor:not-allowed;font-family:inherit;font-size:15px;font-weight:800;';
-  }
-}
-document.getElementById('confirm-btn').addEventListener('click',()=>{
-  if(!selColor||!selShape)return;
-  const idx=4+registeredTeams.length;if(idx>=6)return;
-  takenColors.add(selColor.hex);takenShapes.add(selShape.id);
-  const team={color:selColor.hex,r:selColor.r,g:selColor.g,b:selColor.b,
-    name:`${selColor.name} ${selShape.name}`,shapeId:selShape.id,shapePath:selShape.path};
-  registeredTeams.push(team);TEAMS[idx]=team;
-  renderRegList();selColor=null;selShape=null;
-  buildAvatarUI();updatePreview();updateScores();
-});
-
-function renderRegList(){
-  const list=document.getElementById('reg-list');
-  if(!registeredTeams.length){
-    list.innerHTML='<span style="font-size:12px;color:#1e2840;">Noch keine Teams</span>';return;
-  }
-  list.innerHTML=registeredTeams.map((t,i)=>`
-    <div class="reg-chip">
-      <div class="reg-dot" style="background:${t.color};box-shadow:0 0 6px ${t.color}88;"></div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${SHAPES.find(s=>s.id===t.shapeId)?.path||''}"/></svg>
-      <span style="color:${t.color};font-weight:700;">${t.name}</span>
-    </div>`).join('');
-}
 
 // ── SCORES ──
 function updateScores(){
   const bar=document.getElementById('scorebar');
   bar.innerHTML=TEAMS.map((t,i)=>{
-    if(!t)return'';
+    if(!t) return '';
     const count=state.flat().filter(c=>c?.teamIdx===i).length;
-    if(!count&&i>=4&&!registeredTeams[i-4])return'';
+    if(!count) return '';
     const active=i===activeTeam;
     return`<div class="team-pill${active?' active':''}"
       style="--tc-bg:rgba(${t.r},${t.g},${t.b},.09);--tc-border:rgba(${t.r},${t.g},${t.b},.5);--tc-glow:rgba(${t.r},${t.g},${t.b},.25);"
@@ -677,8 +452,7 @@ function updateScores(){
   }).join('');
 }
 window.selectTeam=i=>{activeTeam=i;updateScores();};
-
-buildAvatarUI();updateScores();renderRegList();
+updateScores();
 </script>
 </body>
 </html>

@@ -388,6 +388,10 @@ export function qqActivateQuestion(
   onTimerExpire: () => void
 ): void {
   assertPhase(room, ['PHASE_INTRO', 'PLACEMENT', 'COMEBACK_CHOICE']);
+  // Prevent ghost-activation right after game start (button swap race condition)
+  if (room.phase === 'PHASE_INTRO' && room.questionIndex === 0 && Date.now() - room.lastActivityAt < 1500) {
+    return; // silently ignore — game just started
+  }
   // Accumulate previous question's answers into history before clearing
   if (room.currentQuestion && room.answers.length > 0) {
     room.questionHistory.push({

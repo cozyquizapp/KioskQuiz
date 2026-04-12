@@ -30,7 +30,7 @@ body {
 }
 .iso-scene.is-iso {
   perspective:900px;
-  perspective-origin:50% -40%;
+  perspective-origin:50% -20%;
 }
 
 .iso-grid {
@@ -42,7 +42,7 @@ body {
   will-change:transform;
 }
 .iso-grid.is-iso {
-  transform:rotateX(54deg) rotateZ(-45deg) scale(.82);
+  transform:rotateX(52deg) rotateZ(0deg) scale(.78);
 }
 
 /* ── CELL ── */
@@ -285,45 +285,66 @@ function drawBuildingSVG(parent, corners, H, team, isHQ){
 
 // ── UPDATE ALL BUILDINGS ──
 let isIsoMode=false;
-function updateBuildings(animateCell=null){
+
+// Draw a single building group into the SVG, optionally with rise animation
+// beginSec: SMIL begin offset in seconds (for staggered spawning)
+function spawnBuilding(svg, r, c, beginSec=0, isNew=false){
+  const cell=state[r][c]; if(!cell) return;
+  const corners=cornerCache[`${r},${c}`]; if(!corners) return;
+  const team=TEAMS[cell.teamIdx];
+  const H=getBH(r,c); if(H<4) return;
+
+  const g=document.createElementNS(NS,'g');
+
+  const dur = isNew ? '1.6s' : '1.0s';
+  const overshoot = isNew ? 16 : 8;
+
+  const anim=mkEl('animateTransform',{
+    attributeName:'transform', type:'translate',
+    values:`0,${H+overshoot}; 0,-8; 0,2; 0,0`,
+    keyTimes:'0;0.62;0.82;1',
+    dur, begin:`${beginSec.toFixed(2)}s`,
+    calcMode:'spline',
+    keySplines:'0.05 0.85 0.2 1;0.4 0 0.6 1;0.4 0 0.6 1',
+    fill:'freeze'
+  });
+  const animOp=mkEl('animate',{
+    attributeName:'opacity', values:'0;0;1;1',
+    keyTimes:'0;0.05;0.25;1',
+    dur, begin:`${beginSec.toFixed(2)}s`, fill:'freeze'
+  });
+  g.appendChild(anim); g.appendChild(animOp);
+
+  drawBuildingSVG(g, corners, H, team, cell.home);
+  svg.appendChild(g);
+}
+
+function updateBuildings(newCell=null){
   const svg=document.getElementById('bld-svg');
   const wr=document.getElementById('board-wrap').getBoundingClientRect();
   svg.setAttribute('width',wr.width); svg.setAttribute('height',wr.height);
   svg.innerHTML='';
   if(!isIsoMode) return;
 
+  // Collect all occupied cells except the new one
+  const existing=[];
   for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
-    const cell=state[r][c]; if(!cell) continue;
-    const corners=cornerCache[`${r},${c}`]; if(!corners) continue;
-    const team=TEAMS[cell.teamIdx];
-    const H=getBH(r,c); if(H<4) continue;
-    const isHQ=cell.home;
+    if(!state[r][c]) continue;
+    if(newCell && newCell.r===r && newCell.c===c) continue;
+    existing.push([r,c]);
+  }
 
-    const g=document.createElementNS(NS,'g');
+  // Stagger existing buildings back-to-front (row 0 = back)
+  // Each gets a small stagger so they rise one after another
+  const staggerStep=0.12; // seconds between each
+  existing.forEach(([r,c],i)=>{
+    spawnBuilding(svg, r, c, i*staggerStep, false);
+  });
 
-    const doAnim=animateCell&&animateCell.r===r&&animateCell.c===c;
-    if(doAnim){
-      // Rise from below — slow and epic
-      const anim=mkEl('animateTransform',{
-        attributeName:'transform', type:'translate',
-        values:`0,${H+20}; 0,-12; 0,2; 0,0`,
-        keyTimes:'0;0.65;0.85;1',
-        dur:'1.4s',
-        calcMode:'spline',
-        keySplines:'0.05 0.9 0.2 1; 0.4 0 0.6 1; 0.4 0 0.6 1',
-        fill:'freeze'
-      });
-      const animOp=mkEl('animate',{
-        attributeName:'opacity',
-        values:'0;0;1;1',
-        keyTimes:'0;0.08;0.28;1',
-        dur:'1.4s', fill:'freeze'
-      });
-      g.appendChild(anim); g.appendChild(animOp);
-    }
-
-    drawBuildingSVG(g, corners, H, team, isHQ);
-    svg.appendChild(g);
+  // New cell spawns last — after all existing are done
+  if(newCell){
+    const newBegin = existing.length * staggerStep + 0.3;
+    spawnBuilding(svg, newCell.r, newCell.c, newBegin, true);
   }
 }
 
@@ -372,11 +393,11 @@ function updateToggleBtn(){
 
 function goTo3D(animateCell=null){
   if(isIsoMode){
-    if(animateCell){
-      cameraAnimating=true;
-      setTimeout(()=>{ buildCornerCache(); updateBuildings(animateCell); },80);
-      setTimeout(()=>{ cameraAnimating=false; },1800);
-    }
+    cameraAnimating=true;
+    setTimeout(()=>{ buildCornerCache(); updateBuildings(animateCell); },80);
+    // New building: stagger of existing + 1.6s rise
+    const existingCount=state.flat().filter(Boolean).length;
+    setTimeout(()=>{ cameraAnimating=false; }, 80 + existingCount*120 + 2000);
     return;
   }
   cameraAnimating=true;
@@ -395,17 +416,15 @@ function goTo3D(animateCell=null){
   setTimeout(()=>{
     buildCornerCache();
     for(let r2=0;r2<SIZE;r2++) for(let c2=0;c2<SIZE;c2++) renderCell(r2,c2);
-    updateBuildings(null);
-    bldSvg.style.transition='opacity .5s ease';
+    bldSvg.style.transition='opacity .3s ease';
     bldSvg.style.opacity='1';
+    // SMIL begin handles all staggering internally
+    updateBuildings(animateCell||null);
   }, 1650);
 
-  if(animateCell){
-    setTimeout(()=>{ updateBuildings(animateCell); }, 2300);
-    setTimeout(()=>{ cameraAnimating=false; }, 4000);
-  } else {
-    setTimeout(()=>{ cameraAnimating=false; }, 2000);
-  }
+  // Unlock after tilt + max stagger time
+  const maxExisting=SIZE*SIZE;
+  setTimeout(()=>{ cameraAnimating=false; }, 1650 + maxExisting*120 + 2200);
 }
 
 function goTo2D(){

@@ -241,7 +241,6 @@ let registeredTeams=[]; // {teamIdx, color, shapeId, name}
 let activeTeam=0;
 
 const HEIGHTS={0:[56,70,46], 1:[18,24,14], 2:[34,42,26], 3:[48,58,38], 4:[80,96,64], 5:[14,18,10]};
-const GHOST_H=[18,28,12,22,16,32,10,24];
 
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 
@@ -399,87 +398,46 @@ function mkEl(tag, attrs){
   return el;
 }
 
-function drawBuildingSVG(svg, corners, H, team, ghost){
-  const cr=team?team.r:40, cg2=team?team.g:50, cb=team?team.b:80;
-  const col = ghost
-    ? 'rgba(255,255,255,.12)'
-    : team.color;
-  const glowCol = ghost ? 'rgba(255,255,255,.04)' : `rgba(${cr},${cg2},${cb},0.35)`;
-  const alpha = ghost ? 1 : 1;
+function drawBuildingSVG(svg, corners, H, team, ghost, isHero=false){
+  const col = ghost ? 'rgba(255,255,255,.10)' : team.color;
 
-  const [C0,C1,C2,C3]=corners; // top, right, bottom, left of rhombus
+  const [C0,C1,C2,C3]=corners; // TL, TR, BR, BL of rhombus (screen space)
   const up=(p,h=H)=>({x:p.x,y:p.y-h});
   const T0=up(C0), T1=up(C1), T2=up(C2), T3=up(C3);
 
-  // The 12 edges of an isometric box:
-  // Top face: 4 edges (T0-T1, T1-T2, T2-T3, T3-T0)
-  // Bottom face: 4 edges (C0-C1, C1-C2, C2-C3, C3-C0) — only visible ones
-  // Vertical edges: 4 (C0-T0, C1-T1, C2-T2, C3-T3) — only visible ones
-  //
-  // In our iso view (rotateX52, rotateZ-45):
-  //   Visible bottom edges: C3-C0 (left), C3-C2 (bottom)  — back edges hidden
-  //   Visible vertical edges: all 4 (corners of the box)
-  //   Top face: all 4 edges visible
-
+  // Visible edges in our iso view (rotateX52, rotateZ-45):
+  // Top face: all 4 edges
+  // Vertical: all 4 corners
+  // Base: only front-left (C3→C0) and front-bottom (C3→C2) — back edges hidden
   const edges=[
-    // Top face (all visible)
-    [T0,T1],[T1,T2],[T2,T3],[T3,T0],
-    // Visible vertical edges (all 4 corners)
-    [C0,T0],[C1,T1],[C2,T2],[C3,T3],
-    // Visible bottom edges (left wall base + front wall base)
-    [C3,C0],[C3,C2],
+    [T0,T1],[T1,T2],[T2,T3],[T3,T0], // top face
+    [C0,T0],[C1,T1],[C2,T2],[C3,T3], // vertical edges
+    [C3,C0],[C3,C2],                  // visible base edges
   ];
 
-  // Draw glow layer first (thick, blurred via stroke-width), then sharp on top
   edges.forEach(([a,b])=>{
-    // glow
+    // glow layer
     svg.appendChild(mkEl('line',{
       x1:a.x.toFixed(1),y1:a.y.toFixed(1),
       x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:ghost?'rgba(255,255,255,.06)':col,
-      'stroke-width': ghost?'1':'3',
-      'stroke-linecap':'round',
-      opacity: ghost?'1':'.3',
+      stroke:col, 'stroke-width':'3.5', 'stroke-linecap':'round', opacity:'.22',
     }));
-    // sharp
+    // sharp layer
     svg.appendChild(mkEl('line',{
       x1:a.x.toFixed(1),y1:a.y.toFixed(1),
       x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:col,
-      'stroke-width': ghost?'.8':'1.2',
-      'stroke-linecap':'round',
-      opacity: ghost?'.7':'1',
+      stroke:col, 'stroke-width':'1.4', 'stroke-linecap':'round', opacity:'1',
     }));
   });
 
-  // Avatar symbol on roof (only for non-ghost teams with a shape)
-  if(!ghost && team.shapePath && H > 12){
+  // Symbol only on hero cell (highest/home building of each connected block)
+  if(isHero && team.shapePath && H > 10){
     const cx=((T0.x+T1.x+T2.x+T3.x)/4).toFixed(1);
     const cy=((T0.y+T1.y+T2.y+T3.y)/4).toFixed(1);
-    const s=Math.min(H*.4, 14); // scale symbol to building height, max 14px
+    const s=Math.min(H*.45, 16);
     const g=mkEl('g',{transform:`translate(${cx},${cy}) scale(${(s/12).toFixed(2)})`});
-    const path=mkEl('path',{
-      d:team.shapePath,
-      stroke:team.color,
-      'stroke-width':'1.5',
-      'stroke-linecap':'round',
-      'stroke-linejoin':'round',
-      fill:'none',
-      transform:'translate(-12,-12)', // center the 24x24 path
-      opacity:'.85',
-    });
-    const pathGlow=mkEl('path',{
-      d:team.shapePath,
-      stroke:team.color,
-      'stroke-width':'4',
-      'stroke-linecap':'round',
-      'stroke-linejoin':'round',
-      fill:'none',
-      transform:'translate(-12,-12)',
-      opacity:'.2',
-    });
-    g.appendChild(pathGlow);
-    g.appendChild(path);
+    g.appendChild(mkEl('path',{d:team.shapePath,stroke:team.color,'stroke-width':'4','stroke-linecap':'round','stroke-linejoin':'round',fill:'none',transform:'translate(-12,-12)',opacity:'.22'}));
+    g.appendChild(mkEl('path',{d:team.shapePath,stroke:team.color,'stroke-width':'1.5','stroke-linecap':'round','stroke-linejoin':'round',fill:'none',transform:'translate(-12,-12)',opacity:'.9'}));
     svg.appendChild(g);
   }
 }
@@ -507,6 +465,46 @@ function buildCornerCache(){
   }
 }
 
+// ── CONNECTED BLOCKS (flood-fill per team) ──
+function getBlocks(teamIdx){
+  const visited=Array.from({length:SIZE},()=>Array(SIZE).fill(false));
+  const blocks=[];
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    if(state[r][c]?.teamIdx===teamIdx && !visited[r][c]){
+      const block=[];
+      const q=[[r,c]];
+      visited[r][c]=true;
+      while(q.length){
+        const [cr,cc]=q.shift();
+        block.push([cr,cc]);
+        [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+          const nr=cr+dr,nc=cc+dc;
+          if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&!visited[nr][nc]&&state[nr][nc]?.teamIdx===teamIdx){
+            visited[nr][nc]=true; q.push([nr,nc]);
+          }
+        });
+      }
+      blocks.push(block);
+    }
+  }
+  return blocks;
+}
+
+// Find the "hero" cell of a block: highest building (home preferred, else edge preferred)
+function blockHeroCell(block){
+  let best=null,bestScore=-1;
+  block.forEach(([r,c])=>{
+    const cell=state[r][c];
+    if(!cell) return;
+    const isHome=cell.home;
+    const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
+    const isEdgeCell=eTop||eBot||eL||eR;
+    const score=(isHome?1000:0)+(isEdgeCell?10:0)+HEIGHTS[cell.teamIdx%6][cell.hi%3];
+    if(score>bestScore){bestScore=score;best=[r,c];}
+  });
+  return best;
+}
+
 // ── UPDATE SVG ──
 let isIsoMode=false;
 function updateBuildingSVG(animateCell=null){
@@ -518,56 +516,58 @@ function updateBuildingSVG(animateCell=null){
   svg.innerHTML='';
   if(!isIsoMode) return;
 
-  for(let ghost=1;ghost>=0;ghost--){
-    for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
-      const cell=state[r][c];
-      const isGhost=!cell;
-      if(isGhost!==!!ghost) continue;
-      const corners=cellCornerCache[`${r},${c}`];
-      if(!corners) continue;
+  // Collect hero cells per team (for roof symbols)
+  const heroCells=new Set();
+  TEAMS.forEach((_,ti)=>{
+    getBlocks(ti).forEach(block=>{
+      const h=blockHeroCell(block);
+      if(h) heroCells.add(`${h[0]},${h[1]}`);
+    });
+  });
 
-      let H,team;
-      if(isGhost){
-        H=GHOST_H[(r*SIZE+c)%GHOST_H.length];
-        team=null;
-      } else {
-        team=TEAMS[cell.teamIdx];
-        const bh=HEIGHTS[cell.teamIdx%6][cell.hi%3];
-        const isHome=cell.home;
-        const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
-        const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
-        H=isHome?Math.round(bh*1.6):interior?Math.round(bh*.45):bh;
-      }
-      // Perspective scale: back rows taller
-      const perspScale=isGhost?1:(1.65-(r/(SIZE-1))*1.0);
-      H=Math.round(H*perspScale);
+  // Draw only owned cells — no ghost buildings
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    const cell=state[r][c];
+    if(!cell) continue;
+    const corners=cellCornerCache[`${r},${c}`];
+    if(!corners) continue;
 
-      const doAnim=!isGhost&&animateCell&&animateCell.r===r&&animateCell.c===c;
-      const g=document.createElementNS(NS,'g');
+    const team=TEAMS[cell.teamIdx];
+    const bh=HEIGHTS[cell.teamIdx%6][cell.hi%3];
+    const isHome=cell.home;
+    const eTop=isEdge(r,c,-1,0),eBot=isEdge(r,c,1,0),eL=isEdge(r,c,0,-1),eR=isEdge(r,c,0,1);
+    const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
+    let H=isHome?Math.round(bh*1.6):interior?Math.round(bh*.55):bh;
+    // Perspective scale: back rows appear taller
+    const perspScale=1.65-(r/(SIZE-1))*1.0;
+    H=Math.round(H*perspScale);
 
-      if(doAnim){
-        const anim=document.createElementNS(NS,'animateTransform');
-        anim.setAttribute('attributeName','transform');
-        anim.setAttribute('type','translate');
-        anim.setAttribute('values',`0,${H}; 0,-5; 0,0`);
-        anim.setAttribute('keyTimes','0; 0.72; 1');
-        anim.setAttribute('dur','1.1s');
-        anim.setAttribute('calcMode','spline');
-        anim.setAttribute('keySplines','0.12 0.8 0.3 1; 0.4 0 0.6 1');
-        anim.setAttribute('fill','freeze');
-        g.appendChild(anim);
-        const animOp=document.createElementNS(NS,'animate');
-        animOp.setAttribute('attributeName','opacity');
-        animOp.setAttribute('values','0;1;1');
-        animOp.setAttribute('keyTimes','0;0.25;1');
-        animOp.setAttribute('dur','1.1s');
-        animOp.setAttribute('fill','freeze');
-        g.appendChild(animOp);
-      }
+    const isHero=heroCells.has(`${r},${c}`);
+    const doAnim=animateCell&&animateCell.r===r&&animateCell.c===c;
+    const g=document.createElementNS(NS,'g');
 
-      drawBuildingSVG(g,corners,H,team,isGhost);
-      svg.appendChild(g);
+    if(doAnim){
+      const anim=document.createElementNS(NS,'animateTransform');
+      anim.setAttribute('attributeName','transform');
+      anim.setAttribute('type','translate');
+      anim.setAttribute('values',`0,${H}; 0,-5; 0,0`);
+      anim.setAttribute('keyTimes','0; 0.72; 1');
+      anim.setAttribute('dur','1.1s');
+      anim.setAttribute('calcMode','spline');
+      anim.setAttribute('keySplines','0.12 0.8 0.3 1; 0.4 0 0.6 1');
+      anim.setAttribute('fill','freeze');
+      g.appendChild(anim);
+      const animOp=document.createElementNS(NS,'animate');
+      animOp.setAttribute('attributeName','opacity');
+      animOp.setAttribute('values','0;1;1');
+      animOp.setAttribute('keyTimes','0;0.25;1');
+      animOp.setAttribute('dur','1.1s');
+      animOp.setAttribute('fill','freeze');
+      g.appendChild(animOp);
     }
+
+    drawBuildingSVG(g,corners,H,team,false,isHero);
+    svg.appendChild(g);
   }
 }
 
@@ -596,21 +596,21 @@ function renderCell(r,c){
   const interior=!eTop&&!eBot&&!eL&&!eR&&!isHome;
   function rc2(a){return`rgba(${team.r},${team.g},${team.b},${a})`;}
 
-  const bg=interior?rc2(.1):isHome?rc2(.22):rc2(.16);
-  const border=interior?`1px solid ${rc2(.15)}`:isHome?`2px solid ${rc2(.65)}`:  `1px solid ${rc2(.4)}`;
-  const gsBase=isHome?`0 0 16px ${rc2(.6)},0 0 32px ${rc2(.25)}`:interior?`inset 0 0 8px rgba(0,0,0,.4)`:`0 0 10px ${rc2(.45)}`;
-  const gsPeak=`0 0 22px ${rc2(.8)},0 0 44px ${rc2(.3)}`;
+  const bg=interior?rc2(.13):isHome?rc2(.28):rc2(.20);
+  const border=interior?`1px solid ${rc2(.25)}`:isHome?`2px solid ${rc2(.75)}`:`1.5px solid ${rc2(.55)}`;
+  const gsBase=isHome?`0 0 18px ${rc2(.65)},0 0 36px ${rc2(.28)}`:interior?`inset 0 0 10px rgba(0,0,0,.5)`:`0 0 12px ${rc2(.5)}`;
+  const gsPeak=`0 0 24px ${rc2(.85)},0 0 48px ${rc2(.35)}`;
 
   tTop.style.cssText=`position:absolute;inset:0;z-index:2;border-radius:2px;
     background:${bg};border:${border};
     --gs-base:${gsBase};--gs-peak:${gsPeak};
     box-shadow:${gsBase};transform:translateZ(1px);transition:box-shadow .3s ease;
     ${(n>=3||isHome)?`animation:dominantPulse ${isHome?2.2:3}s ease-in-out infinite;`:''}`;
-  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:8px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rc2(.06)};border-left:1px solid ${rc2(.12)};border-bottom:1px solid ${rc2(.08)};`;
-  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:8px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rc2(.04)};border-top:1px solid ${rc2(.08)};border-right:1px solid ${rc2(.06)};`;
+  tFront.style.cssText=`position:absolute;top:100%;left:0;right:0;height:8px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${rc2(.1)};border-left:1px solid ${rc2(.18)};border-bottom:1px solid ${rc2(.12)};`;
+  tRight.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:8px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${rc2(.07)};border-top:1px solid ${rc2(.12)};border-right:1px solid ${rc2(.09)};`;
 }
 
-// ── TERRITORY OUTLINES ──
+// ── TERRITORY OUTLINES + 2D SYMBOLS ──
 function updateTerritoryOutlines(){
   document.querySelectorAll('.territory-svg').forEach(s=>s.remove());
   const totalW=(CELL+GAP)*SIZE-GAP;
@@ -618,10 +618,13 @@ function updateTerritoryOutlines(){
   svg.className='territory-svg';
   svg.setAttribute('width',totalW);svg.setAttribute('height',totalW);
   svg.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:50;overflow:visible;';
+
   TEAMS.forEach((team,ti)=>{
     const cells=[];
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(state[r][c]?.teamIdx===ti) cells.push([r,c]);
     if(!cells.length) return;
+
+    // Territory border outlines
     const segs=[],pad=3;
     cells.forEach(([r,c])=>{
       const x=c*(CELL+GAP),y=r*(CELL+GAP);
@@ -631,10 +634,31 @@ function updateTerritoryOutlines(){
       if(!same(r,c+1,ti)) segs.push([x+CELL+pad,y-pad,x+CELL+pad,y+CELL+pad]);
     });
     segs.forEach(([x1,y1,x2,y2])=>{
-      svg.appendChild(mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'6','stroke-opacity':String(.25),'stroke-linecap':'round'}));
-      svg.appendChild(mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'1.8','stroke-opacity':String(.9),'stroke-linecap':'round'}));
+      svg.appendChild(mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'5','stroke-opacity':'.2','stroke-linecap':'round'}));
+      svg.appendChild(mkEl('line',{x1,y1,x2,y2,stroke:team.color,'stroke-width':'1.8','stroke-opacity':'.9','stroke-linecap':'round'}));
     });
+
+    // 2D symbols: one per connected block, centered, scaled by block size
+    // Hide in iso mode (symbols shown on rooftops instead)
+    if(team.shapePath && !isIsoMode){
+      getBlocks(ti).forEach(block=>{
+        const n=block.length;
+        // Center of block in pixel space
+        const cx=block.reduce((s,[,c])=>s+c*(CELL+GAP)+CELL/2,0)/n;
+        const cy=block.reduce((s,[r])=>s+r*(CELL+GAP)+CELL/2,0)/n;
+        // Scale: 1 cell = 18px, grows with block size (max 36px)
+        const sz=Math.min(18+n*4, 36);
+        const sc=(sz/24).toFixed(2);
+        const g=mkEl('g',{transform:`translate(${cx.toFixed(1)},${cy.toFixed(1)}) scale(${sc})`});
+        // glow
+        g.appendChild(mkEl('path',{d:team.shapePath,stroke:team.color,'stroke-width':'6','stroke-linecap':'round','stroke-linejoin':'round',fill:'none',transform:'translate(-12,-12)',opacity:'.2'}));
+        // sharp
+        g.appendChild(mkEl('path',{d:team.shapePath,stroke:team.color,'stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round',fill:'none',transform:'translate(-12,-12)',opacity:'.95'}));
+        svg.appendChild(g);
+      });
+    }
   });
+
   document.querySelector('.iso-grid').appendChild(svg);
 }
 
@@ -652,6 +676,7 @@ function triggerCameraSequence(r,c){
   isIsoMode=true;
   setTimeout(()=>{
     buildCornerCache();
+    updateTerritoryOutlines(); // remove 2D symbols after camera tilts
     updateBuildingSVG(null);
     bldSvg.style.transition='opacity 0.4s ease';
     bldSvg.style.opacity='1';

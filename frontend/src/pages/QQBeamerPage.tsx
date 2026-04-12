@@ -1517,71 +1517,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         animation: 'contentReveal 0.35s ease both',
         visibility: cheeseFullscreen ? 'hidden' : undefined,
       }}>
-        {/* ── Left: question ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: revealed ? '48px 80px' : '32px 56px', justifyContent: 'center', alignItems: revealed ? 'center' : undefined, position: 'relative', zIndex: 5, overflowY: 'auto' }}>
+        {/* ── Main content — full width, centered ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
-          {/* Category badge — hidden on reveal to save space */}
-          <div style={{ display: revealed ? 'none' : 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '8px 22px', borderRadius: 999,
-              background: badgeBg,
-              boxShadow: `0 0 28px ${glow}, 0 4px 10px rgba(0,0,0,0.4)`,
-              fontSize: 13, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff',
-            }}>
-              <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
-              <span key={lang} style={{ animation: 'langFadeIn 0.4s ease both' }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
-            </div>
-            {s.language === 'both' && (
-              <span key={`lang-pill-${lang}`} style={{
-                padding: '4px 12px', borderRadius: 999,
-                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-                fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.5)',
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                animation: 'langFadeIn 0.4s ease both',
-              }}>
-                {lang === 'en' ? '🇬🇧 EN' : '🇩🇪 DE'}
-              </span>
-            )}
-          </div>
-
-          {/* Counter + timer row — hidden on reveal */}
-          <div style={{ display: revealed ? 'none' : 'flex', alignItems: 'center', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
-            <div style={{
-              fontFamily: "'Caveat', cursive", fontSize: 18, color: 'rgba(255,255,255,0.3)',
-            }}>
-              {bt.question.counter[lang].replace('{p}', String(s.gamePhaseIndex)).replace('{t}', String(s.totalPhases)).replace('{q}', String((s.questionIndex % 5) + 1))}
-            </div>
-            {s.timerEndsAt && !revealed && (
+          {/* Timer — large, centered (active only) */}
+          {!revealed && s.timerEndsAt && (
+            <div style={{ marginBottom: 24 }}>
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-            )}
-            {/* All answered banner — shown when every team submitted but moderator hasn't revealed yet */}
-            {!revealed && s.allAnswered && (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
-                borderRadius: 12, padding: '10px 20px', marginBottom: 8,
-                animation: 'contentReveal 0.4s ease both',
-              }}>
-                <span style={{ fontSize: 20 }}>✅</span>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#86EFAC', letterSpacing: '0.04em' }}>
-                  Alle Teams haben geantwortet
-                </span>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Question card — centered and wide on reveal */}
+          {/* Question card — centered, full width */}
           <div style={{
             background: cardBg,
             border: `1px solid rgba(255,255,255,0.08)`,
-            borderRadius: 22,
+            borderRadius: 24,
             boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            padding: revealed ? '36px 52px' : '36px 48px',
-            marginBottom: 24,
-            width: revealed ? '100%' : undefined,
-            maxWidth: revealed ? 1200 : undefined,
-            textAlign: revealed ? 'center' : undefined,
+            padding: '40px 56px',
+            marginBottom: 28,
+            width: '100%', maxWidth: 1400,
+            textAlign: 'center',
           }}>
             <div key={lang} style={{
               fontSize: qFontSize, fontWeight: 900, lineHeight: 1.22,
@@ -1596,11 +1551,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : '1fr 1fr 1fr',
-              gap: revealed ? 16 : 16, marginBottom: 16,
-              width: revealed ? '100%' : undefined,
-              maxWidth: revealed ? 1200 : undefined,
-              animation: 'contentReveal 0.35s ease 0.15s both',
+              gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 18, marginBottom: 16,
+              width: '100%', maxWidth: 1400,
+              animation: 'contentReveal 0.35s ease 0.1s both',
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
@@ -1613,12 +1567,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 return (
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
-                    borderRadius: 18, padding: revealed ? '20px 24px' : '20px 24px',
+                    borderRadius: 20, padding: '24px 28px',
                     background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                    border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}44`,
+                    border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}55`,
                     boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    minHeight: optImg?.url ? 90 : 76,
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    minHeight: optImg?.url ? 100 : 84,
                     transition: 'all 0.3s ease',
                     animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                   }}>
@@ -1634,15 +1588,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     )}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      width: 52, height: 52, borderRadius: 14,
+                      width: 56, height: 56, borderRadius: 16,
                       background: isCorrect ? '#22C55E' : optColor,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 26, fontWeight: 900, color: '#fff', flexShrink: 0,
+                      fontSize: 28, fontWeight: 900, color: '#fff', flexShrink: 0,
                       boxShadow: `0 2px 8px ${(isCorrect ? '#22C55E' : optColor)}66`,
                     }}>{isCorrect ? '✓' : label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800,
+                      fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
                       color: '#F1F5F9', lineHeight: 1.3,
                       textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                     }}>{optText}</div>
@@ -1655,13 +1609,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
-              padding: '24px 40px', borderRadius: 22,
+              padding: '28px 48px', borderRadius: 24,
               background: 'rgba(34,197,94,0.10)',
               border: '2px solid rgba(34,197,94,0.40)',
               boxShadow: '0 0 40px rgba(34,197,94,0.16)',
-              fontSize: 'clamp(30px, 4vw, 60px)', fontWeight: 900,
-              color: '#4ade80', marginBottom: 20,
-              width: '100%', maxWidth: 1200, textAlign: 'center',
+              fontSize: 'clamp(34px, 5vw, 68px)', fontWeight: 900,
+              color: '#4ade80', marginBottom: 24,
+              width: '100%', maxWidth: 1400, textAlign: 'center',
               animation: 'contentReveal 0.4s ease both',
             }}>
               ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
@@ -1685,7 +1639,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
                 padding: '28px 44px', borderRadius: 28, marginBottom: 12,
-                width: '100%', maxWidth: 1200,
+                width: '100%', maxWidth: 1400,
                 background: `linear-gradient(135deg, ${team.color}22, ${team.color}0a)`,
                 border: `2px solid ${team.color}66`,
                 boxShadow: `0 0 40px ${team.color}22, 0 8px 24px rgba(0,0,0,0.4)`,
@@ -1711,23 +1665,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Bottom: team answer status (active questions only) */}
           {!revealed && s.teams.length > 0 && (
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-              marginTop: 'auto', paddingTop: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+              marginTop: 'auto', paddingTop: 20,
             }}>
               {s.teams.map(t => {
                 const answered = s.answers.some(a => a.teamId === t.id);
                 return (
                   <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '6px 14px', borderRadius: 999,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 18px', borderRadius: 999,
                     background: answered ? `${t.color}22` : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${answered ? t.color + '55' : 'rgba(255,255,255,0.08)'}`,
+                    border: `2px solid ${answered ? t.color + '55' : 'rgba(255,255,255,0.08)'}`,
                     transition: 'all 0.4s ease',
-                    opacity: answered ? 1 : 0.5,
+                    opacity: answered ? 1 : 0.45,
                   }}>
-                    <span style={{ fontSize: 22, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                    <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
                     <span style={{
-                      fontSize: 14, fontWeight: 800, color: answered ? t.color : '#64748b',
+                      fontSize: 18, fontWeight: 900, color: answered ? t.color : '#475569',
                     }}>
                       {answered ? '✓' : '…'}
                     </span>
@@ -1736,9 +1690,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               })}
               {s.allAnswered && (
                 <div style={{
-                  padding: '6px 16px', borderRadius: 999,
-                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
-                  fontSize: 14, fontWeight: 800, color: '#86EFAC',
+                  padding: '8px 20px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.35)',
+                  fontSize: 18, fontWeight: 800, color: '#86EFAC',
                   animation: 'contentReveal 0.4s ease both',
                 }}>
                   Alle Teams haben geantwortet
@@ -1799,19 +1753,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         )}
 
-        {/* ── Right side panel — only for reveal (team answer breakdown) ── */}
-        {revealed && (
-          <div style={{
-            width: 480, flexShrink: 0,
-            padding: '16px 20px 16px 12px',
-            display: 'flex', flexDirection: 'column', gap: 10,
-            justifyContent: 'flex-start',
-            position: 'relative', zIndex: 5, overflowY: 'auto',
-          }}>
-            <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />
-            <ScoreBar teams={s.teams} />
-          </div>
-        )}
+        {/* No right panel — everything centered in main area */}
       </div>
     </div>
   );
@@ -2045,20 +1987,20 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
   const secs = Math.ceil(remaining);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
       <div style={{
-        fontWeight: 900, fontSize: 32, minWidth: 52, textAlign: 'center',
-        color, textShadow: urgent ? '0 0 20px rgba(239,68,68,0.6)' : `0 0 12px ${color}44`,
+        fontWeight: 900, fontSize: 'clamp(40px, 5vw, 64px)', minWidth: 70, textAlign: 'center',
+        color, textShadow: urgent ? '0 0 24px rgba(239,68,68,0.6)' : `0 0 16px ${color}44`,
         fontVariantNumeric: 'tabular-nums',
         animation: critical && secs > 0 ? 'timerUrgent 0.5s ease-in-out infinite' : undefined,
       }}>
         {secs}
       </div>
-      <div style={{ width: 140, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+      <div style={{ width: 200, height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
         <div style={{
-          height: '100%', borderRadius: 5, background: color,
+          height: '100%', borderRadius: 6, background: color,
           width: `${pct}%`, transition: 'width 0.1s linear',
-          boxShadow: `0 0 8px ${color}88`,
+          boxShadow: `0 0 12px ${color}88`,
         }} />
       </div>
     </div>

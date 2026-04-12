@@ -22,6 +22,12 @@ export const QQ_BEAMER_CSS = `
   @keyframes floatNum { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
   @keyframes phasePop { from{opacity:0;transform:scale(0.6) translateY(40px)} to{opacity:1;transform:scale(1) translateY(0)} }
   @keyframes phaseLineGrow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+  @keyframes introRoundReveal {
+    0%   { opacity:0; transform:scale(0.6) translateY(40px); }
+    20%  { opacity:1; transform:scale(1) translateY(0); }
+    65%  { opacity:1; transform:scale(1) translateY(0); }
+    100% { opacity:0.7; transform:scale(0.5) translateY(-60px); }
+  }
   @keyframes nbSlide { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }

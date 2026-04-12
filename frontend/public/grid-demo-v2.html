@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarter Quiz — City Grid v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background:#0a0d14;
+  min-height:100vh; color:#f1f5f9;
+  font-family:'Space Grotesk',sans-serif;
+  display:flex; align-items:center; justify-content:center;
+  padding:32px; overflow:hidden;
+}
+
+.board-wrap {
+  position:relative;
+}
+
+/* Flat grid — no CSS 3D rotation, depth comes from SVG drawings */
+.city-grid {
+  display:grid;
+  gap:2px;
+  position:relative;
+}
+
+.tile {
+  position:relative;
+  cursor:pointer;
+  overflow:visible;
+}
+.tile.owned { cursor:default; }
+
+/* Base plate of each tile */
+.tile-base {
+  position:absolute; inset:0;
+  border-radius:2px;
+  transition:background .25s, border-color .25s;
+}
+
+/* SVG building sits on top, anchored to bottom of tile */
+.tile-svg {
+  position:absolute;
+  bottom:0; left:0; right:0;
+  pointer-events:none;
+  overflow:visible;
+}
+
+/* Claim animation: building grows up from ground */
+@keyframes buildRise {
+  0%   { transform:scaleY(0); opacity:0; }
+  60%  { transform:scaleY(1.08); opacity:1; }
+  80%  { transform:scaleY(.97); }
+  100% { transform:scaleY(1); }
+}
+.tile-svg.rising {
+  transform-origin:bottom center;
+  animation:buildRise .55s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+/* Team ownership glow on base */
+@keyframes homeGlow {
+  0%,100% { box-shadow:var(--g-base); }
+  50%      { box-shadow:var(--g-peak); }
+}
+
+/* Score bar */
+.score-bar {
+  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+  margin-top:16px;
+}
+.team-pill {
+  display:flex; align-items:center; gap:7px; padding:6px 14px; border-radius:8px;
+  background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06);
+  cursor:pointer; transition:all .2s ease; user-select:none; font-size:12px;
+}
+.team-pill.active { background:var(--tc-bg); border-color:var(--tc-border); box-shadow:0 0 16px var(--tc-glow); }
+.tp-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.tp-name { font-weight:700; }
+.tp-count { color:#253040; font-weight:600; margin-left:2px; }
+
+/* Territory outline SVG layer */
+.outline-svg {
+  position:absolute; inset:0; pointer-events:none; overflow:visible; z-index:50;
+}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+  <div style="font-size:11px;color:#2a3550;letter-spacing:.08em;margin-bottom:14px;">QUARTER QUIZ — CITY GRID v2 · Iso-Piktogramme</div>
+  <div class="board-wrap" id="board-wrap">
+    <div class="city-grid" id="grid"></div>
+    <svg class="outline-svg" id="outline-svg"></svg>
+  </div>
+  <div class="score-bar" id="scorebar"></div>
+  <div style="font-size:11px;color:#1a2236;margin-top:12px;letter-spacing:.05em;">Team wählen → leeres Feld klicken</div>
+</div>
+
+<script>
+const SIZE=7, CELL=80, GAP=2;
+const NS='http://www.w3.org/2000/svg';
+
+// ── TEAMS ──
+const TEAMS=[
+  {color:'#00aaff',r:0,  g:170,b:255,name:'Die Clique'},
+  {color:'#ff0080',r:255,g:0,  b:128,name:'Rote Karte'},
+  {color:'#00ff88',r:0,  g:255,b:136,name:'Grüne Hölle'},
+  {color:'#ffee00',r:255,g:238,b:0,  name:'Oranje'},
+];
+let activeTeam=0;
+
+// ── STATE ──
+const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+function seed(r,c,t,home=false){ state[r][c]={teamIdx:t,home,new:false}; }
+// Spread teams around corners
+seed(0,0,0,true);seed(0,1,0);seed(1,0,0);seed(1,1,0);seed(2,0,0);seed(0,2,0);
+seed(0,6,1,true);seed(0,5,1);seed(1,6,1);seed(1,5,1);seed(0,4,1);
+seed(6,0,2,true);seed(5,0,2);seed(6,1,2);seed(5,1,2);seed(6,2,2);
+seed(6,6,3,true);seed(5,6,3);seed(6,5,3);seed(5,5,3);
+
+// ── HELPERS ──
+function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`;}
+function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti;}
+function adjCount(r,c){
+  const ti=state[r][c]?.teamIdx; if(ti==null) return 0;
+  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length;
+}
+function isEdgeCell(r,c){
+  const ti=state[r][c]?.teamIdx; if(ti==null) return false;
+  return[[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>!same(r+dr,c+dc,ti));
+}
+
+// ── BUILDING TYPE ──
+// Determines which SVG to draw based on ownership + connectivity
+function getBuildingType(r,c){
+  const cell=state[r][c];
+  if(!cell) return 'empty';
+  if(cell.home) return 'tower';       // Hochhaus / HQ
+  const adj=adjCount(r,c);
+  if(adj>=3) return 'block';          // Büroblock (stark verbunden)
+  if(adj>=1) return 'house';          // Wohnhaus / Reihenhaus
+  return 'cottage';                   // Einzeln stehendes Haus
+}
+
+// ── ISO SVG BUILDINGS ──
+// All buildings drawn in isometric projection:
+// - Camera angle: ~30° elevation, looking slightly from front-left
+// - Each building fits in CELL×CELL footprint
+// - Buildings extend UPWARD (negative y) so they don't cover neighbours
+// Colors: roof=team, left-wall=team*0.65, right-wall=team*0.45, base=dark
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return{r,g,b};
+}
+function shade(hex,f){
+  const{r,g,b}=hexToRgb(hex);
+  return`rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
+}
+function rgba2(hex,a){
+  const{r,g,b}=hexToRgb(hex);
+  return`rgba(${r},${g},${b},${a})`;
+}
+
+// Isometric box helper
+// cx,cy = center-bottom of the building footprint (screen coords)
+// w = footprint half-width, d = footprint half-depth, h = building height
+// Returns SVG path strings for top, left, right faces
+function isoBox(cx, cy, w, d, h, color){
+  // Iso projection: x-axis goes right-down, z-axis goes left-down, y-axis goes up
+  // For a simple iso view at ~30°:
+  //   right face: x increases → goes right+down
+  //   left face:  z increases → goes left+down
+  // Points in screen space:
+  const front  = {x:cx,      y:cy};           // front bottom
+  const right  = {x:cx+w,    y:cy-d*0.5};     // right bottom
+  const back   = {x:cx,      y:cy-d};          // back bottom
+  const left   = {x:cx-w,    y:cy-d*0.5};     // left bottom
+
+  const fTop   = {x:cx,      y:cy-h};
+  const rTop   = {x:cx+w,    y:cy-d*0.5-h};
+  const bTop   = {x:cx,      y:cy-d-h};
+  const lTop   = {x:cx-w,    y:cy-d*0.5-h};
+
+  const p=(pts)=>pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  const roof      = `<polygon points="${p([fTop,rTop,bTop,lTop])}" fill="${shade(color,1.0)}" stroke="${shade(color,1.3)}" stroke-width=".8"/>`;
+  const wallRight = `<polygon points="${p([front,right,rTop,fTop])}" fill="${shade(color,0.6)}" stroke="${shade(color,.7)}" stroke-width=".6"/>`;
+  const wallLeft  = `<polygon points="${p([front,left,lTop,fTop])}"  fill="${shade(color,0.4)}" stroke="${shade(color,.5)}" stroke-width=".6"/>`;
+
+  return wallLeft+wallRight+roof; // draw order: back to front
+}
+
+// Window row helper — adds lit windows to a face
+function windows(cx,cy,w,d,h,color,rows=2,cols=2){
+  let out='';
+  // right face windows
+  const ww=w/(cols+1), wh=h/(rows+1)*0.6;
+  for(let row=1;row<=rows;row++) for(let col=1;col<=cols;col++){
+    const bx=cx+(col/(cols+1))*w;
+    const by=cy-(row/(rows+1))*h - d*0.5*(col/(cols+1));
+    out+=`<rect x="${(bx-ww*.35).toFixed(1)}" y="${(by-wh*.5).toFixed(1)}" width="${(ww*.7).toFixed(1)}" height="${(wh).toFixed(1)}" fill="${rgba2(color,.7)}" rx="1"/>`;
+  }
+  return out;
+}
+
+// ── BUILDING SHAPES ──
+function buildingEmpty(cx,cy,col){
+  // Flat ground: just a very low slab + road markings
+  const w=CELL*.38, d=CELL*.18, h=4;
+  let svg=isoBox(cx,cy,w,d,h,'#1a1f2e');
+  // subtle cross marking
+  svg+=`<line x1="${(cx-8).toFixed(1)}" y1="${(cy-d*.5).toFixed(1)}" x2="${(cx+8).toFixed(1)}" y2="${(cy-d*.5).toFixed(1)}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`;
+  svg+=`<line x1="${cx.toFixed(1)}" y1="${(cy-d*.5-6).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy-d*.5+6).toFixed(1)}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`;
+  return svg;
+}
+
+function buildingCottage(cx,cy,col){
+  // Single small house: box + triangle roof
+  const w=CELL*.28, d=CELL*.16, h=CELL*.25;
+  let svg=isoBox(cx,cy,w,d,h,col);
+  // Door
+  const dw=5, dh=8;
+  svg+=`<rect x="${(cx-dw/2).toFixed(1)}" y="${(cy-dh).toFixed(1)}" width="${dw}" height="${dh}" fill="${shade(col,.25)}" rx="1"/>`;
+  return svg;
+}
+
+function buildingHouse(cx,cy,col){
+  // Row house / terrace: slightly wider, 2 storeys, windows
+  const w=CELL*.32, d=CELL*.17, h=CELL*.34;
+  let svg=isoBox(cx,cy,w,d,h,col);
+  svg+=windows(cx,cy,w,d,h,col,2,2);
+  return svg;
+}
+
+function buildingBlock(cx,cy,col){
+  // Office block: wide, 3 storeys, many windows
+  const w=CELL*.38, d=CELL*.20, h=CELL*.46;
+  let svg=isoBox(cx,cy,w,d,h,col);
+  svg+=windows(cx,cy,w,d,h,col,3,3);
+  // Rooftop detail
+  svg+=isoBox(cx+w*.1,cy-CELL*.46,w*.2,d*.2,CELL*.05,shade(col,1.2));
+  return svg;
+}
+
+function buildingTower(cx,cy,col){
+  // Highrise / HQ: tall slim tower with many floors
+  const w=CELL*.26, d=CELL*.15, h=CELL*.72;
+  let svg='';
+  // Base podium
+  svg+=isoBox(cx,cy,CELL*.38,CELL*.20,CELL*.10,shade(col,.55));
+  // Tower
+  svg+=isoBox(cx,cy-CELL*.10,w,d,h,col);
+  svg+=windows(cx,cy-CELL*.10,w,d,h,col,5,2);
+  // Antenna
+  svg+=`<line x1="${cx.toFixed(1)}" y1="${(cy-CELL*.10-h).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy-CELL*.10-h-CELL*.12).toFixed(1)}" stroke="${rgba2(col,.8)}" stroke-width="1.5"/>`;
+  svg+=`<circle cx="${cx.toFixed(1)}" cy="${(cy-CELL*.10-h-CELL*.12).toFixed(1)}" r="2" fill="${col}"/>`;
+  return svg;
+}
+
+function drawBuilding(r,c,animate=false){
+  const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if(!el) return;
+  // Remove old svg
+  const old=el.querySelector('.tile-svg');
+  if(old) old.remove();
+
+  const cell=state[r][c];
+  const type=getBuildingType(r,c);
+  const team=cell?TEAMS[cell.teamIdx]:null;
+  const col=team?team.color:'#2a3040';
+
+  // SVG canvas: CELL wide, extends 1.2*CELL upward
+  const svgH=CELL*1.3;
+  const svgEl=document.createElementNS(NS,'svg');
+  svgEl.classList.add('tile-svg');
+  svgEl.setAttribute('width',CELL);
+  svgEl.setAttribute('height',svgH);
+  svgEl.style.cssText=`position:absolute;bottom:0;left:0;overflow:visible;pointer-events:none;`;
+  svgEl.setAttribute('viewBox',`0 ${-svgH+CELL} ${CELL} ${svgH}`);
+
+  // Building anchor: center-bottom of cell
+  const cx=CELL/2, cy=CELL;
+
+  let content='';
+  if(type==='empty')   content=buildingEmpty(cx,cy,col);
+  if(type==='cottage') content=buildingCottage(cx,cy,col);
+  if(type==='house')   content=buildingHouse(cx,cy,col);
+  if(type==='block')   content=buildingBlock(cx,cy,col);
+  if(type==='tower')   content=buildingTower(cx,cy,col);
+
+  svgEl.innerHTML=content;
+
+  if(animate){
+    svgEl.classList.add('rising');
+    setTimeout(()=>svgEl.classList.remove('rising'),600);
+  }
+
+  el.appendChild(svgEl);
+}
+
+// ── RENDER CELL BASE ──
+function renderCellBase(r,c){
+  const cell=state[r][c];
+  const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if(!el) return;
+  const base=el.querySelector('.tile-base');
+
+  if(!cell){
+    base.style.cssText='position:absolute;inset:0;border-radius:2px;background:#0e1118;border:1px solid rgba(255,255,255,.04);';
+    return;
+  }
+
+  const team=TEAMS[cell.teamIdx];
+  const isHome=cell.home;
+  const isEdge=isEdgeCell(r,c);
+  const bgA=isHome?.22:isEdge?.14:.08;
+  const brdA=isHome?.7:isEdge?.45:.12;
+  const glow=isHome?`0 0 16px ${rca(team,.6)},0 0 32px ${rca(team,.2)}`
+    :isEdge?`0 0 8px ${rca(team,.35)}`:'none';
+
+  base.style.cssText=`
+    position:absolute;inset:0;border-radius:2px;
+    background:${rca(team,bgA)};
+    border:${isHome?'2px':'1px'} solid ${rca(team,brdA)};
+    box-shadow:${glow};
+    ${isHome?`animation:homeGlow 2.4s ease-in-out infinite;--g-base:${glow};--g-peak:0 0 24px ${rca(team,.85)},0 0 48px ${rca(team,.3)};`:''}
+  `;
+}
+
+// ── OUTLINES ──
+function updateOutlines(){
+  const svg=document.getElementById('outline-svg');
+  const totalW=(CELL+GAP)*SIZE-GAP;
+  svg.setAttribute('width',totalW); svg.setAttribute('height',totalW);
+  svg.innerHTML='';
+
+  TEAMS.forEach((team,ti)=>{
+    const cells=[];
+    for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(state[r][c]?.teamIdx===ti) cells.push([r,c]);
+    if(!cells.length) return;
+    const pad=2;
+    cells.forEach(([r,c])=>{
+      const x=c*(CELL+GAP), y=r*(CELL+GAP);
+      const mkLine=(x1,y1,x2,y2)=>{
+        [[5,.12],[1.8,.95]].forEach(([w,op])=>{
+          const l=document.createElementNS(NS,'line');
+          l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+          l.setAttribute('stroke',team.color);l.setAttribute('stroke-width',w);
+          l.setAttribute('stroke-opacity',op);l.setAttribute('stroke-linecap','round');
+          svg.appendChild(l);
+        });
+      };
+      if(!same(r-1,c,ti)) mkLine(x-pad,y-pad,x+CELL+pad,y-pad);
+      if(!same(r+1,c,ti)) mkLine(x-pad,y+CELL+pad,x+CELL+pad,y+CELL+pad);
+      if(!same(r,c-1,ti)) mkLine(x-pad,y-pad,x-pad,y+CELL+pad);
+      if(!same(r,c+1,ti)) mkLine(x+CELL+pad,y-pad,x+CELL+pad,y+CELL+pad);
+    });
+  });
+}
+
+// ── BUILD DOM ──
+const gridEl=document.getElementById('grid');
+gridEl.style.gridTemplateColumns=`repeat(${SIZE},${CELL}px)`;
+gridEl.style.gridTemplateRows=`repeat(${SIZE},${CELL}px)`;
+
+for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+  const el=document.createElement('div');
+  el.className='tile'+(state[r][c]?' owned':'');
+  el.dataset.r=r; el.dataset.c=c;
+  el.style.cssText=`width:${CELL}px;height:${CELL}px;position:relative;overflow:visible;`;
+
+  const base=document.createElement('div');
+  base.className='tile-base';
+  el.appendChild(base);
+
+  el.addEventListener('mouseenter',()=>{
+    if(state[r][c]) return;
+    const t=TEAMS[activeTeam];
+    base.style.background=`rgba(${t.r},${t.g},${t.b},.10)`;
+    base.style.borderColor=`rgba(${t.r},${t.g},${t.b},.5)`;
+    base.style.boxShadow=`0 0 12px rgba(${t.r},${t.g},${t.b},.3)`;
+  });
+  el.addEventListener('mouseleave',()=>{
+    if(state[r][c]) return;
+    base.style.cssText='position:absolute;inset:0;border-radius:2px;background:#0e1118;border:1px solid rgba(255,255,255,.04);';
+  });
+  el.addEventListener('click',()=>{
+    if(state[r][c]) return;
+    state[r][c]={teamIdx:activeTeam,home:false,new:true};
+    el.classList.add('owned');
+    renderCellBase(r,c);
+    drawBuilding(r,c,true);
+    // Neighbours may change type (adj count changes)
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&state[nr][nc]){
+        renderCellBase(nr,nc);
+        drawBuilding(nr,nc,false);
+      }
+    });
+    updateOutlines();
+    updateScores();
+  });
+
+  gridEl.appendChild(el);
+  renderCellBase(r,c);
+}
+
+// Draw all initial buildings
+requestAnimationFrame(()=>{
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) drawBuilding(r,c,false);
+  updateOutlines();
+});
+
+// ── SCORES ──
+function updateScores(){
+  const bar=document.getElementById('scorebar');
+  bar.innerHTML=TEAMS.map((t,i)=>{
+    const count=state.flat().filter(c=>c?.teamIdx===i).length;
+    const active=i===activeTeam;
+    return`<div class="team-pill${active?' active':''}"
+      style="--tc-bg:rgba(${t.r},${t.g},${t.b},.09);--tc-border:rgba(${t.r},${t.g},${t.b},.45);--tc-glow:rgba(${t.r},${t.g},${t.b},.22);"
+      onclick="selectTeam(${i})">
+      <div class="tp-dot" style="background:${t.color};box-shadow:0 0 6px rgba(${t.r},${t.g},${t.b},.9);"></div>
+      <span class="tp-name" style="color:${active?t.color:'#3a4560'}">${t.name}</span>
+      <span class="tp-count">${count}F</span>
+    </div>`;
+  }).join('');
+}
+window.selectTeam=i=>{activeTeam=i;updateScores();};
+
+// keyframe injection
+document.head.insertAdjacentHTML('beforeend',`<style>@keyframes homeGlow{0%,100%{box-shadow:var(--g-base);}50%{box-shadow:var(--g-peak);}}</style>`);
+
+updateScores();
+</script>
+</body>
+</html>

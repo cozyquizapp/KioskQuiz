@@ -589,12 +589,21 @@ export default function QQSlideEditorPage() {
       const phaseColor = p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : p === 3 ? '#EF4444' : '#10B981';
       steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: phaseColor, phase: p });
       const qs = draft.questions.filter(q => q.phaseIndex === p);
+      // Group questions by category-template so each template appears only once per phase
+      const seenTypes = new Set<string>();
       for (const q of qs) {
         const ttype = getQTemplateType(q);
         const spec = TEMPLATE_SPECS.find(s => s.type === ttype);
-        steps.push({ key: `q-${q.id}`, label: `${spec?.label || q.category} (${q.text?.slice(0, 18)})`, type: ttype, question: q, icon: spec?.icon, color: spec?.color, phase: p });
-        steps.push({ key: `reveal-${q.id}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', question: q, phase: p });
-        steps.push({ key: `placement-${q.id}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', question: q, phase: p });
+        // Show one entry per template type per phase (not one per question)
+        if (!seenTypes.has(ttype)) {
+          seenTypes.add(ttype);
+          steps.push({ key: `q-type-${p}-${ttype}`, label: spec?.label || q.category, type: ttype, question: q, icon: spec?.icon, color: spec?.color, phase: p });
+        }
+      }
+      // REVEAL and PLACEMENT are shared templates — show once per phase, not per question
+      if (qs.length > 0) {
+        steps.push({ key: `reveal-phase-${p}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', phase: p });
+        steps.push({ key: `placement-phase-${p}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', phase: p });
       }
       if (p === 2) steps.push({ key: 'comeback', label: 'Comeback', type: 'COMEBACK_CHOICE', icon: '⚡', color: '#F97316', phase: p });
     }

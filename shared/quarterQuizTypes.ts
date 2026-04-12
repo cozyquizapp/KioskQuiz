@@ -451,6 +451,8 @@ export interface QQStateUpdate {
   volume: number; // 0–1
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
+  // Set when all connected teams have submitted answers (before moderator reveals)
+  allAnswered: boolean;
 }
 
 export type QQPendingAction =

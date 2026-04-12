@@ -128,8 +128,8 @@ export default function QQModeratorPage() {
         emitRef.current('qq:rulesNext', { roomCode });
         return;
       }
-      if (s.phase === 'LOBBY')                                           startGameRef.current();
-      else if (s.phase === 'PHASE_INTRO')                                emitRef.current('qq:activateQuestion', { roomCode });
+      if (s.phase === 'LOBBY')           startGameRef.current();
+      else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
         // CHEESE: show image first, then reveal answer
         if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
@@ -137,7 +137,12 @@ export default function QQModeratorPage() {
         else
           emitRef.current('qq:revealAnswer', { roomCode });
       }
-      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
+      // QUESTION_REVEAL: if winner known and no pending placement → go to PLACEMENT
+      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
+      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
 
@@ -161,6 +166,8 @@ export default function QQModeratorPage() {
       e.preventDefault();
       if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
 
@@ -168,6 +175,8 @@ export default function QQModeratorPage() {
     if (e.code === 'ArrowRight') {
       e.preventDefault();
       if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
@@ -193,15 +202,18 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault();
       if (s.phase === 'RULES') { emitRef.current('qq:rulesNext', { roomCode }); return; }
-      if (s.phase === 'LOBBY')                                                    startGameRef.current();
-      else if (s.phase === 'PHASE_INTRO')                                         emitRef.current('qq:activateQuestion', { roomCode });
+      if (s.phase === 'LOBBY')            startGameRef.current();
+      else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
         if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
           emitRef.current('qq:showImage', { roomCode });
         else
           emitRef.current('qq:revealAnswer', { roomCode });
       }
-      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor) emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'PLACEMENT' && !s.pendingFor)
+        emitRef.current('qq:nextQuestion', { roomCode });
       return;
     }
 

@@ -1537,6 +1537,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {s.timerEndsAt && !revealed && (
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
             )}
+            {/* All answered banner — shown when every team submitted but moderator hasn't revealed yet */}
+            {!revealed && s.allAnswered && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
+                borderRadius: 12, padding: '10px 20px', marginBottom: 8,
+                animation: 'contentReveal 0.4s ease both',
+              }}>
+                <span style={{ fontSize: 20 }}>✅</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#86EFAC', letterSpacing: '0.04em' }}>
+                  Alle Teams haben geantwortet
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Question card */}

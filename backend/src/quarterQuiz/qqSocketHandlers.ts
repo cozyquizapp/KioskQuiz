@@ -188,13 +188,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqActivateQuestion(room, () => {
-          // Timer expired — reveal first, then auto-eval after 3s pause
-          try { qqRevealAnswer(room); } catch { /* already revealed */ }
+          // Timer expired — just broadcast, moderator controls reveal manually
           broadcast(io, payload.roomCode);
-          setTimeout(() => {
-            try { applyAutoEval(room); } catch { /* ignore */ }
-            broadcast(io, payload.roomCode);
-          }, 3000);
         });
         // Auto-start Hot Potato if the activated question is a hotPotato type
         if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
@@ -214,12 +209,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqRevealAnswer(room);
+        // Run evaluation immediately so correctTeamId is set — moderator sees winner
+        try { applyAutoEval(room); } catch { /* ignore if already evaluated */ }
         broadcast(io, payload.roomCode);
-        // Show reveal for 3s before auto-eval transitions to PLACEMENT
-        setTimeout(() => {
-          try { applyAutoEval(room); } catch { /* ignore */ }
-          broadcast(io, payload.roomCode);
-        }, 3000);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -279,18 +271,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         if (typeof payload.answer !== 'string' || payload.answer.length > 1000) throw new QQError('INVALID_ANSWER', 'Antwort zu lang (max 1000 Zeichen).');
         const room = ensureQQRoom(payload.roomCode);
-        const { allAnswered } = qqSubmitAnswer(room, payload.teamId, payload.answer);
-        broadcast(io, payload.roomCode);
-        // Auto-reveal when all connected teams have answered
-        if (allAnswered) {
-          try { qqRevealAnswer(room); } catch { /* already revealed */ }
-          broadcast(io, payload.roomCode);
-          // Pause on reveal screen for 3s, then auto-eval → PLACEMENT
-          setTimeout(() => {
-            try { applyAutoEval(room); } catch { /* ignore */ }
-            broadcast(io, payload.roomCode);
-          }, 3000);
-        }
+        qqSubmitAnswer(room, payload.teamId, payload.answer);
+        // allAnswered is now stored in room.allAnswered and broadcast via state
+        // No auto-reveal — moderator controls when to reveal
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

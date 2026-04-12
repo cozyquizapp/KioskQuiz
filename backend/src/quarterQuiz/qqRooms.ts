@@ -47,6 +47,7 @@ export interface QQRoomState {
   timerHandle: ReturnType<typeof setTimeout> | null;
   // Answers
   answers: QQAnswerEntry[];
+  allAnswered: boolean;  // true when every connected team has submitted
   // Buzz (Hot Potato)
   buzzQueue: QQBuzzEntry[];
   // Hot Potato state
@@ -146,6 +147,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       timerEndsAt: null,
       timerHandle: null,
       answers: [],
+      allAnswered: false,
       buzzQueue: [],
       hotPotatoActiveTeamId: null,
       hotPotatoEliminated: [],
@@ -355,11 +357,13 @@ export function qqSubmitAnswer(
   room.lastActivityAt = Date.now();
   const connectedTeams = room.joinOrder.filter(id => room.teams[id]?.connected);
   const allAnswered = connectedTeams.every(id => room.answers.some(a => a.teamId === id));
+  room.allAnswered = allAnswered;
   return { allAnswered };
 }
 
 export function qqClearAnswers(room: QQRoomState): void {
   room.answers = [];
+  room.allAnswered = false;
 }
 
 // ── Buzz in ───────────────────────────────────────────────────────────────────
@@ -1506,6 +1510,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     timerDurationSec: room.timerDurationSec,
     timerEndsAt:      room.timerEndsAt,
     answers:          room.answers,
+    allAnswered:      room.allAnswered,
     buzzQueue:        room.buzzQueue,
     hotPotatoActiveTeamId: room.hotPotatoActiveTeamId,
     hotPotatoEliminated:   room.hotPotatoEliminated,

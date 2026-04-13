@@ -82,8 +82,8 @@ export const QQ_BEAMER_CSS = `
     100% { transform: scale(1); }
   }
   @keyframes qrGlow {
-    0%, 100% { box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
-    50%      { box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 30px rgba(234,179,8,0.3), 0 0 60px rgba(234,179,8,0.15); }
+    0%, 100% { box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.05); }
+    50%      { box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 40px rgba(234,179,8,0.35), 0 0 80px rgba(234,179,8,0.18); }
   }
   @keyframes teamCardIn {
     from { opacity: 0; transform: translateY(20px) scale(0.9); }

@@ -940,15 +940,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             background: '#ffffff', borderRadius: 28, padding: 28,
             animation: 'qrGlow 3s ease-in-out infinite',
-            boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 40px rgba(255,255,255,0.08)',
+            boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
           }}>
-            <QRCodeSVG value={joinUrl} size={400} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+            <QRCodeSVG value={joinUrl} size={440} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontSize: 'clamp(22px, 2.6vw, 34px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 6,
+              fontSize: 'clamp(24px, 2.8vw, 38px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 6,
             }}>
-              {de ? 'Jetzt mitspielen!' : 'Join now!'}
+              {de ? 'Jetzt scannen & mitspielen!' : 'Scan & join now!'}
             </div>
             <div style={{
               fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#94a3b8', fontFamily: 'monospace',
@@ -988,9 +988,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   <span style={{ fontSize: 'clamp(36px, 4.5vw, 52px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
                   <div>
-                    <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2.2vw, 28px)', color: t.color }}>{t.name}</div>
-                    <div style={{ fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b8' }}>
-                      {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
+                    <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 32px)', color: t.color }}>{t.name}</div>
+                    <div style={{ fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 700, color: t.connected ? '#22C55E66' : '#94a3b844' }}>
+                      {t.connected ? '●' : '○'}
                     </div>
                   </div>
                 </div>
@@ -1004,9 +1004,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {teamCount < 2
                 ? (de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!')
-                : connectedCount === teamCount
-                  ? (de ? `🚀 ${teamCount} Teams bereit — Gleich geht's los!` : `🚀 ${teamCount} teams ready — Let's go!`)
-                  : (de ? `${connectedCount}/${teamCount} Teams verbunden` : `${connectedCount}/${teamCount} teams connected`)}
+                : teamCount >= 5
+                  ? (de ? `🔥 ${teamCount} Teams sind dabei!` : `🔥 ${teamCount} teams are in!`)
+                  : connectedCount === teamCount
+                    ? (de ? `🚀 ${teamCount} Teams bereit — Gleich geht's los!` : `🚀 ${teamCount} teams ready — Let's go!`)
+                    : (de ? `${connectedCount}/${teamCount} Teams verbunden` : `${connectedCount}/${teamCount} teams connected`)}
             </div>
           </>
         )}

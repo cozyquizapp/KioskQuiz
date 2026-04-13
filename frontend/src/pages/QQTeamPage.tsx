@@ -322,7 +322,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
-      <MobileFireflies color="#3B82F644" />
+      <MobileFireflies color="#FEF08A55" />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
@@ -459,12 +459,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
   // Dynamic phase/category accent for glows — match beamer accent colors
   const cat = s.currentQuestion?.category;
-  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? teamColor) : teamColor;
-  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? teamColor) : teamColor;
+  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? '#FEF08A') : '#FEF08A';
+  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? '#FEF08A') : '#FEF08A';
+  // Gold for lobby/rules/intro (matches beamer's warm gold fireflies), category accent during questions
+  const LOBBY_GOLD = '#FEF08A';
   const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catAccent
-    : s.phase === 'PLACEMENT' ? teamColor
+    : s.phase === 'PLACEMENT' ? catAccent
     : s.phase === 'GAME_OVER' ? '#FBBF24'
-    : teamColor;
+    : LOBBY_GOLD;
 
   // Firefly color — uses accent for vibrant glow matching beamer
   const ffColor = `${phaseAccent}66`;
@@ -478,12 +480,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     CHEESE:        `radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(91,33,182,0.10) 0%, transparent 50%), #0D0A06`,
   };
 
-  // Dynamic background — category-specific during questions, team glow otherwise
+  // Dynamic background — gold for lobby (like beamer), category-specific during questions
   const pageBg = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && cat
     ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}22 0%, transparent 50%), #0D0A06`)
     : s.phase === 'GAME_OVER'
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
-    : `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06`;
+    : s.phase === 'PLACEMENT' && cat
+    ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}15 0%, transparent 55%), #0D0A06`)
+    : `radial-gradient(ellipse at 50% 0%, rgba(254,240,138,0.10) 0%, transparent 55%), #0D0A06`;
 
   return (
     <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }}>
@@ -667,7 +671,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
   }
 
   return (
-    <CozyCard borderColor={myTeam.color} pulse>
+    <CozyCard borderColor="#EAB308" pulse>
       <div style={{ textAlign: 'center', padding: '4px 0' }}>
         {/* Own team — hero display */}
         <div style={{

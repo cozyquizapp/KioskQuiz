@@ -1831,35 +1831,40 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         {/* ── Main content — full width, vertically + horizontally centered ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
-          {/* Category badge + Timer — fade out on reveal instead of instant removal */}
+          {/* Category badge — top left corner */}
           <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            overflow: 'hidden',
-            maxHeight: revealed ? 0 : 200,
+            position: 'absolute', top: 20, left: 48, zIndex: 10,
             opacity: revealed ? 0 : 1,
-            marginBottom: revealed ? 0 : 0,
-            transition: 'max-height 0.45s ease, opacity 0.3s ease, margin-bottom 0.45s ease',
+            transition: 'opacity 0.3s ease',
+            pointerEvents: revealed ? 'none' : 'auto',
           }}>
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 18,
-              padding: '8px 24px', borderRadius: 999,
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 22px', borderRadius: 999,
               background: `${accent}18`, border: `2px solid ${accent}44`,
               animation: 'contentReveal 0.35s ease both',
             }}>
-              <span style={{ fontSize: 'clamp(22px, 2.5vw, 32px)' }}>{catLabel.emoji}</span>
+              <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>
               <span style={{
-                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900,
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
                 color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
                 {lang === 'en' ? catLabel.en : catLabel.de}
               </span>
             </div>
-            {s.timerEndsAt && (
-              <div style={{ marginBottom: 20 }}>
-                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-              </div>
-            )}
           </div>
+
+          {/* Timer — top right corner */}
+          {s.timerEndsAt && (
+            <div style={{
+              position: 'absolute', top: 16, right: 48, zIndex: 10,
+              opacity: revealed ? 0 : 1,
+              transition: 'opacity 0.3s ease',
+              pointerEvents: revealed ? 'none' : 'auto',
+            }}>
+              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+            </div>
+          )}
 
           {/* Question card — stays same size on reveal, just dims + blurs */}
           <div style={{

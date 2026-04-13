@@ -101,6 +101,22 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: scale(1); }
     50%      { transform: scale(1.12); }
   }
+  @keyframes bTimerPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.08); }
+  }
+  @keyframes bTimerGlow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.05); }
+  }
+  @keyframes bQuestionIn {
+    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes bAnswerCheck {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
   @keyframes dotPulse {
     0%, 80%, 100% { opacity: 0.3; }
     40% { opacity: 1; }

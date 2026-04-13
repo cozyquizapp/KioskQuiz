@@ -532,6 +532,18 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     ],
   },
   {
+    icon: '🎲',
+    title: '5 Kategorien',
+    color: '#8B5CF6',
+    lines: [
+      '🎯 Schätzchen — Wer schätzt am nächsten?',
+      '🅰️ Mu-Cho — Multiple Choice, schnell entscheiden!',
+      '🎁 Bunte Tüte — Überraschungs-Mechaniken!',
+      '🎰 All In — 3 Antworten, 10 Punkte vergeben!',
+      '📸 Picture This — Erkennt ihr das Bild?',
+    ],
+  },
+  {
     icon: '⚡',
     title: 'So läuft eine Runde',
     color: '#8B5CF6',
@@ -618,6 +630,18 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     lines: [
       'Answer quiz questions and conquer cells on the grid.',
       'The team with the largest connected territory wins!',
+    ],
+  },
+  {
+    icon: '🎲',
+    title: '5 Categories',
+    color: '#8B5CF6',
+    lines: [
+      '🎯 Close Call — Who can guess the closest?',
+      '🅰️ Mu-Cho — Multiple choice, decide fast!',
+      '🎁 Lucky Bag — Surprise mechanics!',
+      '🎰 All In — 3 answers, distribute 10 points!',
+      '📸 Picture This — Can you identify the image?',
     ],
   },
   {
@@ -1407,10 +1431,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           }} />
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
-            background: [
-              'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
-              'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
-            ].join(', '),
+            background: cheeseFullscreen
+              ? 'linear-gradient(180deg, rgba(13,10,6,0.15) 0%, transparent 20%, transparent 80%, rgba(13,10,6,0.25) 100%)'
+              : [
+                'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
+                'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
+              ].join(', '),
             opacity: revealed ? 0.4 : 1,
             transition: 'opacity 0.8s ease',
           }} />
@@ -1462,23 +1488,42 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         {/* ── Main content — full width, vertically + horizontally centered ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
-          {/* Timer — large, centered (active only) */}
+          {/* Category badge — top, colored pill */}
+          {!revealed && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 18,
+              padding: '8px 24px', borderRadius: 999,
+              background: `${accent}18`, border: `2px solid ${accent}44`,
+              animation: 'contentReveal 0.35s ease both',
+            }}>
+              <span style={{ fontSize: 'clamp(22px, 2.5vw, 32px)' }}>{catLabel.emoji}</span>
+              <span style={{
+                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900,
+                color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>
+                {lang === 'en' ? catLabel.en : catLabel.de}
+              </span>
+            </div>
+          )}
+
+          {/* Timer — hero element, large ring (active only) */}
           {!revealed && s.timerEndsAt && (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 20 }}>
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
             </div>
           )}
 
-          {/* Question card — centered, full width */}
+          {/* Question card — centered, full width, stronger presence */}
           <div style={{
             background: cardBg,
-            border: `1px solid rgba(255,255,255,0.08)`,
-            borderRadius: 24,
-            boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
-            padding: '40px 56px',
-            marginBottom: 28,
+            border: `2px solid ${accent}22`,
+            borderRadius: 28,
+            boxShadow: `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+            padding: '48px 64px',
+            marginBottom: 20,
             width: '100%', maxWidth: 1400,
             textAlign: 'center',
+            animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
           }}>
             <div key={lang} style={{
               fontSize: qFontSize, fontWeight: 900, lineHeight: 1.22,
@@ -1488,6 +1533,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {qText}
             </div>
           </div>
+
+          {/* Mobile hint — context for new players */}
+          {!revealed && (() => {
+            const hints: Record<string, { de: string; en: string }> = {
+              SCHAETZCHEN:   { de: '📱 Gebt eure Schätzung auf dem Handy ein', en: '📱 Enter your estimate on your phone' },
+              MUCHO:         { de: '📱 Wählt die richtige Antwort auf dem Handy', en: '📱 Pick the right answer on your phone' },
+              BUNTE_TUETE:   { de: '📱 Antwort jetzt auf dem Handy eingeben', en: '📱 Enter your answer on your phone' },
+              ZEHN_VON_ZEHN: { de: '📱 Verteilt eure Punkte auf dem Handy', en: '📱 Distribute your points on your phone' },
+              CHEESE:        { de: '📱 Antwort auf dem Handy eingeben', en: '📱 Enter your answer on your phone' },
+            };
+            const hint = hints[cat] ?? hints.BUNTE_TUETE;
+            return (
+              <div style={{
+                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 700,
+                color: 'rgba(148,163,184,0.8)', letterSpacing: '0.02em',
+                marginBottom: 16,
+                animation: 'contentReveal 0.4s ease 0.3s both',
+              }}>
+                {lang === 'en' ? hint.en : hint.de}
+              </div>
+            );
+          })()}
 
           {/* MUCHO / ZEHN_VON_ZEHN option cards */}
           {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
@@ -1606,42 +1673,55 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Confetti overlay on correct answer */}
           {revealed && s.correctTeamId && <ConfettiOverlay />}
 
-          {/* Bottom: team answer status (active questions only) */}
+          {/* Bottom: team answer progress (active questions only) */}
           {!revealed && s.teams.length > 0 && (
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
-              position: 'absolute', bottom: 20, left: 0, right: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              position: 'absolute', bottom: 16, left: 0, right: 0,
             }}>
-              {s.teams.map(t => {
-                const answered = s.answers.some(a => a.teamId === t.id);
-                return (
-                  <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 18px', borderRadius: 999,
-                    background: answered ? `${t.color}22` : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${answered ? t.color + '55' : 'rgba(255,255,255,0.08)'}`,
-                    transition: 'all 0.4s ease',
-                    opacity: answered ? 1 : 0.45,
-                  }}>
-                    <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-                    <span style={{
-                      fontSize: 18, fontWeight: 900, color: answered ? t.color : '#475569',
+              {/* Progress text */}
+              <div style={{
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+                color: s.allAnswered ? '#86EFAC' : '#64748b',
+                transition: 'color 0.3s ease',
+              }}>
+                {s.allAnswered
+                  ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
+                  : `${s.answers.length}/${s.teams.length} Teams`}
+              </div>
+              {/* Avatar row */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+              }}>
+                {s.teams.map(tm => {
+                  const answered = s.answers.some(a => a.teamId === tm.id);
+                  return (
+                    <div key={tm.id} style={{
+                      position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 52, height: 52, borderRadius: '50%',
+                      background: answered ? `${tm.color}25` : 'rgba(255,255,255,0.04)',
+                      border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.08)'}`,
+                      transition: 'all 0.4s ease',
+                      opacity: answered ? 1 : 0.4,
+                      boxShadow: answered ? `0 0 16px ${tm.color}44` : 'none',
                     }}>
-                      {answered ? '✓' : '…'}
-                    </span>
-                  </div>
-                );
-              })}
-              {s.allAnswered && (
-                <div style={{
-                  padding: '8px 20px', borderRadius: 999,
-                  background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.35)',
-                  fontSize: 18, fontWeight: 800, color: '#86EFAC',
-                  animation: 'contentReveal 0.4s ease both',
-                }}>
-                  Alle Teams haben geantwortet
-                </div>
-              )}
+                      <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      {/* Checkmark overlay */}
+                      {answered && (
+                        <div style={{
+                          position: 'absolute', bottom: -4, right: -4,
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: '#22C55E', border: '2px solid #0D0A06',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 900, color: '#fff',
+                          animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                        }}>✓</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -2152,8 +2232,6 @@ export function GameOverView({ state: s }: { state: QQStateUpdate }) {
 
 export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
-  const urgent = remaining <= 5;
-  const critical = remaining <= 3;
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -2165,31 +2243,60 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
   }, [endsAt]);
 
   const pct = Math.min(100, (remaining / durationSec) * 100);
-  const color = urgent ? '#EF4444' : accent;
   const secs = Math.ceil(remaining);
 
-  const radius = 52;
-  const stroke = 6;
+  // Urgency levels
+  const isAlert   = remaining <= 10 && remaining > 5;
+  const isWarning = remaining <= 5 && remaining > 3;
+  const isCritical = remaining <= 3;
+  const isUrgent = remaining <= 10;
+
+  const color = isCritical ? '#EF4444'
+    : isWarning ? '#F97316'
+    : isAlert ? '#F59E0B'
+    : accent;
+
+  // Hero timer: big ring
+  const radius = 80;
+  const stroke = isCritical ? 12 : isWarning ? 10 : 8;
+  const sz = radius * 2 + stroke * 2 + 20; // extra for glow
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - pct / 100);
 
+  const glowSize = isCritical ? 28 : isWarning ? 20 : isUrgent ? 14 : 8;
+  const pulseAnim = isCritical ? 'bTimerPulse 0.5s ease-in-out infinite'
+    : isWarning ? 'bTimerPulse 0.8s ease-in-out infinite'
+    : undefined;
+
   return (
-    <div style={{ position: 'relative', width: radius * 2 + stroke * 2, height: radius * 2 + stroke * 2 }}>
+    <div style={{
+      position: 'relative', width: sz, height: sz,
+      animation: pulseAnim,
+    }}>
+      {/* Outer glow ring */}
+      {isUrgent && (
+        <div style={{
+          position: 'absolute', inset: -8,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${color}22 0%, transparent 70%)`,
+          animation: 'bTimerGlow 1.5s ease-in-out infinite',
+        }} />
+      )}
       {/* SVG ring */}
-      <svg width={radius * 2 + stroke * 2} height={radius * 2 + stroke * 2}
+      <svg width={sz} height={sz}
         style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
         {/* Background ring */}
-        <circle cx={radius + stroke} cy={radius + stroke} r={radius}
-          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        <circle cx={sz / 2} cy={sz / 2} r={radius}
+          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
         {/* Progress ring */}
-        <circle cx={radius + stroke} cy={radius + stroke} r={radius}
+        <circle cx={sz / 2} cy={sz / 2} r={radius}
           fill="none" stroke={color} strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
           style={{
             transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s ease',
-            filter: `drop-shadow(0 0 ${urgent ? 12 : 6}px ${color}88)`,
+            filter: `drop-shadow(0 0 ${glowSize}px ${color}aa)`,
           }}
         />
       </svg>
@@ -2197,10 +2304,12 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: 900, fontSize: 'clamp(36px, 4.5vw, 56px)',
-        color, textShadow: urgent ? '0 0 20px rgba(239,68,68,0.6)' : `0 0 12px ${color}44`,
+        fontWeight: 900,
+        fontSize: isCritical ? 'clamp(56px, 7vw, 88px)' : 'clamp(48px, 6vw, 76px)',
+        color,
+        textShadow: isUrgent ? `0 0 24px ${color}88` : `0 0 12px ${color}44`,
         fontVariantNumeric: 'tabular-nums',
-        animation: critical && secs > 0 ? 'timerUrgent 0.5s ease-in-out infinite' : undefined,
+        transition: 'font-size 0.3s ease, color 0.3s ease',
       }}>
         {secs}
       </div>

@@ -147,6 +147,10 @@ const TEAM_CSS = `
     50%  { transform: scale(0.88); }
     100% { transform: scale(1); }
   }
+  @keyframes tcTimerPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.12); opacity: 0.85; }
+  }
   @keyframes frostPulse {
     0%, 100% { box-shadow: 0 0 6px rgba(147,210,255,0.3), inset 0 0 4px rgba(147,210,255,0.1); border-color: rgba(147,210,255,0.6); }
     50%      { box-shadow: 0 0 12px rgba(147,210,255,0.6), inset 0 0 8px rgba(147,210,255,0.25); border-color: rgba(147,210,255,1); }
@@ -723,6 +727,16 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         <AnswerInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />
       )}
 
+      {/* Team answer progress (shown when not yet submitted & others answering) */}
+      {!isRevealed && !s.answers.find(a => a.teamId === myTeamId) && s.answers.length > 0 && s.teams.length > 1 && (
+        <div style={{
+          marginTop: 6, textAlign: 'center', fontSize: 13, color: '#94a3b8', fontWeight: 600,
+          animation: 'tcreveal 0.3s ease both',
+        }}>
+          {s.answers.length}/{s.teams.length} Teams {lang === 'de' ? 'haben schon geantwortet' : 'already answered'}
+        </div>
+      )}
+
       {/* Revealed answer */}
       {isRevealed && s.revealedAnswer && (
         <div style={{
@@ -788,19 +802,20 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
 function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang = 'de' }: {
   onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang?: 'de' | 'en';
 }) {
-  const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}28` : 'rgba(255,255,255,0.04)';
+  const defaultLabel = lang === 'de' ? 'Jetzt antworten!' : 'Answer now!';
+  const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}30` : 'rgba(255,255,255,0.04)';
   const border = submitted ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
-  const color = submitted ? '#fff' : canSubmit ? catColor : '#334155';
+  const color = submitted ? '#fff' : canSubmit ? '#F1F5F9' : '#334155';
   return (
     <button
       onClick={onSubmit}
       disabled={!canSubmit || submitted}
       style={{
-        width: '100%', padding: '15px', borderRadius: 14, marginTop: 10,
+        width: '100%', padding: canSubmit ? '16px' : '14px', borderRadius: 14, marginTop: 10,
         border: `2px solid ${border}`, background: bg, color,
         cursor: canSubmit && !submitted ? 'pointer' : 'default',
-        fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
-        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 20px ${catColor}22` : submitted ? '0 4px 0 #15803d' : 'none',
+        fontFamily: 'inherit', fontWeight: 900, fontSize: canSubmit ? 18 : 16,
+        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}66, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
         transition: 'all 0.2s',
         animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -808,21 +823,50 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
     >
       {submitted
         ? <><span style={{ animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
-        : label ?? t.answer.submit[lang]}
+        : label ?? defaultLabel}
     </button>
   );
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────────
-function SubmittedBadge({ text, lang = 'de' }: { text: string; lang?: 'de' | 'en' }) {
+function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams }: {
+  text: string; lang?: 'de' | 'en'; answeredCount?: number; totalTeams?: number;
+}) {
   return (
     <div style={{
-      padding: '12px 16px', borderRadius: 14, textAlign: 'center',
-      background: 'rgba(34,197,94,0.1)', border: '2px solid rgba(34,197,94,0.3)',
-      fontSize: 15, fontWeight: 800, color: '#4ade80',
+      padding: '16px 20px', borderRadius: 16, textAlign: 'center',
+      background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.35)',
       animation: 'tcreveal 0.3s ease both',
+      display: 'flex', flexDirection: 'column', gap: 8,
     }}>
-      {t.answer.given[lang]}: „{text}"
+      {/* Checkmark + label */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 28, height: 28, borderRadius: '50%', background: '#22C55E',
+          color: '#fff', fontSize: 16, fontWeight: 900, flexShrink: 0,
+          animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}>✓</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: '#4ade80' }}>
+          {lang === 'de' ? 'Antwort abgegeben' : 'Answer submitted'}
+        </span>
+      </div>
+      {/* Show the answer prominently */}
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+        fontSize: 17, fontWeight: 900, color: '#F1F5F9', lineHeight: 1.3,
+        wordBreak: 'break-word',
+      }}>
+        „{text}"
+      </div>
+      {/* Team answer progress */}
+      {answeredCount != null && totalTeams != null && totalTeams > 1 && (
+        <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>
+          {answeredCount}/{totalTeams} Teams {lang === 'de' ? 'haben geantwortet' : 'have answered'}
+          {answeredCount >= totalTeams && <span style={{ marginLeft: 6 }}>✅</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -850,7 +894,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
       }
     }
-    return <SubmittedBadge text={displayText} lang={lang} />;
+    return <SubmittedBadge text={displayText} lang={lang} answeredCount={s.answers.length} totalTeams={s.teams.length} />;
   }
   if (!q) return null;
 
@@ -862,7 +906,13 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   // Route by category
   if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
   if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-  if (q.category === 'SCHAETZCHEN') return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={q.unit ? `${t.answer.enterNumber[lang].replace('…','')} (${lang === 'en' && q.unitEn ? q.unitEn : q.unit})…` : t.answer.enterNumber[lang]} lang={lang} />;
+  if (q.category === 'SCHAETZCHEN') {
+    const unit = lang === 'en' && q.unitEn ? q.unitEn : q.unit;
+    const placeholder = unit
+      ? (lang === 'de' ? `Deine Schätzung (${unit})` : `Your estimate (${unit})`)
+      : (lang === 'de' ? 'Deine Schätzung' : 'Your estimate');
+    return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={placeholder} lang={lang} />;
+  }
   if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
@@ -973,6 +1023,8 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
       <input
         ref={ref}
         type={numeric ? 'number' : 'text'}
+        inputMode={numeric ? 'numeric' : 'text'}
+        pattern={numeric ? '[0-9]*' : undefined}
         value={val}
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val)}
@@ -1430,23 +1482,37 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
   }, [endsAt]);
 
   const pct = Math.min(100, (remaining / durationSec) * 100);
-  const urgent = remaining <= 5;
-  const color = urgent ? '#EF4444' : accentColor;
+  const secs = Math.ceil(remaining);
+
+  // Dynamic urgency levels
+  const isCritical = secs <= 5;
+  const isWarning = secs <= 10 && !isCritical;
+  const isAlert = secs <= 15 && !isWarning && !isCritical;
+  const color = isCritical ? '#EF4444' : isWarning ? '#F97316' : isAlert ? '#F59E0B' : accentColor;
+  const timerFontSize = isCritical ? 22 : isWarning ? 18 : 15;
 
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
         <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Timer</span>
-        <span style={{ fontSize: 15, fontWeight: 900, color,
-          textShadow: urgent ? '0 0 10px rgba(239,68,68,0.6)' : 'none' }}>
-          {Math.ceil(remaining)}s
+        <span style={{
+          fontSize: timerFontSize, fontWeight: 900, color,
+          textShadow: isCritical ? '0 0 14px rgba(239,68,68,0.7)' : isWarning ? '0 0 10px rgba(249,115,22,0.5)' : 'none',
+          animation: isCritical ? 'tcTimerPulse 0.6s ease-in-out infinite' : isWarning ? 'tcTimerPulse 1.2s ease-in-out infinite' : 'none',
+          transition: 'font-size 0.2s, color 0.3s',
+        }}>
+          {secs}s
         </span>
       </div>
-      <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <div style={{
+        height: isCritical ? 10 : 8, borderRadius: 5,
+        background: 'rgba(255,255,255,0.07)', overflow: 'hidden',
+        transition: 'height 0.3s',
+      }}>
         <div style={{
-          height: '100%', borderRadius: 4, background: color,
-          width: `${pct}%`, transition: 'width 0.1s linear',
-          boxShadow: `0 0 8px ${color}88`,
+          height: '100%', borderRadius: 5, background: color,
+          width: `${pct}%`, transition: 'width 0.1s linear, background 0.3s',
+          boxShadow: isCritical ? `0 0 14px ${color}aa` : `0 0 8px ${color}66`,
         }} />
       </div>
     </div>

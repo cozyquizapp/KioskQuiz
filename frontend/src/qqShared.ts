@@ -185,6 +185,10 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 0.6; }
     100% { opacity: 0; }
   }
+  @keyframes revealShimmer {
+    0%   { left: -100%; }
+    100% { left: 200%; }
+  }
   @keyframes revealWinnerIn {
     0%   { opacity: 0; transform: translateY(30px) scale(0.9); }
     50%  { transform: translateY(-4px) scale(1.02); }

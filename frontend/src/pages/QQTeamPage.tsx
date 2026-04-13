@@ -161,6 +161,13 @@ const TEAM_CSS = `
     70%  { transform: scale(0.95); }
     100% { transform: scale(1); opacity: 1; }
   }
+  @keyframes tcffmove {
+    0%   { transform: translate(0,0) scale(1); opacity: 0; }
+    10%  { opacity: 0.7; }
+    45%  { transform: translate(var(--dx,20px), var(--dy,-30px)) scale(1.2); opacity: 0.5; }
+    90%  { opacity: 0.6; }
+    100% { transform: translate(0,0) scale(1); opacity: 0; }
+  }
   @keyframes tcCellGlow {
     0%   { box-shadow: 0 0 0 rgba(255,255,255,0); }
     50%  { box-shadow: 0 0 14px var(--cell-color, rgba(255,255,255,0.5)); }
@@ -314,6 +321,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
+      <MobileFireflies color="#3B82F644" />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
@@ -439,10 +447,17 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
   }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Firefly color based on phase
+  const ffColor = s.phase === 'QUESTION_ACTIVE' ? `${QQ_CATEGORY_COLORS[s.currentQuestion?.category ?? 'BUNTE_TUETE'] ?? teamColor}66`
+    : s.phase === 'PLACEMENT' ? `${teamColor}55`
+    : s.phase === 'GAME_OVER' ? '#FBBF2455'
+    : `${teamColor}44`;
+
   return (
     <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
+      <MobileFireflies color={ffColor} />
 
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
@@ -543,6 +558,35 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         )}
       </div>
     </div>
+  );
+}
+
+// ── Mobile Fireflies (lighter version for phones) ────────────────────────────
+const MOBILE_FF = [
+  { x:10, y:25, dx: 30,  dy:-40,  dur:6.0, del:0   },
+  { x:85, y:60, dx:-25,  dy:-35,  dur:7.2, del:1.2 },
+  { x:45, y:80, dx: 35,  dy:-45,  dur:5.5, del:0.6 },
+  { x:70, y:15, dx:-30,  dy:-25,  dur:8.0, del:2.0 },
+  { x:25, y:55, dx: 20,  dy:-50,  dur:6.8, del:1.5 },
+];
+
+function MobileFireflies({ color }: { color?: string }) {
+  const c = color ?? '#FEF08A88';
+  return (
+    <>
+      {MOBILE_FF.map((f, i) => (
+        <div key={i} style={{
+          position: 'fixed', pointerEvents: 'none', zIndex: 1,
+          left: `${f.x}%`, top: `${f.y}%`,
+          width: 4, height: 4, borderRadius: '50%',
+          background: c,
+          boxShadow: `0 0 5px 1px ${c}`,
+          ['--dx' as string]: `${f.dx}px`,
+          ['--dy' as string]: `${f.dy}px`,
+          animation: `tcffmove ${f.dur}s ease-in-out ${f.del}s infinite`,
+        }} />
+      ))}
+    </>
   );
 }
 

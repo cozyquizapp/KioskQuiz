@@ -1584,13 +1584,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const isCheeseReveal = cheeseOverlay && revealed;
   const cheeseFullscreen = cheeseOverlay;
 
-  // Auto-size: shorter fontSize for long questions
+  // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
-  const qFontSize = revealed
-    ? (qText.length > 200 ? 'clamp(24px, 2.8vw, 40px)'
-      : qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)'
-      : 'clamp(34px, 4.5vw, 64px)')
-    : qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
+  const qFontSize = qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
     : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
     : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
     : 'clamp(52px, 7vw, 108px)';
@@ -1723,16 +1719,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             </div>
 
-            {/* Question text */}
+            {/* Question text — no font-size change on reveal to prevent reflow */}
             <div key={`cheese-${lang}`} style={{
-              fontSize: isCheeseReveal
-                ? (qText.length > 120 ? 'clamp(22px, 2.8vw, 36px)' : 'clamp(28px, 3.5vw, 48px)')
-                : (qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)' : 'clamp(36px, 5vw, 72px)'),
+              fontSize: qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)' : 'clamp(36px, 5vw, 72px)',
               fontWeight: 900, lineHeight: 1.22,
-              color: isCheeseReveal ? '#CBD5E1' : '#F1F5F9',
+              color: '#F1F5F9',
               marginBottom: isCheeseReveal ? 16 : 0,
               animation: 'langFadeIn 0.4s ease both',
-              transition: 'font-size 0.4s ease, color 0.4s ease, margin-bottom 0.3s ease',
+              transition: 'opacity 0.4s ease, margin-bottom 0.3s ease',
+              opacity: isCheeseReveal ? 0.55 : 1,
             }}>
               {lang === 'en' && q.textEn ? q.textEn : q.text}
             </div>
@@ -1740,12 +1735,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {/* Revealed answer */}
             {isCheeseReveal && s.revealedAnswer && (
               <div style={{
+                position: 'relative', overflow: 'hidden',
                 fontSize: 'clamp(32px, 4.5vw, 72px)', fontWeight: 900,
                 color: '#4ADE80',
-                animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+                animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 8,
               }}>
+                <div style={{
+                  position: 'absolute', top: 0, width: '60%', height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
+                  animation: 'revealShimmer 0.8s ease 0.5s both',
+                  pointerEvents: 'none',
+                }} />
                 ✓ {s.revealedAnswer}
               </div>
             )}
@@ -1827,7 +1829,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             )}
           </div>
 
-          {/* Question card — centered, full width, stronger presence */}
+          {/* Question card — stays same size on reveal, just dims + blurs */}
           <div style={{
             background: cardBg,
             border: `2px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}22`}`,
@@ -1835,20 +1837,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: revealed
               ? '0 4px 16px rgba(0,0,0,0.3)'
               : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            padding: revealed ? '28px 48px' : '48px 64px',
+            padding: '48px 64px',
             marginBottom: 20,
             width: '100%', maxWidth: 1400,
             textAlign: 'center',
             animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-            transition: 'padding 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease',
-            opacity: revealed ? 0.7 : 1,
+            transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease',
+            opacity: revealed ? 0.5 : 1,
+            filter: revealed ? 'blur(1px)' : 'none',
           }}>
             <div key={lang} style={{
               fontSize: qFontSize,
               fontWeight: 900, lineHeight: 1.22,
-              color: revealed ? '#94A3B8' : '#F1F5F9',
+              color: '#F1F5F9',
               animation: 'langFadeIn 0.4s ease both',
-              transition: 'font-size 0.4s ease, color 0.4s ease',
             }}>
               {qText}
             </div>
@@ -1949,6 +1951,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
+              position: 'relative', overflow: 'hidden',
               padding: '32px 52px', borderRadius: 28,
               background: 'rgba(34,197,94,0.12)',
               border: '3px solid rgba(34,197,94,0.50)',
@@ -1956,8 +1959,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               fontSize: 'clamp(38px, 5.5vw, 76px)', fontWeight: 900,
               color: '#4ade80', marginBottom: 24,
               width: '100%', maxWidth: 1400, textAlign: 'center',
-              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
             }}>
+              {/* Shimmer sweep */}
+              <div style={{
+                position: 'absolute', top: 0, width: '60%', height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                animation: 'revealShimmer 0.8s ease 0.5s both',
+                pointerEvents: 'none',
+              }} />
               ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
             </div>
           )}

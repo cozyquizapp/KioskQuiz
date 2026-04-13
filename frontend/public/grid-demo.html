@@ -314,30 +314,27 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
   // ── 7: SILO — round-looking cylinder ──
   else if(bi===7){
-    // ── SILO: true cylinder — circular top, single curved wall elements ──
-    const w=Math.round(sz*.48), d=Math.round(sz*.48), h=Math.round(sz*.52*hm)+extra;
-    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    // ── SILO: real 3D cylinder — 16 segments arranged in a circle ──
+    const radius=Math.round(sz*.22), h=Math.round(sz*.52*hm)+extra;
+    const ox=Math.round(sz/2), oy=Math.round(sz/2); // center
+    const segs=16;
     const el=document.createElement('div');
-    el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
+    el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:0;height:0;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
+    // Segment width = circumference / segments
+    const segW=Math.round(2*Math.PI*radius/segs)+1;
+    for(let i=0;i<segs;i++){
+      const angle=(360/segs)*i;
+      // Light varies by angle to simulate shading
+      const shade=.35+.40*Math.max(0,Math.cos((angle-135)*Math.PI/180));
+      const seg=document.createElement('div');
+      seg.style.cssText=`position:absolute;left:${-segW/2}px;top:${-radius}px;width:${segW}px;height:${h}px;transform-origin:${segW/2}px ${radius}px;transform:rotateZ(${angle}deg) rotateX(-90deg);background:${rgba(team,shade)};border-left:1px solid ${rgba(team,shade*.6)};border-right:1px solid ${rgba(team,shade*.6)}`;
+      el.appendChild(seg);
+    }
     // Circular top
+    const topSz=radius*2;
     const top=document.createElement('div');
-    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.60)} 60%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.45)}`;
-    // Front wall — single cylinder element using article technique
-    // border-radius:100%/r makes it fully oval, radial-gradients = top/bottom caps
-    const cr=Math.round(h*.15); // cap curve radius
-    const front=document.createElement('div');
-    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.15) 99.99%, transparent 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.08) 99.99%, transparent 0),linear-gradient(90deg, ${rgba(team,.30)} 0%, ${rgba(team,.70)} 35%, ${rgba(team,.70)} 65%, ${rgba(team,.30)} 100%)`;
-    // Right wall — same technique, rotated 90deg
-    const crR=Math.round(h*.15);
-    const right=document.createElement('div');
-    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:${crR*2}px / 100%;background:radial-gradient(${crR}px 50% at ${crR}px 50%, rgba(0,0,0,.12) 99.99%, transparent 0),radial-gradient(${crR}px 50% at calc(100% - ${crR}px) 50%, rgba(255,255,255,.06) 99.99%, transparent 0),linear-gradient(0deg, ${rgba(team,.20)} 0%, ${rgba(team,.48)} 35%, ${rgba(team,.48)} 65%, ${rgba(team,.20)} 100%)`;
-    // Back wall
-    const back=document.createElement('div');
-    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.10) 99.99%, transparent 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.05) 99.99%, transparent 0),linear-gradient(90deg, ${rgba(team,.22)} 0%, ${rgba(team,.52)} 35%, ${rgba(team,.52)} 65%, ${rgba(team,.22)} 100%)`;
-    // Left wall
-    const left=document.createElement('div');
-    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:${crR*2}px / 100%;background:radial-gradient(${crR}px 50% at ${crR}px 50%, rgba(0,0,0,.08) 99.99%, transparent 0),radial-gradient(${crR}px 50% at calc(100% - ${crR}px) 50%, rgba(255,255,255,.05) 99.99%, transparent 0),linear-gradient(0deg, ${rgba(team,.28)} 0%, ${rgba(team,.56)} 35%, ${rgba(team,.56)} 65%, ${rgba(team,.28)} 100%)`;
-    el.appendChild(top);el.appendChild(front);el.appendChild(right);el.appendChild(back);el.appendChild(left);
+    top.style.cssText=`position:absolute;left:${-radius}px;top:${-radius}px;width:${topSz}px;height:${topSz}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.60)} 60%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.40)}`;
+    el.appendChild(top);
     tileEl.appendChild(el);
     mainEl=el; mainTop=top;
     emojiZ=h;
@@ -386,6 +383,11 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
 }
 
+// Ghost team — light gray, used for empty tiles
+const GHOST={color:'#9CA3AF',r:156,g:163,b:175,name:'',emoji:''};
+// Pre-assign a random building type to each tile for ghost display
+const ghostTypes=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>Math.floor(Math.random()*BTYPES.length)));
+
 // ══ STATE ══
 let activeTeam=0;
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
@@ -417,6 +419,13 @@ function renderTile(r,c){
   if(!cell){
     el.classList.remove('owned');
     ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+    // Ghost building — gray, translucent
+    const gbi=ghostTypes[r][c];
+    buildBuilding(el,{home:false,frozen:false,stacked:0,joker:false,btype:gbi},GHOST,CELL,gbi);
+    // Make all building children translucent
+    Array.from(el.children).forEach(ch=>{
+      if(!ch.classList.contains('ground')) ch.style.opacity='0.12';
+    });
     return;
   }
   el.classList.add('owned');

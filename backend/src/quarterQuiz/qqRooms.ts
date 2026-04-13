@@ -474,6 +474,7 @@ export function qqActivateQuestion(
   room.pendingAction  = null;
   room.answers        = [];
   room.buzzQueue      = [];
+  room.lastPlacedCell = null;
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
   room.hotPotatoLastAnswer   = null;

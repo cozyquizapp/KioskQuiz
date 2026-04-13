@@ -1008,6 +1008,7 @@ export default function QQModeratorPage() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );

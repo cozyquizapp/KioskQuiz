@@ -502,12 +502,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
             padding: '10px 14px', borderRadius: 16,
-            background: '#1B1510', border: `1px solid ${teamColor}44`,
-            boxShadow: `0 4px 16px rgba(0,0,0,0.4), 0 0 20px ${teamColor}18`,
+            background: '#1B1510', border: '1px solid rgba(255,255,255,0.10)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
             <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(myTeam.avatarId).emoji}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 20, color: teamColor, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+              <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                 {myTeam.name}
               </div>
             </div>

@@ -2381,22 +2381,22 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {/* Options or chosen action */}
       {team && (
         <div style={{
-          width: '100%', maxWidth: 700,
+          width: '100%', maxWidth: 1100,
           animation: 'contentReveal 0.5s ease 0.4s both',
           position: 'relative', zIndex: 5,
         }}>
           {!s.comebackAction ? (
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
               <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
               <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
               <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
             </div>
           ) : (
             <div style={{
-              padding: '22px 36px', borderRadius: 20, textAlign: 'center',
-              background: cardBg, border: `2px solid ${teamColor}33`,
-              boxShadow: `0 0 40px ${teamColor}15, 0 8px 32px rgba(0,0,0,0.5)`,
-              fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0',
+              padding: '32px 48px', borderRadius: 24, textAlign: 'center',
+              background: cardBg, border: `2px solid ${teamColor}44`,
+              boxShadow: `0 0 50px ${teamColor}18, 0 8px 32px rgba(0,0,0,0.5)`,
+              fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#e2e8f0',
               animation: 'bQuestionIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both',
             }}>
               {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
@@ -3234,15 +3234,16 @@ export function Fireflies({ color }: { color?: string } = {}) {
 function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string; label: string; desc: string; color: string; cardBg?: string }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 16, padding: '16px 22px', borderRadius: 16,
+      display: 'flex', alignItems: 'center', gap: 24, padding: '28px 36px', borderRadius: 22,
       background: bg ?? '#1B1510',
-      border: `1px solid ${color}33`,
-      boxShadow: `0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)`,
+      border: `2px solid ${color}44`,
+      boxShadow: `0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 30px ${color}12`,
+      flex: '1 1 0', minWidth: 200,
     }}>
-      <span style={{ fontSize: 28, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 48, lineHeight: 1 }}>{icon}</span>
       <div>
-        <div style={{ fontWeight: 900, color, fontSize: 17 }}>{label}</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', marginTop: 2 }}>{desc}</div>
+        <div style={{ fontWeight: 900, color, fontSize: 'clamp(22px, 2.5vw, 30px)' }}>{label}</div>
+        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(17px, 1.8vw, 22px)', color: '#94a3b8', marginTop: 4 }}>{desc}</div>
       </div>
     </div>
   );

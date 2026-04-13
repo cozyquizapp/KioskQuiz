@@ -1,6 +1,23 @@
 import { useState, useRef } from 'react';
 import { QQSoundConfig, QQ_SOUND_SLOT_LABELS } from '../../../shared/quarterQuizTypes';
 
+/** Derive the backend origin from API_BASE so audio URLs resolve correctly in prod. */
+const API_BASE = (() => {
+  const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
+  if (envBase) return envBase;
+  const { protocol, hostname } = window.location;
+  const isLocal = hostname === 'localhost' || hostname.startsWith('127.');
+  return isLocal ? `${protocol}//${hostname}:4000/api` : `${window.location.origin}/api`;
+})();
+
+/** Turn a potentially relative audio URL into an absolute one pointing at the backend. */
+function resolveAudioUrl(url: string): string {
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // API_BASE looks like "http://host:port/api" — strip "/api" to get the origin
+  const origin = API_BASE.replace(/\/api\/?$/, '');
+  return `${origin}${url}`;
+}
+
 export function QQSoundPanel({ config, onChange }: {
   config: QQSoundConfig;
   onChange: (cfg: QQSoundConfig) => void;
@@ -14,10 +31,10 @@ export function QQSoundPanel({ config, onChange }: {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/upload/question-audio', { method: 'POST', body: fd });
+      const res = await fetch(`${API_BASE}/upload/question-audio`, { method: 'POST', body: fd });
       if (res.ok) {
         const { audioUrl } = await res.json() as { audioUrl: string };
-        onChange({ ...config, [slot]: audioUrl });
+        onChange({ ...config, [slot]: resolveAudioUrl(audioUrl) });
       } else {
         alert('Upload fehlgeschlagen');
       }

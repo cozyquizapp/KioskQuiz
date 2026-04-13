@@ -239,9 +239,7 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
     pole.style.cssText=`position:absolute;left:${ox+Math.round(w/2)-1}px;top:${oy+Math.round(d/2)-1}px;width:3px;height:3px;transform-style:preserve-3d;transform:translateZ(${h}px);pointer-events:none`;
     const shaft=document.createElement('div');
     shaft.style.cssText=`position:absolute;left:0;bottom:0;width:3px;height:${ah}px;transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.6)`;
-    const tip=document.createElement('div');
-    tip.style.cssText=`position:absolute;left:-3px;top:-3px;width:9px;height:9px;transform:translateZ(${ah}px);background:${rgba(team,1)};border-radius:50%;box-shadow:0 0 8px ${rgba(team,.8)}`;
-    pole.appendChild(shaft);pole.appendChild(tip);tileEl.appendChild(pole);
+    pole.appendChild(shaft);tileEl.appendChild(pole);
     emojiZ=h;
   }
   // ── 3: LADEN — very wide, very flat + awning ──
@@ -316,32 +314,11 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
   // ── 7: SILO — round-looking cylinder ──
   else if(bi===7){
-    // ── SILO: single-element cylinder technique from article ──
-    // Each wall face uses border-radius:100%/r*2 + 2 radial-gradients for caps
-    const w=Math.round(sz*.46), d=Math.round(sz*.46), h=Math.round(sz*.52*hm)+extra;
+    // ── SILO: square box, short and wide ──
+    const w=Math.round(sz*.48), d=Math.round(sz*.48), h=Math.round(sz*.52*hm)+extra;
     const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
-    const el=document.createElement('div');
-    el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
-    // Curve radius for top/bottom caps on each wall
-    const cr=Math.round(w*.28);
-    // Round top — circle with sphere gradient
-    const top=document.createElement('div');
-    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.65)} 55%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.45)}`;
-    // Front wall — article cylinder technique: border-radius:100%/cr*2 + 2 radial-gradient caps
-    const front=document.createElement('div');
-    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.12) 99.99%, rgba(0,0,0,0) 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.08) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.65)}`;
-    // Back wall
-    const back=document.createElement('div');
-    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.10) 99.99%, rgba(0,0,0,0) 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.05) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.48)}`;
-    // Right wall
-    const right=document.createElement('div');
-    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:${cr*2}px / 100%;background:radial-gradient(${cr}px 50% at ${cr}px 50%, rgba(0,0,0,.10) 99.99%, rgba(0,0,0,0) 0),radial-gradient(${cr}px 50% at calc(100% - ${cr}px) 50%, rgba(255,255,255,.06) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.38)}`;
-    // Left wall
-    const left=document.createElement('div');
-    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:${cr*2}px / 100%;background:radial-gradient(${cr}px 50% at ${cr}px 50%, rgba(0,0,0,.08) 99.99%, rgba(0,0,0,0) 0),radial-gradient(${cr}px 50% at calc(100% - ${cr}px) 50%, rgba(255,255,255,.05) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.52)}`;
-    el.appendChild(top);el.appendChild(front);el.appendChild(back);el.appendChild(right);el.appendChild(left);
-    tileEl.appendChild(el);
-    mainEl=el; mainTop=top;
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
     emojiZ=h;
   }
 

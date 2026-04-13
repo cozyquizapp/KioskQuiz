@@ -121,35 +121,45 @@ function rgba(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 // ══════════════════════════════════════════════════════════════════════════════
 
 // Create a single 3D box at position (x,y,z) with size (w,d,h).
-// Returns {el, top, front, right} — all with explicit inline styles.
-function box(parent, x, y, z, w, d, h, topColor, frontColor, rightColor, borderColor){
+// 5 faces: top, front, right, back, left — fully closed box.
+function box(parent, x, y, z, w, d, h, topColor, frontColor, rightColor, backColor, leftColor, borderColor){
   const el=document.createElement('div');
   el.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(${z}px);pointer-events:none`;
 
-  // TOP face — sits at height h
+  // TOP face
   const top=document.createElement('div');
   top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);background:${topColor};border:1px solid ${borderColor}`;
 
-  // FRONT face — bottom edge, rotated down
+  // FRONT face — bottom edge
   const front=document.createElement('div');
   front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);background:${frontColor};border:1px solid ${borderColor}`;
 
-  // RIGHT face — right edge, rotated right
+  // RIGHT face — right edge
   const right=document.createElement('div');
   right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);background:${rightColor};border:1px solid ${borderColor}`;
 
-  el.appendChild(top);el.appendChild(front);el.appendChild(right);
+  // BACK face — top edge
+  const back=document.createElement('div');
+  back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);background:${backColor};border:1px solid ${borderColor}`;
+
+  // LEFT face — left edge
+  const left=document.createElement('div');
+  left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);background:${leftColor};border:1px solid ${borderColor}`;
+
+  el.appendChild(top);el.appendChild(front);el.appendChild(right);el.appendChild(back);el.appendChild(left);
   parent.appendChild(el);
   return{el,top,front,right};
 }
 
-// Convenience: colored box using team colors
+// Convenience: colored box using team colors — 5 faces, fully closed
 function tbox(parent, x, y, z, w, d, h, team, bright){
   bright=bright||0;
   return box(parent, x, y, z, w, d, h,
     rgba(team, .90+bright),           // top: brightest
     rgba(team, .68+bright*.5),        // front: medium
     rgba(team, .42+bright*.3),        // right: darkest
+    rgba(team, .52+bright*.3),        // back: medium-dark
+    rgba(team, .58+bright*.4),        // left: medium
     rgba(team, .30)                   // border
   );
 }
@@ -310,16 +320,23 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
     const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
     const el=document.createElement('div');
     el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
-    // Round top
+    const hr=Math.round(w/2); // half-radius for rounding
+    // Round top — circle
     const top=document.createElement('div');
     top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.65)} 60%, ${rgba(team,.35)} 100%);border:1px solid ${rgba(team,.50)}`;
-    // Curved front — gradient gives illusion of roundness
+    // Front — full border-radius to make it oval/rounded
     const front=document.createElement('div');
-    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:${Math.round(w*.5)}px / 5px;background:linear-gradient(90deg, ${rgba(team,.30)} 0%, ${rgba(team,.72)} 30%, ${rgba(team,.72)} 70%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.35)}`;
-    // Curved right
+    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:${hr}px / 6px;background:linear-gradient(90deg, ${rgba(team,.25)} 0%, ${rgba(team,.72)} 30%, ${rgba(team,.72)} 70%, ${rgba(team,.25)} 100%);border:1px solid ${rgba(team,.35)}`;
+    // Back
+    const back=document.createElement('div');
+    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:${hr}px / 6px;background:linear-gradient(90deg, ${rgba(team,.20)} 0%, ${rgba(team,.52)} 30%, ${rgba(team,.52)} 70%, ${rgba(team,.20)} 100%);border:1px solid ${rgba(team,.28)}`;
+    // Right
     const right=document.createElement('div');
-    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:5px / ${Math.round(d*.5)}px;background:linear-gradient(0deg, ${rgba(team,.22)} 0%, ${rgba(team,.50)} 30%, ${rgba(team,.50)} 70%, ${rgba(team,.22)} 100%);border:1px solid ${rgba(team,.28)}`;
-    el.appendChild(top);el.appendChild(front);el.appendChild(right);
+    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:6px / ${hr}px;background:linear-gradient(0deg, ${rgba(team,.18)} 0%, ${rgba(team,.48)} 30%, ${rgba(team,.48)} 70%, ${rgba(team,.18)} 100%);border:1px solid ${rgba(team,.25)}`;
+    // Left
+    const left=document.createElement('div');
+    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:6px / ${hr}px;background:linear-gradient(0deg, ${rgba(team,.25)} 0%, ${rgba(team,.55)} 30%, ${rgba(team,.55)} 70%, ${rgba(team,.25)} 100%);border:1px solid ${rgba(team,.30)}`;
+    el.appendChild(top);el.appendChild(front);el.appendChild(back);el.appendChild(right);el.appendChild(left);
     tileEl.appendChild(el);
     mainEl=el; mainTop=top;
     emojiZ=h;

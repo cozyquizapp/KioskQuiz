@@ -379,7 +379,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
 
   return (
     <div style={{
-      minHeight: '100vh', width: '100vw',
+      height: '100vh', width: '100vw',
       background: activeTemplate ? (activeTemplate.background || bg) : bg,
       fontFamily: fontFam,
       color: textCol, display: 'flex', flexDirection: 'column',
@@ -1855,7 +1855,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         animation: 'contentReveal 0.35s ease both',
       }}>
         {/* ── Main content — full width, vertically + horizontally centered ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden' }}>
 
           {/* Category badge — top left corner */}
           <div style={{
@@ -2098,6 +2098,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             );
           })()}
+          {/* Team estimates/answers on reveal (Schätzchen, MUCHO, etc.) */}
+          {revealed && q && (
+            <div style={{ width: '100%', maxWidth: 1000, animation: 'contentReveal 0.5s ease 1s both' }}>
+              <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />
+            </div>
+          )}
+
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
           {revealed && s.correctTeamId && (
             <div style={{ animation: 'contentReveal 0.01s ease 0.8s both' }}>
@@ -2302,7 +2309,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   }, [s.questionIndex, use3D]);
 
   const show3D = viewMode === '3d' || viewMode === 'transitioning';
-  const gridMaxSize = Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 700);
+  const gridMaxSize = Math.min(720, typeof window !== 'undefined' ? window.innerHeight * 0.55 : 600);
 
   // Claim toast state
   const [toast, setToast] = useState<{ text: string; color: string; key: number } | null>(null);

@@ -459,7 +459,7 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
       style={{
         perspective: '800px',
         perspectiveOrigin: '50% 35%',
-        padding: '40px 0 20px',
+        padding: '10px 0',
         userSelect: 'none',
         display: 'flex',
         justifyContent: 'center',

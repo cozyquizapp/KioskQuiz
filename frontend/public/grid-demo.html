@@ -44,11 +44,7 @@ body{overflow-y:auto;overflow-x:hidden}
 .c-left{position:absolute;top:0;left:0;width:var(--bh,30px);height:var(--bd);transform-origin:center left;transform:rotateY(-90deg)}
 .c-emoji{position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);transform:translateZ(calc(var(--bh,30px) + 2px));display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
 
-/* ═══ CYLINDER (single-element trick from article) ═══ */
-.cylinder{position:absolute;pointer-events:none}
-
-/* ═══ PYRAMID (border-trick from article: 4 sides) ═══ */
-.pyr-side{position:absolute;width:0;height:0;pointer-events:none;opacity:.85}
+/* (unused CSS removed — buildings use cubes + border-radius now) */
 
 /* Score bar */
 .score-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -129,17 +125,17 @@ TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 8 BUILDING TYPES
+// 8 BUILDING TYPES — extreme silhouette differences
 // ══════════════════════════════════════════════════════════════════════════════
 const BTYPES=[
-  {name:'Haus',     wf:.72, df:.72, hf:.38, build:'cube'},
-  {name:'Turm',     wf:.40, df:.40, hf:.55, build:'pyramid'},  // pyramid roof
-  {name:'Hochhaus', wf:.62, df:.62, hf:.65, build:'cube'},     // tall + antenna
-  {name:'Laden',    wf:.78, df:.60, hf:.22, build:'cube'},     // flat + awning
-  {name:'Fabrik',   wf:.42, df:.72, hf:.42, build:'lshape'},   // L-form
-  {name:'Kirche',   wf:.42, df:.72, hf:.35, build:'church'},   // cross + steeple
-  {name:'Burg',     wf:.40, df:.72, hf:.28, build:'tshape'},   // T-form + turret
-  {name:'Silo',     wf:.50, df:.50, hf:.45, build:'cylinder'}, // real cylinder
+  {name:'Haus',     id:'haus'},      // wide, medium height cube
+  {name:'Turm',     id:'turm'},      // very narrow, very tall
+  {name:'Hochhaus', id:'hochhaus'},   // medium, tallest, antenna + window grid
+  {name:'Laden',    id:'laden'},      // very wide, very flat + awning shelf
+  {name:'Fabrik',   id:'fabrik'},     // 2 cubes side by side, different heights (staircase)
+  {name:'Kirche',   id:'kirche'},     // narrow tall with cross on top
+  {name:'Burg',     id:'burg'},       // wide low wall + 2 corner towers
+  {name:'Silo',     id:'silo'},       // round cylinder
 ];
 
 // ══ HELPERS ══
@@ -164,239 +160,224 @@ function mkCube(parent, x, y, z, w, d, h, team, bm){
   return{el:mc, top:t, front:f, right:r};
 }
 
-// Real pyramid using CSS 3D triangles (clip-path polygons on rotated planes)
-function mkPyramid(parent, x, y, z, baseW, baseH, team){
-  const wrap=document.createElement('div');
-  wrap.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${baseW}px;height:${baseW}px;
-    transform:translateZ(${z}px);pointer-events:none`;
-
-  const half=baseW/2;
-  // Each face is a rectangle rotated so that the top edge meets the apex.
-  // The slant height of the face = sqrt(half² + baseH²)
-  const slant=Math.sqrt(half*half + baseH*baseH);
-  // The angle to tilt each face: between face plane and base
-  const angle=Math.round(Math.atan2(baseH, half)*180/Math.PI);
-
-  // Front face (bottom edge of base)
-  const s1=document.createElement('div');s1.className='pyr-side';
-  s1.style.cssText=`position:absolute;left:0;bottom:0;width:${baseW}px;height:${Math.round(slant)}px;
-    background:${rca(team,.75)};opacity:1;
-    clip-path:polygon(0% 100%, 100% 100%, 50% 0%);
-    transform-origin:bottom center;transform:rotateX(-${angle}deg)`;
-  wrap.appendChild(s1);
-
-  // Back face (top edge of base)
-  const s2=document.createElement('div');s2.className='pyr-side';
-  s2.style.cssText=`position:absolute;left:0;top:0;width:${baseW}px;height:${Math.round(slant)}px;
-    background:${rca(team,.40)};opacity:1;
-    clip-path:polygon(0% 0%, 100% 0%, 50% 100%);
-    transform-origin:top center;transform:rotateX(${angle}deg)`;
-  wrap.appendChild(s2);
-
-  // Right face (right edge of base)
-  const s3=document.createElement('div');s3.className='pyr-side';
-  s3.style.cssText=`position:absolute;right:0;top:0;width:${Math.round(slant)}px;height:${baseW}px;
-    background:${rca(team,.50)};opacity:1;
-    clip-path:polygon(100% 0%, 100% 100%, 0% 50%);
-    transform-origin:center right;transform:rotateY(${angle}deg)`;
-  wrap.appendChild(s3);
-
-  // Left face (left edge of base)
-  const s4=document.createElement('div');s4.className='pyr-side';
-  s4.style.cssText=`position:absolute;left:0;top:0;width:${Math.round(slant)}px;height:${baseW}px;
-    background:${rca(team,.60)};opacity:1;
-    clip-path:polygon(0% 0%, 0% 100%, 100% 50%);
-    transform-origin:center left;transform:rotateY(-${angle}deg)`;
-  wrap.appendChild(s4);
-
-  parent.appendChild(wrap);
-  return wrap;
-}
-
-// Real CSS cylinder from article: single div, border-radius + radial gradients
-function mkCylinder(parent, x, y, z, w, d, h, team){
-  const el=document.createElement('div');el.className='cylinder';
-  const curveR=Math.round(h*.12); // vertical curve radius
-  el.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${d}px;
-    transform:translateZ(${z}px);pointer-events:none`;
-
-  // Top face (circular, lifted)
-  const top=document.createElement('div');
-  top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;
-    transform:translateZ(${h}px);border-radius:50%;
-    background:radial-gradient(circle at 38% 32%, ${rca(team,1)} 0%, ${rca(team,.75)} 50%, ${rca(team,.45)} 100%);
-    border:1px solid ${rca(team,.65)}`;
-  el.appendChild(top);
-
-  // Front face — cylinder body with rounded edges + curved shading
-  const front=document.createElement('div');
-  front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;
-    transform-origin:bottom center;transform:rotateX(-90deg);
-    border-radius:${Math.round(w*.5)}px / ${curveR}px;
-    background:
-      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.12) 99.99%, transparent 0),
-      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.06) 99.99%, transparent 0),
-      linear-gradient(90deg, ${rca(team,.35)} 0%, ${rca(team,.78)} 40%, ${rca(team,.78)} 60%, ${rca(team,.35)} 100%);
-    border:1px solid ${rca(team,.45)}`;
-  el.appendChild(front);
-
-  // Right face — same cylinder trick, darker
-  const right=document.createElement('div');
-  right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;
-    transform-origin:center right;transform:rotateY(90deg);
-    border-radius:${Math.round(d*.5)}px / ${curveR}px;
-    background:
-      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.15) 99.99%, transparent 0),
-      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.04) 99.99%, transparent 0),
-      linear-gradient(90deg, ${rca(team,.22)} 0%, ${rca(team,.55)} 40%, ${rca(team,.55)} 60%, ${rca(team,.22)} 100%);
-    border:1px solid ${rca(team,.35)}`;
-  el.appendChild(right);
-
-  // Back face — for completeness when rotating
-  const back=document.createElement('div');
-  back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;
-    transform-origin:top center;transform:rotateX(90deg);
-    border-radius:${Math.round(w*.5)}px / ${curveR}px;
-    background:linear-gradient(90deg, ${rca(team,.25)} 0%, ${rca(team,.55)} 40%, ${rca(team,.55)} 60%, ${rca(team,.25)} 100%);
-    border:1px solid ${rca(team,.30)}`;
-  el.appendChild(back);
-
-  // Left face
-  const left=document.createElement('div');
-  left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;
-    transform-origin:center left;transform:rotateY(-90deg);
-    border-radius:${Math.round(d*.5)}px / ${curveR}px;
-    background:linear-gradient(90deg, ${rca(team,.30)} 0%, ${rca(team,.65)} 40%, ${rca(team,.65)} 60%, ${rca(team,.30)} 100%);
-    border:1px solid ${rca(team,.40)}`;
-  el.appendChild(left);
-
-  parent.appendChild(el);
-  return{el, top};
+function addWindows(face, w, h, rows, cols){
+  for(let wr=0;wr<rows;wr++)for(let wc=0;wc<cols;wc++){
+    const win=document.createElement('div');
+    const wW=Math.max(3,Math.round(w*.14)), wH=Math.max(3,Math.round(h*.10));
+    const gX=Math.round((w-cols*wW)/(cols+1)), gY=Math.round((h-rows*wH)/(rows+1));
+    win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
+      left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
+      background:rgba(255,255,200,.25);border:1px solid rgba(255,255,200,.08);border-radius:1px;pointer-events:none`;
+    face.appendChild(win);
+  }
 }
 
 // ══ MAIN BUILD FUNCTION ══
 function buildBuilding(tileEl, cell, team, sz, btype, animate=false){
-  // Remove all building elements (cubes, cylinders, pyramid wrappers, emojis, badges, antennas)
   Array.from(tileEl.children).forEach(ch=>{if(!ch.classList.contains('ground'))ch.remove()});
   if(!cell||!team)return;
 
   const bt=btype||BTYPES[0];
-  const bw=Math.round(sz*bt.wf), bd=Math.round(sz*bt.df);
-  let bh=Math.round(sz*bt.hf);
-  if(cell.home) bh=Math.round(bh*1.25);
-  bh+=cell.stacked*Math.round(sz*.18);
-  if(cell.joker) bh+=Math.round(sz*.12);
-  const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
+  let stackBonus=cell.stacked*Math.round(sz*.15);
+  if(cell.joker) stackBonus+=Math.round(sz*.10);
+  const homeMul=cell.home?1.2:1;
 
-  let mainTop, mainFront, mainRight, mainEl;
+  let mainTop, mainFront, mainEl;
+  let emojiZ=0; // z position for emoji
 
-  if(bt.build==='cylinder'){
-    // ── SILO: real CSS cylinder ──
-    const cyl=mkCylinder(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=cyl.el; mainTop=cyl.top;
-  }
-  else if(bt.build==='pyramid'){
-    // ── TURM: cube body + pyramid roof ──
+  if(bt.id==='haus'){
+    // ── HAUS: wide, medium height, simple house ──
+    const bw=Math.round(sz*.75), bd=Math.round(sz*.70);
+    const bh=Math.round(sz*.35*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
     const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
-    // Pyramid on top
-    const pyrH=Math.round(bh*.55);
-    mkPyramid(tileEl, ox, oy, bh, bw, pyrH, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    if(bh>=16&&bw>=16) addWindows(c.front, bw, bh, 1, 2);
+    emojiZ=bh;
   }
-  else if(bt.build==='church'){
-    // ── KIRCHE: cross-shaped (2 cubes) + tall pyramid steeple ──
-    // Vertical part (nave)
-    const c1=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c1.el; mainTop=c1.top; mainFront=c1.front; mainRight=c1.right;
-    // Horizontal part (transept) — wider, shorter
-    const tw=Math.round(sz*.72), td=Math.round(bd*.35), th=Math.round(bh*.80);
-    const tox=Math.round((sz-tw)/2);
-    mkCube(tileEl, tox, oy+Math.round((bd-td)/2), 0, tw, td, th, team, 0.95);
-    // Tall steeple pyramid
-    const pyrH=Math.round(bh*.90);
-    mkPyramid(tileEl, ox, oy, bh, bw, pyrH, team);
-  }
-  else if(bt.build==='lshape'){
-    // ── FABRIK: L-shape = tall part + wide low wing ──
+  else if(bt.id==='turm'){
+    // ── TURM: very narrow, very tall — like a tower ──
+    const bw=Math.round(sz*.32), bd=Math.round(sz*.32);
+    const bh=Math.round(sz*.85*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
     const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
-    // Low wing extending right
-    const wingW=Math.round(sz*.34), wingH=Math.round(bh*.50);
-    mkCube(tileEl, ox+bw-1, oy, 0, wingW, bd, wingH, team, 0.90);
-    // Chimney
-    const cw=Math.round(bw*.24), cd=Math.round(bd*.20), ch=Math.round(bh*.30);
-    mkCube(tileEl, ox+1, oy+1, bh, cw, cd, ch, team, 0.80);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    // Pointed roof = a smaller cube on top, tapered
+    const roofW=Math.round(bw*.60), roofD=Math.round(bd*.60);
+    const roofH=Math.round(bh*.30);
+    const rox=ox+Math.round((bw-roofW)/2), roy=oy+Math.round((bd-roofD)/2);
+    mkCube(tileEl, rox, roy, bh, roofW, roofD, roofH, team, 1.1);
+    // Even smaller tip
+    const tipW=Math.round(roofW*.45), tipD=Math.round(roofD*.45);
+    const tipH=Math.round(roofH*.70);
+    const tox2=rox+Math.round((roofW-tipW)/2), toy2=roy+Math.round((roofD-tipD)/2);
+    mkCube(tileEl, tox2, toy2, bh+roofH, tipW, tipD, tipH, team, 1.2);
+    if(bh>=20) addWindows(c.front, bw, bh, 3, 1);
+    emojiZ=bh+roofH+tipH;
   }
-  else if(bt.build==='tshape'){
-    // ── BURG: T-shape = stem + wide cross-bar + turret ──
+  else if(bt.id==='hochhaus'){
+    // ── HOCHHAUS: medium width, very tall, grid windows, antenna ──
+    const bw=Math.round(sz*.55), bd=Math.round(sz*.55);
+    const bh=Math.round(sz*.72*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
     const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
-    // Wide cross-bar at front
-    const barW=Math.round(sz*.76), barD=Math.round(bd*.38), barH=Math.round(bh*.75);
-    const barOx=Math.round((sz-barW)/2);
-    mkCube(tileEl, barOx, oy, 0, barW, barD, barH, team, 0.92);
-    // Corner turret with pyramid
-    const tw=Math.round(barW*.20), td=Math.round(barD*.55), th=Math.round(bh*.55);
-    mkCube(tileEl, barOx+barW-tw, oy, barH, tw, td, th, team, 1.05);
-    const pyrH=Math.round(th*.50);
-    mkPyramid(tileEl, barOx+barW-tw, oy, barH+th, tw, pyrH, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    if(bh>=20&&bw>=14) addWindows(c.front, bw, bh, 3, 2);
+    // Antenna
+    const ah=Math.round(bh*.30);
+    const pole=document.createElement('div');
+    pole.style.cssText=`position:absolute;left:${ox+Math.round(bw/2)-1}px;top:${oy+Math.round(bd/2)-1}px;
+      width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
+    const shaft=document.createElement('div');
+    shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
+      transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.6)`;
+    const dot=document.createElement('div');
+    dot.style.cssText=`position:absolute;left:-3px;top:-3px;width:8px;height:8px;
+      transform:translateZ(${ah}px);background:${rca(team,1)};border-radius:50%;
+      box-shadow:0 0 6px ${rca(team,.8)}`;
+    pole.appendChild(shaft);pole.appendChild(dot);tileEl.appendChild(pole);
+    emojiZ=bh;
   }
-  else {
-    // ── DEFAULT CUBE (Haus, Hochhaus, Laden) ──
+  else if(bt.id==='laden'){
+    // ── LADEN: very wide, very flat — like a shop with awning ──
+    const bw=Math.round(sz*.82), bd=Math.round(sz*.65);
+    const bh=Math.round(sz*.18*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
     const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
-
-    // Hochhaus: antenna
-    if(bt.name==='Hochhaus'){
-      const ah=Math.round(bh*.35);
-      const pole=document.createElement('div');
-      pole.style.cssText=`position:absolute;left:${ox+Math.round(bw/2)-1}px;top:${oy+Math.round(bd/2)-1}px;
-        width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
-      const shaft=document.createElement('div');
-      shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
-        transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.5)`;
-      const dot=document.createElement('div');
-      dot.style.cssText=`position:absolute;left:-2px;top:-2px;width:6px;height:6px;
-        transform:translateZ(${ah}px);background:${rca(team,.95)};border-radius:50%`;
-      pole.appendChild(shaft);pole.appendChild(dot);tileEl.appendChild(pole);
-    }
-    // Laden: awning shelf
-    if(bt.name==='Laden'){
-      const aw=bw+4, ad=Math.round(bd*.30), ah=3;
-      mkCube(tileEl, ox-2, oy+bd-Math.round(ad*.3), Math.round(bh*.55), aw, ad, ah, team, 1.15);
-    }
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    // Big awning extending forward — contrasting brightness
+    const aw=bw+6, ad=Math.round(bd*.40), ah=Math.round(sz*.04);
+    const aox=ox-3, aoy=oy+bd-Math.round(ad*.25);
+    mkCube(tileEl, aox, aoy, Math.round(bh*.60), aw, ad, ah, team, 1.2);
+    emojiZ=bh;
   }
-
-  // Windows on front face (cubes only, not cylinder)
-  if(mainFront && bh>=16 && bw>=16 && bt.build!=='cylinder'){
-    const winRows=bh>=28?2:1, winCols=bw>=22?2:1;
-    for(let wr=0;wr<winRows;wr++)for(let wc=0;wc<winCols;wc++){
-      const win=document.createElement('div');
-      const wW=Math.max(3,Math.round(bw*.15)), wH=Math.max(3,Math.round(bh*.13));
-      const gX=Math.round((bw-winCols*wW)/(winCols+1)), gY=Math.round((bh-winRows*wH)/(winRows+1));
-      win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
-        left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
-        background:rgba(255,255,200,.22);border:1px solid rgba(255,255,200,.06);border-radius:1px;pointer-events:none`;
-      mainFront.appendChild(win);
-    }
+  else if(bt.id==='fabrik'){
+    // ── FABRIK: 2 boxes side by side, different heights (staircase) ──
+    const totalW=Math.round(sz*.80);
+    const w1=Math.round(totalW*.55), w2=totalW-w1;
+    const bd=Math.round(sz*.65);
+    const h1=Math.round(sz*.50*homeMul)+stackBonus;
+    const h2=Math.round(h1*.55); // shorter part
+    const ox=Math.round((sz-totalW)/2), oy=Math.round((sz-bd)/2);
+    // Tall part
+    const c=mkCube(tileEl, ox, oy, 0, w1, bd, h1, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    // Short part next to it
+    mkCube(tileEl, ox+w1-1, oy, 0, w2+1, bd, h2, team, 0.9);
+    // Chimney on tall part
+    const cw=Math.round(w1*.28), cd=Math.round(bd*.22), ch=Math.round(h1*.25);
+    mkCube(tileEl, ox+2, oy+2, h1, cw, cd, ch, team, 0.85);
+    if(h1>=20) addWindows(c.front, w1, h1, 2, 1);
+    emojiZ=h1+ch;
+  }
+  else if(bt.id==='kirche'){
+    // ── KIRCHE: narrow body + very tall steeple with cross ──
+    const bw=Math.round(sz*.45), bd=Math.round(sz*.65);
+    const bh=Math.round(sz*.32*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    // Tall steeple tower
+    const tw=Math.round(bw*.55), td=Math.round(bd*.40);
+    const th=Math.round(bh*1.1);
+    const tox=ox+Math.round((bw-tw)/2), toy=oy+Math.round((bd-td)/2);
+    mkCube(tileEl, tox, toy, bh, tw, td, th, team, 1.05);
+    // Cross on top (2 bars)
+    const crossH=Math.round(th*.45);
+    const barW=2, barH=crossH;
+    // Vertical bar
+    const crossWrap=document.createElement('div');
+    crossWrap.style.cssText=`position:absolute;left:${tox+Math.round(tw/2)-1}px;top:${toy+Math.round(td/2)-1}px;
+      width:2px;height:2px;transform:translateZ(${bh+th}px);pointer-events:none`;
+    const vBar=document.createElement('div');
+    vBar.style.cssText=`position:absolute;left:0;bottom:0;width:3px;height:${crossH}px;
+      transform-origin:bottom center;transform:rotateX(-90deg);
+      background:rgba(255,255,255,.85);border-radius:1px`;
+    crossWrap.appendChild(vBar);
+    // Horizontal bar
+    const hBarLen=Math.round(crossH*.55);
+    const hBar=document.createElement('div');
+    hBar.style.cssText=`position:absolute;left:${-Math.round(hBarLen/2)+1}px;top:-1px;width:${hBarLen}px;height:3px;
+      transform:translateZ(${Math.round(crossH*.65)}px);
+      background:rgba(255,255,255,.85);border-radius:1px`;
+    crossWrap.appendChild(hBar);
+    tileEl.appendChild(crossWrap);
+    emojiZ=bh+th;
+  }
+  else if(bt.id==='burg'){
+    // ── BURG: wide low wall + 2 tall corner towers ──
+    const bw=Math.round(sz*.80), bd=Math.round(sz*.70);
+    const bh=Math.round(sz*.20*homeMul)+stackBonus; // low wall
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
+    // Low main wall
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front;
+    // Left tower (taller)
+    const tw=Math.round(bw*.28), td=Math.round(bd*.30);
+    const th=Math.round(bh*2.2);
+    mkCube(tileEl, ox, oy, 0, tw, td, th, team, 1.05);
+    // Right tower (taller)
+    mkCube(tileEl, ox+bw-tw, oy, 0, tw, td, th, team, 1.05);
+    emojiZ=th;
+  }
+  else if(bt.id==='silo'){
+    // ── SILO: cylinder with rounded top ──
+    const bw=Math.round(sz*.48), bd=Math.round(sz*.48);
+    const bh=Math.round(sz*.50*homeMul)+stackBonus;
+    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
+    // Use cube but with heavy border-radius on all faces to look round
+    const mc=document.createElement('div');mc.className='cube';
+    mc.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;
+      position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+      transform:translateZ(0px);pointer-events:none;
+      left:${ox}px;top:${oy}px`;
+    // Top — circle
+    const t=document.createElement('div');t.className='c-top';
+    t.style.cssText=`background:radial-gradient(circle at 38% 32%, ${rca(team,1)} 0%, ${rca(team,.70)} 60%, ${rca(team,.40)} 100%);
+      border:1px solid ${rca(team,.65)};border-radius:50%`;
+    // Front — with horizontal border-radius for curved look
+    const f=document.createElement('div');f.className='c-front';
+    f.style.cssText=`background:linear-gradient(90deg, ${rca(team,.40)} 0%, ${rca(team,.75)} 35%, ${rca(team,.75)} 65%, ${rca(team,.40)} 100%);
+      border:1px solid ${rca(team,.50)};border-radius:${Math.round(bw/2)}px / 4px`;
+    const bk=document.createElement('div');bk.className='c-back';
+    bk.style.cssText=`background:linear-gradient(90deg, ${rca(team,.30)} 0%, ${rca(team,.55)} 35%, ${rca(team,.55)} 65%, ${rca(team,.30)} 100%);
+      border:1px solid ${rca(team,.40)};border-radius:${Math.round(bw/2)}px / 4px`;
+    // Right — with vertical border-radius
+    const r=document.createElement('div');r.className='c-right';
+    r.style.cssText=`background:linear-gradient(90deg, ${rca(team,.25)} 0%, ${rca(team,.50)} 35%, ${rca(team,.50)} 65%, ${rca(team,.25)} 100%);
+      border:1px solid ${rca(team,.35)};border-radius:4px / ${Math.round(bd/2)}px`;
+    const l=document.createElement('div');l.className='c-left';
+    l.style.cssText=`background:linear-gradient(90deg, ${rca(team,.35)} 0%, ${rca(team,.62)} 35%, ${rca(team,.62)} 65%, ${rca(team,.35)} 100%);
+      border:1px solid ${rca(team,.42)};border-radius:4px / ${Math.round(bd/2)}px`;
+    mc.appendChild(t);mc.appendChild(f);mc.appendChild(bk);mc.appendChild(r);mc.appendChild(l);
+    tileEl.appendChild(mc);
+    mainEl=mc; mainTop=t;
+    emojiZ=bh;
   }
 
   // ── Emoji on top ──
-  const emoji=document.createElement('div');
-  const topH=bh + (bt.build==='pyramid'?Math.round(bh*.3):0);
-  emoji.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${bw}px;height:${bd}px;
-    transform:translateZ(${topH+2}px);display:flex;align-items:center;justify-content:center;
-    pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
-    font-size:${cell.home?Math.round(sz*.32):Math.round(sz*.24)}px`;
-  if(cell.frozen){
-    const esz=cell.home?Math.round(sz*.32):Math.round(sz*.24);
-    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(esz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
-  } else if(cell.joker){
-    emoji.textContent='⭐';
-  } else {
-    emoji.textContent=team.emoji;
+  if(mainEl){
+    const bt2=bt;
+    // Figure out bounds for emoji centering
+    const bw2=mainEl.style.width?parseInt(mainEl.style.width):sz;
+    const bd2=mainEl.style.height?parseInt(mainEl.style.height):sz;
+    const ox2=parseInt(mainEl.style.left)||0;
+    const oy2=parseInt(mainEl.style.top)||0;
+    const emoji=document.createElement('div');
+    emoji.style.cssText=`position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;
+      transform:translateZ(${emojiZ+3}px);display:flex;align-items:center;justify-content:center;
+      pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
+      font-size:${cell.home?Math.round(sz*.30):Math.round(sz*.22)}px`;
+    if(cell.frozen){
+      const esz=cell.home?Math.round(sz*.30):Math.round(sz*.22);
+      emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(esz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
+    } else if(cell.joker){
+      emoji.textContent='⭐';
+    } else {
+      emoji.textContent=team.emoji;
+    }
+    tileEl.appendChild(emoji);
   }
-  tileEl.appendChild(emoji);
 
   // ── Frozen: ice on roof only ──
   if(cell.frozen && mainTop){

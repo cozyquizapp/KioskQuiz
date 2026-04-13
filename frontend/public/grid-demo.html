@@ -76,8 +76,8 @@ body{overflow-y:auto;overflow-x:hidden}
 .type-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:700px}
 .type-card{display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 10px 10px}
 .type-card:hover{border-color:rgba(255,255,255,.12)}
-.tc-stage{perspective:400px;perspective-origin:50% 35%;height:100px;width:80px;display:flex;align-items:center;justify-content:center}
-.tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:46px;height:46px}
+.tc-stage{perspective:400px;perspective-origin:50% 35%;height:120px;width:100px;display:flex;align-items:center;justify-content:center}
+.tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:60px;height:60px}
 .tc-name{font-size:11px;font-weight:800;color:#94a3b8;text-align:center}
 
 /* Keyframes */
@@ -113,7 +113,7 @@ body{overflow-y:auto;overflow-x:hidden}
 </div>
 
 <script>
-const SIZE=7, CELL=56;
+const SIZE=7, CELL=64;
 
 const TEAMS=[];
 function mkTeam(hex,name,emoji){
@@ -150,58 +150,63 @@ function mkCube(parent, x, y, z, w, d, h, team, bm){
     position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);
     transform:translateZ(${z}px);pointer-events:none`;
   const t=document.createElement('div');t.className='c-top';
-  t.style.cssText=`background:${rca(team,.78*bm)};border:1px solid ${rca(team,.55)}`;
+  t.style.cssText=`background:${rca(team,.92*bm)};border:1px solid ${rca(team,.65)}`;
   const f=document.createElement('div');f.className='c-front';
-  f.style.cssText=`background:${rca(team,.44*bm)};border:1px solid ${rca(team,.30)}`;
+  f.style.cssText=`background:${rca(team,.72*bm)};border:1px solid ${rca(team,.50)}`;
+  const bk=document.createElement('div');bk.className='c-back';
+  bk.style.cssText=`background:${rca(team,.55*bm)};border:1px solid ${rca(team,.40)}`;
   const r=document.createElement('div');r.className='c-right';
-  r.style.cssText=`background:${rca(team,.26*bm)};border:1px solid ${rca(team,.22)}`;
-  mc.appendChild(t);mc.appendChild(f);mc.appendChild(r);
+  r.style.cssText=`background:${rca(team,.48*bm)};border:1px solid ${rca(team,.35)}`;
+  const l=document.createElement('div');l.className='c-left';
+  l.style.cssText=`background:${rca(team,.62*bm)};border:1px solid ${rca(team,.45)}`;
+  mc.appendChild(t);mc.appendChild(f);mc.appendChild(bk);mc.appendChild(r);mc.appendChild(l);
   parent.appendChild(mc);
   return{el:mc, top:t, front:f, right:r};
 }
 
-// Real pyramid using border trick from daily-dev-tips article:
-// .side { border: Xpx solid transparent; border-bottom: Ypx solid color; width:0;height:0 }
-// 4 sides rotated into position, + base
+// Real pyramid using CSS 3D triangles (clip-path polygons on rotated planes)
 function mkPyramid(parent, x, y, z, baseW, baseH, team){
   const wrap=document.createElement('div');
   wrap.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${baseW}px;height:${baseW}px;
     transform:translateZ(${z}px);pointer-events:none`;
 
-  const half=Math.round(baseW/2);
-  // Tilt angle: atan(height / (base/2))
+  const half=baseW/2;
+  // Each face is a rectangle rotated so that the top edge meets the apex.
+  // The slant height of the face = sqrt(half² + baseH²)
+  const slant=Math.sqrt(half*half + baseH*baseH);
+  // The angle to tilt each face: between face plane and base
   const angle=Math.round(Math.atan2(baseH, half)*180/Math.PI);
 
-  // Side 1 (front — toward camera in isometric = bottom edge)
+  // Front face (bottom edge of base)
   const s1=document.createElement('div');s1.className='pyr-side';
-  s1.style.cssText=`left:0;top:0;
-    border-left:${half}px solid transparent;border-right:${half}px solid transparent;
-    border-bottom:${baseH}px solid ${rca(team,.55)};
-    transform-origin:bottom center;transform:rotateX(${angle}deg)`;
+  s1.style.cssText=`position:absolute;left:0;bottom:0;width:${baseW}px;height:${Math.round(slant)}px;
+    background:${rca(team,.75)};opacity:1;
+    clip-path:polygon(0% 100%, 100% 100%, 50% 0%);
+    transform-origin:bottom center;transform:rotateX(-${angle}deg)`;
   wrap.appendChild(s1);
 
-  // Side 2 (back — top edge)
+  // Back face (top edge of base)
   const s2=document.createElement('div');s2.className='pyr-side';
-  s2.style.cssText=`left:0;bottom:0;
-    border-left:${half}px solid transparent;border-right:${half}px solid transparent;
-    border-top:${baseH}px solid ${rca(team,.30)};
-    transform-origin:top center;transform:rotateX(-${angle}deg)`;
+  s2.style.cssText=`position:absolute;left:0;top:0;width:${baseW}px;height:${Math.round(slant)}px;
+    background:${rca(team,.40)};opacity:1;
+    clip-path:polygon(0% 0%, 100% 0%, 50% 100%);
+    transform-origin:top center;transform:rotateX(${angle}deg)`;
   wrap.appendChild(s2);
 
-  // Side 3 (right)
+  // Right face (right edge of base)
   const s3=document.createElement('div');s3.className='pyr-side';
-  s3.style.cssText=`right:0;top:0;
-    border-top:${half}px solid transparent;border-bottom:${half}px solid transparent;
-    border-left:${baseH}px solid ${rca(team,.22)};
-    transform-origin:center right;transform:rotateY(-${angle}deg)`;
+  s3.style.cssText=`position:absolute;right:0;top:0;width:${Math.round(slant)}px;height:${baseW}px;
+    background:${rca(team,.50)};opacity:1;
+    clip-path:polygon(100% 0%, 100% 100%, 0% 50%);
+    transform-origin:center right;transform:rotateY(${angle}deg)`;
   wrap.appendChild(s3);
 
-  // Side 4 (left)
+  // Left face (left edge of base)
   const s4=document.createElement('div');s4.className='pyr-side';
-  s4.style.cssText=`left:0;top:0;
-    border-top:${half}px solid transparent;border-bottom:${half}px solid transparent;
-    border-right:${baseH}px solid ${rca(team,.42)};
-    transform-origin:center left;transform:rotateY(${angle}deg)`;
+  s4.style.cssText=`position:absolute;left:0;top:0;width:${Math.round(slant)}px;height:${baseW}px;
+    background:${rca(team,.60)};opacity:1;
+    clip-path:polygon(0% 0%, 0% 100%, 100% 50%);
+    transform-origin:center left;transform:rotateY(-${angle}deg)`;
   wrap.appendChild(s4);
 
   parent.appendChild(wrap);
@@ -219,33 +224,51 @@ function mkCylinder(parent, x, y, z, w, d, h, team){
   const top=document.createElement('div');
   top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;
     transform:translateZ(${h}px);border-radius:50%;
-    background:radial-gradient(circle at 38% 32%, ${rca(team,.95)} 0%, ${rca(team,.50)} 50%, ${rca(team,.25)} 100%);
-    border:1px solid ${rca(team,.50)}`;
+    background:radial-gradient(circle at 38% 32%, ${rca(team,1)} 0%, ${rca(team,.75)} 50%, ${rca(team,.45)} 100%);
+    border:1px solid ${rca(team,.65)}`;
   el.appendChild(top);
 
-  // Front face — cylinder body with rounded top/bottom (article technique)
+  // Front face — cylinder body with rounded edges + curved shading
   const front=document.createElement('div');
   front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;
     transform-origin:bottom center;transform:rotateX(-90deg);
     border-radius:${Math.round(w*.5)}px / ${curveR}px;
     background:
-      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.15) 99.99%, transparent 0),
-      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.08) 99.99%, transparent 0),
-      linear-gradient(90deg, ${rca(team,.18)} 0%, ${rca(team,.52)} 40%, ${rca(team,.52)} 60%, ${rca(team,.18)} 100%);
-    border:1px solid ${rca(team,.30)}`;
+      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.12) 99.99%, transparent 0),
+      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.06) 99.99%, transparent 0),
+      linear-gradient(90deg, ${rca(team,.35)} 0%, ${rca(team,.78)} 40%, ${rca(team,.78)} 60%, ${rca(team,.35)} 100%);
+    border:1px solid ${rca(team,.45)}`;
   el.appendChild(front);
 
-  // Right face — same cylinder trick
+  // Right face — same cylinder trick, darker
   const right=document.createElement('div');
   right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;
     transform-origin:center right;transform:rotateY(90deg);
     border-radius:${Math.round(d*.5)}px / ${curveR}px;
     background:
-      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.18) 99.99%, transparent 0),
-      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.06) 99.99%, transparent 0),
-      linear-gradient(90deg, ${rca(team,.10)} 0%, ${rca(team,.35)} 40%, ${rca(team,.35)} 60%, ${rca(team,.10)} 100%);
-    border:1px solid ${rca(team,.22)}`;
+      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.15) 99.99%, transparent 0),
+      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.04) 99.99%, transparent 0),
+      linear-gradient(90deg, ${rca(team,.22)} 0%, ${rca(team,.55)} 40%, ${rca(team,.55)} 60%, ${rca(team,.22)} 100%);
+    border:1px solid ${rca(team,.35)}`;
   el.appendChild(right);
+
+  // Back face — for completeness when rotating
+  const back=document.createElement('div');
+  back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;
+    transform-origin:top center;transform:rotateX(90deg);
+    border-radius:${Math.round(w*.5)}px / ${curveR}px;
+    background:linear-gradient(90deg, ${rca(team,.25)} 0%, ${rca(team,.55)} 40%, ${rca(team,.55)} 60%, ${rca(team,.25)} 100%);
+    border:1px solid ${rca(team,.30)}`;
+  el.appendChild(back);
+
+  // Left face
+  const left=document.createElement('div');
+  left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;
+    transform-origin:center left;transform:rotateY(-90deg);
+    border-radius:${Math.round(d*.5)}px / ${curveR}px;
+    background:linear-gradient(90deg, ${rca(team,.30)} 0%, ${rca(team,.65)} 40%, ${rca(team,.65)} 60%, ${rca(team,.30)} 100%);
+    border:1px solid ${rca(team,.40)}`;
+  el.appendChild(left);
 
   parent.appendChild(el);
   return{el, top};
@@ -253,12 +276,8 @@ function mkCylinder(parent, x, y, z, w, d, h, team){
 
 // ══ MAIN BUILD FUNCTION ══
 function buildBuilding(tileEl, cell, team, sz, btype, animate=false){
-  tileEl.querySelectorAll('.cube,.cylinder,.pyr-side').forEach(b=>b.remove());
-  // Also remove any pyramid wrapper divs
-  tileEl.querySelectorAll('[style*="translateZ"]').forEach(b=>{
-    if(b.classList.contains('ground')||b.classList.contains('cube')||b.classList.contains('cylinder'))return;
-    if(!b.closest('.cube')&&!b.closest('.cylinder')) b.remove();
-  });
+  // Remove all building elements (cubes, cylinders, pyramid wrappers, emojis, badges, antennas)
+  Array.from(tileEl.children).forEach(ch=>{if(!ch.classList.contains('ground'))ch.remove()});
   if(!cell||!team)return;
 
   const bt=btype||BTYPES[0];
@@ -509,11 +528,11 @@ const galEl=document.getElementById('typegallery');
 BTYPES.forEach((bt,i)=>{
   const card=document.createElement('div');card.className='type-card';
   const stage=document.createElement('div');stage.className='tc-stage';
-  const iso=document.createElement('div');iso.className='tc-iso';
+  const iso=document.createElement('div');iso.className='tc-iso';iso.style.cssText='width:60px;height:60px';
   const ground=document.createElement('div');ground.className='ground';
   ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(TEAMS[i%4],.15)};border:1px solid ${rca(TEAMS[i%4],.35)}`;
   iso.appendChild(ground);
-  buildBuilding(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],46,bt);
+  buildBuilding(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],60,bt);
   stage.appendChild(iso);
   const label=document.createElement('div');label.className='tc-name';
   label.textContent=bt.name;

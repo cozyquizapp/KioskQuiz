@@ -93,8 +93,8 @@ const bt = {
   },
   phase: {
     names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
-    descs: { de: ['', 'Felder besetzen', 'Setzen oder Klauen', 'Comeback-Phase', 'Alles aufs Spiel'],
-             en: ['', 'Claim fields', 'Place or steal', 'Comeback phase', 'All in'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Taktik & Freeze!', 'Alles auf eine Karte!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Tactics & Freeze!', 'All or nothing!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -1086,37 +1086,70 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
-      <Fireflies />
+      <Fireflies color={isFirstOfRound && s.introStep === 0 ? `${color}88` : `${catColor}88`} />
 
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
         <>
+          {/* Round progress pill */}
           <div style={{
-            fontFamily: fontFam,
-            fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
-            color,
-            textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
-            textAlign: 'center',
-            animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, floatNum 3.5s ease-in-out 1s infinite',
+            padding: '8px 24px', borderRadius: 999,
+            background: `${color}18`, border: `2px solid ${color}44`,
+            fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
+            color: `${color}cc`, letterSpacing: '0.08em',
+            marginBottom: 28,
+            animation: 'contentReveal 0.4s ease 0.1s both',
             position: 'relative', zIndex: 5,
           }}>
-            {phaseName}
+            {lang === 'de'
+              ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}`
+              : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
           </div>
 
+          {/* Shockwave burst behind title */}
+          <div style={{ position: 'relative', zIndex: 5 }}>
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: 200, height: 200, marginLeft: -100, marginTop: -100,
+              borderRadius: '50%',
+              border: `3px solid ${color}66`,
+              animation: 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
+              pointerEvents: 'none',
+            }} />
+            {/* Round name — BAM entrance */}
+            <div style={{
+              fontFamily: fontFam,
+              fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
+              color,
+              textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
+              textAlign: 'center',
+              animation: 'roundBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
+            }}>
+              {phaseName}
+            </div>
+          </div>
+
+          {/* Divider line with glow + shimmer */}
           <div style={{
             width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
-            background: color, marginTop: 28, marginBottom: 28,
+            background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+            backgroundSize: '200% 100%',
+            marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: 'phaseLineGrow 0.6s cubic-bezier(0.34,1.2,0.64,1) 0.5s both',
+            animation: 'roundLineGlow 0.7s cubic-bezier(0.34,1.2,0.64,1) 0.5s both, lineShimmer 3s linear 1.5s infinite',
+            boxShadow: `0 0 20px ${color}55, 0 0 40px ${color}22`,
             position: 'relative', zIndex: 5,
           }} />
 
+          {/* Mission subtitle — bigger, bolder */}
           <div style={{
-            fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(32px, 4.5vw, 60px)', fontWeight: 700,
-            color: `${color}88`,
-            animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both',
+            fontFamily: fontFam,
+            fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
+            color: `${color}dd`,
+            textShadow: `0 0 30px ${color}33`,
+            animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
             position: 'relative', zIndex: 5,
+            textAlign: 'center',
           }}>
             {phaseDesc}
           </div>
@@ -2643,7 +2676,8 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   );
 }
 
-export function Fireflies() {
+export function Fireflies({ color }: { color?: string } = {}) {
+  const c = color ?? '#FEF08A';
   return (
     <>
       {FF.map((f, i) => (
@@ -2651,8 +2685,8 @@ export function Fireflies() {
           position: 'absolute', pointerEvents: 'none', zIndex: 2,
           left: `${f.x}%`, top: `${f.y}%`,
           width: 5, height: 5, borderRadius: '50%',
-          background: '#FEF08A',
-          boxShadow: '0 0 6px 2px rgba(254,240,138,0.7)',
+          background: c,
+          boxShadow: `0 0 6px 2px ${c}bb`,
           ['--dx' as string]: `${f.dx}px`,
           ['--dy' as string]: `${f.dy}px`,
           ['--dur' as string]: `${f.dur}s`,

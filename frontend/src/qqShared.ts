@@ -137,6 +137,34 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { opacity: 0.7; transform: scale(1); }
     50%      { opacity: 1; transform: scale(1.15); }
   }
+  @keyframes roundBam {
+    0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
+    40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }
+    65%  { transform: scale(1.03); filter: brightness(1.05); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes roundShockwave {
+    0%   { transform: scale(0.3); opacity: 0.8; }
+    50%  { opacity: 0.4; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  @keyframes roundLineGlow {
+    from { transform: scaleX(0); filter: brightness(2); }
+    60%  { filter: brightness(1.5); }
+    to   { transform: scaleX(1); filter: brightness(1); }
+  }
+  @keyframes roundBreathe {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50%      { transform: scale(1.02); filter: brightness(1.12); }
+  }
+  @keyframes lineShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes subtitleSlide {
+    0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

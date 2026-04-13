@@ -637,8 +637,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const colors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
   const color  = colors[(s.gamePhaseIndex - 1) % 4];
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] };
-  const descs  = { de: ['', '1 Feld pro Sieg', '2 Felder oder klauen', 'Comeback-Phase', 'Alles auf Spiel'],
-                   en: ['', '1 field per win', '2 fields or steal', 'Comeback phase', 'All in'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Taktik & Freeze!', 'Alles auf eine Karte!'],
+                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Tactics & Freeze!', 'All or nothing!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;

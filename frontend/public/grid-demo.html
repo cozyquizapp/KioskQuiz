@@ -266,10 +266,11 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
     addWin(b.front, w1, h1, 2, 1);
     // Short part
     tbox(tileEl, ox+w1-2, oy, 0, w2, d, h2, team, -.05);
-    // Chimney on tall part
-    const cw=Math.round(w1*.30), cd=Math.round(d*.24), ch=Math.round(h1*.28);
-    tbox(tileEl, ox+3, oy+3, h1, cw, cd, ch, team, -.10);
-    emojiZ=h1+ch;
+    // Chimney centered on tall part roof
+    const cw=Math.round(w1*.28), cd=Math.round(d*.22), ch=Math.round(h1*.28);
+    const chimX=ox+Math.round((w1-cw)/2), chimY=oy+Math.round((d-cd)/2);
+    tbox(tileEl, chimX, chimY, h1, cw, cd, ch, team, -.10);
+    emojiZ=h1;
   }
   // ── 5: KIRCHE — narrow body + tall steeple + white cross ──
   else if(bi===5){

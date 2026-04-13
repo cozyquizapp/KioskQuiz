@@ -492,6 +492,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         {s.phase === 'COMEBACK_CHOICE' && (
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
+        {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
         {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} />}
 
         {/* Phase stats */}
@@ -1811,6 +1812,60 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
             </div>
           </button>
         ))}
+      </div>
+    </CozyCard>
+  );
+}
+
+function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
+  const de = lang === 'de';
+  const sorted = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myRank = sorted.findIndex(t => t.id === myTeamId) + 1;
+
+  return (
+    <CozyCard>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#94a3b8' }}>
+          ⏸ {de ? 'Kurze Pause' : 'Short Break'}
+        </div>
+
+        {myTeam && (
+          <div style={{
+            background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 18px',
+            border: `2px solid ${myTeam.color}44`,
+          }}>
+            <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700, marginBottom: 6 }}>
+              {de ? 'Dein Stand' : 'Your Position'}
+            </div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: myTeam.color }}>
+              #{myRank}
+            </div>
+            <div style={{ fontSize: 16, color: '#94a3b8', fontWeight: 700 }}>
+              {myTeam.totalCells} {de ? 'Felder' : 'cells'}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sorted.map((t, i) => (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+              borderRadius: 10,
+              background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
+            }}>
+              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: '#64748b', fontWeight: 800 }}>
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+              </span>
+              <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: t.color }}>{t.name}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{t.totalCells}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>
+          {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
+        </div>
       </div>
     </CozyCard>
   );

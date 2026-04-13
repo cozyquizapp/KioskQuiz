@@ -91,6 +91,9 @@ export interface QQRoomState {
   rulesSlideIndex: number;
   // Phase intro sub-step: 0 = round title (first Q) or category (Q2+), 1 = category (first Q only)
   introStep: number;
+  // Pause: stores the phase to return to when resuming
+  _phaseBeforePause: QQPhase | null;
+  _timerRemainingMs?: number;
   // Fun stats — accumulated across questions
   questionHistory: Array<{
     questionText: string;
@@ -174,6 +177,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       rulesSlideIndex: 0,
       introStep: 0,
+      _phaseBeforePause: null,
       questionHistory: [],
       funnyAnswers: [],
     };
@@ -1596,6 +1600,49 @@ export function qqRulesNext(room: QQRoomState): void {
 export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
   room.rulesSlideIndex = Math.max(0, room.rulesSlideIndex - 1);
+  room.lastActivityAt = Date.now();
+}
+
+// ── Pause / Resume ───────────────────────────────────────────────────────────
+
+/** Pause the game — stores current phase and pauses the timer if running. */
+export function qqPause(room: QQRoomState): void {
+  if (room.phase === 'PAUSED') return; // already paused
+  if (room.phase === 'LOBBY') throw new QQError('WRONG_PHASE', 'Kann in der Lobby nicht pausieren.');
+  room._phaseBeforePause = room.phase;
+  // Pause timer if running (keep timerEndsAt for display but stop the timeout)
+  if (room.timerHandle) {
+    clearTimeout(room.timerHandle);
+    room.timerHandle = null;
+    // Store remaining time so we can resume it
+    if (room.timerEndsAt) {
+      room._timerRemainingMs = Math.max(0, room.timerEndsAt - Date.now());
+      room.timerEndsAt = null; // clear so clients don't count down
+    }
+  }
+  room.phase = 'PAUSED';
+  room.lastActivityAt = Date.now();
+}
+
+/** Resume from pause — restores previous phase and restarts timer if it was running. */
+export function qqResume(room: QQRoomState): void {
+  assertPhase(room, ['PAUSED']);
+  if (!room._phaseBeforePause) throw new QQError('WRONG_PHASE', 'Keine Phase zum Fortsetzen.');
+  room.phase = room._phaseBeforePause;
+  room._phaseBeforePause = null;
+  // Resume timer if there was remaining time
+  if (room._timerRemainingMs != null && room._timerRemainingMs > 0 && room._timerOnExpire) {
+    const remainMs = room._timerRemainingMs;
+    room.timerEndsAt = Date.now() + remainMs;
+    const onExpire = room._timerOnExpire;
+    room.timerHandle = setTimeout(() => {
+      room.timerHandle = null;
+      room.timerEndsAt = null;
+      room._timerOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete room._timerRemainingMs;
   room.lastActivityAt = Date.now();
 }
 

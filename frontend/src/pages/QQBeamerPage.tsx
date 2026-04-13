@@ -431,6 +431,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
             <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
           )}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
+          {s.phase === 'PAUSED'          && <PausedView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
         </>
       )}
@@ -889,183 +890,20 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     return () => clearInterval(id);
   }, []);
 
-  // Leaderboard + fun stats
-  type LeaderEntry = { name: string; wins: number; games: number };
-  type RecentGame = { winner: string; teams: { name: string; score: number }[]; playedAt: number; draftTitle: string };
-  type FunStats = {
-    highestScore: { teamName: string; score: number; draftTitle: string } | null;
-    closestGame: { teams: string[]; gap: number; draftTitle: string } | null;
-    winStreak: { teamName: string; streak: number } | null;
-    mostGames: { teamName: string; games: number } | null;
-    fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null;
-    funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
-  };
-  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
-  const [_recentGames, setRecentGames] = useState<RecentGame[]>([]);
-  const [totalGames, setTotalGames] = useState(0);
-  const [funStats, setFunStats] = useState<FunStats | null>(null);
-  useEffect(() => {
-    const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
-    fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
-      if (data.leaderboard) setLeaderboard(data.leaderboard);
-      if (data.recent) setRecentGames(data.recent);
-      if (data.totalGames) setTotalGames(data.totalGames);
-      if (data.funStats) setFunStats(data.funStats);
-    }).catch(() => {});
-  }, []);
-
-  // Build rotating panels: leaderboard + each fun stat that exists
-  const panels: Array<{ key: string; node: React.ReactNode }> = [];
-  // Panel 0: Leaderboard
-  if (leaderboard.length > 0) {
-    panels.push({ key: 'leaderboard', node: (
-      <div>
-        <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          🏆 {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
-        </div>
-        {leaderboard.slice(0, 5).map((entry, i) => (
-          <div key={entry.name} style={{
-            display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0',
-            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          }}>
-            <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 36, textAlign: 'center' }}>
-              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-            </span>
-            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(17px, 1.8vw, 24px)', color: '#e2e8f0' }}>{entry.name}</span>
-            <span style={{ fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
-            <span style={{ fontSize: 'clamp(12px, 1.2vw, 16px)', color: '#64748b' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
-          </div>
-        ))}
-      </div>
-    )});
-  }
-  // Panel: Records (highest score + closest game + win streak + most games)
-  if (funStats) {
-    const records: React.ReactNode[] = [];
-    if (funStats.highestScore) {
-      records.push(
-        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🔥</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
-              {de ? 'Höchster Score' : 'Highest Score'}
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    if (funStats.closestGame) {
-      records.push(
-        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>⚔️</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
-              {de ? 'Knappster Sieg' : 'Closest Game'}
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
-              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    if (funStats.winStreak) {
-      records.push(
-        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🔥</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
-              {de ? 'Siegesserie' : 'Win Streak'}
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    if (funStats.mostGames) {
-      records.push(
-        <div key="mg" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>🎮</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
-              {de ? 'Meiste Spiele' : 'Most Games'}
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.mostGames.teamName}</strong> — {funStats.mostGames.games} {de ? 'Spiele' : 'games'}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    if (funStats.fastestAnswer) {
-      const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
-      records.push(
-        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0' }}>
-          <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)' }}>⚡</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.7vw, 22px)', color: '#e2e8f0' }}>
-              {de ? 'Schnellste Antwort' : 'Fastest Answer'}
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    if (records.length > 0) {
-      panels.push({ key: 'records', node: (
-        <div>
-          <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-            📊 {de ? 'Rekorde' : 'Records'}
-          </div>
-          {records}
-        </div>
-      )});
-    }
-  }
-  // Panel: Funny answers
-  if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
-    panels.push({ key: 'funny', node: (
-      <div>
-        <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          😂 {de ? 'Lustigste Antworten' : 'Funniest Answers'}
-        </div>
-        {funStats.funnyAnswers.map((fa, i) => (
-          <div key={i} style={{ padding: '8px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-            <div style={{ fontSize: 'clamp(17px, 1.8vw, 24px)', fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
-            <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#64748b', marginTop: 3 }}>— {fa.teamName}</div>
-          </div>
-        ))}
-      </div>
-    )});
-  }
-
-  // Auto-rotate panels
-  const [panelIdx, setPanelIdx] = useState(0);
-  useEffect(() => {
-    if (panels.length <= 1) return;
-    const id = setInterval(() => setPanelIdx(p => (p + 1) % panels.length), 10000);
-    return () => clearInterval(id);
-  }, [panels.length]);
-
-  const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
+  // Dynamic status text
+  const teamCount = s.teams.length;
+  const connectedCount = s.teams.filter(t => t.connected).length;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'space-between',
-      padding: '48px 56px 40px', position: 'relative', overflow: 'hidden',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '36px 56px 32px', position: 'relative', overflow: 'hidden',
+      gap: 'clamp(16px, 2.5vh, 32px)',
     }}>
       <Fireflies />
 
-      {/* ── Top: Title centered ── */}
+      {/* ── Top: Title ── */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5,
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
@@ -1079,103 +917,96 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         }}>
           {de ? 'Quartier Quiz' : 'Quarter Quiz'}
         </div>
+        <div style={{
+          fontSize: 'clamp(20px, 2.5vw, 36px)', fontWeight: 700, color: '#94a3b8',
+          marginTop: 8, letterSpacing: '0.02em',
+        }}>
+          {de ? 'Scanne den Code und tritt deinem Team bei!' : 'Scan the code and join your team!'}
+        </div>
       </div>
 
-      {/* ── Middle: QR + rotating stats side by side ── */}
+      {/* ── Center: QR hero (dominant) + small stats panel ── */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 'clamp(40px, 6vw, 100px)', position: 'relative', zIndex: 5,
-        width: '100%', maxWidth: 1200,
+        gap: 'clamp(48px, 7vw, 120px)', position: 'relative', zIndex: 5,
+        width: '100%', maxWidth: 1400,
       }}>
-        {/* QR Code */}
+        {/* QR Code — HERO element */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
           flexShrink: 0,
           animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
         }}>
           <div style={{
-            background: '#ffffff', borderRadius: 24, padding: 24,
+            background: '#ffffff', borderRadius: 28, padding: 28,
             animation: 'qrGlow 3s ease-in-out infinite',
-            boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+            boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 40px rgba(255,255,255,0.08)',
           }}>
-            <QRCodeSVG value={joinUrl} size={320} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+            <QRCodeSVG value={joinUrl} size={400} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', color: '#e2e8f0', fontWeight: 800, marginBottom: 4 }}>
-              {de ? 'Jetzt mitspielen' : 'Join now'}
+            <div style={{
+              fontSize: 'clamp(22px, 2.6vw, 34px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 6,
+            }}>
+              {de ? 'Jetzt mitspielen!' : 'Join now!'}
             </div>
             <div style={{
-              fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#64748b', fontFamily: 'monospace',
-              background: cardBg, padding: '8px 18px', borderRadius: 10,
+              fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#94a3b8', fontFamily: 'monospace',
+              background: cardBg, padding: '10px 24px', borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.1)',
             }}>
-              {joinUrl.replace('https://', '').replace('http://', '')}
+              {de ? 'Oder gehe zu: ' : 'Or go to: '}{joinUrl.replace('https://', '').replace('http://', '')}
             </div>
           </div>
         </div>
 
-        {/* Rotating stats/records panels — big center */}
-        {activePanel && (
-          <div style={{
-            flex: 1, maxWidth: 520,
-            animation: 'contentReveal 0.5s ease both',
-          }}>
-            <div style={{
-              background: cardBg, borderRadius: 20, padding: 'clamp(20px, 2.5vw, 32px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-            }}>
-              {activePanel.node}
-              {panels.length > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
-                  {panels.map((_, i) => (
-                    <div key={i} style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
-                      transition: 'background 0.3s',
-                    }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* ── Bottom: Teams row + status ── */}
+      {/* ── Bottom: Teams + dynamic status ── */}
       <div style={{ position: 'relative', zIndex: 5, textAlign: 'center', width: '100%' }}>
-        {s.teams.length === 0 ? (
-          <div style={{ color: '#475569', fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 700 }}>
+        {teamCount === 0 ? (
+          <div style={{
+            color: '#94a3b8', fontSize: 'clamp(22px, 2.5vw, 32px)', fontWeight: 700,
+            animation: 'lobbyPulse 2.5s ease-in-out infinite',
+          }}>
             {de ? 'Warte auf Teams…' : 'Waiting for teams…'}
           </div>
         ) : (
           <>
             <div style={{
               display: 'flex', gap: 'clamp(12px, 1.5vw, 20px)', justifyContent: 'center', flexWrap: 'wrap',
-              marginBottom: 14,
+              marginBottom: 16,
             }}>
               {s.teams.map((t, i) => (
                 <div key={t.id} style={{
-                  padding: 'clamp(12px, 1.4vw, 20px) clamp(18px, 2vw, 30px)', borderRadius: 18,
+                  padding: 'clamp(14px, 1.6vw, 22px) clamp(20px, 2.2vw, 32px)', borderRadius: 18,
                   background: cardBg,
                   border: `2px solid ${t.color}55`,
                   boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
                   display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 16px)',
                   animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(32px, 4vw, 48px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 52px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
                   <div>
-                    <div style={{ fontWeight: 900, fontSize: 'clamp(16px, 2vw, 24px)', color: t.color }}>{t.name}</div>
-                    <div style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#475569' }}>
+                    <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2.2vw, 28px)', color: t.color }}>{t.name}</div>
+                    <div style={{ fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b8' }}>
                       {t.connected ? (de ? '● verbunden' : '● connected') : (de ? '○ wartend' : '○ waiting')}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ color: '#64748b', fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 700 }}>
-              {s.teams.length < 2
-                ? (de ? 'Mindestens 2 Teams benötigt' : 'At least 2 teams needed')
-                : (de ? 'Moderator startet das Spiel' : 'Moderator starts the game')}
+            {/* Dynamic, emotional status */}
+            <div style={{
+              fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 800,
+              color: teamCount < 2 ? '#F59E0B' : '#22C55E',
+              animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
+            }}>
+              {teamCount < 2
+                ? (de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!')
+                : connectedCount === teamCount
+                  ? (de ? `🚀 ${teamCount} Teams bereit — Gleich geht's los!` : `🚀 ${teamCount} teams ready — Let's go!`)
+                  : (de ? `${connectedCount}/${teamCount} Teams verbunden` : `${connectedCount}/${teamCount} teams connected`)}
             </div>
           </>
         )}
@@ -1978,6 +1809,244 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
         <GridDisplay state={s} maxSize={440} highlightTeam={s.comebackTeamId} showJoker />
         <ScoreBar teams={s.teams} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAUSED — Records / Leaderboard display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type LeaderEntry = { name: string; wins: number; games: number };
+type FunStats = {
+  highestScore: { teamName: string; score: number; draftTitle: string } | null;
+  closestGame: { teams: string[]; gap: number; draftTitle: string } | null;
+  winStreak: { teamName: string; streak: number } | null;
+  mostGames: { teamName: string; games: number } | null;
+  fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null;
+  funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
+};
+
+export function PausedView({ state: s }: { state: QQStateUpdate }) {
+  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const [de, setDe] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setDe(p => !p), 8000);
+    return () => clearInterval(id);
+  }, []);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [totalGames, setTotalGames] = useState(0);
+  const [funStats, setFunStats] = useState<FunStats | null>(null);
+  useEffect(() => {
+    const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
+    fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
+      if (data.leaderboard) setLeaderboard(data.leaderboard);
+      if (data.totalGames) setTotalGames(data.totalGames);
+      if (data.funStats) setFunStats(data.funStats);
+    }).catch(() => {});
+  }, []);
+
+  // Build rotating panels
+  const panels: Array<{ key: string; node: React.ReactNode }> = [];
+
+  // Current game standings
+  const sortedTeams = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  if (sortedTeams.length > 0) {
+    panels.push({ key: 'standings', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          📊 {de ? 'Aktueller Stand' : 'Current Standings'}
+        </div>
+        {sortedTeams.map((t, i) => (
+          <div key={t.id} style={{
+            display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0',
+            borderBottom: i < sortedTeams.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          }}>
+            <span style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', width: 48, textAlign: 'center' }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+            </span>
+            <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(22px, 2.6vw, 32px)', color: t.color }}>{t.name}</span>
+            <span style={{ fontSize: 'clamp(22px, 2.6vw, 32px)', fontWeight: 900, color: '#F59E0B' }}>{t.totalCells}</span>
+            <span style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#64748b' }}>{de ? 'Felder' : 'cells'}</span>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+
+  // All-time leaderboard
+  if (leaderboard.length > 0) {
+    panels.push({ key: 'leaderboard', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          🏆 {de ? 'Bestenliste' : 'Leaderboard'}
+          {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+        </div>
+        {leaderboard.slice(0, 5).map((entry, i) => (
+          <div key={entry.name} style={{
+            display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0',
+            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          }}>
+            <span style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', width: 48, textAlign: 'center' }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+            </span>
+            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(22px, 2.6vw, 32px)', color: '#e2e8f0' }}>{entry.name}</span>
+            <span style={{ fontSize: 'clamp(20px, 2.4vw, 28px)', fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+            <span style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#64748b' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+
+  // Records
+  if (funStats) {
+    const records: React.ReactNode[] = [];
+    if (funStats.highestScore) {
+      records.push(
+        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.closestGame) {
+      records.push(
+        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚔️</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
+              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.winStreak) {
+      records.push(
+        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.fastestAnswer) {
+      const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
+      records.push(
+        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚡</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
+              <strong style={{ color: '#F59E0B' }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (records.length > 0) {
+      panels.push({ key: 'records', node: (
+        <div>
+          <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+            🏅 {de ? 'Rekorde' : 'Records'}
+          </div>
+          {records}
+        </div>
+      )});
+    }
+  }
+
+  // Funny answers
+  if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
+    panels.push({ key: 'funny', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          😂 {de ? 'Lustigste Antworten' : 'Funniest Answers'}
+        </div>
+        {funStats.funnyAnswers.map((fa, i) => (
+          <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
+            <div style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', color: '#64748b', marginTop: 4 }}>— {fa.teamName}</div>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+
+  const [panelIdx, setPanelIdx] = useState(0);
+  useEffect(() => {
+    if (panels.length <= 1) return;
+    const id = setInterval(() => setPanelIdx(p => (p + 1) % panels.length), 8000);
+    return () => clearInterval(id);
+  }, [panels.length]);
+
+  const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '48px 64px', position: 'relative', overflow: 'hidden',
+      gap: 32,
+    }}>
+      <Fireflies />
+
+      {/* Title */}
+      <div style={{
+        fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900, color: '#94a3b8',
+        display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 5,
+        animation: 'lobbyPulse 3s ease-in-out infinite',
+      }}>
+        ⏸ {de ? 'Kurze Pause' : 'Short Break'}
+      </div>
+
+      {/* Records panel */}
+      {activePanel && (
+        <div style={{
+          width: '100%', maxWidth: 900, position: 'relative', zIndex: 5,
+          animation: 'contentReveal 0.5s ease both',
+        }}>
+          <div key={activePanel.key} style={{
+            background: cardBg, borderRadius: 24, padding: 'clamp(28px, 3.5vw, 48px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+          }}>
+            {activePanel.node}
+          </div>
+          {panels.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 18 }}>
+              {panels.map((_, i) => (
+                <div key={i} style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
+                  transition: 'background 0.3s',
+                }} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hint */}
+      <div style={{
+        fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#475569', fontWeight: 700,
+        position: 'relative', zIndex: 5,
+      }}>
+        {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
       </div>
     </div>
   );

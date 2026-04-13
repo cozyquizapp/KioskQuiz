@@ -89,6 +89,10 @@ export const QQ_BEAMER_CSS = `
     from { opacity: 0; transform: translateY(20px) scale(0.9); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
+  @keyframes lobbyPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.6; }
+  }
   @keyframes winnerSlideIn {
     from { opacity: 0; transform: translateY(24px) scale(0.92); }
     to   { opacity: 1; transform: translateY(0) scale(1); }

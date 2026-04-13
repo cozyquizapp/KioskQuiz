@@ -21,7 +21,7 @@ import {
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
   qqSwapOneCell, qqFreezeCell, qqStuckCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
-  qqNextQuestion, qqResetRoom, qqTriggerComeback,
+  qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
@@ -735,6 +735,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqResetRoom(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Pause / Resume ──────────────────────────────────────────────────────
+    socket.on('qq:pause', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqPause(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:resume', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqResume(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

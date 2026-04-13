@@ -139,7 +139,8 @@ export default function QQModeratorPage() {
         }
         return;
       }
-      if (s.phase === 'LOBBY')           startGameRef.current();
+      if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
+      else if (s.phase === 'LOBBY')      startGameRef.current();
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
         // CHEESE: show image first, then reveal answer
@@ -267,6 +268,15 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // P — Toggle pause
+    if (e.code === 'KeyP') {
+      e.preventDefault();
+      if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
+      else if (!['LOBBY', 'GAME_OVER', 'RULES'].includes(s.phase))
+        emitRef.current('qq:pause', { roomCode });
+      return;
+    }
+
     // F18 — Reset (Notfall)
     // F20 — reserviert
   }, [roomCode]);
@@ -293,7 +303,7 @@ export default function QQModeratorPage() {
             Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
-            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc · M=Mute
+            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc · M=Mute · P=Pause
           </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
@@ -490,6 +500,19 @@ export default function QQModeratorPage() {
 
                 {s.phase === 'GAME_OVER' && (
                   <div style={{ fontSize: 14, color: '#64748b' }}>🏆 Spiel beendet</div>
+                )}
+
+                {s.phase === 'PAUSED' && (
+                  <Btn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })}>
+                    ▶ Weiter
+                  </Btn>
+                )}
+
+                {/* Pause — available during active game phases */}
+                {!['LOBBY', 'PAUSED', 'GAME_OVER', 'RULES'].includes(s.phase) && (
+                  <Btn color="#F59E0B" outline onClick={() => emit('qq:pause', { roomCode })}>
+                    ⏸ Pause
+                  </Btn>
                 )}
 
                 <Btn color="#EF4444" outline onClick={() => {

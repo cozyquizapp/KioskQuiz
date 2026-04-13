@@ -83,6 +83,7 @@ export type QQPhase =
   | 'QUESTION_REVEAL'   // Answer shown, winning team about to place
   | 'PLACEMENT'         // Winning team places / steals a cell
   | 'COMEBACK_CHOICE'   // Last-place team picks comeback action before Phase 3
+  | 'PAUSED'            // Moderator-triggered pause — shows records/leaderboard
   | 'GAME_OVER';        // Final state, territory winner shown
 
 export type QQGamePhaseIndex = 1 | 2 | 3 | 4;

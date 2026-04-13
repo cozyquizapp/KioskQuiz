@@ -89,8 +89,10 @@ export interface QQRoomState {
   volume: number; // 0–1
   // Rules presentation
   rulesSlideIndex: number;
-  // Phase intro sub-step: 0 = round title (first Q) or category (Q2+), 1 = category (first Q only)
+  // Phase intro sub-step (see qqActivateQuestion for step flow)
   introStep: number;
+  // Categories already introduced with explanation (key: category name, or 'BUNTE_TUETE:kind' for sub-mechanics)
+  seenCategories: string[];
   // Pause: stores the phase to return to when resuming
   _phaseBeforePause: QQPhase | null;
   _timerRemainingMs?: number;
@@ -177,6 +179,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       rulesSlideIndex: 0,
       introStep: 0,
+      seenCategories: [],
       _phaseBeforePause: null,
       questionHistory: [],
       funnyAnswers: [],
@@ -405,16 +408,35 @@ export function qqActivateQuestion(
   if (room.phase === 'PHASE_INTRO' && room.questionIndex === 0 && room.introStep === 0 && Date.now() - room.lastActivityAt < 1500) {
     return; // silently ignore — game just started
   }
-  // Phase intro sub-steps: first question of round has 2 steps (round title → category)
-  if (room.phase === 'PHASE_INTRO' && room.introStep === 0) {
+  // Phase intro sub-steps (moderator presses Space to advance each):
+  //   First question of round: 0=round title → 1=rule reminder → 2=category → (3=cat explain if new) → activate
+  //   Question 2+:             0=category → (1=cat explain if new) → activate
+  if (room.phase === 'PHASE_INTRO') {
     const questionInPhase = (room.questionIndex % QQ_QUESTIONS_PER_PHASE);
-    if (questionInPhase === 0) {
-      // First question of round: advance to category reveal (step 1)
-      room.introStep = 1;
+    const isFirstOfRound = questionInPhase === 0;
+    const catRevealStep = isFirstOfRound ? 2 : 0; // step at which category is shown
+
+    // Steps before category reveal: advance
+    if (isFirstOfRound && room.introStep < catRevealStep) {
+      room.introStep += 1;
       room.lastActivityAt = Date.now();
-      return; // don't activate yet — show category first
+      return;
     }
-    // Question 2+: category is already shown at step 0, activate directly
+
+    // At category reveal step: check if category is new → show explanation
+    if (room.introStep === catRevealStep) {
+      const q = room.currentQuestion;
+      const catKey = q?.category === 'BUNTE_TUETE' && q.bunteTuete
+        ? `BUNTE_TUETE:${q.bunteTuete.kind}` : (q?.category ?? '');
+      if (catKey && !room.seenCategories.includes(catKey)) {
+        room.seenCategories.push(catKey);
+        room.introStep = catRevealStep + 1; // advance to explanation step
+        room.lastActivityAt = Date.now();
+        return;
+      }
+      // Category already seen — fall through to activate
+    }
+    // At explanation step: fall through to activate
   }
   // Accumulate previous question's answers into history before clearing
   if (room.currentQuestion && room.answers.length > 0) {
@@ -443,12 +465,10 @@ export function qqActivateQuestion(
   room.hotPotatoTurnEndsAt   = null;
   room.hotPotatoUsedAnswers  = [];
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
-  room.imageRevealed  = false;
   room.lastActivityAt = Date.now();
-  // CHEESE: don't start timer yet — timer starts when question is revealed (showImage)
-  if (room.currentQuestion?.category !== 'CHEESE') {
-    qqStartTimer(room, onTimerExpire);
-  }
+  // CHEESE: image + question shown together, so imageRevealed is true immediately
+  room.imageRevealed  = room.currentQuestion?.category === 'CHEESE';
+  qqStartTimer(room, onTimerExpire);
 }
 
 export function qqShowImage(room: QQRoomState, onTimerExpire?: () => void): void {
@@ -1576,6 +1596,17 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     rulesSlideIndex:  room.rulesSlideIndex,
     introStep:        room.introStep,
+    categoryIsNew:    (() => {
+      const q = room.currentQuestion;
+      if (!q) return false;
+      const catKey = q.category === 'BUNTE_TUETE' && q.bunteTuete
+        ? `BUNTE_TUETE:${q.bunteTuete.kind}` : q.category;
+      // It's "new" if it was just added (i.e. it's in seenCategories but was added for THIS question)
+      // Simpler: it's in seenCategories AND the intro is showing the explanation step
+      const questionInPhase = room.questionIndex % QQ_QUESTIONS_PER_PHASE;
+      const catRevealStep = questionInPhase === 0 ? 2 : 0;
+      return room.introStep === catRevealStep + 1 && room.seenCategories.includes(catKey);
+    })(),
   };
 }
 
@@ -1683,6 +1714,7 @@ export function qqResetRoom(room: QQRoomState): void {
   }
   room.totalPhases = 3;
   room.rulesSlideIndex = 0;
+  room.seenCategories = [];
   room.questionHistory = [];
   room.funnyAnswers = [];
   room.lastActivityAt = Date.now();

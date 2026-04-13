@@ -142,13 +142,8 @@ export default function QQModeratorPage() {
       if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
       else if (s.phase === 'LOBBY')      startGameRef.current();
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE') {
-        // CHEESE: show question first (image already shown), then reveal answer
-        if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
-          emitRef.current('qq:showImage', { roomCode });
-        else
-          emitRef.current('qq:revealAnswer', { roomCode });
-      }
+      else if (s.phase === 'QUESTION_ACTIVE')
+        emitRef.current('qq:revealAnswer', { roomCode });
       // QUESTION_REVEAL: start placement (show grid)
       else if (s.phase === 'QUESTION_REVEAL')
         emitRef.current('qq:startPlacement', { roomCode });
@@ -162,14 +157,6 @@ export default function QQModeratorPage() {
     if (e.code === 'KeyR') {
       e.preventDefault();
       if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
-      return;
-    }
-
-    // B — Show question (CHEESE only, image is already shown)
-    if (e.code === 'KeyB') {
-      e.preventDefault();
-      if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
-        emitRef.current('qq:showImage', { roomCode });
       return;
     }
 
@@ -217,12 +204,8 @@ export default function QQModeratorPage() {
       }
       if (s.phase === 'LOBBY')            startGameRef.current();
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE') {
-        if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
-          emitRef.current('qq:showImage', { roomCode });
-        else
-          emitRef.current('qq:revealAnswer', { roomCode });
-      }
+      else if (s.phase === 'QUESTION_ACTIVE')
+        emitRef.current('qq:revealAnswer', { roomCode });
       else if (s.phase === 'QUESTION_REVEAL')
         emitRef.current('qq:startPlacement', { roomCode });
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
@@ -305,7 +288,7 @@ export default function QQModeratorPage() {
     switch (s.phase) {
       case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
       case 'RULES': return { text: 'REGELN', color: '#6366f1', sub: `Slide ${(s.rulesSlideIndex ?? 0) + 1}` };
-      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: 'Intro' };
+      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
@@ -443,8 +426,12 @@ export default function QQModeratorPage() {
                 {/* ── PHASE INTRO ── */}
                 {s.phase === 'PHASE_INTRO' && (() => {
                   const isFirstOfRound = (s.questionIndex % 5) === 0;
-                  const showingRoundTitle = isFirstOfRound && s.introStep === 0;
-                  const label = showingRoundTitle ? '🎯 Kategorie zeigen' : '▶ Frage aktivieren';
+                  const catRevealStep = isFirstOfRound ? 2 : 0;
+                  let label = '▶ Frage aktivieren';
+                  if (isFirstOfRound && s.introStep === 0) label = '📋 Regeln zeigen';
+                  else if (isFirstOfRound && s.introStep === 1) label = '🎯 Kategorie zeigen';
+                  else if (s.introStep === catRevealStep && s.categoryIsNew) label = '💡 Kategorie erklären';
+                  else if (s.categoryIsNew) label = '▶ Frage aktivieren';
                   return (
                     <PrimaryBtn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }} hotkey="Space">
                       {label}
@@ -453,12 +440,7 @@ export default function QQModeratorPage() {
                 })()}
 
                 {/* ── QUESTION ACTIVE ── */}
-                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
-                  <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })} hotkey="Space">
-                    ❓ Frage zeigen
-                  </PrimaryBtn>
-                )}
-                {s.phase === 'QUESTION_ACTIVE' && !(s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed) && (
+                {s.phase === 'QUESTION_ACTIVE' && (
                   <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="R">
                     👁 Antwort aufdecken
                   </PrimaryBtn>

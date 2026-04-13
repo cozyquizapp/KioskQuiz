@@ -338,12 +338,14 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     return () => { a.pause(); };
   }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume]);
 
-  // Fullscreen toggle
+  // Fullscreen toggle — detect both JS Fullscreen API and F11/native fullscreen
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onFsChange);
-    return () => document.removeEventListener('fullscreenchange', onFsChange);
+    const check = () => setIsFullscreen(!!document.fullscreenElement || window.innerHeight === screen.height);
+    document.addEventListener('fullscreenchange', check);
+    window.addEventListener('resize', check);
+    check();
+    return () => { document.removeEventListener('fullscreenchange', check); window.removeEventListener('resize', check); };
   }, []);
   const toggleFullscreen = () => {
     resumeAudio();
@@ -532,35 +534,14 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     ],
   },
   {
-    icon: '🎲',
-    title: '5 Kategorien',
-    color: '#8B5CF6',
-    lines: [
-      '🎯 Schätzchen — Wer schätzt am nächsten?',
-      '🅰️ Mu-Cho — Multiple Choice, schnell entscheiden!',
-      '🎁 Bunte Tüte — Überraschungs-Mechaniken!',
-      '🎰 All In — 3 Antworten, 10 Punkte vergeben!',
-      '📸 Picture This — Erkennt ihr das Bild?',
-    ],
-  },
-  {
     icon: '⚡',
-    title: 'So läuft eine Runde',
+    title: 'So läuft es',
     color: '#8B5CF6',
     lines: [
-      'Eine Frage erscheint — alle Teams antworten gleichzeitig.',
-      'Alle richtigen Teams dürfen ein Feld setzen — das schnellste zuerst!',
+      'Frage → alle antworten gleichzeitig auf dem Handy.',
+      'Richtig? Setzt Felder auf dem Spielfeld — schnellstes Team zuerst!',
     ],
-  },
-  {
-    icon: '1️⃣',
-    title: 'Runde 1 — Besetzen',
-    color: '#3B82F6',
-    lines: [
-      'Richtig beantwortet? Setzt 1 Feld auf dem Spielfeld.',
-      'Baut ein zusammenhängendes Gebiet auf!',
-    ],
-    extra: '⭐ Bildet ihr ein 2×2-Quadrat, gibt es ein Joker-Feld dazu!',
+    extra: '⭐ 2×2-Quadrat bilden = Bonus-Jokerfeld!',
     grid: {
       cells: [
         ['A','A',null,null],
@@ -573,50 +554,12 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     },
   },
   {
-    icon: '2️⃣',
-    title: 'Runde 2 — Klauen',
-    color: '#F59E0B',
-    lines: [
-      'Freie Felder da? Setzt gleich 2 Felder!',
-      'Alles besetzt? Klaut 1 Feld vom Gegner!',
-    ],
-  },
-  {
-    icon: '3️⃣',
-    title: 'Runde 3 — Taktik',
-    color: '#EF4444',
-    lines: [
-      'Wählt: 2 Felder setzen ODER 1 Feld klauen.',
-      'Neu: Friert 1 eigenes Feld ein — es ist 1 Frage lang geschützt! ❄️',
-    ],
-    extra: 'Die richtige Kombination macht den Unterschied!',
-  },
-  {
-    icon: '4️⃣',
-    title: 'Runde 4 — Finale',
-    color: '#10B981',
-    lines: [
-      'Wie Runde 3, plus zwei neue Aktionen:',
-      '🔄 Tauschen — tauscht 1 eigenes gegen 1 feindliches Feld.',
-      '📌 Stapeln — Plus-Form → Mittelpunkt einfrieren & doppelte Punkte!',
-    ],
-    grid: {
-      cells: [
-        [null,'A',null],
-        ['A','📌','A'],
-        [null,'A',null],
-      ],
-      colorA: '#10B981', colorB: '#EF4444',
-      label: '+ Form → 📌 Stapeln!',
-    },
-  },
-  {
     icon: '🏆',
-    title: 'Wertung',
+    title: 'Ziel',
     color: '#F59E0B',
     lines: [
-      'Größtes zusammenhängendes Gebiet = Gewinner!',
-      'Gestapelte Felder 📌 zählen doppelt.',
+      'Baut das größte zusammenhängende Gebiet!',
+      'Neue Aktionen werden jede Runde freigeschaltet.',
     ],
     extra: 'Viel Spaß und möge das beste Team gewinnen! 🎉',
   },
@@ -633,35 +576,14 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     ],
   },
   {
-    icon: '🎲',
-    title: '5 Categories',
-    color: '#8B5CF6',
-    lines: [
-      '🎯 Close Call — Who can guess the closest?',
-      '🅰️ Mu-Cho — Multiple choice, decide fast!',
-      '🎁 Lucky Bag — Surprise mechanics!',
-      '🎰 All In — 3 answers, distribute 10 points!',
-      '📸 Picture This — Can you identify the image?',
-    ],
-  },
-  {
     icon: '⚡',
-    title: 'How a Round Works',
+    title: 'How It Works',
     color: '#8B5CF6',
     lines: [
-      'A question appears — all teams answer at once.',
-      'All correct teams get to place a cell — fastest goes first!',
+      'Question → everyone answers on their phone at once.',
+      'Correct? Place cells on the grid — fastest team goes first!',
     ],
-  },
-  {
-    icon: '1️⃣',
-    title: 'Round 1 — Claim',
-    color: '#3B82F6',
-    lines: [
-      'Correct answer? Place 1 cell on the grid.',
-      'Build a connected territory!',
-    ],
-    extra: '⭐ Form a 2×2 square and get a bonus Joker cell!',
+    extra: '⭐ Form a 2×2 square = bonus Joker cell!',
     grid: {
       cells: [
         ['A','A',null,null],
@@ -674,50 +596,12 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     },
   },
   {
-    icon: '2️⃣',
-    title: 'Round 2 — Steal',
-    color: '#F59E0B',
-    lines: [
-      'Free cells left? Place 2 cells at once!',
-      'Grid full? Steal 1 cell from your opponent!',
-    ],
-  },
-  {
-    icon: '3️⃣',
-    title: 'Round 3 — Tactics',
-    color: '#EF4444',
-    lines: [
-      'Choose: place 2 cells OR steal 1 cell.',
-      'New: Freeze 1 of your cells — protected for 1 question! ❄️',
-    ],
-    extra: 'The right combo makes all the difference!',
-  },
-  {
-    icon: '4️⃣',
-    title: 'Round 4 — Final',
-    color: '#10B981',
-    lines: [
-      'Same as Round 3, plus two new moves:',
-      '🔄 Swap — trade 1 of yours for 1 of theirs.',
-      '📌 Stack — plus-shape → freeze the center & score double!',
-    ],
-    grid: {
-      cells: [
-        [null,'A',null],
-        ['A','📌','A'],
-        [null,'A',null],
-      ],
-      colorA: '#10B981', colorB: '#EF4444',
-      label: '+ Shape → 📌 Stack!',
-    },
-  },
-  {
     icon: '🏆',
-    title: 'Scoring',
+    title: 'Goal',
     color: '#F59E0B',
     lines: [
-      'Largest connected territory = winner!',
-      'Stacked cells 📌 count double.',
+      'Build the largest connected territory!',
+      'New actions unlock each round.',
     ],
     extra: 'Good luck and may the best team win! 🎉',
   },
@@ -1080,13 +964,38 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   };
   const catExplain = cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '';
 
+  // ── Rule reminders per round ──
+  const ROUND_RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
+    1: {
+      emoji: '🏁',
+      de: ['1 Feld setzen nach richtiger Antwort', 'Baut euer Quartier auf!'],
+      en: ['Place 1 tile after a correct answer', 'Build your quarter!'],
+    },
+    2: {
+      emoji: '⚔️',
+      de: ['2 Felder setzen pro Runde', 'Klauen jetzt möglich!'],
+      en: ['Place 2 tiles per round', 'Stealing is now possible!'],
+    },
+    3: {
+      emoji: '🧊',
+      de: ['Wählt eure Aktion frei', 'Einfrieren freigeschaltet!'],
+      en: ['Choose your action freely', 'Freezing unlocked!'],
+    },
+    4: {
+      emoji: '🔄',
+      de: ['Tauschen & Stucken freigeschaltet', 'Alle Aktionen verfügbar!'],
+      en: ['Swap & Stack unlocked', 'All actions available!'],
+    },
+  };
+  const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
-      <Fireflies color={isFirstOfRound && s.introStep === 0 ? `${color}88` : `${catColor}88`} />
+      <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${color}88` : `${catColor ?? color}88`} />
 
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
@@ -1154,8 +1063,209 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseDesc}
           </div>
         </>
+      ) : isFirstOfRound && s.introStep === 1 ? (
+        /* ── Step 1: Rule reminder (what's new this round) ── */
+        <>
+          {/* Round pill — smaller context */}
+          <div style={{
+            padding: '6px 20px', borderRadius: 999,
+            background: `${color}15`, border: `1.5px solid ${color}33`,
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+            color: `${color}aa`, letterSpacing: '0.06em',
+            marginBottom: 24,
+            animation: 'contentReveal 0.4s ease 0.1s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            {phaseName}
+          </div>
+
+          {/* Big emoji */}
+          <div style={{
+            fontSize: 'clamp(72px, 12vw, 140px)',
+            animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
+            position: 'relative', zIndex: 5,
+          }}>{roundRules.emoji}</div>
+
+          {/* "NEU" badge (skip for round 1) */}
+          {s.gamePhaseIndex > 1 && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 22px', borderRadius: 999,
+              background: `${color}25`, border: `2px solid ${color}55`,
+              fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
+              color, letterSpacing: '0.12em', textTransform: 'uppercase',
+              marginTop: 20, marginBottom: 8,
+              animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
+              position: 'relative', zIndex: 5,
+            }}>
+              {lang === 'de' ? '✨ NEU' : '✨ NEW'}
+            </div>
+          )}
+
+          {/* Rule lines */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            marginTop: s.gamePhaseIndex === 1 ? 24 : 12,
+            position: 'relative', zIndex: 5,
+          }}>
+            {(lang === 'en' ? roundRules.en : roundRules.de).map((rule, i) => (
+              <div key={i} style={{
+                fontSize: i === 0 ? 'clamp(32px, 4.5vw, 60px)' : 'clamp(24px, 3vw, 44px)',
+                fontWeight: i === 0 ? 900 : 700,
+                color: i === 0 ? '#F1F5F9' : `${color}cc`,
+                textShadow: i === 0 ? `0 0 40px ${color}33` : 'none',
+                textAlign: 'center',
+                animation: `phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.15}s both`,
+              }}>
+                {rule}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : s.categoryIsNew ? (
+        /* ── Category explanation (first time this category/mechanic appears) ── */
+        (() => {
+          // Detailed explanations per category (and BUNTE_TUETE sub-kinds)
+          const btKind = s.currentQuestion?.bunteTuete?.kind;
+          const CAT_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
+            SCHAETZCHEN: {
+              emoji: catEmoji, title: { de: 'Schätzchen', en: 'Guess It' },
+              lines: {
+                de: ['Gebt eine Zahl als Schätzung ein', 'Das Team mit der nächsten Antwort gewinnt!'],
+                en: ['Enter a number as your estimate', 'The team closest to the answer wins!'],
+              },
+            },
+            MUCHO: {
+              emoji: catEmoji, title: { de: 'Mucho Gusto', en: 'Mucho Gusto' },
+              lines: {
+                de: ['4 Antwortmöglichkeiten, nur 1 ist richtig', 'Wählt schnell — die Zeit läuft!'],
+                en: ['4 options, only 1 is correct', 'Choose fast — the clock is ticking!'],
+              },
+            },
+            ZEHN_VON_ZEHN: {
+              emoji: catEmoji, title: { de: '10 von 10', en: '10 of 10' },
+              lines: {
+                de: ['3 mögliche Antworten, 10 Punkte zu vergeben', 'Verteilt eure Punkte auf die Antworten!'],
+                en: ['3 possible answers, 10 points to distribute', 'Spread your points across the answers!'],
+              },
+            },
+            CHEESE: {
+              emoji: catEmoji, title: { de: 'Picture This', en: 'Picture This' },
+              lines: {
+                de: ['Ein Bild erscheint auf dem Beamer', 'Tippt eure Antwort auf dem Handy ein!'],
+                en: ['An image appears on screen', 'Type your answer on your phone!'],
+              },
+            },
+            // BUNTE_TUETE sub-mechanics
+            'BUNTE_TUETE:top5': {
+              emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
+              lines: {
+                de: ['Nennt so viele richtige Antworten wie möglich', 'Jeder Treffer zählt!'],
+                en: ['Name as many correct answers as you can', 'Every hit counts!'],
+              },
+            },
+            'BUNTE_TUETE:oneOfEight': {
+              emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' },
+              lines: {
+                de: ['8 Aussagen — eine davon ist falsch!', 'Findet den Imposter, ohne selbst rauszufliegen!'],
+                en: ['8 statements — one is false!', 'Find the imposter without getting eliminated!'],
+              },
+            },
+            'BUNTE_TUETE:order': {
+              emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
+              lines: {
+                de: ['Bringt die Begriffe in die richtige Reihenfolge', 'Je besser die Sortierung, desto mehr Punkte!'],
+                en: ['Put the items in the correct order', 'The better your sorting, the more points!'],
+              },
+            },
+            'BUNTE_TUETE:map': {
+              emoji: '🗺️', title: { de: 'Wo ist das?', en: 'Where Is It?' },
+              lines: {
+                de: ['Markiert den richtigen Ort auf der Karte', 'Je näher dran, desto besser!'],
+                en: ['Mark the correct location on the map', 'The closer you are, the better!'],
+              },
+            },
+            'BUNTE_TUETE:hotPotato': {
+              emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
+              lines: {
+                de: ['Reihum Antworten geben — schnell!', 'Wer keine Antwort hat, fliegt raus!'],
+                en: ['Take turns answering — fast!', 'No answer? You\'re out!'],
+              },
+            },
+          };
+
+          const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');
+          const info = CAT_INTRO[key] ?? CAT_INTRO[cat ?? ''];
+          if (!info) return null;
+
+          return (
+            <>
+              {/* Category pill — context */}
+              <div style={{
+                padding: '6px 20px', borderRadius: 999,
+                background: `${catColor}15`, border: `1.5px solid ${catColor}33`,
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+                color: `${catColor}aa`, letterSpacing: '0.06em',
+                marginBottom: 24,
+                animation: 'contentReveal 0.4s ease 0.1s both',
+                position: 'relative', zIndex: 5,
+              }}>
+                {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+              </div>
+
+              {/* Big emoji */}
+              <div style={{
+                fontSize: 'clamp(72px, 12vw, 140px)',
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
+                position: 'relative', zIndex: 5,
+              }}>{info.emoji}</div>
+
+              {/* Category/mechanic name */}
+              <div style={{
+                fontFamily: fontFam,
+                fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
+                color: catColor,
+                textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
+                marginTop: 12,
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
+                position: 'relative', zIndex: 5,
+                textAlign: 'center',
+              }}>{info.title[lang]}</div>
+
+              {/* Explanation lines */}
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                marginTop: 24, position: 'relative', zIndex: 5,
+              }}>
+                {info.lines[lang].map((line, i) => (
+                  <div key={i} style={{
+                    fontSize: i === 0 ? 'clamp(26px, 3.5vw, 48px)' : 'clamp(20px, 2.5vw, 36px)',
+                    fontWeight: i === 0 ? 800 : 600,
+                    color: i === 0 ? '#F1F5F9' : `${catColor}99`,
+                    textAlign: 'center',
+                    animation: `phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.15}s both`,
+                  }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+
+              {/* "So geht's" badge */}
+              <div style={{
+                marginTop: 28, padding: '6px 22px', borderRadius: 999,
+                background: `${catColor}18`, border: `1.5px solid ${catColor}33`,
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+                color: `${catColor}88`, letterSpacing: '0.06em',
+                animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.8s both',
+                position: 'relative', zIndex: 5,
+              }}>
+                {lang === 'de' ? '📱 Antwort auf dem Handy' : '📱 Answer on your phone'}
+              </div>
+            </>
+          );
+        })()
       ) : (
-        /* ── Category reveal (step 1 for first Q, step 0 for Q2+) ── */
+        /* ── Category reveal (no explanation needed — already seen) ── */
         <>
           {/* Question progress: "Frage 2 von 5" + dots */}
           <div style={{
@@ -1465,15 +1575,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const lang = useLangFlip(s.language);
 
   // ── CHEESE "Overlay" layout ─────────────────────────────────────────────
-  // Image stays fullscreen throughout ALL phases. Content overlays as frosted card.
-  // Phase 1: fullscreen image + "Schaut genau hin…" hint (no question, no timer)
-  // Phase 2 (imageRevealed): fullscreen image + frosted question card + timer
-  // Phase 3 (revealed): fullscreen image + frosted answer card + winner
-  const cheeseOverlay = isCheese && hasImg; // true for all CHEESE phases with image
-  const cheeseImageOnly = cheeseOverlay && !s.imageRevealed && !revealed;
-  const cheeseWithQuestion = cheeseOverlay && s.imageRevealed && !revealed;
+  // Image stays fullscreen. Frosted card overlays with question/answer.
+  // No separate "image only" phase — question + image appear together.
+  // Active: fullscreen image + frosted question card + timer
+  // Reveal: fullscreen image + frosted answer card + winner
+  const cheeseOverlay = isCheese && hasImg;
+  const cheeseWithQuestion = cheeseOverlay && !revealed;
   const isCheeseReveal = cheeseOverlay && revealed;
-  // Keep alias for fullscreen image condition (now covers all CHEESE phases)
   const cheeseFullscreen = cheeseOverlay;
 
   // Auto-size: shorter fontSize for long questions
@@ -1510,9 +1618,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
-              ? (cheeseImageOnly
-                ? 'linear-gradient(180deg, rgba(13,10,6,0.10) 0%, transparent 15%, transparent 85%, rgba(13,10,6,0.18) 100%)'
-                : 'linear-gradient(180deg, rgba(13,10,6,0.35) 0%, rgba(13,10,6,0.20) 40%, rgba(13,10,6,0.20) 60%, rgba(13,10,6,0.40) 100%)')
+              ? 'linear-gradient(180deg, rgba(13,10,6,0.35) 0%, rgba(13,10,6,0.20) 40%, rgba(13,10,6,0.20) 60%, rgba(13,10,6,0.40) 100%)'
               : [
                 'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
@@ -1523,25 +1629,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         </>
       )}
 
-      {/* CHEESE Phase 1: "Schaut hin!" hint on fullscreen image */}
-      {cheeseImageOnly && (
-        <div style={{
-          position: 'fixed', bottom: 48, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 52, animation: 'contentReveal 0.6s ease 0.8s both',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-        }}>
-          <span style={{ fontSize: 52, animation: 'cfloat 3s ease-in-out infinite' }}>📸</span>
-          <div style={{
-            padding: '10px 32px', borderRadius: 999,
-            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            color: '#F1F5F9', fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 800,
-            letterSpacing: '0.04em',
-          }}>
-            {lang === 'en' ? 'Look closely…' : 'Schaut genau hin…'}
-          </div>
-        </div>
-      )}
 
       {/* Cutout floating image (bg-removed) */}
       {hasImg && img.layout === 'cutout' && (
@@ -1586,12 +1673,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           padding: '40px 48px 48px',
           pointerEvents: 'none',
         }}>
-          {/* Timer ring — top center */}
-          {cheeseWithQuestion && s.timerEndsAt && (
+          {/* Timer ring — top center, fade out on reveal */}
+          {s.timerEndsAt && (
             <div style={{
               position: 'absolute', top: 32, left: '50%', transform: 'translateX(-50%)',
               animation: 'contentReveal 0.5s ease 0.3s both',
-              pointerEvents: 'auto',
+              pointerEvents: revealed ? 'none' : 'auto',
+              opacity: revealed ? 0 : 1,
+              transition: 'opacity 0.35s ease',
             }}>
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
             </div>
@@ -1609,13 +1698,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.1s both'
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
+            transition: 'padding 0.4s ease, border-color 0.4s ease',
             pointerEvents: 'auto',
             textAlign: 'center',
           }}>
-            {/* Category pill */}
-            {!revealed && (
+            {/* Category pill — fade out on reveal */}
+            <div style={{
+              overflow: 'hidden',
+              maxHeight: revealed ? 0 : 60,
+              opacity: revealed ? 0 : 1,
+              marginBottom: revealed ? 0 : 14,
+              transition: 'max-height 0.35s ease, opacity 0.25s ease, margin-bottom 0.35s ease',
+            }}>
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 14,
+                display: 'inline-flex', alignItems: 'center', gap: 10,
                 padding: '6px 18px', borderRadius: 999,
                 background: `${accent}22`, border: `1.5px solid ${accent}44`,
               }}>
@@ -1625,7 +1721,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
               </div>
-            )}
+            </div>
 
             {/* Question text */}
             <div key={`cheese-${lang}`} style={{
@@ -1636,6 +1732,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               color: isCheeseReveal ? '#CBD5E1' : '#F1F5F9',
               marginBottom: isCheeseReveal ? 16 : 0,
               animation: 'langFadeIn 0.4s ease both',
+              transition: 'font-size 0.4s ease, color 0.4s ease, margin-bottom 0.3s ease',
             }}>
               {lang === 'en' && q.textEn ? q.textEn : q.text}
             </div>
@@ -1672,15 +1769,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               );
             })()}
 
-            {/* Mobile hint */}
-            {cheeseWithQuestion && (
+            {/* Mobile hint — fade out on reveal */}
+            <div style={{
+              overflow: 'hidden',
+              maxHeight: revealed ? 0 : 40,
+              opacity: revealed ? 0 : 1,
+              marginTop: revealed ? 0 : 14,
+              transition: 'max-height 0.35s ease, opacity 0.25s ease, margin-top 0.35s ease',
+            }}>
               <div style={{
-                marginTop: 14, fontSize: 'clamp(12px, 1.2vw, 16px)',
+                fontSize: 'clamp(12px, 1.2vw, 16px)',
                 color: 'rgba(148,163,184,0.7)', fontWeight: 600,
               }}>
                 {lang === 'en' ? 'What do you see in the picture?' : 'Was erkennt ihr auf dem Bild?'}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -1694,8 +1797,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         {/* ── Main content — full width, vertically + horizontally centered ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
 
-          {/* Category badge — top, colored pill */}
-          {!revealed && (
+          {/* Category badge + Timer — fade out on reveal instead of instant removal */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            overflow: 'hidden',
+            maxHeight: revealed ? 0 : 200,
+            opacity: revealed ? 0 : 1,
+            marginBottom: revealed ? 0 : 0,
+            transition: 'max-height 0.45s ease, opacity 0.3s ease, margin-bottom 0.45s ease',
+          }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 18,
               padding: '8px 24px', borderRadius: 999,
@@ -1710,14 +1820,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {lang === 'en' ? catLabel.en : catLabel.de}
               </span>
             </div>
-          )}
-
-          {/* Timer — hero element, large ring (active only) */}
-          {!revealed && s.timerEndsAt && (
-            <div style={{ marginBottom: 20 }}>
-              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-            </div>
-          )}
+            {s.timerEndsAt && (
+              <div style={{ marginBottom: 20 }}>
+                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+              </div>
+            )}
+          </div>
 
           {/* Question card — centered, full width, stronger presence */}
           <div style={{
@@ -1746,8 +1854,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           </div>
 
-          {/* Mobile hint — context for new players */}
-          {!revealed && (() => {
+          {/* Mobile hint — fade out on reveal */}
+          {(() => {
             const hints: Record<string, { de: string; en: string }> = {
               SCHAETZCHEN:   { de: '📱 Gebt eure Schätzung auf dem Handy ein', en: '📱 Enter your estimate on your phone' },
               MUCHO:         { de: '📱 Wählt die richtige Antwort auf dem Handy', en: '📱 Pick the right answer on your phone' },
@@ -1760,8 +1868,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               <div style={{
                 fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 700,
                 color: 'rgba(148,163,184,0.8)', letterSpacing: '0.02em',
-                marginBottom: 16,
-                animation: 'contentReveal 0.4s ease 0.3s both',
+                overflow: 'hidden',
+                maxHeight: revealed ? 0 : 60,
+                opacity: revealed ? 0 : 1,
+                marginBottom: revealed ? 0 : 16,
+                transition: 'max-height 0.4s ease, opacity 0.25s ease, margin-bottom 0.4s ease',
+                animation: !revealed ? 'contentReveal 0.4s ease 0.3s both' : undefined,
               }}>
                 {lang === 'en' ? hint.en : hint.de}
               </div>

@@ -657,7 +657,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
-  const showCategory = !isFirstOfRound || s.introStep >= 1;
+  const showRules    = isFirstOfRound && s.introStep === 1;
+  const showCategory = !isFirstOfRound || s.introStep >= 2;
   const isFinal = s.gamePhaseIndex === s.totalPhases;
   const phaseName = isFinal ? (lang === 'de' ? 'Finale' : 'Final') : names[lang][s.gamePhaseIndex];
   const phaseDesc = isFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in') : descs[lang][s.gamePhaseIndex];
@@ -676,7 +677,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
-        {!showCategory ? (
+        {!showCategory && !showRules ? (
           /* Round announcement */
           <>
             <div style={{ fontSize: 14, color: '#64748b', marginBottom: 6 }}>
@@ -690,8 +691,86 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               {phaseDesc ?? ''}
             </div>
           </>
+        ) : showRules ? (
+          /* Rule reminder */
+          (() => {
+            const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
+              1: { emoji: '🏁', de: ['1 Feld setzen', 'Baut euer Quartier auf!'], en: ['Place 1 tile', 'Build your quarter!'] },
+              2: { emoji: '⚔️', de: ['2 Felder + Klauen!'], en: ['2 tiles + Stealing!'] },
+              3: { emoji: '🧊', de: ['Freie Aktionswahl', 'Einfrieren möglich!'], en: ['Free action choice', 'Freezing unlocked!'] },
+              4: { emoji: '🔄', de: ['Tauschen & Stucken!'], en: ['Swap & Stack!'] },
+            };
+            const r = RULES[s.gamePhaseIndex] ?? RULES[3];
+            return (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color, letterSpacing: '0.06em', marginBottom: 6 }}>
+                  {phaseName}
+                </div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>{r.emoji}</div>
+                {s.gamePhaseIndex > 1 && (
+                  <div style={{
+                    display: 'inline-block', padding: '3px 14px', borderRadius: 999,
+                    background: `${color}22`, border: `1.5px solid ${color}44`,
+                    fontSize: 13, fontWeight: 900, color, letterSpacing: '0.1em',
+                    marginBottom: 6,
+                  }}>
+                    {lang === 'de' ? '✨ NEU' : '✨ NEW'}
+                  </div>
+                )}
+                {(lang === 'en' ? r.en : r.de).map((line, i) => (
+                  <div key={i} style={{
+                    fontSize: i === 0 ? 22 : 16, fontWeight: i === 0 ? 900 : 700,
+                    color: i === 0 ? '#F1F5F9' : `${color}aa`,
+                    marginTop: i === 0 ? 4 : 2,
+                  }}>{line}</div>
+                ))}
+              </>
+            );
+          })()
+        ) : s.categoryIsNew ? (
+          /* Category explanation — first time this category/mechanic appears */
+          (() => {
+            const btKind = s.currentQuestion?.bunteTuete?.kind;
+            const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
+              SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Guess It' }, lines: { de: ['Gebt eine Zahl als Schätzung ein', 'Nächste Antwort gewinnt!'], en: ['Enter a number', 'Closest answer wins!'] } },
+              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mucho Gusto', en: 'Mucho Gusto' }, lines: { de: ['4 Optionen — 1 ist richtig'], en: ['4 options — 1 is correct'] } },
+              ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: '10 of 10' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
+              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Bild erkennen, Antwort eintippen!'], en: ['Identify the image, type your answer!'] } },
+              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['So viele Antworten wie möglich nennen!'], en: ['Name as many answers as you can!'] } },
+              'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['8 Aussagen — eine ist falsch!'], en: ['8 statements — one is false!'] } },
+              'BUNTE_TUETE:order':      { emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Bringt die Begriffe in die richtige Ordnung!'], en: ['Sort the items correctly!'] } },
+              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'Wo ist das?', en: 'Where Is It?' }, lines: { de: ['Markiert den Ort auf der Karte!'], en: ['Mark the spot on the map!'] } },
+              'BUNTE_TUETE:hotPotato':  { emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten — keine Antwort = raus!'], en: ['Take turns — no answer = out!'] } },
+            };
+            const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');
+            const info = TC_INTRO[key] ?? TC_INTRO[cat ?? ''];
+            if (!info) return null;
+            return (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 8 }}>
+                  {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                </div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>{info.emoji}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: catColor, textShadow: `0 0 20px ${catColor}44` }}>
+                  {info.title[lang]}
+                </div>
+                {info.lines[lang].map((line, i) => (
+                  <div key={i} style={{
+                    fontSize: 15, fontWeight: 700, color: i === 0 ? '#F1F5F9' : `${catColor}88`,
+                    marginTop: i === 0 ? 8 : 2,
+                  }}>{line}</div>
+                ))}
+                <div style={{
+                  marginTop: 10, fontSize: 12, fontWeight: 700,
+                  color: `${catColor}66`, letterSpacing: '0.04em',
+                }}>
+                  {lang === 'de' ? '📱 Antwort auf dem Handy' : '📱 Answer on your phone'}
+                </div>
+              </>
+            );
+          })()
         ) : (
-          /* Category reveal */
+          /* Category reveal — already seen, compact */
           <>
             <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 6 }}>
               {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
@@ -743,43 +822,6 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const iWon = s.correctTeamId === myTeamId;
   const isCheese = q.category === 'CHEESE';
   const hasCheeseImg = isCheese && q.image?.url;
-  const cheeseImageOnly = hasCheeseImg && !s.imageRevealed && !isRevealed;
-
-  // CHEESE Phase 1: "Schaut auf den Beamer!" — image preview, no question/input
-  if (cheeseImageOnly) {
-    return (
-      <CozyCard key={q.id}>
-        <div style={{ textAlign: 'center', padding: '12px 0', animation: 'tcreveal 0.5s ease both' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 16,
-            padding: '6px 16px', borderRadius: 999,
-            background: `${catColor}22`, border: `2px solid ${catColor}55`,
-            color: catColor, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
-          }}>
-            <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
-            {lang === 'en' ? catLabel.en : catLabel.de}
-          </div>
-          {q.image?.url && (
-            <img src={q.image.url} alt="" style={{
-              width: '100%', maxHeight: 200, objectFit: 'cover',
-              borderRadius: 14, marginBottom: 16,
-              boxShadow: `0 4px 24px ${catColor}33`,
-            }} />
-          )}
-          <div style={{
-            fontSize: 44, marginBottom: 8,
-            animation: 'tcfloat 2.5s ease-in-out infinite',
-          }}>📸</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: '#F1F5F9' }}>
-            {lang === 'en' ? 'Look at the screen!' : 'Schaut auf den Beamer!'}
-          </div>
-          <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 6 }}>
-            {lang === 'en' ? 'The question is coming soon…' : 'Gleich kommt die Frage…'}
-          </div>
-        </div>
-      </CozyCard>
-    );
-  }
 
   return (
     <CozyCard key={q.id}>

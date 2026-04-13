@@ -452,7 +452,8 @@ export interface QQStateUpdate {
   volume: number; // 0–1
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
-  introStep: number;  // 0 = round title (first Q) or category (Q2+), 1 = category (first Q only)
+  introStep: number;  // sub-step within PHASE_INTRO (see backend qqActivateQuestion for flow)
+  categoryIsNew: boolean; // true when introStep is showing category explanation for first time
   // Set when all connected teams have submitted answers (before moderator reveals)
   allAnswered: boolean;
 }

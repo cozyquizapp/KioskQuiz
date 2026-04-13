@@ -314,29 +314,34 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
   // ── 7: SILO — round-looking cylinder ──
   else if(bi===7){
-    // ── SILO: real 3D cylinder — 16 vertical segments in a circle ──
+    // ── SILO: 3D cylinder — segments arranged as vertical walls around a circle ──
+    // In our coordinate system: X=left/right, Y=top/bottom (depth), Z=up (height)
+    // The "front" face technique: bottom-anchored, rotateX(-90deg) makes it vertical
+    // We place many narrow "front" faces around a circle in X-Y, each standing upright in Z
     const radius=Math.round(sz*.22), h=Math.round(sz*.52*hm)+extra;
-    const cx=Math.round(sz/2), cy=Math.round(sz/2); // center of tile
+    const cx=Math.round(sz/2), cy=Math.round(sz/2);
     const segs=16;
+    const segW=Math.round(2*Math.PI*radius/segs)+1;
     const el=document.createElement('div');
     el.style.cssText=`position:absolute;left:${cx}px;top:${cy}px;width:0;height:0;transform-style:preserve-3d;pointer-events:none`;
-    // Each segment is a vertical rectangle, width = arc length
-    const segW=Math.round(2*Math.PI*radius/segs)+1;
     for(let i=0;i<segs;i++){
       const angleDeg=(360/segs)*i;
       const angleRad=angleDeg*Math.PI/180;
-      // Shade: lighter facing front-left (isometric light), darker facing back-right
-      const shade=.35+.42*Math.max(0,Math.cos((angleDeg-200)*Math.PI/180));
+      // Position on circle edge
+      const px=Math.round(Math.sin(angleRad)*radius);
+      const py=Math.round(-Math.cos(angleRad)*radius);
+      // Shade based on angle — lighter facing top-left (isometric light direction)
+      const shade=.30+.50*Math.max(0,Math.cos((angleDeg-210)*Math.PI/180));
       const seg=document.createElement('div');
-      // Position each segment at the circle edge, facing outward
-      // translateX/Y moves to circle edge, rotateY faces outward, then the face stands upright
-      seg.style.cssText=`position:absolute;width:${segW}px;height:${h}px;left:${-segW/2}px;top:0;transform-style:preserve-3d;transform:rotateY(${angleDeg}deg) translateZ(${radius}px);background:${rgba(team,shade)}`;
+      // Each segment: positioned at circle edge, stands upright (height=h in Z via rotateX)
+      // rotateZ aligns it tangent to circle, rotateX(-90deg) makes it vertical
+      seg.style.cssText=`position:absolute;left:${px-Math.round(segW/2)}px;top:${py}px;width:${segW}px;height:${h}px;transform-origin:center top;transform:rotateZ(${angleDeg}deg) rotateX(-90deg);background:${rgba(team,shade)}`;
       el.appendChild(seg);
     }
-    // Circular top lid
+    // Circular top — translateZ lifts it to height h
     const topSz=radius*2;
     const top=document.createElement('div');
-    top.style.cssText=`position:absolute;left:${-radius}px;top:${-radius}px;width:${topSz}px;height:${topSz}px;transform:translateY(${-h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.60)} 60%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.40)}`;
+    top.style.cssText=`position:absolute;left:${-radius}px;top:${-radius}px;width:${topSz}px;height:${topSz}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.60)} 60%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.40)}`;
     el.appendChild(top);
     tileEl.appendChild(el);
     mainEl=el; mainTop=top;
@@ -425,9 +430,9 @@ function renderTile(r,c){
     // Ghost building — gray, translucent
     const gbi=ghostTypes[r][c];
     buildBuilding(el,{home:false,frozen:false,stacked:0,joker:false,btype:gbi},GHOST,CELL,gbi);
-    // Make all building children translucent but visible as 3D hint
+    // Make all building children translucent but 3D shape still visible
     Array.from(el.children).forEach(ch=>{
-      if(!ch.classList.contains('ground')) ch.style.opacity='0.18';
+      if(!ch.classList.contains('ground')) ch.style.opacity='0.25';
     });
     return;
   }

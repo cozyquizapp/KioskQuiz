@@ -1578,7 +1578,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* CHEESE Phase 1: hide content when only fullscreen image is showing */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
-        flexDirection: (hasImg && img.layout === 'window-left') || cheeseWithQuestion ? 'row-reverse' : 'row',
+        flexDirection: (hasImg && img.layout === 'window-left') ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s ease both',
         visibility: cheeseImageOnly ? 'hidden' : undefined,
       }}>

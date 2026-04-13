@@ -155,6 +155,21 @@ const TEAM_CSS = `
     0%, 100% { box-shadow: 0 0 6px rgba(147,210,255,0.3), inset 0 0 4px rgba(147,210,255,0.1); border-color: rgba(147,210,255,0.6); }
     50%      { box-shadow: 0 0 12px rgba(147,210,255,0.6), inset 0 0 8px rgba(147,210,255,0.25); border-color: rgba(147,210,255,1); }
   }
+  @keyframes tcCellClaim {
+    0%   { transform: scale(0.5); opacity: 0; }
+    40%  { transform: scale(1.15); opacity: 1; }
+    70%  { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes tcCellGlow {
+    0%   { box-shadow: 0 0 0 rgba(255,255,255,0); }
+    50%  { box-shadow: 0 0 14px var(--cell-color, rgba(255,255,255,0.5)); }
+    100% { box-shadow: 0 0 4px var(--cell-color, rgba(255,255,255,0.2)); }
+  }
+  @keyframes tcRowPulse {
+    0%, 100% { box-shadow: 0 0 6px var(--cell-color, rgba(255,255,255,0.3)); }
+    50%      { box-shadow: 0 0 16px var(--cell-color, rgba(255,255,255,0.6)); }
+  }
 
   button:focus-visible, input:focus-visible {
     outline: 2px solid #F59E0B;
@@ -1651,6 +1666,26 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   const cellSize = Math.min(60, Math.floor(340 / s.gridSize));
 
+  // Track newly claimed cells for animation
+  const prevGridRef = useRef<string>('');
+  const [newCells, setNewCells] = useState<Set<string>>(new Set());
+  const gridKey = s.grid.flatMap(row => row.map(c => c.ownerId ?? '')).join(',');
+  useEffect(() => {
+    if (prevGridRef.current && gridKey !== prevGridRef.current) {
+      const prevArr = prevGridRef.current.split(',');
+      const claimed = new Set<string>();
+      s.grid.forEach((row, r) => row.forEach((cell, c) => {
+        const prevOwner = prevArr[(r * s.gridSize) + c];
+        if (cell.ownerId && prevOwner === '') claimed.add(`${r}-${c}`);
+      }));
+      if (claimed.size > 0) {
+        setNewCells(claimed);
+        setTimeout(() => setNewCells(new Set()), 1000);
+      }
+    }
+    prevGridRef.current = gridKey;
+  }, [gridKey]);
+
   useEffect(() => {
     if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); }
   }, [isMyTurn]);
@@ -1723,9 +1758,23 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     setSelecting(false);
   }
 
+  // Detect adjacency: cells with 2+ same-team neighbors in a row/col
+  function hasAdjacentStreak(r: number, c: number, ownerId: string | null): boolean {
+    if (!ownerId) return false;
+    let hCount = 1;
+    for (let cc = c - 1; cc >= 0 && s.grid[r][cc].ownerId === ownerId; cc--) hCount++;
+    for (let cc = c + 1; cc < s.gridSize && s.grid[r][cc].ownerId === ownerId; cc++) hCount++;
+    if (hCount >= 2) return true;
+    let vCount = 1;
+    for (let rr = r - 1; rr >= 0 && s.grid[rr][c].ownerId === ownerId; rr--) vCount++;
+    for (let rr = r + 1; rr < s.gridSize && s.grid[rr][c].ownerId === ownerId; rr++) vCount++;
+    return vCount >= 2;
+  }
+
   if (!isMyTurn) {
     const miniCellSize = Math.min(44, Math.floor(280 / s.gridSize));
     const myTeam = s.teams.find(tm => tm.id === myTeamId);
+
     return (
       <CozyCard>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
@@ -1735,27 +1784,51 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 {qqGetAvatar(pendingTeam.avatarId).emoji}
               </div>
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
-              <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
-                {t.placement.otherChoosing[lang].replace('…', '')}<AnimatedDots />
+              <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, fontWeight: 600 }}>
+                {lang === 'de' ? 'wählt ein Feld' : 'is choosing a field'}<AnimatedDots />
               </div>
             </>
           ) : (
             /* Placement done — show mini grid + score summary */
             <>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-                {lang === 'de' ? 'Aktueller Stand' : 'Current Score'}
+                {lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board'}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${miniCellSize}px)`, gap: 3, justifyContent: 'center', marginBottom: 14 }}>
+              <div style={{
+                display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${miniCellSize}px)`,
+                gap: 3, justifyContent: 'center', marginBottom: 14,
+                padding: 6, borderRadius: 10,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
                 {s.grid.flatMap((row, r) =>
                   row.map((cell, c) => {
                     const cellTeam = s.teams.find(tm => tm.id === cell.ownerId);
+                    const isMine = cell.ownerId === myTeamId;
+                    const inStreak = cellTeam ? hasAdjacentStreak(r, c, cell.ownerId) : false;
+                    const isNew = newCells.has(`${r}-${c}`);
                     return (
                       <div key={`${r}-${c}`} style={{
                         width: miniCellSize, height: miniCellSize, borderRadius: 6,
-                        background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${cellTeam ? cellTeam.color + '88' : 'rgba(255,255,255,0.08)'}`,
+                        background: cellTeam
+                          ? `linear-gradient(135deg, ${cellTeam.color}cc, ${cellTeam.color}88)`
+                          : 'rgba(255,255,255,0.04)',
+                        border: cellTeam
+                          ? `1.5px solid ${cellTeam.color}${isMine ? 'cc' : '66'}`
+                          : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
+                        ['--cell-color' as string]: cellTeam?.color ?? 'transparent',
+                        boxShadow: isNew
+                          ? `0 0 14px ${cellTeam!.color}aa`
+                          : inStreak
+                            ? `0 0 8px ${cellTeam!.color}66, inset 0 1px 0 rgba(255,255,255,0.15)`
+                            : cellTeam
+                              ? `inset 0 1px 0 rgba(255,255,255,0.1)`
+                              : 'none',
+                        animation: isNew ? 'tcCellClaim 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
+                          : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
+                        transition: 'all 0.3s ease',
                       }}>
                         {cellTeam ? qqGetAvatar(cellTeam.avatarId).emoji : ''}
                       </div>
@@ -1763,18 +1836,28 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                   })
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map(tm => (
-                  <div key={tm.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '4px 10px', borderRadius: 999,
-                    background: tm.id === myTeamId ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${tm.id === myTeamId ? tm.color + '55' : 'rgba(255,255,255,0.08)'}`,
-                  }}>
-                    <span style={{ fontSize: 18 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: tm.color }}>{tm.largestConnected}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map((tm, i) => {
+                  const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '5px 12px', borderRadius: 999,
+                      background: tm.id === myTeamId ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${tm.id === myTeamId ? tm.color + '66' : 'rgba(255,255,255,0.08)'}`,
+                      boxShadow: i === 0 ? `0 0 8px ${tm.color}33` : 'none',
+                    }}>
+                      {i === 0 && <span style={{ fontSize: 12 }}>👑</span>}
+                      <span style={{ fontSize: 16 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <span style={{ fontSize: 15, fontWeight: 900, color: tm.color }}>
+                        {cellCount} {lang === 'de' ? 'Felder' : 'cells'}
+                      </span>
+                      <span style={{ fontSize: 12, color: `${tm.color}88`, fontWeight: 700 }}>
+                        ({tm.largestConnected} {lang === 'de' ? 'verbunden' : 'connected'})
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -1884,7 +1967,13 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12 }}>
             {instructionText}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`, gap: 4, justifyContent: 'center' }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
+            gap: 4, justifyContent: 'center',
+            padding: 6, borderRadius: 10,
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}>
             {s.grid.flatMap((row, r) =>
               row.map((cell, c) => {
                 const team = s.teams.find(t => t.id === cell.ownerId);
@@ -1893,23 +1982,26 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isFrozenCell = cell.frozen && !cell.stuck;
                 const isStuckCell = cell.stuck;
                 const isStuckCandidate = isStuck && s.stuckCandidates?.some(sc => sc.row === r && sc.col === c);
+                const isMine = cell.ownerId === myTeamId;
                 return (
                   <div key={`${r}-${c}`} onClick={() => handleCell(r, c)} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
                     background: isSwapSelected ? `${actionColor}66`
-                      : isStuckCell ? `${team?.color ?? '#F59E0B'}cc`
-                      : team ? `${team.color}88` : 'rgba(255,255,255,0.05)',
+                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}dd, ${team?.color ?? '#F59E0B'}aa)`
+                      : team ? `linear-gradient(135deg, ${team.color}bb, ${team.color}77)` : 'rgba(255,255,255,0.04)',
                     border: isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCandidate ? `2px solid #F59E0B`
-                      : clickable ? `2px solid ${actionColor}` : '1px solid rgba(255,255,255,0.07)',
+                      : clickable ? `2px solid ${actionColor}` : team ? `1px solid ${team.color}44` : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
-                    opacity: clickable || isSwapSelected ? 1 : 0.3,
+                    opacity: clickable || isSwapSelected ? 1 : team ? 0.85 : 0.3,
                     transition: 'all 0.15s',
                     boxShadow: isSwapSelected ? `0 0 14px ${actionColor}88`
                       : isStuckCandidate ? '0 0 10px #F59E0B88'
                       : isFrozenCell ? '0 0 8px rgba(147,210,255,0.5)'
+                      : isMine && team ? `0 0 6px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`
+                      : team ? `inset 0 1px 0 rgba(255,255,255,0.08)`
                       : clickable ? `0 0 8px ${actionColor}44` : 'none',
                     animation: tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
                     position: 'relative' as const, overflow: 'visible' as const,

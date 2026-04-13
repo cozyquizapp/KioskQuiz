@@ -2141,62 +2141,82 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 
 export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const accent = s.theme?.accentColor ?? '#F59E0B';
   const cardBg = s.theme?.cardBg ?? '#1B1510';
-  const textCol = s.theme?.textColor ?? '#e2e8f0';
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
+  const teamColor = team?.color ?? '#F59E0B';
 
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-      <Fireflies />
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
+      padding: '48px 64px', gap: 28,
+    }}>
+      <Fireflies color={`${teamColor}55`} />
 
-      {/* Left content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '48px 44px', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
+      {/* Title — BAM entrance */}
+      <div style={{
+        fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900,
+        color: '#F59E0B', textAlign: 'center',
+        textShadow: '0 0 40px rgba(234,179,8,0.35)',
+        animation: 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+        position: 'relative', zIndex: 5,
+      }}>
+        ⚡ {lang === 'en' ? 'Comeback Chance!' : 'Comeback-Chance!'}
+      </div>
+
+      {/* Team hero */}
+      {team && (
         <div style={{
-          fontFamily: "'Caveat', cursive",
-          fontSize: 'clamp(16px, 2vw, 26px)', color: accent, fontWeight: 700,
-          marginBottom: 20, letterSpacing: '0.06em',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          animation: 'contentReveal 0.5s ease 0.2s both',
+          position: 'relative', zIndex: 5,
         }}>
-          {bt.comeback.title[lang]}
+          <div style={{
+            width: 100, height: 100, borderRadius: '50%',
+            background: `${teamColor}20`, border: `3px solid ${teamColor}88`,
+            boxShadow: `0 0 30px ${teamColor}44`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'activeTeamGlow 2s ease-in-out infinite',
+            ['--team-color' as string]: `${teamColor}55`,
+          }}>
+            <span style={{ fontSize: 60, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+          </div>
+          <div style={{
+            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
+            textShadow: `0 0 24px ${teamColor}44`,
+          }}>{team.name}</div>
         </div>
+      )}
 
-        {team && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
-              <span style={{ fontSize: 'clamp(48px, 7vw, 80px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-              <div style={{
-                fontSize: 'clamp(28px, 4vw, 56px)', fontWeight: 900, color: team.color,
-                textShadow: `0 0 40px ${team.color}44`,
-              }}>{team.name}</div>
+      {/* Options or chosen action */}
+      {team && (
+        <div style={{
+          width: '100%', maxWidth: 700,
+          animation: 'contentReveal 0.5s ease 0.4s both',
+          position: 'relative', zIndex: 5,
+        }}>
+          {!s.comebackAction ? (
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
+              <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
+              <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
             </div>
-
-            {!s.comebackAction ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
-                <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
-                <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
-              </div>
-            ) : (
-              <div style={{
-                padding: '22px 28px', borderRadius: 20,
-                background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900, color: textCol,
-              }}>
-                {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
-                {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
-                {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Right: grid */}
-      <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
-        <GridDisplay state={s} maxSize={440} highlightTeam={s.comebackTeamId} showJoker />
-        <ScoreBar teams={s.teams} />
-      </div>
+          ) : (
+            <div style={{
+              padding: '22px 36px', borderRadius: 20, textAlign: 'center',
+              background: cardBg, border: `2px solid ${teamColor}33`,
+              boxShadow: `0 0 40px ${teamColor}15, 0 8px 32px rgba(0,0,0,0.5)`,
+              fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0',
+              animation: 'bQuestionIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both',
+            }}>
+              {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
+              {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
+              {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2445,88 +2465,136 @@ export function PausedView({ state: s }: { state: QQStateUpdate }) {
 
 export function GameOverView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const accent = s.theme?.accentColor ?? '#F59E0B';
   const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const winner = sorted[0];
+  const winnerColor = winner?.color ?? '#F59E0B';
 
   return (
     <div style={{
-      flex: 1, display: 'flex', position: 'relative', overflow: 'hidden',
-      background: [
-        'repeating-linear-gradient(transparent, transparent 39px, rgba(234,179,8,0.03) 39px, rgba(234,179,8,0.03) 40px)',
-        'radial-gradient(ellipse at 50% 0%, rgba(180,83,9,0.18) 0%, transparent 50%)',
-        '#0D0A06',
-      ].join(','),
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
+      padding: '48px 64px',
     }}>
-      {/* Confetti overlay */}
+      {/* Ambient glow behind winner */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: `radial-gradient(ellipse at 50% 35%, ${winnerColor}25 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
+      }} />
+
+      {/* Confetti */}
       <ConfettiOverlay />
+      <Fireflies color={`${winnerColor}55`} />
 
-      {/* Notebook margin line */}
-      <div style={{ position: 'absolute', left: 68, top: 0, bottom: 0, width: 1, background: 'rgba(234,179,8,0.07)', pointerEvents: 'none', zIndex: 1 }} />
-
-      {/* Spiral rings */}
-      <div style={{ position: 'absolute', left: 16, top: 20, bottom: 20, display: 'flex', flexDirection: 'column', gap: 28, alignItems: 'center', zIndex: 5 }}>
-        {Array.from({ length: 18 }).map((_, i) => (
-          <div key={i} style={{ width: 20, height: 20, borderRadius: '50%', border: '2.5px solid rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.03)' }} />
-        ))}
+      {/* Stage 1: "Spielende!" title — appears first, fades up */}
+      <div style={{
+        fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800,
+        color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
+        animation: 'contentReveal 0.6s ease both',
+        position: 'relative', zIndex: 5, marginBottom: 8,
+      }}>
+        {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '28px 44px 28px 90px', gap: 20, position: 'relative', zIndex: 2 }}>
-
-        {/* Title */}
+      {/* Stage 2: Winner hero — big entrance */}
+      {winner && (
         <div style={{
-          fontFamily: "'Caveat', cursive", fontWeight: 700,
-          fontSize: 'clamp(36px, 5.5vw, 68px)', color: '#FEF3C7',
-          borderBottom: '3px solid rgba(234,179,8,0.2)', paddingBottom: 10,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
+          position: 'relative', zIndex: 5, marginBottom: 20,
         }}>
-          {bt.gameOver.title[lang]}
-        </div>
+          {/* Crown */}
+          <div style={{
+            fontSize: 'clamp(40px, 5vw, 64px)',
+            animation: 'finaleStarBurst 0.5s ease 0.9s both',
+          }}>🏆</div>
 
-        {/* Rankings */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
-          {sorted.map((tm, i) => (
-            <div key={tm.id} style={{
-              display: 'flex', alignItems: 'center', gap: 20,
-              padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
-              ['--del' as string]: `${i * 0.12}s`,
-              animation: `nbSlide 0.5s cubic-bezier(0.34,1.2,0.64,1) var(--del,0s) both`,
-            }}>
-              <div style={{
-                fontFamily: "'Caveat', cursive", fontSize: 34, fontWeight: 700, width: 44,
-                color: i === 0 ? accent : 'rgba(255,255,255,0.18)',
-              }}>#{i + 1}</div>
-              <div style={{ width: 14, height: 44, borderRadius: 7, background: tm.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 32, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 700, color: '#fff', flex: 1 }}>
-                {tm.name}
-                {i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
-              </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 22, color: i === 0 ? accent : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
-                {tm.largestConnected} {bt.gameOver.connected[lang]}
-              </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 18, color: '#475569', fontWeight: 600, minWidth: 80, textAlign: 'right' }}>
-                {tm.totalCells} {bt.gameOver.total[lang]}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right: final grid */}
-      <div style={{ width: 480, flexShrink: 0, padding: '28px 28px 28px 16px', display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', position: 'relative', zIndex: 5 }}>
-        {winner && (
-          <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 72, lineHeight: 1, animation: 'winnerPulse 2s ease-in-out infinite, celebShake 0.6s ease 0.3s both' }}>
+          {/* Avatar with celebration ring */}
+          <div style={{
+            width: 'clamp(100px, 14vw, 160px)', height: 'clamp(100px, 14vw, 160px)',
+            borderRadius: '50%',
+            background: `${winnerColor}15`,
+            border: `4px solid ${winnerColor}`,
+            boxShadow: `0 0 60px ${winnerColor}44, 0 0 120px ${winnerColor}22`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'celebShake 0.6s ease 1.2s both',
+          }}>
+            <span style={{ fontSize: 'clamp(56px, 8vw, 96px)', lineHeight: 1 }}>
               {qqGetAvatar(winner.avatarId).emoji}
-            </div>
-            <div style={{ fontWeight: 900, fontSize: 22, color: winner.color, marginTop: 6, textShadow: `0 0 20px ${winner.color}44` }}>
-              {winner.name}
-            </div>
+            </span>
           </div>
-        )}
-        <GridDisplay state={s} maxSize={440} showJoker={false} />
-      </div>
+
+          {/* Winner name */}
+          <div style={{
+            fontSize: 'clamp(36px, 5.5vw, 72px)', fontWeight: 900,
+            color: winnerColor,
+            animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
+            marginTop: 8,
+          }}>
+            {winner.name}
+          </div>
+
+          {/* Score highlight */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16, marginTop: 4,
+            animation: 'contentReveal 0.5s ease 1.8s both',
+          }}>
+            <span style={{
+              fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900,
+              color: '#EAB308',
+            }}>
+              {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected fields'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Stage 3: Rankings — slide in staggered */}
+      {sorted.length > 1 && (
+        <div style={{
+          width: '100%', maxWidth: 800,
+          display: 'flex', flexDirection: 'column', gap: 8,
+          position: 'relative', zIndex: 5,
+        }}>
+          {sorted.slice(1).map((tm, i) => {
+            const rank = i + 2;
+            const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+            return (
+              <div key={tm.id} style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '12px 24px', borderRadius: 16,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.15}s both`,
+              }}>
+                <span style={{
+                  fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, width: 40,
+                  color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569',
+                }}>
+                  {rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                </span>
+                <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1 }}>
+                  {qqGetAvatar(tm.avatarId).emoji}
+                </span>
+                <span style={{
+                  flex: 1, fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900, color: tm.color,
+                }}>{tm.name}</span>
+                <span style={{
+                  fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 700,
+                  color: 'rgba(255,255,255,0.5)',
+                }}>
+                  {tm.largestConnected} {lang === 'de' ? 'verbunden' : 'connected'}
+                </span>
+                <span style={{
+                  fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#475569', fontWeight: 600,
+                }}>
+                  ({cellCount} {lang === 'de' ? 'gesamt' : 'total'})
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

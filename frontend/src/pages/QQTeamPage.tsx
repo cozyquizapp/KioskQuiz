@@ -658,6 +658,9 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
   const showCategory = !isFirstOfRound || s.introStep >= 1;
+  const isFinal = s.gamePhaseIndex === s.totalPhases;
+  const phaseName = isFinal ? (lang === 'de' ? 'Finale' : 'Final') : names[lang][s.gamePhaseIndex];
+  const phaseDesc = isFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in') : descs[lang][s.gamePhaseIndex];
 
   const cat = s.currentQuestion?.category;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
@@ -681,10 +684,10 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
               animation: 'tcfloat 3s ease-in-out infinite' }}>
-              {names[lang][s.gamePhaseIndex] ?? `Round ${s.gamePhaseIndex}`}
+              {phaseName ?? `Round ${s.gamePhaseIndex}`}
             </div>
             <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
-              {descs[lang][s.gamePhaseIndex] ?? ''}
+              {phaseDesc ?? ''}
             </div>
           </>
         ) : (
@@ -2184,38 +2187,60 @@ function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdat
   const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
   const myTeam  = sorted.find(t => t.id === myTeamId);
   const winner  = sorted[0];
+  const iWon = myRank === 1;
 
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        {myRank === 1 ? (
-          <>
-            <div style={{ fontSize: 56, marginBottom: 6, animation: 'tcfloat 2s ease-in-out infinite' }}>🏆</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: myTeam?.color }}>{t.gameOver.won[lang]}</div>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: 48, marginBottom: 6 }}>{qqGetAvatar(winner.avatarId).emoji}</div>
-            <div style={{ fontWeight: 800, color: winner.color, fontSize: 20 }}>{t.gameOver.wins[lang].replace('{name}', winner.name)}</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: '#64748b', marginTop: 4 }}>
-              {t.gameOver.rank[lang].replace('{n}', String(myRank))}
+        {/* Hero section */}
+        <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>
+          <div style={{ fontSize: 52, marginBottom: 4 }}>{iWon ? '🏆' : qqGetAvatar(winner.avatarId).emoji}</div>
+          {iWon ? (
+            <div style={{ fontSize: 26, fontWeight: 900, color: myTeam?.color, marginBottom: 4 }}>
+              {t.gameOver.won[lang]}
             </div>
-          </>
-        )}
-        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {sorted.map((tm, i) => (
-            <div key={tm.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
-              background: tm.id === myTeamId ? `${tm.color}18` : 'rgba(255,255,255,0.03)',
-              border: tm.id === myTeamId ? `2px solid ${tm.color}44` : '1px solid rgba(255,255,255,0.06)',
-              animation: `tcreveal 0.5s ease ${i * 0.1}s both`,
-            }}>
-              <span style={{ fontSize: 14, width: 22, color: i === 0 ? '#EAB308' : '#475569', fontWeight: 800 }}>#{i + 1}</span>
-              <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-              <span style={{ fontWeight: 900, color: tm.color, flex: 1 }}>{tm.name}</span>
-              <span style={{ fontSize: 13, color: '#64748b' }}>{tm.largestConnected} {t.gameOver.connected[lang]}</span>
-            </div>
-          ))}
+          ) : (
+            <>
+              <div style={{ fontWeight: 900, color: winner.color, fontSize: 22, marginBottom: 2 }}>
+                {t.gameOver.wins[lang].replace('{name}', winner.name)}
+              </div>
+              <div style={{
+                display: 'inline-block', padding: '4px 14px', borderRadius: 999,
+                background: `${myTeam?.color ?? '#64748b'}18`,
+                border: `1.5px solid ${myTeam?.color ?? '#64748b'}44`,
+                fontSize: 14, fontWeight: 800, color: myTeam?.color ?? '#94a3b8',
+              }}>
+                {lang === 'de' ? `Ihr: Platz ${myRank}` : `You: #${myRank}`}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Rankings */}
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sorted.map((tm, i) => {
+            const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+            return (
+              <div key={tm.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
+                background: tm.id === myTeamId ? `${tm.color}18` : 'rgba(255,255,255,0.03)',
+                border: tm.id === myTeamId ? `2px solid ${tm.color}44` : '1px solid rgba(255,255,255,0.06)',
+                animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
+              }}>
+                <span style={{ fontSize: 16, width: 24, fontWeight: 900,
+                  color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
+                }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? '#EAB308' : '#94a3b8' }}>
+                    {tm.largestConnected} {t.gameOver.connected[lang]}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#475569' }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </CozyCard>

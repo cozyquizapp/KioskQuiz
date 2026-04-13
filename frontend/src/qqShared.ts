@@ -209,6 +209,32 @@ export const QQ_BEAMER_CSS = `
     100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
   }
 
+  @keyframes finaleTitle {
+    0%   { opacity: 0; transform: scale(1.8); filter: brightness(3) blur(8px); }
+    30%  { opacity: 1; filter: brightness(1.5) blur(0px); }
+    50%  { transform: scale(0.95); filter: brightness(1.1); }
+    70%  { transform: scale(1.02); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes finaleGlow {
+    0%, 100% { text-shadow: 0 0 30px rgba(234,179,8,0.4), 0 0 60px rgba(234,179,8,0.15); }
+    50%      { text-shadow: 0 0 50px rgba(234,179,8,0.6), 0 0 100px rgba(234,179,8,0.25); }
+  }
+  @keyframes finaleWinner {
+    0%   { opacity: 0; transform: translateY(50px) scale(0.8); }
+    50%  { transform: translateY(-8px) scale(1.04); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes finaleRank {
+    from { opacity: 0; transform: translateX(-30px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes finaleStarBurst {
+    0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+    50%  { transform: scale(1.3) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;

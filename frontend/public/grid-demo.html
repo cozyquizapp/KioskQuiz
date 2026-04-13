@@ -6,7 +6,8 @@
 <title>Quartier Quiz — 3D Grid Showcase</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
-*,*::after,*::before{box-sizing:border-box;margin:0;padding:0;transform-style:preserve-3d}
+/* RESET — preserve-3d ONLY where needed, not globally */
+*{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:#0D0A06;color:#e2e8f0;font-family:'Nunito',system-ui,sans-serif}
 body{overflow-y:auto;overflow-x:hidden}
 
@@ -21,30 +22,20 @@ body{overflow-y:auto;overflow-x:hidden}
 .section-title{font-size:clamp(20px,3vw,28px);font-weight:900;color:#F59E0B;text-shadow:0 0 20px rgba(245,158,11,.25)}
 .section-sub{font-size:clamp(11px,1.4vw,13px);color:#92400E;font-weight:700;margin-top:-16px}
 
-/* ═══ 3D GRID ═══ */
+/* 3D GRID — preserve-3d only on grid + tiles + buildings */
 .grid-scene{perspective:800px;perspective-origin:50% 35%;padding:60px 0 20px;cursor:grab;user-select:none}
 .grid-scene.dragging{cursor:grabbing}
 .grid-scene.dragging .iso-grid{transition:none}
 .iso-grid{
   display:grid;gap:4px;
+  transform-style:preserve-3d;
   transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg));
   transition:transform .15s ease-out;
 }
 .drag-hint{font-size:11px;color:#64748b;margin-top:-12px;font-weight:700;opacity:.7}
-.tile{position:relative;cursor:pointer;transition:transform .15s ease}
+.tile{position:relative;cursor:pointer;transition:transform .15s ease;transform-style:preserve-3d}
 .tile:not(.owned):hover .ground{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
 .ground{width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
-
-/* ═══ 6-FACE CUBE ═══ */
-.cube{position:absolute;pointer-events:none;left:var(--ox,0px);top:var(--oy,0px);width:var(--bw,100%);height:var(--bd,100%)}
-.c-top{position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);border-radius:var(--tr,2px);transform:translateZ(var(--bh,30px))}
-.c-front{position:absolute;left:0;bottom:0;width:var(--bw);height:var(--bh,30px);transform-origin:bottom center;transform:rotateX(-90deg)}
-.c-back{position:absolute;left:0;top:0;width:var(--bw);height:var(--bh,30px);transform-origin:top center;transform:rotateX(90deg)}
-.c-right{position:absolute;top:0;right:0;width:var(--bh,30px);height:var(--bd);transform-origin:center right;transform:rotateY(90deg)}
-.c-left{position:absolute;top:0;left:0;width:var(--bh,30px);height:var(--bd);transform-origin:center left;transform:rotateY(-90deg)}
-.c-emoji{position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);transform:translateZ(calc(var(--bh,30px) + 2px));display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
-
-/* (unused CSS removed — buildings use cubes + border-radius now) */
 
 /* Score bar */
 .score-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -68,21 +59,20 @@ body{overflow-y:auto;overflow-x:hidden}
 .sc-play{padding:10px 22px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;background:var(--sc-color,#F59E0B);color:#0D0A06;box-shadow:0 4px 16px var(--sc-glow,rgba(245,158,11,.3));transition:all .2s;align-self:center}
 .sc-play:hover{transform:scale(1.04);filter:brightness(1.15)}
 
-/* Gallery 4×2 */
+/* Gallery 4x2 */
 .type-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:700px}
 .type-card{display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 10px 10px}
 .type-card:hover{border-color:rgba(255,255,255,.12)}
-.tc-stage{perspective:400px;perspective-origin:50% 35%;height:120px;width:100px;display:flex;align-items:center;justify-content:center}
-.tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:60px;height:60px}
+.tc-stage{perspective:400px;perspective-origin:50% 35%;height:130px;width:110px;display:flex;align-items:center;justify-content:center}
+.tc-iso{transform-style:preserve-3d;transform:rotateX(55deg) rotateZ(-45deg);position:relative}
 .tc-name{font-size:11px;font-weight:800;color:#94a3b8;text-align:center}
 
 /* Keyframes */
 @keyframes stampRing{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3);opacity:0}}
 @keyframes shatterOut{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(.3) rotate(var(--sr,180deg))}}
 @keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4)}50%{box-shadow:0 0 16px rgba(147,210,255,.8)}}
-@keyframes jokerBurst{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.5)}}
-@keyframes starFall{0%{opacity:1;transform:translateY(var(--starY,-60px)) rotate(0)}100%{opacity:0;transform:translateY(20px) rotate(720deg)}}
 @keyframes jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
+@keyframes starFall{0%{opacity:1;transform:translateY(var(--starY,-60px)) rotate(0)}100%{opacity:0;transform:translateY(20px) rotate(720deg)}}
 </style>
 </head>
 <body>
@@ -91,16 +81,16 @@ body{overflow-y:auto;overflow-x:hidden}
 
 <div class="page">
 <div class="section-title">Quartier Quiz</div>
-<div class="section-sub">Klicke leere Felder zum Setzen — verbundene Felder verschmelzen zu größeren Gebäuden</div>
+<div class="section-sub">Klicke leere Felder zum Setzen</div>
 
-<div class="drag-hint">🖱 Ziehen = Drehen · Mausrad = Zoom · Doppelklick = Reset</div>
+<div class="drag-hint">&#x1F5B1; Ziehen = Drehen · Mausrad = Zoom · Doppelklick = Reset</div>
 <div class="grid-scene" id="gridscene">
   <div class="iso-grid" id="grid"></div>
 </div>
 <div class="score-bar" id="scorebar"></div>
 
 <div class="section-title" style="margin-top:8px">Gebäudetypen</div>
-<div class="section-sub">8 Formen — Einzelgebäude + Verbund-Morphing</div>
+<div class="section-sub">8 einzigartige Silhouetten</div>
 <div class="type-gallery" id="typegallery"></div>
 
 <div class="section-title" style="margin-top:8px">Animation Showcase</div>
@@ -122,284 +112,254 @@ TEAMS.push(mkTeam('#EF4444','Tiger','\u{1F42F}'));
 TEAMS.push(mkTeam('#F97316','Eule','\u{1F989}'));
 TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 
-function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
+function rgba(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 8 BUILDING TYPES — extreme silhouette differences
+// BUILDING SYSTEM — clean from scratch
+// Each box() call creates ONE standalone 3D box with exactly 3 visible faces.
+// No CSS variables, no class-based sizing, no nesting issues.
 // ══════════════════════════════════════════════════════════════════════════════
-const BTYPES=[
-  {name:'Haus',     id:'haus'},      // wide, medium height cube
-  {name:'Turm',     id:'turm'},      // very narrow, very tall
-  {name:'Hochhaus', id:'hochhaus'},   // medium, tallest, antenna + window grid
-  {name:'Laden',    id:'laden'},      // very wide, very flat + awning shelf
-  {name:'Fabrik',   id:'fabrik'},     // 2 cubes side by side, different heights (staircase)
-  {name:'Kirche',   id:'kirche'},     // narrow tall with cross on top
-  {name:'Burg',     id:'burg'},       // wide low wall + 2 corner towers
-  {name:'Silo',     id:'silo'},       // round cylinder
-];
 
-// ══ HELPERS ══
-function mkCube(parent, x, y, z, w, d, h, team, bm){
-  bm=bm||1;
-  const mc=document.createElement('div');mc.className='cube';
-  mc.style.cssText=`--bw:${w}px;--bd:${d}px;--bh:${h}px;--ox:${x}px;--oy:${y}px;
-    position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);
-    transform:translateZ(${z}px);pointer-events:none`;
-  const t=document.createElement('div');t.className='c-top';
-  t.style.cssText=`background:${rca(team,.92*bm)};border:1px solid ${rca(team,.65)}`;
-  const f=document.createElement('div');f.className='c-front';
-  f.style.cssText=`background:${rca(team,.72*bm)};border:1px solid ${rca(team,.50)}`;
-  const bk=document.createElement('div');bk.className='c-back';
-  bk.style.cssText=`background:${rca(team,.55*bm)};border:1px solid ${rca(team,.40)}`;
-  const r=document.createElement('div');r.className='c-right';
-  r.style.cssText=`background:${rca(team,.48*bm)};border:1px solid ${rca(team,.35)}`;
-  const l=document.createElement('div');l.className='c-left';
-  l.style.cssText=`background:${rca(team,.62*bm)};border:1px solid ${rca(team,.45)}`;
-  mc.appendChild(t);mc.appendChild(f);mc.appendChild(bk);mc.appendChild(r);mc.appendChild(l);
-  parent.appendChild(mc);
-  return{el:mc, top:t, front:f, right:r};
+// Create a single 3D box at position (x,y,z) with size (w,d,h).
+// Returns {el, top, front, right} — all with explicit inline styles.
+function box(parent, x, y, z, w, d, h, topColor, frontColor, rightColor, borderColor){
+  const el=document.createElement('div');
+  el.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(${z}px);pointer-events:none`;
+
+  // TOP face — sits at height h
+  const top=document.createElement('div');
+  top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);background:${topColor};border:1px solid ${borderColor}`;
+
+  // FRONT face — bottom edge, rotated down
+  const front=document.createElement('div');
+  front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);background:${frontColor};border:1px solid ${borderColor}`;
+
+  // RIGHT face — right edge, rotated right
+  const right=document.createElement('div');
+  right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);background:${rightColor};border:1px solid ${borderColor}`;
+
+  el.appendChild(top);el.appendChild(front);el.appendChild(right);
+  parent.appendChild(el);
+  return{el,top,front,right};
 }
 
-function addWindows(face, w, h, rows, cols){
-  for(let wr=0;wr<rows;wr++)for(let wc=0;wc<cols;wc++){
-    const win=document.createElement('div');
-    const wW=Math.max(3,Math.round(w*.14)), wH=Math.max(3,Math.round(h*.10));
-    const gX=Math.round((w-cols*wW)/(cols+1)), gY=Math.round((h-rows*wH)/(rows+1));
-    win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
-      left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
-      background:rgba(255,255,200,.25);border:1px solid rgba(255,255,200,.08);border-radius:1px;pointer-events:none`;
-    face.appendChild(win);
+// Convenience: colored box using team colors
+function tbox(parent, x, y, z, w, d, h, team, bright){
+  bright=bright||0;
+  return box(parent, x, y, z, w, d, h,
+    rgba(team, .90+bright),           // top: brightest
+    rgba(team, .68+bright*.5),        // front: medium
+    rgba(team, .42+bright*.3),        // right: darkest
+    rgba(team, .30)                   // border
+  );
+}
+
+// Add window dots to a front face
+function addWin(face, fw, fh, rows, cols){
+  const wW=Math.max(3, Math.round(fw*.13));
+  const wH=Math.max(3, Math.round(fh*.12));
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const gx=Math.round((fw-cols*wW)/(cols+1));
+    const gy=Math.round((fh-rows*wH)/(rows+1));
+    const w=document.createElement('div');
+    w.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;left:${gx+c*(wW+gx)}px;top:${gy+r*(wH+gy)}px;background:rgba(255,255,200,.28);border:1px solid rgba(255,255,200,.08);border-radius:1px;pointer-events:none`;
+    face.appendChild(w);
   }
 }
 
-// ══ MAIN BUILD FUNCTION ══
-function buildBuilding(tileEl, cell, team, sz, btype, animate=false){
+// ══════════════════════════════════════════════════════════════════════════════
+// 8 BUILDING TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+const BTYPES=[
+  {name:'Haus',     id:0},
+  {name:'Turm',     id:1},
+  {name:'Hochhaus', id:2},
+  {name:'Laden',    id:3},
+  {name:'Fabrik',   id:4},
+  {name:'Kirche',   id:5},
+  {name:'Burg',     id:6},
+  {name:'Silo',     id:7},
+];
+
+function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
+  // Clear old building
   Array.from(tileEl.children).forEach(ch=>{if(!ch.classList.contains('ground'))ch.remove()});
   if(!cell||!team)return;
 
-  const bt=btype||BTYPES[0];
-  let stackBonus=cell.stacked*Math.round(sz*.15);
-  if(cell.joker) stackBonus+=Math.round(sz*.10);
-  const homeMul=cell.home?1.2:1;
+  const bi=btypeIdx!=null?btypeIdx:0;
+  let extra=cell.stacked*Math.round(sz*.14);
+  if(cell.joker) extra+=Math.round(sz*.08);
+  const hm=cell.home?1.2:1;
 
-  let mainTop, mainFront, mainEl;
-  let emojiZ=0; // z position for emoji
+  let mainTop=null, mainEl=null, emojiZ=0;
 
-  if(bt.id==='haus'){
-    // ── HAUS: wide, medium height, simple house ──
-    const bw=Math.round(sz*.75), bd=Math.round(sz*.70);
-    const bh=Math.round(sz*.35*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    if(bh>=16&&bw>=16) addWindows(c.front, bw, bh, 1, 2);
-    emojiZ=bh;
+  // ── 0: HAUS — wide, medium height ──
+  if(bi===0){
+    const w=Math.round(sz*.72), d=Math.round(sz*.68), h=Math.round(sz*.36*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    addWin(b.front, w, h, 1, 2);
+    emojiZ=h;
   }
-  else if(bt.id==='turm'){
-    // ── TURM: very narrow, very tall — like a tower ──
-    const bw=Math.round(sz*.32), bd=Math.round(sz*.32);
-    const bh=Math.round(sz*.85*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    // Pointed roof = a smaller cube on top, tapered
-    const roofW=Math.round(bw*.60), roofD=Math.round(bd*.60);
-    const roofH=Math.round(bh*.30);
-    const rox=ox+Math.round((bw-roofW)/2), roy=oy+Math.round((bd-roofD)/2);
-    mkCube(tileEl, rox, roy, bh, roofW, roofD, roofH, team, 1.1);
-    // Even smaller tip
-    const tipW=Math.round(roofW*.45), tipD=Math.round(roofD*.45);
-    const tipH=Math.round(roofH*.70);
-    const tox2=rox+Math.round((roofW-tipW)/2), toy2=roy+Math.round((roofD-tipD)/2);
-    mkCube(tileEl, tox2, toy2, bh+roofH, tipW, tipD, tipH, team, 1.2);
-    if(bh>=20) addWindows(c.front, bw, bh, 3, 1);
-    emojiZ=bh+roofH+tipH;
+  // ── 1: TURM — very narrow, very tall with stepped top ──
+  else if(bi===1){
+    const w=Math.round(sz*.30), d=Math.round(sz*.30), h=Math.round(sz*.90*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    addWin(b.front, w, h, 4, 1);
+    // Stepped tip: 2 smaller cubes stacked
+    const w2=Math.round(w*.65), d2=Math.round(d*.65), h2=Math.round(h*.22);
+    tbox(tileEl, ox+Math.round((w-w2)/2), oy+Math.round((d-d2)/2), h, w2, d2, h2, team, .08);
+    const w3=Math.round(w2*.55), d3=Math.round(d2*.55), h3=Math.round(h2*.65);
+    tbox(tileEl, ox+Math.round((w-w3)/2), oy+Math.round((d-d3)/2), h+h2, w3, d3, h3, team, .15);
+    emojiZ=h+h2+h3;
   }
-  else if(bt.id==='hochhaus'){
-    // ── HOCHHAUS: medium width, very tall, grid windows, antenna ──
-    const bw=Math.round(sz*.55), bd=Math.round(sz*.55);
-    const bh=Math.round(sz*.72*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    if(bh>=20&&bw>=14) addWindows(c.front, bw, bh, 3, 2);
-    // Antenna
-    const ah=Math.round(bh*.30);
+  // ── 2: HOCHHAUS — medium, tallest, antenna ──
+  else if(bi===2){
+    const w=Math.round(sz*.50), d=Math.round(sz*.50), h=Math.round(sz*.75*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    addWin(b.front, w, h, 3, 2);
+    // Antenna pole (simple div)
+    const ah=Math.round(h*.35);
     const pole=document.createElement('div');
-    pole.style.cssText=`position:absolute;left:${ox+Math.round(bw/2)-1}px;top:${oy+Math.round(bd/2)-1}px;
-      width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
+    pole.style.cssText=`position:absolute;left:${ox+Math.round(w/2)-1}px;top:${oy+Math.round(d/2)-1}px;width:3px;height:3px;transform-style:preserve-3d;transform:translateZ(${h}px);pointer-events:none`;
     const shaft=document.createElement('div');
-    shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
-      transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.6)`;
-    const dot=document.createElement('div');
-    dot.style.cssText=`position:absolute;left:-3px;top:-3px;width:8px;height:8px;
-      transform:translateZ(${ah}px);background:${rca(team,1)};border-radius:50%;
-      box-shadow:0 0 6px ${rca(team,.8)}`;
-    pole.appendChild(shaft);pole.appendChild(dot);tileEl.appendChild(pole);
-    emojiZ=bh;
+    shaft.style.cssText=`position:absolute;left:0;bottom:0;width:3px;height:${ah}px;transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.6)`;
+    const tip=document.createElement('div');
+    tip.style.cssText=`position:absolute;left:-3px;top:-3px;width:9px;height:9px;transform:translateZ(${ah}px);background:${rgba(team,1)};border-radius:50%;box-shadow:0 0 8px ${rgba(team,.8)}`;
+    pole.appendChild(shaft);pole.appendChild(tip);tileEl.appendChild(pole);
+    emojiZ=h;
   }
-  else if(bt.id==='laden'){
-    // ── LADEN: very wide, very flat — like a shop with awning ──
-    const bw=Math.round(sz*.82), bd=Math.round(sz*.65);
-    const bh=Math.round(sz*.18*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    // Big awning extending forward — contrasting brightness
-    const aw=bw+6, ad=Math.round(bd*.40), ah=Math.round(sz*.04);
-    const aox=ox-3, aoy=oy+bd-Math.round(ad*.25);
-    mkCube(tileEl, aox, aoy, Math.round(bh*.60), aw, ad, ah, team, 1.2);
-    emojiZ=bh;
+  // ── 3: LADEN — very wide, very flat + awning ──
+  else if(bi===3){
+    const w=Math.round(sz*.82), d=Math.round(sz*.62), h=Math.round(sz*.18*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    // Awning — extends forward beyond the building
+    const aw=w+8, ad=Math.round(d*.38), ah=Math.max(3, Math.round(sz*.035));
+    tbox(tileEl, ox-4, oy+d-Math.round(ad*.2), Math.round(h*.55), aw, ad, ah, team, .15);
+    emojiZ=h;
   }
-  else if(bt.id==='fabrik'){
-    // ── FABRIK: 2 boxes side by side, different heights (staircase) ──
-    const totalW=Math.round(sz*.80);
-    const w1=Math.round(totalW*.55), w2=totalW-w1;
-    const bd=Math.round(sz*.65);
-    const h1=Math.round(sz*.50*homeMul)+stackBonus;
-    const h2=Math.round(h1*.55); // shorter part
-    const ox=Math.round((sz-totalW)/2), oy=Math.round((sz-bd)/2);
+  // ── 4: FABRIK — 2 boxes side by side, staircase ──
+  else if(bi===4){
+    const totalW=Math.round(sz*.78);
+    const w1=Math.round(totalW*.55), w2=totalW-w1+2;
+    const d=Math.round(sz*.62);
+    const h1=Math.round(sz*.52*hm)+extra, h2=Math.round(h1*.50);
+    const ox=Math.round((sz-totalW)/2), oy=Math.round((sz-d)/2);
     // Tall part
-    const c=mkCube(tileEl, ox, oy, 0, w1, bd, h1, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    // Short part next to it
-    mkCube(tileEl, ox+w1-1, oy, 0, w2+1, bd, h2, team, 0.9);
+    const b=tbox(tileEl, ox, oy, 0, w1, d, h1, team);
+    mainEl=b.el; mainTop=b.top;
+    addWin(b.front, w1, h1, 2, 1);
+    // Short part
+    tbox(tileEl, ox+w1-2, oy, 0, w2, d, h2, team, -.05);
     // Chimney on tall part
-    const cw=Math.round(w1*.28), cd=Math.round(bd*.22), ch=Math.round(h1*.25);
-    mkCube(tileEl, ox+2, oy+2, h1, cw, cd, ch, team, 0.85);
-    if(h1>=20) addWindows(c.front, w1, h1, 2, 1);
+    const cw=Math.round(w1*.30), cd=Math.round(d*.24), ch=Math.round(h1*.28);
+    tbox(tileEl, ox+3, oy+3, h1, cw, cd, ch, team, -.10);
     emojiZ=h1+ch;
   }
-  else if(bt.id==='kirche'){
-    // ── KIRCHE: narrow body + very tall steeple with cross ──
-    const bw=Math.round(sz*.45), bd=Math.round(sz*.65);
-    const bh=Math.round(sz*.32*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    // Tall steeple tower
-    const tw=Math.round(bw*.55), td=Math.round(bd*.40);
-    const th=Math.round(bh*1.1);
-    const tox=ox+Math.round((bw-tw)/2), toy=oy+Math.round((bd-td)/2);
-    mkCube(tileEl, tox, toy, bh, tw, td, th, team, 1.05);
-    // Cross on top (2 bars)
-    const crossH=Math.round(th*.45);
-    const barW=2, barH=crossH;
-    // Vertical bar
+  // ── 5: KIRCHE — narrow body + tall steeple + white cross ──
+  else if(bi===5){
+    const w=Math.round(sz*.44), d=Math.round(sz*.60);
+    const h=Math.round(sz*.30*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    // Nave
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    // Steeple tower — tall and narrow
+    const tw=Math.round(w*.50), td=Math.round(d*.38), th=Math.round(h*1.3);
+    const tox=ox+Math.round((w-tw)/2), toy=oy+Math.round((d-td)/2);
+    tbox(tileEl, tox, toy, h, tw, td, th, team, .06);
+    // Spire tip
+    const sw=Math.round(tw*.55), sd=Math.round(td*.55), sh=Math.round(th*.35);
+    tbox(tileEl, tox+Math.round((tw-sw)/2), toy+Math.round((td-sd)/2), h+th, sw, sd, sh, team, .12);
+    // White cross on very top
+    const crossH=Math.round(sh*.80);
     const crossWrap=document.createElement('div');
-    crossWrap.style.cssText=`position:absolute;left:${tox+Math.round(tw/2)-1}px;top:${toy+Math.round(td/2)-1}px;
-      width:2px;height:2px;transform:translateZ(${bh+th}px);pointer-events:none`;
+    crossWrap.style.cssText=`position:absolute;left:${tox+Math.round(tw/2)-1}px;top:${toy+Math.round(td/2)-1}px;width:2px;height:2px;transform-style:preserve-3d;transform:translateZ(${h+th+sh}px);pointer-events:none`;
     const vBar=document.createElement('div');
-    vBar.style.cssText=`position:absolute;left:0;bottom:0;width:3px;height:${crossH}px;
-      transform-origin:bottom center;transform:rotateX(-90deg);
-      background:rgba(255,255,255,.85);border-radius:1px`;
-    crossWrap.appendChild(vBar);
-    // Horizontal bar
+    vBar.style.cssText=`position:absolute;left:0;bottom:0;width:3px;height:${crossH}px;transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.9);border-radius:1px`;
     const hBarLen=Math.round(crossH*.55);
     const hBar=document.createElement('div');
-    hBar.style.cssText=`position:absolute;left:${-Math.round(hBarLen/2)+1}px;top:-1px;width:${hBarLen}px;height:3px;
-      transform:translateZ(${Math.round(crossH*.65)}px);
-      background:rgba(255,255,255,.85);border-radius:1px`;
-    crossWrap.appendChild(hBar);
-    tileEl.appendChild(crossWrap);
-    emojiZ=bh+th;
+    hBar.style.cssText=`position:absolute;left:${-Math.round(hBarLen/2)+1}px;top:-1px;width:${hBarLen}px;height:3px;transform-style:preserve-3d;transform:translateZ(${Math.round(crossH*.6)}px);background:rgba(255,255,255,.9);border-radius:1px`;
+    crossWrap.appendChild(vBar);crossWrap.appendChild(hBar);tileEl.appendChild(crossWrap);
+    emojiZ=h+th+sh;
   }
-  else if(bt.id==='burg'){
-    // ── BURG: wide low wall + 2 tall corner towers ──
-    const bw=Math.round(sz*.80), bd=Math.round(sz*.70);
-    const bh=Math.round(sz*.20*homeMul)+stackBonus; // low wall
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    // Low main wall
-    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
-    mainEl=c.el; mainTop=c.top; mainFront=c.front;
-    // Left tower (taller)
-    const tw=Math.round(bw*.28), td=Math.round(bd*.30);
-    const th=Math.round(bh*2.2);
-    mkCube(tileEl, ox, oy, 0, tw, td, th, team, 1.05);
-    // Right tower (taller)
-    mkCube(tileEl, ox+bw-tw, oy, 0, tw, td, th, team, 1.05);
+  // ── 6: BURG — wide low wall + 2 corner towers ──
+  else if(bi===6){
+    const w=Math.round(sz*.78), d=Math.round(sz*.68);
+    const h=Math.round(sz*.18*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    // Low wide wall
+    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
+    mainEl=b.el; mainTop=b.top;
+    // 2 corner towers — much taller
+    const tw=Math.round(w*.26), td=Math.round(d*.28), th=Math.round(h*2.5);
+    tbox(tileEl, ox, oy, 0, tw, td, th, team, .06);
+    tbox(tileEl, ox+w-tw, oy, 0, tw, td, th, team, .06);
     emojiZ=th;
   }
-  else if(bt.id==='silo'){
-    // ── SILO: cylinder with rounded top ──
-    const bw=Math.round(sz*.48), bd=Math.round(sz*.48);
-    const bh=Math.round(sz*.50*homeMul)+stackBonus;
-    const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
-    // Use cube but with heavy border-radius on all faces to look round
-    const mc=document.createElement('div');mc.className='cube';
-    mc.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;
-      position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-      transform:translateZ(0px);pointer-events:none;
-      left:${ox}px;top:${oy}px`;
-    // Top — circle
-    const t=document.createElement('div');t.className='c-top';
-    t.style.cssText=`background:radial-gradient(circle at 38% 32%, ${rca(team,1)} 0%, ${rca(team,.70)} 60%, ${rca(team,.40)} 100%);
-      border:1px solid ${rca(team,.65)};border-radius:50%`;
-    // Front — with horizontal border-radius for curved look
-    const f=document.createElement('div');f.className='c-front';
-    f.style.cssText=`background:linear-gradient(90deg, ${rca(team,.40)} 0%, ${rca(team,.75)} 35%, ${rca(team,.75)} 65%, ${rca(team,.40)} 100%);
-      border:1px solid ${rca(team,.50)};border-radius:${Math.round(bw/2)}px / 4px`;
-    const bk=document.createElement('div');bk.className='c-back';
-    bk.style.cssText=`background:linear-gradient(90deg, ${rca(team,.30)} 0%, ${rca(team,.55)} 35%, ${rca(team,.55)} 65%, ${rca(team,.30)} 100%);
-      border:1px solid ${rca(team,.40)};border-radius:${Math.round(bw/2)}px / 4px`;
-    // Right — with vertical border-radius
-    const r=document.createElement('div');r.className='c-right';
-    r.style.cssText=`background:linear-gradient(90deg, ${rca(team,.25)} 0%, ${rca(team,.50)} 35%, ${rca(team,.50)} 65%, ${rca(team,.25)} 100%);
-      border:1px solid ${rca(team,.35)};border-radius:4px / ${Math.round(bd/2)}px`;
-    const l=document.createElement('div');l.className='c-left';
-    l.style.cssText=`background:linear-gradient(90deg, ${rca(team,.35)} 0%, ${rca(team,.62)} 35%, ${rca(team,.62)} 65%, ${rca(team,.35)} 100%);
-      border:1px solid ${rca(team,.42)};border-radius:4px / ${Math.round(bd/2)}px`;
-    mc.appendChild(t);mc.appendChild(f);mc.appendChild(bk);mc.appendChild(r);mc.appendChild(l);
-    tileEl.appendChild(mc);
-    mainEl=mc; mainTop=t;
-    emojiZ=bh;
+  // ── 7: SILO — round-looking cylinder ──
+  else if(bi===7){
+    const w=Math.round(sz*.46), d=Math.round(sz*.46), h=Math.round(sz*.52*hm)+extra;
+    const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
+    // Round top
+    const top=document.createElement('div');
+    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.65)} 60%, ${rgba(team,.35)} 100%);border:1px solid ${rgba(team,.50)}`;
+    // Curved front — gradient gives illusion of roundness
+    const front=document.createElement('div');
+    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:${Math.round(w*.5)}px / 5px;background:linear-gradient(90deg, ${rgba(team,.30)} 0%, ${rgba(team,.72)} 30%, ${rgba(team,.72)} 70%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.35)}`;
+    // Curved right
+    const right=document.createElement('div');
+    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:5px / ${Math.round(d*.5)}px;background:linear-gradient(0deg, ${rgba(team,.22)} 0%, ${rgba(team,.50)} 30%, ${rgba(team,.50)} 70%, ${rgba(team,.22)} 100%);border:1px solid ${rgba(team,.28)}`;
+    el.appendChild(top);el.appendChild(front);el.appendChild(right);
+    tileEl.appendChild(el);
+    mainEl=el; mainTop=top;
+    emojiZ=h;
   }
 
-  // ── Emoji on top ──
-  if(mainEl){
-    const bt2=bt;
-    // Figure out bounds for emoji centering
-    const bw2=mainEl.style.width?parseInt(mainEl.style.width):sz;
-    const bd2=mainEl.style.height?parseInt(mainEl.style.height):sz;
-    const ox2=parseInt(mainEl.style.left)||0;
-    const oy2=parseInt(mainEl.style.top)||0;
-    const emoji=document.createElement('div');
-    emoji.style.cssText=`position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;
-      transform:translateZ(${emojiZ+3}px);display:flex;align-items:center;justify-content:center;
-      pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
-      font-size:${cell.home?Math.round(sz*.30):Math.round(sz*.22)}px`;
-    if(cell.frozen){
-      const esz=cell.home?Math.round(sz*.30):Math.round(sz*.22);
-      emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(esz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
-    } else if(cell.joker){
-      emoji.textContent='⭐';
-    } else {
-      emoji.textContent=team.emoji;
-    }
-    tileEl.appendChild(emoji);
-  }
+  if(!mainEl) return;
 
-  // ── Frozen: ice on roof only ──
+  // ── Emoji ──
+  const emoji=document.createElement('div');
+  emoji.style.cssText=`position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;transform-style:preserve-3d;transform:translateZ(${emojiZ+4}px);display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));font-size:${cell.home?Math.round(sz*.30):Math.round(sz*.22)}px`;
+  if(cell.frozen){
+    const esz=cell.home?Math.round(sz*.30):Math.round(sz*.22);
+    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(esz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">&#x2744;&#xFE0F;</span>`;
+  } else if(cell.joker){
+    emoji.textContent='\u2B50';
+  } else {
+    emoji.textContent=team.emoji;
+  }
+  tileEl.appendChild(emoji);
+
+  // ── Frozen roof ──
   if(cell.frozen && mainTop){
-    mainTop.style.background='rgba(147,210,255,.50)';
+    mainTop.style.background='rgba(147,210,255,.55)';
     mainTop.style.border='2px solid rgba(147,210,255,.85)';
     mainTop.style.animation='frostPulse 2.5s ease-in-out infinite';
   }
-  // ── Joker: golden roof ──
+  // ── Joker roof ──
   if(cell.joker && mainTop){
-    mainTop.style.background='rgba(251,191,36,.55)';
+    mainTop.style.background='rgba(251,191,36,.60)';
     mainTop.style.border='2px solid rgba(251,191,36,.9)';
     mainTop.style.animation='jokerGlow 2s ease-in-out infinite';
   }
   // ── Stack badge ──
   if(cell.stacked>0 && !cell.joker){
     const badge=document.createElement('div');
-    badge.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${bw}px;height:${bd}px;
-      transform:translateZ(${bh+8}px);display:flex;align-items:center;justify-content:center;pointer-events:none`;
-    const span=document.createElement('span');
-    span.style.cssText='font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
-    span.textContent='\u00D7'+(cell.stacked+1);
-    badge.appendChild(span);tileEl.appendChild(badge);
+    badge.style.cssText=`position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;transform-style:preserve-3d;transform:translateZ(${emojiZ+15}px);display:flex;align-items:center;justify-content:center;pointer-events:none`;
+    const sp=document.createElement('span');
+    sp.style.cssText='font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
+    sp.textContent='\u00D7'+(cell.stacked+1);
+    badge.appendChild(sp);tileEl.appendChild(badge);
   }
   // ── Animate ──
   if(animate && mainEl){
@@ -413,8 +373,7 @@ let activeTeam=0;
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 
 function seed(r,c,t,home=false){
-  state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false,
-    btype:home?0:Math.floor(Math.random()*BTYPES.length)};
+  state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false,btype:home?0:Math.floor(Math.random()*BTYPES.length)};
 }
 const S=SIZE-1;
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);
@@ -436,7 +395,6 @@ function renderTile(r,c){
   if(!el)return;
   const cell=state[r][c];
   const ground=el.querySelector('.ground');
-  // Clear everything except ground
   Array.from(el.children).forEach(ch=>{if(!ch.classList.contains('ground'))ch.remove()});
   if(!cell){
     el.classList.remove('owned');
@@ -445,8 +403,8 @@ function renderTile(r,c){
   }
   el.classList.add('owned');
   const team=TEAMS[cell.teamIdx];
-  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 10px ${rca(team,.20)}`;
-  buildBuilding(el,cell,team,CELL,BTYPES[cell.btype||0]);
+  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(team,.15)};border:1px solid ${rgba(team,.35)};box-shadow:0 0 10px ${rgba(team,.20)}`;
+  buildBuilding(el,cell,team,CELL,cell.btype||0);
 }
 
 // ══ BUILD DOM ══
@@ -501,7 +459,7 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
 function updateScores(){
   document.getElementById('scorebar').innerHTML=TEAMS.map((t,i)=>{
     const count=state.flat().filter(c=>c?.teamIdx===i).length;const active=i===activeTeam;
-    return`<div class="team-pill${active?' active':''}" style="--tc-bg:${rca(t,.08)};--tc-border:${rca(t,.45)};--tc-glow:${rca(t,.2)};--tc-text:${t.color};--tc-count-bg:${rca(t,.15)}" onclick="selectTeam(${i})"><span class="tp-emoji">${t.emoji}</span><span class="tp-name">${t.name}</span><span class="tp-count">${count}</span></div>`}).join('')}
+    return`<div class="team-pill${active?' active':''}" style="--tc-bg:${rgba(t,.08)};--tc-border:${rgba(t,.45)};--tc-glow:${rgba(t,.2)};--tc-text:${t.color};--tc-count-bg:${rgba(t,.15)}" onclick="selectTeam(${i})"><span class="tp-emoji">${t.emoji}</span><span class="tp-name">${t.name}</span><span class="tp-count">${count}</span></div>`}).join('')}
 window.selectTeam=i=>{activeTeam=i;updateScores()};updateScores();
 
 // ══ GALLERY ══
@@ -509,11 +467,12 @@ const galEl=document.getElementById('typegallery');
 BTYPES.forEach((bt,i)=>{
   const card=document.createElement('div');card.className='type-card';
   const stage=document.createElement('div');stage.className='tc-stage';
-  const iso=document.createElement('div');iso.className='tc-iso';iso.style.cssText='width:60px;height:60px';
+  const iso=document.createElement('div');iso.className='tc-iso';
+  iso.style.width='66px';iso.style.height='66px';
   const ground=document.createElement('div');ground.className='ground';
-  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(TEAMS[i%4],.15)};border:1px solid ${rca(TEAMS[i%4],.35)}`;
+  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(TEAMS[i%4],.15)};border:1px solid ${rgba(TEAMS[i%4],.35)}`;
   iso.appendChild(ground);
-  buildBuilding(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],60,bt);
+  buildBuilding(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],66,i);
   stage.appendChild(iso);
   const label=document.createElement('div');label.className='tc-name';
   label.textContent=bt.name;
@@ -528,37 +487,37 @@ function miniStage(stage,cols,rows,sz,cells){
   const scene=document.createElement('div');
   scene.style.cssText='perspective:500px;perspective-origin:50% 35%';
   const grid=document.createElement('div');
-  grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);grid-template-rows:repeat(${rows},${sz}px);transform:rotateX(55deg) rotateZ(-45deg)`;
+  grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);grid-template-rows:repeat(${rows},${sz}px);transform-style:preserve-3d;transform:rotateX(55deg) rotateZ(-45deg)`;
   const map={};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const tile=document.createElement('div');tile.className='tile';tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative`;
+    const tile=document.createElement('div');tile.className='tile';tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative;transform-style:preserve-3d`;
     const ground=document.createElement('div');ground.className='ground';ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
     tile.appendChild(ground);grid.appendChild(tile);map[`${r},${c}`]=tile;
   }
   scene.appendChild(grid);stage.appendChild(scene);
   cells.forEach(([r,c,team,home,btIdx])=>{
     const tile=map[`${r},${c}`];if(!tile)return;
-    tile.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 8px ${rca(team,.2)}`;
+    tile.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(team,.15)};border:1px solid ${rgba(team,.35)};box-shadow:0 0 8px ${rgba(team,.2)}`;
     const bi=btIdx!=null?btIdx:0;
-    buildBuilding(tile,{home:!!home,frozen:false,stacked:0,joker:false,btype:bi},team,sz,BTYPES[bi]);
+    buildBuilding(tile,{home:!!home,frozen:false,stacked:0,joker:false,btype:bi},team,sz,bi);
   });
   return{grid,map,stage,sz};
 }
-function fxRing(p,color,d=0){const r=document.createElement('div');r.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;border-radius:50%;border:2px solid ${color};pointer-events:none;z-index:20;animation:stampRing .7s ease-out ${d}s both`;p.appendChild(r);setTimeout(()=>r.remove(),900)}
-function fxShatter(p,color,n=10){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=18+Math.random()*25,el=document.createElement('div');el.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:1px;background:${color};pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;--sr:${Math.random()*360}deg;animation:shatterOut .55s ease-out ${Math.random()*.08}s both`;p.appendChild(el);setTimeout(()=>el.remove(),700)}}
+function fxRing(p,color,d){d=d||0;const r=document.createElement('div');r.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;border-radius:50%;border:2px solid ${color};pointer-events:none;z-index:20;animation:stampRing .7s ease-out ${d}s both`;p.appendChild(r);setTimeout(()=>r.remove(),900)}
+function fxShatter(p,color,n){n=n||10;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=18+Math.random()*25,el=document.createElement('div');el.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:1px;background:${color};pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;--sr:${Math.random()*360}deg;animation:shatterOut .55s ease-out ${Math.random()*.08}s both`;p.appendChild(el);setTimeout(()=>el.remove(),700)}}
 
-function playPlace(stage){const SZ=42,bt=Math.floor(Math.random()*BTYPES.length);const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,0],[0,1,T_BLUE,false,2],[1,0,T_BLUE,false,4]]);const target=map['1,1'];setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)};box-shadow:0 0 8px ${rca(T_BLUE,.2)}`;buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);fxRing(target,T_BLUE.color);fxRing(target,T_BLUE.color,.12);fxShatter(target,T_BLUE.color,6)},500);setTimeout(()=>playPlace(stage),3500)}
-function playSteal(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,1],[0,1,T_BLUE,false,3],[1,0,T_BLUE,false,0],[1,1,T_RED,false,6]]);const target=map['1,1'];setTimeout(()=>{fxShatter(target,T_RED.color,12);const oldCubes=target.querySelectorAll('.cube,.cylinder');oldCubes.forEach(b=>{b.style.transition='opacity .2s';b.style.opacity='0';setTimeout(()=>b.remove(),250)});setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)}`;const bt=Math.floor(Math.random()*BTYPES.length);buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true)},300)},500);setTimeout(()=>playSteal(stage),3800)}
-function playFreeze(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED,false,0]]);const target=map['1,1'];setTimeout(()=>{for(let i=0;i<6;i++){const cr=document.createElement('div'),a=i*(Math.PI*2/6),d=22;cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:10px;pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;animation:shatterOut .7s ease-out ${i*.04}s both`;cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900)}setTimeout(()=>{target.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(147,210,255,.12);border:1px solid rgba(147,210,255,.4)';buildBuilding(target,{home:false,frozen:true,stacked:0,joker:false,btype:0},T_RED,SZ,BTYPES[0])},400)},500);setTimeout(()=>playFreeze(stage),4000)}
-function playStack(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE,false,3],[1,1,T_BLUE,false,2],[1,2,T_BLUE,false,5]]);const target=map['1,1'];let count=0;function once(){count++;fxRing(target,'#FBBF24');buildBuilding(target,{home:false,frozen:false,stacked:count,joker:false,btype:2},T_BLUE,SZ,BTYPES[2],true)}setTimeout(once,500);setTimeout(once,1200);setTimeout(once,1900);setTimeout(()=>playStack(stage),4200)}
-function playJoker(stage){const SZ=38;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,4],[0,1,T_BLUE,false,1],[1,0,T_BLUE,false,7]]);setTimeout(()=>{const t=map['1,1'];t.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)}`;buildBuilding(t,{home:false,frozen:false,stacked:0,joker:false,btype:0},T_BLUE,SZ,BTYPES[0],true)},500);setTimeout(()=>{[[0,0],[0,1],[1,0],[1,1]].forEach(([r,c],idx)=>{const tile=map[`${r},${c}`];tile.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;border:1px solid rgba(251,191,36,.7);box-shadow:0 0 12px rgba(251,191,36,.4);background:rgba(251,191,36,.06)';buildBuilding(tile,{home:false,frozen:false,stacked:0,joker:true,btype:[4,1,7,0][idx]},T_BLUE,SZ,BTYPES[[4,1,7,0][idx]])});for(let i=0;i<8;i++){const star=document.createElement('div');star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;font-size:${10+Math.random()*8}px;pointer-events:none;z-index:20;--starY:${-30-Math.random()*30}px;animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900)}},1200);setTimeout(()=>playJoker(stage),4800)}
+function playPlace(stage){const SZ=46,bt=Math.floor(Math.random()*BTYPES.length);const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,0],[0,1,T_BLUE,false,2],[1,0,T_BLUE,false,4]]);const target=map['1,1'];setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(T_BLUE,.15)};border:1px solid ${rgba(T_BLUE,.35)};box-shadow:0 0 8px ${rgba(T_BLUE,.2)}`;buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,bt,true);fxRing(target,T_BLUE.color);fxRing(target,T_BLUE.color,.12);fxShatter(target,T_BLUE.color,6)},500);setTimeout(()=>playPlace(stage),3500)}
+function playSteal(stage){const SZ=46;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,1],[0,1,T_BLUE,false,3],[1,0,T_BLUE,false,0],[1,1,T_RED,false,6]]);const target=map['1,1'];setTimeout(()=>{fxShatter(target,T_RED.color,12);Array.from(target.children).forEach(ch=>{if(!ch.classList.contains('ground')){ch.style.transition='opacity .2s';ch.style.opacity='0';setTimeout(()=>ch.remove(),250)}});setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(T_BLUE,.15)};border:1px solid ${rgba(T_BLUE,.35)}`;const bt=Math.floor(Math.random()*BTYPES.length);buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,bt,true)},300)},500);setTimeout(()=>playSteal(stage),3800)}
+function playFreeze(stage){const SZ=46;const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED,false,0]]);const target=map['1,1'];setTimeout(()=>{for(let i=0;i<6;i++){const cr=document.createElement('div'),a=i*(Math.PI*2/6),d=22;cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:10px;pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;animation:shatterOut .7s ease-out ${i*.04}s both`;cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900)}setTimeout(()=>{target.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(147,210,255,.12);border:1px solid rgba(147,210,255,.4)';buildBuilding(target,{home:false,frozen:true,stacked:0,joker:false,btype:0},T_RED,SZ,0)},400)},500);setTimeout(()=>playFreeze(stage),4000)}
+function playStack(stage){const SZ=46;const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE,false,3],[1,1,T_BLUE,false,2],[1,2,T_BLUE,false,5]]);const target=map['1,1'];let count=0;function once(){count++;fxRing(target,'#FBBF24');buildBuilding(target,{home:false,frozen:false,stacked:count,joker:false,btype:2},T_BLUE,SZ,2,true)}setTimeout(once,500);setTimeout(once,1200);setTimeout(once,1900);setTimeout(()=>playStack(stage),4200)}
+function playJoker(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,4],[0,1,T_BLUE,false,1],[1,0,T_BLUE,false,7]]);setTimeout(()=>{const t=map['1,1'];t.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rgba(T_BLUE,.15)};border:1px solid ${rgba(T_BLUE,.35)}`;buildBuilding(t,{home:false,frozen:false,stacked:0,joker:false,btype:0},T_BLUE,SZ,0,true)},500);setTimeout(()=>{[[0,0],[0,1],[1,0],[1,1]].forEach(([r,c],idx)=>{const tile=map[`${r},${c}`];tile.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;border:1px solid rgba(251,191,36,.7);box-shadow:0 0 12px rgba(251,191,36,.4);background:rgba(251,191,36,.06)';const bts=[4,1,7,0];buildBuilding(tile,{home:false,frozen:false,stacked:0,joker:true,btype:bts[idx]},T_BLUE,SZ,bts[idx])});for(let i=0;i<8;i++){const star=document.createElement('div');star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;font-size:${10+Math.random()*8}px;pointer-events:none;z-index:20;--starY:${-30-Math.random()*30}px;animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900)}},1200);setTimeout(()=>playJoker(stage),4800)}
 
 const CARDS=[
-  {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',desc:'Leeres Feld erobern. Zufälliger Gebäudetyp steigt aus dem Boden.',play:playPlace},
-  {icon:'\u26A1',title:'Klauen',color:'#EF4444',desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, neues steigt auf.',play:playSteal},
-  {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',desc:'Feld schützen. Nur das Dach wird eisblau — Wände behalten die Teamfarbe.',play:playFreeze},
-  {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',desc:'Eigenes Feld verstärken. Gebäude wächst höher (3×).',play:playStack},
-  {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',desc:'Vier Felder = Quadrat. Goldene Burst-Ringe, Sternenregen.',play:playJoker},
+  {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',desc:'Leeres Feld erobern. Zufälliger Gebäudetyp.',play:playPlace},
+  {icon:'\u26A1',title:'Klauen',color:'#EF4444',desc:'Gegnerisches Gebäude übernehmen.',play:playSteal},
+  {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',desc:'Feld schützen. Dach wird eisblau.',play:playFreeze},
+  {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',desc:'Gebäude wächst höher (3x).',play:playStack},
+  {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',desc:'Vier Felder = Quadrat. Sternenregen.',play:playJoker},
 ];
 const scC=document.getElementById('showcases');
 CARDS.forEach(card=>{

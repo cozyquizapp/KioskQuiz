@@ -1136,7 +1136,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               },
             },
             MUCHO: {
-              emoji: catEmoji, title: { de: 'Mucho Gusto', en: 'Mucho Gusto' },
+              emoji: catEmoji, title: { de: 'Mu-Cho', en: 'Mu-Cho' },
               lines: {
                 de: ['4 Antwortmöglichkeiten, nur 1 ist richtig', '⚡ Schnelligkeit entscheidet bei Gleichstand!'],
                 en: ['4 options, only 1 is correct', '⚡ Speed decides when tied!'],

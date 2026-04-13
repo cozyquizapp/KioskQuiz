@@ -260,13 +260,31 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
   const colBack=rca(team,.20), colLeft=rca(team,.35);
   const bordTop=rca(team,.60), bordSide=rca(team,.30);
 
+  const isSilo=(bt.extra==='dome');
+
   // 6 faces
   const top=document.createElement('div');top.className='c-top';
-  top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:${bt.tr}`;
+  if(isSilo){
+    // Sphere gradient on top: radial light at 40% 30% for 3D dome illusion
+    top.style.cssText=`background:radial-gradient(circle at 40% 30%, ${rca(team,0)} 4%, 57%, rgba(0,0,0,.55) 90%) ${colTop};
+      border:1px solid ${bordTop};border-radius:50%`;
+  } else {
+    top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:${bt.tr}`;
+  }
   cube.appendChild(top);
 
   const front=document.createElement('div');front.className='c-front';
-  front.style.cssText=`background:${colFront};border:1px solid ${bordSide}`;
+  if(isSilo){
+    // Cylinder gradient on front: curved shading from center-bright to edge-dark
+    const cylR=Math.round(bh*.15);
+    front.style.cssText=`background:
+      radial-gradient(50% ${cylR}px at 50% ${cylR}px, rgba(0,0,0,.12) 99.99%, transparent 0),
+      radial-gradient(50% ${cylR}px at 50% calc(100% - ${cylR}px), rgba(255,255,255,.08) 99.99%, transparent 0),
+      radial-gradient(ellipse at 50% 50%, ${rca(team,.52)} 0%, ${rca(team,.20)} 100%);
+      border:none;border-radius:${Math.round(bw*.15)}px / ${cylR}px`;
+  } else {
+    front.style.cssText=`background:${colFront};border:1px solid ${bordSide}`;
+  }
   cube.appendChild(front);
 
   const back=document.createElement('div');back.className='c-back';
@@ -274,7 +292,17 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
   cube.appendChild(back);
 
   const right=document.createElement('div');right.className='c-right';
-  right.style.cssText=`background:${colRight};border:1px solid ${bordSide}`;
+  if(isSilo){
+    // Cylinder gradient on right side too
+    const cylR=Math.round(bh*.15);
+    right.style.cssText=`background:
+      radial-gradient(50% ${cylR}px at 50% ${cylR}px, rgba(0,0,0,.15) 99.99%, transparent 0),
+      radial-gradient(50% ${cylR}px at 50% calc(100% - ${cylR}px), rgba(255,255,255,.06) 99.99%, transparent 0),
+      radial-gradient(ellipse at 50% 50%, ${rca(team,.35)} 0%, ${rca(team,.12)} 100%);
+      border:none;border-radius:${Math.round(bd*.15)}px / ${cylR}px`;
+  } else {
+    right.style.cssText=`background:${colRight};border:1px solid ${bordSide}`;
+  }
   cube.appendChild(right);
 
   const left=document.createElement('div');left.className='c-left';
@@ -377,13 +405,16 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
   }
 
   if(ex==='dome'){
-    // Dome ring on top (the round top face already from tr:50%)
+    // Dome highlight ring + subtle inner glow on top face
     const ring=document.createElement('div');
-    ring.style.cssText=`position:absolute;left:${Math.round(bw*.12)}px;top:${Math.round(bd*.12)}px;
-      width:${Math.round(bw*.76)}px;height:${Math.round(bd*.76)}px;
+    ring.style.cssText=`position:absolute;left:${Math.round(bw*.08)}px;top:${Math.round(bd*.08)}px;
+      width:${Math.round(bw*.84)}px;height:${Math.round(bd*.84)}px;
       transform:translateZ(${bh+1}px);
-      border:2px solid ${rca(team,.35)};border-radius:50%;pointer-events:none`;
+      border:1px solid ${rca(team,.25)};border-radius:50%;pointer-events:none;
+      background:radial-gradient(circle at 35% 35%, rgba(255,255,255,.15) 0%, transparent 60%)`;
     cube.appendChild(ring);
+    // No windows for silo — remove any that were added
+    front.querySelectorAll('div').forEach(w=>w.remove());
   }
 
   // ── Emoji on top ──

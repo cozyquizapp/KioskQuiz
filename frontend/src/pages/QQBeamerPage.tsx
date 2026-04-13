@@ -2277,9 +2277,10 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     }
   }, [use3D]);
 
-  // When enable3DTransition + first flashCell arrives → trigger the "Fahrt"
+  // When enable3DTransition + first cell is placed (lastPlacedCell or flashCell) → trigger the "Fahrt"
+  const cellTrigger = flashCell || s.lastPlacedCell;
   useEffect(() => {
-    if (!enable3DTransition || use3D || hasTransitioned.current || !flashCell) return;
+    if (!enable3DTransition || use3D || hasTransitioned.current || !cellTrigger) return;
     // First cell placed this round → start 2D→3D transition
     hasTransitioned.current = true;
     setViewMode('transitioning');
@@ -2288,7 +2289,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
       setViewMode('3d');
     }, 1200);
     return () => { if (transitionTimer.current) clearTimeout(transitionTimer.current); };
-  }, [flashCell, enable3DTransition, use3D]);
+  }, [cellTrigger, enable3DTransition, use3D]);
 
   // Reset transition state when entering a fresh placement round (questionIndex changes)
   const prevQIdx = useRef(s.questionIndex);
@@ -2386,8 +2387,8 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           <QQ3DGrid
             state={s}
             maxSize={gridMaxSize}
-            animateCell={flashCell ? { row: flashCell.row, col: flashCell.col, teamId: flashCell.teamId, wasSteal: flashCell.wasSteal } : null}
-            interactive={!s.pendingFor}
+            animateCell={cellTrigger ? { row: cellTrigger.row, col: cellTrigger.col, teamId: cellTrigger.teamId, wasSteal: cellTrigger.wasSteal } : null}
+            interactive={viewMode === '3d'}
             entering={viewMode === 'transitioning'}
           />
         ) : (

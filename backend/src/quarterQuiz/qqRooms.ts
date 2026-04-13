@@ -422,18 +422,30 @@ export function qqActivateQuestion(
     // Steps before category reveal: advance
     if (isFirstOfRound && room.introStep < catRevealStep) {
       room.introStep += 1;
+      // If we just landed on catRevealStep AND the category is new,
+      // skip the simple reveal and jump straight to explanation
+      if (room.introStep === catRevealStep) {
+        const q = room.currentQuestion;
+        const catKey = q?.category === 'BUNTE_TUETE' && q.bunteTuete
+          ? `BUNTE_TUETE:${q.bunteTuete.kind}` : (q?.category ?? '');
+        if (catKey && !room.seenCategories.includes(catKey)) {
+          room.seenCategories.push(catKey);
+          room.introStep = catRevealStep + 1; // jump to explanation
+        }
+      }
       room.lastActivityAt = Date.now();
       return;
     }
 
-    // At category reveal step: check if category is new → show explanation
+    // At category reveal step (non-first question, or first question with already-seen category)
     if (room.introStep === catRevealStep) {
       const q = room.currentQuestion;
       const catKey = q?.category === 'BUNTE_TUETE' && q.bunteTuete
         ? `BUNTE_TUETE:${q.bunteTuete.kind}` : (q?.category ?? '');
       if (catKey && !room.seenCategories.includes(catKey)) {
+        // New category: show explanation
         room.seenCategories.push(catKey);
-        room.introStep = catRevealStep + 1; // advance to explanation step
+        room.introStep = catRevealStep + 1;
         room.lastActivityAt = Date.now();
         return;
       }

@@ -6,7 +6,7 @@
 <title>Quartier Quiz — 3D Grid Showcase</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*,*::after,*::before{box-sizing:border-box;margin:0;padding:0;transform-style:preserve-3d}
 html,body{width:100%;height:100%;background:#0D0A06;color:#e2e8f0;font-family:'Nunito',system-ui,sans-serif}
 body{overflow-y:auto;overflow-x:hidden}
 
@@ -26,58 +26,82 @@ body{overflow-y:auto;overflow-x:hidden}
 .iso-grid{
   display:grid;gap:4px;
   transform:rotateX(55deg) rotateZ(-45deg);
-  transform-style:preserve-3d;
 }
 .tile{
-  position:relative;transform-style:preserve-3d;
+  position:relative;
   cursor:pointer;transition:transform .15s ease;
 }
 .tile:not(.owned):hover .ground{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
 
-/* Ground plane — lies flat */
 .ground{
   width:100%;height:100%;border-radius:3px;
   background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
 }
 
-/* ═══ 3D BUILDING — real extruded box using translateZ ═══
-   The grid is rotated so Z points "up" visually.
-   We build a box: bottom at Z=0, top at Z=height.
-   Faces: top, front (Y+), right (X+), and their geometry. */
-.box{
-  position:absolute;inset:0;
-  transform-style:preserve-3d;
-  pointer-events:none;
+/* ═══ 6-FACE 3D CUBE SYSTEM ═══
+   Each building is a full 3D box with 6 faces.
+   The cube wrapper sits at inset:0 of the tile,
+   faces are positioned via rotate+translate.
+   --bw = building width, --bd = building depth,
+   --bh = building height (Z axis, going UP) */
+.cube{
+  position:absolute;pointer-events:none;
+  /* centered on tile: offset by (tile-bw)/2 and (tile-bd)/2 */
+  left:var(--ox,0px);top:var(--oy,0px);
+  width:var(--bw,100%);height:var(--bd,100%);
 }
+
 /* Top face — lifted to Z=height */
-.box-top{
-  position:absolute;inset:0;border-radius:2px;
-  transform:translateZ(var(--h,30px));
-  backface-visibility:hidden;
+.c-top{
+  position:absolute;left:0;top:0;
+  width:var(--bw);height:var(--bd);
+  border-radius:var(--tr,2px);
+  transform:translateZ(var(--bh,30px));
 }
-/* Front face (visible bottom wall from camera angle) */
-.box-front{
-  position:absolute;left:0;right:0;bottom:0;
-  height:var(--h,30px);
+/* Bottom face — at Z=0 (usually hidden) */
+.c-bot{
+  position:absolute;left:0;top:0;
+  width:var(--bw);height:var(--bd);
+  transform:translateZ(0);
+  opacity:0; /* hidden, just for completeness */
+}
+/* Front face — bottom edge, folds down toward viewer */
+.c-front{
+  position:absolute;left:0;bottom:0;
+  width:var(--bw);height:var(--bh,30px);
   transform-origin:bottom center;
   transform:rotateX(-90deg);
-  backface-visibility:hidden;
 }
-/* Right face (visible right wall from camera angle) */
-.box-right{
-  position:absolute;top:0;bottom:0;right:0;
-  width:var(--h,30px);
+/* Back face — top edge, folds up away from viewer */
+.c-back{
+  position:absolute;left:0;top:0;
+  width:var(--bw);height:var(--bh,30px);
+  transform-origin:top center;
+  transform:rotateX(90deg);
+}
+/* Right face — right edge, folds right */
+.c-right{
+  position:absolute;top:0;right:0;
+  width:var(--bh,30px);height:var(--bd);
   transform-origin:center right;
   transform:rotateY(90deg);
-  backface-visibility:hidden;
 }
-/* Emoji floating above top */
-.box-emoji{
-  position:absolute;inset:0;
-  transform:translateZ(calc(var(--h,30px) + 1px));
+/* Left face — left edge, folds left */
+.c-left{
+  position:absolute;top:0;left:0;
+  width:var(--bh,30px);height:var(--bd);
+  transform-origin:center left;
+  transform:rotateY(-90deg);
+}
+
+/* Emoji floating above */
+.c-emoji{
+  position:absolute;left:0;top:0;
+  width:var(--bw);height:var(--bd);
+  transform:translateZ(calc(var(--bh,30px) + 2px));
   display:flex;align-items:center;justify-content:center;
   pointer-events:none;
-  filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
 }
 
 /* Score bar */
@@ -111,19 +135,24 @@ body{overflow-y:auto;overflow-x:hidden}
   transition:all .2s;align-self:center}
 .sc-play:hover{transform:scale(1.04);filter:brightness(1.15)}
 
+/* Building type gallery */
+.type-gallery{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1200px}
+.type-card{display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;
+  padding:16px 20px;min-width:110px}
+.type-card:hover{border-color:rgba(255,255,255,.12)}
+.tc-stage{perspective:400px;perspective-origin:50% 35%;height:90px;width:90px;
+  display:flex;align-items:center;justify-content:center}
+.tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:50px;height:50px}
+.tc-name{font-size:12px;font-weight:800;color:#94a3b8}
+
 /* ═══ KEYFRAMES ═══ */
 @keyframes stampRing{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3);opacity:0}}
 @keyframes shatterOut{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(.3) rotate(var(--sr,180deg))}}
-@keyframes iceSpread{0%{clip-path:circle(0% at 50% 50%);opacity:0}40%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
-@keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4);border-color:rgba(147,210,255,.7)}50%{box-shadow:0 0 16px rgba(147,210,255,.8);border-color:rgba(147,210,255,1)}}
-@keyframes frostShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4)}50%{box-shadow:0 0 16px rgba(147,210,255,.8)}}
 @keyframes jokerBurst{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.5)}}
 @keyframes starFall{0%{opacity:1;transform:translateY(var(--starY,-60px)) rotate(0)}100%{opacity:0;transform:translateY(20px) rotate(720deg)}}
 @keyframes jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
-@keyframes emojiDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}50%{transform:scale(1.4) rotate(6deg);opacity:1}70%{transform:scale(.85)}100%{transform:scale(1);opacity:1}}
-@keyframes riseUp{0%{--h:0px;opacity:0}30%{opacity:1}100%{opacity:1}}
-@keyframes inkFill{0%{clip-path:circle(0% at 50% 50%);opacity:0}30%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
-@keyframes homeGlow{0%,100%{box-shadow:var(--gb)}50%{box-shadow:var(--gp)}}
 </style>
 </head>
 <body>
@@ -132,12 +161,16 @@ body{overflow-y:auto;overflow-x:hidden}
 
 <div class="page">
 <div class="section-title">Quartier Quiz</div>
-<div class="section-sub">Klicke leere Felder zum Setzen</div>
+<div class="section-sub">Klicke leere Felder zum Setzen — jedes Feld bekommt einen zufälligen Gebäudetyp</div>
 
 <div class="grid-scene">
   <div class="iso-grid" id="grid"></div>
 </div>
 <div class="score-bar" id="scorebar"></div>
+
+<div class="section-title" style="margin-top:8px">Gebäudetypen</div>
+<div class="section-sub">8 verschiedene Silhouetten — sofort unterscheidbar</div>
+<div class="type-gallery" id="typegallery"></div>
 
 <div class="section-title" style="margin-top:8px">Animation Showcase</div>
 <div class="section-sub">Klicke Play um jede Animation zu sehen</div>
@@ -161,9 +194,298 @@ TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 
+// ══════════════════════════════════════════════════════════════════════════════
+// 8 BUILDING TYPES — each defines width, depth, height (relative to tile size)
+// plus optional extras (roof shape, chimney, antenna, steps, etc.)
+// ══════════════════════════════════════════════════════════════════════════════
+const BTYPES=[
+  // 0: Haus — medium square, pitched roof effect via clipped top
+  {name:'Haus',  wf:.82, df:.82, hf:.45, topRadius:'2px',
+   extras:[]},
+  // 1: Turm — narrow & tall
+  {name:'Turm',  wf:.48, df:.48, hf:.85, topRadius:'2px',
+   extras:['spire']},
+  // 2: Hochhaus — full width, very tall, flat roof
+  {name:'Hochhaus', wf:.78, df:.78, hf:.72, topRadius:'1px',
+   extras:['antenna']},
+  // 3: Laden — wide & flat with awning
+  {name:'Laden', wf:.90, df:.70, hf:.30, topRadius:'2px',
+   extras:['awning']},
+  // 4: Fabrik — wide, medium height, chimney
+  {name:'Fabrik', wf:.85, df:.75, hf:.48, topRadius:'1px',
+   extras:['chimney']},
+  // 5: Kirche — narrow with steeple
+  {name:'Kirche', wf:.52, df:.65, hf:.60, topRadius:'2px',
+   extras:['steeple']},
+  // 6: Burg — stepped, wide base + narrow upper
+  {name:'Burg',  wf:.88, df:.88, hf:.38, topRadius:'1px',
+   extras:['tower']},
+  // 7: Silo — round (border-radius), medium
+  {name:'Silo',  wf:.55, df:.55, hf:.58, topRadius:'50%',
+   extras:['dome']},
+];
+
+// ══ BUILD 6-FACE CUBE ══
+// Creates a full 3D cube with all 6 faces + optional extras
+function buildCube(tileEl, cell, team, sz, btype, animate=false){
+  tileEl.querySelectorAll('.cube').forEach(b=>b.remove());
+  if(!cell||!team)return;
+
+  const bt=btype||BTYPES[0];
+  const bw=Math.round(sz*bt.wf);
+  const bd=Math.round(sz*bt.df);
+  let bh=Math.round(sz*bt.hf);
+
+  // Home buildings are taller
+  if(cell.home) bh=Math.round(bh*1.3);
+  // Stacked buildings grow
+  bh += cell.stacked*Math.round(sz*.22);
+  // Joker adds height
+  if(cell.joker) bh += Math.round(sz*.15);
+
+  const ox=Math.round((sz-bw)/2);
+  const oy=Math.round((sz-bd)/2);
+
+  const cube=document.createElement('div');cube.className='cube';
+  cube.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;--ox:${ox}px;--oy:${oy}px;--tr:${bt.topRadius}`;
+
+  // Color scheme: top=bright, front=medium, right=dark, back=darker, left=medium-dark
+  const colTop=rca(team,.80);
+  const colFront=rca(team,.45);
+  const colRight=rca(team,.28);
+  const colBack=rca(team,.20);
+  const colLeft=rca(team,.35);
+  const bordTop=rca(team,.60);
+  const bordSide=rca(team,.35);
+
+  // -- Top face --
+  const top=document.createElement('div');top.className='c-top';
+  top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:${bt.topRadius}`;
+  cube.appendChild(top);
+
+  // -- Front face --
+  const front=document.createElement('div');front.className='c-front';
+  front.style.cssText=`background:${colFront};border:1px solid ${bordSide}`;
+  cube.appendChild(front);
+
+  // -- Back face --
+  const back=document.createElement('div');back.className='c-back';
+  back.style.cssText=`background:${colBack};border:1px solid ${bordSide}`;
+  cube.appendChild(back);
+
+  // -- Right face --
+  const right=document.createElement('div');right.className='c-right';
+  right.style.cssText=`background:${colRight};border:1px solid ${bordSide}`;
+  cube.appendChild(right);
+
+  // -- Left face --
+  const left=document.createElement('div');left.className='c-left';
+  left.style.cssText=`background:${colLeft};border:1px solid ${bordSide}`;
+  cube.appendChild(left);
+
+  // -- Windows (small rectangles on front face) --
+  if(bh>18 && bw>20){
+    const winRows=bh>35?2:1;
+    const winCols=bw>30?2:1;
+    for(let wr=0;wr<winRows;wr++){
+      for(let wc=0;wc<winCols;wc++){
+        const win=document.createElement('div');
+        const winW=Math.max(4,Math.round(bw*.18));
+        const winH=Math.max(4,Math.round(bh*.16));
+        const gapX=Math.round((bw-winCols*winW)/(winCols+1));
+        const gapY=Math.round((bh-winRows*winH)/(winRows+1));
+        win.style.cssText=`position:absolute;
+          width:${winW}px;height:${winH}px;
+          left:${gapX+wc*(winW+gapX)}px;top:${gapY+wr*(winH+gapY)}px;
+          background:rgba(255,255,200,.18);border:1px solid rgba(255,255,200,.08);
+          border-radius:1px;pointer-events:none`;
+        front.appendChild(win);
+      }
+    }
+  }
+
+  // -- Extras based on building type --
+  bt.extras.forEach(extra=>{
+    if(extra==='spire'){
+      // Narrow spike on top of tower
+      const spire=document.createElement('div');
+      const sw=Math.round(bw*.3), sd=Math.round(bd*.3), sh=Math.round(bh*.45);
+      spire.className='cube';
+      spire.style.cssText=`--bw:${sw}px;--bd:${sd}px;--bh:${sh}px;
+        --ox:${Math.round((bw-sw)/2)}px;--oy:${Math.round((bd-sd)/2)}px;
+        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+        transform:translateZ(${bh}px);pointer-events:none`;
+      const st=document.createElement('div');st.className='c-top';
+      st.style.cssText=`background:${rca(team,.90)};border:1px solid ${bordTop};border-radius:2px`;
+      const sf=document.createElement('div');sf.className='c-front';
+      sf.style.cssText=`background:${rca(team,.55)};border:1px solid ${bordSide}`;
+      const sr=document.createElement('div');sr.className='c-right';
+      sr.style.cssText=`background:${rca(team,.35)};border:1px solid ${bordSide}`;
+      spire.appendChild(st);spire.appendChild(sf);spire.appendChild(sr);
+      cube.appendChild(spire);
+    }
+    if(extra==='antenna'){
+      // Thin antenna on top
+      const ant=document.createElement('div');
+      const aw=3, ad=3, ah=Math.round(bh*.4);
+      ant.style.cssText=`position:absolute;
+        left:${Math.round(bw/2-1)}px;top:${Math.round(bd/2-1)}px;
+        width:${aw}px;height:${ad}px;
+        transform:translateZ(${bh}px);pointer-events:none`;
+      const pole=document.createElement('div');
+      pole.style.cssText=`position:absolute;left:0;top:0;width:${aw}px;height:${ad}px;
+        transform:translateZ(${ah}px);background:${rca(team,.90)};border-radius:50%`;
+      const shaft=document.createElement('div');
+      shaft.style.cssText=`position:absolute;left:0;bottom:0;width:${aw}px;height:${ah}px;
+        transform-origin:bottom center;transform:rotateX(-90deg);
+        background:rgba(255,255,255,.4)`;
+      ant.appendChild(pole);ant.appendChild(shaft);
+      cube.appendChild(ant);
+    }
+    if(extra==='awning'){
+      // Wide overhang on front
+      const aw=bw+6, ad=Math.round(bd*.35), ah=3;
+      const awning=document.createElement('div');
+      awning.className='cube';
+      awning.style.cssText=`--bw:${aw}px;--bd:${ad}px;--bh:${ah}px;
+        --ox:${-3}px;--oy:${bd-Math.round(ad*.3)}px;
+        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+        transform:translateZ(${Math.round(bh*.7)}px);pointer-events:none`;
+      const at=document.createElement('div');at.className='c-top';
+      at.style.cssText=`background:${rca(team,.90)};border:1px solid ${bordTop}`;
+      const af=document.createElement('div');af.className='c-front';
+      af.style.cssText=`background:${rca(team,.60)};border:1px solid ${bordSide}`;
+      awning.appendChild(at);awning.appendChild(af);
+      cube.appendChild(awning);
+    }
+    if(extra==='chimney'){
+      // Small chimney on back-right
+      const cw=Math.round(bw*.2), cd=Math.round(bd*.2), ch=Math.round(bh*.45);
+      const chim=document.createElement('div');
+      chim.className='cube';
+      chim.style.cssText=`--bw:${cw}px;--bd:${cd}px;--bh:${ch}px;
+        --ox:${bw-cw-3}px;--oy:2px;
+        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+        transform:translateZ(${bh}px);pointer-events:none`;
+      const ct=document.createElement('div');ct.className='c-top';
+      ct.style.cssText=`background:${rca(team,.65)};border:1px solid ${bordSide}`;
+      const cf=document.createElement('div');cf.className='c-front';
+      cf.style.cssText=`background:${rca(team,.40)};border:1px solid ${bordSide}`;
+      const cr=document.createElement('div');cr.className='c-right';
+      cr.style.cssText=`background:${rca(team,.25)};border:1px solid ${bordSide}`;
+      chim.appendChild(ct);chim.appendChild(cf);chim.appendChild(cr);
+      cube.appendChild(chim);
+    }
+    if(extra==='steeple'){
+      // Tall narrow steeple on top
+      const sw=Math.round(bw*.35), sd=Math.round(bd*.35), sh=Math.round(bh*.65);
+      const steeple=document.createElement('div');
+      steeple.className='cube';
+      steeple.style.cssText=`--bw:${sw}px;--bd:${sd}px;--bh:${sh}px;
+        --ox:${Math.round((bw-sw)/2)}px;--oy:${Math.round((bd-sd)/2)}px;
+        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+        transform:translateZ(${bh}px);pointer-events:none`;
+      const st=document.createElement('div');st.className='c-top';
+      st.style.cssText=`background:${rca(team,.95)};border:1px solid ${bordTop};border-radius:2px`;
+      const sf=document.createElement('div');sf.className='c-front';
+      sf.style.cssText=`background:${rca(team,.55)};border:1px solid ${bordSide}`;
+      const sr=document.createElement('div');sr.className='c-right';
+      sr.style.cssText=`background:${rca(team,.35)};border:1px solid ${bordSide}`;
+      steeple.appendChild(st);steeple.appendChild(sf);steeple.appendChild(sr);
+      cube.appendChild(steeple);
+    }
+    if(extra==='tower'){
+      // Small tower on one corner (burg)
+      const tw=Math.round(bw*.32), td=Math.round(bd*.32), th=Math.round(bh*.75);
+      const tower=document.createElement('div');
+      tower.className='cube';
+      tower.style.cssText=`--bw:${tw}px;--bd:${td}px;--bh:${th}px;
+        --ox:${bw-tw-1}px;--oy:1px;
+        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+        transform:translateZ(${bh}px);pointer-events:none`;
+      const tt=document.createElement('div');tt.className='c-top';
+      tt.style.cssText=`background:${rca(team,.85)};border:1px solid ${bordTop}`;
+      const tf=document.createElement('div');tf.className='c-front';
+      tf.style.cssText=`background:${rca(team,.50)};border:1px solid ${bordSide}`;
+      const tr2=document.createElement('div');tr2.className='c-right';
+      tr2.style.cssText=`background:${rca(team,.30)};border:1px solid ${bordSide}`;
+      tower.appendChild(tt);tower.appendChild(tf);tower.appendChild(tr2);
+      cube.appendChild(tower);
+    }
+    if(extra==='dome'){
+      // Rounded dome: a smaller sphere-ish top (circle top face)
+      // Already handled by topRadius:'50%' — add a ring
+      const ring=document.createElement('div');
+      ring.style.cssText=`position:absolute;left:${Math.round(bw*.15)}px;top:${Math.round(bd*.15)}px;
+        width:${Math.round(bw*.7)}px;height:${Math.round(bd*.7)}px;
+        transform:translateZ(${bh+1}px);
+        border:2px solid ${rca(team,.40)};border-radius:50%;pointer-events:none`;
+      cube.appendChild(ring);
+    }
+  });
+
+  // -- Emoji on top --
+  const emoji=document.createElement('div');emoji.className='c-emoji';
+  const emojiSize=cell.home?Math.round(sz*.36):Math.round(sz*.28);
+  emoji.style.fontSize=emojiSize+'px';
+
+  if(cell.frozen){
+    // Frozen: show team emoji + small snowflake beside it
+    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(emojiSize*.55)}px;margin-left:-2px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
+  } else if(cell.joker){
+    emoji.textContent='⭐';
+  } else {
+    emoji.textContent=team.emoji;
+  }
+  cube.appendChild(emoji);
+
+  // -- Frozen effect: ONLY top face gets ice, walls stay team-colored --
+  if(cell.frozen){
+    top.style.background='rgba(147,210,255,.50)';
+    top.style.border='2px solid rgba(147,210,255,.85)';
+    top.style.animation='frostPulse 2.5s ease-in-out infinite';
+    // Subtle frost tint on edges but keep team color visible
+    front.style.background=`linear-gradient(to bottom, rgba(147,210,255,.15), ${colFront})`;
+    right.style.background=`linear-gradient(to bottom, rgba(147,210,255,.10), ${colRight})`;
+  }
+
+  // -- Joker: golden top --
+  if(cell.joker){
+    top.style.background='rgba(251,191,36,.55)';
+    top.style.border='2px solid rgba(251,191,36,.9)';
+    top.style.animation='jokerGlow 2s ease-in-out infinite';
+  }
+
+  // -- Stack badge --
+  if(cell.stacked>0 && !cell.joker){
+    const badge=document.createElement('div');
+    badge.style.cssText=`position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
+      transform:translateZ(${bh+10}px);
+      display:flex;align-items:center;justify-content:center;pointer-events:none`;
+    const span=document.createElement('span');
+    span.style.cssText='font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
+    span.textContent='\u00D7'+(cell.stacked+1);
+    badge.appendChild(span);cube.appendChild(badge);
+  }
+
+  // -- Animate: rise from ground --
+  if(animate){
+    cube.style.opacity='0';
+    cube.style.transition='opacity .35s ease';
+    requestAnimationFrame(()=>{cube.style.opacity='1'});
+  }
+
+  tileEl.appendChild(cube);
+}
+
+// ══ STATE ══
 let activeTeam=0;
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
-function seed(r,c,t,home=false){state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false}}
+
+function seed(r,c,t,home=false){
+  state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false,
+    btype:home?0:Math.floor(Math.random()*BTYPES.length)};
+}
 const S=SIZE-1;
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);
 seed(0,S,1,true);seed(0,S-1,1);seed(1,S,1);
@@ -178,86 +500,6 @@ for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firef
   el.style.setProperty('--dur',(4+Math.random()*6)+'s');el.style.setProperty('--del',(Math.random()*5)+'s');
   ffC.appendChild(el)}
 
-// ══ HEIGHT LOGIC ══
-function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti}
-function adjCount(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return 0;
-  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length}
-
-function getH(cell){
-  if(!cell)return 0;
-  const base=cell.home?44:24;
-  return base+cell.stacked*14+(cell.joker?10:0);
-}
-
-// ══ BUILD 3D BOX ══
-// Creates a real 3D extruded box inside a tile using translateZ
-function buildBox(tileEl, cell, team, sz, animate=false){
-  tileEl.querySelectorAll('.box').forEach(b=>b.remove());
-  if(!cell||!team)return;
-
-  const h=getH(cell);
-  const box=document.createElement('div');box.className='box';
-
-  // Top face (bright) — lifted up by h
-  const top=document.createElement('div');top.className='box-top';
-  top.style.cssText=`--h:${h}px;background:${rca(team,.75)};border:1px solid ${rca(team,.55)}`;
-  box.appendChild(top);
-
-  // Front face (medium) — rotated down from bottom edge
-  const front=document.createElement('div');front.className='box-front';
-  front.style.cssText=`--h:${h}px;background:${rca(team,.40)};border:1px solid ${rca(team,.35)}`;
-  box.appendChild(front);
-
-  // Right face (dark) — rotated from right edge
-  const right=document.createElement('div');right.className='box-right';
-  right.style.cssText=`--h:${h}px;background:${rca(team,.25)};border:1px solid ${rca(team,.30)}`;
-  box.appendChild(right);
-
-  // Emoji on top
-  const emoji=document.createElement('div');emoji.className='box-emoji';
-  emoji.style.cssText=`--h:${h}px;font-size:${cell.home?Math.round(sz*.4):Math.round(sz*.32)}px`;
-  emoji.textContent=cell.frozen?'\u2744\uFE0F':cell.joker?'\u2B50':team.emoji;
-  box.appendChild(emoji);
-
-  // Frozen: tint top face ice-blue
-  if(cell.frozen){
-    top.style.background='rgba(147,210,255,.45)';
-    top.style.border='2px solid rgba(147,210,255,.85)';
-    top.style.animation='frostPulse 2.5s ease-in-out infinite';
-    front.style.background='rgba(147,210,255,.20)';
-    right.style.background='rgba(147,210,255,.12)';
-  }
-  // Joker: golden top
-  if(cell.joker){
-    top.style.background='rgba(251,191,36,.50)';
-    top.style.border='2px solid rgba(251,191,36,.9)';
-    top.style.animation='jokerGlow 2s ease-in-out infinite';
-  }
-  // Stack badge above
-  if(cell.stacked>0&&!cell.joker){
-    const badge=document.createElement('div');
-    badge.style.cssText=`position:absolute;inset:0;transform:translateZ(${h+8}px);
-      display:flex;align-items:center;justify-content:center;pointer-events:none`;
-    const span=document.createElement('span');
-    span.style.cssText='font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
-    span.textContent='\u00D7'+(cell.stacked+1);
-    badge.appendChild(span);box.appendChild(badge);
-  }
-
-  // Animate: grow from 0
-  if(animate){
-    box.style.opacity='0';
-    box.style.transform='translateZ(-10px)';
-    box.style.transition='opacity .3s ease, transform .5s cubic-bezier(.34,1.2,.64,1)';
-    requestAnimationFrame(()=>{
-      box.style.opacity='1';
-      box.style.transform='translateZ(0)';
-    });
-  }
-
-  tileEl.appendChild(box);
-}
-
 // ══ RENDER TILE ══
 function renderTile(r,c){
   const el=document.querySelector(`#grid [data-r="${r}"][data-c="${c}"]`);
@@ -268,13 +510,13 @@ function renderTile(r,c){
   if(!cell){
     el.classList.remove('owned');
     ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
-    buildBox(el,null,null,CELL);
+    el.querySelectorAll('.cube').forEach(b=>b.remove());
     return;
   }
   el.classList.add('owned');
   const team=TEAMS[cell.teamIdx];
   ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 10px ${rca(team,.20)}`;
-  buildBox(el,cell,team,CELL);
+  buildCube(el,cell,team,CELL,BTYPES[cell.btype||0]);
 }
 
 // ══ BUILD DOM ══
@@ -291,9 +533,10 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
 
   el.addEventListener('click',()=>{
     if(state[r][c])return;
-    state[r][c]={teamIdx:activeTeam,home:false,frozen:false,stacked:0,joker:false};
+    const bt=Math.floor(Math.random()*BTYPES.length);
+    state[r][c]={teamIdx:activeTeam,home:false,frozen:false,stacked:0,joker:false,btype:bt};
     renderTile(r,c);
-    buildBox(el,state[r][c],TEAMS[activeTeam],CELL,true);
+    buildCube(el,state[r][c],TEAMS[activeTeam],CELL,BTYPES[bt],true);
     [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
       const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderTile(nr,nc)});
     updateScores();
@@ -310,6 +553,33 @@ function updateScores(){
 window.selectTeam=i=>{activeTeam=i;updateScores()};updateScores();
 
 // ══════════════════════════════════════════════════════════════════════════════
+// BUILDING TYPE GALLERY
+// ══════════════════════════════════════════════════════════════════════════════
+const galEl=document.getElementById('typegallery');
+BTYPES.forEach((bt,i)=>{
+  const card=document.createElement('div');card.className='type-card';
+  const stage=document.createElement('div');stage.className='tc-stage';
+  const iso=document.createElement('div');iso.className='tc-iso';
+
+  // Ground
+  const ground=document.createElement('div');ground.className='ground';
+  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(TEAMS[i%4],.15)};border:1px solid ${rca(TEAMS[i%4],.35)}`;
+  iso.appendChild(ground);
+
+  // Build the building
+  const team=TEAMS[i%4];
+  const cell={home:false,frozen:false,stacked:0,joker:false,btype:i};
+  // Use a slightly larger size for gallery
+  buildCube(iso,cell,team,50,bt);
+
+  stage.appendChild(iso);
+  const label=document.createElement('div');label.className='tc-name';
+  label.textContent=bt.name;
+  card.appendChild(stage);card.appendChild(label);
+  galEl.appendChild(card);
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // SHOWCASE SECTION
 // ══════════════════════════════════════════════════════════════════════════════
 const T_BLUE=TEAMS[0],T_RED=TEAMS[1];
@@ -321,22 +591,23 @@ function miniStage(stage,cols,rows,sz,cells){
   const grid=document.createElement('div');
   grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);
     grid-template-rows:repeat(${rows},${sz}px);
-    transform:rotateX(55deg) rotateZ(-45deg);transform-style:preserve-3d`;
+    transform:rotateX(55deg) rotateZ(-45deg)`;
   const map={};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const tile=document.createElement('div');tile.className='tile';
-    tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative;transform-style:preserve-3d`;
+    tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative`;
     const ground=document.createElement('div');ground.className='ground';
     ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
     tile.appendChild(ground);grid.appendChild(tile);map[`${r},${c}`]=tile;
   }
   scene.appendChild(grid);stage.appendChild(scene);
-  cells.forEach(([r,c,team,home])=>{
+  cells.forEach(([r,c,team,home,btIdx])=>{
     const tile=map[`${r},${c}`];if(!tile)return;
     const ground=tile.querySelector('.ground');
     ground.style.background=rca(team,.15);ground.style.borderColor=rca(team,.35);
     ground.style.boxShadow=`0 0 8px ${rca(team,.2)}`;
-    buildBox(tile,{home:!!home,frozen:false,stacked:0,joker:false},team,sz);
+    const bi=btIdx!=null?btIdx:Math.floor(Math.random()*BTYPES.length);
+    buildCube(tile,{home:!!home,frozen:false,stacked:0,joker:false,btype:bi},team,sz,BTYPES[bi]);
   });
   return{grid,map,stage,sz};
 }
@@ -364,13 +635,14 @@ function fxShatter(parent,color,n=10){
 // ── PLACE ──
 function playPlace(stage){
   const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
+  const bt=Math.floor(Math.random()*BTYPES.length);
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,0],[0,1,T_BLUE,false,2],[1,0,T_BLUE,false,4]]);
   const target=map['1,1'];
   setTimeout(()=>{
     const ground=target.querySelector('.ground');
     ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
     ground.style.boxShadow=`0 0 8px ${rca(T_BLUE,.2)}`;
-    buildBox(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    buildCube(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);
     fxRing(target,T_BLUE.color,0);fxRing(target,T_BLUE.color,.12);
     fxShatter(target,T_BLUE.color,6);
   },500);
@@ -380,7 +652,7 @@ function playPlace(stage){
 // ── STEAL ──
 function playSteal(stage){
   const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE],[1,1,T_RED]]);
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,1],[0,1,T_BLUE,false,3],[1,0,T_BLUE,false,0],[1,1,T_RED,false,6]]);
   const target=map['1,1'];
   setTimeout(()=>{
     fxShatter(target,T_RED.color,12);
@@ -388,13 +660,13 @@ function playSteal(stage){
     flash.style.cssText=`position:absolute;inset:-8px;border-radius:50%;z-index:19;pointer-events:none;
       background:radial-gradient(circle,rgba(239,68,68,.5),transparent 70%);animation:stampRing .5s ease-out both`;
     target.appendChild(flash);setTimeout(()=>flash.remove(),600);
-    // Fade out old box
-    const oldBox=target.querySelector('.box');
+    const oldBox=target.querySelector('.cube');
     if(oldBox){oldBox.style.transition='opacity .2s';oldBox.style.opacity='0';setTimeout(()=>oldBox.remove(),250);}
     setTimeout(()=>{
       const ground=target.querySelector('.ground');
       ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
-      buildBox(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+      const bt=Math.floor(Math.random()*BTYPES.length);
+      buildCube(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);
     },300);
   },500);
   setTimeout(()=>playSteal(stage),3800);
@@ -403,7 +675,7 @@ function playSteal(stage){
 // ── FREEZE ──
 function playFreeze(stage){
   const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED]]);
+  const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED,false,0]]);
   const target=map['1,1'];
   setTimeout(()=>{
     for(let i=0;i<6;i++){
@@ -417,7 +689,7 @@ function playFreeze(stage){
     setTimeout(()=>{
       const ground=target.querySelector('.ground');
       ground.style.background='rgba(147,210,255,.12)';ground.style.borderColor='rgba(147,210,255,.4)';
-      buildBox(target,{home:false,frozen:true,stacked:0,joker:false},T_RED,SZ);
+      buildCube(target,{home:false,frozen:true,stacked:0,joker:false,btype:0},T_RED,SZ,BTYPES[0]);
     },400);
   },500);
   setTimeout(()=>playFreeze(stage),4000);
@@ -426,7 +698,7 @@ function playFreeze(stage){
 // ── STACK ──
 function playStack(stage){
   const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE],[1,1,T_BLUE],[1,2,T_BLUE]]);
+  const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE,false,3],[1,1,T_BLUE,false,2],[1,2,T_BLUE,false,5]]);
   const target=map['1,1'];
   let count=0;
   function once(){
@@ -439,7 +711,7 @@ function playStack(stage){
         animation:starFall .6s ease-out ${i*.06}s both reverse`;
       p.textContent='\u25B2';target.appendChild(p);setTimeout(()=>p.remove(),800);
     }
-    buildBox(target,{home:false,frozen:false,stacked:count,joker:false},T_BLUE,SZ,true);
+    buildCube(target,{home:false,frozen:false,stacked:count,joker:false,btype:2},T_BLUE,SZ,BTYPES[2],true);
   }
   setTimeout(once,500);
   setTimeout(once,1200);
@@ -450,18 +722,18 @@ function playStack(stage){
 // ── JOKER ──
 function playJoker(stage){
   const SZ=38;
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,4],[0,1,T_BLUE,false,1],[1,0,T_BLUE,false,7]]);
   setTimeout(()=>{
     const t=map['1,1'],g=t.querySelector('.ground');
     g.style.background=rca(T_BLUE,.15);g.style.borderColor=rca(T_BLUE,.35);
-    buildBox(t,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    buildCube(t,{home:false,frozen:false,stacked:0,joker:false,btype:0},T_BLUE,SZ,BTYPES[0],true);
   },500);
   setTimeout(()=>{
-    [[0,0],[0,1],[1,0],[1,1]].forEach(([r,c])=>{
+    [[0,0],[0,1],[1,0],[1,1]].forEach(([r,c],idx)=>{
       const tile=map[`${r},${c}`];
       const g=tile.querySelector('.ground');
       g.style.borderColor='rgba(251,191,36,.7)';g.style.boxShadow='0 0 12px rgba(251,191,36,.4)';
-      buildBox(tile,{home:false,frozen:false,stacked:0,joker:true},T_BLUE,SZ);
+      buildCube(tile,{home:false,frozen:false,stacked:0,joker:true,btype:[4,1,7,0][idx]},T_BLUE,SZ,BTYPES[[4,1,7,0][idx]]);
     });
     for(let i=0;i<8;i++){
       const star=document.createElement('div');
@@ -483,14 +755,14 @@ function playJoker(stage){
   setTimeout(()=>playJoker(stage),4800);
 }
 
-// Build cards
+// Build showcase cards
 const CARDS=[
   {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',
-    desc:'Leeres Feld erobern. Block steigt aus dem Boden, Schockwellen breiten sich aus.',play:playPlace},
+    desc:'Leeres Feld erobern. Zufälliger Gebäudetyp steigt aus dem Boden.',play:playPlace},
   {icon:'\u26A1',title:'Klauen',color:'#EF4444',
-    desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, roter Flash, neuer Block steigt auf.',play:playSteal},
+    desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, neues Gebäude steigt auf.',play:playSteal},
   {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',
-    desc:'Feld schützen. Eiskristalle fliegen, Frost-Schicht auf dem Dach pulsiert blau.',play:playFreeze},
+    desc:'Feld schützen. Nur das Dach wird eisblau — Wände behalten die Teamfarbe.',play:playFreeze},
   {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',
     desc:'Eigenes Feld verstärken. Gebäude wächst höher (3×), goldene Pfeile + Badge.',play:playStack},
   {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',

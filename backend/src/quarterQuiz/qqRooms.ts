@@ -445,7 +445,7 @@ export function qqActivateQuestion(
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.imageRevealed  = false;
   room.lastActivityAt = Date.now();
-  // CHEESE: don't start timer yet — timer starts when image is revealed (showImage)
+  // CHEESE: don't start timer yet — timer starts when question is revealed (showImage)
   if (room.currentQuestion?.category !== 'CHEESE') {
     qqStartTimer(room, onTimerExpire);
   }

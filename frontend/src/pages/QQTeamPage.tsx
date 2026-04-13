@@ -723,6 +723,45 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const isRevealed = s.phase === 'QUESTION_REVEAL';
   const iWon = s.correctTeamId === myTeamId;
+  const isCheese = q.category === 'CHEESE';
+  const hasCheeseImg = isCheese && q.image?.url;
+  const cheeseImageOnly = hasCheeseImg && !s.imageRevealed && !isRevealed;
+
+  // CHEESE Phase 1: "Schaut auf den Beamer!" — image preview, no question/input
+  if (cheeseImageOnly) {
+    return (
+      <CozyCard key={q.id}>
+        <div style={{ textAlign: 'center', padding: '12px 0', animation: 'tcreveal 0.5s ease both' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 16,
+            padding: '6px 16px', borderRadius: 999,
+            background: `${catColor}22`, border: `2px solid ${catColor}55`,
+            color: catColor, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
+          }}>
+            <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
+            {lang === 'en' ? catLabel.en : catLabel.de}
+          </div>
+          {q.image?.url && (
+            <img src={q.image.url} alt="" style={{
+              width: '100%', maxHeight: 200, objectFit: 'cover',
+              borderRadius: 14, marginBottom: 16,
+              boxShadow: `0 4px 24px ${catColor}33`,
+            }} />
+          )}
+          <div style={{
+            fontSize: 44, marginBottom: 8,
+            animation: 'tcfloat 2.5s ease-in-out infinite',
+          }}>📸</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#F1F5F9' }}>
+            {lang === 'en' ? 'Look at the screen!' : 'Schaut auf den Beamer!'}
+          </div>
+          <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 6 }}>
+            {lang === 'en' ? 'The question is coming soon…' : 'Gleich kommt die Frage…'}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
 
   return (
     <CozyCard key={q.id}>
@@ -1594,6 +1633,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   // Derived mode flags
   const isFree      = pa === 'FREE';
+  const isJoker     = pa === 'PLACE_1' && phase >= 2; // Joker bonus placement
   const isFreeze    = pa === 'FREEZE_1' || (isFree && freeMode === 'FREEZE');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   const isStuck     = pa === 'STAPEL_1' || (isFree && freeMode === 'STAPEL');
@@ -1617,12 +1657,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
-    if (action === 'FREEZE' || action === 'SWAP' || action === 'STAPEL') {
-      await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
-      setSelecting(true);
-    } else {
-      await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
-    }
+    await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+    // Always go directly to grid selection — skip the extra confirm step
+    setSelecting(true);
   }
 
   async function handleCell(r: number, c: number) {
@@ -1718,9 +1755,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                         background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.06)',
                         border: `1px solid ${cellTeam ? cellTeam.color + '88' : 'rgba(255,255,255,0.08)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: miniCellSize * 0.5,
+                        fontSize: Math.max(10, miniCellSize * 0.45),
                       }}>
-                        {cellTeam && (cell.ownerId === myTeamId ? '' : '')}
+                        {cellTeam ? qqGetAvatar(cellTeam.avatarId).emoji : ''}
                       </div>
                     );
                   })
@@ -1750,6 +1787,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     : isFreeze ? '#60A5FA'
     : isStuck ? '#F59E0B'
     : isSteal  ? '#EF4444'
+    : isJoker  ? '#FBBF24'
     : '#22C55E';
 
   // Cell clickability per mode
@@ -1769,6 +1807,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isStuck)  return lang === 'de' ? '📌 Stucken' : '📌 Stuck';
     if (isSteal)  return t.placement.titleSteal[lang];
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
+    if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
     return t.placement.titlePlace[lang];
   })();
 
@@ -1780,6 +1819,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isFreeze) return lang === 'de' ? 'Eigenes Feld einfrieren (1 Frage)' : 'Freeze one of your cells (1 question)';
     if (isStuck) return lang === 'de' ? 'Plus-Zentrum wählen (📌 markiert)' : 'Select the plus center (📌 marked)';
     if (isSteal) return t.placement.tapOpponent[lang];
+    if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty field';
     return t.placement.tapEmpty[lang];
   })();
 
@@ -1833,6 +1873,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
             : isFreeze ? (lang === 'de' ? '❄️ Feld auswählen' : '❄️ Select cell')
             : isStuck  ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
             : isSteal  ? t.placement.confirmSteal[lang]
+            : isJoker  ? (lang === 'de' ? '⭐ Jokerfeld setzen' : '⭐ Place joker cell')
             : t.placement.confirmPlace[lang]}
         </CozyBtn>
       )}

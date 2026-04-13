@@ -1464,12 +1464,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
 
-  // ── CHEESE staged flow ──────────────────────────────────────────────────
-  // Phase 1: question text visible, no image, no timer (waiting for moderator to show image)
-  // Phase 2 (imageRevealed): fullscreen image + timer starts
-  // Phase 3 (revealed): image as side panel, answer + grid visible
-  const cheeseWaiting = isCheese && hasImg && !s.imageRevealed && !revealed;
-  const cheeseFullscreen = isCheese && hasImg && s.imageRevealed && !revealed;
+  // ── CHEESE staged flow (Bild → Frage) ──────────────────────────────────
+  // Phase 1: fullscreen image, NO question, NO timer — "Schaut auf den Beamer!"
+  // Phase 2 (imageRevealed=true): image shrinks to left panel, question + timer appear
+  // Phase 3 (revealed): answer reveal with image panel
+  const cheeseImageOnly = isCheese && hasImg && !s.imageRevealed && !revealed;
+  const cheeseFullscreen = cheeseImageOnly; // alias for fullscreen image display
+  const cheeseWithQuestion = isCheese && hasImg && s.imageRevealed && !revealed;
   // In CHEESE reveal: treat image as a proper window-right panel (not absolute clip)
   const isCheeseReveal = isCheese && hasImg && revealed;
 
@@ -1489,11 +1490,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
       {/* Fullscreen background image (explicit fullscreen layout OR CHEESE staged reveal — not CHEESE reveal which uses window panel) */}
-      {/* CHEESE: only show fullscreen image after imageRevealed (cheeseFullscreen), not from layout alone */}
+      {/* Fullscreen image: non-CHEESE fullscreen layout OR CHEESE Phase 1 (image only, before question) */}
       {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && !isCheeseReveal && (
         <>
           <div style={{
-            position: 'absolute', inset: 0, zIndex: 1,
+            position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 50 : 1,
             backgroundImage: `url(${img!.url})`,
             backgroundSize: 'cover', backgroundPosition: 'center',
             clipPath: revealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
@@ -1501,14 +1502,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
               : (revealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s both'),
             transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
-            transform: `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
+            transform: cheeseFullscreen ? undefined : `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
             opacity: img!.opacity ?? 1,
-            filter: imgFilter(img!),
+            filter: cheeseFullscreen ? undefined : imgFilter(img!),
           }} />
           <div style={{
-            position: 'absolute', inset: 0, zIndex: 2,
+            position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
-              ? 'linear-gradient(180deg, rgba(13,10,6,0.15) 0%, transparent 20%, transparent 80%, rgba(13,10,6,0.25) 100%)'
+              ? 'linear-gradient(180deg, rgba(13,10,6,0.10) 0%, transparent 15%, transparent 85%, rgba(13,10,6,0.18) 100%)'
               : [
                 'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
@@ -1517,6 +1518,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             transition: 'opacity 0.8s ease',
           }} />
         </>
+      )}
+
+      {/* CHEESE Phase 1: "Schaut hin!" hint on fullscreen image */}
+      {cheeseImageOnly && (
+        <div style={{
+          position: 'fixed', bottom: 48, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 52, animation: 'contentReveal 0.6s ease 0.8s both',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ fontSize: 52, animation: 'cfloat 3s ease-in-out infinite' }}>📸</span>
+          <div style={{
+            padding: '10px 32px', borderRadius: 999,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#F1F5F9', fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 800,
+            letterSpacing: '0.04em',
+          }}>
+            {lang === 'en' ? 'Look closely…' : 'Schaut genau hin…'}
+          </div>
+        </div>
       )}
 
       {/* Cutout floating image (bg-removed) */}
@@ -1554,12 +1575,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       <Fireflies />
 
       {/* Main content */}
-      {/* CHEESE: hide when fullscreen image is showing (imageRevealed but not yet revealed) */}
+      {/* CHEESE Phase 1: hide content when only fullscreen image is showing */}
       <div style={{
         flex: 1, display: 'flex', gap: 0,
-        flexDirection: hasImg && img.layout === 'window-left' ? 'row-reverse' : 'row',
+        flexDirection: (hasImg && img.layout === 'window-left') || cheeseWithQuestion ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s ease both',
-        visibility: cheeseFullscreen ? 'hidden' : undefined,
+        visibility: cheeseImageOnly ? 'hidden' : undefined,
       }}>
         {/* ── Main content — full width, vertically + horizontally centered ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflowY: 'auto' }}>
@@ -1838,12 +1859,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
         </div>
 
-        {/* ── Image window panel (window-left / window-right / CHEESE reveal) ── */}
-        {(isWindow || isCheeseReveal) && (
+        {/* ── Image window panel (window-left / window-right / CHEESE Phase 2 / CHEESE reveal) ── */}
+        {(isWindow || cheeseWithQuestion || isCheeseReveal) && (
           <div style={{
-            width: '35%', flexShrink: 0, position: 'relative', zIndex: 5,
+            width: cheeseWithQuestion ? '45%' : '35%', flexShrink: 0, position: 'relative', zIndex: 5,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 24,
+            animation: cheeseWithQuestion ? 'imgZoomIn 0.6s cubic-bezier(0.4,0,0.2,1) both' : undefined,
           }}>
             {/* Ambient blur glow behind image */}
             <img

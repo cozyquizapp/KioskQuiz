@@ -143,7 +143,7 @@ export default function QQModeratorPage() {
       else if (s.phase === 'LOBBY')      startGameRef.current();
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE') {
-        // CHEESE: show image first, then reveal answer
+        // CHEESE: show question first (image already shown), then reveal answer
         if (s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
           emitRef.current('qq:showImage', { roomCode });
         else
@@ -165,7 +165,7 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // B — Show image (CHEESE only)
+    // B — Show question (CHEESE only, image is already shown)
     if (e.code === 'KeyB') {
       e.preventDefault();
       if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed)
@@ -455,7 +455,7 @@ export default function QQModeratorPage() {
                 {/* ── QUESTION ACTIVE ── */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
                   <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })} hotkey="Space">
-                    🖼 Bild zeigen
+                    ❓ Frage zeigen
                   </PrimaryBtn>
                 )}
                 {s.phase === 'QUESTION_ACTIVE' && !(s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed) && (

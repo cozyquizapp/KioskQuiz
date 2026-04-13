@@ -1857,7 +1857,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         animation: 'contentReveal 0.35s ease both',
       }}>
         {/* ── Main content — full width, vertically + horizontally centered ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 64px 80px', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'clamp(12px, 1.5vh, 24px) clamp(28px, 4vw, 64px) clamp(16px, 2vh, 40px)', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden' }}>
 
           {/* Category badge — top left corner */}
           <div style={{
@@ -1902,14 +1902,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: revealed
               ? '0 4px 16px rgba(0,0,0,0.3)'
               : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            padding: '48px 64px',
-            marginBottom: 20,
+            padding: 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
+            marginBottom: 'clamp(8px, 1.2vh, 20px)',
             width: '100%', maxWidth: 1400,
             textAlign: 'center',
             animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
             transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease',
-            opacity: revealed ? 0.5 : 1,
-            filter: revealed ? 'blur(1px)' : 'none',
+            opacity: revealed ? 0.45 : 1,
           }}>
             <div key={lang} style={{
               fontSize: qFontSize,
@@ -2017,12 +2016,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
               position: 'relative', overflow: 'hidden',
-              padding: '32px 52px', borderRadius: 28,
+              padding: 'clamp(16px, 2vh, 32px) clamp(24px, 3vw, 52px)', borderRadius: 28,
               background: 'rgba(34,197,94,0.12)',
               border: '3px solid rgba(34,197,94,0.50)',
               boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
-              fontSize: 'clamp(38px, 5.5vw, 76px)', fontWeight: 900,
-              color: '#4ade80', marginBottom: 24,
+              fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900,
+              color: '#4ade80', marginBottom: 'clamp(8px, 1.2vh, 24px)',
               width: '100%', maxWidth: 1400, textAlign: 'center',
               animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
             }}>

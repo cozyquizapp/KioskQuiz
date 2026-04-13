@@ -288,6 +288,33 @@ export default function QQModeratorPage() {
 
   const s = state;
   const teamList = s?.teams ?? [];
+  const [settingsOpen, setSettingsOpen] = useState(true);
+  // Auto-collapse settings when game starts
+  const prevPhaseRef = useRef(s?.phase);
+  useEffect(() => {
+    if (prevPhaseRef.current === 'LOBBY' && s?.phase && s.phase !== 'LOBBY') {
+      setSettingsOpen(false);
+    }
+    prevPhaseRef.current = s?.phase;
+  }, [s?.phase]);
+
+  // Derive status text for the big banner
+  function getStatusText(s: QQStateUpdate): { text: string; color: string; sub?: string } {
+    const answeredCount = s.answers.length;
+    const connectedTeams = s.teams.filter(t => t.connected).length;
+    switch (s.phase) {
+      case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
+      case 'RULES': return { text: 'REGELN', color: '#6366f1', sub: `Slide ${(s.rulesSlideIndex ?? 0) + 1}` };
+      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: 'Intro' };
+      case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
+      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
+      case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
+      case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
+      case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
+      case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
+      default: return { text: s.phase, color: '#475569' };
+    }
+  }
 
   return (
     <div style={page}>
@@ -296,15 +323,8 @@ export default function QQModeratorPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={badgeStyle('#3B82F6')}>Quartier Quiz</span>
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
-          {s?.phase && <span style={phasePillStyle(s.phase)}>{s.phase}</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 12, color: '#64748b' }}>
-            Raum: <b style={{ color: '#94a3b8' }}>{roomCode}</b>
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
-            F13/Space · F15/R · F17/N · F14/1–5 · F16/Esc · M=Mute · P=Pause
-          </span>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
           </span>
@@ -316,27 +336,71 @@ export default function QQModeratorPage() {
       )}
 
       {joined && s && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14 }}>
+        <>
+          {/* ══ BIG STATUS BANNER ══ */}
+          {(() => {
+            const status = getStatusText(s);
+            const answeredCount = s.answers.length;
+            const connectedTeams = s.teams.filter(t => t.connected).length;
+            const showProgress = s.phase === 'QUESTION_ACTIVE' && connectedTeams > 0;
+            return (
+              <div style={{
+                background: `${status.color}15`, border: `2px solid ${status.color}44`,
+                borderRadius: 16, padding: '14px 24px', marginBottom: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    fontSize: 22, fontWeight: 900, color: status.color,
+                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                  }}>{status.text}</div>
+                  {status.sub && <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700 }}>{status.sub}</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {/* Answer progress bar */}
+                  {showProgress && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 120, height: 8, borderRadius: 4,
+                        background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          width: `${(answeredCount / connectedTeams) * 100}%`,
+                          height: '100%', borderRadius: 4,
+                          background: answeredCount >= connectedTeams ? '#22C55E' : '#F59E0B',
+                          transition: 'width 0.3s, background 0.3s',
+                        }} />
+                      </div>
+                      <span style={{
+                        fontSize: 13, fontWeight: 800,
+                        color: answeredCount >= connectedTeams ? '#22C55E' : '#F59E0B',
+                      }}>
+                        {answeredCount}/{connectedTeams}
+                      </span>
+                    </div>
+                  )}
+                  <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
+                  <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
+                  {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
+                </div>
+              </div>
+            );
+          })()}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14 }}>
 
           {/* ── Left column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Status + timer */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Pill label={`Phase ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
-              <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
-              <Pill label={`Global ${s.questionIndex + 1}/${s.totalPhases * 5}`} color="#475569" />
-              {s.pendingFor && (
-                <Pill label={`⏳ ${teamList.find(t => t.id === s.pendingFor)?.name ?? s.pendingFor}`} color="#F59E0B" />
-              )}
-              {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
-            </div>
-
-            {/* Main action controls */}
-            <div style={card}>
-              <div style={sectionLabel}>Spielsteuerung</div>
+            {/* ══ SHOW CONTROLS — primary actions ══ */}
+            <div style={{
+              ...card,
+              border: '1px solid rgba(255,255,255,0.12)',
+              padding: '12px 16px',
+            }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
 
+                {/* ── LOBBY: setup + start ── */}
                 {s.phase === 'LOBBY' && (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -362,10 +426,11 @@ export default function QQModeratorPage() {
                         </option>
                       ))}
                     </select>
-                    <Btn color="#22C55E" onClick={startGame}>▶ Spiel starten</Btn>
+                    <PrimaryBtn color="#22C55E" onClick={startGame} hotkey="Space">▶ Spiel starten</PrimaryBtn>
                   </>
                 )}
 
+                {/* ── RULES ── */}
                 {s.phase === 'RULES' && (
                   <RulesControls
                     state={s}
@@ -375,27 +440,28 @@ export default function QQModeratorPage() {
                   />
                 )}
 
+                {/* ── PHASE INTRO ── */}
                 {s.phase === 'PHASE_INTRO' && (() => {
                   const isFirstOfRound = (s.questionIndex % 5) === 0;
                   const showingRoundTitle = isFirstOfRound && s.introStep === 0;
                   const label = showingRoundTitle ? '🎯 Kategorie zeigen' : '▶ Frage aktivieren';
                   return (
-                    <Btn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }}>
+                    <PrimaryBtn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }} hotkey="Space">
                       {label}
-                    </Btn>
+                    </PrimaryBtn>
                   );
                 })()}
 
-                {/* CHEESE: show image first, then reveal answer */}
+                {/* ── QUESTION ACTIVE ── */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed && (
-                  <Btn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })}>
+                  <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:showImage', { roomCode })} hotkey="Space">
                     🖼 Bild zeigen
-                  </Btn>
+                  </PrimaryBtn>
                 )}
                 {s.phase === 'QUESTION_ACTIVE' && !(s.currentQuestion?.category === 'CHEESE' && !s.imageRevealed) && (
-                  <Btn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })}>
-                    Antwort aufdecken
-                  </Btn>
+                  <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="R">
+                    👁 Antwort aufdecken
+                  </PrimaryBtn>
                 )}
 
                 {/* Imposter (oneOfEight) controls */}
@@ -469,54 +535,61 @@ export default function QQModeratorPage() {
                   </div>
                 )}
 
+                {/* ── QUESTION REVEAL ── */}
                 {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && (
-                  <Btn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })}>
+                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
                     📍 Felder setzen
-                  </Btn>
+                  </PrimaryBtn>
                 )}
-
                 {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
                   <>
-                    <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner — manuell markieren oder überspringen</span>
+                    <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner</span>
                     <Btn color="#64748b" onClick={() => emit('qq:startPlacement', { roomCode })}>
                       → Überspringen
                     </Btn>
                   </>
                 )}
 
+                {/* ── PLACEMENT ── */}
                 {s.phase === 'PLACEMENT' && s.pendingAction && (
                   <PlacementControls state={s} roomCode={roomCode} emit={emit} />
                 )}
-
                 {s.phase === 'PLACEMENT' && !s.pendingFor && (
-                  <Btn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })}>
+                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                     → Nächste Frage
-                  </Btn>
+                  </PrimaryBtn>
                 )}
 
+                {/* ── COMEBACK ── */}
                 {s.phase === 'COMEBACK_CHOICE' && (
                   <ComebackControls state={s} roomCode={roomCode} emit={emit} />
                 )}
 
+                {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (
-                  <div style={{ fontSize: 14, color: '#64748b' }}>🏆 Spiel beendet</div>
+                  <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}>🏆 Spiel beendet</div>
                 )}
 
+                {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
-                  <Btn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })}>
+                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
                     ▶ Weiter
-                  </Btn>
+                  </PrimaryBtn>
                 )}
 
-                {/* Pause — available during active game phases */}
+                {/* ── Separator ── */}
+                <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} />
+
+                {/* ── Secondary: Pause ── */}
                 {!['LOBBY', 'PAUSED', 'GAME_OVER', 'RULES'].includes(s.phase) && (
                   <Btn color="#F59E0B" outline onClick={() => emit('qq:pause', { roomCode })}>
-                    ⏸ Pause
+                    ⏸ Pause <span style={{ fontSize: 10, opacity: 0.6 }}>P</span>
                   </Btn>
                 )}
 
+                {/* ── Danger: Reset ── */}
                 <Btn color="#EF4444" outline onClick={() => {
-                  if (s.phase !== 'LOBBY' && !window.confirm('Spiel wirklich zurücksetzen? Alle Fortschritte gehen verloren!')) return;
+                  if (s.phase !== 'LOBBY' && !window.confirm('Spiel wirklich zurücksetzen?')) return;
                   emit('qq:resetRoom', { roomCode });
                 }}>
                   ↺ Reset
@@ -524,7 +597,7 @@ export default function QQModeratorPage() {
 
                 {s.phase === 'LOBBY' && (
                   <Btn color="#475569" outline onClick={async () => {
-                    if (!window.confirm('Ewige Tabelle wirklich komplett löschen? Alle Spielergebnisse gehen verloren!')) return;
+                    if (!window.confirm('Ewige Tabelle wirklich komplett löschen?')) return;
                     await fetch('/api/qq/gameresults', { method: 'DELETE' });
                   }}>
                     🗑 Tabelle löschen
@@ -745,9 +818,16 @@ export default function QQModeratorPage() {
           {/* ── Right column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Settings */}
+            {/* Settings — collapsible */}
             <div style={card}>
-              <div style={sectionLabel}>Einstellungen</div>
+              <div
+                onClick={() => setSettingsOpen(v => !v)}
+                style={{ ...sectionLabel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}
+              >
+                <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: settingsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                Einstellungen
+              </div>
+              {settingsOpen && <>
 
               {/* Timer */}
               <div style={{ marginBottom: 14 }}>
@@ -908,6 +988,7 @@ export default function QQModeratorPage() {
                   </div>
                 )}
               </div>
+              </>}
             </div>
 
             {/* Grid — collapsible */}
@@ -1216,6 +1297,26 @@ function Btn({ children, color, onClick, outline = false, small = false }: {
   );
 }
 
+/** Big primary action button — the "do the next thing" button */
+function PrimaryBtn({ children, color, onClick, hotkey }: {
+  children: React.ReactNode; color: string; onClick: () => void; hotkey?: string;
+}) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '10px 24px', borderRadius: 10,
+      border: `2px solid ${color}`,
+      background: `${color}30`,
+      color, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900,
+      fontSize: 15,
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      boxShadow: `0 0 16px ${color}22`,
+    }}>
+      {children}
+      {hotkey && <span style={{ fontSize: 10, opacity: 0.5, fontWeight: 700 }}>{hotkey}</span>}
+    </button>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function actionLabel(action: string, stats: any): string {
@@ -1228,9 +1329,9 @@ function actionLabel(action: string, stats: any): string {
 
 function phasePillStyle(phase: string): React.CSSProperties {
   const colors: Record<string, string> = {
-    LOBBY: '#475569', PHASE_INTRO: '#3B82F6', QUESTION_ACTIVE: '#22C55E',
+    LOBBY: '#475569', RULES: '#6366f1', PHASE_INTRO: '#3B82F6', QUESTION_ACTIVE: '#22C55E',
     QUESTION_REVEAL: '#F59E0B', PLACEMENT: '#EF4444',
-    COMEBACK_CHOICE: '#8B5CF6', GAME_OVER: '#64748b',
+    COMEBACK_CHOICE: '#8B5CF6', PAUSED: '#F59E0B', GAME_OVER: '#64748b',
   };
   const c = colors[phase] ?? '#475569';
   return {

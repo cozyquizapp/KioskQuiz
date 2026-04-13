@@ -196,12 +196,12 @@ const BTYPES=[
   {name:'Hochhaus', wf:.62, df:.62, hf:.65, tr:'1px', extra:'antenna'},
   // 3: Laden — wide & flat with awning overhang
   {name:'Laden',   wf:.78, df:.60, hf:.25, tr:'2px', extra:'awning'},
-  // 4: Fabrik — wide, medium height, chimney on back
-  {name:'Fabrik',  wf:.75, df:.68, hf:.38, tr:'1px', extra:'chimney'},
+  // 4: Fabrik — L-shape: tall part + low wing + chimney
+  {name:'Fabrik',  wf:.48, df:.72, hf:.45, tr:'1px', extra:'lshape'},
   // 5: Kirche — narrow body with tall pyramid steeple
   {name:'Kirche',  wf:.45, df:.55, hf:.42, tr:'2px', extra:'steeple'},
-  // 6: Burg — wide low base + small corner turret
-  {name:'Burg',    wf:.78, df:.78, hf:.28, tr:'1px', extra:'turret'},
+  // 6: Burg — T-shape: main hall + cross wing + corner turret
+  {name:'Burg',    wf:.45, df:.78, hf:.30, tr:'1px', extra:'tshape'},
   // 7: Silo — round, medium height, dome ring
   {name:'Silo',    wf:.48, df:.48, hf:.48, tr:'50%', extra:'dome'},
 ];
@@ -372,12 +372,17 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
     mkMiniCube(cube, aox, bd-Math.round(ad*.4), Math.round(bh*.65), aw, ad, ah, team, 1.1);
   }
 
-  if(ex==='chimney'){
-    // Small chimney on back-right corner
-    const cw=Math.round(bw*.18);
-    const cd=Math.round(bd*.18);
-    const ch=Math.round(bh*.4);
-    mkMiniCube(cube, bw-cw-2, 2, bh, cw, cd, ch, team, 0.9);
+  if(ex==='lshape'){
+    // L-SHAPE: main cube is the tall vertical part (already rendered above).
+    // Add a low horizontal wing extending to the right + chimney on top.
+    const wingW=Math.round(sz*.30);  // wing width
+    const wingD=Math.round(bd*.60);  // wing depth (shorter than main)
+    const wingH=Math.round(bh*.55);  // wing is lower
+    // Wing sits to the right of the main building, bottom-aligned
+    mkMiniCube(cube, bw, bd-wingD, 0, wingW, wingD, wingH, team, 0.95);
+    // Chimney on top of main building
+    const cw=Math.round(bw*.22), cd=Math.round(bd*.18), ch=Math.round(bh*.35);
+    mkMiniCube(cube, bw-cw-1, 1, bh, cw, cd, ch, team, 0.85);
   }
 
   if(ex==='steeple'){
@@ -387,20 +392,24 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
     mkPyramid(cube, Math.round(bw/2), Math.round(bd/2), bh, base, ph, team);
   }
 
-  if(ex==='turret'){
-    // Small corner turret (cube + tiny pyramid)
-    const tw=Math.round(bw*.26);
-    const td=Math.round(bd*.26);
-    const th=Math.round(bh*.65);
-    mkMiniCube(cube, bw-tw-1, 1, bh, tw, td, th, team, 1.05);
+  if(ex==='tshape'){
+    // T-SHAPE: main cube is the vertical bar of the T.
+    // Add a wider horizontal cross-bar at the top + corner turret with pyramid.
+    const barW=Math.round(sz*.78);  // cross bar wider than tile center
+    const barD=Math.round(bd*.35);  // cross bar shallow
+    const barH=Math.round(bh*.85);  // slightly lower than main
+    const barOx=Math.round((bw-barW)/2); // center the bar on the main cube
+    mkMiniCube(cube, barOx, 0, 0, barW, barD, barH, team, 1.0);
+    // Corner turret on the cross-bar right end
+    const tw=Math.round(barW*.18), td=Math.round(barD*.55), th=Math.round(bh*.60);
+    mkMiniCube(cube, barOx+barW-tw, 0, barH, tw, td, th, team, 1.05);
     // Tiny pyramid on turret
-    const pb=Math.round(tw*.8);
-    const ph=Math.round(th*.5);
-    const pyr=document.createElement('div');pyr.className='pyramid';
+    const pb=Math.round(tw*.85), ph=Math.round(th*.45);
     const half=Math.round(pb/2);
+    const pyr=document.createElement('div');pyr.className='pyramid';
     pyr.style.cssText=`position:absolute;
-      left:${bw-tw-1+Math.round(tw/2)}px;top:${1+Math.round(td/2)}px;
-      transform:translateZ(${bh+th}px) translateX(-${half}px) translateY(-${half}px);
+      left:${barOx+barW-tw+Math.round(tw/2)}px;top:${Math.round(td/2)}px;
+      transform:translateZ(${barH+th}px) translateX(-${half}px) translateY(-${half}px);
       border-left:${half}px solid ${rca(team,.30)};
       border-right:${half}px solid ${rca(team,.22)};
       border-bottom:${ph}px solid ${rca(team,.55)};

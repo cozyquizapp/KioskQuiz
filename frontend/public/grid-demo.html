@@ -10,132 +10,77 @@
 html,body{width:100%;height:100%;background:#0D0A06;color:#e2e8f0;font-family:'Nunito',system-ui,sans-serif}
 body{overflow-y:auto;overflow-x:hidden}
 
-/* Grain */
 .grain{position:fixed;inset:0;z-index:0;pointer-events:none;
   background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence baseFrequency=".85" type="fractalNoise"/></filter><rect width="200" height="200" filter="url(%23n)" opacity=".03"/></svg>')}
-
-/* Fireflies */
 .firefly{position:fixed;pointer-events:none;z-index:1;width:4px;height:4px;border-radius:50%;
   background:#FEF08A;box-shadow:0 0 6px 2px rgba(254,240,138,.7);
   animation:ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite}
 @keyframes ffmove{0%,100%{transform:translate(0,0);opacity:.35}50%{transform:translate(var(--dx,20px),var(--dy,-15px));opacity:.7}}
 
-/* Layout */
 .page{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;padding:24px 20px 80px;gap:24px}
 .section-title{font-size:clamp(20px,3vw,28px);font-weight:900;color:#F59E0B;text-shadow:0 0 20px rgba(245,158,11,.25)}
 .section-sub{font-size:clamp(11px,1.4vw,13px);color:#92400E;font-weight:700;margin-top:-16px}
 
-/* ═══════════════════════════════════════════════════
-   CSS 3D GRID
-   ═══════════════════════════════════════════════════ */
-.grid-scene{
-  perspective:900px;
-  perspective-origin:50% 30%;
-  padding:40px 0;
-}
+/* ═══ 3D GRID ═══ */
+.grid-scene{perspective:800px;perspective-origin:50% 35%;padding:60px 0 20px}
 .iso-grid{
-  display:grid;
-  gap:6px;
-  transform:rotateX(58deg) rotateZ(-45deg);
+  display:grid;gap:4px;
+  transform:rotateX(55deg) rotateZ(-45deg);
   transform-style:preserve-3d;
-  transform-origin:center center;
 }
-
-/* ── Tile (ground cell) ── */
 .tile{
-  position:relative;
-  transform-style:preserve-3d;
-  cursor:pointer;
-  transition:transform .2s ease;
+  position:relative;transform-style:preserve-3d;
+  cursor:pointer;transition:transform .15s ease;
 }
-.tile:not(.owned):hover{transform:translateZ(4px)}
-.tile.owned{cursor:default}
+.tile:not(.owned):hover .ground{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
 
-/* Ground face */
-.tile-ground{
-  position:absolute;inset:0;border-radius:3px;
-  background:rgba(255,255,255,.02);
-  border:1px solid rgba(255,255,255,.05);
-}
-.tile.owned .tile-ground{
-  background:var(--tc,.15);
-  border-color:var(--tb,.3);
-  box-shadow:0 0 8px var(--tg,transparent);
+/* Ground plane — lies flat */
+.ground{
+  width:100%;height:100%;border-radius:3px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
 }
 
-/* ── Building (CSS 3D box) ── */
-.building{
-  position:absolute;
-  bottom:0;left:12%;width:76%;
+/* ═══ 3D BUILDING — real extruded box using translateZ ═══
+   The grid is rotated so Z points "up" visually.
+   We build a box: bottom at Z=0, top at Z=height.
+   Faces: top, front (Y+), right (X+), and their geometry. */
+.box{
+  position:absolute;inset:0;
   transform-style:preserve-3d;
-  transition:height .4s cubic-bezier(.34,1.2,.64,1), opacity .3s;
+  pointer-events:none;
 }
-/* Front face */
-.building-front{
-  position:absolute;bottom:0;left:0;width:100%;
-  background:var(--bFront);
-  border:1px solid var(--bEdge);border-top:none;
+/* Top face — lifted to Z=height */
+.box-top{
+  position:absolute;inset:0;border-radius:2px;
+  transform:translateZ(var(--h,30px));
+  backface-visibility:hidden;
+}
+/* Front face (visible bottom wall from camera angle) */
+.box-front{
+  position:absolute;left:0;right:0;bottom:0;
+  height:var(--h,30px);
   transform-origin:bottom center;
+  transform:rotateX(-90deg);
+  backface-visibility:hidden;
 }
-/* Right side face */
-.building-right{
-  position:absolute;bottom:0;right:0;height:100%;
-  background:var(--bRight);
-  border:1px solid var(--bEdge);border-left:none;
+/* Right face (visible right wall from camera angle) */
+.box-right{
+  position:absolute;top:0;bottom:0;right:0;
+  width:var(--h,30px);
+  transform-origin:center right;
   transform:rotateY(90deg);
-  transform-origin:right center;
+  backface-visibility:hidden;
 }
-/* Top face */
-.building-top{
-  position:absolute;top:0;left:0;width:100%;
-  background:var(--bTop);
-  border:1px solid var(--bEdge);
-  transform:rotateX(90deg);
-  transform-origin:top center;
-}
-/* Emoji on top */
-.building-emoji{
-  position:absolute;top:0;left:0;width:100%;
-  transform:rotateX(90deg) translateZ(1px);
-  transform-origin:top center;
+/* Emoji floating above top */
+.box-emoji{
+  position:absolute;inset:0;
+  transform:translateZ(calc(var(--h,30px) + 1px));
   display:flex;align-items:center;justify-content:center;
   pointer-events:none;
-  filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));
 }
 
-/* ── Cell overlays ── */
-.frost-layer{
-  position:absolute;top:0;left:0;width:100%;
-  transform:rotateX(90deg) translateZ(2px);
-  transform-origin:top center;
-  background:rgba(147,210,255,.35);
-  border:2px solid rgba(147,210,255,.85);
-  border-radius:2px;
-  animation:frostPulse 2.5s ease-in-out infinite;
-  pointer-events:none;
-}
-.joker-layer{
-  position:absolute;top:0;left:0;width:100%;
-  transform:rotateX(90deg) translateZ(2px);
-  transform-origin:top center;
-  background:rgba(251,191,36,.25);
-  border:2px solid rgba(251,191,36,.9);
-  border-radius:2px;
-  animation:jokerGlow 2s ease-in-out infinite;
-  pointer-events:none;
-}
-.stack-badge{
-  position:absolute;top:0;left:50%;
-  transform:rotateX(90deg) translateZ(3px) translateX(-50%);
-  transform-origin:top center;
-  font-size:11px;padding:1px 6px;border-radius:5px;
-  background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;
-  pointer-events:none;
-}
-
-/* ═══════════════════════════════════════════════════
-   SCORE BAR
-   ═══════════════════════════════════════════════════ */
+/* Score bar */
 .score-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .team-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;
   background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);
@@ -147,9 +92,7 @@ body{overflow-y:auto;overflow-x:hidden}
 .tp-count{font-weight:900;font-size:10px;color:#1C1917;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
 .team-pill.active .tp-count{background:var(--tc-count-bg);color:var(--tc-text)}
 
-/* ═══════════════════════════════════════════════════
-   SHOWCASE CARDS
-   ═══════════════════════════════════════════════════ */
+/* ═══ SHOWCASE ═══ */
 .showcases{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;width:100%;max-width:1200px}
 .showcase-card{background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;
   padding:20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
@@ -158,7 +101,7 @@ body{overflow-y:auto;overflow-x:hidden}
 .sc-icon{font-size:28px;line-height:1}
 .sc-title{font-size:16px;font-weight:900}
 .sc-desc{font-size:12px;color:#64748b;line-height:1.5}
-.sc-stage{position:relative;height:160px;border-radius:12px;overflow:hidden;
+.sc-stage{position:relative;height:180px;border-radius:12px;overflow:hidden;
   background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.04);
   display:flex;align-items:center;justify-content:center}
 .sc-play{padding:10px 22px;border-radius:12px;border:none;cursor:pointer;
@@ -168,29 +111,19 @@ body{overflow-y:auto;overflow-x:hidden}
   transition:all .2s;align-self:center}
 .sc-play:hover{transform:scale(1.04);filter:brightness(1.15)}
 
-/* Mini showcase grid */
-.mini-scene{perspective:600px;perspective-origin:50% 30%}
-.mini-iso{display:grid;gap:4px;transform:rotateX(58deg) rotateZ(-45deg);transform-style:preserve-3d}
-.mini-tile{position:relative;transform-style:preserve-3d;border-radius:3px}
-.mini-tile .tile-ground{position:absolute;inset:0;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
-
-/* ═══════════════════════════════════════════════════
-   KEYFRAMES
-   ═══════════════════════════════════════════════════ */
-@keyframes homeGlow{0%,100%{box-shadow:var(--gb)}50%{box-shadow:var(--gp)}}
-@keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4);border-color:rgba(147,210,255,.7)}50%{box-shadow:0 0 16px rgba(147,210,255,.8);border-color:rgba(147,210,255,1)}}
-@keyframes jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
-@keyframes buildingRise{0%{height:0;opacity:0}60%{opacity:1}80%{height:var(--bh-over)}100%{height:var(--bh)}}
+/* ═══ KEYFRAMES ═══ */
 @keyframes stampRing{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3);opacity:0}}
 @keyframes shatterOut{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(.3) rotate(var(--sr,180deg))}}
 @keyframes iceSpread{0%{clip-path:circle(0% at 50% 50%);opacity:0}40%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
+@keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4);border-color:rgba(147,210,255,.7)}50%{box-shadow:0 0 16px rgba(147,210,255,.8);border-color:rgba(147,210,255,1)}}
 @keyframes frostShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes jokerBurst{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.5)}}
 @keyframes starFall{0%{opacity:1;transform:translateY(var(--starY,-60px)) rotate(0)}100%{opacity:0;transform:translateY(20px) rotate(720deg)}}
-@keyframes stackBounce{0%{transform:translateZ(0)}30%{transform:translateZ(12px)}60%{transform:translateZ(-2px)}100%{transform:translateZ(0)}}
-@keyframes emojiDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}50%{transform:scale(1.4) rotate(6deg);opacity:1}70%{transform:scale(.85) rotate(-3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
+@keyframes emojiDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}50%{transform:scale(1.4) rotate(6deg);opacity:1}70%{transform:scale(.85)}100%{transform:scale(1);opacity:1}}
+@keyframes riseUp{0%{--h:0px;opacity:0}30%{opacity:1}100%{opacity:1}}
 @keyframes inkFill{0%{clip-path:circle(0% at 50% 50%);opacity:0}30%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
-@keyframes pulseGlow{0%,100%{box-shadow:0 0 8px var(--pg)}50%{box-shadow:0 0 22px var(--pg)}}
+@keyframes homeGlow{0%,100%{box-shadow:var(--gb)}50%{box-shadow:var(--gp)}}
 </style>
 </head>
 <body>
@@ -201,42 +134,35 @@ body{overflow-y:auto;overflow-x:hidden}
 <div class="section-title">Quartier Quiz</div>
 <div class="section-sub">Klicke leere Felder zum Setzen</div>
 
-<div class="grid-scene" id="grid-scene">
+<div class="grid-scene">
   <div class="iso-grid" id="grid"></div>
 </div>
 <div class="score-bar" id="scorebar"></div>
 
 <div class="section-title" style="margin-top:8px">Animation Showcase</div>
-<div class="section-sub">Klicke Play um jede Animation einzeln zu sehen</div>
+<div class="section-sub">Klicke Play um jede Animation zu sehen</div>
 <div class="showcases" id="showcases"></div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════════════════════════════
-const SIZE=7, CELL=58;
+const SIZE=7, CELL=56;
 
+// ══ TEAMS ══
 const TEAMS=[];
 function mkTeam(hex,name,emoji){
-  const m=hex.match(/^#(..)(..)(..)/);
+  const m=hex.match(/#(..)(..)(..)/);
   const r=parseInt(m[1],16),g=parseInt(m[2],16),b=parseInt(m[3],16);
-  return{color:hex,r,g,b,name,emoji,
-    // Pre-computed building face colors (solid, warm)
-    bTop:`rgba(${r},${g},${b},.70)`,
-    bFront:`rgba(${r},${g},${b},.45)`,
-    bRight:`rgba(${r},${g},${b},.30)`,
-    bEdge:`rgba(${r},${g},${b},.50)`,
-  };
+  return{color:hex,r,g,b,name,emoji};
 }
 TEAMS.push(mkTeam('#3B82F6','Fuchs','\u{1F98A}'));
 TEAMS.push(mkTeam('#EF4444','Tiger','\u{1F42F}'));
 TEAMS.push(mkTeam('#F97316','Eule','\u{1F989}'));
 TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 
+function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
+
 let activeTeam=0;
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
-
 function seed(r,c,t,home=false){state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false}}
 const S=SIZE-1;
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);
@@ -244,18 +170,7 @@ seed(0,S,1,true);seed(0,S-1,1);seed(1,S,1);
 seed(S,0,2,true);seed(S-1,0,2);seed(S,1,2);
 seed(S,S,3,true);seed(S-1,S,3);seed(S,S-1,3);
 
-function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
-function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti}
-function adjCount(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return 0;
-  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length}
-
-function getHeight(cell){
-  if(!cell)return 0;
-  const base=cell.home?50:30;
-  return base+cell.stacked*16;
-}
-
-// ══ FIREFLIES ══
+// Fireflies
 const ffC=document.getElementById('fireflies');
 for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firefly';
   el.style.left=Math.random()*100+'%';el.style.top=Math.random()*100+'%';
@@ -263,119 +178,128 @@ for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firef
   el.style.setProperty('--dur',(4+Math.random()*6)+'s');el.style.setProperty('--del',(Math.random()*5)+'s');
   ffC.appendChild(el)}
 
-// ══════════════════════════════════════════════════════════════════════════════
-// BUILD GRID
-// ══════════════════════════════════════════════════════════════════════════════
+// ══ HEIGHT LOGIC ══
+function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti}
+function adjCount(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return 0;
+  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length}
+
+function getH(cell){
+  if(!cell)return 0;
+  const base=cell.home?44:24;
+  return base+cell.stacked*14+(cell.joker?10:0);
+}
+
+// ══ BUILD 3D BOX ══
+// Creates a real 3D extruded box inside a tile using translateZ
+function buildBox(tileEl, cell, team, sz, animate=false){
+  tileEl.querySelectorAll('.box').forEach(b=>b.remove());
+  if(!cell||!team)return;
+
+  const h=getH(cell);
+  const box=document.createElement('div');box.className='box';
+
+  // Top face (bright) — lifted up by h
+  const top=document.createElement('div');top.className='box-top';
+  top.style.cssText=`--h:${h}px;background:${rca(team,.75)};border:1px solid ${rca(team,.55)}`;
+  box.appendChild(top);
+
+  // Front face (medium) — rotated down from bottom edge
+  const front=document.createElement('div');front.className='box-front';
+  front.style.cssText=`--h:${h}px;background:${rca(team,.40)};border:1px solid ${rca(team,.35)}`;
+  box.appendChild(front);
+
+  // Right face (dark) — rotated from right edge
+  const right=document.createElement('div');right.className='box-right';
+  right.style.cssText=`--h:${h}px;background:${rca(team,.25)};border:1px solid ${rca(team,.30)}`;
+  box.appendChild(right);
+
+  // Emoji on top
+  const emoji=document.createElement('div');emoji.className='box-emoji';
+  emoji.style.cssText=`--h:${h}px;font-size:${cell.home?Math.round(sz*.4):Math.round(sz*.32)}px`;
+  emoji.textContent=cell.frozen?'\u2744\uFE0F':cell.joker?'\u2B50':team.emoji;
+  box.appendChild(emoji);
+
+  // Frozen: tint top face ice-blue
+  if(cell.frozen){
+    top.style.background='rgba(147,210,255,.45)';
+    top.style.border='2px solid rgba(147,210,255,.85)';
+    top.style.animation='frostPulse 2.5s ease-in-out infinite';
+    front.style.background='rgba(147,210,255,.20)';
+    right.style.background='rgba(147,210,255,.12)';
+  }
+  // Joker: golden top
+  if(cell.joker){
+    top.style.background='rgba(251,191,36,.50)';
+    top.style.border='2px solid rgba(251,191,36,.9)';
+    top.style.animation='jokerGlow 2s ease-in-out infinite';
+  }
+  // Stack badge above
+  if(cell.stacked>0&&!cell.joker){
+    const badge=document.createElement('div');
+    badge.style.cssText=`position:absolute;inset:0;transform:translateZ(${h+8}px);
+      display:flex;align-items:center;justify-content:center;pointer-events:none`;
+    const span=document.createElement('span');
+    span.style.cssText='font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
+    span.textContent='\u00D7'+(cell.stacked+1);
+    badge.appendChild(span);box.appendChild(badge);
+  }
+
+  // Animate: grow from 0
+  if(animate){
+    box.style.opacity='0';
+    box.style.transform='translateZ(-10px)';
+    box.style.transition='opacity .3s ease, transform .5s cubic-bezier(.34,1.2,.64,1)';
+    requestAnimationFrame(()=>{
+      box.style.opacity='1';
+      box.style.transform='translateZ(0)';
+    });
+  }
+
+  tileEl.appendChild(box);
+}
+
+// ══ RENDER TILE ══
+function renderTile(r,c){
+  const el=document.querySelector(`#grid [data-r="${r}"][data-c="${c}"]`);
+  if(!el)return;
+  const cell=state[r][c];
+  const ground=el.querySelector('.ground');
+
+  if(!cell){
+    el.classList.remove('owned');
+    ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+    buildBox(el,null,null,CELL);
+    return;
+  }
+  el.classList.add('owned');
+  const team=TEAMS[cell.teamIdx];
+  ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 10px ${rca(team,.20)}`;
+  buildBox(el,cell,team,CELL);
+}
+
+// ══ BUILD DOM ══
 const gridEl=document.getElementById('grid');
 gridEl.style.gridTemplateColumns=`repeat(${SIZE},${CELL}px)`;
 gridEl.style.gridTemplateRows=`repeat(${SIZE},${CELL}px)`;
 
-function buildBuilding(tileEl,cell,team,animate=false){
-  // Remove old building if any
-  tileEl.querySelectorAll('.building').forEach(b=>b.remove());
-  if(!cell)return;
-
-  const h=getHeight(cell);
-  const sideW=Math.round(CELL*.22); // depth of side face
-
-  const bld=document.createElement('div');bld.className='building';
-  bld.style.cssText=`height:${h}px;--bTop:${team.bTop};--bFront:${team.bFront};--bRight:${team.bRight};--bEdge:${team.bEdge}`;
-
-  // Front face
-  const front=document.createElement('div');front.className='building-front';
-  front.style.height=h+'px';
-  bld.appendChild(front);
-
-  // Right face
-  const right=document.createElement('div');right.className='building-right';
-  right.style.cssText=`width:${sideW}px;height:${h}px`;
-  bld.appendChild(right);
-
-  // Top face
-  const top=document.createElement('div');top.className='building-top';
-  top.style.height=sideW+'px';
-  bld.appendChild(top);
-
-  // Emoji on top
-  const emojiDiv=document.createElement('div');emojiDiv.className='building-emoji';
-  emojiDiv.style.height=sideW+'px';
-  emojiDiv.style.fontSize=(cell.home?'20px':'15px');
-  emojiDiv.textContent=team.emoji;
-  bld.appendChild(emojiDiv);
-
-  // Frozen overlay on top
-  if(cell.frozen){
-    const frost=document.createElement('div');frost.className='frost-layer';
-    frost.style.height=sideW+'px';
-    bld.appendChild(frost);
-    emojiDiv.textContent='\u2744\uFE0F';
-    emojiDiv.style.fontSize='16px';
-  }
-  // Joker overlay
-  if(cell.joker){
-    const jk=document.createElement('div');jk.className='joker-layer';
-    jk.style.height=sideW+'px';
-    bld.appendChild(jk);
-    emojiDiv.textContent='\u2B50';
-    emojiDiv.style.fontSize='18px';
-  }
-  // Stack badge
-  if(cell.stacked>0&&!cell.joker){
-    const badge=document.createElement('div');badge.className='stack-badge';
-    badge.textContent='\u00D7'+(cell.stacked+1);
-    bld.appendChild(badge);
-  }
-
-  if(animate){
-    bld.style.height='0';bld.style.opacity='0';
-    requestAnimationFrame(()=>{
-      bld.style.transition='height .5s cubic-bezier(.34,1.2,.64,1), opacity .3s';
-      bld.style.height=h+'px';bld.style.opacity='1';
-    });
-  }
-
-  tileEl.appendChild(bld);
-}
-
-function renderTile(r,c){
-  const el=document.querySelector(`.iso-grid [data-r="${r}"][data-c="${c}"]`);
-  if(!el)return;
-  const cell=state[r][c];
-  const ground=el.querySelector('.tile-ground');
-
-  if(!cell){
-    el.className='tile';
-    ground.style.cssText='position:absolute;inset:0;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
-    buildBuilding(el,null,null);
-    return;
-  }
-  el.className='tile owned';
-  const team=TEAMS[cell.teamIdx];
-  ground.style.cssText=`position:absolute;inset:0;border-radius:3px;background:${rca(team,.12)};border:1px solid ${rca(team,.30)};box-shadow:0 0 10px ${rca(team,.15)}`;
-  buildBuilding(el,cell,team);
-}
-
-// Create tile DOM
 for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-  const el=document.createElement('div');
-  el.className='tile'+(state[r][c]?' owned':'');
+  const el=document.createElement('div');el.className='tile';
   el.dataset.r=r;el.dataset.c=c;
   el.style.cssText=`width:${CELL}px;height:${CELL}px`;
-  const ground=document.createElement('div');ground.className='tile-ground';
+  const ground=document.createElement('div');ground.className='ground';
   el.appendChild(ground);
 
   el.addEventListener('click',()=>{
     if(state[r][c])return;
     state[r][c]={teamIdx:activeTeam,home:false,frozen:false,stacked:0,joker:false};
     renderTile(r,c);
-    buildBuilding(el,state[r][c],TEAMS[activeTeam],true);
+    buildBox(el,state[r][c],TEAMS[activeTeam],CELL,true);
     [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
       const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderTile(nr,nc)});
     updateScores();
   });
 
-  gridEl.appendChild(el);
-  renderTile(r,c);
+  gridEl.appendChild(el);renderTile(r,c);
 }
 
 // Scores
@@ -383,8 +307,7 @@ function updateScores(){
   document.getElementById('scorebar').innerHTML=TEAMS.map((t,i)=>{
     const count=state.flat().filter(c=>c?.teamIdx===i).length;const active=i===activeTeam;
     return`<div class="team-pill${active?' active':''}" style="--tc-bg:${rca(t,.08)};--tc-border:${rca(t,.45)};--tc-glow:${rca(t,.2)};--tc-text:${t.color};--tc-count-bg:${rca(t,.15)}" onclick="selectTeam(${i})"><span class="tp-emoji">${t.emoji}</span><span class="tp-name">${t.name}</span><span class="tp-count">${count}</span></div>`}).join('')}
-window.selectTeam=i=>{activeTeam=i;updateScores()};
-updateScores();
+window.selectTeam=i=>{activeTeam=i;updateScores()};updateScores();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SHOWCASE SECTION
@@ -393,76 +316,32 @@ const T_BLUE=TEAMS[0],T_RED=TEAMS[1];
 
 function miniStage(stage,cols,rows,sz,cells){
   stage.innerHTML='';
-  const scene=document.createElement('div');scene.className='mini-scene';
-  const grid=document.createElement('div');grid.className='mini-iso';
-  grid.style.gridTemplateColumns=`repeat(${cols},${sz}px)`;
-  grid.style.gridTemplateRows=`repeat(${rows},${sz}px)`;
-
+  const scene=document.createElement('div');
+  scene.style.cssText='perspective:500px;perspective-origin:50% 35%';
+  const grid=document.createElement('div');
+  grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);
+    grid-template-rows:repeat(${rows},${sz}px);
+    transform:rotateX(55deg) rotateZ(-45deg);transform-style:preserve-3d`;
   const map={};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const tile=document.createElement('div');tile.className='mini-tile';
+    const tile=document.createElement('div');tile.className='tile';
     tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative;transform-style:preserve-3d`;
-    const ground=document.createElement('div');ground.className='tile-ground';
-    tile.appendChild(ground);
-    grid.appendChild(tile);
-    map[`${r},${c}`]=tile;
+    const ground=document.createElement('div');ground.className='ground';
+    ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+    tile.appendChild(ground);grid.appendChild(tile);map[`${r},${c}`]=tile;
   }
   scene.appendChild(grid);stage.appendChild(scene);
-
-  // Place initial cells
   cells.forEach(([r,c,team,home])=>{
     const tile=map[`${r},${c}`];if(!tile)return;
-    const ground=tile.querySelector('.tile-ground');
-    ground.style.background=rca(team,.12);ground.style.borderColor=rca(team,.3);
-    ground.style.boxShadow=`0 0 8px ${rca(team,.15)}`;
-    const cell={teamIdx:0,home:!!home,frozen:false,stacked:0,joker:false};
-    miniBuilding(tile,cell,team,sz,false);
+    const ground=tile.querySelector('.ground');
+    ground.style.background=rca(team,.15);ground.style.borderColor=rca(team,.35);
+    ground.style.boxShadow=`0 0 8px ${rca(team,.2)}`;
+    buildBox(tile,{home:!!home,frozen:false,stacked:0,joker:false},team,sz);
   });
-
   return{grid,map,stage,sz};
 }
 
-function miniBuilding(tileEl,cell,team,sz,animate=false){
-  tileEl.querySelectorAll('.building').forEach(b=>b.remove());
-  if(!cell)return;
-  const h=cell.home?Math.round(sz*.8):Math.round(sz*.5)+cell.stacked*Math.round(sz*.25);
-  const sideW=Math.round(sz*.22);
-
-  const bld=document.createElement('div');bld.className='building';
-  bld.style.cssText=`height:${h}px;left:12%;width:76%;bottom:0;position:absolute;transform-style:preserve-3d;
-    --bTop:${team.bTop};--bFront:${team.bFront};--bRight:${team.bRight};--bEdge:${team.bEdge}`;
-
-  const front=document.createElement('div');front.className='building-front';front.style.height=h+'px';bld.appendChild(front);
-  const right=document.createElement('div');right.className='building-right';right.style.cssText=`width:${sideW}px;height:${h}px`;bld.appendChild(right);
-  const top=document.createElement('div');top.className='building-top';top.style.height=sideW+'px';bld.appendChild(top);
-
-  const emojiDiv=document.createElement('div');emojiDiv.className='building-emoji';
-  emojiDiv.style.cssText=`height:${sideW}px;font-size:${Math.round(sz*.3)}px`;
-  emojiDiv.textContent=cell.frozen?'\u2744\uFE0F':cell.joker?'\u2B50':team.emoji;
-  bld.appendChild(emojiDiv);
-
-  if(cell.frozen){
-    const frost=document.createElement('div');frost.className='frost-layer';frost.style.height=sideW+'px';bld.appendChild(frost);
-  }
-  if(cell.joker){
-    const jk=document.createElement('div');jk.className='joker-layer';jk.style.height=sideW+'px';bld.appendChild(jk);
-  }
-  if(cell.stacked>0){
-    const badge=document.createElement('div');badge.className='stack-badge';
-    badge.textContent='\u00D7'+(cell.stacked+1);bld.appendChild(badge);
-  }
-
-  if(animate){
-    bld.style.height='0';bld.style.opacity='0';
-    requestAnimationFrame(()=>{
-      bld.style.transition='height .5s cubic-bezier(.34,1.2,.64,1), opacity .3s';
-      bld.style.height=h+'px';bld.style.opacity='1';
-    });
-  }
-  tileEl.appendChild(bld);
-}
-
-// FX helpers
+// FX
 function fxRing(parent,color,delay=0){
   const ring=document.createElement('div');
   ring.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;
@@ -470,8 +349,8 @@ function fxRing(parent,color,delay=0){
     animation:stampRing .7s ease-out ${delay}s both`;
   parent.appendChild(ring);setTimeout(()=>ring.remove(),900);
 }
-function fxShatter(parent,color,count=10){
-  for(let i=0;i<count;i++){
+function fxShatter(parent,color,n=10){
+  for(let i=0;i<n;i++){
     const a=Math.random()*Math.PI*2,d=18+Math.random()*25;
     const p=document.createElement('div');
     p.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;
@@ -484,15 +363,14 @@ function fxShatter(parent,color,count=10){
 
 // ── PLACE ──
 function playPlace(stage){
-  const SZ=40;
+  const SZ=42;
   const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
   const target=map['1,1'];
   setTimeout(()=>{
-    const ground=target.querySelector('.tile-ground');
-    ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
-    ground.style.boxShadow=`0 0 8px ${rca(T_BLUE,.15)}`;
-    ground.style.animation='inkFill .5s ease-out both';
-    miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    const ground=target.querySelector('.ground');
+    ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
+    ground.style.boxShadow=`0 0 8px ${rca(T_BLUE,.2)}`;
+    buildBox(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
     fxRing(target,T_BLUE.color,0);fxRing(target,T_BLUE.color,.12);
     fxShatter(target,T_BLUE.color,6);
   },500);
@@ -501,23 +379,22 @@ function playPlace(stage){
 
 // ── STEAL ──
 function playSteal(stage){
-  const SZ=40;
+  const SZ=42;
   const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE],[1,1,T_RED]]);
   const target=map['1,1'];
   setTimeout(()=>{
     fxShatter(target,T_RED.color,12);
-    // Red flash
     const flash=document.createElement('div');
     flash.style.cssText=`position:absolute;inset:-8px;border-radius:50%;z-index:19;pointer-events:none;
       background:radial-gradient(circle,rgba(239,68,68,.5),transparent 70%);animation:stampRing .5s ease-out both`;
     target.appendChild(flash);setTimeout(()=>flash.remove(),600);
-    // Remove old building
-    target.querySelectorAll('.building').forEach(b=>{b.style.transition='opacity .2s';b.style.opacity='0';setTimeout(()=>b.remove(),200)});
-    // Build new after brief delay
+    // Fade out old box
+    const oldBox=target.querySelector('.box');
+    if(oldBox){oldBox.style.transition='opacity .2s';oldBox.style.opacity='0';setTimeout(()=>oldBox.remove(),250);}
     setTimeout(()=>{
-      const ground=target.querySelector('.tile-ground');
-      ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
-      miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+      const ground=target.querySelector('.ground');
+      ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
+      buildBox(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
     },300);
   },500);
   setTimeout(()=>playSteal(stage),3800);
@@ -525,11 +402,10 @@ function playSteal(stage){
 
 // ── FREEZE ──
 function playFreeze(stage){
-  const SZ=40;
+  const SZ=42;
   const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED]]);
   const target=map['1,1'];
   setTimeout(()=>{
-    // Ice crystals flying out
     for(let i=0;i<6;i++){
       const cr=document.createElement('div');
       const a=i*(Math.PI*2/6),d=22;
@@ -538,12 +414,10 @@ function playFreeze(stage){
         animation:shatterOut .7s ease-out ${i*.04}s both`;
       cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900);
     }
-    // Rebuild with frozen state
-    const ground=target.querySelector('.tile-ground');
-    ground.style.animation='iceSpread .5s ease-out both';
     setTimeout(()=>{
-      target.querySelectorAll('.building').forEach(b=>b.remove());
-      miniBuilding(target,{home:false,frozen:true,stacked:0,joker:false},T_RED,SZ,false);
+      const ground=target.querySelector('.ground');
+      ground.style.background='rgba(147,210,255,.12)';ground.style.borderColor='rgba(147,210,255,.4)';
+      buildBox(target,{home:false,frozen:true,stacked:0,joker:false},T_RED,SZ);
     },400);
   },500);
   setTimeout(()=>playFreeze(stage),4000);
@@ -551,16 +425,13 @@ function playFreeze(stage){
 
 // ── STACK ──
 function playStack(stage){
-  const SZ=40;
+  const SZ=42;
   const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE],[1,1,T_BLUE],[1,2,T_BLUE]]);
   const target=map['1,1'];
   let count=0;
   function once(){
     count++;
-    // Bounce
-    target.style.animation='stackBounce .4s ease-out both';
-    setTimeout(()=>target.style.animation='',500);
-    // Golden particles up
+    fxRing(target,'#FBBF24',0);
     for(let i=0;i<3;i++){
       const p=document.createElement('div');
       p.style.cssText=`position:absolute;left:${42+Math.random()*16}%;top:30%;font-size:10px;color:#FBBF24;
@@ -568,10 +439,7 @@ function playStack(stage){
         animation:starFall .6s ease-out ${i*.06}s both reverse`;
       p.textContent='\u25B2';target.appendChild(p);setTimeout(()=>p.remove(),800);
     }
-    fxRing(target,'#FBBF24',0);
-    // Rebuild taller
-    target.querySelectorAll('.building').forEach(b=>b.remove());
-    miniBuilding(target,{home:false,frozen:false,stacked:count,joker:false},T_BLUE,SZ,false);
+    buildBox(target,{home:false,frozen:false,stacked:count,joker:false},T_BLUE,SZ,true);
   }
   setTimeout(once,500);
   setTimeout(once,1200);
@@ -581,27 +449,20 @@ function playStack(stage){
 
 // ── JOKER ──
 function playJoker(stage){
-  const SZ=36;
+  const SZ=38;
   const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
-  // Fill 4th cell
   setTimeout(()=>{
-    const target=map['1,1'];
-    const ground=target.querySelector('.tile-ground');
-    ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
-    ground.style.animation='inkFill .4s ease-out both';
-    miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    const t=map['1,1'],g=t.querySelector('.ground');
+    g.style.background=rca(T_BLUE,.15);g.style.borderColor=rca(T_BLUE,.35);
+    buildBox(t,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
   },500);
-  // Joker formation
   setTimeout(()=>{
-    const block=[[0,0],[0,1],[1,0],[1,1]];
-    block.forEach(([r,c])=>{
+    [[0,0],[0,1],[1,0],[1,1]].forEach(([r,c])=>{
       const tile=map[`${r},${c}`];
-      tile.querySelectorAll('.building').forEach(b=>b.remove());
-      miniBuilding(tile,{home:false,frozen:false,stacked:0,joker:true},T_BLUE,SZ,false);
-      tile.querySelector('.tile-ground').style.borderColor='rgba(251,191,36,.7)';
-      tile.querySelector('.tile-ground').style.boxShadow='0 0 12px rgba(251,191,36,.4)';
+      const g=tile.querySelector('.ground');
+      g.style.borderColor='rgba(251,191,36,.7)';g.style.boxShadow='0 0 12px rgba(251,191,36,.4)';
+      buildBox(tile,{home:false,frozen:false,stacked:0,joker:true},T_BLUE,SZ);
     });
-    // Star rain
     for(let i=0;i<8;i++){
       const star=document.createElement('div');
       star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;
@@ -610,7 +471,6 @@ function playJoker(stage){
         animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;
       star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900);
     }
-    // Burst rings
     const cx=stage.offsetWidth/2,cy=stage.offsetHeight/2;
     for(let i=0;i<3;i++){
       const ring=document.createElement('div');
@@ -623,60 +483,33 @@ function playJoker(stage){
   setTimeout(()=>playJoker(stage),4800);
 }
 
-// Build showcase cards
+// Build cards
 const CARDS=[
   {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',
-    desc:'Ein leeres Feld wird erobert. Der Block steigt aus dem Boden, Schockwellen breiten sich aus, das Emoji erscheint auf dem Dach.',
-    play:playPlace},
+    desc:'Leeres Feld erobern. Block steigt aus dem Boden, Schockwellen breiten sich aus.',play:playPlace},
   {icon:'\u26A1',title:'Klauen',color:'#EF4444',
-    desc:'Ein gegnerisches Gebäude wird übernommen. Die alte Farbe zerbröckelt in Partikel, roter Blitz-Flash, dann steigt der neue Block auf.',
-    play:playSteal},
+    desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, roter Flash, neuer Block steigt auf.',play:playSteal},
   {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',
-    desc:'Ein Feld wird geschützt. Eiskristalle fliegen umher, eine Frost-Schicht legt sich über das Dach und pulsiert blau.',
-    play:playFreeze},
+    desc:'Feld schützen. Eiskristalle fliegen, Frost-Schicht auf dem Dach pulsiert blau.',play:playFreeze},
   {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',
-    desc:'Ein eigenes Feld wird verstärkt. Das Gebäude wächst nach oben, goldene Pfeile steigen auf, ein \u00D7N-Badge erscheint.',
-    play:playStack},
+    desc:'Eigenes Feld verstärken. Gebäude wächst höher (3×), goldene Pfeile + Badge.',play:playStack},
   {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',
-    desc:'Vier Felder bilden ein Quadrat. Goldene Burst-Ringe, Sternenregen, alle 4 Gebäude bekommen goldene Dächer mit Stern.',
-    play:playJoker},
+    desc:'Vier Felder = Quadrat. Goldene Burst-Ringe, Sternenregen, goldene Dächer.',play:playJoker},
 ];
-
-const scContainer=document.getElementById('showcases');
+const scC=document.getElementById('showcases');
 CARDS.forEach(card=>{
   const div=document.createElement('div');div.className='showcase-card';
-  div.innerHTML=`
-    <div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div>
-    <div class="sc-desc">${card.desc}</div>
-    <div class="sc-stage"></div>
-    <button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">\u25B6 Abspielen</button>`;
+  div.innerHTML=`<div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div>
+    <div class="sc-desc">${card.desc}</div><div class="sc-stage"></div>
+    <button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">\u25B6 Play</button>`;
   const stageEl=div.querySelector('.sc-stage');
-  const btn=div.querySelector('.sc-play');
-  let timer=null;
-  btn.onclick=()=>{
-    if(timer){clearTimeout(timer);timer=null}
-    // Stop previous loops by clearing stage
-    stageEl.innerHTML='';
-    card.play(stageEl);
-    btn.textContent='\u23F9 Stopp';
-    btn.onclick=()=>{
-      stageEl.innerHTML='';timer=null;
-      btn.textContent='\u25B6 Abspielen';
-      btn.onclick=arguments.callee; // re-bind — but we need to re-create
-      // Simpler: just reload card
-      rebindBtn();
-    };
-  };
-  function rebindBtn(){
-    btn.textContent='\u25B6 Abspielen';
-    btn.onclick=()=>{
-      stageEl.innerHTML='';
-      card.play(stageEl);
-      btn.textContent='\u23F9 Stopp';
-      btn.onclick=()=>{stageEl.innerHTML='';rebindBtn()};
-    };
+  function bind(){
+    const btn=div.querySelector('.sc-play');
+    btn.textContent='\u25B6 Play';
+    btn.onclick=()=>{stageEl.innerHTML='';card.play(stageEl);
+      btn.textContent='\u23F9 Stop';btn.onclick=()=>{stageEl.innerHTML='';bind()}};
   }
-  scContainer.appendChild(div);
+  bind();scC.appendChild(div);
 });
 </script>
 </body>

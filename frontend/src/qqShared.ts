@@ -165,6 +165,31 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  @keyframes revealCorrectPop {
+    0%   { transform: scale(1); box-shadow: 0 0 0 rgba(34,197,94,0); }
+    30%  { transform: scale(1.06); box-shadow: 0 0 40px rgba(34,197,94,0.5); }
+    60%  { transform: scale(0.98); }
+    100% { transform: scale(1); box-shadow: 0 0 24px rgba(34,197,94,0.3); }
+  }
+  @keyframes revealWrongDim {
+    from { opacity: 1; filter: brightness(1) saturate(1); }
+    to   { opacity: 0.45; filter: brightness(0.6) saturate(0.3); }
+  }
+  @keyframes revealAnswerBam {
+    0%   { opacity: 0; transform: scale(0.8); filter: brightness(2); }
+    40%  { opacity: 1; transform: scale(1.04); filter: brightness(1.3); }
+    70%  { transform: scale(0.98); filter: brightness(1.05); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes revealFlash {
+    0%   { opacity: 0.6; }
+    100% { opacity: 0; }
+  }
+  @keyframes revealWinnerIn {
+    0%   { opacity: 0; transform: translateY(30px) scale(0.9); }
+    50%  { transform: translateY(-4px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

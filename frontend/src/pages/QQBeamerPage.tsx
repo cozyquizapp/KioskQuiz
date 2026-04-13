@@ -1592,19 +1592,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Question card — centered, full width, stronger presence */}
           <div style={{
             background: cardBg,
-            border: `2px solid ${accent}22`,
+            border: `2px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}22`}`,
             borderRadius: 28,
-            boxShadow: `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            padding: '48px 64px',
+            boxShadow: revealed
+              ? '0 4px 16px rgba(0,0,0,0.3)'
+              : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+            padding: revealed ? '28px 48px' : '48px 64px',
             marginBottom: 20,
             width: '100%', maxWidth: 1400,
             textAlign: 'center',
             animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+            transition: 'padding 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease',
+            opacity: revealed ? 0.7 : 1,
           }}>
             <div key={lang} style={{
-              fontSize: qFontSize, fontWeight: 900, lineHeight: 1.22,
-              color: '#F1F5F9',
+              fontSize: qFontSize,
+              fontWeight: 900, lineHeight: 1.22,
+              color: revealed ? '#94A3B8' : '#F1F5F9',
               animation: 'langFadeIn 0.4s ease both',
+              transition: 'font-size 0.4s ease, color 0.4s ease',
             }}>
               {qText}
             </div>
@@ -1644,6 +1650,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
                 const isCorrect = revealed && i === q.correctOptionIndex;
+                const isWrong = revealed && i !== q.correctOptionIndex;
                 const muchoLabels = ['A', 'B', 'C', 'D'];
                 const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
                 const label = q.category === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
@@ -1654,12 +1661,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     position: 'relative', overflow: 'hidden',
                     borderRadius: 20, padding: '24px 28px',
                     background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                    border: isCorrect ? '3px solid #22C55E' : `2px solid ${optColor}55`,
-                    boxShadow: isCorrect ? '0 0 24px rgba(34,197,94,0.3)' : `0 4px 16px rgba(0,0,0,0.3)`,
+                    border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
+                    boxShadow: isCorrect ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)' : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 16,
                     minHeight: optImg?.url ? 100 : 84,
                     transition: 'all 0.3s ease',
-                    animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                    animation: isCorrect
+                      ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.25s both'
+                      : isWrong
+                        ? 'revealWrongDim 0.4s ease 0.15s both'
+                        : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                   }}>
                     {optImg?.url && (
                       <img src={optImg.url} alt="" style={{
@@ -1674,16 +1685,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     <div style={{
                       position: 'relative', zIndex: 1,
                       width: 56, height: 56, borderRadius: 16,
-                      background: isCorrect ? '#22C55E' : optColor,
+                      background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-                      boxShadow: `0 2px 8px ${(isCorrect ? '#22C55E' : optColor)}66`,
+                      fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
+                      boxShadow: isCorrect ? '0 0 16px rgba(34,197,94,0.6)' : `0 2px 8px ${optColor}44`,
+                      transition: 'all 0.3s ease',
                     }}>{isCorrect ? '✓' : label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
                       fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
-                      color: '#F1F5F9', lineHeight: 1.3,
+                      color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
                       textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
+                      transition: 'color 0.3s ease',
                     }}>{optText}</div>
                   </div>
                 );
@@ -1694,20 +1707,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
             <div style={{
-              padding: '28px 48px', borderRadius: 24,
-              background: 'rgba(34,197,94,0.10)',
-              border: '2px solid rgba(34,197,94,0.40)',
-              boxShadow: '0 0 40px rgba(34,197,94,0.16)',
-              fontSize: 'clamp(34px, 5vw, 68px)', fontWeight: 900,
+              padding: '32px 52px', borderRadius: 28,
+              background: 'rgba(34,197,94,0.12)',
+              border: '3px solid rgba(34,197,94,0.50)',
+              boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
+              fontSize: 'clamp(38px, 5.5vw, 76px)', fontWeight: 900,
               color: '#4ade80', marginBottom: 24,
               width: '100%', maxWidth: 1400, textAlign: 'center',
-              animation: 'contentReveal 0.4s ease both',
+              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
             }}>
               ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
             </div>
           )}
 
-          {/* Correct team — full-width winner banner */}
+          {/* Background flash on reveal */}
+          {revealed && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+              background: s.correctTeamId
+                ? `radial-gradient(ellipse at center, rgba(34,197,94,0.3) 0%, transparent 70%)`
+                : `radial-gradient(ellipse at center, rgba(239,68,68,0.2) 0%, transparent 70%)`,
+              animation: 'revealFlash 1.2s ease-out both',
+            }} />
+          )}
+
+          {/* Correct team — full-width winner banner (delayed for drama) */}
           {revealed && s.correctTeamId && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
             if (!team) return null;
@@ -1729,25 +1753,37 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 width: '100%', maxWidth: 1400,
                 background: `linear-gradient(135deg, ${team.color}22, ${team.color}0a)`,
                 border: `2px solid ${team.color}66`,
-                boxShadow: `0 0 40px ${team.color}22, 0 8px 24px rgba(0,0,0,0.4)`,
-                animation: 'winnerSlideIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+                boxShadow: `0 0 60px ${team.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+                animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
               }}>
-                <span style={{ fontSize: 'clamp(64px, 8vw, 110px)', lineHeight: 1, flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 'clamp(64px, 8vw, 110px)', lineHeight: 1, flexShrink: 0,
+                  animation: 'celebShake 0.6s ease 1.1s both',
+                }}>
                   {qqGetAvatar(team.avatarId).emoji}
                 </span>
                 <div>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team.color, lineHeight: 1.1 }}>
+                  <div style={{
+                    fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team.color, lineHeight: 1.1,
+                    textShadow: `0 0 30px ${team.color}44`,
+                  }}>
                     {team.name}
                   </div>
-                  <div style={{ color: '#94a3b8', fontSize: 'clamp(18px, 2.4vw, 32px)', fontWeight: 700, marginTop: 6 }}>
+                  <div style={{
+                    color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6,
+                  }}>
                     {winMsg}
                   </div>
                 </div>
               </div>
             );
           })()}
-          {/* Confetti overlay on correct answer */}
-          {revealed && s.correctTeamId && <ConfettiOverlay />}
+          {/* Confetti overlay on correct answer (delayed to sync with winner) */}
+          {revealed && s.correctTeamId && (
+            <div style={{ animation: 'contentReveal 0.01s ease 0.8s both' }}>
+              <ConfettiOverlay />
+            </div>
+          )}
 
           {/* Bottom: team answer progress (active questions only) */}
           {!revealed && s.teams.length > 0 && (

@@ -912,13 +912,17 @@ function CustomSlideElement({
             const voters = isRevealed && s.answers?.length
               ? s.answers.filter(a => a.text === String(i)).map(a => s.teams.find(t => t.id === a.teamId)).filter(Boolean)
               : [];
+            const isWrong = isRevealed && i !== q.correctOptionIndex;
             return (
               <div key={i} style={{
                 position: 'relative', overflow: 'hidden',
                 borderRadius: tileRadius, padding: '12px 16px',
                 background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                border: isCorrect ? '2px solid #22C55E' : `2px solid ${optColor}44`,
+                border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}44`,
+                boxShadow: isCorrect ? '0 0 30px rgba(34,197,94,0.3)' : 'none',
                 display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6,
+                animation: isCorrect ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.25s both'
+                  : isWrong ? 'revealWrongDim 0.4s ease 0.15s both' : undefined,
               }}>
                 {optImg?.url && (
                   <img src={optImg.url} alt="" style={{
@@ -929,13 +933,15 @@ function CustomSlideElement({
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 30, height: 30, borderRadius: 8,
-                    background: isCorrect ? '#22C55E' : optColor,
+                    background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0,
+                    transition: 'background 0.3s ease',
                   }}>{isCorrect ? '✓' : label}</div>
                   <div style={{
                     fontSize: `${(el.fontSize ?? 1.6) * canvasW / 100}px`,
-                    fontWeight: 800, color: '#F1F5F9', lineHeight: 1.3,
+                    fontWeight: 800, color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                    transition: 'color 0.3s ease',
                   }}>{optText}</div>
                 </div>
                 {voters.length > 0 && (

@@ -447,14 +447,25 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
   }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Firefly color based on phase
-  const ffColor = s.phase === 'QUESTION_ACTIVE' ? `${QQ_CATEGORY_COLORS[s.currentQuestion?.category ?? 'BUNTE_TUETE'] ?? teamColor}66`
-    : s.phase === 'PLACEMENT' ? `${teamColor}55`
-    : s.phase === 'GAME_OVER' ? '#FBBF2455'
-    : `${teamColor}44`;
+  // Dynamic phase/category accent for glows
+  const catColor = s.currentQuestion?.category ? (QQ_CATEGORY_COLORS[s.currentQuestion.category] ?? teamColor) : teamColor;
+  const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catColor
+    : s.phase === 'PLACEMENT' ? teamColor
+    : s.phase === 'GAME_OVER' ? '#FBBF24'
+    : teamColor;
+
+  // Firefly color
+  const ffColor = `${phaseAccent}55`;
+
+  // Dynamic background — category glow during questions, team glow otherwise
+  const pageBg = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
+    ? `radial-gradient(ellipse at 50% 0%, ${catColor}20 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, ${catColor}10 0%, transparent 40%), #0D0A06`
+    : s.phase === 'GAME_OVER'
+    ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
+    : `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06`;
 
   return (
-    <div style={{ ...darkPage, background: `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06` }}>
+    <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color={ffColor} />
@@ -595,63 +606,112 @@ function MobileFireflies({ color }: { color?: string }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
-  // Rotating microcopy for engagement
-  const tips = lang === 'de'
-    ? ['Schnelligkeit zählt!', 'Jede Antwort bringt Punkte!', 'Wer kennt sich am besten aus?', 'Teamwork ist gefragt!']
-    : ['Speed matters!', 'Every answer counts!', 'Who knows best?', 'Teamwork is key!'];
-  const [tipIdx, setTipIdx] = React.useState(0);
-  React.useEffect(() => {
-    const id = setInterval(() => setTipIdx(i => (i + 1) % tips.length), 3500);
-    return () => clearInterval(id);
-  }, [tips.length]);
-
   const de = lang === 'de';
-  const tc = s.teams.length;
-  const otherCount = myTeam ? tc - 1 : tc;
+  const opponents = s.teams.filter(t => t.id !== myTeam?.id);
 
-  // Social context text
-  const socialText = tc === 0
-    ? (de ? 'Noch keine Teams' : 'No teams yet')
-    : tc === 1
-      ? (de ? 'Noch kein Gegner da' : 'No opponent yet')
-      : myTeam
-        ? (de
-          ? `Du spielst gegen ${otherCount} ${otherCount === 1 ? 'Team' : 'Teams'}`
-          : `You're playing against ${otherCount} ${otherCount === 1 ? 'team' : 'teams'}`)
-        : (de ? `${tc} Teams bereit` : `${tc} teams ready`);
+  // Pulsing ready dot
+  const [pulse, setPulse] = React.useState(true);
+  React.useEffect(() => {
+    const id = setInterval(() => setPulse(p => !p), 1200);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!myTeam) {
+    // Not yet joined — simple waiting view
+    return (
+      <CozyCard>
+        <div style={{ textAlign: 'center', padding: '12px 0' }}>
+          <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 6 }}>
+            {de ? 'Warteraum' : 'Waiting room'}
+          </div>
+          <div style={{ fontSize: 14, color: '#64748b' }}>
+            {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} Teams`}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
 
   return (
-    <CozyCard>
-      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
-        <div style={{ fontWeight: 900, fontSize: 24, color: '#F1F5F9', marginBottom: 4 }}>
-          {myTeam ? (de ? 'Mach dich bereit!' : 'Get ready!') : (de ? 'Warteraum' : 'Waiting room')}
-        </div>
-        <div style={{ fontSize: 15, color: '#94a3b8', marginBottom: 6 }}>
-          {socialText}
-        </div>
-        {/* Rotating tip */}
+    <CozyCard borderColor={myTeam.color} pulse>
+      <div style={{ textAlign: 'center', padding: '4px 0' }}>
+        {/* Own team — hero display */}
         <div style={{
-          fontSize: 13, color: '#64748b', fontWeight: 700, fontStyle: 'italic',
-          minHeight: 20, transition: 'opacity 0.3s',
-          marginBottom: 14,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginBottom: 8,
         }}>
-          {tips[tipIdx]}
+          <div style={{
+            fontSize: 56, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite',
+            filter: `drop-shadow(0 0 12px ${myTeam.color}44)`,
+          }}>
+            {qqGetAvatar(myTeam.avatarId).emoji}
+          </div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: myTeam.color, marginTop: 4 }}>
+            {myTeam.name}
+          </div>
+          {/* Pulsing ready indicator */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 16px', borderRadius: 999, marginTop: 4,
+            background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
+          }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#22C55E',
+              boxShadow: pulse ? '0 0 8px #22C55E' : '0 0 2px #22C55E',
+              transition: 'box-shadow 0.6s ease',
+            }} />
+            <span style={{ fontSize: 13, fontWeight: 900, color: '#4ade80', letterSpacing: '0.06em' }}>
+              {de ? 'BEREIT' : 'READY'}
+            </span>
+          </div>
         </div>
-        {/* Team pills — flat status indicators */}
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {s.teams.map(t => (
+
+        {/* VS separator */}
+        {opponents.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0',
+          }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{
+              fontWeight: 900, fontSize: 20, color: '#EF4444',
+              textShadow: '0 0 14px rgba(239,68,68,0.4)',
+              letterSpacing: '0.15em',
+            }}>VS</div>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+        )}
+
+        {/* Opponents */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {opponents.map(t => (
             <div key={t.id} style={{
-              padding: '5px 12px', borderRadius: 999,
-              background: `${t.color}15`,
-              border: `1px solid ${t.color}33`,
-              fontSize: 13, fontWeight: 800, color: t.color,
-              display: 'flex', alignItems: 'center', gap: 5,
-              opacity: 0.85,
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 14px', borderRadius: 14,
+              background: `${t.color}08`,
+              border: `1px solid ${t.color}22`,
             }}>
-              {qqGetAvatar(t.avatarId).emoji} {t.name}
+              <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <span style={{ fontWeight: 800, fontSize: 16, color: t.color }}>{t.name}</span>
             </div>
           ))}
+          {opponents.length === 0 && (
+            <div style={{ fontSize: 14, color: '#64748b', fontStyle: 'italic', padding: '8px 0' }}>
+              {de ? 'Warte auf Gegner…' : 'Waiting for opponents…'}
+            </div>
+          )}
+        </div>
+
+        {/* Speed hint banner */}
+        <div style={{
+          marginTop: 14, padding: '8px 14px', borderRadius: 12,
+          background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}>
+          <span style={{ fontSize: 14 }}>⚡</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.04em' }}>
+            {de ? 'Schnelligkeit zählt — antworte so schnell wie möglich!' : 'Speed matters — answer as fast as you can!'}
+          </span>
         </div>
       </div>
     </CozyCard>
@@ -712,14 +772,17 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const catColor = cat ? QQ_CATEGORY_COLORS[cat] : color;
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
     SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
-    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
+    MUCHO:         { de: 'Wählt schnell die richtige Antwort!', en: 'Pick the right answer — fast!' },
     BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
     CHEESE:        { de: 'Erkennt ihr das Bild?', en: 'Can you identify the image?' },
   };
 
+  // Card border — round color for round intro, category color for category steps
+  const introBorder = showCategory ? catColor : color;
+
   return (
-    <CozyCard>
+    <CozyCard borderColor={introBorder}>
       <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
         {!showCategory && !showRules ? (
           /* Round announcement */
@@ -777,7 +840,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             const btKind = s.currentQuestion?.bunteTuete?.kind;
             const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Guess It' }, lines: { de: ['Gebt eine Zahl als Schätzung ein', 'Nächste Antwort gewinnt!'], en: ['Enter a number', 'Closest answer wins!'] } },
-              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mucho Gusto', en: 'Mucho Gusto' }, lines: { de: ['4 Optionen — 1 ist richtig'], en: ['4 options — 1 is correct'] } },
+              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mucho Gusto', en: 'Mucho Gusto' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: '10 of 10' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
               CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Bild erkennen, Antwort eintippen!'], en: ['Identify the image, type your answer!'] } },
               'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['So viele Antworten wie möglich nennen!'], en: ['Name as many answers as you can!'] } },
@@ -867,8 +930,13 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const isCheese = q.category === 'CHEESE';
   const hasCheeseImg = isCheese && q.image?.url;
 
+  // Phase-specific card styling
+  const cardBorder = isRevealed
+    ? (iWon ? '#22C55E' : '#EF4444')
+    : catColor;
+
   return (
-    <CozyCard key={q.id}>
+    <CozyCard key={q.id} borderColor={cardBorder} pulse={!isRevealed}>
       {/* Category pill */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14,
@@ -958,6 +1026,8 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
         const cat = q.category;
         const isEn = lang === 'en';
+        const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null
+          && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
         if (iWon) {
           const winMsg = cat === 'SCHAETZCHEN'
             ? (isEn ? '🎯 You were closest! Choose a field.' : '🎯 Ihr wart am nächsten dran! Wählt ein Feld.')
@@ -965,7 +1035,9 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               ? (isEn ? '📸 Correct! Choose a field.' : '📸 Erkannt! Wählt ein Feld.')
               : cat === 'BUNTE_TUETE'
                 ? (isEn ? '🎁 You win this round! Choose a field.' : '🎁 Ihr gewinnt die Runde! Wählt ein Feld.')
-                : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
+                : muchoSpeedWin
+                  ? (isEn ? '⚡ Fastest & correct! Choose a field.' : '⚡ Am schnellsten & richtig! Wählt ein Feld.')
+                  : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 12,
@@ -978,9 +1050,14 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             </div>
           );
         } else if (winnerTeam) {
-          const loseMsg = cat === 'SCHAETZCHEN'
-            ? (isEn ? `😔 ${winnerTeam.name} was closer.` : `😔 Leider war ${winnerTeam.name} näher dran.`)
-            : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
+          // Check if this team also answered correctly but was slower
+          const myAnswer = s.answers.find(a => a.teamId === myTeamId);
+          const alsoCorrect = muchoSpeedWin && myAnswer && q.correctOptionIndex != null && myAnswer.text === String(q.correctOptionIndex);
+          const loseMsg = alsoCorrect
+            ? (isEn ? `⏱ Correct, but ${winnerTeam.name} was faster!` : `⏱ Richtig, aber ${winnerTeam.name} war schneller!`)
+            : cat === 'SCHAETZCHEN'
+              ? (isEn ? `😔 ${winnerTeam.name} was closer.` : `😔 Leider war ${winnerTeam.name} näher dran.`)
+              : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 12,
@@ -1865,7 +1942,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     const myTeam = s.teams.find(tm => tm.id === myTeamId);
 
     return (
-      <CozyCard>
+      <CozyCard borderColor={myTeam?.color}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           {pendingTeam ? (
             <>
@@ -2276,7 +2353,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdat
   const iWon = myRank === 1;
 
   return (
-    <CozyCard>
+    <CozyCard borderColor={iWon ? '#FBBF24' : undefined}>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         {/* Hero section */}
         <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>
@@ -2354,14 +2431,16 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
 // Shared UI primitives
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function CozyCard({ children, anim, borderColor }: { children: React.ReactNode; anim?: boolean; borderColor?: string }) {
+function CozyCard({ children, anim, borderColor, pulse }: { children: React.ReactNode; anim?: boolean; borderColor?: string; pulse?: boolean }) {
   return (
     <div style={{
       background: '#1B1510',
       border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
       borderRadius: 20, padding: '20px 18px', marginBottom: 14,
       boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)${borderColor ? `, 0 0 20px ${borderColor}18` : ''}`,
-      animation: anim ? 'tcreveal 0.4s ease both' : undefined,
+      animation: anim ? 'tcreveal 0.4s ease both' : pulse ? `tcpulse 2.5s ease-in-out infinite` : undefined,
+      ['--c' as string]: borderColor ? `${borderColor}33` : undefined,
+      transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
     }}>
       {children}
     </div>

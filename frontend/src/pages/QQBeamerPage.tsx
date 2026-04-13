@@ -1138,8 +1138,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             MUCHO: {
               emoji: catEmoji, title: { de: 'Mucho Gusto', en: 'Mucho Gusto' },
               lines: {
-                de: ['4 Antwortmöglichkeiten, nur 1 ist richtig', 'Wählt schnell — die Zeit läuft!'],
-                en: ['4 options, only 1 is correct', 'Choose fast — the clock is ticking!'],
+                de: ['4 Antwortmöglichkeiten, nur 1 ist richtig', '⚡ Schnelligkeit entscheidet bei Gleichstand!'],
+                en: ['4 options, only 1 is correct', '⚡ Speed decides when tied!'],
               },
             },
             ZEHN_VON_ZEHN: {
@@ -1381,40 +1381,72 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
       )}
 
       {/* MUCHO / ZEHN: who chose which option */}
-      {(q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && q.options && (
-        <div style={{ animation: 'contentReveal 0.5s ease 0.1s both' }}>
-          {q.options.map((_, optIdx) => {
-            const voters = s.answers
-              .filter(a => a.text === String(optIdx))
+      {(q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && q.options && (() => {
+        // Pre-compute correct voters sorted by speed for ranking
+        const correctVoters = q.category === 'MUCHO' && q.correctOptionIndex != null
+          ? s.answers
+              .filter(a => a.text === String(q.correctOptionIndex))
               .sort((a, b) => a.submittedAt - b.submittedAt)
-              .map(a => s.teams.find(t => t.id === a.teamId))
-              .filter(Boolean);
-            if (!voters.length) return null;
-            const isCorrect = optIdx === q.correctOptionIndex;
-            const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
-            const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
-            return (
-              <div key={optIdx} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '7px 12px', borderRadius: 10, marginBottom: 4,
-                background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)',
-                border: isCorrect ? '1.5px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.06)',
-                animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.07}s both`,
-              }}>
-                <span style={{ width: 26, height: 26, borderRadius: 7, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(12px, 1.3vw, 15px)', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
-                  {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
-                </span>
-                {voters.map((t, vi) => (
-                  <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 5, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
-                    <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)' }}>{qqGetAvatar(t!.avatarId).emoji}</span>
-                    <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: t!.color }}>{t!.name}</span>
+          : [];
+        const showSpeedRank = correctVoters.length > 1;
+        // Map teamId → speed rank (1-based)
+        const speedRank: Record<string, number> = {};
+        correctVoters.forEach((a, i) => { speedRank[a.teamId] = i + 1; });
+        // Earliest answer timestamp for relative time display
+        const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (correctVoters[0]?.submittedAt ?? 0);
+
+        return (
+          <div style={{ animation: 'contentReveal 0.5s ease 0.1s both' }}>
+            {q.options!.map((_, optIdx) => {
+              const voterAnswers = s.answers
+                .filter(a => a.text === String(optIdx))
+                .sort((a, b) => a.submittedAt - b.submittedAt);
+              const voters = voterAnswers
+                .map(a => ({ team: s.teams.find(t => t.id === a.teamId), answer: a }))
+                .filter((v): v is { team: NonNullable<typeof v.team>; answer: typeof v.answer } => !!v.team);
+              if (!voters.length) return null;
+              const isCorrect = optIdx === q.correctOptionIndex;
+              const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+              const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
+              return (
+                <div key={optIdx} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '7px 12px', borderRadius: 10, marginBottom: 4,
+                  background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)',
+                  border: isCorrect ? '1.5px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                  animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.07}s both`,
+                }}>
+                  <span style={{ width: 26, height: 26, borderRadius: 7, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(12px, 1.3vw, 15px)', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                    {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
                   </span>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  {voters.map(({ team: tm, answer: a }, vi) => {
+                    const rank = speedRank[tm.id];
+                    const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
+                    return (
+                      <span key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 5, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
+                        <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                        <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                        {/* Speed rank badge for correct voters when multiple got it right */}
+                        {showSpeedRank && isCorrect && rank != null && (
+                          <span style={{
+                            fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                            padding: '1px 7px', borderRadius: 999, marginLeft: 2,
+                            background: rank === 1 ? 'rgba(251,191,36,0.20)' : 'rgba(255,255,255,0.06)',
+                            border: rank === 1 ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                            color: rank === 1 ? '#FBBF24' : '#64748b',
+                          }}>
+                            {rank === 1 ? '⚡' : `#${rank}`}{timeSec ? ` ${timeSec}s` : ''}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* CHEESE: speed-ranked */}
       {q.category === 'CHEESE' && (
@@ -1989,6 +2021,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             if (!team) return null;
             const cat = q.category;
             const isEn = lang === 'en';
+            // Check if this was a speed-based MUCHO win (multiple correct, fastest wins)
+            const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null
+              && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
             const winMsg = cat === 'SCHAETZCHEN'
               ? (isEn ? 'was closest!' : 'war am nächsten dran!')
               : cat === 'CHEESE'
@@ -1997,7 +2032,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
                   : cat === 'ZEHN_VON_ZEHN'
                     ? (isEn ? 'nailed it!' : 'hat am meisten gewusst!')
-                    : (isEn ? 'correct!' : 'richtig!');
+                    : muchoSpeedWin
+                      ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
+                      : (isEn ? 'correct!' : 'richtig!');
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,

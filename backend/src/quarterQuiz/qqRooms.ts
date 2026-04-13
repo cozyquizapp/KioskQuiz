@@ -87,6 +87,8 @@ export interface QQRoomState {
   musicMuted: boolean;
   sfxMuted: boolean;
   volume: number; // 0–1
+  // 3D grid
+  enable3DTransition: boolean;
   // Rules presentation
   rulesSlideIndex: number;
   // Phase intro sub-step (see qqActivateQuestion for step flow)
@@ -177,6 +179,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       musicMuted: false,
       sfxMuted: false,
       volume: 0.8,
+      enable3DTransition: false,
       rulesSlideIndex: 0,
       introStep: 0,
       seenCategories: [],
@@ -1594,6 +1597,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     sfxMuted:         room.sfxMuted,
     volume:           room.volume,
     soundConfig:      room.soundConfig,
+    enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
     introStep:        room.introStep,
     categoryIsNew:    (() => {

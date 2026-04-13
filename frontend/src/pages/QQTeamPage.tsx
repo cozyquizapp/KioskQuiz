@@ -174,6 +174,21 @@ const TEAM_CSS = `
     50%  { box-shadow: 0 0 14px var(--cell-color, rgba(255,255,255,0.5)); }
     100% { box-shadow: 0 0 4px var(--cell-color, rgba(255,255,255,0.2)); }
   }
+  @keyframes tcAvatarPick {
+    0%   { transform: scale(1); }
+    25%  { transform: scale(1.25) rotate(-8deg); }
+    50%  { transform: scale(0.9) rotate(5deg); }
+    75%  { transform: scale(1.08) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes tcAvatarRing {
+    0%   { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes tcAvatarSpark {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--sx,10px), var(--sy,-20px)) scale(0); opacity: 0; }
+  }
   @keyframes tcRowPulse {
     0%, 100% { box-shadow: 0 0 6px var(--cell-color, rgba(255,255,255,0.3)); }
     50%      { box-shadow: 0 0 16px var(--cell-color, rgba(255,255,255,0.6)); }
@@ -318,8 +333,30 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
   takenAvatarIds: string[];
 }) {
+  // Track which avatar was just picked for the burst animation
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleAvatarPick(id: string) {
+    setAvatarId(id);
+    setPickedId(id);
+    if (pickTimer.current) clearTimeout(pickTimer.current);
+    pickTimer.current = setTimeout(() => setPickedId(null), 600);
+  }
+
+  // Spark positions for burst effect (8 particles radiating outward)
+  const sparks = [
+    { sx: '18px', sy: '-22px' }, { sx: '-18px', sy: '-22px' },
+    { sx: '24px', sy: '0px' },  { sx: '-24px', sy: '0px' },
+    { sx: '16px', sy: '18px' }, { sx: '-16px', sy: '18px' },
+    { sx: '22px', sy: '-10px' },{ sx: '-22px', sy: '-10px' },
+  ];
+
   return (
-    <div style={darkPage}>
+    <div style={{
+      ...darkPage,
+      background: `radial-gradient(ellipse at 50% 0%, rgba(254,240,138,0.10) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.06) 0%, transparent 45%), #0D0A06`,
+    }}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color="#FEF08A55" />
@@ -355,39 +392,64 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           </button>
         </div>
         {step === 'AVATAR' && (
-          <CozyCard anim>
+          <CozyCard anim borderColor="#EAB308">
             <StepLabel>{t.setup.chooseAvatar[lang]}</StepLabel>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
               {QQ_AVATARS.map((a, i) => {
                 const sel = avatarId === a.id;
                 const taken = takenAvatarIds.includes(a.id);
+                const justPicked = pickedId === a.id;
                 return (
-                  <button key={a.id} onClick={() => !taken && setAvatarId(a.id)} disabled={taken} style={{
+                  <button key={a.id} onClick={() => !taken && handleAvatarPick(a.id)} disabled={taken} style={{
                     padding: '12px 4px', borderRadius: 14, cursor: taken ? 'not-allowed' : 'pointer',
-                    background: taken ? 'rgba(255,255,255,0.02)' : sel ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? '#3B82F6' : 'rgba(255,255,255,0.07)'}`,
+                    background: taken ? 'rgba(255,255,255,0.02)' : sel ? 'rgba(234,179,8,0.18)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? '#EAB308' : 'rgba(255,255,255,0.07)'}`,
                     opacity: taken ? 0.35 : 1,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    fontFamily: 'inherit', transition: 'all 0.15s',
-                    boxShadow: sel ? '0 0 16px rgba(59,130,246,0.3)' : 'none',
-                    ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
-                    animation: sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
+                    fontFamily: 'inherit', transition: 'all 0.18s',
+                    boxShadow: sel ? '0 0 18px rgba(234,179,8,0.35)' : 'none',
+                    position: 'relative', overflow: 'visible',
                   }}>
-                    <span style={{ fontSize: 34, lineHeight: 1, filter: taken ? 'grayscale(1)' : 'none' }}>{a.emoji}</span>
-                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? '#3B82F6' : '#475569', fontWeight: 800,
+                    {/* Expanding ring on pick */}
+                    {justPicked && (
+                      <div style={{
+                        position: 'absolute', inset: -4, borderRadius: 18, pointerEvents: 'none',
+                        border: '2px solid rgba(234,179,8,0.6)',
+                        animation: 'tcAvatarRing 0.5s ease-out forwards',
+                      }} />
+                    )}
+                    {/* Spark burst on pick */}
+                    {justPicked && sparks.map((sp, si) => (
+                      <div key={si} style={{
+                        position: 'absolute', left: '50%', top: '40%', width: 5, height: 5,
+                        borderRadius: '50%', background: '#FBBF24', pointerEvents: 'none',
+                        ['--sx' as string]: sp.sx, ['--sy' as string]: sp.sy,
+                        animation: 'tcAvatarSpark 0.45s ease-out forwards',
+                        animationDelay: `${si * 0.02}s`,
+                      }} />
+                    ))}
+                    <span style={{
+                      fontSize: 34, lineHeight: 1,
+                      filter: taken ? 'grayscale(1)' : 'none',
+                      animation: justPicked ? 'tcAvatarPick 0.5s ease-out' : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
+                      ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
+                    }}>{a.emoji}</span>
+                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? '#EAB308' : '#64748b', fontWeight: 800,
                       textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>
                   </button>
                 );
               })}
             </div>
-            <CozyBtn color="#3B82F6" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
+            <CozyBtn color="#EAB308" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
           </CozyCard>
         )}
         {step === 'NAME' && (
-          <CozyCard anim>
+          <CozyCard anim borderColor="#EAB308">
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <span style={{ fontSize: 64, lineHeight: 1, display: 'block',
-                animation: 'tcfloat 3s ease-in-out infinite' }}>
+                animation: 'tcfloat 3s ease-in-out infinite',
+                filter: 'drop-shadow(0 0 12px rgba(234,179,8,0.3))',
+              }}>
                 {qqGetAvatar(avatarId).emoji}
               </span>
             </div>
@@ -396,7 +458,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               value={teamName}
               onChange={e => setTeamName(e.target.value)}
               placeholder={t.setup.placeholder[lang]}
-              style={cozyInput}
+              style={{
+                ...cozyInput,
+                border: '1px solid rgba(234,179,8,0.25)',
+                background: 'rgba(234,179,8,0.06)',
+              }}
               autoFocus
               maxLength={20}
               onKeyDown={e => e.key === 'Enter' && teamName.trim() && onJoin()}

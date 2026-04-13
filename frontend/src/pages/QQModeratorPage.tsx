@@ -897,6 +897,27 @@ export default function QQModeratorPage() {
                 </div>
               </div>
 
+              {/* 3D Grid */}
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🏙️ 3D Grid</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    onClick={() => emit('qq:setEnable3D', { roomCode, enabled: !s.enable3DTransition })}
+                    style={{
+                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 800, fontSize: 13,
+                      border: `1px solid ${s.enable3DTransition ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+                      background: s.enable3DTransition ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+                      color: s.enable3DTransition ? '#22C55E' : '#64748b',
+                    }}>
+                    {s.enable3DTransition ? '✓ 3D Transition aktiv' : '○ 3D Transition aus'}
+                  </button>
+                  <span style={{ fontSize: 11, color: '#475569' }}>
+                    {s.enable3DTransition ? '2D→3D Fahrt beim Placement' : 'Nur 2D Grid'}
+                  </span>
+                </div>
+              </div>
+
               {/* Sound — mute buttons + volume + upload panel */}
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🔊 Sound</div>

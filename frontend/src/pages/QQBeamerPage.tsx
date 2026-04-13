@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
@@ -7,6 +7,7 @@ import {
   QQSlideTemplates,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
+import { QQ3DGrid } from '../components/QQ3DGrid';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
@@ -236,6 +237,14 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
+  // ── 3D grid toggle (beamer-local, persisted in localStorage) ──
+  const [use3D, setUse3D] = useState(() => {
+    try { return localStorage.getItem('qq-beamer-3d') === '1'; } catch { return false; }
+  });
+  const toggle3D = useCallback(() => {
+    setUse3D(v => { const next = !v; try { localStorage.setItem('qq-beamer-3d', next ? '1' : '0'); } catch {} return next; });
+  }, []);
+
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
   const prevPhaseRef = useRef(s.phase);
@@ -404,6 +413,23 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         >⛶</button>
       )}
 
+      {/* 3D grid toggle */}
+      <button
+        onClick={toggle3D}
+        title={use3D ? '2D Grid' : '3D Grid'}
+        style={{
+          position: 'fixed', top: 12, right: !isFullscreen ? 56 : 12, zIndex: 9999,
+          height: 36, borderRadius: 8, padding: '0 10px',
+          border: `1px solid ${use3D ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.18)'}`,
+          background: use3D ? 'rgba(59,130,246,0.25)' : 'rgba(13,17,23,0.72)',
+          color: use3D ? '#93c5fd' : '#e2e8f0', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+          fontFamily: 'inherit',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+          backdropFilter: 'blur(6px)',
+          transition: 'all 0.2s',
+        }}
+      >{use3D ? '3D' : '2D'}</button>
+
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
         <>
@@ -414,7 +440,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {/* Placement flash overlay for custom template mode */}
           {placementFlash && (
             <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-              <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
+              <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
             </div>
           )}
         </>
@@ -427,10 +453,10 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
           )}
-          {s.phase === 'PLACEMENT'       && <PlacementView state={s} />}
+          {s.phase === 'PLACEMENT'       && <PlacementView state={s} use3D={use3D} enable3DTransition={s.enable3DTransition} />}
           {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
           {placementFlash && (
-            <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} />
+            <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
           )}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'PAUSED'          && <PausedView state={s} />}
@@ -2218,10 +2244,64 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 // PLACEMENT VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; flashCell?: { row: number; col: number; teamId: string } | null }) {
+export function PlacementView({ state: s, flashCell, use3D = false, enable3DTransition = false }: {
+  state: QQStateUpdate;
+  flashCell?: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
+  use3D?: boolean;
+  enable3DTransition?: boolean;
+}) {
   const lang = useLangFlip(s.language);
   const team = s.teams.find(tm => tm.id === (flashCell?.teamId ?? s.pendingFor));
   const teamColor = team?.color ?? '#94a3b8';
+
+  // ── 3D transition state machine ──
+  // 'flat' = show 2D grid
+  // 'transitioning' = 2D→3D camera animation in progress
+  // '3d' = fully in 3D mode
+  const [viewMode, setViewMode] = useState<'flat' | 'transitioning' | '3d'>(() => {
+    // If use3D (instant toggle) is on, start in 3D directly
+    if (use3D) return '3d';
+    return 'flat';
+  });
+  const hasTransitioned = useRef(false);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // When the beamer instant toggle changes, update immediately
+  useEffect(() => {
+    if (use3D) {
+      setViewMode('3d');
+      hasTransitioned.current = true;
+    } else if (!enable3DTransition) {
+      setViewMode('flat');
+      hasTransitioned.current = false;
+    }
+  }, [use3D]);
+
+  // When enable3DTransition + first flashCell arrives → trigger the "Fahrt"
+  useEffect(() => {
+    if (!enable3DTransition || use3D || hasTransitioned.current || !flashCell) return;
+    // First cell placed this round → start 2D→3D transition
+    hasTransitioned.current = true;
+    setViewMode('transitioning');
+    // After transition animation completes (~1.2s), switch to full 3D
+    transitionTimer.current = setTimeout(() => {
+      setViewMode('3d');
+    }, 1200);
+    return () => { if (transitionTimer.current) clearTimeout(transitionTimer.current); };
+  }, [flashCell, enable3DTransition, use3D]);
+
+  // Reset transition state when entering a fresh placement round (questionIndex changes)
+  const prevQIdx = useRef(s.questionIndex);
+  useEffect(() => {
+    if (prevQIdx.current !== s.questionIndex) {
+      prevQIdx.current = s.questionIndex;
+      hasTransitioned.current = false;
+      if (!use3D) setViewMode('flat');
+    }
+  }, [s.questionIndex, use3D]);
+
+  const show3D = viewMode === '3d' || viewMode === 'transitioning';
+  const gridMaxSize = Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 700);
 
   // Claim toast state
   const [toast, setToast] = useState<{ text: string; color: string; key: number } | null>(null);
@@ -2302,7 +2382,17 @@ export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; f
 
       {/* Center: large grid + score */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
-        <GridDisplay state={s} maxSize={Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 700)} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+        {show3D ? (
+          <QQ3DGrid
+            state={s}
+            maxSize={gridMaxSize}
+            animateCell={flashCell ? { row: flashCell.row, col: flashCell.col, teamId: flashCell.teamId, wasSteal: flashCell.wasSteal } : null}
+            interactive={!s.pendingFor}
+            entering={viewMode === 'transitioning'}
+          />
+        ) : (
+          <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+        )}
         <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
       </div>
 

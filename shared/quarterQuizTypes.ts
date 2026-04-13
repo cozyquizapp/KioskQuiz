@@ -451,6 +451,8 @@ export interface QQStateUpdate {
   sfxMuted: boolean;     // mutes: all SFX (correct, wrong, reveal, fanfare, fieldPlaced, steal, ticks, gameOver)
   volume: number; // 0–1
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
+  // 3D grid
+  enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
   introStep: number;  // sub-step within PHASE_INTRO (see backend qqActivateQuestion for flow)
   categoryIsNew: boolean; // true when introStep is showing category explanation for first time
@@ -502,6 +504,7 @@ export interface QQSetMusicMutedPayload  { roomCode: string; muted: boolean; }
 export interface QQSetSfxMutedPayload    { roomCode: string; muted: boolean; }
 export interface QQSetVolumePayload        { roomCode: string; volume: number; }
 export interface QQUpdateSoundConfigPayload { roomCode: string; soundConfig: QQSoundConfig; }
+export interface QQSetEnable3DPayload     { roomCode: string; enabled: boolean; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

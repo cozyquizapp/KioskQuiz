@@ -9,7 +9,7 @@ import {
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
-  QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload,
+  QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload, QQSetEnable3DPayload,
   QQSubmitAnswerPayload, QQAck,
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
@@ -596,6 +596,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.soundConfig = payload.soundConfig;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setEnable3D', (payload: QQSetEnable3DPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.enable3DTransition = payload.enabled;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

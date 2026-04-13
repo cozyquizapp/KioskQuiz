@@ -441,29 +441,45 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 {myTeam.name}
               </div>
             </div>
-            {/* Language selector — always visible, always works */}
+            {/* Language selector — pill style */}
             <button
               onClick={onFlagClick}
               style={{
-                border: 'none', background: 'none', cursor: 'pointer', padding: 0,
+                border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
+                cursor: 'pointer', padding: '3px 10px',
                 marginLeft: 6, marginRight: 6, outline: 'none',
-                fontSize: 24, display: 'inline-block',
-                perspective: '400px',
+                fontSize: 12, fontWeight: 800, fontFamily: 'inherit',
+                borderRadius: 999, color: '#94a3b8',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                transition: 'background 0.15s',
               }}
               aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
-              title={lang === 'de' ? 'Deutsch (klicken für Englisch)' : 'English (click for German)'}
             >
               <span style={{
-                display: 'inline-block',
+                display: 'inline-block', fontSize: 15,
                 transition: 'transform 0.2s ease-in-out, opacity 0.2s',
                 transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
                 opacity: flagFlip ? 0 : 1,
               }}>
                 {lang === 'de' ? '🇩🇪' : '🇬🇧'}
               </span>
+              {lang === 'de' ? 'DE' : 'EN'} ▼
             </button>
-            <div style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8', flexShrink: 0 }}>
-              {lang === 'de' ? 'Frage' : 'Q'} {(s.questionIndex % 5) + 1}/5
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8' }}>
+                {(s.questionIndex % 5) + 1}/5
+              </div>
+              <div style={{
+                width: 40, height: 4, borderRadius: 2,
+                background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  width: `${(((s.questionIndex % 5) + 1) / 5) * 100}%`,
+                  height: '100%', borderRadius: 2,
+                  background: '#3B82F6',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
             </div>
           </div>
         )}
@@ -516,23 +532,59 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
+  // Rotating microcopy for engagement
+  const tips = lang === 'de'
+    ? ['Schnelligkeit zählt!', 'Jede Antwort bringt Punkte!', 'Wer kennt sich am besten aus?', 'Teamwork ist gefragt!']
+    : ['Speed matters!', 'Every answer counts!', 'Who knows best?', 'Teamwork is key!'];
+  const [tipIdx, setTipIdx] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setTipIdx(i => (i + 1) % tips.length), 3500);
+    return () => clearInterval(id);
+  }, [tips.length]);
+
+  const de = lang === 'de';
+  const tc = s.teams.length;
+  const otherCount = myTeam ? tc - 1 : tc;
+
+  // Social context text
+  const socialText = tc === 0
+    ? (de ? 'Noch keine Teams' : 'No teams yet')
+    : tc === 1
+      ? (de ? 'Noch kein Gegner da' : 'No opponent yet')
+      : myTeam
+        ? (de
+          ? `Du spielst gegen ${otherCount} ${otherCount === 1 ? 'Team' : 'Teams'}`
+          : `You're playing against ${otherCount} ${otherCount === 1 ? 'team' : 'teams'}`)
+        : (de ? `${tc} Teams bereit` : `${tc} teams ready`);
+
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <div style={{ fontSize: 44, marginBottom: 10, animation: 'tcwobble 2s ease-in-out infinite' }}>🎮</div>
-        <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 6 }}>
-          {myTeam ? (lang === 'de' ? 'Bereit!' : 'Ready!') : (lang === 'de' ? 'Warteraum' : 'Waiting room')}
+        <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
+        <div style={{ fontWeight: 900, fontSize: 24, color: '#F1F5F9', marginBottom: 4 }}>
+          {myTeam ? (de ? 'Mach dich bereit!' : 'Get ready!') : (de ? 'Warteraum' : 'Waiting room')}
         </div>
-        <div style={{ fontSize: 15, color: '#64748b', marginBottom: 16 }}>
-          {s.teams.length} Team{s.teams.length !== 1 ? 's' : ''} · {lang === 'de' ? 'Warte auf Moderator' : 'Waiting for moderator'}
+        <div style={{ fontSize: 15, color: '#94a3b8', marginBottom: 6 }}>
+          {socialText}
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {/* Rotating tip */}
+        <div style={{
+          fontSize: 13, color: '#64748b', fontWeight: 700, fontStyle: 'italic',
+          minHeight: 20, transition: 'opacity 0.3s',
+          marginBottom: 14,
+        }}>
+          {tips[tipIdx]}
+        </div>
+        {/* Team pills — flat status indicators */}
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
           {s.teams.map(t => (
             <div key={t.id} style={{
-              padding: '6px 14px', borderRadius: 999,
-              background: `${t.color}22`, border: `2px solid ${t.color}55`,
-              fontSize: 14, fontWeight: 800, color: t.color,
-              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 12px', borderRadius: 999,
+              background: `${t.color}15`,
+              border: `1px solid ${t.color}33`,
+              fontSize: 13, fontWeight: 800, color: t.color,
+              display: 'flex', alignItems: 'center', gap: 5,
+              opacity: 0.85,
             }}>
               {qqGetAvatar(t.avatarId).emoji} {t.name}
             </div>

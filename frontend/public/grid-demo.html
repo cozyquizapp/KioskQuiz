@@ -3,47 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quartier Quiz — Showcase</title>
+<title>Quartier Quiz — 3D Grid Showcase</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{
-  width:100%;height:100%;
-  background:#0D0A06;color:#e2e8f0;
-  font-family:'Nunito',system-ui,sans-serif;
-}
+html,body{width:100%;height:100%;background:#0D0A06;color:#e2e8f0;font-family:'Nunito',system-ui,sans-serif}
 body{overflow-y:auto;overflow-x:hidden}
 
-/* ── Grain ── */
+/* Grain */
 .grain{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence baseFrequency=".85" type="fractalNoise"/></filter><rect width="200" height="200" filter="url(%23n)" opacity=".03"/></svg>');}
+  background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence baseFrequency=".85" type="fractalNoise"/></filter><rect width="200" height="200" filter="url(%23n)" opacity=".03"/></svg>')}
 
-/* ── Fireflies ── */
+/* Fireflies */
 .firefly{position:fixed;pointer-events:none;z-index:1;width:4px;height:4px;border-radius:50%;
   background:#FEF08A;box-shadow:0 0 6px 2px rgba(254,240,138,.7);
-  animation:ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite;}
-@keyframes ffmove{0%,100%{transform:translate(0,0);opacity:.4}50%{transform:translate(var(--dx,20px),var(--dy,-15px));opacity:.7}}
+  animation:ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite}
+@keyframes ffmove{0%,100%{transform:translate(0,0);opacity:.35}50%{transform:translate(var(--dx,20px),var(--dy,-15px));opacity:.7}}
 
-/* ── Layout ── */
-.page{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;padding:16px 20px 60px;gap:20px}
-.section-title{font-size:22px;font-weight:900;color:#F59E0B;text-shadow:0 0 20px rgba(245,158,11,.25)}
-.section-sub{font-size:12px;color:#92400E;font-weight:700;margin-top:-14px}
+/* Layout */
+.page{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;padding:24px 20px 80px;gap:24px}
+.section-title{font-size:clamp(20px,3vw,28px);font-weight:900;color:#F59E0B;text-shadow:0 0 20px rgba(245,158,11,.25)}
+.section-sub{font-size:clamp(11px,1.4vw,13px);color:#92400E;font-weight:700;margin-top:-16px}
 
-/* ── Grid area ── */
-.grid-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
-.board-wrap{position:relative}
-.iso-scene{perspective:1100px;perspective-origin:50% 10%;position:relative;z-index:5}
-.iso-grid{transform:rotateX(55deg) rotateZ(-45deg) scale(.55);transform-style:preserve-3d;
-  transform-origin:center center;display:grid;gap:5px;will-change:transform}
-.cell{position:relative;transform-style:preserve-3d;cursor:pointer;transition:transform .15s ease}
-.cell:not(.owned):hover{transform:translateZ(8px)}
-.tile-top{position:absolute;inset:0;border-radius:4px;z-index:2;transition:background .3s,border-color .3s,box-shadow .3s}
-.tile-front{position:absolute;top:100%;left:0;right:0;height:10px;transform-origin:top center;transform:rotateX(-90deg);z-index:1}
-.tile-right{position:absolute;top:0;bottom:0;left:100%;width:10px;transform-origin:left center;transform:rotateY(90deg);z-index:1}
-#bld-svg{position:absolute;inset:0;pointer-events:none;z-index:200;overflow:visible}
-.fx-container{position:absolute;inset:0;pointer-events:none;z-index:300;overflow:visible}
+/* ═══════════════════════════════════════════════════
+   CSS 3D GRID
+   ═══════════════════════════════════════════════════ */
+.grid-scene{
+  perspective:900px;
+  perspective-origin:50% 30%;
+  padding:40px 0;
+}
+.iso-grid{
+  display:grid;
+  gap:6px;
+  transform:rotateX(58deg) rotateZ(-45deg);
+  transform-style:preserve-3d;
+  transform-origin:center center;
+}
 
-/* Score bar */
+/* ── Tile (ground cell) ── */
+.tile{
+  position:relative;
+  transform-style:preserve-3d;
+  cursor:pointer;
+  transition:transform .2s ease;
+}
+.tile:not(.owned):hover{transform:translateZ(4px)}
+.tile.owned{cursor:default}
+
+/* Ground face */
+.tile-ground{
+  position:absolute;inset:0;border-radius:3px;
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.05);
+}
+.tile.owned .tile-ground{
+  background:var(--tc,.15);
+  border-color:var(--tb,.3);
+  box-shadow:0 0 8px var(--tg,transparent);
+}
+
+/* ── Building (CSS 3D box) ── */
+.building{
+  position:absolute;
+  bottom:0;left:12%;width:76%;
+  transform-style:preserve-3d;
+  transition:height .4s cubic-bezier(.34,1.2,.64,1), opacity .3s;
+}
+/* Front face */
+.building-front{
+  position:absolute;bottom:0;left:0;width:100%;
+  background:var(--bFront);
+  border:1px solid var(--bEdge);border-top:none;
+  transform-origin:bottom center;
+}
+/* Right side face */
+.building-right{
+  position:absolute;bottom:0;right:0;height:100%;
+  background:var(--bRight);
+  border:1px solid var(--bEdge);border-left:none;
+  transform:rotateY(90deg);
+  transform-origin:right center;
+}
+/* Top face */
+.building-top{
+  position:absolute;top:0;left:0;width:100%;
+  background:var(--bTop);
+  border:1px solid var(--bEdge);
+  transform:rotateX(90deg);
+  transform-origin:top center;
+}
+/* Emoji on top */
+.building-emoji{
+  position:absolute;top:0;left:0;width:100%;
+  transform:rotateX(90deg) translateZ(1px);
+  transform-origin:top center;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));
+}
+
+/* ── Cell overlays ── */
+.frost-layer{
+  position:absolute;top:0;left:0;width:100%;
+  transform:rotateX(90deg) translateZ(2px);
+  transform-origin:top center;
+  background:rgba(147,210,255,.35);
+  border:2px solid rgba(147,210,255,.85);
+  border-radius:2px;
+  animation:frostPulse 2.5s ease-in-out infinite;
+  pointer-events:none;
+}
+.joker-layer{
+  position:absolute;top:0;left:0;width:100%;
+  transform:rotateX(90deg) translateZ(2px);
+  transform-origin:top center;
+  background:rgba(251,191,36,.25);
+  border:2px solid rgba(251,191,36,.9);
+  border-radius:2px;
+  animation:jokerGlow 2s ease-in-out infinite;
+  pointer-events:none;
+}
+.stack-badge{
+  position:absolute;top:0;left:50%;
+  transform:rotateX(90deg) translateZ(3px) translateX(-50%);
+  transform-origin:top center;
+  font-size:11px;padding:1px 6px;border-radius:5px;
+  background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;
+  pointer-events:none;
+}
+
+/* ═══════════════════════════════════════════════════
+   SCORE BAR
+   ═══════════════════════════════════════════════════ */
 .score-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .team-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;
   background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);
@@ -55,89 +147,88 @@ body{overflow-y:auto;overflow-x:hidden}
 .tp-count{font-weight:900;font-size:10px;color:#1C1917;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
 .team-pill.active .tp-count{background:var(--tc-count-bg);color:var(--tc-text)}
 
-/* ── Showcase cards ── */
+/* ═══════════════════════════════════════════════════
+   SHOWCASE CARDS
+   ═══════════════════════════════════════════════════ */
 .showcases{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;width:100%;max-width:1200px}
-.showcase-card{
-  background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;
-  padding:20px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;
-}
+.showcase-card{background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;
+  padding:20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
 .showcase-card:hover{border-color:rgba(255,255,255,.12)}
 .sc-header{display:flex;align-items:center;gap:10px}
 .sc-icon{font-size:28px;line-height:1}
 .sc-title{font-size:16px;font-weight:900}
 .sc-desc{font-size:12px;color:#64748b;line-height:1.5}
-.sc-stage{
-  position:relative;height:140px;border-radius:12px;overflow:hidden;
+.sc-stage{position:relative;height:160px;border-radius:12px;overflow:hidden;
   background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.04);
-  display:flex;align-items:center;justify-content:center;
-}
-.sc-play{
-  padding:10px 22px;border-radius:12px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.sc-play{padding:10px 22px;border-radius:12px;border:none;cursor:pointer;
   font-family:inherit;font-size:13px;font-weight:800;
   background:var(--sc-color,#F59E0B);color:#0D0A06;
   box-shadow:0 4px 16px var(--sc-glow,rgba(245,158,11,.3));
-  transition:all .2s;align-self:center;
-}
+  transition:all .2s;align-self:center}
 .sc-play:hover{transform:scale(1.04);filter:brightness(1.15)}
-.sc-play:active{transform:scale(.97)}
 
-/* Mini grid for showcases */
-.mini-grid{display:grid;gap:4px;transform-style:preserve-3d}
-.mini-cell{border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;font-size:16px}
+/* Mini showcase grid */
+.mini-scene{perspective:600px;perspective-origin:50% 30%}
+.mini-iso{display:grid;gap:4px;transform:rotateX(58deg) rotateZ(-45deg);transform-style:preserve-3d}
+.mini-tile{position:relative;transform-style:preserve-3d;border-radius:3px}
+.mini-tile .tile-ground{position:absolute;inset:0;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
 
-/* ── Animations ── */
+/* ═══════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════ */
 @keyframes homeGlow{0%,100%{box-shadow:var(--gb)}50%{box-shadow:var(--gp)}}
-@keyframes stampRing{0%{transform:scale(.5);opacity:.9}100%{transform:scale(3);opacity:0}}
+@keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4);border-color:rgba(147,210,255,.7)}50%{box-shadow:0 0 16px rgba(147,210,255,.8);border-color:rgba(147,210,255,1)}}
+@keyframes jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
+@keyframes buildingRise{0%{height:0;opacity:0}60%{opacity:1}80%{height:var(--bh-over)}100%{height:var(--bh)}}
+@keyframes stampRing{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3);opacity:0}}
 @keyframes shatterOut{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(.3) rotate(var(--sr,180deg))}}
 @keyframes iceSpread{0%{clip-path:circle(0% at 50% 50%);opacity:0}40%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
-@keyframes frostPulse{0%,100%{box-shadow:0 0 8px rgba(147,210,255,.4);border-color:rgba(147,210,255,.7)}50%{box-shadow:0 0 18px rgba(147,210,255,.7);border-color:rgba(147,210,255,1)}}
 @keyframes frostShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes jokerBurst{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.5)}}
 @keyframes starFall{0%{opacity:1;transform:translateY(var(--starY,-60px)) rotate(0)}100%{opacity:0;transform:translateY(20px) rotate(720deg)}}
-@keyframes stackUp{0%{transform:translateY(0) scaleY(1)}30%{transform:translateY(-8px) scaleY(1.15)}60%{transform:translateY(2px) scaleY(.95)}100%{transform:translateY(0) scaleY(1)}}
-@keyframes inkFill{0%{clip-path:circle(0% at 50% 50%);opacity:0}30%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
+@keyframes stackBounce{0%{transform:translateZ(0)}30%{transform:translateZ(12px)}60%{transform:translateZ(-2px)}100%{transform:translateZ(0)}}
 @keyframes emojiDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}50%{transform:scale(1.4) rotate(6deg);opacity:1}70%{transform:scale(.85) rotate(-3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
-@keyframes pulseGlow{0%,100%{box-shadow:0 0 8px var(--pg,rgba(251,191,36,.5))}50%{box-shadow:0 0 22px var(--pg,rgba(251,191,36,.8))}}
+@keyframes inkFill{0%{clip-path:circle(0% at 50% 50%);opacity:0}30%{opacity:1}100%{clip-path:circle(100% at 50% 50%);opacity:1}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 8px var(--pg)}50%{box-shadow:0 0 22px var(--pg)}}
 </style>
 </head>
 <body>
-
 <div class="grain"></div>
 <div id="fireflies"></div>
 
 <div class="page">
-
-<!-- ═══ GRID SECTION ═══ -->
 <div class="section-title">Quartier Quiz</div>
-<div class="section-sub">Klicke leere Felder zum Setzen — wähle ein Team unten</div>
+<div class="section-sub">Klicke leere Felder zum Setzen</div>
 
-<div class="grid-wrap">
-  <div class="board-wrap" id="board-wrap">
-    <div class="iso-scene" id="iso-scene">
-      <div class="iso-grid" id="grid"></div>
-    </div>
-    <svg id="bld-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div class="fx-container" id="fx"></div>
-  </div>
-  <div class="score-bar" id="scorebar"></div>
+<div class="grid-scene" id="grid-scene">
+  <div class="iso-grid" id="grid"></div>
 </div>
+<div class="score-bar" id="scorebar"></div>
 
-<!-- ═══ SHOWCASE SECTION ═══ -->
-<div class="section-title" style="margin-top:12px">Animation Showcase</div>
+<div class="section-title" style="margin-top:8px">Animation Showcase</div>
 <div class="section-sub">Klicke Play um jede Animation einzeln zu sehen</div>
-
 <div class="showcases" id="showcases"></div>
-
-</div><!-- /page -->
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
-// MAIN GRID
+// CONFIG
 // ══════════════════════════════════════════════════════════════════════════════
-const SIZE=7, CELL=60, NS='http://www.w3.org/2000/svg';
+const SIZE=7, CELL=58;
 
 const TEAMS=[];
-function mkTeam(c,n,e){const m=c.match(/^#(..)(..)(..)/);return{color:c,r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16),name:n,emoji:e}}
+function mkTeam(hex,name,emoji){
+  const m=hex.match(/^#(..)(..)(..)/);
+  const r=parseInt(m[1],16),g=parseInt(m[2],16),b=parseInt(m[3],16);
+  return{color:hex,r,g,b,name,emoji,
+    // Pre-computed building face colors (solid, warm)
+    bTop:`rgba(${r},${g},${b},.70)`,
+    bFront:`rgba(${r},${g},${b},.45)`,
+    bRight:`rgba(${r},${g},${b},.30)`,
+    bEdge:`rgba(${r},${g},${b},.50)`,
+  };
+}
 TEAMS.push(mkTeam('#3B82F6','Fuchs','\u{1F98A}'));
 TEAMS.push(mkTeam('#EF4444','Tiger','\u{1F42F}'));
 TEAMS.push(mkTeam('#F97316','Eule','\u{1F989}'));
@@ -145,6 +236,7 @@ TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 
 let activeTeam=0;
 const state=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+
 function seed(r,c,t,home=false){state[r][c]={teamIdx:t,home,frozen:false,stacked:0,joker:false}}
 const S=SIZE-1;
 seed(0,0,0,true);seed(0,1,0);seed(1,0,0);
@@ -152,7 +244,18 @@ seed(0,S,1,true);seed(0,S-1,1);seed(1,S,1);
 seed(S,0,2,true);seed(S-1,0,2);seed(S,1,2);
 seed(S,S,3,true);seed(S-1,S,3);seed(S,S-1,3);
 
-// Fireflies
+function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
+function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti}
+function adjCount(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return 0;
+  return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length}
+
+function getHeight(cell){
+  if(!cell)return 0;
+  const base=cell.home?50:30;
+  return base+cell.stacked*16;
+}
+
+// ══ FIREFLIES ══
 const ffC=document.getElementById('fireflies');
 for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firefly';
   el.style.left=Math.random()*100+'%';el.style.top=Math.random()*100+'%';
@@ -160,418 +263,421 @@ for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firef
   el.style.setProperty('--dur',(4+Math.random()*6)+'s');el.style.setProperty('--del',(Math.random()*5)+'s');
   ffC.appendChild(el)}
 
-function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
-function same(r,c,ti){return r>=0&&r<SIZE&&c>=0&&c<SIZE&&state[r][c]?.teamIdx===ti}
-function adjCount(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return 0;return[[-1,0],[1,0],[0,-1],[0,1]].filter(([dr,dc])=>same(r+dr,c+dc,ti)).length}
-function isEdge(r,c){const ti=state[r][c]?.teamIdx;if(ti==null)return false;return[[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>!same(r+dr,c+dc,ti))}
-function getBH(r,c){const cell=state[r][c];if(!cell)return 0;const st=cell.stacked*18;
-  const base=(cell.home?68:adjCount(r,c)>=3?42:adjCount(r,c)>=1?28:18)+st;
-  return Math.round(base*(1.3-(r/(SIZE-1))*.55))}
-
-let cornerCache={};
-function buildCornerCache(){cornerCache={};
-  const wr=document.getElementById('board-wrap').getBoundingClientRect();
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);if(!el)continue;
-    cornerCache[`${r},${c}`]=[[0,0],[CELL,0],[CELL,CELL],[0,CELL]].map(([lx,ly])=>{
-      const m=document.createElement('div');m.style.cssText=`position:absolute;left:${lx}px;top:${ly}px;width:1px;height:1px`;
-      el.appendChild(m);const mr=m.getBoundingClientRect();m.remove();
-      return{x:mr.left-wr.left,y:mr.top-wr.top}})}}
-
-function mkEl(tag,attrs){const el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el}
-function pts(arr){return arr.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
-
-function drawBuildingSVG(parent,corners,H,team,cell){
-  const[C0,C1,C2,C3]=corners;const up=p=>({x:p.x,y:p.y-H});
-  const T0=up(C0),T1=up(C1),T2=up(C2),T3=up(C3);
-
-  // Ground shadow
-  parent.insertBefore(mkEl('polygon',{points:pts([C0,C1,C2,C3]),fill:'rgba(0,0,0,.3)',stroke:'none'}),parent.firstChild);
-
-  // Solid faces
-  parent.appendChild(mkEl('polygon',{points:pts([C1,C2,T2,T1]),fill:'#0D0A06',stroke:'none'}));
-  parent.appendChild(mkEl('polygon',{points:pts([C1,C2,T2,T1]),fill:rca(team,.55),stroke:'none'}));
-  parent.appendChild(mkEl('polygon',{points:pts([C3,C2,T2,T3]),fill:'#0D0A06',stroke:'none'}));
-  parent.appendChild(mkEl('polygon',{points:pts([C3,C2,T2,T3]),fill:rca(team,.40),stroke:'none'}));
-  parent.appendChild(mkEl('polygon',{points:pts([T0,T1,T2,T3]),fill:'#0D0A06',stroke:'none'}));
-  parent.appendChild(mkEl('polygon',{points:pts([T0,T1,T2,T3]),fill:rca(team,.75),stroke:'none'}));
-
-  // Edges
-  [[T0,T1],[T1,T2],[T2,T3],[T3,T0],[C1,T1],[C2,T2],[C3,T3]].forEach(([a,b])=>{
-    parent.appendChild(mkEl('line',{x1:a.x.toFixed(1),y1:a.y.toFixed(1),x2:b.x.toFixed(1),y2:b.y.toFixed(1),
-      stroke:team.color,'stroke-width':'1.2','stroke-linecap':'round',opacity:'.4'}))});
-  // Top highlight
-  parent.appendChild(mkEl('line',{x1:T0.x.toFixed(1),y1:T0.y.toFixed(1),x2:T1.x.toFixed(1),y2:T1.y.toFixed(1),
-    stroke:'rgba(255,255,255,.25)','stroke-width':'1','stroke-linecap':'round'}));
-
-  // Overlays
-  const cx=(T0.x+T1.x+T2.x+T3.x)/4,cy=(T0.y+T1.y+T2.y+T3.y)/4;
-  if(cell.frozen){
-    parent.appendChild(mkEl('polygon',{points:pts([T0,T1,T2,T3]),fill:'rgba(147,210,255,.35)',stroke:'rgba(147,210,255,.9)','stroke-width':'1.5'}));
-    const fo=mkEl('foreignObject',{x:(cx-10).toFixed(0),y:(cy-12).toFixed(0),width:'20',height:'20'});
-    const sp=document.createElement('span');sp.style.cssText='font-size:16px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;filter:drop-shadow(0 0 4px rgba(147,210,255,.8))';
-    sp.textContent='\u2744\uFE0F';fo.appendChild(sp);parent.appendChild(fo)
-  } else if(cell.joker){
-    parent.appendChild(mkEl('polygon',{points:pts([T0,T1,T2,T3]),fill:'rgba(251,191,36,.3)',stroke:'rgba(251,191,36,.9)','stroke-width':'1.5'}));
-    const fo=mkEl('foreignObject',{x:(cx-12).toFixed(0),y:(cy-14).toFixed(0),width:'24',height:'24'});
-    const sp=document.createElement('span');sp.style.cssText='font-size:20px;display:flex;align-items:center;justify-content:center;width:24px;height:24px;filter:drop-shadow(0 0 6px rgba(251,191,36,.8))';
-    sp.textContent='\u2B50';fo.appendChild(sp);parent.appendChild(fo)
-  } else if(cell.stacked>0){
-    const fo=mkEl('foreignObject',{x:(cx-12).toFixed(0),y:(cy-10).toFixed(0),width:'24',height:'20'});
-    const sp=document.createElement('span');sp.style.cssText='font-size:11px;display:flex;align-items:center;justify-content:center;width:24px;height:20px;background:rgba(251,191,36,.9);color:#1C1917;border-radius:5px;font-weight:900;font-family:Nunito,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.4)';
-    sp.textContent='\u00D7'+(cell.stacked+1);fo.appendChild(sp);parent.appendChild(fo)
-  } else {
-    const sz=cell.home?22:16;
-    const fo=mkEl('foreignObject',{x:(cx-sz/2).toFixed(0),y:(cy-sz/2-1).toFixed(0),width:String(sz),height:String(sz)});
-    const sp=document.createElement('span');sp.style.cssText=`font-size:${sz-2}px;line-height:1;display:flex;align-items:center;justify-content:center;width:${sz}px;height:${sz}px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))`;
-    sp.textContent=team.emoji;fo.appendChild(sp);parent.appendChild(fo)
-  }
-}
-
-// Z-SORT: in isometric rotateX(55deg) rotateZ(-45deg), back-to-front is row ASC then col ASC
-// The cell at (0,0) is at the back-top, (SIZE-1,SIZE-1) is front-bottom
-function isoZOrder(r,c){return r+c}
-
-function updateBuildings(newCell=null){
-  const svg=document.getElementById('bld-svg');
-  const wr=document.getElementById('board-wrap').getBoundingClientRect();
-  svg.setAttribute('width',wr.width);svg.setAttribute('height',wr.height);svg.innerHTML='';
-
-  const cells=[];
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){if(state[r][c])cells.push([r,c])}
-  // Sort by z-order: lower sum drawn first (behind), higher sum drawn last (in front)
-  cells.sort((a,b)=>isoZOrder(a[0],a[1])-isoZOrder(b[0],b[1]));
-
-  const step=0.06;
-  cells.forEach(([r,c],i)=>{
-    const isNew=newCell&&newCell.r===r&&newCell.c===c;
-    spawnBuilding(svg,r,c,i*step,isNew);
-  });
-}
-
-function spawnBuilding(svg,r,c,beginSec=0,isNew=false){
-  const cell=state[r][c];if(!cell)return;
-  const corners=cornerCache[`${r},${c}`];if(!corners)return;
-  const team=TEAMS[cell.teamIdx];const H=getBH(r,c);if(H<4)return;
-  const g=document.createElementNS(NS,'g');
-  const dur=isNew?'1.6s':'0.8s';const ov=isNew?16:6;
-  g.appendChild(mkEl('animateTransform',{attributeName:'transform',type:'translate',
-    values:`0,${H+ov};0,-5;0,1;0,0`,keyTimes:'0;0.65;0.85;1',dur,begin:`${beginSec.toFixed(2)}s`,
-    calcMode:'spline',keySplines:'0.04 0.9 0.15 1;0.4 0 0.6 1;0.4 0 0.6 1',fill:'freeze'}));
-  g.appendChild(mkEl('animate',{attributeName:'opacity',values:'0;0;1;1',keyTimes:'0;0.04;0.2;1',dur,begin:`${beginSec.toFixed(2)}s`,fill:'freeze'}));
-  drawBuildingSVG(g,corners,H,team,cell);svg.appendChild(g);
-}
-
-function renderCell(r,c){
-  const cell=state[r][c];const el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);if(!el)return;
-  const top=el.querySelector('.tile-top'),front=el.querySelector('.tile-front'),right=el.querySelector('.tile-right');
-  if(!cell){
-    top.style.cssText='position:absolute;inset:0;border-radius:4px;z-index:2;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04)';
-    front.style.cssText='position:absolute;top:100%;left:0;right:0;height:10px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:rgba(13,10,6,.8);border:1px solid rgba(255,255,255,.02);border-top:none';
-    right.style.cssText='position:absolute;top:0;bottom:0;left:100%;width:10px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:rgba(13,10,6,.7);border:1px solid rgba(255,255,255,.02);border-left:none';
-    el.className='cell';return}
-  el.className='cell owned';const team=TEAMS[cell.teamIdx];const home=cell.home,edge=isEdge(r,c);
-  const bgA=home?.35:edge?.22:.14,brdA=home?.90:edge?.60:.25;
-  top.style.cssText=`position:absolute;inset:0;border-radius:4px;z-index:2;background:${rca(team,bgA)};border:1.5px solid ${rca(team,brdA)};box-shadow:${home?`0 0 16px ${rca(team,.5)}`:'none'};${home?`animation:homeGlow 2.4s ease-in-out infinite;--gb:0 0 16px ${rca(team,.5)};--gp:0 0 24px ${rca(team,.7)};`:''}`;
-  const wf=rca(team,home?.25:edge?.15:.08),wb=`1px solid ${rca(team,home?.40:edge?.22:.08)}`;
-  front.style.cssText=`position:absolute;top:100%;left:0;right:0;height:10px;transform-origin:top center;transform:rotateX(-90deg);z-index:1;background:${wf};border-left:${wb};border-bottom:${wb};border-right:${wb}`;
-  right.style.cssText=`position:absolute;top:0;bottom:0;left:100%;width:10px;transform-origin:left center;transform:rotateY(90deg);z-index:1;background:${wf};border-top:${wb};border-right:${wb};border-bottom:${wb}`}
-
-// Grid DOM
+// ══════════════════════════════════════════════════════════════════════════════
+// BUILD GRID
+// ══════════════════════════════════════════════════════════════════════════════
 const gridEl=document.getElementById('grid');
 gridEl.style.gridTemplateColumns=`repeat(${SIZE},${CELL}px)`;
 gridEl.style.gridTemplateRows=`repeat(${SIZE},${CELL}px)`;
+
+function buildBuilding(tileEl,cell,team,animate=false){
+  // Remove old building if any
+  tileEl.querySelectorAll('.building').forEach(b=>b.remove());
+  if(!cell)return;
+
+  const h=getHeight(cell);
+  const sideW=Math.round(CELL*.22); // depth of side face
+
+  const bld=document.createElement('div');bld.className='building';
+  bld.style.cssText=`height:${h}px;--bTop:${team.bTop};--bFront:${team.bFront};--bRight:${team.bRight};--bEdge:${team.bEdge}`;
+
+  // Front face
+  const front=document.createElement('div');front.className='building-front';
+  front.style.height=h+'px';
+  bld.appendChild(front);
+
+  // Right face
+  const right=document.createElement('div');right.className='building-right';
+  right.style.cssText=`width:${sideW}px;height:${h}px`;
+  bld.appendChild(right);
+
+  // Top face
+  const top=document.createElement('div');top.className='building-top';
+  top.style.height=sideW+'px';
+  bld.appendChild(top);
+
+  // Emoji on top
+  const emojiDiv=document.createElement('div');emojiDiv.className='building-emoji';
+  emojiDiv.style.height=sideW+'px';
+  emojiDiv.style.fontSize=(cell.home?'20px':'15px');
+  emojiDiv.textContent=team.emoji;
+  bld.appendChild(emojiDiv);
+
+  // Frozen overlay on top
+  if(cell.frozen){
+    const frost=document.createElement('div');frost.className='frost-layer';
+    frost.style.height=sideW+'px';
+    bld.appendChild(frost);
+    emojiDiv.textContent='\u2744\uFE0F';
+    emojiDiv.style.fontSize='16px';
+  }
+  // Joker overlay
+  if(cell.joker){
+    const jk=document.createElement('div');jk.className='joker-layer';
+    jk.style.height=sideW+'px';
+    bld.appendChild(jk);
+    emojiDiv.textContent='\u2B50';
+    emojiDiv.style.fontSize='18px';
+  }
+  // Stack badge
+  if(cell.stacked>0&&!cell.joker){
+    const badge=document.createElement('div');badge.className='stack-badge';
+    badge.textContent='\u00D7'+(cell.stacked+1);
+    bld.appendChild(badge);
+  }
+
+  if(animate){
+    bld.style.height='0';bld.style.opacity='0';
+    requestAnimationFrame(()=>{
+      bld.style.transition='height .5s cubic-bezier(.34,1.2,.64,1), opacity .3s';
+      bld.style.height=h+'px';bld.style.opacity='1';
+    });
+  }
+
+  tileEl.appendChild(bld);
+}
+
+function renderTile(r,c){
+  const el=document.querySelector(`.iso-grid [data-r="${r}"][data-c="${c}"]`);
+  if(!el)return;
+  const cell=state[r][c];
+  const ground=el.querySelector('.tile-ground');
+
+  if(!cell){
+    el.className='tile';
+    ground.style.cssText='position:absolute;inset:0;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+    buildBuilding(el,null,null);
+    return;
+  }
+  el.className='tile owned';
+  const team=TEAMS[cell.teamIdx];
+  ground.style.cssText=`position:absolute;inset:0;border-radius:3px;background:${rca(team,.12)};border:1px solid ${rca(team,.30)};box-shadow:0 0 10px ${rca(team,.15)}`;
+  buildBuilding(el,cell,team);
+}
+
+// Create tile DOM
 for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-  const el=document.createElement('div');el.className='cell'+(state[r][c]?' owned':'');
-  el.dataset.r=r;el.dataset.c=c;el.style.cssText=`width:${CELL}px;height:${CELL}px`;
-  ['tile-top','tile-front','tile-right'].forEach(cn=>{const d=document.createElement('div');d.className=cn;el.appendChild(d)});
+  const el=document.createElement('div');
+  el.className='tile'+(state[r][c]?' owned':'');
+  el.dataset.r=r;el.dataset.c=c;
+  el.style.cssText=`width:${CELL}px;height:${CELL}px`;
+  const ground=document.createElement('div');ground.className='tile-ground';
+  el.appendChild(ground);
+
   el.addEventListener('click',()=>{
     if(state[r][c])return;
     state[r][c]={teamIdx:activeTeam,home:false,frozen:false,stacked:0,joker:false};
-    renderCell(r,c);
-    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderCell(nr,nc)});
+    renderTile(r,c);
+    buildBuilding(el,state[r][c],TEAMS[activeTeam],true);
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+      const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderTile(nr,nc)});
     updateScores();
-    setTimeout(()=>{buildCornerCache();updateBuildings({r,c})},80);
   });
-  gridEl.appendChild(el);renderCell(r,c)}
 
+  gridEl.appendChild(el);
+  renderTile(r,c);
+}
+
+// Scores
 function updateScores(){
-  const bar=document.getElementById('scorebar');
-  bar.innerHTML=TEAMS.map((t,i)=>{const count=state.flat().filter(c=>c?.teamIdx===i).length;const active=i===activeTeam;
+  document.getElementById('scorebar').innerHTML=TEAMS.map((t,i)=>{
+    const count=state.flat().filter(c=>c?.teamIdx===i).length;const active=i===activeTeam;
     return`<div class="team-pill${active?' active':''}" style="--tc-bg:${rca(t,.08)};--tc-border:${rca(t,.45)};--tc-glow:${rca(t,.2)};--tc-text:${t.color};--tc-count-bg:${rca(t,.15)}" onclick="selectTeam(${i})"><span class="tp-emoji">${t.emoji}</span><span class="tp-name">${t.name}</span><span class="tp-count">${count}</span></div>`}).join('')}
 window.selectTeam=i=>{activeTeam=i;updateScores()};
 updateScores();
-requestAnimationFrame(()=>requestAnimationFrame(()=>{buildCornerCache();updateBuildings()}));
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SHOWCASE CARDS
+// SHOWCASE SECTION
 // ══════════════════════════════════════════════════════════════════════════════
+const T_BLUE=TEAMS[0],T_RED=TEAMS[1];
 
-const T_BLUE=TEAMS[0], T_RED=TEAMS[1];
+function miniStage(stage,cols,rows,sz,cells){
+  stage.innerHTML='';
+  const scene=document.createElement('div');scene.className='mini-scene';
+  const grid=document.createElement('div');grid.className='mini-iso';
+  grid.style.gridTemplateColumns=`repeat(${cols},${sz}px)`;
+  grid.style.gridTemplateRows=`repeat(${rows},${sz}px)`;
 
-function createShowcaseCards(){
-  const container=document.getElementById('showcases');
-  const cards=[
-    {
-      icon:'📍',title:'Setzen',color:'#22C55E',
-      desc:'Ein leeres Feld wird erobert. Die Team-Farbe füllt sich kreisförmig, das Emoji fällt von oben ein, Schockwellen breiten sich aus.',
-      play:playPlaceDemo
-    },
-    {
-      icon:'⚡',title:'Klauen (Steal)',color:'#EF4444',
-      desc:'Ein gegnerisches Feld wird übernommen. Die alte Farbe zerbröckelt in Partikel, ein roter Blitz-Flash, dann füllt sich die neue Farbe.',
-      play:playStealDemo
-    },
-    {
-      icon:'❄️',title:'Einfrieren (Freeze)',color:'#93D2FF',
-      desc:'Ein Feld wird eingefroren und kann nicht geklaut werden. Eis breitet sich kreisförmig aus, Schneekristalle fliegen umher, Frost-Schimmer pulsiert.',
-      play:playFreezeDemo
-    },
-    {
-      icon:'📌',title:'Stapeln (Stack)',color:'#FBBF24',
-      desc:'Ein eigenes Feld wird verstärkt. Das Feld wächst nach oben, goldene Pfeile steigen auf, ein ×N-Badge erscheint.',
-      play:playStackDemo
-    },
-    {
-      icon:'⭐',title:'Joker (2×2)',color:'#F59E0B',
-      desc:'Vier Felder bilden ein 2×2-Quadrat. Goldene Burst-Ringe, Sternenregen aus der Mitte, alle 4 Felder leuchten golden auf.',
-      play:playJokerDemo
-    },
-  ];
-
-  cards.forEach(card=>{
-    const div=document.createElement('div');div.className='showcase-card';
-    div.innerHTML=`
-      <div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div>
-      <div class="sc-desc">${card.desc}</div>
-      <div class="sc-stage" id="stage-${card.title.replace(/[^a-z]/gi,'')}"></div>
-      <button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">▶ Abspielen</button>`;
-    div.querySelector('.sc-play').onclick=()=>card.play(div.querySelector('.sc-stage'));
-    container.appendChild(div);
-  });
-}
-
-// ── MINI GRID HELPERS ──
-function miniGrid(stage, cols, rows, cellSize, cells){
-  stage.innerHTML='';stage.style.position='relative';
-  const grid=document.createElement('div');
-  grid.style.cssText=`display:grid;grid-template-columns:repeat(${cols},${cellSize}px);gap:4px;position:relative;z-index:2`;
   const map={};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const div=document.createElement('div');div.className='mini-cell';
-    div.style.cssText=`width:${cellSize}px;height:${cellSize}px;border-radius:6px;position:relative;overflow:visible;
-      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);transition:all .4s`;
-    div.dataset.r=r;div.dataset.c=c;
-    grid.appendChild(div);map[`${r},${c}`]=div;
+    const tile=document.createElement('div');tile.className='mini-tile';
+    tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative;transform-style:preserve-3d`;
+    const ground=document.createElement('div');ground.className='tile-ground';
+    tile.appendChild(ground);
+    grid.appendChild(tile);
+    map[`${r},${c}`]=tile;
   }
-  stage.appendChild(grid);
-  // Apply initial cell states
-  cells.forEach(([r,c,team])=>paintCell(map[`${r},${c}`],team));
-  return{grid,map,stage};
+  scene.appendChild(grid);stage.appendChild(scene);
+
+  // Place initial cells
+  cells.forEach(([r,c,team,home])=>{
+    const tile=map[`${r},${c}`];if(!tile)return;
+    const ground=tile.querySelector('.tile-ground');
+    ground.style.background=rca(team,.12);ground.style.borderColor=rca(team,.3);
+    ground.style.boxShadow=`0 0 8px ${rca(team,.15)}`;
+    const cell={teamIdx:0,home:!!home,frozen:false,stacked:0,joker:false};
+    miniBuilding(tile,cell,team,sz,false);
+  });
+
+  return{grid,map,stage,sz};
 }
-function paintCell(el,team,animate=false){
-  if(!el)return;
-  el.style.background=rca(team,.25);el.style.borderColor=rca(team,.7);
-  el.style.boxShadow=`0 0 12px ${rca(team,.3)}`;
+
+function miniBuilding(tileEl,cell,team,sz,animate=false){
+  tileEl.querySelectorAll('.building').forEach(b=>b.remove());
+  if(!cell)return;
+  const h=cell.home?Math.round(sz*.8):Math.round(sz*.5)+cell.stacked*Math.round(sz*.25);
+  const sideW=Math.round(sz*.22);
+
+  const bld=document.createElement('div');bld.className='building';
+  bld.style.cssText=`height:${h}px;left:12%;width:76%;bottom:0;position:absolute;transform-style:preserve-3d;
+    --bTop:${team.bTop};--bFront:${team.bFront};--bRight:${team.bRight};--bEdge:${team.bEdge}`;
+
+  const front=document.createElement('div');front.className='building-front';front.style.height=h+'px';bld.appendChild(front);
+  const right=document.createElement('div');right.className='building-right';right.style.cssText=`width:${sideW}px;height:${h}px`;bld.appendChild(right);
+  const top=document.createElement('div');top.className='building-top';top.style.height=sideW+'px';bld.appendChild(top);
+
+  const emojiDiv=document.createElement('div');emojiDiv.className='building-emoji';
+  emojiDiv.style.cssText=`height:${sideW}px;font-size:${Math.round(sz*.3)}px`;
+  emojiDiv.textContent=cell.frozen?'\u2744\uFE0F':cell.joker?'\u2B50':team.emoji;
+  bld.appendChild(emojiDiv);
+
+  if(cell.frozen){
+    const frost=document.createElement('div');frost.className='frost-layer';frost.style.height=sideW+'px';bld.appendChild(frost);
+  }
+  if(cell.joker){
+    const jk=document.createElement('div');jk.className='joker-layer';jk.style.height=sideW+'px';bld.appendChild(jk);
+  }
+  if(cell.stacked>0){
+    const badge=document.createElement('div');badge.className='stack-badge';
+    badge.textContent='\u00D7'+(cell.stacked+1);bld.appendChild(badge);
+  }
+
   if(animate){
-    el.style.animation='none';el.offsetHeight;
-    el.style.animation='inkFill .6s ease-out both';
+    bld.style.height='0';bld.style.opacity='0';
+    requestAnimationFrame(()=>{
+      bld.style.transition='height .5s cubic-bezier(.34,1.2,.64,1), opacity .3s';
+      bld.style.height=h+'px';bld.style.opacity='1';
+    });
   }
-  el.innerHTML=`<span style="font-size:20px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));${animate?'animation:emojiDrop .5s cubic-bezier(.34,1.56,.64,1) .2s both':''}">${team.emoji}</span>`;
-}
-function clearCell(el){
-  if(!el)return;
-  el.style.background='rgba(255,255,255,.03)';el.style.borderColor='rgba(255,255,255,.06)';
-  el.style.boxShadow='none';el.style.animation='none';el.innerHTML='';
+  tileEl.appendChild(bld);
 }
 
-// ── PLACE DEMO ──
-function playPlaceDemo(stage){
-  const{map}=miniGrid(stage,3,3,38,[
-    [0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]
-  ]);
-  const target=map['1,1'];
-  setTimeout(()=>{
-    paintCell(target,T_BLUE,true);
-    // Shockwave rings
-    for(let i=0;i<2;i++){
-      const ring=document.createElement('div');
-      ring.style.cssText=`position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px;
-        border-radius:50%;border:2px solid ${T_BLUE.color};pointer-events:none;z-index:10;
-        animation:stampRing .7s ease-out ${i*.15}s both`;
-      target.appendChild(ring);setTimeout(()=>ring.remove(),900);
-    }
-    // Sparkle particles
-    for(let i=0;i<6;i++){
-      const angle=i*60,dist=28;
-      const sp=document.createElement('div');
-      sp.style.cssText=`position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;
-        border-radius:50%;background:${T_BLUE.color};pointer-events:none;z-index:10;
-        --sx:${Math.cos(angle*Math.PI/180)*dist}px;--sy:${Math.sin(angle*Math.PI/180)*dist}px;
-        animation:shatterOut .5s ease-out ${.1+i*.03}s both`;
-      target.appendChild(sp);setTimeout(()=>sp.remove(),700);
-    }
-  },400);
-  // Reset after
-  setTimeout(()=>miniGrid(stage,3,3,38,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]),3000);
+// FX helpers
+function fxRing(parent,color,delay=0){
+  const ring=document.createElement('div');
+  ring.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;
+    border-radius:50%;border:2px solid ${color};pointer-events:none;z-index:20;
+    animation:stampRing .7s ease-out ${delay}s both`;
+  parent.appendChild(ring);setTimeout(()=>ring.remove(),900);
+}
+function fxShatter(parent,color,count=10){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2,d=18+Math.random()*25;
+    const p=document.createElement('div');
+    p.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;
+      border-radius:1px;background:${color};pointer-events:none;z-index:20;
+      --sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;--sr:${Math.random()*360}deg;
+      animation:shatterOut .55s ease-out ${Math.random()*.08}s both`;
+    parent.appendChild(p);setTimeout(()=>p.remove(),700);
+  }
 }
 
-// ── STEAL DEMO ──
-function playStealDemo(stage){
-  const{map}=miniGrid(stage,3,3,38,[
-    [0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE],[1,1,T_RED]
-  ]);
+// ── PLACE ──
+function playPlace(stage){
+  const SZ=40;
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
   const target=map['1,1'];
   setTimeout(()=>{
-    // Shatter old color
-    for(let i=0;i<12;i++){
-      const angle=Math.random()*Math.PI*2,dist=20+Math.random()*30;
-      const sp=document.createElement('div');
-      sp.style.cssText=`position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;
-        border-radius:2px;background:${T_RED.color};pointer-events:none;z-index:10;
-        --sx:${Math.cos(angle)*dist}px;--sy:${Math.sin(angle)*dist}px;--sr:${Math.random()*360}deg;
-        animation:shatterOut .6s ease-out ${Math.random()*.08}s both`;
-      target.appendChild(sp);setTimeout(()=>sp.remove(),800);
-    }
+    const ground=target.querySelector('.tile-ground');
+    ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
+    ground.style.boxShadow=`0 0 8px ${rca(T_BLUE,.15)}`;
+    ground.style.animation='inkFill .5s ease-out both';
+    miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    fxRing(target,T_BLUE.color,0);fxRing(target,T_BLUE.color,.12);
+    fxShatter(target,T_BLUE.color,6);
+  },500);
+  setTimeout(()=>playPlace(stage),3500);
+}
+
+// ── STEAL ──
+function playSteal(stage){
+  const SZ=40;
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE],[1,1,T_RED]]);
+  const target=map['1,1'];
+  setTimeout(()=>{
+    fxShatter(target,T_RED.color,12);
     // Red flash
     const flash=document.createElement('div');
-    flash.style.cssText=`position:absolute;inset:-10px;border-radius:50%;z-index:9;pointer-events:none;
+    flash.style.cssText=`position:absolute;inset:-8px;border-radius:50%;z-index:19;pointer-events:none;
       background:radial-gradient(circle,rgba(239,68,68,.5),transparent 70%);animation:stampRing .5s ease-out both`;
     target.appendChild(flash);setTimeout(()=>flash.remove(),600);
-    // Brief blank
-    clearCell(target);
-    // Fill with new color
-    setTimeout(()=>paintCell(target,T_BLUE,true),250);
+    // Remove old building
+    target.querySelectorAll('.building').forEach(b=>{b.style.transition='opacity .2s';b.style.opacity='0';setTimeout(()=>b.remove(),200)});
+    // Build new after brief delay
+    setTimeout(()=>{
+      const ground=target.querySelector('.tile-ground');
+      ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
+      miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+    },300);
   },500);
-  setTimeout(()=>miniGrid(stage,3,3,38,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE],[1,1,T_RED]]),3500);
+  setTimeout(()=>playSteal(stage),3800);
 }
 
-// ── FREEZE DEMO ──
-function playFreezeDemo(stage){
-  const{map}=miniGrid(stage,3,3,38,[[1,1,T_RED]]);
+// ── FREEZE ──
+function playFreeze(stage){
+  const SZ=40;
+  const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED]]);
   const target=map['1,1'];
   setTimeout(()=>{
-    // Ice spread overlay
-    const ice=document.createElement('div');
-    ice.style.cssText=`position:absolute;inset:0;border-radius:6px;z-index:10;pointer-events:none;
-      background:rgba(147,210,255,.35);border:2px solid rgba(147,210,255,.9);
-      animation:iceSpread .6s ease-out both`;
-    target.appendChild(ice);
-    // Frost shimmer (permanent)
-    setTimeout(()=>{
-      const shimmer=document.createElement('div');
-      shimmer.style.cssText=`position:absolute;inset:0;border-radius:6px;z-index:11;pointer-events:none;
-        background:linear-gradient(105deg,transparent 30%,rgba(200,230,255,.35) 45%,rgba(255,255,255,.45) 50%,rgba(200,230,255,.35) 55%,transparent 70%);
-        background-size:200% 100%;animation:frostShimmer 3s ease-in-out infinite`;
-      target.appendChild(shimmer);
-    },500);
-    // Ice badge
-    const badge=document.createElement('div');
-    badge.style.cssText='position:absolute;top:-5px;right:-5px;z-index:12;font-size:14px;line-height:1;filter:drop-shadow(0 0 3px rgba(147,210,255,.8));animation:emojiDrop .4s cubic-bezier(.34,1.56,.64,1) .3s both';
-    badge.textContent='\u2744\uFE0F';target.appendChild(badge);
-    // Flying crystals
+    // Ice crystals flying out
     for(let i=0;i<6;i++){
       const cr=document.createElement('div');
-      const angle=i*(Math.PI*2/6),dist=25;
-      cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:11px;pointer-events:none;z-index:10;
-        --sx:${Math.cos(angle)*dist}px;--sy:${Math.sin(angle)*dist}px;
-        animation:shatterOut .8s ease-out ${i*.05}s both`;
-      cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),1000);
+      const a=i*(Math.PI*2/6),d=22;
+      cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:10px;pointer-events:none;z-index:20;
+        --sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;
+        animation:shatterOut .7s ease-out ${i*.04}s both`;
+      cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900);
     }
-    // Desaturate emoji
-    const emojiEl=target.querySelector('span');
-    if(emojiEl)emojiEl.style.filter='saturate(.3) brightness(1.3) drop-shadow(0 1px 3px rgba(0,0,0,.5))';
-  },400);
-  setTimeout(()=>miniGrid(stage,3,3,38,[[1,1,T_RED]]),4000);
+    // Rebuild with frozen state
+    const ground=target.querySelector('.tile-ground');
+    ground.style.animation='iceSpread .5s ease-out both';
+    setTimeout(()=>{
+      target.querySelectorAll('.building').forEach(b=>b.remove());
+      miniBuilding(target,{home:false,frozen:true,stacked:0,joker:false},T_RED,SZ,false);
+    },400);
+  },500);
+  setTimeout(()=>playFreeze(stage),4000);
 }
 
-// ── STACK DEMO ──
-function playStackDemo(stage){
-  const{map}=miniGrid(stage,3,3,38,[[1,0,T_BLUE],[1,1,T_BLUE],[1,2,T_BLUE]]);
+// ── STACK ──
+function playStack(stage){
+  const SZ=40;
+  const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE],[1,1,T_BLUE],[1,2,T_BLUE]]);
   const target=map['1,1'];
   let count=0;
-  function stackOnce(){
+  function once(){
     count++;
-    target.style.animation='stackUp .5s cubic-bezier(.34,1.2,.64,1) both';
-    // Golden flash
-    const flash=document.createElement('div');
-    flash.style.cssText=`position:absolute;inset:-8px;border-radius:50%;z-index:9;pointer-events:none;
-      background:radial-gradient(circle,rgba(251,191,36,.4),transparent 70%);animation:stampRing .6s ease-out both`;
-    target.appendChild(flash);setTimeout(()=>flash.remove(),700);
-    // Upward particles
-    for(let i=0;i<4;i++){
+    // Bounce
+    target.style.animation='stackBounce .4s ease-out both';
+    setTimeout(()=>target.style.animation='',500);
+    // Golden particles up
+    for(let i=0;i<3;i++){
       const p=document.createElement('div');
-      p.style.cssText=`position:absolute;left:${45+Math.random()*10}%;top:50%;font-size:12px;color:#FBBF24;
-        pointer-events:none;z-index:10;--starY:${-40-Math.random()*20}px;
-        animation:starFall .7s ease-out ${i*.08}s both reverse`;
-      p.textContent='\u25B2';target.appendChild(p);setTimeout(()=>p.remove(),900);
+      p.style.cssText=`position:absolute;left:${42+Math.random()*16}%;top:30%;font-size:10px;color:#FBBF24;
+        pointer-events:none;z-index:20;--starY:${-30-Math.random()*15}px;
+        animation:starFall .6s ease-out ${i*.06}s both reverse`;
+      p.textContent='\u25B2';target.appendChild(p);setTimeout(()=>p.remove(),800);
     }
-    // Badge
-    let badge=target.querySelector('.stack-b');
-    if(badge)badge.remove();
-    badge=document.createElement('div');badge.className='stack-b';
-    badge.style.cssText='position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:12;font-size:10px;padding:1px 6px;border-radius:5px;background:rgba(251,191,36,.9);color:#1C1917;font-weight:900;animation:emojiDrop .3s ease-out both';
-    badge.textContent='\u00D7'+(count+1);target.appendChild(badge);
-    // Thicker border
-    target.style.borderColor='rgba(251,191,36,.8)';
-    target.style.boxShadow='0 0 14px rgba(251,191,36,.5)';
+    fxRing(target,'#FBBF24',0);
+    // Rebuild taller
+    target.querySelectorAll('.building').forEach(b=>b.remove());
+    miniBuilding(target,{home:false,frozen:false,stacked:count,joker:false},T_BLUE,SZ,false);
   }
-  setTimeout(stackOnce,400);
-  setTimeout(stackOnce,1200);
-  setTimeout(stackOnce,2000);
-  setTimeout(()=>miniGrid(stage,3,3,38,[[1,0,T_BLUE],[1,1,T_BLUE],[1,2,T_BLUE]]),4000);
+  setTimeout(once,500);
+  setTimeout(once,1200);
+  setTimeout(once,1900);
+  setTimeout(()=>playStack(stage),4200);
 }
 
-// ── JOKER DEMO ──
-function playJokerDemo(stage){
-  const{map}=miniGrid(stage,4,3,34,[
-    [0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]
-  ]);
-  // First fill the missing cell
+// ── JOKER ──
+function playJoker(stage){
+  const SZ=36;
+  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]);
+  // Fill 4th cell
   setTimeout(()=>{
-    paintCell(map['1,1'],T_BLUE,true);
-  },400);
-  // Then trigger joker on all 4
+    const target=map['1,1'];
+    const ground=target.querySelector('.tile-ground');
+    ground.style.background=rca(T_BLUE,.12);ground.style.borderColor=rca(T_BLUE,.3);
+    ground.style.animation='inkFill .4s ease-out both';
+    miniBuilding(target,{home:false,frozen:false,stacked:0,joker:false},T_BLUE,SZ,true);
+  },500);
+  // Joker formation
   setTimeout(()=>{
     const block=[[0,0],[0,1],[1,0],[1,1]];
-    // Golden burst rings from center
-    const stageRect=stage.getBoundingClientRect();
     block.forEach(([r,c])=>{
-      const el=map[`${r},${c}`];
-      // Gold border animation
-      el.style.borderColor='rgba(251,191,36,.9)';
-      el.style.boxShadow='0 0 18px rgba(251,191,36,.6)';
-      el.style.animation='pulseGlow 1.5s ease-in-out infinite';
-      el.style.setProperty('--pg','rgba(251,191,36,.6)');
-      // Star inside
-      const star=document.createElement('div');
-      star.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:11;font-size:18px;animation:emojiDrop .4s cubic-bezier(.34,1.56,.64,1) both';
-      star.textContent='\u2B50';el.appendChild(star);
+      const tile=map[`${r},${c}`];
+      tile.querySelectorAll('.building').forEach(b=>b.remove());
+      miniBuilding(tile,{home:false,frozen:false,stacked:0,joker:true},T_BLUE,SZ,false);
+      tile.querySelector('.tile-ground').style.borderColor='rgba(251,191,36,.7)';
+      tile.querySelector('.tile-ground').style.boxShadow='0 0 12px rgba(251,191,36,.4)';
     });
-    // Star rain from center
-    const cx=stage.offsetWidth/2,cy=stage.offsetHeight/2;
-    for(let i=0;i<10;i++){
+    // Star rain
+    for(let i=0;i<8;i++){
       const star=document.createElement('div');
-      star.style.cssText=`position:absolute;left:${cx-30+Math.random()*60}px;top:${cy}px;
-        font-size:${12+Math.random()*10}px;pointer-events:none;z-index:20;
-        --starY:${-40-Math.random()*40}px;
-        animation:starFall ${.5+Math.random()*.3}s ease-out ${Math.random()*.25}s both`;
-      star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),1000);
+      star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;
+        font-size:${10+Math.random()*8}px;pointer-events:none;z-index:20;
+        --starY:${-30-Math.random()*30}px;
+        animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;
+      star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900);
     }
-    // Golden burst
+    // Burst rings
+    const cx=stage.offsetWidth/2,cy=stage.offsetHeight/2;
     for(let i=0;i<3;i++){
       const ring=document.createElement('div');
-      ring.style.cssText=`position:absolute;left:${cx-20}px;top:${cy-20}px;width:40px;height:40px;
-        border-radius:50%;border:3px solid #FBBF24;pointer-events:none;z-index:19;
-        animation:jokerBurst .7s ease-out ${i*.1}s both`;
-      stage.appendChild(ring);setTimeout(()=>ring.remove(),1000);
+      ring.style.cssText=`position:absolute;left:${cx-16}px;top:${cy-16}px;width:32px;height:32px;
+        border-radius:50%;border:2px solid #FBBF24;pointer-events:none;z-index:19;
+        animation:jokerBurst .6s ease-out ${i*.1}s both`;
+      stage.appendChild(ring);setTimeout(()=>ring.remove(),900);
     }
-  },1000);
-  // Reset
-  setTimeout(()=>miniGrid(stage,4,3,34,[[0,0,T_BLUE],[0,1,T_BLUE],[1,0,T_BLUE]]),4500);
+  },1200);
+  setTimeout(()=>playJoker(stage),4800);
 }
 
-createShowcaseCards();
+// Build showcase cards
+const CARDS=[
+  {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',
+    desc:'Ein leeres Feld wird erobert. Der Block steigt aus dem Boden, Schockwellen breiten sich aus, das Emoji erscheint auf dem Dach.',
+    play:playPlace},
+  {icon:'\u26A1',title:'Klauen',color:'#EF4444',
+    desc:'Ein gegnerisches Gebäude wird übernommen. Die alte Farbe zerbröckelt in Partikel, roter Blitz-Flash, dann steigt der neue Block auf.',
+    play:playSteal},
+  {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',
+    desc:'Ein Feld wird geschützt. Eiskristalle fliegen umher, eine Frost-Schicht legt sich über das Dach und pulsiert blau.',
+    play:playFreeze},
+  {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',
+    desc:'Ein eigenes Feld wird verstärkt. Das Gebäude wächst nach oben, goldene Pfeile steigen auf, ein \u00D7N-Badge erscheint.',
+    play:playStack},
+  {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',
+    desc:'Vier Felder bilden ein Quadrat. Goldene Burst-Ringe, Sternenregen, alle 4 Gebäude bekommen goldene Dächer mit Stern.',
+    play:playJoker},
+];
+
+const scContainer=document.getElementById('showcases');
+CARDS.forEach(card=>{
+  const div=document.createElement('div');div.className='showcase-card';
+  div.innerHTML=`
+    <div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div>
+    <div class="sc-desc">${card.desc}</div>
+    <div class="sc-stage"></div>
+    <button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">\u25B6 Abspielen</button>`;
+  const stageEl=div.querySelector('.sc-stage');
+  const btn=div.querySelector('.sc-play');
+  let timer=null;
+  btn.onclick=()=>{
+    if(timer){clearTimeout(timer);timer=null}
+    // Stop previous loops by clearing stage
+    stageEl.innerHTML='';
+    card.play(stageEl);
+    btn.textContent='\u23F9 Stopp';
+    btn.onclick=()=>{
+      stageEl.innerHTML='';timer=null;
+      btn.textContent='\u25B6 Abspielen';
+      btn.onclick=arguments.callee; // re-bind — but we need to re-create
+      // Simpler: just reload card
+      rebindBtn();
+    };
+  };
+  function rebindBtn(){
+    btn.textContent='\u25B6 Abspielen';
+    btn.onclick=()=>{
+      stageEl.innerHTML='';
+      card.play(stageEl);
+      btn.textContent='\u23F9 Stopp';
+      btn.onclick=()=>{stageEl.innerHTML='';rebindBtn()};
+    };
+  }
+  scContainer.appendChild(div);
+});
 </script>
 </body>
 </html>

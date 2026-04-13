@@ -1070,6 +1070,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   };
   const catColor = (cat && CAT_COLORS[cat]) || color;
 
+  // Category explanations — 1 line to clarify for audience
+  const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
+    SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
+    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
+    BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
+    ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
+    CHEESE:        { de: 'Erkennt ihr das Bild?', en: 'Can you identify the image?' },
+  };
+  const catExplain = cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '';
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -1114,35 +1124,68 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       ) : (
         /* ── Category reveal (step 1 for first Q, step 0 for Q2+) ── */
         <>
+          {/* Question progress: "Frage 2 von 5" + dots */}
           <div style={{
-            fontFamily: "'Caveat', cursive",
-            fontSize: 'clamp(26px, 3.5vw, 44px)', fontWeight: 700,
-            color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 24,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            marginBottom: 28,
             animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
             position: 'relative', zIndex: 5,
           }}>
-            {lang === 'de' ? `Frage ${questionInPhase}` : `Question ${questionInPhase}`}
+            <div style={{
+              fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 800,
+              color: catColor, letterSpacing: '0.08em',
+            }}>
+              {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <div key={n} style={{
+                  width: n === questionInPhase ? 28 : 12,
+                  height: 12, borderRadius: 6,
+                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(255,255,255,0.1)',
+                  boxShadow: n === questionInPhase ? `0 0 12px ${catColor}66` : 'none',
+                  transition: 'all 0.3s ease',
+                }} />
+              ))}
+            </div>
           </div>
 
           {cat && (
             <>
+              {/* Emoji — float idle */}
               <div style={{
                 fontSize: 'clamp(80px, 14vw, 180px)',
-                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both',
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both, cfloat 4s ease-in-out 1s infinite',
                 position: 'relative', zIndex: 5,
               }}>{catEmoji}</div>
 
+              {/* Category name — glow pulse idle */}
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(68px, 13vw, 200px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
                 textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
                 marginTop: 12,
-                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both, floatNum 3.5s ease-in-out 1.2s infinite',
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both, qqGlow 3s ease-in-out 1.2s infinite',
                 position: 'relative', zIndex: 5,
                 textAlign: 'center',
               }}>{catLabel}</div>
+
+              {/* Category explanation — 1 line */}
+              {catExplain && (
+                <div style={{
+                  fontFamily: "'Caveat', cursive",
+                  fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 700,
+                  color: `${catColor}88`,
+                  marginTop: 16,
+                  animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.65s both',
+                  position: 'relative', zIndex: 5,
+                  textAlign: 'center',
+                }}>
+                  {catExplain}
+                </div>
+              )}
             </>
           )}
         </>

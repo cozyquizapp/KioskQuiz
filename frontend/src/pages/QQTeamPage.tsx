@@ -639,19 +639,76 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] };
   const descs  = { de: ['', '1 Feld pro Sieg', '2 Felder oder klauen', 'Comeback-Phase', 'Alles auf Spiel'],
                    en: ['', '1 field per win', '2 fields or steal', 'Comeback phase', 'All in'] };
+
+  const questionInPhase = (s.questionIndex % 5) + 1;
+  const isFirstOfRound = questionInPhase === 1;
+  const showCategory = !isFirstOfRound || s.introStep >= 1;
+
+  const cat = s.currentQuestion?.category;
+  const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
+  const catColor = cat ? QQ_CATEGORY_COLORS[cat] : color;
+  const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
+    SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
+    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
+    BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
+    ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
+    CHEESE:        { de: 'Erkennt ihr das Bild?', en: 'Can you identify the image?' },
+  };
+
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
-        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 6 }}>
-          {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
-        </div>
-        <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
-          animation: 'tcfloat 3s ease-in-out infinite' }}>
-          {names[lang][s.gamePhaseIndex] ?? `Round ${s.gamePhaseIndex}`}
-        </div>
-        <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
-          {descs[lang][s.gamePhaseIndex] ?? ''}
-        </div>
+        {!showCategory ? (
+          /* Round announcement */
+          <>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 6 }}>
+              {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
+            </div>
+            <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
+              animation: 'tcfloat 3s ease-in-out infinite' }}>
+              {names[lang][s.gamePhaseIndex] ?? `Round ${s.gamePhaseIndex}`}
+            </div>
+            <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
+              {descs[lang][s.gamePhaseIndex] ?? ''}
+            </div>
+          </>
+        ) : (
+          /* Category reveal */
+          <>
+            <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 6 }}>
+              {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 12 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <div key={n} style={{
+                  width: n === questionInPhase ? 18 : 8,
+                  height: 8, borderRadius: 4,
+                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(255,255,255,0.1)',
+                  transition: 'all 0.3s ease',
+                }} />
+              ))}
+            </div>
+            {catInfo && (
+              <>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>
+                  {catInfo.emoji}
+                </div>
+                <div style={{
+                  fontSize: 32, fontWeight: 900, color: catColor,
+                  textShadow: `0 0 20px ${catColor}44`,
+                }}>
+                  {catInfo[lang]}
+                </div>
+                {cat && CAT_EXPLAIN[cat] && (
+                  <div style={{ fontSize: 15, color: `${catColor}88`, marginTop: 6, fontWeight: 700 }}>
+                    {CAT_EXPLAIN[cat][lang]}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
       </div>
     </CozyCard>
   );

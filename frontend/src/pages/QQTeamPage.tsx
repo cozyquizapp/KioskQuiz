@@ -10,6 +10,7 @@ import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
+import { QQ_CAT_ACCENT } from '../qqShared';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
 } from '../utils/sounds';
@@ -456,19 +457,30 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     }
   }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Dynamic phase/category accent for glows
-  const catColor = s.currentQuestion?.category ? (QQ_CATEGORY_COLORS[s.currentQuestion.category] ?? teamColor) : teamColor;
-  const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catColor
+  // Dynamic phase/category accent for glows — match beamer accent colors
+  const cat = s.currentQuestion?.category;
+  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? teamColor) : teamColor;
+  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? teamColor) : teamColor;
+  const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catAccent
     : s.phase === 'PLACEMENT' ? teamColor
     : s.phase === 'GAME_OVER' ? '#FBBF24'
     : teamColor;
 
-  // Firefly color
-  const ffColor = `${phaseAccent}55`;
+  // Firefly color — uses accent for vibrant glow matching beamer
+  const ffColor = `${phaseAccent}66`;
 
-  // Dynamic background — category glow during questions, team glow otherwise
-  const pageBg = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
-    ? `radial-gradient(ellipse at 50% 0%, ${catColor}20 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, ${catColor}10 0%, transparent 40%), #0D0A06`
+  // Category-specific backgrounds matching beamer CAT_BG (adapted for mobile portrait)
+  const TC_CAT_BG: Record<string, string> = {
+    SCHAETZCHEN:   `radial-gradient(ellipse at 50% 0%, rgba(234,179,8,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(133,77,14,0.12) 0%, transparent 50%), #0D0A06`,
+    MUCHO:         `radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(29,78,216,0.10) 0%, transparent 50%), #0D0A06`,
+    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.20) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(185,28,28,0.10) 0%, transparent 50%), #0D0A06`,
+    ZEHN_VON_ZEHN: `radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.18) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(6,78,59,0.12) 0%, transparent 50%), #0D0A06`,
+    CHEESE:        `radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(91,33,182,0.10) 0%, transparent 50%), #0D0A06`,
+  };
+
+  // Dynamic background — category-specific during questions, team glow otherwise
+  const pageBg = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && cat
+    ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}22 0%, transparent 50%), #0D0A06`)
     : s.phase === 'GAME_OVER'
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
     : `radial-gradient(ellipse at 50% 0%, ${teamColor}18 0%, transparent 60%), #0D0A06`;
@@ -790,7 +802,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
 
   const cat = s.currentQuestion?.category;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
-  const catColor = cat ? QQ_CATEGORY_COLORS[cat] : color;
+  const catColor = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat]) : color;
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
     SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
     MUCHO:         { de: 'Wählt schnell die richtige Antwort!', en: 'Pick the right answer — fast!' },
@@ -945,16 +957,17 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const q = s.currentQuestion;
   if (!q) return null;
   const catColor = QQ_CATEGORY_COLORS[q.category];
+  const catAccent = QQ_CAT_ACCENT[q.category] ?? catColor;
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const isRevealed = s.phase === 'QUESTION_REVEAL';
   const iWon = s.correctTeamId === myTeamId;
   const isCheese = q.category === 'CHEESE';
   const hasCheeseImg = isCheese && q.image?.url;
 
-  // Phase-specific card styling
+  // Phase-specific card styling — accent color for glow matching beamer
   const cardBorder = isRevealed
     ? (iWon ? '#22C55E' : '#EF4444')
-    : catColor;
+    : catAccent;
 
   return (
     <CozyCard key={q.id} borderColor={cardBorder} pulse={!isRevealed}>
@@ -962,9 +975,9 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14,
         padding: '6px 16px', borderRadius: 999,
-        background: `${catColor}22`, border: `2px solid ${catColor}55`,
-        color: catColor, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
-        boxShadow: `0 0 16px ${catColor}22`,
+        background: `${catAccent}18`, border: `2px solid ${catAccent}44`,
+        color: catAccent, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
+        boxShadow: `0 0 16px ${catAccent}22`,
       }}>
         <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
         {lang === 'en' ? catLabel.en : catLabel.de}

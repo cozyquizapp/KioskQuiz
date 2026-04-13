@@ -316,26 +316,29 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
   // ── 7: SILO — round-looking cylinder ──
   else if(bi===7){
+    // ── SILO: single-element cylinder technique from article ──
+    // Each wall face uses border-radius:100%/r*2 + 2 radial-gradients for caps
     const w=Math.round(sz*.46), d=Math.round(sz*.46), h=Math.round(sz*.52*hm)+extra;
     const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
     const el=document.createElement('div');
     el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
-    const hr=Math.round(w/2); // half-radius for rounding
-    // Round top — circle
+    // Curve radius for top/bottom caps on each wall
+    const cr=Math.round(w*.28);
+    // Round top — circle with sphere gradient
     const top=document.createElement('div');
-    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.65)} 60%, ${rgba(team,.35)} 100%);border:1px solid ${rgba(team,.50)}`;
-    // Front — full border-radius to make it oval/rounded
+    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.65)} 55%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.45)}`;
+    // Front wall — article cylinder technique: border-radius:100%/cr*2 + 2 radial-gradient caps
     const front=document.createElement('div');
-    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:${hr}px / 6px;background:linear-gradient(90deg, ${rgba(team,.25)} 0%, ${rgba(team,.72)} 30%, ${rgba(team,.72)} 70%, ${rgba(team,.25)} 100%);border:1px solid ${rgba(team,.35)}`;
-    // Back
+    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.12) 99.99%, rgba(0,0,0,0) 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.08) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.65)}`;
+    // Back wall
     const back=document.createElement('div');
-    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:${hr}px / 6px;background:linear-gradient(90deg, ${rgba(team,.20)} 0%, ${rgba(team,.52)} 30%, ${rgba(team,.52)} 70%, ${rgba(team,.20)} 100%);border:1px solid ${rgba(team,.28)}`;
-    // Right
+    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.10) 99.99%, rgba(0,0,0,0) 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.05) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.48)}`;
+    // Right wall
     const right=document.createElement('div');
-    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:6px / ${hr}px;background:linear-gradient(0deg, ${rgba(team,.18)} 0%, ${rgba(team,.48)} 30%, ${rgba(team,.48)} 70%, ${rgba(team,.18)} 100%);border:1px solid ${rgba(team,.25)}`;
-    // Left
+    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:${cr*2}px / 100%;background:radial-gradient(${cr}px 50% at ${cr}px 50%, rgba(0,0,0,.10) 99.99%, rgba(0,0,0,0) 0),radial-gradient(${cr}px 50% at calc(100% - ${cr}px) 50%, rgba(255,255,255,.06) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.38)}`;
+    // Left wall
     const left=document.createElement('div');
-    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:6px / ${hr}px;background:linear-gradient(0deg, ${rgba(team,.25)} 0%, ${rgba(team,.55)} 30%, ${rgba(team,.55)} 70%, ${rgba(team,.25)} 100%);border:1px solid ${rgba(team,.30)}`;
+    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:${cr*2}px / 100%;background:radial-gradient(${cr}px 50% at ${cr}px 50%, rgba(0,0,0,.08) 99.99%, rgba(0,0,0,0) 0),radial-gradient(${cr}px 50% at calc(100% - ${cr}px) 50%, rgba(255,255,255,.05) 99.99%, rgba(0,0,0,0) 0),${rgba(team,.52)}`;
     el.appendChild(top);el.appendChild(front);el.appendChild(back);el.appendChild(right);el.appendChild(left);
     tileEl.appendChild(el);
     mainEl=el; mainTop=top;

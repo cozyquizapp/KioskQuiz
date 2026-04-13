@@ -190,6 +190,24 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  @keyframes gridIdle {
+    0%, 100% { box-shadow: 0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.03); }
+    50%      { box-shadow: 0 0 50px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.05); }
+  }
+  @keyframes cellIdlePulse {
+    0%, 100% { background: rgba(255,255,255,0.04); }
+    50%      { background: rgba(255,255,255,0.10); }
+  }
+  @keyframes activeTeamGlow {
+    0%, 100% { box-shadow: 0 0 12px var(--team-color, #fff); opacity: 1; }
+    50%      { box-shadow: 0 0 24px var(--team-color, #fff); opacity: 0.85; }
+  }
+  @keyframes claimToast {
+    0%   { opacity: 0; transform: translateY(20px) scale(0.9); }
+    15%  { opacity: 1; transform: translateY(0) scale(1); }
+    85%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

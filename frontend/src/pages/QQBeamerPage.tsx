@@ -1902,42 +1902,105 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 export function PlacementView({ state: s, flashCell }: { state: QQStateUpdate; flashCell?: { row: number; col: number; teamId: string } | null }) {
   const lang = useLangFlip(s.language);
   const team = s.teams.find(tm => tm.id === (flashCell?.teamId ?? s.pendingFor));
+  const teamColor = team?.color ?? '#94a3b8';
+
+  // Claim toast state
+  const [toast, setToast] = useState<{ text: string; color: string; key: number } | null>(null);
+  const prevPendingRef = useRef(s.pendingFor);
+  useEffect(() => {
+    if (prevPendingRef.current && prevPendingRef.current !== s.pendingFor) {
+      const prevTeam = s.teams.find(t => t.id === prevPendingRef.current);
+      if (prevTeam) {
+        const isSteal = s.pendingAction === 'STEAL_1';
+        const msg = isSteal
+          ? (lang === 'de' ? `⚡ ${prevTeam.name} hat ein Feld geklaut!` : `⚡ ${prevTeam.name} stole a field!`)
+          : (lang === 'de' ? `✅ ${prevTeam.name} hat ein Feld gesetzt!` : `✅ ${prevTeam.name} placed a field!`);
+        setToast({ text: msg, color: prevTeam.color, key: Date.now() });
+        setTimeout(() => setToast(null), 2500);
+      }
+    }
+    prevPendingRef.current = s.pendingFor;
+  }, [s.pendingFor]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-      <Fireflies />
+      <Fireflies color={`${teamColor}77`} />
 
-      {/* Top banner — team + action info */}
+      {/* Top banner — hero status */}
       <div style={{
-        padding: '16px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+        padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
         position: 'relative', zIndex: 5,
-        background: 'rgba(13,10,6,0.6)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)`,
+        borderBottom: `2px solid ${teamColor}22`,
       }}>
         {team && (
           <>
-            <span style={{ fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-            <span style={{ fontWeight: 900, fontSize: 'clamp(24px, 3vw, 44px)', color: team.color }}>{team.name}</span>
+            {/* Avatar with glow ring */}
+            <div style={{
+              position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 72, height: 72, borderRadius: '50%',
+              background: `${teamColor}20`,
+              border: `3px solid ${teamColor}88`,
+              boxShadow: `0 0 20px ${teamColor}44`,
+              animation: 'activeTeamGlow 2s ease-in-out infinite',
+              ['--team-color' as string]: `${teamColor}55`,
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{
+                fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
+                textShadow: `0 0 24px ${teamColor}44`,
+              }}>{team.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{
+                  fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
+                  color: '#e2e8f0',
+                }}>
+                  {actionVerb(s.pendingAction, lang)}
+                </span>
+                {s.teamPhaseStats[team.id] && (
+                  <span style={{
+                    padding: '3px 12px', borderRadius: 999,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                  }}>
+                    {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
+                  </span>
+                )}
+              </div>
+            </div>
           </>
         )}
-        <span style={{
-          fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
-          color: '#94a3b8',
-        }}>
-          {actionVerb(s.pendingAction, lang)}
-        </span>
-        {team && s.teamPhaseStats[team.id] && (
-          <span style={{ color: '#64748b', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700 }}>
-            {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
+        {!team && (
+          <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 800, color: '#64748b' }}>
+            {lang === 'de' ? '⏳ Warte auf nächsten Zug…' : '⏳ Waiting for next move…'}
           </span>
         )}
       </div>
 
-      {/* Center: large grid centered with score below */}
+      {/* Center: large grid + score */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
         <GridDisplay state={s} maxSize={Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 700)} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
-        <ScoreBar teams={s.teams} />
+        <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
       </div>
+
+      {/* Claim toast */}
+      {toast && (
+        <div key={toast.key} style={{
+          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 20, padding: '14px 32px', borderRadius: 999,
+          background: `${toast.color}22`, border: `2px solid ${toast.color}55`,
+          boxShadow: `0 0 30px ${toast.color}33`,
+          fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900, color: '#e2e8f0',
+          animation: 'claimToast 2.5s ease both',
+          whiteSpace: 'nowrap',
+        }}>
+          {toast.text}
+        </div>
+      )}
     </div>
   );
 }
@@ -2435,6 +2498,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const lang = useLangFlip(s.language);
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
+  const activeTeam = s.teams.find(t => t.id === highlightTeam);
+  const activeColor = activeTeam?.color ?? '#fff';
 
   // Track newly placed cells for pop animation (#5)
   const prevGridRef = useRef<string>('');
@@ -2452,16 +2517,40 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     if (newSet.size > 0) setTimeout(() => { newCellsRef.current = new Set(); }, 1200);
   }
 
+  // Idle pulse: pick 2 random empty cells to softly pulse
+  const [idleCells, setIdleCells] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const emptyCells: string[] = [];
+      s.grid.forEach((row, r) => row.forEach((cell, c) => {
+        if (!cell.ownerId) emptyCells.push(`${r}-${c}`);
+      }));
+      if (emptyCells.length === 0) { setIdleCells(new Set()); return; }
+      const picked = new Set<string>();
+      for (let i = 0; i < Math.min(2, emptyCells.length); i++) {
+        const idx = Math.floor(Math.random() * emptyCells.length);
+        picked.add(emptyCells.splice(idx, 1)[0]);
+      }
+      setIdleCells(picked);
+    }, 2500);
+    return () => clearInterval(iv);
+  }, [s.grid]);
+
   return (
     <div>
-      {/* Grid size label removed — not needed on beamer */}
+      {/* Grid — game board styling */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
         gap,
         background: 'rgba(255,255,255,0.03)',
-        padding: 8, borderRadius: 14,
-        border: '1px solid rgba(255,255,255,0.05)',
+        padding: 10, borderRadius: 18,
+        border: `2px solid ${highlightTeam ? `${activeColor}22` : 'rgba(255,255,255,0.06)'}`,
+        boxShadow: highlightTeam
+          ? `0 0 40px ${activeColor}15, inset 0 1px 0 rgba(255,255,255,0.04)`
+          : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
+        animation: 'gridIdle 4s ease-in-out infinite',
+        transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
       }}>
         {s.grid.flatMap((row, r) =>
           row.map((cell, c) => {
@@ -2482,26 +2571,30 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 fontSize: Math.max(8, cellSize * 0.42),
                 zIndex: isAccent ? 5 : 1,
               }}>
-                {/* Empty cell base */}
+                {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: cellRadius,
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.06)',
+                  animation: !team && idleCells.has(`${r}-${c}`) ? 'cellIdlePulse 2.5s ease-in-out both' : undefined,
                 }} />
-                {/* Team color layer — ink fill for new cells */}
-                {team && (
+                {/* Team color layer — ink fill for new cells, dim non-active teams */}
+                {team && (() => {
+                  const isActiveTeam = team.id === highlightTeam;
+                  const isDimmed = highlightTeam && !isActiveTeam && !isAccent;
+                  return (
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: cellRadius,
                     background: isStuck
                       ? `linear-gradient(135deg, ${team.color}ff, ${team.color}bb)`
-                      : `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : '66'})`,
+                      : `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : '66'})`,
                     border: isStuck
                       ? '2px solid rgba(251,191,36,0.95)'
                       : showStar
                         ? '2px solid rgba(251,191,36,0.9)'
                         : isFrozen
                           ? 'none'
-                          : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : '55'}`,
+                          : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
                     animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
                     boxShadow: isStuck
                       ? `0 0 14px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.4)`
@@ -2510,11 +2603,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         : showStar
                           ? '0 0 10px rgba(251,191,36,0.5)'
                           : isHighlighted
-                              ? `0 0 12px ${team.color}66`
+                              ? `0 0 14px ${team.color}88`
                               : 'none',
-                    transition: 'box-shadow 0.4s ease',
+                    transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
+                    filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
                   }} />
-                )}
+                  );
+                })()}
                 {/* Frozen overlay — ice tint + shimmer + frost corners */}
                 {isFrozen && (
                   <>
@@ -2645,7 +2740,7 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
+export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams']; activeTeamId?: string | null }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
   const prevScores = useRef<Record<string, number>>({});
@@ -2672,42 +2767,57 @@ export function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
   }, [teams]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 800 }}>
-      {sorted.map((t, i) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 800 }}>
+      {sorted.map((t, i) => {
+        const isLeader = i === 0 && t.largestConnected > 0;
+        const isActive = t.id === activeTeamId;
+        return (
         <div key={t.id} style={{
           display: 'flex', alignItems: 'center', gap: 14,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
+          opacity: activeTeamId && !isActive ? 0.6 : 1,
+          transition: 'opacity 0.3s ease',
         }}>
-          <span style={{ fontSize: 32, width: 40, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+          <div style={{ position: 'relative', width: 44, textAlign: 'center' }}>
+            <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+            {isLeader && <span style={{ position: 'absolute', top: -8, right: -4, fontSize: 16 }}>👑</span>}
+          </div>
           <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 22, fontWeight: 900, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 20, color: '#94a3b8', fontWeight: 800 }}>
-                {t.largestConnected}<span style={{ opacity: 0.5, fontSize: 16 }}> / {t.totalCells}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+              <span style={{
+                fontSize: 24, fontWeight: 900, color: t.color,
+                textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
+              }}>{t.name}</span>
+              <span style={{ fontSize: 22, color: '#e2e8f0', fontWeight: 900 }}>
+                {t.largestConnected}
+                <span style={{ opacity: 0.4, fontSize: 15, fontWeight: 700, marginLeft: 4 }}>
+                  {t.largestConnected === 1 ? 'Feld' : 'Felder'}
+                </span>
               </span>
             </div>
-            <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ height: 14, borderRadius: 7, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 5,
+                height: '100%', borderRadius: 7,
                 background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
                 width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
                 transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: i === 0 ? `0 0 8px ${t.color}66` : 'none',
+                boxShadow: isLeader ? `0 0 12px ${t.color}88` : 'none',
               }} />
             </div>
             {/* Float +N */}
             {floaters.filter(f => f.teamId === t.id).map(f => (
               <div key={f.id} style={{
-                position: 'absolute', right: 0, top: -4,
-                fontWeight: 900, fontSize: 18, color: t.color,
+                position: 'absolute', right: 0, top: -6,
+                fontWeight: 900, fontSize: 20, color: t.color,
                 animation: 'scoreFloat 1.0s ease-out both',
                 pointerEvents: 'none',
-                textShadow: `0 0 8px ${t.color}66`,
+                textShadow: `0 0 10px ${t.color}88`,
               }}>+{f.diff}</div>
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

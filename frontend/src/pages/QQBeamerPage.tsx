@@ -413,22 +413,24 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         >⛶</button>
       )}
 
-      {/* 3D grid toggle */}
-      <button
-        onClick={toggle3D}
-        title={use3D ? '2D Grid' : '3D Grid'}
-        style={{
-          position: 'fixed', top: 12, right: !isFullscreen ? 56 : 12, zIndex: 9999,
-          height: 36, borderRadius: 8, padding: '0 10px',
-          border: `1px solid ${use3D ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.18)'}`,
-          background: use3D ? 'rgba(59,130,246,0.25)' : 'rgba(13,17,23,0.72)',
-          color: use3D ? '#93c5fd' : '#e2e8f0', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-          fontFamily: 'inherit',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-          backdropFilter: 'blur(6px)',
-          transition: 'all 0.2s',
-        }}
-      >{use3D ? '3D' : '2D'}</button>
+      {/* 3D grid toggle — only visible during PLACEMENT phase or placement flash */}
+      {(s.phase === 'PLACEMENT' || placementFlash) && (
+        <button
+          onClick={toggle3D}
+          title={use3D ? '2D Grid' : '3D Grid'}
+          style={{
+            position: 'fixed', top: 12, right: !isFullscreen ? 56 : 12, zIndex: 9999,
+            height: 36, borderRadius: 8, padding: '0 10px',
+            border: `1px solid ${use3D ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.18)'}`,
+            background: use3D ? 'rgba(59,130,246,0.25)' : 'rgba(13,17,23,0.72)',
+            color: use3D ? '#93c5fd' : '#e2e8f0', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+            fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            backdropFilter: 'blur(6px)',
+            transition: 'all 0.2s',
+          }}
+        >{use3D ? '3D' : '2D'}</button>
+      )}
 
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
@@ -2046,26 +2048,93 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             }} />
           )}
 
-          {/* Correct team — full-width winner banner (delayed for drama) */}
-          {revealed && s.correctTeamId && (() => {
+          {/* Schätzchen: combined leaderboard with all estimates */}
+          {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (() => {
+            const ranked = s.answers
+              .map(a => {
+                const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+                const team = s.teams.find(t => t.id === a.teamId);
+                const distance = Number.isNaN(num) || q.targetValue == null ? Infinity : Math.abs(num - q.targetValue);
+                return { ...a, num, distance, team };
+              })
+              .sort((a, b) => a.distance - b.distance);
+            return (
+              <div style={{
+                display: 'flex', gap: 'clamp(8px, 1.2vw, 16px)', width: '100%', maxWidth: 1400,
+                animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+                flexWrap: 'wrap', justifyContent: 'center',
+              }}>
+                {ranked.map((r, i) => {
+                  const isWinner = i === 0 && r.distance !== Infinity;
+                  const tColor = r.team?.color ?? '#94a3b8';
+                  return (
+                    <div key={r.teamId} style={{
+                      flex: isWinner ? '1 1 100%' : '1 1 0',
+                      minWidth: isWinner ? undefined : 'clamp(120px, 18vw, 220px)',
+                      display: 'flex', alignItems: 'center', gap: isWinner ? 20 : 10,
+                      padding: isWinner ? 'clamp(14px, 2vw, 24px) clamp(20px, 3vw, 40px)' : 'clamp(8px, 1vw, 14px) clamp(10px, 1.5vw, 18px)',
+                      borderRadius: isWinner ? 24 : 16,
+                      background: isWinner ? `linear-gradient(135deg, ${tColor}22, ${tColor}0a)` : 'rgba(255,255,255,0.04)',
+                      border: isWinner ? `2px solid ${tColor}66` : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: isWinner ? `0 0 40px ${tColor}33` : 'none',
+                      animation: `contentReveal 0.4s ease ${0.7 + i * 0.12}s both`,
+                    }}>
+                      <span style={{
+                        fontSize: isWinner ? 'clamp(40px, 5vw, 72px)' : 'clamp(24px, 3vw, 38px)',
+                        lineHeight: 1, flexShrink: 0,
+                        animation: isWinner ? 'celebShake 0.6s ease 1.1s both' : undefined,
+                      }}>
+                        {r.team ? qqGetAvatar(r.team.avatarId).emoji : '?'}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontWeight: 900,
+                          fontSize: isWinner ? 'clamp(22px, 3vw, 40px)' : 'clamp(13px, 1.5vw, 20px)',
+                          color: tColor, lineHeight: 1.2,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{r.team?.name ?? r.teamId}</div>
+                        <div style={{
+                          fontWeight: 900,
+                          fontSize: isWinner ? 'clamp(28px, 4vw, 52px)' : 'clamp(18px, 2.2vw, 30px)',
+                          color: '#e2e8f0', lineHeight: 1.2,
+                        }}>{r.text}</div>
+                        {isWinner && (
+                          <div style={{
+                            color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, marginTop: 2,
+                          }}>
+                            {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
+                          </div>
+                        )}
+                      </div>
+                      {!isWinner && r.distance !== Infinity && (
+                        <div style={{
+                          fontSize: 'clamp(10px, 1vw, 14px)', color: '#475569', fontWeight: 700, whiteSpace: 'nowrap',
+                        }}>Δ {r.distance.toLocaleString()}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Correct team — winner banner (non-Schätzchen) */}
+          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (() => {
             const team = s.teams.find(t => t.id === s.correctTeamId);
             if (!team) return null;
             const cat = q.category;
             const isEn = lang === 'en';
-            // Check if this was a speed-based MUCHO win (multiple correct, fastest wins)
             const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null
               && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
-            const winMsg = cat === 'SCHAETZCHEN'
-              ? (isEn ? 'was closest!' : 'war am nächsten dran!')
-              : cat === 'CHEESE'
-                ? (isEn ? 'got it right!' : 'hat es erkannt!')
-                : cat === 'BUNTE_TUETE'
-                  ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
-                  : cat === 'ZEHN_VON_ZEHN'
-                    ? (isEn ? 'nailed it!' : 'hat am meisten gewusst!')
-                    : muchoSpeedWin
-                      ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
-                      : (isEn ? 'correct!' : 'richtig!');
+            const winMsg = cat === 'CHEESE'
+              ? (isEn ? 'got it right!' : 'hat es erkannt!')
+              : cat === 'BUNTE_TUETE'
+                ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
+                : cat === 'ZEHN_VON_ZEHN'
+                  ? (isEn ? 'nailed it!' : 'hat am meisten gewusst!')
+                  : muchoSpeedWin
+                    ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
+                    : (isEn ? 'correct!' : 'richtig!');
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
@@ -2098,12 +2167,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             );
           })()}
-          {/* Team estimates/answers on reveal (Schätzchen, MUCHO, etc.) */}
-          {revealed && q && (
-            <div style={{ width: '100%', maxWidth: 1000, animation: 'contentReveal 0.5s ease 1s both' }}>
-              <TeamAnswerReveal s={s} q={q} lang={lang} cardBg={cardBg} accent={accent} />
-            </div>
-          )}
 
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
           {revealed && s.correctTeamId && (

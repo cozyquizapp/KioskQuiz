@@ -404,18 +404,24 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     grid.style.setProperty('--zoom', String(zoom));
   }, [rx, rz, zoom]);
 
+  // Refs for drag state (avoids re-registering listeners on every state change)
+  const rxRef = useRef(rx);
+  const rzRef = useRef(rz);
+  useEffect(() => { rxRef.current = rx; }, [rx]);
+  useEffect(() => { rzRef.current = rz; }, [rz]);
+
   // Interactive: drag to rotate + wheel to zoom
   useEffect(() => {
     if (!interactive) return;
     const scene = containerRef.current;
     if (!scene) return;
 
-    let dragging = false, startX = 0, startY = 0, startRx = rx, startRz = rz, didDrag = false;
+    let dragging = false, startX = 0, startY = 0, startRx = 0, startRz = 0, didDrag = false;
 
     const onDown = (e: MouseEvent) => {
       dragging = true; didDrag = false;
       startX = e.clientX; startY = e.clientY;
-      startRx = rx; startRz = rz;
+      startRx = rxRef.current; startRz = rzRef.current;
       scene.style.cursor = 'grabbing';
       e.preventDefault();
     };
@@ -451,7 +457,7 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
       scene.removeEventListener('dblclick', onDbl);
       scene.removeEventListener('wheel', onWheel);
     };
-  }, [interactive, rx, rz]);
+  }, [interactive]);
 
   return (
     <div

@@ -55,5 +55,14 @@ export function useQQSocket(roomCode: string) {
     });
   }
 
-  return { state, connected, emit };
+  /** Force a manual reconnect (drops current socket and creates a fresh connection). */
+  function reconnect() {
+    const s = socketRef.current;
+    if (!s) return;
+    if (s.connected) return; // already connected
+    s.disconnect();
+    s.connect();
+  }
+
+  return { state, connected, emit, reconnect };
 }

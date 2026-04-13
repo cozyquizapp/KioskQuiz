@@ -2074,6 +2074,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
+          {/* Nobody got it right banner */}
+          {revealed && !s.correctTeamId && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+              padding: '24px 44px', borderRadius: 28, marginBottom: 12,
+              width: '100%', maxWidth: 1400,
+              background: 'rgba(239,68,68,0.08)',
+              border: '2px solid rgba(239,68,68,0.30)',
+              boxShadow: '0 0 40px rgba(239,68,68,0.15)',
+              animation: 'revealWinnerIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+            }}>
+              <span style={{ fontSize: 'clamp(48px, 6vw, 80px)', lineHeight: 1 }}>
+                {s.answers.length === 0 ? '⏱' : '❌'}
+              </span>
+              <div style={{
+                fontSize: 'clamp(24px, 3.5vw, 48px)', fontWeight: 900,
+                color: s.answers.length === 0 ? '#94a3b8' : '#f87171',
+              }}>
+                {s.answers.length === 0
+                  ? (lang === 'en' ? 'No answers!' : 'Keine Antworten!')
+                  : (lang === 'en' ? 'Nobody got it right!' : 'Keiner hatte Recht!')}
+              </div>
+            </div>
+          )}
+
           {/* Bottom: team answer progress (active questions only) */}
           {!revealed && s.teams.length > 0 && (
             <div style={{

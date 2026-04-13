@@ -229,7 +229,7 @@ export default function QQTeamPage() {
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const { state, connected, emit } = useQQSocket(roomCode);
+  const { state, connected, emit, reconnect } = useQQSocket(roomCode);
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
@@ -303,7 +303,7 @@ export default function QQTeamPage() {
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} />;
+    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -417,11 +417,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 // GAME VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected }: {
+function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected, reconnect }: {
   state: QQStateUpdate; myTeam: QQTeam | null;
   myTeamId: string; emit: any; roomCode: string;
   lang: 'de' | 'en'; flagFlip: boolean; onFlagClick: () => void;
-  connected: boolean;
+  connected: boolean; reconnect: () => void;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
@@ -433,18 +433,27 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = s.phase;
     resumeAudio();
-    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') playFanfare();
+    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
+      playFanfare();
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+    }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       if (s.correctTeamId === myTeamId) {
         playCorrect();
-        if (typeof navigator.vibrate === 'function') navigator.vibrate([50, 30, 50]);
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
       } else {
         playWrong();
-        if (typeof navigator.vibrate === 'function') navigator.vibrate([80, 40, 80, 40, 80]);
+        if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 80]);
       }
     }
-    if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) playScoreUp();
-    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playFanfare();
+    if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) {
+      playScoreUp();
+      if (navigator.vibrate) navigator.vibrate([30, 15, 30, 15, 60]);
+    }
+    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
+      playFanfare();
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50, 30, 100]);
+    }
   }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dynamic phase/category accent for glows
@@ -529,18 +538,29 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           </div>
         )}
 
-        {/* Disconnect banner */}
+        {/* Disconnect banner with manual reconnect */}
         {!connected && (
-          <div style={{
-            padding: '10px 16px', borderRadius: 12, marginBottom: 12, textAlign: 'center',
+          <div role="alert" style={{
+            padding: '12px 16px', borderRadius: 12, marginBottom: 12, textAlign: 'center',
             background: '#7F1D1D', border: '1px solid #EF4444', color: '#FCA5A5',
-            fontWeight: 800, fontSize: 13, animation: 'tcpulse 2s infinite',
+            fontWeight: 800, fontSize: 13,
           }}>
-            {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
+            <div style={{ marginBottom: 8, animation: 'tcpulse 2s infinite' }}>
+              {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
+            </div>
+            <button onClick={reconnect} style={{
+              padding: '8px 20px', borderRadius: 10, fontFamily: 'inherit',
+              fontWeight: 900, fontSize: 13, cursor: 'pointer',
+              background: 'rgba(239,68,68,0.25)', border: '1.5px solid #EF4444',
+              color: '#FCA5A5', animation: 'tcbtnpop 0.3s ease both',
+            }}>
+              {lang === 'de' ? '🔄 Jetzt neu verbinden' : '🔄 Reconnect now'}
+            </button>
           </div>
         )}
 
         {/* Phase content */}
+        <div aria-live="polite" aria-atomic="false">
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
         {s.phase === 'RULES'           && <RulesCard lang={lang} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
@@ -555,6 +575,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         )}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
         {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} />}
+        </div>
 
         {/* Phase stats */}
         {myTeam && s.teamPhaseStats[myTeamId] && (
@@ -1071,6 +1092,20 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         }
         return null;
       })()}
+
+      {/* Nobody got it right */}
+      {isRevealed && !s.correctTeamId && (
+        <div style={{
+          marginTop: 8, padding: '10px 14px', borderRadius: 12, textAlign: 'center',
+          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+          fontSize: 14, fontWeight: 800, color: '#f87171',
+          animation: 'tcreveal 0.4s ease 0.2s both',
+        }}>
+          {s.answers.length === 0
+            ? (lang === 'de' ? '⏱ Keine Antworten eingegangen' : '⏱ No answers received')
+            : (lang === 'de' ? '❌ Keiner hatte Recht' : '❌ Nobody got it right')}
+        </div>
+      )}
     </CozyCard>
   );
 }
@@ -1273,6 +1308,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && val.trim() && submit()}
         placeholder={t.answer.enterAnswer[lang]}
+        aria-label={lang === 'de' ? 'Antwort eingeben' : 'Enter your answer'}
         autoComplete="off"
         style={{
           width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
@@ -1306,6 +1342,7 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val)}
         placeholder={placeholder ?? t.answer.enterAnswer[lang]}
+        aria-label={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
         autoComplete="off"
         style={{
           width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
@@ -1340,6 +1377,8 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
           <button
             key={i}
             onClick={() => setSelected(i)}
+            aria-label={`${MUCHO_LABELS[i]}: ${label}`}
+            aria-pressed={isSelected}
             style={{
               display: 'flex', alignItems: 'center', gap: 0,
               borderRadius: 14, overflow: 'hidden', border: 'none', cursor: 'pointer',
@@ -1879,6 +1918,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       const firstCell = s.grid[swapFirst.r][swapFirst.c];
       if (firstCell.ownerId === cell.ownerId) return;
       await emit('qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
       setSelecting(false); setSwapFirst(null); return;
     }
 
@@ -1908,6 +1948,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       const isCandidate = s.stuckCandidates?.some(sc => sc.row === r && sc.col === c);
       if (!isCandidate) return;
       await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
       setSelecting(false); return;
     }
 
@@ -1915,12 +1956,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isSteal) {
       if (!cell.ownerId || cell.ownerId === myTeamId || cell.frozen || cell.stuck) return;
       await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
       setSelecting(false); return;
     }
 
     // PLACE
     if (cell.ownerId) return;
     await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
+    if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
     setSelecting(false);
   }
 
@@ -2150,7 +2193,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isStuckCandidate = isStuck && s.stuckCandidates?.some(sc => sc.row === r && sc.col === c);
                 const isMine = cell.ownerId === myTeamId;
                 return (
-                  <div key={`${r}-${c}`} onClick={() => handleCell(r, c)} style={{
+                  <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
+                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}`}
+                    onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
                     background: isSwapSelected ? `${actionColor}66`
                       : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}dd, ${team?.color ?? '#F59E0B'}aa)`
@@ -2271,7 +2316,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
           { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang],   desc: t.comeback.steal1desc[lang],   color: '#EF4444' },
           { action: 'SWAP_2',  icon: '🔄', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: '#8B5CF6' },
         ].map(opt => (
-          <button key={opt.action} onClick={() => emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action })}
+          <button key={opt.action} onClick={() => { if (navigator.vibrate) navigator.vibrate(30); emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action }); }}
             style={{
               padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
               background: '#1B1510', border: `2px solid ${opt.color}44`,
@@ -2413,13 +2458,52 @@ function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdat
 // ─── Waiting screen ────────────────────────────────────────────────────────────
 function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string; connected: boolean; lang?: 'de' | 'en' }) {
   return (
-    <div style={{ ...darkPage, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <style>{TEAM_CSS}</style>
-      <div style={{ textAlign: 'center', color: '#e2e8f0', position: 'relative', zIndex: 5 }}>
-        <div style={{ fontSize: 42, marginBottom: 12, animation: 'tcspin 3s linear infinite', display: 'inline-block' }}>⏳</div>
-        <div style={{ fontSize: 22, fontWeight: 900 }}>Quarter Quiz</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', margin: '8px 0' }}>{t.waiting.room[lang]}: {roomCode}</div>
-        <div style={{ fontSize: 12, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
+    <div style={darkPage}>
+      <style>{TEAM_CSS}{`
+        @keyframes tcShimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}</style>
+      <div style={grainOverlay} />
+      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+        {/* Header skeleton */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 42, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9' }}>Quarter Quiz</div>
+          <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', margin: '8px 0' }}>
+            {t.waiting.room[lang]}: {roomCode}
+          </div>
+        </div>
+        {/* Skeleton card */}
+        <div style={{
+          background: '#1B1510', borderRadius: 20, padding: '24px 18px',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{
+              height: i === 1 ? 18 : 14, borderRadius: 8,
+              marginBottom: i < 3 ? 12 : 0,
+              width: i === 1 ? '70%' : i === 2 ? '100%' : '55%',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%)',
+              backgroundSize: '200% 100%',
+              animation: `tcShimmer 1.8s ease-in-out ${i * 0.15}s infinite`,
+            }} />
+          ))}
+        </div>
+        {/* Connection status */}
+        <div style={{
+          textAlign: 'center', marginTop: 20,
+          fontSize: 13, fontWeight: 700,
+          color: connected ? '#22C55E' : '#EF4444',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: connected ? '#22C55E' : '#EF4444',
+            boxShadow: connected ? '0 0 6px #22C55E' : '0 0 6px #EF4444',
+            animation: 'tcpulse 1.5s infinite',
+          }} />
           {connected ? t.waiting.loading[lang] : t.waiting.connecting[lang]}
         </div>
       </div>

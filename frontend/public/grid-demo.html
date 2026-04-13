@@ -314,11 +314,32 @@ function buildBuilding(tileEl, cell, team, sz, btypeIdx, animate){
   }
   // ── 7: SILO — round-looking cylinder ──
   else if(bi===7){
-    // ── SILO: square box, short and wide ──
+    // ── SILO: true cylinder — circular top, single curved wall elements ──
     const w=Math.round(sz*.48), d=Math.round(sz*.48), h=Math.round(sz*.52*hm)+extra;
     const ox=Math.round((sz-w)/2), oy=Math.round((sz-d)/2);
-    const b=tbox(tileEl, ox, oy, 0, w, d, h, team);
-    mainEl=b.el; mainTop=b.top;
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${w}px;height:${d}px;transform-style:preserve-3d;transform:translateZ(0px);pointer-events:none`;
+    // Circular top
+    const top=document.createElement('div');
+    top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;transform:translateZ(${h}px);border-radius:50%;background:radial-gradient(circle at 38% 32%, ${rgba(team,1)} 0%, ${rgba(team,.60)} 60%, ${rgba(team,.30)} 100%);border:1px solid ${rgba(team,.45)}`;
+    // Front wall — single cylinder element using article technique
+    // border-radius:100%/r makes it fully oval, radial-gradients = top/bottom caps
+    const cr=Math.round(h*.15); // cap curve radius
+    const front=document.createElement('div');
+    front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;transform-origin:bottom center;transform:rotateX(-90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.15) 99.99%, transparent 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.08) 99.99%, transparent 0),linear-gradient(90deg, ${rgba(team,.30)} 0%, ${rgba(team,.70)} 35%, ${rgba(team,.70)} 65%, ${rgba(team,.30)} 100%)`;
+    // Right wall — same technique, rotated 90deg
+    const crR=Math.round(h*.15);
+    const right=document.createElement('div');
+    right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;transform-origin:center right;transform:rotateY(90deg);border-radius:${crR*2}px / 100%;background:radial-gradient(${crR}px 50% at ${crR}px 50%, rgba(0,0,0,.12) 99.99%, transparent 0),radial-gradient(${crR}px 50% at calc(100% - ${crR}px) 50%, rgba(255,255,255,.06) 99.99%, transparent 0),linear-gradient(0deg, ${rgba(team,.20)} 0%, ${rgba(team,.48)} 35%, ${rgba(team,.48)} 65%, ${rgba(team,.20)} 100%)`;
+    // Back wall
+    const back=document.createElement('div');
+    back.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${h}px;transform-origin:top center;transform:rotateX(90deg);border-radius:100% / ${cr*2}px;background:radial-gradient(50% ${cr}px at 50% ${cr}px, rgba(0,0,0,.10) 99.99%, transparent 0),radial-gradient(50% ${cr}px at 50% calc(100% - ${cr}px), rgba(255,255,255,.05) 99.99%, transparent 0),linear-gradient(90deg, ${rgba(team,.22)} 0%, ${rgba(team,.52)} 35%, ${rgba(team,.52)} 65%, ${rgba(team,.22)} 100%)`;
+    // Left wall
+    const left=document.createElement('div');
+    left.style.cssText=`position:absolute;top:0;left:0;width:${h}px;height:${d}px;transform-origin:center left;transform:rotateY(-90deg);border-radius:${crR*2}px / 100%;background:radial-gradient(${crR}px 50% at ${crR}px 50%, rgba(0,0,0,.08) 99.99%, transparent 0),radial-gradient(${crR}px 50% at calc(100% - ${crR}px) 50%, rgba(255,255,255,.05) 99.99%, transparent 0),linear-gradient(0deg, ${rgba(team,.28)} 0%, ${rgba(team,.56)} 35%, ${rgba(team,.56)} 65%, ${rgba(team,.28)} 100%)`;
+    el.appendChild(top);el.appendChild(front);el.appendChild(right);el.appendChild(back);el.appendChild(left);
+    tileEl.appendChild(el);
+    mainEl=el; mainTop=top;
     emojiZ=h;
   }
 

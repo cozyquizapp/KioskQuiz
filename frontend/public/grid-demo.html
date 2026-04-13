@@ -31,75 +31,28 @@ body{overflow-y:auto;overflow-x:hidden}
   transition:transform .15s ease-out;
 }
 .drag-hint{font-size:11px;color:#64748b;margin-top:-12px;font-weight:700;opacity:.7}
-.tile{
-  position:relative;
-  cursor:pointer;transition:transform .15s ease;
-}
+.tile{position:relative;cursor:pointer;transition:transform .15s ease}
 .tile:not(.owned):hover .ground{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+.ground{width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
 
-.ground{
-  width:100%;height:100%;border-radius:3px;
-  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
-}
+/* ═══ 6-FACE CUBE ═══ */
+.cube{position:absolute;pointer-events:none;left:var(--ox,0px);top:var(--oy,0px);width:var(--bw,100%);height:var(--bd,100%)}
+.c-top{position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);border-radius:var(--tr,2px);transform:translateZ(var(--bh,30px))}
+.c-front{position:absolute;left:0;bottom:0;width:var(--bw);height:var(--bh,30px);transform-origin:bottom center;transform:rotateX(-90deg)}
+.c-back{position:absolute;left:0;top:0;width:var(--bw);height:var(--bh,30px);transform-origin:top center;transform:rotateX(90deg)}
+.c-right{position:absolute;top:0;right:0;width:var(--bh,30px);height:var(--bd);transform-origin:center right;transform:rotateY(90deg)}
+.c-left{position:absolute;top:0;left:0;width:var(--bh,30px);height:var(--bd);transform-origin:center left;transform:rotateY(-90deg)}
+.c-emoji{position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);transform:translateZ(calc(var(--bh,30px) + 2px));display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
 
-/* ═══ 6-FACE 3D CUBE SYSTEM ═══ */
-.cube{
-  position:absolute;pointer-events:none;
-  left:var(--ox,0px);top:var(--oy,0px);
-  width:var(--bw,100%);height:var(--bd,100%);
-}
-.c-top{
-  position:absolute;left:0;top:0;
-  width:var(--bw);height:var(--bd);
-  border-radius:var(--tr,2px);
-  transform:translateZ(var(--bh,30px));
-}
-.c-front{
-  position:absolute;left:0;bottom:0;
-  width:var(--bw);height:var(--bh,30px);
-  transform-origin:bottom center;
-  transform:rotateX(-90deg);
-}
-.c-back{
-  position:absolute;left:0;top:0;
-  width:var(--bw);height:var(--bh,30px);
-  transform-origin:top center;
-  transform:rotateX(90deg);
-}
-.c-right{
-  position:absolute;top:0;right:0;
-  width:var(--bh,30px);height:var(--bd);
-  transform-origin:center right;
-  transform:rotateY(90deg);
-}
-.c-left{
-  position:absolute;top:0;left:0;
-  width:var(--bh,30px);height:var(--bd);
-  transform-origin:center left;
-  transform:rotateY(-90deg);
-}
-.c-emoji{
-  position:absolute;left:0;top:0;
-  width:var(--bw);height:var(--bd);
-  transform:translateZ(calc(var(--bh,30px) + 2px));
-  display:flex;align-items:center;justify-content:center;
-  pointer-events:none;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
-}
+/* ═══ CYLINDER (single-element trick from article) ═══ */
+.cylinder{position:absolute;pointer-events:none}
 
-/* Pyramid face — triangular clip-path, rotated into 3D position */
-.pyr-face{
-  position:absolute;pointer-events:none;
-  clip-path:polygon(50% 0%, 0% 100%, 100% 100%);
-}
-/* Keep old .pyramid class for compat */
-.pyramid{position:absolute;width:0;height:0;pointer-events:none}
+/* ═══ PYRAMID (border-trick from article: 4 sides) ═══ */
+.pyr-side{position:absolute;width:0;height:0;pointer-events:none;opacity:.85}
 
 /* Score bar */
 .score-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.team-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;
-  background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);
-  cursor:pointer;transition:all .25s;user-select:none;font-size:12px}
+.team-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .25s;user-select:none;font-size:12px}
 .team-pill.active{background:var(--tc-bg);border-color:var(--tc-border);box-shadow:0 0 20px var(--tc-glow)}
 .tp-emoji{font-size:16px;line-height:1}
 .tp-name{font-weight:800;color:#475569;font-size:12px}
@@ -107,37 +60,27 @@ body{overflow-y:auto;overflow-x:hidden}
 .tp-count{font-weight:900;font-size:10px;color:#1C1917;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
 .team-pill.active .tp-count{background:var(--tc-count-bg);color:var(--tc-text)}
 
-/* ═══ SHOWCASE ═══ */
+/* Showcase */
 .showcases{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;width:100%;max-width:1200px}
-.showcase-card{background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;
-  padding:20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.showcase-card{background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
 .showcase-card:hover{border-color:rgba(255,255,255,.12)}
 .sc-header{display:flex;align-items:center;gap:10px}
 .sc-icon{font-size:28px;line-height:1}
 .sc-title{font-size:16px;font-weight:900}
 .sc-desc{font-size:12px;color:#64748b;line-height:1.5}
-.sc-stage{position:relative;height:180px;border-radius:12px;overflow:hidden;
-  background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.04);
-  display:flex;align-items:center;justify-content:center}
-.sc-play{padding:10px 22px;border-radius:12px;border:none;cursor:pointer;
-  font-family:inherit;font-size:13px;font-weight:800;
-  background:var(--sc-color,#F59E0B);color:#0D0A06;
-  box-shadow:0 4px 16px var(--sc-glow,rgba(245,158,11,.3));
-  transition:all .2s;align-self:center}
+.sc-stage{position:relative;height:180px;border-radius:12px;overflow:hidden;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center}
+.sc-play{padding:10px 22px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;background:var(--sc-color,#F59E0B);color:#0D0A06;box-shadow:0 4px 16px var(--sc-glow,rgba(245,158,11,.3));transition:all .2s;align-self:center}
 .sc-play:hover{transform:scale(1.04);filter:brightness(1.15)}
 
-/* Building type gallery — 4 columns × 2 rows */
+/* Gallery 4×2 */
 .type-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:700px}
-.type-card{display:flex;flex-direction:column;align-items:center;gap:6px;
-  background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;
-  padding:14px 10px 10px}
+.type-card{display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 10px 10px}
 .type-card:hover{border-color:rgba(255,255,255,.12)}
-.tc-stage{perspective:400px;perspective-origin:50% 35%;height:100px;width:80px;
-  display:flex;align-items:center;justify-content:center}
+.tc-stage{perspective:400px;perspective-origin:50% 35%;height:100px;width:80px;display:flex;align-items:center;justify-content:center}
 .tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:46px;height:46px}
 .tc-name{font-size:11px;font-weight:800;color:#94a3b8;text-align:center}
 
-/* ═══ KEYFRAMES ═══ */
+/* Keyframes */
 @keyframes stampRing{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3);opacity:0}}
 @keyframes shatterOut{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(.3) rotate(var(--sr,180deg))}}
 @keyframes frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4)}50%{box-shadow:0 0 16px rgba(147,210,255,.8)}}
@@ -152,7 +95,7 @@ body{overflow-y:auto;overflow-x:hidden}
 
 <div class="page">
 <div class="section-title">Quartier Quiz</div>
-<div class="section-sub">Klicke leere Felder zum Setzen — jedes Feld bekommt einen zufälligen Gebäudetyp</div>
+<div class="section-sub">Klicke leere Felder zum Setzen — verbundene Felder verschmelzen zu größeren Gebäuden</div>
 
 <div class="drag-hint">🖱 Ziehen = Drehen · Mausrad = Zoom · Doppelklick = Reset</div>
 <div class="grid-scene" id="gridscene">
@@ -161,7 +104,7 @@ body{overflow-y:auto;overflow-x:hidden}
 <div class="score-bar" id="scorebar"></div>
 
 <div class="section-title" style="margin-top:8px">Gebäudetypen</div>
-<div class="section-sub">8 Silhouetten — jede sofort erkennbar</div>
+<div class="section-sub">8 Formen — Einzelgebäude + Verbund-Morphing</div>
 <div class="type-gallery" id="typegallery"></div>
 
 <div class="section-title" style="margin-top:8px">Animation Showcase</div>
@@ -186,315 +129,283 @@ TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 8 BUILDING TYPES — ALL kept well within tile bounds
-// wf/df = fraction of tile for width/depth (max .78)
-// hf = fraction of tile for height
+// 8 BUILDING TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 const BTYPES=[
-  // 0: Haus — medium square block, simple & clean
-  {name:'Haus',    wf:.72, df:.72, hf:.38, extra:null},
-  // 1: Turm — narrow & tall with 3D pyramid roof
-  {name:'Turm',    wf:.40, df:.40, hf:.50, extra:'pyramid'},
-  // 2: Hochhaus — tall block, flat roof, antenna
-  {name:'Hochhaus', wf:.62, df:.62, hf:.65, extra:'antenna'},
-  // 3: Laden — wide & flat with visible awning shelf
-  {name:'Laden',   wf:.78, df:.60, hf:.22, extra:'awning'},
-  // 4: Fabrik — L-shape: tall part + wide low wing
-  {name:'Fabrik',  wf:.42, df:.72, hf:.42, extra:'lshape'},
-  // 5: Kirche — narrow body with tall 3D pyramid steeple
-  {name:'Kirche',  wf:.42, df:.55, hf:.38, extra:'steeple'},
-  // 6: Burg — T-shape: main hall + wide cross wing + turret
-  {name:'Burg',    wf:.40, df:.72, hf:.28, extra:'tshape'},
-  // 7: Silo — cylindrical with domed top (gradient shading)
-  {name:'Silo',    wf:.50, df:.50, hf:.45, extra:'silo'},
+  {name:'Haus',     wf:.72, df:.72, hf:.38, build:'cube'},
+  {name:'Turm',     wf:.40, df:.40, hf:.55, build:'pyramid'},  // pyramid roof
+  {name:'Hochhaus', wf:.62, df:.62, hf:.65, build:'cube'},     // tall + antenna
+  {name:'Laden',    wf:.78, df:.60, hf:.22, build:'cube'},     // flat + awning
+  {name:'Fabrik',   wf:.42, df:.72, hf:.42, build:'lshape'},   // L-form
+  {name:'Kirche',   wf:.42, df:.72, hf:.35, build:'church'},   // cross + steeple
+  {name:'Burg',     wf:.40, df:.72, hf:.28, build:'tshape'},   // T-form + turret
+  {name:'Silo',     wf:.50, df:.50, hf:.45, build:'cylinder'}, // real cylinder
 ];
 
-// ══ HELPER: create a mini cube (for L/T-shape wings, chimney, etc.) ══
-function mkMiniCube(parent, x, y, z, w, d, h, team, brightMul){
+// ══ HELPERS ══
+function mkCube(parent, x, y, z, w, d, h, team, bm){
+  bm=bm||1;
   const mc=document.createElement('div');mc.className='cube';
   mc.style.cssText=`--bw:${w}px;--bd:${d}px;--bh:${h}px;--ox:${x}px;--oy:${y}px;
     position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);
     transform:translateZ(${z}px);pointer-events:none`;
   const t=document.createElement('div');t.className='c-top';
-  t.style.cssText=`background:${rca(team,.70*brightMul)};border:1px solid ${rca(team,.50)}`;
+  t.style.cssText=`background:${rca(team,.78*bm)};border:1px solid ${rca(team,.55)}`;
   const f=document.createElement('div');f.className='c-front';
-  f.style.cssText=`background:${rca(team,.42*brightMul)};border:1px solid ${rca(team,.30)}`;
+  f.style.cssText=`background:${rca(team,.44*bm)};border:1px solid ${rca(team,.30)}`;
   const r=document.createElement('div');r.className='c-right';
-  r.style.cssText=`background:${rca(team,.25*brightMul)};border:1px solid ${rca(team,.25)}`;
+  r.style.cssText=`background:${rca(team,.26*bm)};border:1px solid ${rca(team,.22)}`;
   mc.appendChild(t);mc.appendChild(f);mc.appendChild(r);
   parent.appendChild(mc);
-  return mc;
+  return{el:mc, top:t, front:f, right:r};
 }
 
-// ══ HELPER: real 3D pyramid from 4 triangular faces ══
-// Uses clip-path:polygon(50% 0, 0 100%, 100% 100%) for triangles,
-// each face rotated into position around the base.
-function mkPyramid3D(parent, cx, cy, zBase, baseW, baseD, pyrH, team){
+// Real pyramid using border trick from daily-dev-tips article:
+// .side { border: Xpx solid transparent; border-bottom: Ypx solid color; width:0;height:0 }
+// 4 sides rotated into position, + base
+function mkPyramid(parent, x, y, z, baseW, baseH, team){
   const wrap=document.createElement('div');
-  wrap.style.cssText=`position:absolute;left:${cx}px;top:${cy}px;width:0;height:0;
-    transform:translateZ(${zBase}px);pointer-events:none`;
+  wrap.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${baseW}px;height:${baseW}px;
+    transform:translateZ(${z}px);pointer-events:none`;
 
-  // 4 faces: front, back, right, left
-  // Each face is a triangle: base at bottom, peak at top
-  // Face dimensions: width=base side, height=slant height
-  const halfW=baseW/2, halfD=baseD/2;
-  const slantFront=Math.sqrt(pyrH*pyrH + halfD*halfD);
-  const slantSide=Math.sqrt(pyrH*pyrH + halfW*halfW);
+  const half=Math.round(baseW/2);
+  // Tilt angle: atan(height / (base/2))
+  const angle=Math.round(Math.atan2(baseH, half)*180/Math.PI);
 
-  // Front face (toward viewer / bottom in iso)
-  const ff=document.createElement('div');ff.className='pyr-face';
-  ff.style.cssText=`width:${baseW}px;height:${slantFront}px;
-    left:${-halfW}px;top:${-slantFront}px;
-    transform-origin:bottom center;
-    transform:translateY(${halfD}px) rotateX(-${Math.atan2(pyrH,halfD)*180/Math.PI}deg);
-    background:${rca(team,.50)}`;
-  wrap.appendChild(ff);
+  // Side 1 (front — toward camera in isometric = bottom edge)
+  const s1=document.createElement('div');s1.className='pyr-side';
+  s1.style.cssText=`left:0;top:0;
+    border-left:${half}px solid transparent;border-right:${half}px solid transparent;
+    border-bottom:${baseH}px solid ${rca(team,.55)};
+    transform-origin:bottom center;transform:rotateX(${angle}deg)`;
+  wrap.appendChild(s1);
 
-  // Back face
-  const bf=document.createElement('div');bf.className='pyr-face';
-  bf.style.cssText=`width:${baseW}px;height:${slantFront}px;
-    left:${-halfW}px;top:0;
-    transform-origin:top center;
-    transform:translateY(${-halfD}px) rotateX(${Math.atan2(pyrH,halfD)*180/Math.PI}deg);
-    background:${rca(team,.30)}`;
-  wrap.appendChild(bf);
+  // Side 2 (back — top edge)
+  const s2=document.createElement('div');s2.className='pyr-side';
+  s2.style.cssText=`left:0;bottom:0;
+    border-left:${half}px solid transparent;border-right:${half}px solid transparent;
+    border-top:${baseH}px solid ${rca(team,.30)};
+    transform-origin:top center;transform:rotateX(-${angle}deg)`;
+  wrap.appendChild(s2);
 
-  // Right face
-  const rf=document.createElement('div');rf.className='pyr-face';
-  rf.style.cssText=`width:${baseD}px;height:${slantSide}px;
-    left:0;top:${-slantSide/2}px;
-    transform-origin:center left;
-    transform:translateX(${halfW}px) rotateY(${Math.atan2(pyrH,halfW)*180/Math.PI}deg) translateY(${slantSide/2-halfD}px);
-    background:${rca(team,.22)}`;
-  wrap.appendChild(rf);
+  // Side 3 (right)
+  const s3=document.createElement('div');s3.className='pyr-side';
+  s3.style.cssText=`right:0;top:0;
+    border-top:${half}px solid transparent;border-bottom:${half}px solid transparent;
+    border-left:${baseH}px solid ${rca(team,.22)};
+    transform-origin:center right;transform:rotateY(-${angle}deg)`;
+  wrap.appendChild(s3);
 
-  // Left face
-  const lf=document.createElement('div');lf.className='pyr-face';
-  lf.style.cssText=`width:${baseD}px;height:${slantSide}px;
-    left:0;top:${-slantSide/2}px;
-    transform-origin:center right;
-    transform:translateX(${-halfW}px) rotateY(-${Math.atan2(pyrH,halfW)*180/Math.PI}deg) translateY(${slantSide/2-halfD}px);
-    background:${rca(team,.38)}`;
-  wrap.appendChild(lf);
+  // Side 4 (left)
+  const s4=document.createElement('div');s4.className='pyr-side';
+  s4.style.cssText=`left:0;top:0;
+    border-top:${half}px solid transparent;border-bottom:${half}px solid transparent;
+    border-right:${baseH}px solid ${rca(team,.42)};
+    transform-origin:center left;transform:rotateY(${angle}deg)`;
+  wrap.appendChild(s4);
 
   parent.appendChild(wrap);
+  return wrap;
 }
 
-// ══ BUILD 6-FACE CUBE ══
-function buildCube(tileEl, cell, team, sz, btype, animate=false){
-  tileEl.querySelectorAll('.cube,.pyramid').forEach(b=>b.remove());
+// Real CSS cylinder from article: single div, border-radius + radial gradients
+function mkCylinder(parent, x, y, z, w, d, h, team){
+  const el=document.createElement('div');el.className='cylinder';
+  const curveR=Math.round(h*.12); // vertical curve radius
+  el.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${d}px;
+    transform:translateZ(${z}px);pointer-events:none`;
+
+  // Top face (circular, lifted)
+  const top=document.createElement('div');
+  top.style.cssText=`position:absolute;left:0;top:0;width:${w}px;height:${d}px;
+    transform:translateZ(${h}px);border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, ${rca(team,.95)} 0%, ${rca(team,.50)} 50%, ${rca(team,.25)} 100%);
+    border:1px solid ${rca(team,.50)}`;
+  el.appendChild(top);
+
+  // Front face — cylinder body with rounded top/bottom (article technique)
+  const front=document.createElement('div');
+  front.style.cssText=`position:absolute;left:0;bottom:0;width:${w}px;height:${h}px;
+    transform-origin:bottom center;transform:rotateX(-90deg);
+    border-radius:${Math.round(w*.5)}px / ${curveR}px;
+    background:
+      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.15) 99.99%, transparent 0),
+      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.08) 99.99%, transparent 0),
+      linear-gradient(90deg, ${rca(team,.18)} 0%, ${rca(team,.52)} 40%, ${rca(team,.52)} 60%, ${rca(team,.18)} 100%);
+    border:1px solid ${rca(team,.30)}`;
+  el.appendChild(front);
+
+  // Right face — same cylinder trick
+  const right=document.createElement('div');
+  right.style.cssText=`position:absolute;top:0;right:0;width:${h}px;height:${d}px;
+    transform-origin:center right;transform:rotateY(90deg);
+    border-radius:${Math.round(d*.5)}px / ${curveR}px;
+    background:
+      radial-gradient(50% ${curveR}px at 50% ${curveR}px, rgba(0,0,0,.18) 99.99%, transparent 0),
+      radial-gradient(50% ${curveR}px at 50% calc(100% - ${curveR}px), rgba(255,255,255,.06) 99.99%, transparent 0),
+      linear-gradient(90deg, ${rca(team,.10)} 0%, ${rca(team,.35)} 40%, ${rca(team,.35)} 60%, ${rca(team,.10)} 100%);
+    border:1px solid ${rca(team,.22)}`;
+  el.appendChild(right);
+
+  parent.appendChild(el);
+  return{el, top};
+}
+
+// ══ MAIN BUILD FUNCTION ══
+function buildBuilding(tileEl, cell, team, sz, btype, animate=false){
+  tileEl.querySelectorAll('.cube,.cylinder,.pyr-side').forEach(b=>b.remove());
+  // Also remove any pyramid wrapper divs
+  tileEl.querySelectorAll('[style*="translateZ"]').forEach(b=>{
+    if(b.classList.contains('ground')||b.classList.contains('cube')||b.classList.contains('cylinder'))return;
+    if(!b.closest('.cube')&&!b.closest('.cylinder')) b.remove();
+  });
   if(!cell||!team)return;
 
   const bt=btype||BTYPES[0];
-  const bw=Math.round(sz*bt.wf);
-  const bd=Math.round(sz*bt.df);
+  const bw=Math.round(sz*bt.wf), bd=Math.round(sz*bt.df);
   let bh=Math.round(sz*bt.hf);
-
-  // Home buildings slightly taller
   if(cell.home) bh=Math.round(bh*1.25);
-  // Stack growth
-  bh += cell.stacked*Math.round(sz*.18);
-  // Joker bonus
-  if(cell.joker) bh += Math.round(sz*.12);
+  bh+=cell.stacked*Math.round(sz*.18);
+  if(cell.joker) bh+=Math.round(sz*.12);
+  const ox=Math.round((sz-bw)/2), oy=Math.round((sz-bd)/2);
 
-  const ox=Math.round((sz-bw)/2);
-  const oy=Math.round((sz-bd)/2);
+  let mainTop, mainFront, mainRight, mainEl;
 
-  const isSilo=(bt.extra==='silo');
-
-  const cube=document.createElement('div');cube.className='cube';
-  cube.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;--ox:${ox}px;--oy:${oy}px;--tr:2px`;
-
-  const colTop=rca(team,.80), colFront=rca(team,.45), colRight=rca(team,.28);
-  const colBack=rca(team,.20), colLeft=rca(team,.35);
-  const bordTop=rca(team,.60), bordSide=rca(team,.30);
-
-  // 6 faces
-  const top=document.createElement('div');top.className='c-top';
-  if(isSilo){
-    // Sphere gradient for domed top
-    top.style.cssText=`background:radial-gradient(circle at 38% 32%, ${rca(team,.95)} 0%, ${rca(team,.45)} 55%, ${rca(team,.20)} 100%);
-      border:1px solid ${bordTop};border-radius:50%`;
-  } else {
-    top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:2px`;
+  if(bt.build==='cylinder'){
+    // ── SILO: real CSS cylinder ──
+    const cyl=mkCylinder(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=cyl.el; mainTop=cyl.top;
   }
-  cube.appendChild(top);
-
-  const front=document.createElement('div');front.className='c-front';
-  if(isSilo){
-    // Cylinder-like gradient: bright center → dark edges
-    front.style.cssText=`background:radial-gradient(ellipse 70% 100% at 50% 50%, ${rca(team,.55)} 0%, ${rca(team,.18)} 100%);
-      border:1px solid ${bordSide};border-radius:${Math.round(bw*.3)}px / 2px`;
-  } else {
-    front.style.cssText=`background:${colFront};border:1px solid ${bordSide}`;
+  else if(bt.build==='pyramid'){
+    // ── TURM: cube body + pyramid roof ──
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
+    // Pyramid on top
+    const pyrH=Math.round(bh*.55);
+    mkPyramid(tileEl, ox, oy, bh, bw, pyrH, team);
   }
-  cube.appendChild(front);
-
-  const back=document.createElement('div');back.className='c-back';
-  back.style.cssText=`background:${colBack};border:1px solid ${bordSide}`;
-  cube.appendChild(back);
-
-  const right=document.createElement('div');right.className='c-right';
-  if(isSilo){
-    right.style.cssText=`background:radial-gradient(ellipse 70% 100% at 50% 50%, ${rca(team,.38)} 0%, ${rca(team,.10)} 100%);
-      border:1px solid ${bordSide};border-radius:${Math.round(bd*.3)}px / 2px`;
-  } else {
-    right.style.cssText=`background:${colRight};border:1px solid ${bordSide}`;
+  else if(bt.build==='church'){
+    // ── KIRCHE: cross-shaped (2 cubes) + tall pyramid steeple ──
+    // Vertical part (nave)
+    const c1=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c1.el; mainTop=c1.top; mainFront=c1.front; mainRight=c1.right;
+    // Horizontal part (transept) — wider, shorter
+    const tw=Math.round(sz*.72), td=Math.round(bd*.35), th=Math.round(bh*.80);
+    const tox=Math.round((sz-tw)/2);
+    mkCube(tileEl, tox, oy+Math.round((bd-td)/2), 0, tw, td, th, team, 0.95);
+    // Tall steeple pyramid
+    const pyrH=Math.round(bh*.90);
+    mkPyramid(tileEl, ox, oy, bh, bw, pyrH, team);
   }
-  cube.appendChild(right);
+  else if(bt.build==='lshape'){
+    // ── FABRIK: L-shape = tall part + wide low wing ──
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
+    // Low wing extending right
+    const wingW=Math.round(sz*.34), wingH=Math.round(bh*.50);
+    mkCube(tileEl, ox+bw-1, oy, 0, wingW, bd, wingH, team, 0.90);
+    // Chimney
+    const cw=Math.round(bw*.24), cd=Math.round(bd*.20), ch=Math.round(bh*.30);
+    mkCube(tileEl, ox+1, oy+1, bh, cw, cd, ch, team, 0.80);
+  }
+  else if(bt.build==='tshape'){
+    // ── BURG: T-shape = stem + wide cross-bar + turret ──
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
+    // Wide cross-bar at front
+    const barW=Math.round(sz*.76), barD=Math.round(bd*.38), barH=Math.round(bh*.75);
+    const barOx=Math.round((sz-barW)/2);
+    mkCube(tileEl, barOx, oy, 0, barW, barD, barH, team, 0.92);
+    // Corner turret with pyramid
+    const tw=Math.round(barW*.20), td=Math.round(barD*.55), th=Math.round(bh*.55);
+    mkCube(tileEl, barOx+barW-tw, oy, barH, tw, td, th, team, 1.05);
+    const pyrH=Math.round(th*.50);
+    mkPyramid(tileEl, barOx+barW-tw, oy, barH+th, tw, pyrH, team);
+  }
+  else {
+    // ── DEFAULT CUBE (Haus, Hochhaus, Laden) ──
+    const c=mkCube(tileEl, ox, oy, 0, bw, bd, bh, team);
+    mainEl=c.el; mainTop=c.top; mainFront=c.front; mainRight=c.right;
 
-  const left=document.createElement('div');left.className='c-left';
-  left.style.cssText=`background:${colLeft};border:1px solid ${bordSide}`;
-  cube.appendChild(left);
-
-  // Windows on front face (only if tall enough)
-  if(bh>=16 && bw>=16){
-    const winRows=bh>=30?2:1;
-    const winCols=bw>=24?2:1;
-    for(let wr=0;wr<winRows;wr++){
-      for(let wc=0;wc<winCols;wc++){
-        const win=document.createElement('div');
-        const wW=Math.max(3,Math.round(bw*.16));
-        const wH=Math.max(3,Math.round(bh*.14));
-        const gX=Math.round((bw-winCols*wW)/(winCols+1));
-        const gY=Math.round((bh-winRows*wH)/(winRows+1));
-        win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
-          left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
-          background:rgba(255,255,200,.20);border:1px solid rgba(255,255,200,.06);
-          border-radius:1px;pointer-events:none`;
-        front.appendChild(win);
-      }
+    // Hochhaus: antenna
+    if(bt.name==='Hochhaus'){
+      const ah=Math.round(bh*.35);
+      const pole=document.createElement('div');
+      pole.style.cssText=`position:absolute;left:${ox+Math.round(bw/2)-1}px;top:${oy+Math.round(bd/2)-1}px;
+        width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
+      const shaft=document.createElement('div');
+      shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
+        transform-origin:bottom center;transform:rotateX(-90deg);background:rgba(255,255,255,.5)`;
+      const dot=document.createElement('div');
+      dot.style.cssText=`position:absolute;left:-2px;top:-2px;width:6px;height:6px;
+        transform:translateZ(${ah}px);background:${rca(team,.95)};border-radius:50%`;
+      pole.appendChild(shaft);pole.appendChild(dot);tileEl.appendChild(pole);
+    }
+    // Laden: awning shelf
+    if(bt.name==='Laden'){
+      const aw=bw+4, ad=Math.round(bd*.30), ah=3;
+      mkCube(tileEl, ox-2, oy+bd-Math.round(ad*.3), Math.round(bh*.55), aw, ad, ah, team, 1.15);
     }
   }
 
-  // ── EXTRAS ──
-  const ex=bt.extra;
-
-  if(ex==='pyramid'){
-    // Real 3D pyramid roof on tower
-    mkPyramid3D(cube, Math.round(bw/2), Math.round(bd/2), bh,
-      Math.round(bw*.85), Math.round(bd*.85), Math.round(bh*.55), team);
-  }
-
-  if(ex==='antenna'){
-    // Thin vertical pole + dot on top
-    const ah=Math.round(bh*.35);
-    const pole=document.createElement('div');
-    pole.style.cssText=`position:absolute;left:${Math.round(bw/2)-1}px;top:${Math.round(bd/2)-1}px;
-      width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
-    const shaft=document.createElement('div');
-    shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
-      transform-origin:bottom center;transform:rotateX(-90deg);
-      background:rgba(255,255,255,.45)`;
-    const dot=document.createElement('div');
-    dot.style.cssText=`position:absolute;left:-2px;top:-2px;width:6px;height:6px;
-      transform:translateZ(${ah}px);background:${rca(team,.95)};border-radius:50%`;
-    pole.appendChild(shaft);pole.appendChild(dot);
-    cube.appendChild(pole);
-  }
-
-  if(ex==='awning'){
-    // Wide visible shelf/awning — clearly a shop front
-    const aw=bw+4;
-    const ad=Math.round(bd*.32);
-    const ah=3;
-    mkMiniCube(cube, -2, bd-Math.round(ad*.3), Math.round(bh*.6), aw, ad, ah, team, 1.15);
-  }
-
-  if(ex==='lshape'){
-    // L-SHAPE: main cube is the tall part. Add wide low wing to the right.
-    const wingW=Math.round(sz*.34);
-    const wingD=bd;  // same depth as main = flush
-    const wingH=Math.round(bh*.50);
-    mkMiniCube(cube, bw-1, 0, 0, wingW, wingD, wingH, team, 0.92);
-    // Small chimney on main roof
-    const cw=Math.round(bw*.25), cd=Math.round(bd*.20), ch=Math.round(bh*.32);
-    mkMiniCube(cube, 1, 1, bh, cw, cd, ch, team, 0.80);
-  }
-
-  if(ex==='steeple'){
-    // Tall 3D pyramid steeple centered on church roof
-    mkPyramid3D(cube, Math.round(bw/2), Math.round(bd/2), bh,
-      Math.round(bw*.75), Math.round(bd*.75), Math.round(bh*.80), team);
-  }
-
-  if(ex==='tshape'){
-    // T-SHAPE: main cube is the stem. Add wide cross-bar at front.
-    const barW=Math.round(sz*.78);
-    const barD=Math.round(bd*.40);
-    const barH=Math.round(bh*.80);
-    const barOx=Math.round((bw-barW)/2);
-    mkMiniCube(cube, barOx, 0, 0, barW, barD, barH, team, 0.95);
-    // Corner turret on cross-bar
-    const tw=Math.round(barW*.20), td=Math.round(barD*.60), th=Math.round(bh*.55);
-    mkMiniCube(cube, barOx+barW-tw, 0, barH, tw, td, th, team, 1.05);
-    // Pyramid on turret
-    mkPyramid3D(cube, barOx+barW-tw+Math.round(tw/2), Math.round(td/2), barH+th,
-      Math.round(tw*.9), Math.round(td*.9), Math.round(th*.5), team);
-  }
-
-  if(ex==='silo'){
-    // Dome highlight glow on top
-    const dome=document.createElement('div');
-    dome.style.cssText=`position:absolute;left:${Math.round(bw*.05)}px;top:${Math.round(bd*.05)}px;
-      width:${Math.round(bw*.9)}px;height:${Math.round(bd*.9)}px;
-      transform:translateZ(${bh+1}px);border-radius:50%;pointer-events:none;
-      background:radial-gradient(circle at 35% 35%, rgba(255,255,255,.18) 0%, transparent 55%)`;
-    cube.appendChild(dome);
-    // Remove windows from silo
-    front.querySelectorAll('div').forEach(w=>w.remove());
+  // Windows on front face (cubes only, not cylinder)
+  if(mainFront && bh>=16 && bw>=16 && bt.build!=='cylinder'){
+    const winRows=bh>=28?2:1, winCols=bw>=22?2:1;
+    for(let wr=0;wr<winRows;wr++)for(let wc=0;wc<winCols;wc++){
+      const win=document.createElement('div');
+      const wW=Math.max(3,Math.round(bw*.15)), wH=Math.max(3,Math.round(bh*.13));
+      const gX=Math.round((bw-winCols*wW)/(winCols+1)), gY=Math.round((bh-winRows*wH)/(winRows+1));
+      win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
+        left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
+        background:rgba(255,255,200,.22);border:1px solid rgba(255,255,200,.06);border-radius:1px;pointer-events:none`;
+      mainFront.appendChild(win);
+    }
   }
 
   // ── Emoji on top ──
-  const emoji=document.createElement('div');emoji.className='c-emoji';
-  const emojiSz=cell.home?Math.round(sz*.32):Math.round(sz*.24);
-  emoji.style.fontSize=emojiSz+'px';
-
+  const emoji=document.createElement('div');
+  const topH=bh + (bt.build==='pyramid'?Math.round(bh*.3):0);
+  emoji.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${bw}px;height:${bd}px;
+    transform:translateZ(${topH+2}px);display:flex;align-items:center;justify-content:center;
+    pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
+    font-size:${cell.home?Math.round(sz*.32):Math.round(sz*.24)}px`;
   if(cell.frozen){
-    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(emojiSz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
+    const esz=cell.home?Math.round(sz*.32):Math.round(sz*.24);
+    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(esz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
   } else if(cell.joker){
     emoji.textContent='⭐';
   } else {
     emoji.textContent=team.emoji;
   }
-  cube.appendChild(emoji);
+  tileEl.appendChild(emoji);
 
-  // ── Frozen: ONLY roof gets ice, walls keep team color ──
-  if(cell.frozen){
-    top.style.background='rgba(147,210,255,.50)';
-    top.style.border='2px solid rgba(147,210,255,.85)';
-    top.style.animation='frostPulse 2.5s ease-in-out infinite';
-    front.style.background=`linear-gradient(to bottom, rgba(147,210,255,.12), ${colFront})`;
-    right.style.background=`linear-gradient(to bottom, rgba(147,210,255,.08), ${colRight})`;
+  // ── Frozen: ice on roof only ──
+  if(cell.frozen && mainTop){
+    mainTop.style.background='rgba(147,210,255,.50)';
+    mainTop.style.border='2px solid rgba(147,210,255,.85)';
+    mainTop.style.animation='frostPulse 2.5s ease-in-out infinite';
   }
-
   // ── Joker: golden roof ──
-  if(cell.joker){
-    top.style.background='rgba(251,191,36,.55)';
-    top.style.border='2px solid rgba(251,191,36,.9)';
-    top.style.animation='jokerGlow 2s ease-in-out infinite';
+  if(cell.joker && mainTop){
+    mainTop.style.background='rgba(251,191,36,.55)';
+    mainTop.style.border='2px solid rgba(251,191,36,.9)';
+    mainTop.style.animation='jokerGlow 2s ease-in-out infinite';
   }
-
   // ── Stack badge ──
   if(cell.stacked>0 && !cell.joker){
     const badge=document.createElement('div');
-    badge.style.cssText=`position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-      transform:translateZ(${bh+8}px);
-      display:flex;align-items:center;justify-content:center;pointer-events:none`;
+    badge.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${bw}px;height:${bd}px;
+      transform:translateZ(${bh+8}px);display:flex;align-items:center;justify-content:center;pointer-events:none`;
     const span=document.createElement('span');
     span.style.cssText='font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
     span.textContent='\u00D7'+(cell.stacked+1);
-    badge.appendChild(span);cube.appendChild(badge);
+    badge.appendChild(span);tileEl.appendChild(badge);
   }
-
   // ── Animate ──
-  if(animate){
-    cube.style.opacity='0';
-    cube.style.transition='opacity .35s ease';
-    requestAnimationFrame(()=>{cube.style.opacity='1'});
+  if(animate && mainEl){
+    mainEl.style.opacity='0';mainEl.style.transition='opacity .35s ease';
+    requestAnimationFrame(()=>{mainEl.style.opacity='1'});
   }
-
-  tileEl.appendChild(cube);
 }
 
 // ══ STATE ══
@@ -519,22 +430,23 @@ for(let i=0;i<16;i++){const el=document.createElement('div');el.className='firef
   el.style.setProperty('--dur',(4+Math.random()*6)+'s');el.style.setProperty('--del',(Math.random()*5)+'s');
   ffC.appendChild(el)}
 
-// ══ RENDER TILE ══
+// ══ RENDER ══
 function renderTile(r,c){
   const el=document.querySelector(`#grid [data-r="${r}"][data-c="${c}"]`);
   if(!el)return;
   const cell=state[r][c];
   const ground=el.querySelector('.ground');
+  // Clear everything except ground
+  Array.from(el.children).forEach(ch=>{if(!ch.classList.contains('ground'))ch.remove()});
   if(!cell){
     el.classList.remove('owned');
     ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
-    el.querySelectorAll('.cube,.pyramid').forEach(b=>b.remove());
     return;
   }
   el.classList.add('owned');
   const team=TEAMS[cell.teamIdx];
   ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 10px ${rca(team,.20)}`;
-  buildCube(el,cell,team,CELL,BTYPES[cell.btype||0]);
+  buildBuilding(el,cell,team,CELL,BTYPES[cell.btype||0]);
 }
 
 // ══ BUILD DOM ══
@@ -553,7 +465,6 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
     const bt=Math.floor(Math.random()*BTYPES.length);
     state[r][c]={teamIdx:activeTeam,home:false,frozen:false,stacked:0,joker:false,btype:bt};
     renderTile(r,c);
-    buildCube(el,state[r][c],TEAMS[activeTeam],CELL,BTYPES[bt],true);
     [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
       const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderTile(nr,nc)});
     updateScores();
@@ -561,107 +472,29 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
   gridEl.appendChild(el);renderTile(r,c);
 }
 
-// ══ DRAG TO ROTATE ══
+// ══ DRAG / ZOOM ══
 {
   const scene=document.getElementById('gridscene');
-  let rx=55, rz=-45, zoom=1; // initial rotation + zoom
-  let dragging=false, startX=0, startY=0, startRx=0, startRz=0;
-  let didDrag=false;
+  let rx=55, rz=-45, zoom=1;
+  let dragging=false, startX=0, startY=0, startRx=0, startRz=0, didDrag=false;
 
   function applyTransform(){
-    gridEl.style.setProperty('--rx', rx+'deg');
-    gridEl.style.setProperty('--rz', rz+'deg');
-    gridEl.style.setProperty('--zoom', zoom);
+    gridEl.style.setProperty('--rx',rx+'deg');
+    gridEl.style.setProperty('--rz',rz+'deg');
+    gridEl.style.setProperty('--zoom',zoom);
   }
-
-  scene.addEventListener('mousedown', e=>{
-    // Don't hijack clicks on tiles — only start drag tracking
-    dragging=true; didDrag=false;
-    startX=e.clientX; startY=e.clientY;
-    startRx=rx; startRz=rz;
-    scene.classList.add('dragging');
-    e.preventDefault();
-  });
-
-  window.addEventListener('mousemove', e=>{
-    if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    if(Math.abs(dx)>3 || Math.abs(dy)>3) didDrag=true;
-    // Horizontal drag = rotateZ, vertical drag = rotateX
-    rz=startRz + dx*0.4;
-    rx=startRx - dy*0.3;
-    // Clamp rotateX: 15° (almost flat) to 75° (top-down)
-    rx=Math.max(15, Math.min(75, rx));
-    applyTransform();
-  });
-
-  window.addEventListener('mouseup', ()=>{
-    if(!dragging) return;
-    dragging=false;
-    scene.classList.remove('dragging');
-  });
-
-  // If it was a drag (not click), prevent tile click
-  scene.addEventListener('click', e=>{
-    if(didDrag){ e.stopPropagation(); didDrag=false; }
-  }, true);
-
-  // Double-click to reset
-  scene.addEventListener('dblclick', e=>{
-    rx=55; rz=-45; zoom=1;
-    applyTransform();
-    e.preventDefault();
-  });
-
-  // Mouse wheel zoom
-  scene.addEventListener('wheel', e=>{
-    e.preventDefault();
-    const delta=e.deltaY>0 ? -0.08 : 0.08;
-    zoom=Math.max(0.4, Math.min(2.5, zoom+delta));
-    applyTransform();
-  }, {passive:false});
-
-  // Touch support
-  scene.addEventListener('touchstart', e=>{
-    if(e.touches.length!==1) return;
-    dragging=true; didDrag=false;
-    startX=e.touches[0].clientX; startY=e.touches[0].clientY;
-    startRx=rx; startRz=rz;
-  }, {passive:true});
-
-  window.addEventListener('touchmove', e=>{
-    if(!dragging || e.touches.length!==1) return;
-    const dx=e.touches[0].clientX-startX, dy=e.touches[0].clientY-startY;
-    if(Math.abs(dx)>3 || Math.abs(dy)>3) didDrag=true;
-    rz=startRz + dx*0.4;
-    rx=startRx - dy*0.3;
-    rx=Math.max(15, Math.min(75, rx));
-    applyTransform();
-  }, {passive:true});
-
-  window.addEventListener('touchend', ()=>{ dragging=false; });
-
-  // Pinch-to-zoom (2 fingers)
+  scene.addEventListener('mousedown',e=>{dragging=true;didDrag=false;startX=e.clientX;startY=e.clientY;startRx=rx;startRz=rz;scene.classList.add('dragging');e.preventDefault()});
+  window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;rz=startRz+dx*.4;rx=Math.max(15,Math.min(75,startRx-dy*.3));applyTransform()});
+  window.addEventListener('mouseup',()=>{if(dragging){dragging=false;scene.classList.remove('dragging')}});
+  scene.addEventListener('click',e=>{if(didDrag){e.stopPropagation();didDrag=false}},true);
+  scene.addEventListener('dblclick',e=>{rx=55;rz=-45;zoom=1;applyTransform();e.preventDefault()});
+  scene.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.4,Math.min(2.5,zoom+(e.deltaY>0?-.08:.08)));applyTransform()},{passive:false});
+  scene.addEventListener('touchstart',e=>{if(e.touches.length===1){dragging=true;didDrag=false;startX=e.touches[0].clientX;startY=e.touches[0].clientY;startRx=rx;startRz=rz}},{passive:true});
+  window.addEventListener('touchmove',e=>{if(!dragging||e.touches.length!==1)return;const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;rz=startRz+dx*.4;rx=Math.max(15,Math.min(75,startRx-dy*.3));applyTransform()},{passive:true});
+  window.addEventListener('touchend',()=>{dragging=false});
   let pinchStart=0;
-  scene.addEventListener('touchstart', e=>{
-    if(e.touches.length===2){
-      const dx=e.touches[0].clientX-e.touches[1].clientX;
-      const dy=e.touches[0].clientY-e.touches[1].clientY;
-      pinchStart=Math.sqrt(dx*dx+dy*dy);
-    }
-  }, {passive:true});
-  scene.addEventListener('touchmove', e=>{
-    if(e.touches.length===2 && pinchStart>0){
-      const dx=e.touches[0].clientX-e.touches[1].clientX;
-      const dy=e.touches[0].clientY-e.touches[1].clientY;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      const scale=dist/pinchStart;
-      zoom=Math.max(0.4, Math.min(2.5, zoom*scale));
-      pinchStart=dist;
-      applyTransform();
-      e.preventDefault();
-    }
-  }, {passive:false});
+  scene.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinchStart=Math.sqrt(dx*dx+dy*dy)}},{passive:true});
+  scene.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinchStart>0){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,dist=Math.sqrt(dx*dx+dy*dy);zoom=Math.max(.4,Math.min(2.5,zoom*(dist/pinchStart)));pinchStart=dist;applyTransform();e.preventDefault()}},{passive:false});
 }
 
 // Scores
@@ -671,9 +504,7 @@ function updateScores(){
     return`<div class="team-pill${active?' active':''}" style="--tc-bg:${rca(t,.08)};--tc-border:${rca(t,.45)};--tc-glow:${rca(t,.2)};--tc-text:${t.color};--tc-count-bg:${rca(t,.15)}" onclick="selectTeam(${i})"><span class="tp-emoji">${t.emoji}</span><span class="tp-name">${t.name}</span><span class="tp-count">${count}</span></div>`}).join('')}
 window.selectTeam=i=>{activeTeam=i;updateScores()};updateScores();
 
-// ══════════════════════════════════════════════════════════════════════════════
-// BUILDING TYPE GALLERY
-// ══════════════════════════════════════════════════════════════════════════════
+// ══ GALLERY ══
 const galEl=document.getElementById('typegallery');
 BTYPES.forEach((bt,i)=>{
   const card=document.createElement('div');card.className='type-card';
@@ -682,7 +513,7 @@ BTYPES.forEach((bt,i)=>{
   const ground=document.createElement('div');ground.className='ground';
   ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(TEAMS[i%4],.15)};border:1px solid ${rca(TEAMS[i%4],.35)}`;
   iso.appendChild(ground);
-  buildCube(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],46,bt);
+  buildBuilding(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],46,bt);
   stage.appendChild(iso);
   const label=document.createElement('div');label.className='tc-name';
   label.textContent=bt.name;
@@ -690,207 +521,51 @@ BTYPES.forEach((bt,i)=>{
   galEl.appendChild(card);
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SHOWCASE SECTION
-// ══════════════════════════════════════════════════════════════════════════════
+// ══ SHOWCASE ══
 const T_BLUE=TEAMS[0],T_RED=TEAMS[1];
-
 function miniStage(stage,cols,rows,sz,cells){
   stage.innerHTML='';
   const scene=document.createElement('div');
   scene.style.cssText='perspective:500px;perspective-origin:50% 35%';
   const grid=document.createElement('div');
-  grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);
-    grid-template-rows:repeat(${rows},${sz}px);
-    transform:rotateX(55deg) rotateZ(-45deg)`;
+  grid.style.cssText=`display:grid;gap:3px;grid-template-columns:repeat(${cols},${sz}px);grid-template-rows:repeat(${rows},${sz}px);transform:rotateX(55deg) rotateZ(-45deg)`;
   const map={};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const tile=document.createElement('div');tile.className='tile';
-    tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative`;
-    const ground=document.createElement('div');ground.className='ground';
-    ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+    const tile=document.createElement('div');tile.className='tile';tile.style.cssText=`width:${sz}px;height:${sz}px;position:relative`;
+    const ground=document.createElement('div');ground.className='ground';ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
     tile.appendChild(ground);grid.appendChild(tile);map[`${r},${c}`]=tile;
   }
   scene.appendChild(grid);stage.appendChild(scene);
   cells.forEach(([r,c,team,home,btIdx])=>{
     const tile=map[`${r},${c}`];if(!tile)return;
-    const ground=tile.querySelector('.ground');
-    ground.style.background=rca(team,.15);ground.style.borderColor=rca(team,.35);
-    ground.style.boxShadow=`0 0 8px ${rca(team,.2)}`;
-    const bi=btIdx!=null?btIdx:Math.floor(Math.random()*BTYPES.length);
-    buildCube(tile,{home:!!home,frozen:false,stacked:0,joker:false,btype:bi},team,sz,BTYPES[bi]);
+    tile.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(team,.15)};border:1px solid ${rca(team,.35)};box-shadow:0 0 8px ${rca(team,.2)}`;
+    const bi=btIdx!=null?btIdx:0;
+    buildBuilding(tile,{home:!!home,frozen:false,stacked:0,joker:false,btype:bi},team,sz,BTYPES[bi]);
   });
   return{grid,map,stage,sz};
 }
+function fxRing(p,color,d=0){const r=document.createElement('div');r.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;border-radius:50%;border:2px solid ${color};pointer-events:none;z-index:20;animation:stampRing .7s ease-out ${d}s both`;p.appendChild(r);setTimeout(()=>r.remove(),900)}
+function fxShatter(p,color,n=10){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=18+Math.random()*25,el=document.createElement('div');el.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:1px;background:${color};pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;--sr:${Math.random()*360}deg;animation:shatterOut .55s ease-out ${Math.random()*.08}s both`;p.appendChild(el);setTimeout(()=>el.remove(),700)}}
 
-function fxRing(parent,color,delay=0){
-  const ring=document.createElement('div');
-  ring.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;
-    border-radius:50%;border:2px solid ${color};pointer-events:none;z-index:20;
-    animation:stampRing .7s ease-out ${delay}s both`;
-  parent.appendChild(ring);setTimeout(()=>ring.remove(),900);
-}
-function fxShatter(parent,color,n=10){
-  for(let i=0;i<n;i++){
-    const a=Math.random()*Math.PI*2,d=18+Math.random()*25;
-    const p=document.createElement('div');
-    p.style.cssText=`position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;
-      border-radius:1px;background:${color};pointer-events:none;z-index:20;
-      --sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;--sr:${Math.random()*360}deg;
-      animation:shatterOut .55s ease-out ${Math.random()*.08}s both`;
-    parent.appendChild(p);setTimeout(()=>p.remove(),700);
-  }
-}
+function playPlace(stage){const SZ=42,bt=Math.floor(Math.random()*BTYPES.length);const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,0],[0,1,T_BLUE,false,2],[1,0,T_BLUE,false,4]]);const target=map['1,1'];setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)};box-shadow:0 0 8px ${rca(T_BLUE,.2)}`;buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);fxRing(target,T_BLUE.color);fxRing(target,T_BLUE.color,.12);fxShatter(target,T_BLUE.color,6)},500);setTimeout(()=>playPlace(stage),3500)}
+function playSteal(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,1],[0,1,T_BLUE,false,3],[1,0,T_BLUE,false,0],[1,1,T_RED,false,6]]);const target=map['1,1'];setTimeout(()=>{fxShatter(target,T_RED.color,12);const oldCubes=target.querySelectorAll('.cube,.cylinder');oldCubes.forEach(b=>{b.style.transition='opacity .2s';b.style.opacity='0';setTimeout(()=>b.remove(),250)});setTimeout(()=>{target.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)}`;const bt=Math.floor(Math.random()*BTYPES.length);buildBuilding(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true)},300)},500);setTimeout(()=>playSteal(stage),3800)}
+function playFreeze(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED,false,0]]);const target=map['1,1'];setTimeout(()=>{for(let i=0;i<6;i++){const cr=document.createElement('div'),a=i*(Math.PI*2/6),d=22;cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:10px;pointer-events:none;z-index:20;--sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;animation:shatterOut .7s ease-out ${i*.04}s both`;cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900)}setTimeout(()=>{target.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(147,210,255,.12);border:1px solid rgba(147,210,255,.4)';buildBuilding(target,{home:false,frozen:true,stacked:0,joker:false,btype:0},T_RED,SZ,BTYPES[0])},400)},500);setTimeout(()=>playFreeze(stage),4000)}
+function playStack(stage){const SZ=42;const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE,false,3],[1,1,T_BLUE,false,2],[1,2,T_BLUE,false,5]]);const target=map['1,1'];let count=0;function once(){count++;fxRing(target,'#FBBF24');buildBuilding(target,{home:false,frozen:false,stacked:count,joker:false,btype:2},T_BLUE,SZ,BTYPES[2],true)}setTimeout(once,500);setTimeout(once,1200);setTimeout(once,1900);setTimeout(()=>playStack(stage),4200)}
+function playJoker(stage){const SZ=38;const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,4],[0,1,T_BLUE,false,1],[1,0,T_BLUE,false,7]]);setTimeout(()=>{const t=map['1,1'];t.querySelector('.ground').style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(T_BLUE,.15)};border:1px solid ${rca(T_BLUE,.35)}`;buildBuilding(t,{home:false,frozen:false,stacked:0,joker:false,btype:0},T_BLUE,SZ,BTYPES[0],true)},500);setTimeout(()=>{[[0,0],[0,1],[1,0],[1,1]].forEach(([r,c],idx)=>{const tile=map[`${r},${c}`];tile.querySelector('.ground').style.cssText='width:100%;height:100%;border-radius:3px;border:1px solid rgba(251,191,36,.7);box-shadow:0 0 12px rgba(251,191,36,.4);background:rgba(251,191,36,.06)';buildBuilding(tile,{home:false,frozen:false,stacked:0,joker:true,btype:[4,1,7,0][idx]},T_BLUE,SZ,BTYPES[[4,1,7,0][idx]])});for(let i=0;i<8;i++){const star=document.createElement('div');star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;font-size:${10+Math.random()*8}px;pointer-events:none;z-index:20;--starY:${-30-Math.random()*30}px;animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900)}},1200);setTimeout(()=>playJoker(stage),4800)}
 
-// ── PLACE ──
-function playPlace(stage){
-  const SZ=42;
-  const bt=Math.floor(Math.random()*BTYPES.length);
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,0],[0,1,T_BLUE,false,2],[1,0,T_BLUE,false,4]]);
-  const target=map['1,1'];
-  setTimeout(()=>{
-    const ground=target.querySelector('.ground');
-    ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
-    ground.style.boxShadow=`0 0 8px ${rca(T_BLUE,.2)}`;
-    buildCube(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);
-    fxRing(target,T_BLUE.color,0);fxRing(target,T_BLUE.color,.12);
-    fxShatter(target,T_BLUE.color,6);
-  },500);
-  setTimeout(()=>playPlace(stage),3500);
-}
-
-// ── STEAL ──
-function playSteal(stage){
-  const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,1],[0,1,T_BLUE,false,3],[1,0,T_BLUE,false,0],[1,1,T_RED,false,6]]);
-  const target=map['1,1'];
-  setTimeout(()=>{
-    fxShatter(target,T_RED.color,12);
-    const flash=document.createElement('div');
-    flash.style.cssText=`position:absolute;inset:-8px;border-radius:50%;z-index:19;pointer-events:none;
-      background:radial-gradient(circle,rgba(239,68,68,.5),transparent 70%);animation:stampRing .5s ease-out both`;
-    target.appendChild(flash);setTimeout(()=>flash.remove(),600);
-    const oldBox=target.querySelector('.cube');
-    if(oldBox){oldBox.style.transition='opacity .2s';oldBox.style.opacity='0';setTimeout(()=>oldBox.remove(),250);}
-    setTimeout(()=>{
-      const ground=target.querySelector('.ground');
-      ground.style.background=rca(T_BLUE,.15);ground.style.borderColor=rca(T_BLUE,.35);
-      const bt=Math.floor(Math.random()*BTYPES.length);
-      buildCube(target,{home:false,frozen:false,stacked:0,joker:false,btype:bt},T_BLUE,SZ,BTYPES[bt],true);
-    },300);
-  },500);
-  setTimeout(()=>playSteal(stage),3800);
-}
-
-// ── FREEZE ──
-function playFreeze(stage){
-  const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[1,1,T_RED,false,0]]);
-  const target=map['1,1'];
-  setTimeout(()=>{
-    for(let i=0;i<6;i++){
-      const cr=document.createElement('div');
-      const a=i*(Math.PI*2/6),d=22;
-      cr.style.cssText=`position:absolute;left:50%;top:50%;font-size:10px;pointer-events:none;z-index:20;
-        --sx:${Math.cos(a)*d}px;--sy:${Math.sin(a)*d}px;
-        animation:shatterOut .7s ease-out ${i*.04}s both`;
-      cr.textContent='\u2744';target.appendChild(cr);setTimeout(()=>cr.remove(),900);
-    }
-    setTimeout(()=>{
-      const ground=target.querySelector('.ground');
-      ground.style.background='rgba(147,210,255,.12)';ground.style.borderColor='rgba(147,210,255,.4)';
-      buildCube(target,{home:false,frozen:true,stacked:0,joker:false,btype:0},T_RED,SZ,BTYPES[0]);
-    },400);
-  },500);
-  setTimeout(()=>playFreeze(stage),4000);
-}
-
-// ── STACK ──
-function playStack(stage){
-  const SZ=42;
-  const{map}=miniStage(stage,3,3,SZ,[[1,0,T_BLUE,false,3],[1,1,T_BLUE,false,2],[1,2,T_BLUE,false,5]]);
-  const target=map['1,1'];
-  let count=0;
-  function once(){
-    count++;
-    fxRing(target,'#FBBF24',0);
-    for(let i=0;i<3;i++){
-      const p=document.createElement('div');
-      p.style.cssText=`position:absolute;left:${42+Math.random()*16}%;top:30%;font-size:10px;color:#FBBF24;
-        pointer-events:none;z-index:20;--starY:${-30-Math.random()*15}px;
-        animation:starFall .6s ease-out ${i*.06}s both reverse`;
-      p.textContent='\u25B2';target.appendChild(p);setTimeout(()=>p.remove(),800);
-    }
-    buildCube(target,{home:false,frozen:false,stacked:count,joker:false,btype:2},T_BLUE,SZ,BTYPES[2],true);
-  }
-  setTimeout(once,500);
-  setTimeout(once,1200);
-  setTimeout(once,1900);
-  setTimeout(()=>playStack(stage),4200);
-}
-
-// ── JOKER ──
-function playJoker(stage){
-  const SZ=38;
-  const{map}=miniStage(stage,3,3,SZ,[[0,0,T_BLUE,false,4],[0,1,T_BLUE,false,1],[1,0,T_BLUE,false,7]]);
-  setTimeout(()=>{
-    const t=map['1,1'],g=t.querySelector('.ground');
-    g.style.background=rca(T_BLUE,.15);g.style.borderColor=rca(T_BLUE,.35);
-    buildCube(t,{home:false,frozen:false,stacked:0,joker:false,btype:0},T_BLUE,SZ,BTYPES[0],true);
-  },500);
-  setTimeout(()=>{
-    [[0,0],[0,1],[1,0],[1,1]].forEach(([r,c],idx)=>{
-      const tile=map[`${r},${c}`];
-      const g=tile.querySelector('.ground');
-      g.style.borderColor='rgba(251,191,36,.7)';g.style.boxShadow='0 0 12px rgba(251,191,36,.4)';
-      buildCube(tile,{home:false,frozen:false,stacked:0,joker:true,btype:[4,1,7,0][idx]},T_BLUE,SZ,BTYPES[[4,1,7,0][idx]]);
-    });
-    for(let i=0;i<8;i++){
-      const star=document.createElement('div');
-      star.style.cssText=`position:absolute;left:${30+Math.random()*40}%;top:40%;
-        font-size:${10+Math.random()*8}px;pointer-events:none;z-index:20;
-        --starY:${-30-Math.random()*30}px;
-        animation:starFall ${.4+Math.random()*.3}s ease-out ${Math.random()*.2}s both`;
-      star.textContent='\u2B50';stage.appendChild(star);setTimeout(()=>star.remove(),900);
-    }
-    const cx=stage.offsetWidth/2,cy=stage.offsetHeight/2;
-    for(let i=0;i<3;i++){
-      const ring=document.createElement('div');
-      ring.style.cssText=`position:absolute;left:${cx-16}px;top:${cy-16}px;width:32px;height:32px;
-        border-radius:50%;border:2px solid #FBBF24;pointer-events:none;z-index:19;
-        animation:jokerBurst .6s ease-out ${i*.1}s both`;
-      stage.appendChild(ring);setTimeout(()=>ring.remove(),900);
-    }
-  },1200);
-  setTimeout(()=>playJoker(stage),4800);
-}
-
-// Build showcase cards
 const CARDS=[
-  {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',
-    desc:'Leeres Feld erobern. Zufälliger Gebäudetyp steigt aus dem Boden.',play:playPlace},
-  {icon:'\u26A1',title:'Klauen',color:'#EF4444',
-    desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, neues Gebäude steigt auf.',play:playSteal},
-  {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',
-    desc:'Feld schützen. Nur das Dach wird eisblau — Wände behalten die Teamfarbe.',play:playFreeze},
-  {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',
-    desc:'Eigenes Feld verstärken. Gebäude wächst höher (3×), goldene Pfeile + Badge.',play:playStack},
-  {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',
-    desc:'Vier Felder = Quadrat. Goldene Burst-Ringe, Sternenregen, goldene Dächer.',play:playJoker},
+  {icon:'\u{1F4CD}',title:'Setzen',color:'#22C55E',desc:'Leeres Feld erobern. Zufälliger Gebäudetyp steigt aus dem Boden.',play:playPlace},
+  {icon:'\u26A1',title:'Klauen',color:'#EF4444',desc:'Gegnerisches Gebäude übernehmen. Alte Farbe zerbröckelt, neues steigt auf.',play:playSteal},
+  {icon:'\u2744\uFE0F',title:'Einfrieren',color:'#93D2FF',desc:'Feld schützen. Nur das Dach wird eisblau — Wände behalten die Teamfarbe.',play:playFreeze},
+  {icon:'\u{1F4CC}',title:'Stapeln',color:'#FBBF24',desc:'Eigenes Feld verstärken. Gebäude wächst höher (3×).',play:playStack},
+  {icon:'\u2B50',title:'Joker (2\u00D72)',color:'#F59E0B',desc:'Vier Felder = Quadrat. Goldene Burst-Ringe, Sternenregen.',play:playJoker},
 ];
 const scC=document.getElementById('showcases');
 CARDS.forEach(card=>{
   const div=document.createElement('div');div.className='showcase-card';
-  div.innerHTML=`<div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div>
-    <div class="sc-desc">${card.desc}</div><div class="sc-stage"></div>
-    <button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">\u25B6 Play</button>`;
+  div.innerHTML=`<div class="sc-header"><span class="sc-icon">${card.icon}</span><span class="sc-title" style="color:${card.color}">${card.title}</span></div><div class="sc-desc">${card.desc}</div><div class="sc-stage"></div><button class="sc-play" style="--sc-color:${card.color};--sc-glow:${card.color}44">\u25B6 Play</button>`;
   const stageEl=div.querySelector('.sc-stage');
-  function bind(){
-    const btn=div.querySelector('.sc-play');
-    btn.textContent='\u25B6 Play';
-    btn.onclick=()=>{stageEl.innerHTML='';card.play(stageEl);
-      btn.textContent='\u23F9 Stop';btn.onclick=()=>{stageEl.innerHTML='';bind()}};
-  }
+  function bind(){const btn=div.querySelector('.sc-play');btn.textContent='\u25B6 Play';btn.onclick=()=>{stageEl.innerHTML='';card.play(stageEl);btn.textContent='\u23F9 Stop';btn.onclick=()=>{stageEl.innerHTML='';bind()}}}
   bind();scC.appendChild(div);
 });
 </script>

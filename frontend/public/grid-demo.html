@@ -38,63 +38,42 @@ body{overflow-y:auto;overflow-x:hidden}
   background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
 }
 
-/* ═══ 6-FACE 3D CUBE SYSTEM ═══
-   Each building is a full 3D box with 6 faces.
-   The cube wrapper sits at inset:0 of the tile,
-   faces are positioned via rotate+translate.
-   --bw = building width, --bd = building depth,
-   --bh = building height (Z axis, going UP) */
+/* ═══ 6-FACE 3D CUBE SYSTEM ═══ */
 .cube{
   position:absolute;pointer-events:none;
-  /* centered on tile: offset by (tile-bw)/2 and (tile-bd)/2 */
   left:var(--ox,0px);top:var(--oy,0px);
   width:var(--bw,100%);height:var(--bd,100%);
 }
-
-/* Top face — lifted to Z=height */
 .c-top{
   position:absolute;left:0;top:0;
   width:var(--bw);height:var(--bd);
   border-radius:var(--tr,2px);
   transform:translateZ(var(--bh,30px));
 }
-/* Bottom face — at Z=0 (usually hidden) */
-.c-bot{
-  position:absolute;left:0;top:0;
-  width:var(--bw);height:var(--bd);
-  transform:translateZ(0);
-  opacity:0; /* hidden, just for completeness */
-}
-/* Front face — bottom edge, folds down toward viewer */
 .c-front{
   position:absolute;left:0;bottom:0;
   width:var(--bw);height:var(--bh,30px);
   transform-origin:bottom center;
   transform:rotateX(-90deg);
 }
-/* Back face — top edge, folds up away from viewer */
 .c-back{
   position:absolute;left:0;top:0;
   width:var(--bw);height:var(--bh,30px);
   transform-origin:top center;
   transform:rotateX(90deg);
 }
-/* Right face — right edge, folds right */
 .c-right{
   position:absolute;top:0;right:0;
   width:var(--bh,30px);height:var(--bd);
   transform-origin:center right;
   transform:rotateY(90deg);
 }
-/* Left face — left edge, folds left */
 .c-left{
   position:absolute;top:0;left:0;
   width:var(--bh,30px);height:var(--bd);
   transform-origin:center left;
   transform:rotateY(-90deg);
 }
-
-/* Emoji floating above */
 .c-emoji{
   position:absolute;left:0;top:0;
   width:var(--bw);height:var(--bd);
@@ -102,6 +81,11 @@ body{overflow-y:auto;overflow-x:hidden}
   display:flex;align-items:center;justify-content:center;
   pointer-events:none;
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
+}
+
+/* Pyramid spike (border trick) — sits on top of a cube via translateZ */
+.pyramid{
+  position:absolute;width:0;height:0;pointer-events:none;
 }
 
 /* Score bar */
@@ -141,7 +125,7 @@ body{overflow-y:auto;overflow-x:hidden}
   background:rgba(27,21,16,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;
   padding:16px 20px;min-width:110px}
 .type-card:hover{border-color:rgba(255,255,255,.12)}
-.tc-stage{perspective:400px;perspective-origin:50% 35%;height:90px;width:90px;
+.tc-stage{perspective:400px;perspective-origin:50% 35%;height:100px;width:90px;
   display:flex;align-items:center;justify-content:center}
 .tc-iso{transform:rotateX(55deg) rotateZ(-45deg);position:relative;width:50px;height:50px}
 .tc-name{font-size:12px;font-weight:800;color:#94a3b8}
@@ -180,7 +164,6 @@ body{overflow-y:auto;overflow-x:hidden}
 <script>
 const SIZE=7, CELL=56;
 
-// ══ TEAMS ══
 const TEAMS=[];
 function mkTeam(hex,name,emoji){
   const m=hex.match(/#(..)(..)(..)/);
@@ -195,40 +178,64 @@ TEAMS.push(mkTeam('#22C55E','Frosch','\u{1F438}'));
 function rca(t,a){return`rgba(${t.r},${t.g},${t.b},${a})`}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 8 BUILDING TYPES — each defines width, depth, height (relative to tile size)
-// plus optional extras (roof shape, chimney, antenna, steps, etc.)
+// 8 BUILDING TYPES — ALL kept well within tile bounds
+// wf/df = fraction of tile for width/depth (max .78)
+// hf = fraction of tile for height
 // ══════════════════════════════════════════════════════════════════════════════
 const BTYPES=[
-  // 0: Haus — medium square, pitched roof effect via clipped top
-  {name:'Haus',  wf:.82, df:.82, hf:.45, topRadius:'2px',
-   extras:[]},
-  // 1: Turm — narrow & tall
-  {name:'Turm',  wf:.48, df:.48, hf:.85, topRadius:'2px',
-   extras:['spire']},
-  // 2: Hochhaus — full width, very tall, flat roof
-  {name:'Hochhaus', wf:.78, df:.78, hf:.72, topRadius:'1px',
-   extras:['antenna']},
-  // 3: Laden — wide & flat with awning
-  {name:'Laden', wf:.90, df:.70, hf:.30, topRadius:'2px',
-   extras:['awning']},
-  // 4: Fabrik — wide, medium height, chimney
-  {name:'Fabrik', wf:.85, df:.75, hf:.48, topRadius:'1px',
-   extras:['chimney']},
-  // 5: Kirche — narrow with steeple
-  {name:'Kirche', wf:.52, df:.65, hf:.60, topRadius:'2px',
-   extras:['steeple']},
-  // 6: Burg — stepped, wide base + narrow upper
-  {name:'Burg',  wf:.88, df:.88, hf:.38, topRadius:'1px',
-   extras:['tower']},
-  // 7: Silo — round (border-radius), medium
-  {name:'Silo',  wf:.55, df:.55, hf:.58, topRadius:'50%',
-   extras:['dome']},
+  // 0: Haus — medium square block, simple
+  {name:'Haus',    wf:.72, df:.72, hf:.38, tr:'2px', extra:null},
+  // 1: Turm — narrow & tall with pyramid spire on top
+  {name:'Turm',    wf:.40, df:.40, hf:.55, tr:'2px', extra:'spire'},
+  // 2: Hochhaus — taller block, flat roof, antenna pole
+  {name:'Hochhaus', wf:.62, df:.62, hf:.65, tr:'1px', extra:'antenna'},
+  // 3: Laden — wide & flat with awning overhang
+  {name:'Laden',   wf:.78, df:.60, hf:.25, tr:'2px', extra:'awning'},
+  // 4: Fabrik — wide, medium height, chimney on back
+  {name:'Fabrik',  wf:.75, df:.68, hf:.38, tr:'1px', extra:'chimney'},
+  // 5: Kirche — narrow body with tall pyramid steeple
+  {name:'Kirche',  wf:.45, df:.55, hf:.42, tr:'2px', extra:'steeple'},
+  // 6: Burg — wide low base + small corner turret
+  {name:'Burg',    wf:.78, df:.78, hf:.28, tr:'1px', extra:'turret'},
+  // 7: Silo — round, medium height, dome ring
+  {name:'Silo',    wf:.48, df:.48, hf:.48, tr:'50%', extra:'dome'},
 ];
 
+// ══ HELPER: create a mini cube (for extras like chimney, turret) ══
+function mkMiniCube(parent, x, y, z, w, d, h, team, brightMul){
+  const mc=document.createElement('div');mc.className='cube';
+  mc.style.cssText=`--bw:${w}px;--bd:${d}px;--bh:${h}px;--ox:${x}px;--oy:${y}px;
+    position:absolute;left:0;top:0;width:var(--bw);height:var(--bd);
+    transform:translateZ(${z}px);pointer-events:none`;
+  // Only 3 visible faces (top, front, right) — back/left hidden by main cube
+  const t=document.createElement('div');t.className='c-top';
+  t.style.cssText=`background:${rca(team,.70*brightMul)};border:1px solid ${rca(team,.50)}`;
+  const f=document.createElement('div');f.className='c-front';
+  f.style.cssText=`background:${rca(team,.42*brightMul)};border:1px solid ${rca(team,.30)}`;
+  const r=document.createElement('div');r.className='c-right';
+  r.style.cssText=`background:${rca(team,.25*brightMul)};border:1px solid ${rca(team,.25)}`;
+  mc.appendChild(t);mc.appendChild(f);mc.appendChild(r);
+  parent.appendChild(mc);
+  return mc;
+}
+
+// ══ HELPER: create pyramid spire (border trick from article) ══
+function mkPyramid(parent, x, y, z, base, height, team){
+  const pyr=document.createElement('div');pyr.className='pyramid';
+  // The pyramid sits centered at (x,y) lifted to z
+  const half=Math.round(base/2);
+  pyr.style.cssText=`left:${x}px;top:${y}px;
+    transform:translateZ(${z}px) translateX(-${half}px) translateY(-${half}px);
+    border-left:${half}px solid ${rca(team,.30)};
+    border-right:${half}px solid ${rca(team,.22)};
+    border-bottom:${height}px solid ${rca(team,.55)};
+    border-top:${half}px solid ${rca(team,.75)}`;
+  parent.appendChild(pyr);
+}
+
 // ══ BUILD 6-FACE CUBE ══
-// Creates a full 3D cube with all 6 faces + optional extras
 function buildCube(tileEl, cell, team, sz, btype, animate=false){
-  tileEl.querySelectorAll('.cube').forEach(b=>b.remove());
+  tileEl.querySelectorAll('.cube,.pyramid').forEach(b=>b.remove());
   if(!cell||!team)return;
 
   const bt=btype||BTYPES[0];
@@ -236,202 +243,156 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
   const bd=Math.round(sz*bt.df);
   let bh=Math.round(sz*bt.hf);
 
-  // Home buildings are taller
-  if(cell.home) bh=Math.round(bh*1.3);
-  // Stacked buildings grow
-  bh += cell.stacked*Math.round(sz*.22);
-  // Joker adds height
-  if(cell.joker) bh += Math.round(sz*.15);
+  // Home buildings slightly taller
+  if(cell.home) bh=Math.round(bh*1.25);
+  // Stack growth
+  bh += cell.stacked*Math.round(sz*.18);
+  // Joker bonus
+  if(cell.joker) bh += Math.round(sz*.12);
 
   const ox=Math.round((sz-bw)/2);
   const oy=Math.round((sz-bd)/2);
 
   const cube=document.createElement('div');cube.className='cube';
-  cube.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;--ox:${ox}px;--oy:${oy}px;--tr:${bt.topRadius}`;
+  cube.style.cssText=`--bw:${bw}px;--bd:${bd}px;--bh:${bh}px;--ox:${ox}px;--oy:${oy}px;--tr:${bt.tr}`;
 
-  // Color scheme: top=bright, front=medium, right=dark, back=darker, left=medium-dark
-  const colTop=rca(team,.80);
-  const colFront=rca(team,.45);
-  const colRight=rca(team,.28);
-  const colBack=rca(team,.20);
-  const colLeft=rca(team,.35);
-  const bordTop=rca(team,.60);
-  const bordSide=rca(team,.35);
+  const colTop=rca(team,.80), colFront=rca(team,.45), colRight=rca(team,.28);
+  const colBack=rca(team,.20), colLeft=rca(team,.35);
+  const bordTop=rca(team,.60), bordSide=rca(team,.30);
 
-  // -- Top face --
+  // 6 faces
   const top=document.createElement('div');top.className='c-top';
-  top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:${bt.topRadius}`;
+  top.style.cssText=`background:${colTop};border:1px solid ${bordTop};border-radius:${bt.tr}`;
   cube.appendChild(top);
 
-  // -- Front face --
   const front=document.createElement('div');front.className='c-front';
   front.style.cssText=`background:${colFront};border:1px solid ${bordSide}`;
   cube.appendChild(front);
 
-  // -- Back face --
   const back=document.createElement('div');back.className='c-back';
   back.style.cssText=`background:${colBack};border:1px solid ${bordSide}`;
   cube.appendChild(back);
 
-  // -- Right face --
   const right=document.createElement('div');right.className='c-right';
   right.style.cssText=`background:${colRight};border:1px solid ${bordSide}`;
   cube.appendChild(right);
 
-  // -- Left face --
   const left=document.createElement('div');left.className='c-left';
   left.style.cssText=`background:${colLeft};border:1px solid ${bordSide}`;
   cube.appendChild(left);
 
-  // -- Windows (small rectangles on front face) --
-  if(bh>18 && bw>20){
-    const winRows=bh>35?2:1;
-    const winCols=bw>30?2:1;
+  // Windows on front face (only if tall enough)
+  if(bh>=16 && bw>=16){
+    const winRows=bh>=30?2:1;
+    const winCols=bw>=24?2:1;
     for(let wr=0;wr<winRows;wr++){
       for(let wc=0;wc<winCols;wc++){
         const win=document.createElement('div');
-        const winW=Math.max(4,Math.round(bw*.18));
-        const winH=Math.max(4,Math.round(bh*.16));
-        const gapX=Math.round((bw-winCols*winW)/(winCols+1));
-        const gapY=Math.round((bh-winRows*winH)/(winRows+1));
-        win.style.cssText=`position:absolute;
-          width:${winW}px;height:${winH}px;
-          left:${gapX+wc*(winW+gapX)}px;top:${gapY+wr*(winH+gapY)}px;
-          background:rgba(255,255,200,.18);border:1px solid rgba(255,255,200,.08);
+        const wW=Math.max(3,Math.round(bw*.16));
+        const wH=Math.max(3,Math.round(bh*.14));
+        const gX=Math.round((bw-winCols*wW)/(winCols+1));
+        const gY=Math.round((bh-winRows*wH)/(winRows+1));
+        win.style.cssText=`position:absolute;width:${wW}px;height:${wH}px;
+          left:${gX+wc*(wW+gX)}px;top:${gY+wr*(wH+gY)}px;
+          background:rgba(255,255,200,.20);border:1px solid rgba(255,255,200,.06);
           border-radius:1px;pointer-events:none`;
         front.appendChild(win);
       }
     }
   }
 
-  // -- Extras based on building type --
-  bt.extras.forEach(extra=>{
-    if(extra==='spire'){
-      // Narrow spike on top of tower
-      const spire=document.createElement('div');
-      const sw=Math.round(bw*.3), sd=Math.round(bd*.3), sh=Math.round(bh*.45);
-      spire.className='cube';
-      spire.style.cssText=`--bw:${sw}px;--bd:${sd}px;--bh:${sh}px;
-        --ox:${Math.round((bw-sw)/2)}px;--oy:${Math.round((bd-sd)/2)}px;
-        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-        transform:translateZ(${bh}px);pointer-events:none`;
-      const st=document.createElement('div');st.className='c-top';
-      st.style.cssText=`background:${rca(team,.90)};border:1px solid ${bordTop};border-radius:2px`;
-      const sf=document.createElement('div');sf.className='c-front';
-      sf.style.cssText=`background:${rca(team,.55)};border:1px solid ${bordSide}`;
-      const sr=document.createElement('div');sr.className='c-right';
-      sr.style.cssText=`background:${rca(team,.35)};border:1px solid ${bordSide}`;
-      spire.appendChild(st);spire.appendChild(sf);spire.appendChild(sr);
-      cube.appendChild(spire);
-    }
-    if(extra==='antenna'){
-      // Thin antenna on top
-      const ant=document.createElement('div');
-      const aw=3, ad=3, ah=Math.round(bh*.4);
-      ant.style.cssText=`position:absolute;
-        left:${Math.round(bw/2-1)}px;top:${Math.round(bd/2-1)}px;
-        width:${aw}px;height:${ad}px;
-        transform:translateZ(${bh}px);pointer-events:none`;
-      const pole=document.createElement('div');
-      pole.style.cssText=`position:absolute;left:0;top:0;width:${aw}px;height:${ad}px;
-        transform:translateZ(${ah}px);background:${rca(team,.90)};border-radius:50%`;
-      const shaft=document.createElement('div');
-      shaft.style.cssText=`position:absolute;left:0;bottom:0;width:${aw}px;height:${ah}px;
-        transform-origin:bottom center;transform:rotateX(-90deg);
-        background:rgba(255,255,255,.4)`;
-      ant.appendChild(pole);ant.appendChild(shaft);
-      cube.appendChild(ant);
-    }
-    if(extra==='awning'){
-      // Wide overhang on front
-      const aw=bw+6, ad=Math.round(bd*.35), ah=3;
-      const awning=document.createElement('div');
-      awning.className='cube';
-      awning.style.cssText=`--bw:${aw}px;--bd:${ad}px;--bh:${ah}px;
-        --ox:${-3}px;--oy:${bd-Math.round(ad*.3)}px;
-        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-        transform:translateZ(${Math.round(bh*.7)}px);pointer-events:none`;
-      const at=document.createElement('div');at.className='c-top';
-      at.style.cssText=`background:${rca(team,.90)};border:1px solid ${bordTop}`;
-      const af=document.createElement('div');af.className='c-front';
-      af.style.cssText=`background:${rca(team,.60)};border:1px solid ${bordSide}`;
-      awning.appendChild(at);awning.appendChild(af);
-      cube.appendChild(awning);
-    }
-    if(extra==='chimney'){
-      // Small chimney on back-right
-      const cw=Math.round(bw*.2), cd=Math.round(bd*.2), ch=Math.round(bh*.45);
-      const chim=document.createElement('div');
-      chim.className='cube';
-      chim.style.cssText=`--bw:${cw}px;--bd:${cd}px;--bh:${ch}px;
-        --ox:${bw-cw-3}px;--oy:2px;
-        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-        transform:translateZ(${bh}px);pointer-events:none`;
-      const ct=document.createElement('div');ct.className='c-top';
-      ct.style.cssText=`background:${rca(team,.65)};border:1px solid ${bordSide}`;
-      const cf=document.createElement('div');cf.className='c-front';
-      cf.style.cssText=`background:${rca(team,.40)};border:1px solid ${bordSide}`;
-      const cr=document.createElement('div');cr.className='c-right';
-      cr.style.cssText=`background:${rca(team,.25)};border:1px solid ${bordSide}`;
-      chim.appendChild(ct);chim.appendChild(cf);chim.appendChild(cr);
-      cube.appendChild(chim);
-    }
-    if(extra==='steeple'){
-      // Tall narrow steeple on top
-      const sw=Math.round(bw*.35), sd=Math.round(bd*.35), sh=Math.round(bh*.65);
-      const steeple=document.createElement('div');
-      steeple.className='cube';
-      steeple.style.cssText=`--bw:${sw}px;--bd:${sd}px;--bh:${sh}px;
-        --ox:${Math.round((bw-sw)/2)}px;--oy:${Math.round((bd-sd)/2)}px;
-        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-        transform:translateZ(${bh}px);pointer-events:none`;
-      const st=document.createElement('div');st.className='c-top';
-      st.style.cssText=`background:${rca(team,.95)};border:1px solid ${bordTop};border-radius:2px`;
-      const sf=document.createElement('div');sf.className='c-front';
-      sf.style.cssText=`background:${rca(team,.55)};border:1px solid ${bordSide}`;
-      const sr=document.createElement('div');sr.className='c-right';
-      sr.style.cssText=`background:${rca(team,.35)};border:1px solid ${bordSide}`;
-      steeple.appendChild(st);steeple.appendChild(sf);steeple.appendChild(sr);
-      cube.appendChild(steeple);
-    }
-    if(extra==='tower'){
-      // Small tower on one corner (burg)
-      const tw=Math.round(bw*.32), td=Math.round(bd*.32), th=Math.round(bh*.75);
-      const tower=document.createElement('div');
-      tower.className='cube';
-      tower.style.cssText=`--bw:${tw}px;--bd:${td}px;--bh:${th}px;
-        --ox:${bw-tw-1}px;--oy:1px;
-        position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-        transform:translateZ(${bh}px);pointer-events:none`;
-      const tt=document.createElement('div');tt.className='c-top';
-      tt.style.cssText=`background:${rca(team,.85)};border:1px solid ${bordTop}`;
-      const tf=document.createElement('div');tf.className='c-front';
-      tf.style.cssText=`background:${rca(team,.50)};border:1px solid ${bordSide}`;
-      const tr2=document.createElement('div');tr2.className='c-right';
-      tr2.style.cssText=`background:${rca(team,.30)};border:1px solid ${bordSide}`;
-      tower.appendChild(tt);tower.appendChild(tf);tower.appendChild(tr2);
-      cube.appendChild(tower);
-    }
-    if(extra==='dome'){
-      // Rounded dome: a smaller sphere-ish top (circle top face)
-      // Already handled by topRadius:'50%' — add a ring
-      const ring=document.createElement('div');
-      ring.style.cssText=`position:absolute;left:${Math.round(bw*.15)}px;top:${Math.round(bd*.15)}px;
-        width:${Math.round(bw*.7)}px;height:${Math.round(bd*.7)}px;
-        transform:translateZ(${bh+1}px);
-        border:2px solid ${rca(team,.40)};border-radius:50%;pointer-events:none`;
-      cube.appendChild(ring);
-    }
-  });
+  // ── EXTRAS ──
+  const ex=bt.extra;
 
-  // -- Emoji on top --
+  if(ex==='spire'){
+    // Pyramid spike on top of tower (border trick)
+    const base=Math.round(bw*.7);
+    const ph=Math.round(bh*.5);
+    mkPyramid(cube, Math.round(bw/2), Math.round(bd/2), bh, base, ph, team);
+  }
+
+  if(ex==='antenna'){
+    // Thin vertical pole + dot on top
+    const ah=Math.round(bh*.35);
+    const pole=document.createElement('div');
+    pole.style.cssText=`position:absolute;left:${Math.round(bw/2)-1}px;top:${Math.round(bd/2)-1}px;
+      width:2px;height:2px;transform:translateZ(${bh}px);pointer-events:none`;
+    // Shaft going up
+    const shaft=document.createElement('div');
+    shaft.style.cssText=`position:absolute;left:0;bottom:0;width:2px;height:${ah}px;
+      transform-origin:bottom center;transform:rotateX(-90deg);
+      background:rgba(255,255,255,.45)`;
+    // Dot at top
+    const dot=document.createElement('div');
+    dot.style.cssText=`position:absolute;left:-1px;top:-1px;width:4px;height:4px;
+      transform:translateZ(${ah}px);background:${rca(team,.95)};border-radius:50%`;
+    pole.appendChild(shaft);pole.appendChild(dot);
+    cube.appendChild(pole);
+  }
+
+  if(ex==='awning'){
+    // Flat overhang on front side — stays within tile bounds
+    const aw=Math.min(bw+4, sz-2); // don't exceed tile
+    const ad=Math.round(bd*.28);
+    const ah=2;
+    const aox=Math.round((bw-aw)/2); // center on building
+    mkMiniCube(cube, aox, bd-Math.round(ad*.4), Math.round(bh*.65), aw, ad, ah, team, 1.1);
+  }
+
+  if(ex==='chimney'){
+    // Small chimney on back-right corner
+    const cw=Math.round(bw*.18);
+    const cd=Math.round(bd*.18);
+    const ch=Math.round(bh*.4);
+    mkMiniCube(cube, bw-cw-2, 2, bh, cw, cd, ch, team, 0.9);
+  }
+
+  if(ex==='steeple'){
+    // Tall pyramid steeple centered on church roof
+    const base=Math.round(Math.min(bw,bd)*.65);
+    const ph=Math.round(bh*.7);
+    mkPyramid(cube, Math.round(bw/2), Math.round(bd/2), bh, base, ph, team);
+  }
+
+  if(ex==='turret'){
+    // Small corner turret (cube + tiny pyramid)
+    const tw=Math.round(bw*.26);
+    const td=Math.round(bd*.26);
+    const th=Math.round(bh*.65);
+    mkMiniCube(cube, bw-tw-1, 1, bh, tw, td, th, team, 1.05);
+    // Tiny pyramid on turret
+    const pb=Math.round(tw*.8);
+    const ph=Math.round(th*.5);
+    const pyr=document.createElement('div');pyr.className='pyramid';
+    const half=Math.round(pb/2);
+    pyr.style.cssText=`position:absolute;
+      left:${bw-tw-1+Math.round(tw/2)}px;top:${1+Math.round(td/2)}px;
+      transform:translateZ(${bh+th}px) translateX(-${half}px) translateY(-${half}px);
+      border-left:${half}px solid ${rca(team,.30)};
+      border-right:${half}px solid ${rca(team,.22)};
+      border-bottom:${ph}px solid ${rca(team,.55)};
+      border-top:${half}px solid ${rca(team,.80)};
+      pointer-events:none`;
+    cube.appendChild(pyr);
+  }
+
+  if(ex==='dome'){
+    // Dome ring on top (the round top face already from tr:50%)
+    const ring=document.createElement('div');
+    ring.style.cssText=`position:absolute;left:${Math.round(bw*.12)}px;top:${Math.round(bd*.12)}px;
+      width:${Math.round(bw*.76)}px;height:${Math.round(bd*.76)}px;
+      transform:translateZ(${bh+1}px);
+      border:2px solid ${rca(team,.35)};border-radius:50%;pointer-events:none`;
+    cube.appendChild(ring);
+  }
+
+  // ── Emoji on top ──
   const emoji=document.createElement('div');emoji.className='c-emoji';
-  const emojiSize=cell.home?Math.round(sz*.36):Math.round(sz*.28);
-  emoji.style.fontSize=emojiSize+'px';
+  const emojiSz=cell.home?Math.round(sz*.32):Math.round(sz*.24);
+  emoji.style.fontSize=emojiSz+'px';
 
   if(cell.frozen){
-    // Frozen: show team emoji + small snowflake beside it
-    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(emojiSize*.55)}px;margin-left:-2px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
+    emoji.innerHTML=`<span>${team.emoji}</span><span style="font-size:${Math.round(emojiSz*.5)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">❄️</span>`;
   } else if(cell.joker){
     emoji.textContent='⭐';
   } else {
@@ -439,36 +400,35 @@ function buildCube(tileEl, cell, team, sz, btype, animate=false){
   }
   cube.appendChild(emoji);
 
-  // -- Frozen effect: ONLY top face gets ice, walls stay team-colored --
+  // ── Frozen: ONLY roof gets ice, walls keep team color ──
   if(cell.frozen){
     top.style.background='rgba(147,210,255,.50)';
     top.style.border='2px solid rgba(147,210,255,.85)';
     top.style.animation='frostPulse 2.5s ease-in-out infinite';
-    // Subtle frost tint on edges but keep team color visible
-    front.style.background=`linear-gradient(to bottom, rgba(147,210,255,.15), ${colFront})`;
-    right.style.background=`linear-gradient(to bottom, rgba(147,210,255,.10), ${colRight})`;
+    front.style.background=`linear-gradient(to bottom, rgba(147,210,255,.12), ${colFront})`;
+    right.style.background=`linear-gradient(to bottom, rgba(147,210,255,.08), ${colRight})`;
   }
 
-  // -- Joker: golden top --
+  // ── Joker: golden roof ──
   if(cell.joker){
     top.style.background='rgba(251,191,36,.55)';
     top.style.border='2px solid rgba(251,191,36,.9)';
     top.style.animation='jokerGlow 2s ease-in-out infinite';
   }
 
-  // -- Stack badge --
+  // ── Stack badge ──
   if(cell.stacked>0 && !cell.joker){
     const badge=document.createElement('div');
     badge.style.cssText=`position:absolute;left:0;top:0;width:${bw}px;height:${bd}px;
-      transform:translateZ(${bh+10}px);
+      transform:translateZ(${bh+8}px);
       display:flex;align-items:center;justify-content:center;pointer-events:none`;
     const span=document.createElement('span');
-    span.style.cssText='font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
+    span.style.cssText='font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.95);color:#1C1917;font-weight:900;font-family:Nunito,sans-serif';
     span.textContent='\u00D7'+(cell.stacked+1);
     badge.appendChild(span);cube.appendChild(badge);
   }
 
-  // -- Animate: rise from ground --
+  // ── Animate ──
   if(animate){
     cube.style.opacity='0';
     cube.style.transition='opacity .35s ease';
@@ -506,11 +466,10 @@ function renderTile(r,c){
   if(!el)return;
   const cell=state[r][c];
   const ground=el.querySelector('.ground');
-
   if(!cell){
     el.classList.remove('owned');
     ground.style.cssText='width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
-    el.querySelectorAll('.cube').forEach(b=>b.remove());
+    el.querySelectorAll('.cube,.pyramid').forEach(b=>b.remove());
     return;
   }
   el.classList.add('owned');
@@ -530,7 +489,6 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
   el.style.cssText=`width:${CELL}px;height:${CELL}px`;
   const ground=document.createElement('div');ground.className='ground';
   el.appendChild(ground);
-
   el.addEventListener('click',()=>{
     if(state[r][c])return;
     const bt=Math.floor(Math.random()*BTYPES.length);
@@ -541,7 +499,6 @@ for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
       const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE)renderTile(nr,nc)});
     updateScores();
   });
-
   gridEl.appendChild(el);renderTile(r,c);
 }
 
@@ -560,18 +517,10 @@ BTYPES.forEach((bt,i)=>{
   const card=document.createElement('div');card.className='type-card';
   const stage=document.createElement('div');stage.className='tc-stage';
   const iso=document.createElement('div');iso.className='tc-iso';
-
-  // Ground
   const ground=document.createElement('div');ground.className='ground';
   ground.style.cssText=`width:100%;height:100%;border-radius:3px;background:${rca(TEAMS[i%4],.15)};border:1px solid ${rca(TEAMS[i%4],.35)}`;
   iso.appendChild(ground);
-
-  // Build the building
-  const team=TEAMS[i%4];
-  const cell={home:false,frozen:false,stacked:0,joker:false,btype:i};
-  // Use a slightly larger size for gallery
-  buildCube(iso,cell,team,50,bt);
-
+  buildCube(iso,{home:false,frozen:false,stacked:0,joker:false,btype:i},TEAMS[i%4],50,bt);
   stage.appendChild(iso);
   const label=document.createElement('div');label.className='tc-name';
   label.textContent=bt.name;
@@ -612,7 +561,6 @@ function miniStage(stage,cols,rows,sz,cells){
   return{grid,map,stage,sz};
 }
 
-// FX
 function fxRing(parent,color,delay=0){
   const ring=document.createElement('div');
   ring.style.cssText=`position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;

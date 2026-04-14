@@ -177,13 +177,24 @@ export default function QQBeamerPage() {
   const [joined, setJoined] = useState(false);
   const [slideTemplates, setSlideTemplates] = useState<QQSlideTemplates>({});
   const fetchedDraftId = useRef<string | null>(null);
-  const { state, connected, emit } = useQQSocket(roomCode);
+  const { state, connected, emit, socketRef } = useQQSocket(roomCode);
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
+
+  // Remote-Flyover vom Moderator: simuliere F-Taste, damit interner Listener feuert
+  useEffect(() => {
+    const sock = socketRef.current;
+    if (!sock) return;
+    const onFlyover = () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
+    };
+    sock.on('qq:flyover', onFlyover);
+    return () => { sock.off('qq:flyover', onFlyover); };
+  }, [connected]);
 
   useEffect(() => {
     if (!connected) { setJoined(false); return; }

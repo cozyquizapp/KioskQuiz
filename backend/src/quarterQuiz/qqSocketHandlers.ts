@@ -831,6 +831,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── Flyover (Beamer 3D cinematic orbit, triggered from moderator) ──────
+    socket.on('qq:flyover', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        io.to(payload.roomCode).emit('qq:flyover');
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Pause / Resume ──────────────────────────────────────────────────────
     socket.on('qq:pause', (payload: { roomCode: string }, ack?: unknown) => {
       try {

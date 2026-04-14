@@ -263,6 +263,13 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // F — Flyover (cinematic orbit on 3D beamer grid)
+    if (e.code === 'KeyF') {
+      e.preventDefault();
+      emitRef.current('qq:flyover', { roomCode });
+      return;
+    }
+
     // F18 — Reset (Notfall)
     // F20 — reserviert
   }, [roomCode]);

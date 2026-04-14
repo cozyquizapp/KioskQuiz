@@ -64,5 +64,5 @@ export function useQQSocket(roomCode: string) {
     s.connect();
   }
 
-  return { state, connected, emit, reconnect };
+  return { state, connected, emit, reconnect, socketRef };
 }

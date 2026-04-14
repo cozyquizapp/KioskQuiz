@@ -386,7 +386,7 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     return () => clearTimeout(t);
   }, [entering]);
 
-  // Flyover: dramatic cinematic orbit — zoom in, low-angle 270° dolly, then pull back up. ~8s total.
+  // Flyover: dramatic cinematic orbit — zoom in, low-angle 270° dolly, then pull back up. ~9.8s total.
   const prevFlySig = useRef(flyoverSignal);
   const flyoverTransitionRef = useRef<string | null>(null);
   const flyoverBaseZoomRef = useRef<number>(1);
@@ -417,16 +417,17 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
       setRz(-45 + 40 + 270);
     }, 1800);
 
-    // Phase 3 (6.0s → 8.2s): "ascend" — pull up and zoom out back to default
+    // Phase 3 (6.0s → 9.6s): "ascend" — pull up and zoom out back to default (laenger & weicher)
     const t3 = setTimeout(() => {
       if (!gridRef.current) return;
-      gridRef.current.style.transition = 'transform 2.2s cubic-bezier(.4,0,.2,1)';
+      gridRef.current.style.transition = 'transform 3.6s cubic-bezier(.25,.1,.25,1)';
       setRx(55);
       setRz(-45 + 360);
       setZoom(flyoverBaseZoomRef.current);
     }, 6000);
 
     // Phase 4: snap rz back to -45 (equivalent to 315°) without visible movement + restore base transition
+    // Weit nach Phase 3 Ende, damit kein frueher Abbruch sichtbar wird.
     const t4 = setTimeout(() => {
       if (!gridRef.current) return;
       gridRef.current.style.transition = 'none';
@@ -436,7 +437,7 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
           gridRef.current.style.transition = flyoverTransitionRef.current;
         }
       });
-    }, 8250);
+    }, 9800);
 
     return () => { clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [flyoverSignal]);

@@ -1205,6 +1205,50 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return null;
       })()}
 
+      {/* CozyGuessr: Distanz-Ranking */}
+      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map' && (() => {
+        const btt = q.bunteTuete as any;
+        const tLat: number = btt.lat; const tLng: number = btt.lng;
+        const scored = [...s.answers].map(a => {
+          const parts = String(a.text ?? '').split(',');
+          const lat = Number(parts[0]); const lng = Number(parts[1]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ...a, distKm: null as number | null };
+          const R = 6371;
+          const dLat = (lat - tLat) * Math.PI / 180;
+          const dLng = (lng - tLng) * Math.PI / 180;
+          const aa = Math.sin(dLat/2)**2 + Math.cos(tLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLng/2)**2;
+          return { ...a, distKm: R * 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1-aa)) };
+        }).sort((a, b) => (a.distKm === null ? 1 : b.distKm === null ? -1 : a.distKm - b.distKm));
+        if (scored.length === 0) return null;
+        return (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
+              🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
+            </div>
+            {scored.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isMe = a.teamId === myTeamId;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+              const dist = a.distKm == null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
+              return (
+                <div key={a.teamId} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: isMe ? `${team?.color ?? '#3b82f6'}22` : 'rgba(255,255,255,0.04)',
+                  border: `1.5px solid ${isMe ? (team?.color ?? '#3b82f6') + '88' : 'rgba(255,255,255,0.08)'}`,
+                  animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
+                }}>
+                  <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
+                  {team && <span style={{ fontSize: 18, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
+                  <span style={{ fontWeight: 800, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Nobody got it right */}
       {isRevealed && !s.correctTeamId && (
         <div style={{

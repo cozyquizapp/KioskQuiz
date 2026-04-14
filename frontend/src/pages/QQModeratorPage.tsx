@@ -568,19 +568,44 @@ export default function QQModeratorPage() {
                 )}
 
                 {/* ── QUESTION REVEAL ── */}
-                {s.phase === 'QUESTION_REVEAL' && s.correctTeamId && (
-                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
-                    📍 Felder setzen
-                  </PrimaryBtn>
-                )}
-                {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
-                  <>
-                    <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner</span>
-                    <Btn color="#64748b" onClick={() => emit('qq:startPlacement', { roomCode })}>
-                      → Überspringen
-                    </Btn>
-                  </>
-                )}
+                {s.phase === 'QUESTION_REVEAL' && (() => {
+                  const qRev = s.currentQuestion;
+                  const isMap = qRev?.category === 'BUNTE_TUETE' && (qRev as any)?.bunteTuete?.kind === 'map';
+                  const validPins = s.answers?.filter((a: any) => {
+                    const [lat, lng] = String(a.text ?? '').split(',').map(Number);
+                    return Number.isFinite(lat) && Number.isFinite(lng);
+                  }).length ?? 0;
+                  const maxStep = 1 + validPins + 1;
+                  const step = s.mapRevealStep ?? 0;
+                  const inProgress = isMap && step < maxStep;
+                  if (inProgress) {
+                    const label = step === 0
+                      ? '🎯 Target zeigen'
+                      : step <= validPins
+                        ? `📍 Pin ${step}/${validPins} aufdecken`
+                        : '🏆 Ranking zeigen';
+                    return (
+                      <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:mapRevealStep', { roomCode })} hotkey="Space">
+                        {label}
+                      </PrimaryBtn>
+                    );
+                  }
+                  if (s.correctTeamId) {
+                    return (
+                      <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
+                        📍 Felder setzen
+                      </PrimaryBtn>
+                    );
+                  }
+                  return (
+                    <>
+                      <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner</span>
+                      <Btn color="#64748b" onClick={() => emit('qq:startPlacement', { roomCode })}>
+                        → Überspringen
+                      </Btn>
+                    </>
+                  );
+                })()}
 
                 {/* ── PLACEMENT ── */}
                 {s.phase === 'PLACEMENT' && s.pendingAction && (

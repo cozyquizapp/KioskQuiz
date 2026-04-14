@@ -221,6 +221,33 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { background: rgba(255,255,255,0.04); }
     50%      { background: rgba(255,255,255,0.10); }
   }
+  @keyframes boardShake {
+    0%, 100% { transform: translate(0, 0); }
+    15%      { transform: translate(-3px, 2px); }
+    30%      { transform: translate(3px, -2px); }
+    45%      { transform: translate(-2px, 1px); }
+    60%      { transform: translate(2px, -1px); }
+    80%      { transform: translate(-1px, 0); }
+  }
+  @keyframes cellNeighborDuck {
+    0%, 100% { transform: scale(1); }
+    40%      { transform: scale(0.94); }
+    70%      { transform: scale(1.02); }
+  }
+  @keyframes cellShatter {
+    0%   { opacity: 1; transform: scale(1); filter: brightness(1); }
+    25%  { opacity: 0.9; transform: scale(1.08); filter: brightness(2); }
+    55%  { opacity: 0.6; transform: scale(0.92) rotate(-4deg); filter: brightness(1.4) blur(1px); }
+    100% { opacity: 0; transform: scale(0.4) rotate(8deg); filter: blur(3px); }
+  }
+  @keyframes cellShard {
+    0%   { opacity: 1; transform: translate(0,0) rotate(0deg) scale(1); }
+    100% { opacity: 0; transform: translate(var(--shx), var(--shy)) rotate(var(--shr, 180deg)) scale(0.3); }
+  }
+  @keyframes cellAnticipate {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+    50%      { transform: scale(1.06); box-shadow: 0 0 18px rgba(255,255,255,0.55); }
+  }
   @keyframes activeTeamGlow {
     0%, 100% { box-shadow: 0 0 12px var(--team-color, #fff); opacity: 1; }
     50%      { box-shadow: 0 0 24px var(--team-color, #fff); opacity: 0.85; }

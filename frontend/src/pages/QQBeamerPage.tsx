@@ -3743,20 +3743,45 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const activeTeam = s.teams.find(t => t.id === highlightTeam);
   const activeColor = activeTeam?.color ?? '#fff';
 
-  // Track newly placed cells for pop animation (#5)
+  // Track newly placed cells for pop animation (#5) + stolen cells + neighbor reactions + board shake
   const prevGridRef = useRef<string>('');
   const newCellsRef = useRef<Set<string>>(new Set());
+  const stolenCellsRef = useRef<Set<string>>(new Set());
+  const neighborCellsRef = useRef<Set<string>>(new Set());
+  const [shakeTick, setShakeTick] = useState(0);
   const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
   if (gridKey !== prevGridRef.current) {
     const newSet = new Set<string>();
+    const stolenSet = new Set<string>();
+    const neighborSet = new Set<string>();
+    const prevOwners = prevGridRef.current.split(',');
     s.grid.forEach((row, r) => row.forEach((cell, c) => {
-      const prevOwner = prevGridRef.current.split(',')[(r * s.gridSize) + c];
+      const prevOwner = prevOwners[(r * s.gridSize) + c];
       if (cell.ownerId && prevOwner === '') newSet.add(`${r}-${c}`);
+      else if (cell.ownerId && prevOwner && prevOwner !== cell.ownerId) stolenSet.add(`${r}-${c}`);
     }));
+    // Collect 4-neighbors of any changed cell
+    const changed = new Set<string>([...newSet, ...stolenSet]);
+    for (const key of changed) {
+      const [r, c] = key.split('-').map(Number);
+      [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr, nc]) => {
+        if (nr >= 0 && nr < s.gridSize && nc >= 0 && nc < s.gridSize && !changed.has(`${nr}-${nc}`)) {
+          neighborSet.add(`${nr}-${nc}`);
+        }
+      });
+    }
     newCellsRef.current = newSet;
+    stolenCellsRef.current = stolenSet;
+    neighborCellsRef.current = neighborSet;
     prevGridRef.current = gridKey;
-    // Clear new-cell markers after animation completes
-    if (newSet.size > 0) setTimeout(() => { newCellsRef.current = new Set(); }, 1200);
+    if (newSet.size > 0 || stolenSet.size > 0) {
+      setShakeTick(t => t + 1);
+      setTimeout(() => {
+        newCellsRef.current = new Set();
+        stolenCellsRef.current = new Set();
+        neighborCellsRef.current = new Set();
+      }, 1200);
+    }
   }
 
   // Idle pulse: pick 2 random empty cells to softly pulse
@@ -3779,7 +3804,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   }, [s.grid]);
 
   return (
-    <div>
+    <div style={{ animation: shakeTick > 0 ? 'boardShake 0.45s ease-out' : undefined }} key={`shake-${shakeTick}`}>
       {/* Grid — game board styling */}
       <div style={{
         display: 'grid',
@@ -3799,8 +3824,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const team = s.teams.find(t => t.id === cell.ownerId);
             const isHighlighted = highlightTeam && team?.id === highlightTeam;
             const isNew = newCellsRef.current.has(`${r}-${c}`);
+            const isStolen = stolenCellsRef.current.has(`${r}-${c}`);
+            const isNeighbor = neighborCellsRef.current.has(`${r}-${c}`);
             const isFlash = flashCellKey === `${r}-${c}`;
-            const isAccent = isNew || isFlash;
+            const isAccent = isNew || isStolen || isFlash;
             const showStar = showJoker && cell.jokerFormed;
             const isFrozen = cell.frozen;
             const isStuck = cell.stuck;
@@ -3812,6 +3839,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
                 zIndex: isAccent ? 5 : 1,
+                animation: isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
               }}>
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
@@ -3837,7 +3865,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         : isFrozen
                           ? 'none'
                           : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
-                    animation: isNew ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
                     boxShadow: isStuck
                       ? `0 0 14px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.4)`
                       : isAccent
@@ -3900,8 +3928,31 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none', zIndex: 1,
                   }} />
                 )}
+                {/* Steal shatter — flying shards from stolen cell */}
+                {isStolen && [0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+                  const angle = i * 45 + Math.random() * 20;
+                  const dist = cellSize * (0.7 + Math.random() * 0.5);
+                  const shx = `${Math.cos(angle * Math.PI / 180) * dist}px`;
+                  const shy = `${Math.sin(angle * Math.PI / 180) * dist}px`;
+                  const shr = `${(Math.random() * 360 - 180).toFixed(0)}deg`;
+                  return (
+                    <div key={`sh-${i}`} style={{
+                      position: 'absolute',
+                      width: Math.max(4, cellSize * 0.14), height: Math.max(4, cellSize * 0.14),
+                      borderRadius: 2,
+                      background: team?.color ?? '#fff',
+                      top: '50%', left: '50%',
+                      marginTop: -Math.max(2, cellSize * 0.07),
+                      marginLeft: -Math.max(2, cellSize * 0.07),
+                      ['--shx' as string]: shx, ['--shy' as string]: shy, ['--shr' as string]: shr,
+                      animation: `cellShard 0.7s ease-out ${0.05 + i * 0.02}s both`,
+                      pointerEvents: 'none', zIndex: 6,
+                      boxShadow: `0 0 8px ${team?.color ?? '#fff'}`,
+                    }} />
+                  );
+                })}
                 {/* Shockwave rings on new cells */}
-                {isNew && (
+                {(isNew || isStolen) && (
                   <>
                     <div style={{
                       position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
@@ -3918,7 +3969,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   </>
                 )}
                 {/* Sparkle particles on new cells */}
-                {isNew && [0, 1, 2, 3, 4, 5].map(i => {
+                {(isNew || isStolen) && [0, 1, 2, 3, 4, 5].map(i => {
                   const angle = i * 60;
                   const dist = cellSize * 0.6;
                   const sx = `${Math.cos(angle * Math.PI / 180) * dist}px`;
@@ -3947,7 +3998,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {/* Emoji / star content */}
                 <div style={{
                   position: 'relative', zIndex: 4,
-                  animation: isNew ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
+                  animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
                   fontSize: isStuck ? Math.max(8, cellSize * 0.52) : undefined,
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,

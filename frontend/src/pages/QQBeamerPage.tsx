@@ -186,7 +186,8 @@ export default function QQBeamerPage() {
   }, []);
 
   useEffect(() => {
-    if (!connected || joined) return;
+    if (!connected) { setJoined(false); return; }
+    if (joined) return;
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
   }, [connected]);
 

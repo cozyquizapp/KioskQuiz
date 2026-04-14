@@ -7896,9 +7896,129 @@ function createSampleQQDrafts(): typeof qqDrafts {
     q(`${d2id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche berühmte Person ist das?', answer: 'Albert Einstein' }),
   ];
 
+  // Draft 3: Hamburg
+  const d3id = 'qq-sample-hamburg';
+  const d3qs = [
+    // Phase 1 — Stadt & Leben (bunte Tüte: top5)
+    q(`${d3id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Einwohner hat Hamburg (gerundet auf Tausend)?', answer: '1.900.000', targetValue: 1900000, unit: 'Einwohner' }),
+    q(`${d3id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welche Stadt hat mehr Einwohner: Hamburg oder München?', answer: 'Hamburg', options: ['Hamburg', 'München', 'Etwa gleich viele', 'Köln'], correctOptionIndex: 0, funFact: 'Hamburg hat rund 1,9 Mio. Einwohner, München ~1,5 Mio. Hamburg ist die zweitgrößte Stadt Deutschlands.' }),
+    q(`${d3id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 größten Stadtteile Hamburgs nach Einwohnerzahl!', answer: 'Rahlstedt, Billstedt, Wandsbek, Eimsbüttel, Winterhude', bunteTuete: { kind: 'top5', answers: ['Rahlstedt', 'Billstedt', 'Wandsbek', 'Eimsbüttel', 'Winterhude'] } }),
+    q(`${d3id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Bundesland liegt Hamburg?', answer: 'Hamburg (Stadtstaat)', options: ['Niedersachsen', 'Hamburg (Stadtstaat)', 'Schleswig-Holstein'], correctOptionIndex: 1 }),
+    q(`${d3id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Hamburger Wahrzeichen ist das?', answer: 'Elbphilharmonie' }),
+    // Phase 2 — Hafen & Wasser (bunte Tüte: order)
+    q(`${d3id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Brücken hat Hamburg ungefähr?', answer: '2500', targetValue: 2500, funFact: 'Hamburg hat mehr Brücken als Venedig, Amsterdam und London zusammen.' }),
+    q(`${d3id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wie heißt der große See mitten in Hamburg?', answer: 'Alster', options: ['Elbe', 'Alster', 'Bille', 'Isebek'], correctOptionIndex: 1 }),
+    q(`${d3id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Hamburger Bauwerke in die richtige Reihenfolge ihrer Eröffnung!', answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Rathaus', 'Michel', 'Köhlbrandbrücke'], correctOrder: [2, 1, 3, 0], criteria: 'nach Eröffnungsjahr (älteste zuerst)' }, funFact: 'Michel 1786, Rathaus 1897, Köhlbrandbrücke 1974, Elbphilharmonie 2017.' }),
+    q(`${d3id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Hamburg ist der größte Seehafen Deutschlands — stimmt das?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d3id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche berühmte Brücke ist das?', answer: 'Köhlbrandbrücke' }),
+    // Phase 3 — St. Pauli & Kiez (bunte Tüte: hotPotato)
+    q(`${d3id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie lang ist die Reeperbahn in Metern?', answer: '930', targetValue: 930, unit: 'm' }),
+    q(`${d3id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welchem Hamburger Club spielten die Beatles 1960-1962?', answer: 'Star-Club', options: ['Molotow', 'Star-Club', 'Grosse Freiheit 36', 'Docks'], correctOptionIndex: 1 }),
+    q(`${d3id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine Straße oder einen Ort auf der Reeperbahn/St. Pauli — reihum!', answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d3id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Liga spielt der FC St. Pauli in der Saison 2024/25?', answer: 'Bundesliga', options: ['Bundesliga', '2. Bundesliga', '3. Liga'], correctOptionIndex: 0, funFact: 'St. Pauli ist nach langer Zeit 2024 in die Bundesliga aufgestiegen.' }),
+    q(`${d3id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches St.-Pauli-Symbol ist das?', answer: 'Totenkopf (St.-Pauli-Logo)' }),
+    // Phase 4 — Essen & Kultur (bunte Tüte: map)
+    q(`${d3id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr wurde der Hamburger Fischmarkt gegründet?', answer: '1703', targetValue: 1703 }),
+    q(`${d3id}-p4-1`, 4, 1, 'MUCHO', { text: 'Was isst man traditionell als Hamburger Spezialität?', answer: 'Franzbrötchen', options: ['Currywurst', 'Franzbrötchen', 'Döner', 'Brezel'], correctOptionIndex: 1 }),
+    q(`${d3id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt die Speicherstadt in Hamburg? Setz einen Pin!', answer: 'Speicherstadt, HafenCity', bunteTuete: { kind: 'map', lat: 53.5438, lng: 9.9887, targetLabel: 'Speicherstadt, Hamburg' } }),
+    q(`${d3id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Wie heißt die berühmteste Hamburger Musical-Show?', answer: 'Der König der Löwen', options: ['Cats', 'Der König der Löwen', 'Mamma Mia'], correctOptionIndex: 1 }),
+    q(`${d3id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Hamburger Gebäude ist das?', answer: 'Michel (St.-Michaelis-Kirche)' }),
+  ];
+
+  // Draft 4: Natur & Tiere
+  const d4id = 'qq-sample-natur-tiere';
+  const d4qs = [
+    // Phase 1 — Säugetiere (top5)
+    q(`${d4id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie schnell kann ein Gepard maximal laufen (km/h)?', answer: '112', targetValue: 112, unit: 'km/h' }),
+    q(`${d4id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Landtier der Welt?', answer: 'Afrikanischer Elefant', options: ['Nashorn', 'Afrikanischer Elefant', 'Giraffe', 'Flusspferd'], correctOptionIndex: 1 }),
+    q(`${d4id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 schwersten Landtiere!', answer: 'Afrikanischer Elefant, Asiatischer Elefant, Breitmaulnashorn, Flusspferd, Spitzmaulnashorn', bunteTuete: { kind: 'top5', answers: ['Afrikanischer Elefant', 'Asiatischer Elefant', 'Breitmaulnashorn', 'Flusspferd', 'Spitzmaulnashorn'] } }),
+    q(`${d4id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Sind Wale Fische?', answer: 'Nein (Säugetiere)', options: ['Ja', 'Nein (Säugetiere)'], correctOptionIndex: 1 }),
+    q(`${d4id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Rotfuchs' }),
+    // Phase 2 — Vögel & Insekten (order)
+    q(`${d4id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Flügelschläge pro Sekunde hat ein Kolibri (ca.)?', answer: '80', targetValue: 80 }),
+    q(`${d4id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welcher Vogel kann NICHT fliegen?', answer: 'Pinguin', options: ['Albatros', 'Pinguin', 'Kolibri', 'Adler'], correctOptionIndex: 1 }),
+    q(`${d4id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Tiere nach ihrer Lebensdauer in die richtige Reihenfolge!', answer: 'Eintagsfliege, Maus, Hund, Grönlandwal', bunteTuete: { kind: 'order', items: ['Grönlandwal', 'Hund', 'Eintagsfliege', 'Maus'], correctOrder: [2, 3, 1, 0], criteria: 'kürzeste zuerst' }, funFact: 'Eintagsfliege 1 Tag, Maus ~2 Jahre, Hund ~12 Jahre, Grönlandwal 200+ Jahre.' }),
+    q(`${d4id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Beine hat eine Spinne?', answer: '8', options: ['6', '8', '10'], correctOptionIndex: 1 }),
+    q(`${d4id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welcher Vogel ist das?', answer: 'Flamingo' }),
+    // Phase 3 — Pflanzen & Wald (hotPotato)
+    q(`${d4id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie hoch kann ein Mammutbaum maximal werden (m)?', answer: '115', targetValue: 115, unit: 'm' }),
+    q(`${d4id}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Baum verliert im Winter NICHT seine Blätter?', answer: 'Tanne', options: ['Buche', 'Eiche', 'Tanne', 'Birke'], correctOptionIndex: 2 }),
+    q(`${d4id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen Baum, der in Deutschland wächst — reihum!', answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d4id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Produzieren Pflanzen Sauerstoff?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d4id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche Pflanze ist das?', answer: 'Sonnenblume' }),
+    // Phase 4 — Wasser & Meer (map)
+    q(`${d4id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie tief ist der tiefste Punkt des Ozeans (Marianengraben) in Metern?', answer: '10984', targetValue: 10984, unit: 'm' }),
+    q(`${d4id}-p4-1`, 4, 1, 'MUCHO', { text: 'Welches ist der größte Ozean?', answer: 'Pazifischer Ozean', options: ['Atlantik', 'Pazifik', 'Indischer Ozean', 'Arktischer Ozean'], correctOptionIndex: 1 }),
+    q(`${d4id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt das Great Barrier Reef? Setz einen Pin!', answer: 'Ostküste Australien', bunteTuete: { kind: 'map', lat: -18.2871, lng: 147.6992, targetLabel: 'Great Barrier Reef, Australien' } }),
+    q(`${d4id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Ist ein Oktopus ein Wirbeltier?', answer: 'Nein', options: ['Ja', 'Nein'], correctOptionIndex: 1 }),
+    q(`${d4id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Meerestier ist das?', answer: 'Seepferdchen' }),
+  ];
+
+  // Draft 5: Sport
+  const d5id = 'qq-sample-sport';
+  const d5qs = [
+    // Phase 1 — Fußball (top5)
+    q(`${d5id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Tore schoss Lionel Messi bis Ende 2023 für sein Land Argentinien (ca.)?', answer: '108', targetValue: 108 }),
+    q(`${d5id}-p1-1`, 1, 1, 'MUCHO', { text: 'Wer wurde 2022 Fußball-Weltmeister?', answer: 'Argentinien', options: ['Frankreich', 'Argentinien', 'Brasilien', 'Deutschland'], correctOptionIndex: 1 }),
+    q(`${d5id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 Rekord-Weltmeister (Männer-Fußball)!', answer: 'Brasilien (5), Deutschland (4), Italien (4), Argentinien (3), Frankreich (2)', bunteTuete: { kind: 'top5', answers: ['Brasilien', 'Deutschland', 'Italien', 'Argentinien', 'Frankreich'] } }),
+    q(`${d5id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Spieler stehen pro Mannschaft auf dem Feld (ohne Torwart)?', answer: '10', options: ['9', '10', '11'], correctOptionIndex: 1, funFact: '11 insgesamt — also 10 Feldspieler plus Torwart.' }),
+    q(`${d5id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Stadion ist das?', answer: 'Allianz Arena (München)' }),
+    // Phase 2 — Olympia (order)
+    q(`${d5id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr fanden die ersten modernen Olympischen Spiele statt?', answer: '1896', targetValue: 1896 }),
+    q(`${d5id}-p2-1`, 2, 1, 'MUCHO', { text: 'In welcher Stadt fanden 2024 die Sommerolympiade statt?', answer: 'Paris', options: ['Tokio', 'Paris', 'Los Angeles', 'London'], correctOptionIndex: 1 }),
+    q(`${d5id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Olympia-Städte in chronologische Reihenfolge!', answer: 'München, Barcelona, London, Paris', bunteTuete: { kind: 'order', items: ['Paris 2024', 'München 1972', 'London 2012', 'Barcelona 1992'], correctOrder: [1, 3, 2, 0], criteria: 'älteste zuerst' } }),
+    q(`${d5id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Ringe hat das Olympia-Symbol?', answer: '5', options: ['4', '5', '6'], correctOptionIndex: 1 }),
+    q(`${d5id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche Sportart ist das?', answer: 'Bogenschießen' }),
+    // Phase 3 — Individualsport (hotPotato)
+    q(`${d5id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Grand-Slam-Titel hat Novak Djokovic bis Ende 2024 gewonnen?', answer: '24', targetValue: 24 }),
+    q(`${d5id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welcher Sportart gibt es "Strikes" und "Spares"?', answer: 'Bowling', options: ['Bowling', 'Baseball', 'Golf', 'Eishockey'], correctOptionIndex: 0 }),
+    q(`${d5id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine olympische Sportart — reihum!', answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d5id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Löcher hat ein Standard-Golfplatz?', answer: '18', options: ['9', '18', '27'], correctOptionIndex: 1 }),
+    q(`${d5id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welcher Sportler ist das?', answer: 'Usain Bolt' }),
+    // Phase 4 — Stadien (map)
+    q(`${d5id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Zuschauer passen ins Camp Nou (FC Barcelona)?', answer: '99354', targetValue: 99354 }),
+    q(`${d5id}-p4-1`, 4, 1, 'MUCHO', { text: 'Wo steht das Maracanã-Stadion?', answer: 'Rio de Janeiro', options: ['São Paulo', 'Rio de Janeiro', 'Buenos Aires', 'Brasília'], correctOptionIndex: 1 }),
+    q(`${d5id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Wembley-Stadium? Setz einen Pin!', answer: 'London', bunteTuete: { kind: 'map', lat: 51.5560, lng: -0.2795, targetLabel: 'Wembley Stadium, London' } }),
+    q(`${d5id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Stadt steht das Olympiastadion Berlin?', answer: 'Berlin', options: ['Berlin', 'München', 'Hamburg'], correctOptionIndex: 0 }),
+    q(`${d5id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Stadion ist das?', answer: 'Wembley Stadium' }),
+  ];
+
+  // Draft 6: Essen & Trinken
+  const d6id = 'qq-sample-essen-trinken';
+  const d6qs = [
+    // Phase 1 — Deutsche Küche (top5)
+    q(`${d6id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele verschiedene Brotsorten gibt es in Deutschland (ca.)?', answer: '3200', targetValue: 3200 }),
+    q(`${d6id}-p1-1`, 1, 1, 'MUCHO', { text: 'Aus welchem Bundesland stammt die Currywurst?', answer: 'Berlin', options: ['Hamburg', 'Berlin', 'NRW', 'Bayern'], correctOptionIndex: 1, funFact: 'Erfunden 1949 von Herta Heuwer in Berlin.' }),
+    q(`${d6id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 beliebtesten Brotsorten in Deutschland!', answer: 'Mischbrot, Toastbrot, Vollkornbrot, Roggenbrot, Weizenbrot', bunteTuete: { kind: 'top5', answers: ['Mischbrot', 'Toastbrot', 'Vollkornbrot', 'Roggenbrot', 'Weizenbrot'] } }),
+    q(`${d6id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Ist Sauerkraut fermentiert?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d6id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches deutsche Gericht ist das?', answer: 'Schweinshaxe' }),
+    // Phase 2 — Süßes & Desserts (order)
+    q(`${d6id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viel Zucker (g) enthält eine 0,33l-Cola?', answer: '35', targetValue: 35, unit: 'g' }),
+    q(`${d6id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land hat die Praline erfunden?', answer: 'Belgien', options: ['Frankreich', 'Belgien', 'Schweiz', 'Italien'], correctOptionIndex: 1 }),
+    q(`${d6id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Desserts nach ihrem Kaloriengehalt pro 100g!', answer: 'Obstsalat, Vanilleeis, Schwarzwälder Kirschtorte, Sahnetorte', bunteTuete: { kind: 'order', items: ['Sahnetorte', 'Obstsalat', 'Schwarzwälder Kirschtorte', 'Vanilleeis'], correctOrder: [1, 3, 2, 0], criteria: 'wenigste Kalorien zuerst' } }),
+    q(`${d6id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptzutat in Marzipan?', answer: 'Mandeln', options: ['Nüsse', 'Mandeln', 'Kokos'], correctOptionIndex: 1 }),
+    q(`${d6id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Dessert ist das?', answer: 'Crème brûlée' }),
+    // Phase 3 — Getränke (hotPotato)
+    q(`${d6id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Liter Bier trinkt ein Deutscher pro Jahr im Durchschnitt?', answer: '90', targetValue: 90, unit: 'l' }),
+    q(`${d6id}-p3-1`, 3, 1, 'MUCHO', { text: 'Aus welcher Pflanze wird Tequila gemacht?', answer: 'Agave', options: ['Agave', 'Kaktus', 'Zuckerrohr', 'Mais'], correctOptionIndex: 0 }),
+    q(`${d6id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen alkoholfreien Cocktail oder ein Erfrischungsgetränk — reihum!', answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d6id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Getränk enthält KEIN Koffein?', answer: 'Rooibos-Tee', options: ['Schwarzer Tee', 'Grüner Tee', 'Rooibos-Tee'], correctOptionIndex: 2 }),
+    q(`${d6id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Getränk ist das?', answer: 'Aperol Spritz' }),
+    // Phase 4 — International (map)
+    q(`${d6id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Pizzen werden weltweit pro Tag gebacken (Millionen)?', answer: '14', targetValue: 14, unit: 'Mio' }),
+    q(`${d6id}-p4-1`, 4, 1, 'MUCHO', { text: 'Aus welchem Land stammt Sushi ursprünglich?', answer: 'Japan', options: ['China', 'Japan', 'Korea', 'Thailand'], correctOptionIndex: 1 }),
+    q(`${d6id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Neapel (Heimat der Pizza)? Setz einen Pin!', answer: 'Süditalien', bunteTuete: { kind: 'map', lat: 40.8518, lng: 14.2681, targetLabel: 'Neapel, Italien' } }),
+    q(`${d6id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land ist der größte Käseproduzent Europas?', answer: 'Deutschland', options: ['Frankreich', 'Deutschland', 'Italien'], correctOptionIndex: 1, funFact: 'Deutschland produziert ~2,3 Mio. Tonnen Käse/Jahr, vor Frankreich.' }),
+    q(`${d6id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Gericht ist das?', answer: 'Paella' }),
+  ];
+
   return [
-    { id: d1id, title: '🧠 Allgemeinwissen', phases: 3 as const, language: 'both', questions: d1qs, createdAt: now - 1000, updatedAt: now - 1000 },
-    { id: d2id, title: '🎬 Pop & Kultur', phases: 3 as const, language: 'both', questions: d2qs, createdAt: now, updatedAt: now },
+    { id: d1id, title: '🧠 Allgemeinwissen', phases: 3 as const, language: 'both', questions: d1qs, createdAt: now - 5000, updatedAt: now - 5000 },
+    { id: d2id, title: '🎬 Pop & Kultur', phases: 3 as const, language: 'both', questions: d2qs, createdAt: now - 4000, updatedAt: now - 4000 },
+    { id: d3id, title: '⚓ Hamburg', phases: 4 as const, language: 'both', questions: d3qs, createdAt: now - 3000, updatedAt: now - 3000 },
+    { id: d4id, title: '🦊 Natur & Tiere', phases: 4 as const, language: 'both', questions: d4qs, createdAt: now - 2000, updatedAt: now - 2000 },
+    { id: d5id, title: '⚽ Sport', phases: 4 as const, language: 'both', questions: d5qs, createdAt: now - 1000, updatedAt: now - 1000 },
+    { id: d6id, title: '🍳 Essen & Trinken', phases: 4 as const, language: 'both', questions: d6qs, createdAt: now, updatedAt: now },
   ];
 }
 

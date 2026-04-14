@@ -26,6 +26,7 @@ const QQLibraryPage       = React.lazy(() => import('./pages/QQLibraryPage'));
 const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'));
 const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
+const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -129,7 +130,7 @@ function App() {
       }>
         <Routes>
           {/* ── Quarter Quiz (Hauptapp) ───────────────────────────── */}
-          <Route path="/" element={<Navigate to="/team" replace />} />
+          <Route path="/" element={<QQLandingPage />} />
           <Route path="/team"       element={<QQTeamPage />} />
           <Route path="/beamer"     element={<QQBeamerPage />} />
           <Route path="/moderator"  element={<PinGate><QQModeratorPage /></PinGate>} />

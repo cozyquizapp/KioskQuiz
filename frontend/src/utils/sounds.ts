@@ -21,6 +21,13 @@ let ctx: AudioContext | null = null;
 let masterVolume = 0.8;
 let soundConfig: QQSoundConfig = {};
 
+// Music-Duck: globaler Faktor (0..1) der auf Loop-Musik multipliziert wird.
+// 1.0 = normal, 0.2 = gedämpft (z.B. während PAUSE).
+// Die setMusicDucked-API ist weiter unten definiert (nach loopAudioEl).
+let musicDuckFactor = 1;
+let musicDuckTarget = 1;
+let duckRafHandle: number | null = null;
+
 /** true wenn der Slot nicht per `enabled[slot] === false` stumm geschaltet wurde. */
 function isSlotEnabled(slot: QQSoundSlot): boolean {
   return soundConfig.enabled?.[slot] !== false;
@@ -124,6 +131,37 @@ let loopActive = false;
 let loopScheduleTimeout: ReturnType<typeof setTimeout> | null = null;
 let loopAudioEl: HTMLAudioElement | null = null;
 
+function applyDuckToLoop() {
+  if (loopAudioEl) loopAudioEl.volume = masterVolume * musicDuckFactor;
+}
+
+/** Ziel-Duck setzen (500ms smooth fade). true = auf 0.2 dämpfen, false = auf 1 zurück. */
+export function setMusicDucked(ducked: boolean) {
+  musicDuckTarget = ducked ? 0.2 : 1;
+  if (duckRafHandle !== null) return;
+  const stepMs = 16;
+  const durMs = 500;
+  const tick = () => {
+    const delta = musicDuckTarget - musicDuckFactor;
+    const maxChange = stepMs / durMs;
+    if (Math.abs(delta) <= maxChange) {
+      musicDuckFactor = musicDuckTarget;
+      applyDuckToLoop();
+      duckRafHandle = null;
+      return;
+    }
+    musicDuckFactor += Math.sign(delta) * maxChange;
+    applyDuckToLoop();
+    duckRafHandle = window.setTimeout(tick, stepMs);
+  };
+  duckRafHandle = window.setTimeout(tick, stepMs);
+}
+
+/** Aktueller Duck-Faktor, nützlich für externe Audio-Elemente (question musicUrl). */
+export function getMusicDuckFactor(): number {
+  return musicDuckFactor;
+}
+
 /**
  * Starts a looping timer sound while the question is active.
  * Uses custom URL if set in soundConfig.timerLoop, else synth.
@@ -136,7 +174,7 @@ export function startTimerLoop() {
   const url = resolveSlotUrl('timerLoop');
   if (url) {
     loopAudioEl = getOrCreateAudio(url);
-    loopAudioEl.volume = masterVolume;
+    loopAudioEl.volume = masterVolume * musicDuckFactor;
     loopAudioEl.currentTime = 0;
     loopAudioEl.loop = true;
     loopAudioEl.play().catch(() => {});

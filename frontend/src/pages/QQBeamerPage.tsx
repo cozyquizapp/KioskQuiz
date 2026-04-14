@@ -12,6 +12,7 @@ import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
+  setMusicDucked, getMusicDuckFactor,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -321,6 +322,26 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     return () => stopTimerLoop();
   }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Music Duck: während PAUSE wird alle Musik auf ~20% gedämpft (500ms fade) ──
+  useEffect(() => {
+    setMusicDucked(s.phase === 'PAUSED');
+  }, [s.phase]);
+
+  // ── Duck auf question-musicUrl anwenden (tickt, weil getMusicDuckFactor global ist) ──
+  const [duckFactor, setDuckFactor] = useState(1);
+  useEffect(() => {
+    if (s.phase !== 'PAUSED' && duckFactor === 1) return;
+    // während Fade: alle 30ms nachziehen, bis Ziel erreicht
+    const iv = setInterval(() => {
+      const f = getMusicDuckFactor();
+      setDuckFactor(f);
+      if ((s.phase === 'PAUSED' && f <= 0.21) || (s.phase !== 'PAUSED' && f >= 0.99)) {
+        clearInterval(iv);
+      }
+    }, 30);
+    return () => clearInterval(iv);
+  }, [s.phase, duckFactor]);
+
   // ── Sound: timer ticks (SFX — not music) ──
   useEffect(() => {
     if (s.sfxMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
@@ -355,22 +376,24 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       return;
     }
-    if (s.phase !== 'QUESTION_ACTIVE' && s.phase !== 'QUESTION_REVEAL') {
+    // Während PAUSE nicht stoppen — nur runterducken (Musik bleibt im Hintergrund).
+    if (s.phase !== 'QUESTION_ACTIVE' && s.phase !== 'QUESTION_REVEAL' && s.phase !== 'PAUSED') {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       return;
     }
+    const effVol = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5 * duckFactor);
     if (audioRef.current?.src?.endsWith(url)) {
-      audioRef.current.volume = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5);
+      audioRef.current.volume = effVol;
       return;
     }
     if (audioRef.current) audioRef.current.pause();
     const a = new Audio(url);
     a.loop = true;
-    a.volume = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5);
+    a.volume = effVol;
     a.play().catch(() => {});
     audioRef.current = a;
     return () => { a.pause(); };
-  }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume]);
+  }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume, duckFactor]);
 
   // Fullscreen toggle — detect both JS Fullscreen API and F11/native fullscreen
   const [isFullscreen, setIsFullscreen] = useState(false);

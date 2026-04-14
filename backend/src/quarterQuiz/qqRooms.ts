@@ -484,7 +484,14 @@ export function qqActivateQuestion(
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately
   room.imageRevealed  = room.currentQuestion?.category === 'CHEESE';
-  qqStartTimer(room, onTimerExpire);
+  // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
+  const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
+    && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
+  if (isHotPotato) {
+    qqStopTimer(room);
+  } else {
+    qqStartTimer(room, onTimerExpire);
+  }
 }
 
 export function qqShowImage(room: QQRoomState, onTimerExpire?: () => void): void {

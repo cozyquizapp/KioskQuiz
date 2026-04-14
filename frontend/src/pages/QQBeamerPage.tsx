@@ -42,12 +42,14 @@ const CAT_GLOW: Record<string, string> = {
 };
 // (CAT_ACCENT removed — now imported from qqShared)
 interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: string; right?: string; size: number; rot: number; alt?: boolean }
+// Positions avoid the top-right timer (at top:16px right:48px) and top-left category pill.
+// Decorations stay on the sides (mid-height) and near the bottom, where nothing else sits.
 const CAT_CUTOUTS: Record<string, CutoutSpec[]> = {
-  SCHAETZCHEN:   [{ emoji:'🎯', top:'6%',  right:'11%', size:80, rot:-12 },{ emoji:'✨', bottom:'14%', left:'7%',  size:50, rot:8  },{ emoji:'🔮', top:'30%', right:'5%',  size:40, rot:16, alt:true }],
-  MUCHO:         [{ emoji:'🅰️', top:'8%',  right:'13%', size:76, rot:-8  },{ emoji:'💡', bottom:'18%', left:'6%',  size:54, rot:12 },{ emoji:'🤔', top:'38%', right:'6%',  size:44, rot:-14, alt:true }],
-  BUNTE_TUETE:   [{ emoji:'🎁', top:'7%',  right:'10%', size:84, rot:-10 },{ emoji:'🎲', bottom:'16%', left:'8%',  size:56, rot:14 },{ emoji:'⭐', top:'42%', right:'5%',  size:42, rot:20 }],
-  ZEHN_VON_ZEHN: [{ emoji:'🎰', top:'10%', right:'12%', size:72, rot:-6  },{ emoji:'⚡', bottom:'20%', left:'7%',  size:50, rot:10 },{ emoji:'💪', top:'32%', right:'7%',  size:46, rot:-12, alt:true }],
-  CHEESE:        [{ emoji:'📸', top:'9%',  right:'11%', size:78, rot:-11 },{ emoji:'🔍', bottom:'15%', left:'7%',  size:52, rot:8  },{ emoji:'👁️', top:'36%', right:'6%',  size:44, rot:-9, alt:true }],
+  SCHAETZCHEN:   [{ emoji:'🎯', top:'45%', left:'3%',  size:70, rot:-12 },{ emoji:'✨', bottom:'14%', left:'7%',  size:50, rot:8  },{ emoji:'🔮', top:'50%', right:'4%',  size:54, rot:16, alt:true }],
+  MUCHO:         [{ emoji:'🅰️', top:'48%', left:'4%',  size:66, rot:-8  },{ emoji:'💡', bottom:'18%', left:'6%',  size:54, rot:12 },{ emoji:'🤔', top:'48%', right:'5%',  size:58, rot:-14, alt:true }],
+  BUNTE_TUETE:   [{ emoji:'🎁', top:'46%', left:'3%',  size:72, rot:-10 },{ emoji:'🎲', bottom:'16%', left:'8%',  size:56, rot:14 },{ emoji:'⭐', top:'52%', right:'4%',  size:56, rot:20 }],
+  ZEHN_VON_ZEHN: [{ emoji:'🎰', top:'48%', left:'4%',  size:62, rot:-6  },{ emoji:'⚡', bottom:'20%', left:'7%',  size:50, rot:10 },{ emoji:'💪', top:'48%', right:'5%',  size:58, rot:-12, alt:true }],
+  CHEESE:        [{ emoji:'📸', top:'48%', left:'3%',  size:68, rot:-11 },{ emoji:'🔍', bottom:'15%', left:'7%',  size:52, rot:8  },{ emoji:'👁️', top:'48%', right:'5%',  size:56, rot:-9, alt:true }],
 };
 
 // ── Static firefly positions ──────────────────────────────────────────────────
@@ -563,6 +565,121 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
     case 'GAME_OVER':       return 'GAME_OVER';
     default:                return null;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HOT POTATO BEAMER VIEW — active team, per-turn timer, used answers
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function HotPotatoBeamerView({ state: s, lang, revealed }: {
+  state: any; lang: 'de' | 'en'; revealed: boolean;
+}) {
+  // Live countdown for per-turn timer
+  const [remaining, setRemaining] = useState<number | null>(() =>
+    s.hotPotatoTurnEndsAt ? Math.max(0, Math.ceil((s.hotPotatoTurnEndsAt - Date.now()) / 1000)) : null
+  );
+  useEffect(() => {
+    if (!s.hotPotatoTurnEndsAt) { setRemaining(null); return; }
+    const tick = () => setRemaining(Math.max(0, Math.ceil((s.hotPotatoTurnEndsAt! - Date.now()) / 1000)));
+    tick();
+    const iv = setInterval(tick, 200);
+    return () => clearInterval(iv);
+  }, [s.hotPotatoTurnEndsAt]);
+
+  const activeTeam = s.teams.find((t: any) => t.id === s.hotPotatoActiveTeamId);
+  const urgent = remaining !== null && remaining <= 5;
+  const used: string[] = s.hotPotatoUsedAnswers ?? [];
+
+  if (revealed) return null;
+
+  return (
+    <div style={{
+      position: 'absolute', bottom: 16, left: 0, right: 0,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+      pointerEvents: 'none',
+    }}>
+      {/* Active team pill + turn timer */}
+      {activeTeam ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '10px 22px', borderRadius: 999,
+          background: `linear-gradient(135deg, ${activeTeam.color}33, ${activeTeam.color}11)`,
+          border: `2px solid ${activeTeam.color}`,
+          boxShadow: `0 0 32px ${activeTeam.color}55`,
+          animation: 'tcpulse 1.4s ease-in-out infinite',
+        }}>
+          <span style={{ fontSize: 36, lineHeight: 1 }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#94a3b8' }}>
+              🥔 {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
+            </span>
+            <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', fontWeight: 900, color: activeTeam.color }}>
+              {activeTeam.name} {lang === 'en' ? 'is up!' : 'ist dran!'}
+            </span>
+          </div>
+          {remaining !== null && (
+            <div style={{
+              marginLeft: 8, padding: '6px 16px', borderRadius: 999,
+              background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
+              border: `2px solid ${urgent ? '#EF4444' : '#475569'}`,
+              color: urgent ? '#fca5a5' : '#e2e8f0',
+              fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 900,
+              minWidth: 68, textAlign: 'center',
+              animation: urgent ? 'tcpulse 0.5s ease infinite alternate' : 'none',
+            }}>
+              ⏱ {remaining}s
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{
+          padding: '8px 18px', borderRadius: 999,
+          background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
+          color: '#94a3b8', fontSize: 15, fontWeight: 700,
+        }}>
+          🥔 {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
+        </div>
+      )}
+
+      {/* Used answers list */}
+      {used.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8,
+          maxWidth: 'min(92vw, 1200px)',
+        }}>
+          {used.map((a, i) => (
+            <div key={`${a}-${i}`} style={{
+              padding: '6px 14px', borderRadius: 999,
+              background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)',
+              color: '#86efac', fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
+              animation: 'contentReveal 0.3s ease both',
+            }}>
+              ✓ {a}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Eliminated teams (small, subtle) */}
+      {s.hotPotatoEliminated && s.hotPotatoEliminated.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 12, color: '#64748b', fontWeight: 700,
+        }}>
+          <span>❌ {lang === 'en' ? 'Out:' : 'Raus:'}</span>
+          {s.hotPotatoEliminated.map((id: string) => {
+            const t = s.teams.find((tm: any) => tm.id === id);
+            if (!t) return null;
+            return (
+              <span key={id} style={{ color: t.color, opacity: 0.7 }}>
+                {qqGetAvatar(t.avatarId).emoji} {t.name}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2081,8 +2198,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           </div>
 
-          {/* Timer — top right corner */}
-          {s.timerEndsAt && (
+          {/* Timer — top right corner (hidden for Hot Potato, which uses per-turn timer) */}
+          {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
             <div style={{
               position: 'absolute', top: 16, right: 48, zIndex: 10,
               opacity: revealed ? 0 : 1,
@@ -2211,8 +2328,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN — already visible in option cards) */}
-          {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN' && (
+          {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN + Hot Potato — handled separately) */}
+          {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN'
+            && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
             <div style={{
               position: 'relative', overflow: 'hidden',
               padding: 'clamp(16px, 2vh, 32px) clamp(24px, 3vw, 52px)', borderRadius: 28,
@@ -2234,6 +2352,52 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
             </div>
           )}
+
+          {/* Hot Potato reveal: show full answer list as chips, mark which were named */}
+          {revealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
+            const raw = (lang === 'en' && q.answerEn ? q.answerEn : q.answer) ?? '';
+            const allAnswers = raw.split(/[,;]/).map(a => a.replace(/[…\.]+$/, '').trim()).filter(Boolean);
+            const usedNorm = (s.hotPotatoUsedAnswers ?? []).map((u: string) => u.toLowerCase().trim());
+            const wasNamed = (a: string) => usedNorm.some((u: string) =>
+              u === a.toLowerCase().trim() || u.includes(a.toLowerCase().trim()) || a.toLowerCase().trim().includes(u)
+            );
+            return (
+              <div style={{
+                width: '100%', maxWidth: 1400, marginBottom: 'clamp(8px, 1.2vh, 24px)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+              }}>
+                <div style={{
+                  fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                  color: '#86efac', letterSpacing: 0.5,
+                }}>
+                  🥔 {lang === 'en' ? 'All possible answers' : 'Alle möglichen Antworten'}
+                </div>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
+                  padding: '18px 22px', borderRadius: 22,
+                  background: 'rgba(34,197,94,0.08)',
+                  border: '2px solid rgba(34,197,94,0.3)',
+                }}>
+                  {allAnswers.map((a, i) => {
+                    const named = wasNamed(a);
+                    return (
+                      <div key={`${a}-${i}`} style={{
+                        padding: '8px 18px', borderRadius: 999,
+                        fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
+                        background: named ? 'rgba(34,197,94,0.22)' : 'rgba(15,23,42,0.5)',
+                        border: `2px solid ${named ? '#22C55E' : 'rgba(148,163,184,0.25)'}`,
+                        color: named ? '#86efac' : '#94a3b8',
+                        animation: `contentReveal 0.4s ease ${0.2 + i * 0.05}s both`,
+                      }}>
+                        {named ? '✓ ' : ''}{a}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Background flash on reveal */}
           {revealed && (
@@ -2398,8 +2562,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Bottom: team answer progress (active questions only) */}
-          {!revealed && s.teams.length > 0 && (
+          {/* Bottom: team answer progress — Hot Potato has its own indicator below */}
+          {!revealed && s.teams.length > 0 && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
               position: 'absolute', bottom: 16, left: 0, right: 0,
@@ -2448,6 +2612,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 })}
               </div>
             </div>
+          )}
+
+          {/* ── HOT POTATO: active team + turn timer + used answers ── */}
+          {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (
+            <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
         </div>
 

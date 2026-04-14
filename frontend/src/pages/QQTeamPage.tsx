@@ -577,16 +577,16 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
             <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(myTeam.avatarId).emoji}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', minWidth: 0 }}>
                 {myTeam.name}
               </div>
-              {/* Joker slots — 2 stars, greyed when used this phase */}
+              {/* Joker slots — 2 stars for the whole game, greyed when used */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
-                  style={{ display: 'flex', gap: 3, marginTop: 2, alignItems: 'center' }}
-                  title={lang === 'de' ? '2×2 Joker dieser Phase' : '2×2 Jokers this phase'}
-                  aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used this phase`}
+                  style={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}
+                  title={lang === 'de' ? '2×2 Joker (gesamtes Spiel)' : '2×2 Jokers (whole game)'}
+                  aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
                 >
                   {Array.from({ length: 2 }).map((_, i) => {
                     const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
@@ -595,7 +595,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                         fontSize: 14,
                         color: used ? '#475569' : '#FBBF24',
                         filter: used ? 'grayscale(1)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.55))',
-                        opacity: used ? 0.55 : 1,
+                        opacity: used ? 0.5 : 1,
                         textDecoration: used ? 'line-through' : 'none',
                         textDecorationColor: used ? '#64748b' : undefined,
                         lineHeight: 1,
@@ -606,46 +606,30 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 </div>
               )}
             </div>
-            {/* Language selector — pill style */}
+            {/* Language selector — flag only */}
             <button
               onClick={onFlagClick}
               style={{
                 border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
-                cursor: 'pointer', padding: '3px 10px',
-                marginLeft: 6, marginRight: 6, outline: 'none',
-                fontSize: 12, fontWeight: 800, fontFamily: 'inherit',
-                borderRadius: 999, color: '#94a3b8',
-                display: 'inline-flex', alignItems: 'center', gap: 4,
+                cursor: 'pointer', padding: '4px 8px',
+                outline: 'none',
+                fontSize: 16, fontFamily: 'inherit',
+                borderRadius: 999,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s',
+                flexShrink: 0,
               }}
               aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
             >
               <span style={{
-                display: 'inline-block', fontSize: 15,
+                display: 'inline-block', fontSize: 16, lineHeight: 1,
                 transition: 'transform 0.2s ease-in-out, opacity 0.2s',
                 transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
                 opacity: flagFlip ? 0 : 1,
               }}>
                 {lang === 'de' ? '🇩🇪' : '🇬🇧'}
               </span>
-              {lang === 'de' ? 'DE' : 'EN'} ▼
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8' }}>
-                {(s.questionIndex % 5) + 1}/5
-              </div>
-              <div style={{
-                width: 40, height: 4, borderRadius: 2,
-                background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: `${(((s.questionIndex % 5) + 1) / 5) * 100}%`,
-                  height: '100%', borderRadius: 2,
-                  background: '#3B82F6',
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-            </div>
           </div>
         )}
 

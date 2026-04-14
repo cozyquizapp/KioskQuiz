@@ -4,7 +4,7 @@ import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
-  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_PHASE,
+  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
 } from '../../../shared/quarterQuizTypes';
 import {
@@ -1427,9 +1427,13 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.swapFirstCell   = null;
   room.frozenCells     = [];
 
-  // Reset per-phase stats
+  // Reset per-phase stats — but preserve jokersEarned (it's per-game, not per-phase)
   for (const id of room.joinOrder) {
-    room.teamPhaseStats[id] = emptyPhaseStats();
+    const prev = room.teamPhaseStats[id];
+    room.teamPhaseStats[id] = {
+      ...emptyPhaseStats(),
+      jokersEarned: prev?.jokersEarned ?? 0,
+    };
   }
   room.lastActivityAt = Date.now();
 }
@@ -1494,7 +1498,7 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
   if (newBlocks.length === 0) return 0;
 
   const stats = room.teamPhaseStats[teamId];
-  const remaining = QQ_MAX_JOKERS_PER_PHASE - stats.jokersEarned;
+  const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
   const toAward = Math.min(newBlocks.length, remaining);
 
   for (let i = 0; i < newBlocks.length; i++) {

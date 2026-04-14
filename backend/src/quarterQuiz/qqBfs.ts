@@ -112,7 +112,7 @@ export function findLastPlace(
  * Returns array of top-left corners [r, c] of each new 2×2 block.
  * The caller is responsible for:
  *   1. Marking those cells jokerFormed = true
- *   2. Awarding one bonus field per block (up to QQ_MAX_JOKERS_PER_PHASE)
+ *   2. Awarding one bonus field per block (up to QQ_MAX_JOKERS_PER_GAME)
  */
 export function detectNewJokers(
   grid: QQGrid,

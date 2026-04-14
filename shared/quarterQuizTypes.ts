@@ -57,7 +57,7 @@ export const QQ_PHASES_COUNT          = 3;
 export const QQ_QUESTIONS_PER_PHASE   = 5;
 export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
-export const QQ_MAX_JOKERS_PER_PHASE  = 2;
+export const QQ_MAX_JOKERS_PER_GAME   = 2;
 export const QQ_MAX_TEAMS             = 10;
 export const QQ_MIN_TEAMS             = 2;
 
@@ -171,7 +171,7 @@ export interface QQQuestion {
 // ── Per-team per-phase stats ──────────────────────────────────────────────────
 export interface QQTeamPhaseStats {
   stealsUsed: number;       // Phase 2: max QQ_MAX_STEALS_PER_PHASE
-  jokersEarned: number;     // max QQ_MAX_JOKERS_PER_PHASE this phase
+  jokersEarned: number;     // max QQ_MAX_JOKERS_PER_GAME over the whole game (not reset per phase)
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
 }
 
@@ -513,15 +513,17 @@ export interface QQAck {
 // ── Available avatars ─────────────────────────────────────────────────────────
 // 8 avatar+color pairs. Order matters: first 4 are the highest-contrast picks
 // and should be picked first for games with few teams.
+// 8 head-only animal avatars, ordered for highest contrast at low team counts.
+// Colors are the "team color" — pairing is fixed so pickers choose avatar + color together.
 export const QQ_AVATARS = [
   { id: 'fox',     emoji: '🦊', label: 'Fox',     color: '#EA580C' },  // orange
-  { id: 'bear',    emoji: '🐻', label: 'Bear',    color: '#DC2626' },  // red
-  { id: 'owl',     emoji: '🦉', label: 'Owl',     color: '#2563EB' },  // blue
   { id: 'frog',    emoji: '🐸', label: 'Frog',    color: '#16A34A' },  // green
-  { id: 'duck',    emoji: '🦆', label: 'Duck',    color: '#EAB308' },  // yellow
+  { id: 'panda',   emoji: '🐼', label: 'Panda',   color: '#2563EB' },  // blue
   { id: 'rabbit',  emoji: '🐰', label: 'Rabbit',  color: '#DB2777' },  // pink
-  { id: 'panda',   emoji: '🐼', label: 'Panda',   color: '#9333EA' },  // violet
-  { id: 'penguin', emoji: '🐧', label: 'Penguin', color: '#06B6D4' },  // cyan
+  { id: 'unicorn', emoji: '🦄', label: 'Unicorn', color: '#9333EA' },  // violet
+  { id: 'raccoon', emoji: '🦝', label: 'Raccoon', color: '#06B6D4' },  // cyan
+  { id: 'cow',     emoji: '🐮', label: 'Cow',     color: '#EAB308' },  // yellow
+  { id: 'cat',     emoji: '🐱', label: 'Cat',     color: '#DC2626' },  // red
 ];
 
 export function qqGetAvatar(avatarId: string) {

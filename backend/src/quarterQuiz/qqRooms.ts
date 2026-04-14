@@ -91,6 +91,8 @@ export interface QQRoomState {
   enable3DTransition: boolean;
   // Rules presentation
   rulesSlideIndex: number;
+  // Teams reveal animation anchor (set when entering TEAMS_REVEAL)
+  teamsRevealStartedAt: number | null;
   // Phase intro sub-step (see qqActivateQuestion for step flow)
   introStep: number;
   // Categories already introduced with explanation (key: category name, or 'BUNTE_TUETE:kind' for sub-mechanics)
@@ -181,6 +183,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       enable3DTransition: false,
       rulesSlideIndex: 0,
+      teamsRevealStartedAt: null,
       introStep: 0,
       seenCategories: [],
       _phaseBeforePause: null,
@@ -298,6 +301,7 @@ export function qqStartGame(
   room.gamePhaseIndex = 1;
   room.phase          = 'RULES';
   room.rulesSlideIndex = 0;
+  room.teamsRevealStartedAt = null;
   room.introStep      = 0;
   room.currentQuestion = questions[0];
   room.revealedAnswer  = null;
@@ -1628,6 +1632,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
+    teamsRevealStartedAt: room.teamsRevealStartedAt,
     introStep:        room.introStep,
     categoryIsNew:    (() => {
       const q = room.currentQuestion;
@@ -1664,6 +1669,25 @@ export function qqRulesNext(room: QQRoomState): void {
 export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
   room.rulesSlideIndex = Math.max(0, room.rulesSlideIndex - 1);
+  room.lastActivityAt = Date.now();
+}
+
+// ── Teams reveal (one-time, nach Rules vor Phase 1) ───────────────────────────
+
+/** Start the epic team-reveal animation. Called when moderator finishes rules. */
+export function qqStartTeamsReveal(room: QQRoomState): void {
+  assertPhase(room, ['RULES']);
+  room.phase = 'TEAMS_REVEAL';
+  room.teamsRevealStartedAt = Date.now();
+  room.lastActivityAt = Date.now();
+}
+
+/** Finish teams reveal (auto after animation or moderator-skip) → PHASE_INTRO. */
+export function qqFinishTeamsReveal(room: QQRoomState): void {
+  assertPhase(room, ['TEAMS_REVEAL']);
+  room.phase = 'PHASE_INTRO';
+  room.introStep = 0;
+  room.teamsRevealStartedAt = null;
   room.lastActivityAt = Date.now();
 }
 
@@ -1747,6 +1771,7 @@ export function qqResetRoom(room: QQRoomState): void {
   }
   room.totalPhases = 3;
   room.rulesSlideIndex = 0;
+  room.teamsRevealStartedAt = null;
   room.seenCategories = [];
   room.questionHistory = [];
   room.funnyAnswers = [];

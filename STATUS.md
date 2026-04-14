@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block C #9 — Team-Intro-Animation bei PHASE_INTRO.
+**Nächstes Todo**: Block C #10 — Game-Over QR-Code + Team-Summary-Seite.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -41,7 +41,7 @@ Details + Anleitungen zu allen offenen Blöcken:
 - [x] Live-Frage-Preview im Builder (kollabierbar, beamer-nah, CHEESE-Crop)
 
 ### Block C — Show-Polish (Woche 3)
-- [ ] Team-Intro-Animation bei PHASE_INTRO
+- [x] Epische Team-Reveal-Folie (einmalig nach Rules vor Phase 1)
 - [ ] Game-Over QR-Code → Team-Summary-Seite
 
 ### Block D — Spectator

@@ -21,6 +21,7 @@ import {
   qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
   qqSwapOneCell, qqFreezeCell, qqStuckCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
+  qqStartTeamsReveal, qqFinishTeamsReveal,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
@@ -740,10 +741,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:rulesFinish', (payload: QQRulesFinishPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        // rulesFinish → advance to PHASE_INTRO (rules are now part of the game flow)
-        room.phase = 'PHASE_INTRO';
-        room.introStep = 0;
+        // rulesFinish → TEAMS_REVEAL (one-time epic team intro)
+        qqStartTeamsReveal(room);
         room.rulesSlideIndex = 0;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:teamsRevealFinish', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqFinishTeamsReveal(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

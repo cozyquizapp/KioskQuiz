@@ -141,6 +141,7 @@ export default function QQModeratorPage() {
       }
       if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
       else if (s.phase === 'LOBBY')      startGameRef.current();
+      else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
         emitRef.current('qq:revealAnswer', { roomCode });
@@ -203,6 +204,7 @@ export default function QQModeratorPage() {
         return;
       }
       if (s.phase === 'LOBBY')            startGameRef.current();
+      else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
         emitRef.current('qq:revealAnswer', { roomCode });
@@ -255,7 +257,7 @@ export default function QQModeratorPage() {
     if (e.code === 'KeyP') {
       e.preventDefault();
       if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
-      else if (!['LOBBY', 'GAME_OVER', 'RULES'].includes(s.phase))
+      else if (!['LOBBY', 'GAME_OVER', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
         emitRef.current('qq:pause', { roomCode });
       return;
     }
@@ -288,6 +290,7 @@ export default function QQModeratorPage() {
     switch (s.phase) {
       case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
       case 'RULES': return { text: 'REGELN', color: '#6366f1', sub: `Slide ${(s.rulesSlideIndex ?? 0) + 1}` };
+      case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
       case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
@@ -424,6 +427,18 @@ export default function QQModeratorPage() {
                     emit={emit}
                     onStartGame={startGame}
                   />
+                )}
+
+                {/* ── TEAMS REVEAL ── */}
+                {s.phase === 'TEAMS_REVEAL' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+                      🎬 Epische Team-Vorstellung läuft auf dem Beamer…
+                    </div>
+                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:teamsRevealFinish', { roomCode })} hotkey="Space">
+                      ▶ Los geht's (Phase 1)
+                    </PrimaryBtn>
+                  </div>
                 )}
 
                 {/* ── PHASE INTRO ── */}
@@ -566,7 +581,7 @@ export default function QQModeratorPage() {
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} />
 
                 {/* ── Secondary: Pause ── */}
-                {!['LOBBY', 'PAUSED', 'GAME_OVER', 'RULES'].includes(s.phase) && (
+                {!['LOBBY', 'PAUSED', 'GAME_OVER', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
                   <Btn color="#F59E0B" outline onClick={() => emit('qq:pause', { roomCode })}>
                     ⏸ Pause <span style={{ fontSize: 10, opacity: 0.6 }}>P</span>
                   </Btn>

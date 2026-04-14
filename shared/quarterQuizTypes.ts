@@ -73,6 +73,7 @@ export function qqGridSize(teamCount: number): number {
 export type QQPhase =
   | 'LOBBY'             // Waiting for teams to join + avatar selection
   | 'RULES'             // Rules presentation (moderator-controlled, before game start)
+  | 'TEAMS_REVEAL'      // One-time epic team reveal after rules, before phase 1
   | 'PHASE_INTRO'       // Animated intro for each phase (1/2/3)
   | 'QUESTION_ACTIVE'   // Question visible, teams answering
   | 'QUESTION_REVEAL'   // Answer shown, winning team about to place
@@ -482,6 +483,7 @@ export interface QQStateUpdate {
   // 3D grid
   enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
+  teamsRevealStartedAt: number | null;  // timestamp for TEAMS_REVEAL animation anchor
   introStep: number;  // sub-step within PHASE_INTRO (see backend qqActivateQuestion for flow)
   categoryIsNew: boolean; // true when introStep is showing category explanation for first time
   // Set when all connected teams have submitted answers (before moderator reveals)

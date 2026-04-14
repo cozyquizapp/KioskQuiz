@@ -416,7 +416,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
   // These phases always use built-in views — custom templates not supported
-  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'PLACEMENT';
+  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'TEAMS_REVEAL' || s.phase === 'PLACEMENT';
   // Per-question override takes priority over category template
   const perQKey = !builtinOnly && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
   const rawPerQ = perQKey ? slideTemplates[perQKey] : undefined;
@@ -527,6 +527,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         >
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
           {s.phase === 'RULES'           && <RulesView state={s} />}
+          {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
           {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
@@ -1294,6 +1295,186 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     : (de ? `${connectedCount}/${teamCount} verbunden` : `${connectedCount}/${teamCount} connected`)}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TEAMS REVEAL — einmalige epische Team-Vorstellung nach Rules, vor Phase 1
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const teams = s.teams.filter(t => t.connected).length > 0
+    ? s.teams.filter(t => t.connected)
+    : s.teams;
+  // Animation start anchor — fallback auf "jetzt" falls Backend-Feld fehlt
+  const anchor = s.teamsRevealStartedAt ?? Date.now();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 250);
+    return () => clearInterval(id);
+  }, []);
+  void tick;
+  const elapsed = Date.now() - anchor;
+
+  // Timing: 0.8s Titel → pro Team 0.9s stagger → 1.2s Outro-Grid mit "VIEL GLÜCK!"
+  const titleDelay = 0;
+  const titleDur = 800;
+  const perTeamDelay = 900;
+  const revealedCount = Math.max(0, Math.min(teams.length, Math.floor((elapsed - titleDur) / perTeamDelay) + 1));
+  const allRevealed = revealedCount >= teams.length;
+  const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
+  const showGoodLuck = elapsed >= goodLuckDelay;
+
+  // Sounds triggern pro Team (nur einmal je Index)
+  const playedRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    for (let i = 0; i < revealedCount; i++) {
+      if (!playedRef.current.has(i)) {
+        playedRef.current.add(i);
+        try { playFieldPlaced(); } catch {}
+      }
+    }
+    if (showGoodLuck && !playedRef.current.has(-1)) {
+      playedRef.current.add(-1);
+      try { playFanfare(); } catch {}
+    }
+  }, [revealedCount, showGoodLuck]);
+
+  return (
+    <div style={{
+      width: '100%', height: '100%', position: 'relative',
+      background: 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 55%, #020617 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontFamily: fontFam, overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes qqTrTitle {
+          0%   { opacity: 0; transform: translateY(-30px) scale(0.8); letter-spacing: 0.5em; }
+          100% { opacity: 1; transform: translateY(0)     scale(1);   letter-spacing: 0.12em; }
+        }
+        @keyframes qqTrSlam {
+          0%   { opacity: 0; transform: translateY(-80vh) scale(2) rotate(-18deg); filter: blur(6px); }
+          55%  { opacity: 1; transform: translateY(8%)    scale(1.15) rotate(3deg); filter: blur(0); }
+          75%  { transform: translateY(-2%) scale(0.96) rotate(-1deg); }
+          100% { transform: translateY(0)    scale(1) rotate(0deg); }
+        }
+        @keyframes qqTrFlash {
+          0%   { opacity: 0; }
+          10%  { opacity: 0.9; }
+          100% { opacity: 0; }
+        }
+        @keyframes qqTrGood {
+          0%   { opacity: 0; transform: scale(0.7); }
+          60%  { opacity: 1; transform: scale(1.1); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes qqTrPulse {
+          0%,100% { transform: scale(1); }
+          50%     { transform: scale(1.04); }
+        }
+      `}</style>
+
+      {/* Backdrop spotlight */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(circle at 50% 40%, rgba(251,191,36,0.12) 0%, transparent 55%)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Title */}
+      <div style={{
+        fontSize: 'clamp(36px, 5.2vw, 82px)', fontWeight: 900, color: '#f8fafc',
+        textTransform: 'uppercase', letterSpacing: '0.12em',
+        animation: `qqTrTitle ${titleDur}ms cubic-bezier(.2,.8,.2,1) ${titleDelay}ms both`,
+        textShadow: '0 4px 20px rgba(251,191,36,0.25)',
+        marginBottom: 'clamp(24px, 3vw, 48px)',
+      }}>
+        🎬 Heute spielen…
+      </div>
+
+      {/* Teams row */}
+      <div style={{
+        display: 'flex', gap: 'clamp(12px, 2vw, 28px)',
+        flexWrap: 'wrap', justifyContent: 'center', maxWidth: '90vw',
+      }}>
+        {teams.map((t, i) => {
+          const shown = i < revealedCount;
+          const slamDelay = titleDur + i * perTeamDelay;
+          const av = qqGetAvatar(t.avatarId);
+          return (
+            <div key={t.id} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 10,
+              opacity: shown ? 1 : 0,
+              animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
+              animationDelay: shown ? '0ms' : `${slamDelay}ms`,
+            }}>
+              {/* Avatar-Disc */}
+              <div style={{
+                width: 'clamp(120px, 14vw, 200px)',
+                height: 'clamp(120px, 14vw, 200px)',
+                borderRadius: '50%',
+                background: `radial-gradient(circle at 35% 30%, ${t.color} 0%, ${t.color}cc 45%, ${t.color}88 100%)`,
+                border: `5px solid ${t.color}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
+                fontSize: 'clamp(60px, 8vw, 110px)', lineHeight: 1,
+                animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
+              }}>
+                {av.emoji}
+              </div>
+              {/* Flash overlay on slam */}
+              {shown && (
+                <div style={{
+                  position: 'absolute',
+                  width: 'clamp(120px, 14vw, 200px)',
+                  height: 'clamp(120px, 14vw, 200px)',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  pointerEvents: 'none',
+                  animation: 'qqTrFlash 600ms ease-out both',
+                }} />
+              )}
+              {/* Team name */}
+              <div style={{
+                padding: '6px 16px', borderRadius: 14,
+                background: t.color,
+                color: '#fff', fontWeight: 900,
+                fontSize: 'clamp(18px, 2.2vw, 32px)',
+                textTransform: 'uppercase', letterSpacing: '0.04em',
+                boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
+                whiteSpace: 'nowrap',
+              }}>
+                {t.name}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* "Viel Glück!" */}
+      {showGoodLuck && (
+        <div style={{
+          marginTop: 'clamp(32px, 4vw, 64px)',
+          fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900,
+          color: '#fbbf24',
+          textTransform: 'uppercase', letterSpacing: '0.15em',
+          textShadow: '0 4px 24px rgba(251,191,36,0.5)',
+          animation: 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both',
+        }}>
+          ✨ Viel Glück! ✨
+        </div>
+      )}
+
+      {/* Skip-Hint */}
+      <div style={{
+        position: 'absolute', bottom: 20, left: 0, right: 0,
+        textAlign: 'center', fontSize: 13, color: '#64748b', fontWeight: 700,
+      }}>
+        {allRevealed ? 'Moderator drückt weiter, sobald alle warm sind…' : 'Intro läuft…'}
       </div>
     </div>
   );

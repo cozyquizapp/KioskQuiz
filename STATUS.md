@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block D #11 — Emote-Rückmeldungen für Zuschauer.
+**Nächstes Todo**: Block E #12 — Reconnect-Stresstest mit gedrosseltem WLAN.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -45,7 +45,7 @@ Details + Anleitungen zu allen offenen Blöcken:
 - [x] Game-Over QR-Code → Team-Summary-Seite (Stats, Feedback, Upcoming)
 
 ### Block D — Spectator
-- [ ] Emote-Rückmeldungen für Zuschauer (ausschaltbar im Moderator)
+- [→] Emote-Rückmeldungen für Zuschauer — nach Longterm verschoben (2026-04-14)
 
 ### Block E — Betrieb
 - [ ] Reconnect-Stresstest mit gedrosseltem WLAN

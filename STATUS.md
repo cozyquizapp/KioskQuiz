@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block F — Memory/Handoff aufräumen, dann ist die Roadmap durch.
+**Nächstes Todo**: Keine offenen Roadmap-Punkte. Neue Features/Bugs ad-hoc.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -53,8 +53,8 @@ Details + Anleitungen zu allen offenen Blöcken:
 - [→] Plausible — nach Longterm (skippen bis Marketing-Landing existiert)
 
 ### Block F — Memory & Longterm-Memo
-- [ ] Handoff-Memo komprimieren
-- [ ] Longterm-TODO-File erweitern (Landing, Höher/Tiefer, Musik-Quiz — bereits drin)
+- [x] Handoff-Memo komprimiert (297 → ~55 Zeilen, nur Code-Map + Regeln)
+- [x] Longterm-TODO-File gepflegt (Sentry, Plausible, Spectator-Emotes eingepflegt)
 
 ## Offen / Bugs
 

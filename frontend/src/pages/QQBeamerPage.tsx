@@ -1627,6 +1627,51 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {rule}
               </div>
             ))}
+            {/* Round 4: Stacking example grid with + symbol */}
+            {s.gamePhaseIndex === 4 && (
+              <div style={{
+                marginTop: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+                  {/* Before: 3 stones team color */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 56px)', gap: 5 }}>
+                    {[0,1,2,3,4,5,6,7,8].map(i => (
+                      <div key={i} style={{
+                        width: 56, height: 56, borderRadius: 10,
+                        background: i < 3 ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.06)',
+                        border: i < 3 ? `1px solid ${color}` : '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: i < 3 ? `0 0 10px ${color}66` : 'none',
+                      }} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 48, fontWeight: 900, color: `${color}cc` }}>+</div>
+                  <div style={{ fontSize: 48 }}>📌</div>
+                  <div style={{ fontSize: 48, fontWeight: 900, color: `${color}cc` }}>=</div>
+                  {/* After: same 3 stones, one stuck with 📌 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 56px)', gap: 5 }}>
+                    {[0,1,2,3,4,5,6,7,8].map(i => (
+                      <div key={i} style={{
+                        width: 56, height: 56, borderRadius: 10,
+                        background: i < 3 ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.06)',
+                        border: i === 1 ? '2px solid rgba(251,191,36,0.95)' : i < 3 ? `1px solid ${color}` : '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: i === 1 ? '0 0 14px rgba(251,191,36,0.7)' : i < 3 ? `0 0 10px ${color}66` : 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 26,
+                      }}>{i === 1 ? '📌' : ''}</div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 800,
+                  color: `${color}aa`, textAlign: 'center', maxWidth: 700,
+                }}>
+                  {lang === 'en'
+                    ? '📌 Stack locks a tile — it can\'t be stolen or swapped anymore'
+                    : '📌 Stucken macht ein Feld unklaubbar und untauschbar'}
+                </div>
+              </div>
+            )}
           </div>
         </>
       ) : s.categoryIsNew ? (
@@ -2868,7 +2913,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : cat === 'BUNTE_TUETE'
                 ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
                 : cat === 'ZEHN_VON_ZEHN'
-                  ? (isEn ? 'nailed it!' : 'hat am meisten gewusst!')
+                  ? (isEn ? 'bet the most points on the correct answer!' : 'hat die meisten Punkte auf die richtige Antwort gesetzt!')
                   : muchoSpeedWin
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
                     : (isEn ? 'correct!' : 'richtig!');
@@ -3230,7 +3275,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             />
           </>
         ) : (
-          <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+          <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
         )}
         <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
       </div>
@@ -3809,42 +3854,44 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     }}>
       <Fireflies color="rgba(234,179,8,0.35)" />
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        padding: '48px 64px', borderRadius: 36,
-        background: 'rgba(255,255,255,0.98)', color: '#0f172a',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 120px rgba(234,179,8,0.25)',
-        maxWidth: 820,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
+        padding: '56px 72px', borderRadius: 36,
+        background: 'linear-gradient(135deg, rgba(20,16,10,0.92), rgba(13,10,6,0.96))',
+        border: '2px solid rgba(251,191,36,0.4)',
+        boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(234,179,8,0.2), inset 0 1px 0 rgba(251,191,36,0.15)',
+        maxWidth: 900,
         animation: 'contentReveal 0.6s ease both',
       }}>
         <div style={{
-          fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900,
-          color: '#0f172a', textAlign: 'center', lineHeight: 1.1,
+          fontSize: 'clamp(36px, 4.5vw, 64px)', fontWeight: 900,
+          color: '#FBBF24', textAlign: 'center', lineHeight: 1.1,
+          textShadow: '0 0 40px rgba(251,191,36,0.4)',
         }}>
           🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
         <div style={{
           fontSize: 'clamp(18px, 1.9vw, 24px)', fontWeight: 600,
-          color: '#475569', textAlign: 'center', lineHeight: 1.45,
-          maxWidth: 640,
+          color: '#cbd5e1', textAlign: 'center', lineHeight: 1.45,
+          maxWidth: 680,
         }}>
           {lang === 'de'
-            ? '📣 Erzählt euren Freunden vom Quarter Quiz — und scannt den Code für ein kleines Goodie 🎁'
-            : '📣 Tell your friends about Quarter Quiz — and scan the code for a little goodie 🎁'}
+            ? '📣 Erzählt euren Freunden vom Quarter Quiz — und scannt den Code für eure Team-Stats 🎁'
+            : '📣 Tell your friends about Quarter Quiz — and scan the code for your team stats 🎁'}
         </div>
         {summaryUrl && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 36, marginTop: 4 }}>
             <div style={{
               padding: 14, borderRadius: 18,
               background: '#ffffff',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              boxShadow: '0 0 32px rgba(251,191,36,0.35), 0 4px 16px rgba(0,0,0,0.4)',
             }}>
-              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0f172a" level="M" />
+              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320 }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340 }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC' }}>
                 📱 {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
               </div>
-              <div style={{ fontSize: 17, color: '#475569', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
+              <div style={{ fontSize: 17, color: '#94a3b8', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
                 {lang === 'de'
                   ? '• Eure Team-Stats\n• Feedback & Bugs\n• Nächste Quiz-Termine'
                   : '• Your team stats\n• Feedback & bugs\n• Upcoming events'}
@@ -3853,8 +3900,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </div>
         )}
         <div style={{
-          fontSize: 14, color: '#94a3b8', fontWeight: 700,
-          letterSpacing: '0.12em', textTransform: 'uppercase',
+          fontSize: 15, color: 'rgba(251,191,36,0.7)', fontWeight: 800,
+          letterSpacing: '0.14em', textTransform: 'uppercase',
         }}>
           play.cozyquiz.app
         </div>

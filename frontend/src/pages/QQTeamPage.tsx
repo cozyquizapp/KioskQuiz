@@ -678,7 +678,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
-        {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} />}
+        {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
 
         {/* Phase stats */}
@@ -1168,9 +1168,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               ? (isEn ? '📸 Correct! Choose a field.' : '📸 Erkannt! Wählt ein Feld.')
               : cat === 'BUNTE_TUETE'
                 ? (isEn ? '🎁 You win this round! Choose a field.' : '🎁 Ihr gewinnt die Runde! Wählt ein Feld.')
-                : muchoSpeedWin
-                  ? (isEn ? '⚡ Fastest & correct! Choose a field.' : '⚡ Am schnellsten & richtig! Wählt ein Feld.')
-                  : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
+                : cat === 'ZEHN_VON_ZEHN'
+                  ? (isEn ? '💰 Most points on the right answer! Choose a field.' : '💰 Die meisten Punkte auf die richtige Antwort! Wählt ein Feld.')
+                  : muchoSpeedWin
+                    ? (isEn ? '⚡ Fastest & correct! Choose a field.' : '⚡ Am schnellsten & richtig! Wählt ein Feld.')
+                    : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 12,
@@ -1203,6 +1205,73 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           );
         }
         return null;
+      })()}
+
+      {/* Top-5: eigene Antworten mit ✓/✗ + Team-Badges wer es auch hatte */}
+      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
+        const btt = q.bunteTuete as any;
+        const correctDE: string[] = (btt.answers ?? []).map((x: string) => String(x ?? '').trim()).filter(Boolean);
+        const correctEN: string[] = (btt.answersEn ?? []).map((x: string) => String(x ?? '').trim()).filter(Boolean);
+        const allCorrectLower = new Set([...correctDE, ...correctEN].map(c => c.toLowerCase()));
+        const myAns = s.answers.find(a => a.teamId === myTeamId);
+        if (!myAns) return null;
+        const mine = String(myAns.text ?? '').split('|').map(x => x.trim()).filter(Boolean);
+        const matchFor = (guess: string): string | null => {
+          const g = guess.toLowerCase();
+          for (const c of allCorrectLower) {
+            if (g === c || g.includes(c) || c.includes(g)) return c;
+          }
+          return null;
+        };
+        // Welche anderen Teams hatten die gleiche korrekte Antwort?
+        const teamsForCorrect = (corrLower: string): Array<{ id: string; color: string; avatarId: string; name: string }> => {
+          const out: Array<{ id: string; color: string; avatarId: string; name: string }> = [];
+          for (const a of s.answers) {
+            if (a.teamId === myTeamId) continue;
+            const sub = String(a.text ?? '').split('|').map(x => x.trim().toLowerCase()).filter(Boolean);
+            const hit = sub.some(x => x === corrLower || x.includes(corrLower) || corrLower.includes(x));
+            if (hit) {
+              const tm = s.teams.find(t => t.id === a.teamId);
+              if (tm) out.push({ id: tm.id, color: tm.color, avatarId: tm.avatarId, name: tm.name });
+            }
+          }
+          return out;
+        };
+        return (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
+              📝 {lang === 'en' ? 'Your answers' : 'Eure Tipps'}
+            </div>
+            {mine.map((g, i) => {
+              const m = matchFor(g);
+              const others = m ? teamsForCorrect(m) : [];
+              return (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: m ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
+                  border: `1.5px solid ${m ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                  animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
+                }}>
+                  <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{m ? '✓' : '✗'}</span>
+                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: m ? '#4ade80' : '#f87171' }}>{g}</span>
+                  {others.length > 0 && (
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {others.map(o => (
+                        <span key={o.id} title={o.name} style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: `${o.color}33`, border: `1.5px solid ${o.color}`,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12,
+                        }}>{qqGetAvatar(o.avatarId).emoji}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
       })()}
 
       {/* CozyGuessr: Distanz-Ranking */}
@@ -2609,7 +2678,7 @@ function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate;
   );
 }
 
-function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
+function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
   const sorted  = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
   const myTeam  = sorted.find(t => t.id === myTeamId);
@@ -2669,6 +2738,26 @@ function GameOverCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdat
             );
           })}
         </div>
+
+        {/* Summary link button */}
+        {roomCode && (
+          <a
+            href={`/summary/${encodeURIComponent(roomCode)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block', marginTop: 18, padding: '14px 16px',
+              borderRadius: 14, textAlign: 'center',
+              background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
+              color: '#0D0A06', fontWeight: 900, fontSize: 16,
+              textDecoration: 'none',
+              boxShadow: '0 4px 0 #B45309, 0 0 24px rgba(251,191,36,0.35)',
+              animation: 'tcreveal 0.5s ease 0.7s both',
+            }}
+          >
+            {lang === 'en' ? '📊 View full results' : '📊 Zur Ergebnisseite'}
+          </a>
+        )}
       </div>
     </CozyCard>
   );

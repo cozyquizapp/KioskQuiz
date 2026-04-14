@@ -818,40 +818,12 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     },
   },
   {
-    icon: '1️⃣',
-    title: 'Runde 1 — Basis',
-    color: '#3B82F6',
-    lines: [
-      'Antworten geben, Felder setzen — klassisch und direkt.',
-      'Jede richtige Antwort = ein Feld erobern.',
-    ],
-  },
-  {
-    icon: '2️⃣',
-    title: 'Runde 2 — Klau & Tausch',
-    color: '#EC4899',
-    lines: [
-      'Neue Aktionen werden freigeschaltet.',
-      'Gegnerische Felder können geklaut oder getauscht werden!',
-    ],
-    extra: '⚡ Klauen kostet Geschwindigkeit — wer zu langsam ist, verliert!',
-  },
-  {
-    icon: '3️⃣',
-    title: 'Runde 3 — Chaos',
-    color: '#EF4444',
-    lines: [
-      'Spezialkategorien: Imposter, Heiße Kartoffel, Schätzchen und mehr.',
-      'Einfrieren, festnageln, alles ist möglich — alles zählt doppelt!',
-    ],
-  },
-  {
-    icon: '4️⃣',
-    title: 'Runde 4 — Finale',
+    icon: '🔄',
+    title: 'Comeback-Chance',
     color: '#8B5CF6',
     lines: [
-      'Die letzte Runde bringt das große Finale.',
-      'Jeder Zug kann über Sieg oder Niederlage entscheiden!',
+      'Vor der letzten Runde bekommt das Team auf dem letzten Platz eine faire Chance.',
+      'Keine Sorge — wir erklären die Details, wenn es soweit ist!',
     ],
   },
   {
@@ -907,40 +879,12 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     },
   },
   {
-    icon: '1️⃣',
-    title: 'Round 1 — Basics',
-    color: '#3B82F6',
-    lines: [
-      'Answer, place cells — simple and direct.',
-      'Each correct answer = one cell claimed.',
-    ],
-  },
-  {
-    icon: '2️⃣',
-    title: 'Round 2 — Steal & Swap',
-    color: '#EC4899',
-    lines: [
-      'New actions unlock.',
-      'Opponent cells can be stolen or swapped!',
-    ],
-    extra: '⚡ Stealing costs speed — slow teams lose out!',
-  },
-  {
-    icon: '3️⃣',
-    title: 'Round 3 — Chaos',
-    color: '#EF4444',
-    lines: [
-      'Special categories: Imposter, Hot Potato, Schätzchen and more.',
-      'Freeze, pin, anything goes — everything counts double!',
-    ],
-  },
-  {
-    icon: '4️⃣',
-    title: 'Round 4 — Finale',
+    icon: '🔄',
+    title: 'Comeback Chance',
     color: '#8B5CF6',
     lines: [
-      'The last round brings the grand finale.',
-      'Every move can decide victory or defeat!',
+      'Before the final round, the team in last place gets a fair chance.',
+      "Don't worry — we'll explain the details when the time comes!",
     ],
   },
   {
@@ -1012,9 +956,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const allSlides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
-  // For 3-phase games, filter out "Round 4" slide (icon 4️⃣)
-  const slides = s.totalPhases === 3 ? allSlides.filter(sl => sl.icon !== '4️⃣') : allSlides;
+  const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
   const totalSlides = slides.length;
   const idx = Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1);
   const slide = slides[idx];

@@ -140,7 +140,7 @@ export default function QQModeratorPage() {
     if (e.code === 'Space') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = s.totalPhases === 3 ? 7 : 8;
+        const totalSlides = 5;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -215,7 +215,7 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = s.totalPhases === 3 ? 7 : 8;
+        const totalSlides = 5;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -1420,7 +1420,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = s.totalPhases === 3 ? 7 : 8; // 6 slides for 3-phase (skip Round 4), 7 for 4-phase
+  const totalSlides = 5;
   const idx = s.rulesSlideIndex ?? 0;
   const isFirst = idx === 0;
   const isLast = idx >= totalSlides - 1;

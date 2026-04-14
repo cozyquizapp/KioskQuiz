@@ -399,22 +399,27 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 const sel = avatarId === a.id;
                 const taken = takenAvatarIds.includes(a.id);
                 const justPicked = pickedId === a.id;
+                const avColor = a.color ?? '#EAB308';
                 return (
                   <button key={a.id} onClick={() => !taken && handleAvatarPick(a.id)} disabled={taken} style={{
                     padding: '12px 4px', borderRadius: 14, cursor: taken ? 'not-allowed' : 'pointer',
-                    background: taken ? 'rgba(255,255,255,0.02)' : sel ? 'rgba(234,179,8,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? '#EAB308' : 'rgba(255,255,255,0.07)'}`,
+                    background: taken
+                      ? 'rgba(255,255,255,0.02)'
+                      : sel
+                        ? `linear-gradient(135deg, ${avColor}33, ${avColor}14)`
+                        : `linear-gradient(135deg, ${avColor}18, ${avColor}08)`,
+                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? avColor : `${avColor}55`}`,
                     opacity: taken ? 0.35 : 1,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     fontFamily: 'inherit', transition: 'all 0.18s',
-                    boxShadow: sel ? '0 0 18px rgba(234,179,8,0.35)' : 'none',
+                    boxShadow: sel ? `0 0 18px ${avColor}66` : 'none',
                     position: 'relative', overflow: 'visible',
                   }}>
                     {/* Expanding ring on pick */}
                     {justPicked && (
                       <div style={{
                         position: 'absolute', inset: -4, borderRadius: 18, pointerEvents: 'none',
-                        border: '2px solid rgba(234,179,8,0.6)',
+                        border: `2px solid ${avColor}99`,
                         animation: 'tcAvatarRing 0.5s ease-out forwards',
                       }} />
                     )}
@@ -422,7 +427,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     {justPicked && sparks.map((sp, si) => (
                       <div key={si} style={{
                         position: 'absolute', left: '50%', top: '40%', width: 5, height: 5,
-                        borderRadius: '50%', background: '#FBBF24', pointerEvents: 'none',
+                        borderRadius: '50%', background: avColor, pointerEvents: 'none',
                         ['--sx' as string]: sp.sx, ['--sy' as string]: sp.sy,
                         animation: 'tcAvatarSpark 0.45s ease-out forwards',
                         animationDelay: `${si * 0.02}s`,
@@ -434,7 +439,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       animation: justPicked ? 'tcAvatarPick 0.5s ease-out' : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
                       ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
                     }}>{a.emoji}</span>
-                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? '#EAB308' : '#64748b', fontWeight: 800,
+                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
                       textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>
                   </button>
                 );

@@ -3,7 +3,7 @@
 import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
-  QQLanguage, QQ_TEAM_PALETTE, QQ_QUESTIONS_PER_PHASE,
+  QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_PHASE,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
 } from '../../../shared/quarterQuizTypes';
@@ -205,6 +205,9 @@ export function qqJoinTeam(
     const safeAvatarId = takenBy ? room.teams[teamId].avatarId : avatarId; // keep old if taken
     room.teams[teamId].name      = teamName;
     room.teams[teamId].avatarId  = safeAvatarId;
+    // Sync color to (possibly new) avatar's signature color
+    const newAvatar = QQ_AVATARS.find(a => a.id === safeAvatarId);
+    if (newAvatar?.color) room.teams[teamId].color = newAvatar.color;
     room.teams[teamId].connected = true;
     return;
   }
@@ -221,11 +224,13 @@ export function qqJoinTeam(
   if (avatarTaken) {
     throw new QQError('AVATAR_TAKEN', 'Dieser Avatar ist bereits vergeben.');
   }
-  const colorIndex = existingCount % QQ_TEAM_PALETTE.length;
+  // Color is derived from the chosen avatar (each avatar has a fixed signature color)
+  const avatar = QQ_AVATARS.find(a => a.id === avatarId);
+  const color = avatar?.color ?? QQ_TEAM_PALETTE[existingCount % QQ_TEAM_PALETTE.length];
   room.teams[teamId] = {
     id: teamId,
     name: teamName,
-    color: QQ_TEAM_PALETTE[colorIndex],
+    color,
     avatarId,
     connected: true,
     totalCells: 0,

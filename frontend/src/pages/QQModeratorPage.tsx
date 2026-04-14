@@ -1025,7 +1025,7 @@ export default function QQModeratorPage() {
 const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
   LOBBY: {
     title: 'Lobby — Teams einchecken',
-    text: 'Begrüße dein Publikum. Weise Teams darauf hin, den QR-Code zu scannen, einen Teamnamen und eine Farbe zu wählen. Warte, bis alle Teams bereit sind, bevor du startest.',
+    text: 'Begrüße dein Publikum. Weise Teams darauf hin, den QR-Code zu scannen, einen Avatar (inkl. Teamfarbe) und einen Teamnamen zu wählen. Warte, bis alle Teams bereit sind, bevor du startest.',
   },
   RULES: {
     title: 'Regeln erklären',

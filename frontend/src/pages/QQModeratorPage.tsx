@@ -23,7 +23,7 @@ export default function QQModeratorPage() {
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
-  const [selectedDraftId, setSelectedDraftId] = useState<string>('__default__');
+  const [selectedDraftId, setSelectedDraftId] = useState<string>('');
   const [showSoundPanel, setShowSoundPanel] = useState(false);
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   const startingRef = useRef(false); // prevent double-fire on startGame
@@ -70,7 +70,9 @@ export default function QQModeratorPage() {
             questionCount: d.questions?.length ?? 0,
           }))
         : [];
-      setDrafts(qq.sort((a, b) => b.updatedAt - a.updatedAt));
+      const sorted = qq.sort((a, b) => b.updatedAt - a.updatedAt);
+      setDrafts(sorted);
+      setSelectedDraftId(prev => prev || sorted[0]?.id || '');
     });
   }, []);
 
@@ -81,23 +83,18 @@ export default function QQModeratorPage() {
     let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
     let slideTemplates: undefined | import('../../../shared/quarterQuizTypes').QQSlideTemplates;
     let soundConfig: undefined | import('../../../shared/quarterQuizTypes').QQSoundConfig;
-    if (selectedDraftId === '__default__') {
-      const res = await fetch('/api/qq/questions/default');
-      if (!res.ok) { alert('Standard-Fragen konnten nicht geladen werden'); return; }
-      questions = await res.json();
-    } else {
-      // QQ Builder draft — questions already in QQ format
-      const qqId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
-      const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
-      if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
-      const draft = await res.json();
-      questions = draft.questions ?? [];
-      theme = draft.theme;
-      slideTemplates = draft.slideTemplates;
-      soundConfig = draft.soundConfig;
-      if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
-    }
-    const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : (selectedDraftId !== '__default__' ? selectedDraftId : undefined);
+    if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
+    // QQ Builder draft — questions already in QQ format
+    const qqId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
+    const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
+    if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
+    const draft = await res.json();
+    questions = draft.questions ?? [];
+    theme = draft.theme;
+    slideTemplates = draft.slideTemplates;
+    soundConfig = draft.soundConfig;
+    if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
+    const qqDraftId = qqId;
     const qqDraftTitle = qqDraftId ? (drafts.find(d => d.id === qqDraftId)?.title ?? undefined) : undefined;
     const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig });
     if (!ack.ok) {
@@ -413,7 +410,7 @@ export default function QQModeratorPage() {
                       onChange={e => setSelectedDraftId(e.target.value)}
                       style={{ ...selectStyle, maxWidth: 220 }}
                     >
-                      <option value="__default__">📋 Standard-Testfragen</option>
+                      {drafts.length === 0 && <option value="">— keine Drafts —</option>}
                       {drafts.map(d => (
                         <option key={d.id} value={d.id}>
                           📄 {d.title}{d.date ? ` (${d.date})` : ''}

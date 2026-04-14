@@ -69,7 +69,8 @@
       "WebFetch(domain:alvaromontoro.medium.com)",
       "Bash(wc -l c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\frontend\\\\\\\\src\\\\\\\\pages\\\\\\\\QQModeratorPage.tsx c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\shared\\\\\\\\quarterQuizTypes.ts)",
       "WebFetch(domain:play.cozyquiz.app)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(node -e \"console.log\\('node ok'\\)\")"
     ]
   }
 }

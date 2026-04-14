@@ -506,25 +506,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         >⛶</button>
       )}
 
-      {/* 3D grid toggle — only visible during PLACEMENT phase or placement flash */}
-      {(s.phase === 'PLACEMENT' || placementFlash) && (
-        <button
-          onClick={toggle3D}
-          title={use3D ? '2D Grid' : '3D Grid'}
-          style={{
-            position: 'fixed', top: 12, right: !isFullscreen ? 56 : 12, zIndex: 9999,
-            height: 36, borderRadius: 8, padding: '0 10px',
-            border: `1px solid ${use3D ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.18)'}`,
-            background: use3D ? 'rgba(59,130,246,0.25)' : 'rgba(13,17,23,0.72)',
-            color: use3D ? '#93c5fd' : '#e2e8f0', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-            fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-            backdropFilter: 'blur(6px)',
-            transition: 'all 0.2s',
-          }}
-        >{use3D ? '3D' : '2D'}</button>
-      )}
-
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
         <>
@@ -3091,26 +3072,6 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               entering={viewMode === 'transitioning'}
               flyoverSignal={flyoverSignal}
             />
-            {viewMode === '3d' && (
-              <div style={{
-                position: 'absolute', bottom: 18, right: 24, zIndex: 15,
-                padding: '5px 12px', borderRadius: 999,
-                background: 'rgba(15,23,42,0.55)',
-                border: '1px solid rgba(148,163,184,0.25)',
-                color: '#94a3b8', fontSize: 12, fontWeight: 700,
-                letterSpacing: 0.4, pointerEvents: 'none',
-                opacity: 0.7,
-              }}>
-                <kbd style={{
-                  fontFamily: 'inherit', fontSize: 11,
-                  padding: '1px 7px', borderRadius: 4,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  marginRight: 6, color: '#e2e8f0',
-                }}>F</kbd>
-                Flyover
-              </div>
-            )}
           </>
         ) : (
           <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />

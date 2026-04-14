@@ -588,7 +588,17 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'Frage → alle antworten gleichzeitig auf dem Handy.',
-      'Richtig? Setzt Felder auf dem Spielfeld — schnellstes Team zuerst!',
+      'Richtig? Setzt Felder auf dem Spielfeld.',
+      'Bei mehreren richtigen Antworten darf das schnellste Team zuerst wählen!',
+    ],
+  },
+  {
+    icon: '⭐',
+    title: 'Joker — 2×2 Bonus',
+    color: '#F59E0B',
+    lines: [
+      'Bildet ein 2×2-Quadrat in Teamfarbe und erhaltet ein Joker-Feld.',
+      'Joker-Felder geben Bonuspunkte am Ende!',
     ],
     extra: '⭐ 2×2-Quadrat bilden = Bonus-Jokerfeld!',
     grid: {
@@ -603,12 +613,49 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     },
   },
   {
+    icon: '1️⃣',
+    title: 'Runde 1 — Basis',
+    color: '#3B82F6',
+    lines: [
+      'Antworten geben, Felder setzen — klassisch und direkt.',
+      'Jede richtige Antwort = ein Feld erobern.',
+    ],
+  },
+  {
+    icon: '2️⃣',
+    title: 'Runde 2 — Klau & Tausch',
+    color: '#EC4899',
+    lines: [
+      'Neue Aktionen werden freigeschaltet.',
+      'Gegnerische Felder können geklaut oder getauscht werden!',
+    ],
+    extra: '⚡ Klauen kostet Geschwindigkeit — wer zu langsam ist, verliert!',
+  },
+  {
+    icon: '3️⃣',
+    title: 'Runde 3 — Chaos',
+    color: '#EF4444',
+    lines: [
+      'Spezialkategorien: Imposter, Heiße Kartoffel, Schätzchen und mehr.',
+      'Einfrieren, festnageln, alles ist möglich — alles zählt doppelt!',
+    ],
+  },
+  {
+    icon: '4️⃣',
+    title: 'Runde 4 — Finale',
+    color: '#8B5CF6',
+    lines: [
+      'Die letzte Runde bringt das große Finale.',
+      'Jeder Zug kann über Sieg oder Niederlage entscheiden!',
+    ],
+  },
+  {
     icon: '🏆',
     title: 'Ziel',
-    color: '#F59E0B',
+    color: '#22C55E',
     lines: [
       'Baut das größte zusammenhängende Gebiet!',
-      'Neue Aktionen werden jede Runde freigeschaltet.',
+      'Jokerfelder geben zusätzliche Bonuspunkte.',
     ],
     extra: 'Viel Spaß und möge das beste Team gewinnen! 🎉',
   },
@@ -630,7 +677,17 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'Question → everyone answers on their phone at once.',
-      'Correct? Place cells on the grid — fastest team goes first!',
+      'Correct? Place cells on the grid.',
+      'If multiple teams are correct, the fastest one picks first!',
+    ],
+  },
+  {
+    icon: '⭐',
+    title: 'Joker — 2×2 Bonus',
+    color: '#F59E0B',
+    lines: [
+      'Form a 2×2 square in your team color to earn a Joker cell.',
+      'Joker cells grant bonus points at the end!',
     ],
     extra: '⭐ Form a 2×2 square = bonus Joker cell!',
     grid: {
@@ -645,12 +702,49 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     },
   },
   {
+    icon: '1️⃣',
+    title: 'Round 1 — Basics',
+    color: '#3B82F6',
+    lines: [
+      'Answer, place cells — simple and direct.',
+      'Each correct answer = one cell claimed.',
+    ],
+  },
+  {
+    icon: '2️⃣',
+    title: 'Round 2 — Steal & Swap',
+    color: '#EC4899',
+    lines: [
+      'New actions unlock.',
+      'Opponent cells can be stolen or swapped!',
+    ],
+    extra: '⚡ Stealing costs speed — slow teams lose out!',
+  },
+  {
+    icon: '3️⃣',
+    title: 'Round 3 — Chaos',
+    color: '#EF4444',
+    lines: [
+      'Special categories: Imposter, Hot Potato, Schätzchen and more.',
+      'Freeze, pin, anything goes — everything counts double!',
+    ],
+  },
+  {
+    icon: '4️⃣',
+    title: 'Round 4 — Finale',
+    color: '#8B5CF6',
+    lines: [
+      'The last round brings the grand finale.',
+      'Every move can decide victory or defeat!',
+    ],
+  },
+  {
     icon: '🏆',
     title: 'Goal',
-    color: '#F59E0B',
+    color: '#22C55E',
     lines: [
       'Build the largest connected territory!',
-      'New actions unlock each round.',
+      'Joker cells grant extra bonus points.',
     ],
     extra: 'Good luck and may the best team win! 🎉',
   },
@@ -734,17 +828,17 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       {/* Main card — full-width for beamer readability */}
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
-        maxWidth: 1200, width: '94%',
+        maxWidth: 1200, width: '94%', maxHeight: '92vh', overflow: 'hidden',
         background: 'rgba(15,12,9,0.85)',
         border: `2px solid ${slide.color}44`,
         borderRadius: 36,
-        padding: hasGrid ? '52px 64px' : '60px 72px',
+        padding: `clamp(24px, 4vh, ${hasGrid ? 52 : 60}px) clamp(32px, 5vw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
         animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
         backdropFilter: 'blur(10px)',
       }}>
         {/* Icon + title row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)', marginBottom: 'clamp(16px, 2.5vh, 32px)' }}>
           <span style={{
             fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
             filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
@@ -770,29 +864,29 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         <div style={{
           width: '100%', height: 3, borderRadius: 2,
           background: `linear-gradient(90deg, ${slide.color}aa, ${slide.color}22, transparent)`,
-          marginBottom: 32,
+          marginBottom: 'clamp(16px, 2.5vh, 32px)',
         }} />
 
         {/* Content: text left, grid right (if grid exists) */}
         <div style={{
-          display: 'flex', gap: 48, alignItems: 'center',
+          display: 'flex', gap: 'clamp(24px, 3vw, 48px)', alignItems: 'center',
           flexDirection: hasGrid ? 'row' : 'column',
         }}>
           {/* Text lines */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 20px)', flex: 1 }}>
             {slide.lines.map((line, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 18,
+                display: 'flex', alignItems: 'flex-start', gap: 'clamp(10px, 1.2vw, 18px)',
                 animation: `contentReveal 0.4s ease ${0.1 + i * 0.12}s both`,
               }}>
                 <div style={{
                   width: 12, height: 12, borderRadius: '50%',
-                  background: slide.color, marginTop: 14, flexShrink: 0,
+                  background: slide.color, marginTop: 10, flexShrink: 0,
                   boxShadow: `0 0 10px ${slide.color}66`,
                 }} />
                 <span style={{
-                  fontSize: 'clamp(26px,3.5vw,48px)', fontWeight: 700,
-                  color: '#e2e8f0', lineHeight: 1.35,
+                  fontSize: 'clamp(22px,3vw,42px)', fontWeight: 700,
+                  color: '#e2e8f0', lineHeight: 1.3,
                 }}>{line}</span>
               </div>
             ))}
@@ -805,9 +899,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Extra callout */}
         {slide.extra && (
           <div style={{
-            marginTop: 32, padding: '20px 28px', borderRadius: 18,
+            marginTop: 'clamp(16px, 2.5vh, 32px)', padding: 'clamp(12px, 1.8vh, 20px) clamp(18px, 2.2vw, 28px)', borderRadius: 18,
             background: `${slide.color}15`, border: `2px solid ${slide.color}33`,
-            fontSize: 'clamp(22px,2.8vw,38px)', fontWeight: 800,
+            fontSize: 'clamp(18px,2.4vw,34px)', fontWeight: 800,
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.4s both',
             textShadow: `0 0 24px ${slide.color}33`,
@@ -819,8 +913,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Last slide hint */}
         {isLast && (
           <div style={{
-            marginTop: 32, textAlign: 'center',
-            fontSize: 'clamp(22px,3vw,40px)', fontWeight: 800,
+            marginTop: 'clamp(16px, 2.5vh, 32px)', textAlign: 'center',
+            fontSize: 'clamp(20px,2.8vw,36px)', fontWeight: 800,
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.6s both',
             textShadow: `0 0 24px ${slide.color}33`,
@@ -851,31 +945,34 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const teamCount = s.teams.length;
   const connectedCount = s.teams.filter(t => t.connected).length;
 
+  // QR size responsive to viewport height (avoid clipping on laptops)
+  const qrSize = 'min(44vh, 420px)';
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '36px 56px 32px', position: 'relative', overflow: 'hidden',
-      gap: 'clamp(16px, 2.5vh, 32px)',
+      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
+      position: 'relative', overflow: 'hidden',
+      gap: 'clamp(10px, 1.5vh, 20px)',
     }}>
       <Fireflies />
 
-      {/* ── Top: Logo + Title ── */}
+      {/* ── Top: Logo + Title (compact, centered) ── */}
       <div style={{
-        textAlign: 'center', position: 'relative', zIndex: 5,
+        textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          marginBottom: 6, opacity: 0.7,
+          marginBottom: 4, opacity: 0.7,
         }}>
           <img
             src="/logo.png"
             alt=""
-            style={{ width: 34, height: 34, objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
+            style={{ width: 'clamp(22px, 2.5vh, 30px)', height: 'clamp(22px, 2.5vh, 30px)', objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
           />
           <span style={{
-            fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 800, letterSpacing: '0.24em',
+            fontSize: 'clamp(10px, 1.1vw, 14px)', fontWeight: 800, letterSpacing: '0.24em',
             color: '#94a3b8', textTransform: 'uppercase',
           }}>
             A CozyWolf Production
@@ -883,108 +980,125 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         </div>
         <div style={{
           fontFamily: fontFam,
-          fontSize: 'clamp(56px, 9vw, 120px)', fontWeight: 900, lineHeight: 1,
+          fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
           background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           letterSpacing: '-0.02em',
         }}>
           {de ? 'Quartier Quiz' : 'Quarter Quiz'}
         </div>
-        <div style={{
-          fontSize: 'clamp(20px, 2.5vw, 36px)', fontWeight: 700, color: '#94a3b8',
-          marginTop: 8, letterSpacing: '0.02em',
-        }}>
-          {de ? 'Scanne den Code und tritt deinem Team bei!' : 'Scan the code and join your team!'}
-        </div>
       </div>
 
-      {/* ── Center: QR hero (dominant) + small stats panel ── */}
+      {/* ── Center: 2-column layout — QR left, Teams right ── */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 'clamp(48px, 7vw, 120px)', position: 'relative', zIndex: 5,
-        width: '100%', maxWidth: 1400,
+        gap: 'clamp(32px, 5vw, 80px)', position: 'relative', zIndex: 5,
+        width: '100%', maxWidth: 1600, margin: '0 auto',
+        minHeight: 0,
       }}>
-        {/* QR Code — HERO element */}
+        {/* Left: QR Code */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5vh, 18px)',
           flexShrink: 0,
           animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
         }}>
           <div style={{
-            background: '#ffffff', borderRadius: 28, padding: 28,
+            background: '#ffffff', borderRadius: 28, padding: 'clamp(14px, 2vh, 24px)',
             animation: 'qrGlow 3s ease-in-out infinite',
             boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
+            width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <QRCodeSVG value={joinUrl} size={440} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+            <QRCodeSVG value={joinUrl} size={256} bgColor="#ffffff" fgColor="#0D0A06" level="M"
+              style={{ width: '100%', height: '100%' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontSize: 'clamp(24px, 2.8vw, 38px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 6,
+              fontSize: 'clamp(18px, 2vw, 28px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 4,
             }}>
-              {de ? 'Jetzt scannen & mitspielen!' : 'Scan & join now!'}
+              {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
             </div>
             <div style={{
-              fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#94a3b8', fontFamily: 'monospace',
-              background: cardBg, padding: '10px 24px', borderRadius: 12,
+              fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#94a3b8', fontFamily: 'monospace',
+              background: cardBg, padding: '6px 16px', borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.1)',
+              display: 'inline-block',
             }}>
-              {de ? 'Oder gehe zu: ' : 'Or go to: '}{joinUrl.replace('https://', '').replace('http://', '')}
+              {joinUrl.replace('https://', '').replace('http://', '')}
             </div>
           </div>
         </div>
 
-      </div>
-
-      {/* ── Bottom: Teams + dynamic status ── */}
-      <div style={{ position: 'relative', zIndex: 5, textAlign: 'center', width: '100%' }}>
-        {teamCount === 0 ? (
+        {/* Right: Teams + status */}
+        <div style={{
+          flex: 1, minWidth: 0, maxWidth: 560,
+          display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 18px)',
+          alignItems: 'stretch', justifyContent: 'center',
+        }}>
           <div style={{
-            color: '#94a3b8', fontSize: 'clamp(22px, 2.5vw, 32px)', fontWeight: 700,
-            animation: 'lobbyPulse 2.5s ease-in-out infinite',
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+            color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
+            textAlign: 'center', opacity: 0.7,
           }}>
-            {de ? 'Warte auf Teams…' : 'Waiting for teams…'}
+            {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
           </div>
-        ) : (
-          <>
+
+          {teamCount === 0 ? (
             <div style={{
-              display: 'flex', gap: 'clamp(12px, 1.5vw, 20px)', justifyContent: 'center', flexWrap: 'wrap',
-              marginBottom: 16,
+              color: '#94a3b8', fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 700,
+              animation: 'lobbyPulse 2.5s ease-in-out infinite', textAlign: 'center',
+              padding: 'clamp(20px, 3vh, 40px) 20px',
+              border: '2px dashed rgba(148,163,184,0.2)', borderRadius: 18,
+            }}>
+              {de ? 'Warte auf Teams…' : 'Waiting for teams…'}
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: 'clamp(8px, 1.2vw, 14px)',
+              maxHeight: '50vh', overflow: 'hidden',
             }}>
               {s.teams.map((t, i) => (
                 <div key={t.id} style={{
-                  padding: 'clamp(14px, 1.6vw, 22px) clamp(20px, 2.2vw, 32px)', borderRadius: 18,
+                  padding: 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.5vw, 20px)', borderRadius: 16,
                   background: cardBg,
                   border: `2px solid ${t.color}55`,
                   boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
-                  display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 16px)',
+                  display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 12px)',
                   animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.08}s both`,
+                  minWidth: 0,
                 }}>
-                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 52px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-                  <div>
-                    <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 32px)', color: t.color }}>{t.name}</div>
-                    <div style={{ fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 700, color: t.connected ? '#22C55E66' : '#94a3b844' }}>
-                      {t.connected ? '●' : '○'}
+                  <span style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', lineHeight: 1, flexShrink: 0 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontWeight: 900, fontSize: 'clamp(16px, 1.8vw, 24px)', color: t.color,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{t.name}</div>
+                    <div style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866' }}>
+                      {t.connected ? '● bereit' : '○ offline'}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            {/* Dynamic, emotional status */}
-            <div style={{
-              fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 800,
-              color: teamCount < 2 ? '#F59E0B' : '#22C55E',
-              animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
-            }}>
-              {teamCount < 2
+          )}
+
+          {/* Dynamic status */}
+          <div style={{
+            fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800, textAlign: 'center',
+            color: teamCount < 2 ? '#F59E0B' : '#22C55E',
+            animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
+          }}>
+            {teamCount === 0
+              ? (de ? '📱 Scannt den Code um beizutreten' : '📱 Scan to join')
+              : teamCount < 2
                 ? (de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!')
                 : teamCount >= 5
                   ? (de ? `🔥 ${teamCount} Teams sind dabei!` : `🔥 ${teamCount} teams are in!`)
                   : connectedCount === teamCount
-                    ? (de ? `🚀 ${teamCount} Teams bereit — Gleich geht's los!` : `🚀 ${teamCount} teams ready — Let's go!`)
-                    : (de ? `${connectedCount}/${teamCount} Teams verbunden` : `${connectedCount}/${teamCount} teams connected`)}
-            </div>
-          </>
-        )}
+                    ? (de ? `🚀 Gleich geht's los!` : `🚀 Let's go!`)
+                    : (de ? `${connectedCount}/${teamCount} verbunden` : `${connectedCount}/${teamCount} connected`)}
+          </div>
+        </div>
       </div>
     </div>
   );

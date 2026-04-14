@@ -825,17 +825,6 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
           )}
         </div>
 
-        {/* Speed hint banner */}
-        <div style={{
-          marginTop: 14, padding: '8px 14px', borderRadius: 12,
-          background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        }}>
-          <span style={{ fontSize: 14 }}>⚡</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.04em' }}>
-            {de ? 'Schnelligkeit zählt — antworte so schnell wie möglich!' : 'Speed matters — answer as fast as you can!'}
-          </span>
-        </div>
       </div>
     </CozyCard>
   );

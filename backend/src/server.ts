@@ -8015,10 +8015,10 @@ function createSampleQQDrafts(): typeof qqDrafts {
   return [
     { id: d1id, title: '🧠 Allgemeinwissen', phases: 3 as const, language: 'both', questions: d1qs, createdAt: now - 5000, updatedAt: now - 5000 },
     { id: d2id, title: '🎬 Pop & Kultur', phases: 3 as const, language: 'both', questions: d2qs, createdAt: now - 4000, updatedAt: now - 4000 },
-    { id: d3id, title: '⚓ Hamburg', phases: 4 as const, language: 'both', questions: d3qs, createdAt: now - 3000, updatedAt: now - 3000 },
-    { id: d4id, title: '🦊 Natur & Tiere', phases: 4 as const, language: 'both', questions: d4qs, createdAt: now - 2000, updatedAt: now - 2000 },
-    { id: d5id, title: '⚽ Sport', phases: 4 as const, language: 'both', questions: d5qs, createdAt: now - 1000, updatedAt: now - 1000 },
-    { id: d6id, title: '🍳 Essen & Trinken', phases: 4 as const, language: 'both', questions: d6qs, createdAt: now, updatedAt: now },
+    { id: d3id, title: '🆕 ⚓ Hamburg', phases: 4 as const, language: 'both', questions: d3qs, createdAt: now - 3000, updatedAt: now - 3000 },
+    { id: d4id, title: '🆕 🦊 Natur & Tiere', phases: 4 as const, language: 'both', questions: d4qs, createdAt: now - 2000, updatedAt: now - 2000 },
+    { id: d5id, title: '🆕 ⚽ Sport', phases: 4 as const, language: 'both', questions: d5qs, createdAt: now - 1000, updatedAt: now - 1000 },
+    { id: d6id, title: '🆕 🍳 Essen & Trinken', phases: 4 as const, language: 'both', questions: d6qs, createdAt: now, updatedAt: now },
   ];
 }
 
@@ -8036,6 +8036,19 @@ try {
 if (qqDrafts.length === 0) {
   qqDrafts = createSampleQQDrafts();
   persistQQDrafts();
+}
+
+// Migrate: mark the 4 newer sample drafts with 🆕 if not already tagged
+{
+  const newIds = ['qq-sample-hamburg', 'qq-sample-natur-tiere', 'qq-sample-sport', 'qq-sample-essen-trinken'];
+  let changed = false;
+  for (const d of qqDrafts) {
+    if (newIds.includes(d.id) && !d.title.startsWith('🆕')) {
+      d.title = `🆕 ${d.title}`;
+      changed = true;
+    }
+  }
+  if (changed) persistQQDrafts();
 }
 
 app.get('/api/qq/drafts', async (_req, res) => {

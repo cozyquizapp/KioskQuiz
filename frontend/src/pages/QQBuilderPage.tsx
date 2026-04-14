@@ -33,6 +33,7 @@ import {
 import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
+import { QQMiniPreview } from './QQMiniPreview';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const CATEGORIES: QQCategory[] = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'];
@@ -886,6 +887,10 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         </button>
       </div>
 
+      {/* Mini live preview */}
+      <MiniPreviewPanel question={q} />
+
+
       {/* Question text DE/EN — always shown */}
       <div>
         <label style={labelStyle}>Frage (DE)</label>
@@ -1652,6 +1657,35 @@ function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onDelete }:
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Mini preview wrapper (kollabierbar, Zustand persistiert) ──────────────────
+function MiniPreviewPanel({ question }: { question: QQQuestion }) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('qq-builder-preview-collapsed') === '1'; } catch { return false; }
+  });
+  function toggle() {
+    setCollapsed(c => {
+      const next = !c;
+      try { localStorage.setItem('qq-builder-preview-collapsed', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 10 }}>
+      <button onClick={toggle} style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+        background: 'transparent', border: 'none', color: '#94a3b8',
+        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800,
+        textTransform: 'uppercase', letterSpacing: 0.08, padding: 0,
+        marginBottom: collapsed ? 0 : 8,
+      }}>
+        <span>🖥️ Live-Vorschau</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{collapsed ? '▸' : '▾'}</span>
+      </button>
+      {!collapsed && <QQMiniPreview question={question} />}
     </div>
   );
 }

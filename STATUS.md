@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block B #8 — Live-Frage-Preview im Builder.
+**Nächstes Todo**: Block C #9 — Team-Intro-Animation bei PHASE_INTRO.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -38,7 +38,7 @@ Details + Anleitungen zu allen offenen Blöcken:
 ### Block B — Content & Partner (Woche 2-3)
 - [x] CSV-Import im Builder (Vorlage-Download, Drag-Drop, Preview, Merge)
 - [x] Frage duplizieren (📋 Button neben Move/Delete)
-- [ ] Live-Frage-Preview im Builder
+- [x] Live-Frage-Preview im Builder (kollabierbar, beamer-nah, CHEESE-Crop)
 
 ### Block C — Show-Polish (Woche 3)
 - [ ] Team-Intro-Animation bei PHASE_INTRO

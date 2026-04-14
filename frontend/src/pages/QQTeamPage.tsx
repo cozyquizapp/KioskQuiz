@@ -581,6 +581,30 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
               <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                 {myTeam.name}
               </div>
+              {/* Joker slots — 2 stars, greyed when used this phase */}
+              {s.teamPhaseStats[myTeamId] && (
+                <div
+                  style={{ display: 'flex', gap: 3, marginTop: 2, alignItems: 'center' }}
+                  title={lang === 'de' ? '2×2 Joker dieser Phase' : '2×2 Jokers this phase'}
+                  aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used this phase`}
+                >
+                  {Array.from({ length: 2 }).map((_, i) => {
+                    const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
+                    return (
+                      <span key={i} style={{
+                        fontSize: 14,
+                        color: used ? '#475569' : '#FBBF24',
+                        filter: used ? 'grayscale(1)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.55))',
+                        opacity: used ? 0.55 : 1,
+                        textDecoration: used ? 'line-through' : 'none',
+                        textDecorationColor: used ? '#64748b' : undefined,
+                        lineHeight: 1,
+                        transition: 'color 0.3s ease, filter 0.3s ease, opacity 0.3s ease',
+                      }}>⭐</span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             {/* Language selector — pill style */}
             <button
@@ -670,9 +694,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             {s.teamPhaseStats[myTeamId].stealsUsed > 0 && (
               <StatChip label={`⚡ ${s.teamPhaseStats[myTeamId].stealsUsed} ${t.stats.stolen[lang]}`} color="#EF4444" />
             )}
-            {s.teamPhaseStats[myTeamId].jokersEarned > 0 && (
-              <StatChip label={`⭐ ${s.teamPhaseStats[myTeamId].jokersEarned} ${t.stats.joker[lang]}`} color="#FBBF24" />
-            )}
+            {/* Joker count moved to header as 2 star slots */}
           </div>
         )}
 

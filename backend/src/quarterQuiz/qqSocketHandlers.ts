@@ -79,13 +79,46 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     });
   }
 
+  // Per-Team Aggregat-Stats für die Summary-Seite
+  const teamStats: Record<string, { correct: number; answered: number; jokersEarned: number; stealsUsed: number }> = {};
+  for (const t of teamList) {
+    const t_: any = t;
+    teamStats[t_.id] = {
+      correct: 0,
+      answered: 0,
+      jokersEarned: Object.values(room.teamPhaseStats[t_.id] ?? {}).reduce<number>(
+        (acc, v: any) => acc + (v?.jokersEarned ?? 0), 0
+      ),
+      stealsUsed: Object.values(room.teamPhaseStats[t_.id] ?? {}).reduce<number>(
+        (acc, v: any) => acc + (v?.stealsUsed ?? 0), 0
+      ),
+    };
+  }
+  for (const qh of room.questionHistory) {
+    for (const a of qh.answers) {
+      const s = teamStats[a.teamId];
+      if (!s) continue;
+      s.answered += 1;
+      if (qh.correctTeamId === a.teamId) s.correct += 1;
+    }
+  }
+
   const result = {
     id: `qqr-${room.roomCode}-${Date.now().toString(36)}`,
     draftId: room.draftId ?? null,
     draftTitle: room.draftTitle ?? 'Unbekannt',
     roomCode: room.roomCode,
     playedAt: Date.now(),
-    teams: teamList.map((t: any) => ({ id: t.id, name: t.name, color: t.color, score: scores[t.id] ?? 0 })),
+    teams: teamList.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      avatarId: t.avatarId,
+      score: scores[t.id] ?? 0,
+      totalCells: t.totalCells ?? 0,
+      largestConnected: t.largestConnected ?? 0,
+      ...teamStats[t.id],
+    })),
     winner,
     phases: room.totalPhases,
     language: room.language,

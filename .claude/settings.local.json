@@ -52,7 +52,24 @@
       "Bash(xargs -I {} basename {})",
       "Bash(wc -l /c/Users/hornu/Desktop/kioskquiz/frontend/src/views/*.tsx)",
       "Bash(head -20 /c/Users/hornu/Desktop/kioskquiz/frontend/src/pages/*.tsx)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(node_modules/.bin/tsc --project tsconfig.json --noEmit)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(grep -n \"getQQGameResults\\\\|saveQQGameResult\" c:/Users/hornu/Desktop/kioskquiz/backend/src/*.ts)",
+      "Bash(ping -n 2 github.com)",
+      "Bash(cat frontend/vercel.json)",
+      "Bash(cat vercel.json)",
+      "Bash(curl -s \"https://play.cozyquiz.app/grid-demo.html\")",
+      "Bash(ls .vercel)",
+      "Bash(grep -r \"vercel\" .github/workflows/)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
+      "Bash(npx vite:*)",
+      "WebFetch(domain:frontend.horse)",
+      "WebFetch(domain:daily-dev-tips.com)",
+      "WebFetch(domain:alvaromontoro.medium.com)",
+      "Bash(wc -l c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\frontend\\\\\\\\src\\\\\\\\pages\\\\\\\\QQModeratorPage.tsx c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\shared\\\\\\\\quarterQuizTypes.ts)",
+      "WebFetch(domain:play.cozyquiz.app)",
+      "Bash(git reset:*)"
     ]
   }
 }

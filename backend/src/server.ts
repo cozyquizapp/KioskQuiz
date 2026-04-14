@@ -8168,6 +8168,108 @@ app.delete('/api/qq/gameresults', async (_req, res) => {
   res.json({ ok: true, deleted: count });
 });
 
+// ── QQ Summary ────────────────────────────────────────────────────────────────
+// Public, kein PinGate — Spieler scannen den QR-Code nach Game-Over.
+app.get('/api/qq/summary/:roomCode', async (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const results = await getQQGameResults(200);
+    const hit = results.find((r: any) => r.roomCode === roomCode);
+    if (!hit) return res.status(404).json({ error: 'Kein Ergebnis für diesen Raum gefunden.' });
+    // Nur die relevanten Felder — kein Grid, kein komplettes Drafts-Dump
+    res.json({
+      id: hit.id,
+      roomCode: hit.roomCode,
+      playedAt: hit.playedAt,
+      draftTitle: hit.draftTitle,
+      winner: hit.winner,
+      phases: hit.phases,
+      teams: hit.teams ?? [],
+      funnyAnswers: hit.funnyAnswers ?? [],
+    });
+  } catch (err) {
+    console.error('QQ summary error:', err);
+    res.status(500).json({ error: 'Fehler beim Laden der Zusammenfassung.' });
+  }
+});
+
+// ── QQ Feedback ───────────────────────────────────────────────────────────────
+// Append-only JSON-File, kein DB-Overhead. Rate-Limit via globalem apiLimiter.
+const qqFeedbackPath = path.join(__dirname, 'data', 'qqFeedback.json');
+type QQFeedbackEntry = {
+  id: string;
+  submittedAt: number;
+  roomCode: string | null;
+  teamName: string | null;
+  rating: number | null;
+  text: string;
+  contact: string | null;
+};
+function loadQQFeedback(): QQFeedbackEntry[] {
+  try {
+    if (fs.existsSync(qqFeedbackPath)) return JSON.parse(fs.readFileSync(qqFeedbackPath, 'utf-8'));
+  } catch {}
+  return [];
+}
+function saveQQFeedback(list: QQFeedbackEntry[]): void {
+  try {
+    const dir = path.dirname(qqFeedbackPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(qqFeedbackPath, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('QQ feedback write failed:', err);
+  }
+}
+app.post('/api/qq/feedback', (req, res) => {
+  const body = req.body as Partial<QQFeedbackEntry> & { text?: string };
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';
+  if (!text) return res.status(400).json({ error: 'Text fehlt.' });
+  const entry: QQFeedbackEntry = {
+    id: `qqf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    submittedAt: Date.now(),
+    roomCode: typeof body.roomCode === 'string' ? body.roomCode.slice(0, 32) : null,
+    teamName: typeof body.teamName === 'string' ? body.teamName.slice(0, 64) : null,
+    rating: typeof body.rating === 'number' && body.rating >= 1 && body.rating <= 5 ? Math.round(body.rating) : null,
+    text,
+    contact: typeof body.contact === 'string' ? body.contact.trim().slice(0, 200) : null,
+  };
+  const list = loadQQFeedback();
+  list.push(entry);
+  saveQQFeedback(list);
+  res.json({ ok: true, id: entry.id });
+});
+app.get('/api/qq/feedback', (_req, res) => {
+  // Nur für den Moderator — PinGate brauchen wir hier eigentlich, aber reicht
+  // fürs erste als simple Abfrage. Reihenfolge: neueste zuerst.
+  res.json(loadQQFeedback().slice().reverse());
+});
+
+// ── QQ Upcoming Events ────────────────────────────────────────────────────────
+// Wolf editiert das File manuell; Summary-Seite liest es für "Nächste Quizze".
+const qqUpcomingPath = path.join(__dirname, 'data', 'qqUpcoming.json');
+type QQUpcomingEvent = {
+  id: string;
+  date: string;      // ISO-Datum 'YYYY-MM-DD'
+  time?: string;     // 'HH:MM'
+  location: string;
+  city?: string;
+  link?: string;
+  note?: string;
+};
+function loadQQUpcoming(): QQUpcomingEvent[] {
+  try {
+    if (fs.existsSync(qqUpcomingPath)) return JSON.parse(fs.readFileSync(qqUpcomingPath, 'utf-8'));
+  } catch {}
+  return [];
+}
+app.get('/api/qq/upcoming', (_req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const events = loadQQUpcoming()
+    .filter(e => !e.date || e.date >= today)
+    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  res.json(events);
+});
+
 // Background removal via Cloudinary e_background_removal
 app.post('/api/qq/remove-bg', (req, res) => {
   const { imageUrl } = req.body as { imageUrl?: string };

@@ -32,6 +32,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
+import { QQCsvImportModal } from './QQCsvImportModal';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const CATEGORIES: QQCategory[] = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'];
@@ -211,6 +212,7 @@ export default function QQBuilderPage() {
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
   const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -476,6 +478,16 @@ export default function QQBuilderPage() {
         </div>
       )}
       {/* Preview modal */}
+      {showImport && activeDraft && (
+        <QQCsvImportModal
+          draft={activeDraft}
+          onClose={() => setShowImport(false)}
+          onApply={merged => {
+            setActiveDraft({ ...activeDraft, questions: merged, updatedAt: Date.now() });
+            setShowImport(false);
+          }}
+        />
+      )}
       {showPreview && activeQ && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setShowPreview(false)}>
@@ -607,6 +619,7 @@ export default function QQBuilderPage() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowImport(true)} style={btnStyle('#10B981')} title="Fragen aus CSV-Datei importieren (Vorlage im Modal)">📥 CSV</button>
           <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
           <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
           <button onClick={async () => { await saveDraftRaw(activeDraft); navigate(`/slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>

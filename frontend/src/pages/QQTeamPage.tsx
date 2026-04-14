@@ -670,6 +670,26 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             )}
           </div>
         )}
+
+        {/* CozyWolf brand footer */}
+        <div style={{
+          marginTop: 24, paddingTop: 16,
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          opacity: 0.4, userSelect: 'none',
+        }}>
+          <img
+            src="/logo.png"
+            alt=""
+            style={{ width: 18, height: 18, objectFit: 'contain' }}
+          />
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+            color: '#94a3b8', textTransform: 'uppercase',
+          }}>
+            CozyWolf · © 2026
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -396,6 +396,27 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
+      {/* CozyWolf watermark — dezent unten links */}
+      <div style={{
+        position: 'fixed', bottom: 14, left: 16, zIndex: 9991,
+        display: 'flex', alignItems: 'center', gap: 8,
+        pointerEvents: 'none', userSelect: 'none',
+        opacity: 0.35,
+      }}>
+        <img
+          src="/logo.png"
+          alt=""
+          style={{ width: 22, height: 22, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+        />
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+          color: '#cbd5e1', textTransform: 'uppercase',
+          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+        }}>
+          CozyWolf
+        </span>
+      </div>
+
       {/* Fullscreen toggle — hidden when already fullscreen */}
       {!isFullscreen && (
         <button
@@ -839,11 +860,27 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* ── Top: Title ── */}
+      {/* ── Top: Logo + Title ── */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5,
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
       }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          marginBottom: 6, opacity: 0.7,
+        }}>
+          <img
+            src="/logo.png"
+            alt=""
+            style={{ width: 34, height: 34, objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
+          />
+          <span style={{
+            fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 800, letterSpacing: '0.24em',
+            color: '#94a3b8', textTransform: 'uppercase',
+          }}>
+            A CozyWolf Production
+          </span>
+        </div>
         <div style={{
           fontFamily: fontFam,
           fontSize: 'clamp(56px, 9vw, 120px)', fontWeight: 900, lineHeight: 1,

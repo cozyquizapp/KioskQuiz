@@ -301,9 +301,11 @@ interface QQ3DGridProps {
   onTransitionDone?: () => void;
   /** When true, grid starts flat (top-down) and animates to isometric — the "Fahrt" */
   entering?: boolean;
+  /** Incrementing counter — each change triggers a quick cinematic flyover (~3s orbit) */
+  flyoverSignal?: number;
 }
 
-export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = false, onTransitionDone, entering = false }: QQ3DGridProps) {
+export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = false, onTransitionDone, entering = false, flyoverSignal = 0 }: QQ3DGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const injectedCss = useRef(false);
@@ -322,6 +324,29 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     }, 80);
     return () => clearTimeout(t);
   }, [entering]);
+
+  // Flyover: on each signal bump, orbit 360° over ~3s and return to default
+  const prevFlySig = useRef(flyoverSignal);
+  useEffect(() => {
+    if (flyoverSignal === prevFlySig.current) return;
+    prevFlySig.current = flyoverSignal;
+    const startRx = 35;
+    const endRx = 55;
+    const startRz = -45;
+    const midRz = -45 + 360; // one full spin
+    // Phase 1: tilt down + start spin
+    setRx(startRx);
+    setRz(startRz);
+    const t1 = setTimeout(() => {
+      setRz(midRz);
+    }, 80);
+    // Phase 2: return to default
+    const t2 = setTimeout(() => {
+      setRx(endRx);
+      setRz(-45);
+    }, 2800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [flyoverSignal]);
 
   // Inject CSS once
   useEffect(() => {

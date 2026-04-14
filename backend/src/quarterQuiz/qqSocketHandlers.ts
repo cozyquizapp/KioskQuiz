@@ -432,16 +432,35 @@ export function registerQQHandlers(io: SocketIOServer): void {
             return score >= 0.8;
           });
           if (isMatch) {
-            // Correct — record & advance
+            // Correct — record answer
             room.hotPotatoUsedAnswers.push(trimmed);
+
+            // Pool exhausted? All survivors win, random placement order
+            const usedNorm = room.hotPotatoUsedAnswers.map(u => normalizeText(u));
+            const remaining = validAnswers.filter(valid =>
+              !usedNorm.some(u => similarityScore(u, valid) >= 0.8)
+            );
+            const aliveNow = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+            if (remaining.length === 0 && aliveNow.length >= 1) {
+              qqClearHotPotatoTimer(room);
+              qqRevealAnswer(room);
+              qqClearBuzz(room);
+              // Shuffle alive teams for random placement order
+              const shuffled = [...aliveNow].sort(() => Math.random() - 0.5);
+              qqMarkCorrect(room, shuffled.length === 1 ? shuffled[0] : shuffled);
+              broadcast(io, payload.roomCode);
+              ok(ack);
+              return;
+            }
+
+            // Otherwise advance to next team
             const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
             if (!next) {
               qqClearHotPotatoTimer(room);
               qqRevealAnswer(room);
               qqClearBuzz(room);
-              const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
-              if (alive.length === 1) qqMarkCorrect(room, alive[0]);
-              else qqMarkCorrect(room, alive);
+              if (aliveNow.length === 1) qqMarkCorrect(room, aliveNow[0]);
+              else qqMarkCorrect(room, aliveNow);
             } else {
               const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
               if (alive.length === 1) {

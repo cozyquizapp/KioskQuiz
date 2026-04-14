@@ -1504,8 +1504,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:top5': {
               emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
               lines: {
-                de: ['Nennt so viele richtige Antworten wie möglich', 'Jeder Treffer zählt!'],
-                en: ['Name as many correct answers as you can', 'Every hit counts!'],
+                de: ['Alle Teams gleichzeitig — bis zu 5 Antworten eintippen.', 'Wer die meisten Treffer hat, gewinnt die Runde.'],
+                en: ['All teams at once — type up to 5 answers.', 'Most hits wins the round.'],
               },
             },
             'BUNTE_TUETE:oneOfEight': {
@@ -1518,22 +1518,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:order': {
               emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
               lines: {
-                de: ['Bringt die Begriffe in die richtige Reihenfolge', 'Je besser die Sortierung, desto mehr Punkte!'],
-                en: ['Put the items in the correct order', 'The better your sorting, the more points!'],
+                de: ['Jedes Team sortiert eigenständig auf dem Handy.', 'Pro korrekter Position = 1 Punkt. Meiste Punkte gewinnt!'],
+                en: ['Each team sorts independently on their phone.', '1 point per item in the correct position — most wins!'],
               },
             },
             'BUNTE_TUETE:map': {
-              emoji: '🗺️', title: { de: 'Wo ist das?', en: 'Where Is It?' },
+              emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' },
               lines: {
-                de: ['Markiert den richtigen Ort auf der Karte', 'Je näher dran, desto besser!'],
-                en: ['Mark the correct location on the map', 'The closer you are, the better!'],
+                de: ['Markiert den Ort auf der Karte — nächstes Team gewinnt!', 'Bei gleicher Entfernung: alle gewinnen (Reihenfolge nach Speed).'],
+                en: ['Pin the location — closest team wins!', 'On tie by distance: all win (order by speed).'],
               },
             },
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum Antworten geben — schnell!', 'Wer keine Antwort hat, fliegt raus!'],
-                en: ['Take turns answering — fast!', 'No answer? You\'re out!'],
+                de: ['Reihum eine richtige Antwort tippen — Zeit läuft!', 'Keine richtige Antwort in der Zeit = raus.'],
+                en: ['Take turns typing a correct answer — timer runs!', 'No correct answer in time = you\'re out.'],
               },
             },
           };
@@ -2748,6 +2748,22 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   const show3D = viewMode === '3d' || viewMode === 'transitioning';
   const gridMaxSize = Math.min(720, typeof window !== 'undefined' ? window.innerHeight * 0.55 : 600);
 
+  // Manual flyover hotkey (F): trigger a cinematic orbit over the grid
+  const [flyoverSignal, setFlyoverSignal] = useState(0);
+  useEffect(() => {
+    if (viewMode !== '3d') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'f' || e.key === 'F') {
+        // Avoid triggering if user is typing in an input
+        const tgt = e.target as HTMLElement | null;
+        if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+        setFlyoverSignal(v => v + 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewMode]);
+
   // Claim toast state
   const [toast, setToast] = useState<{ text: string; color: string; key: number } | null>(null);
   const prevPendingRef = useRef(s.pendingFor);
@@ -2828,13 +2844,36 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
       {/* Center: large grid + score */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
         {show3D ? (
-          <QQ3DGrid
-            state={s}
-            maxSize={gridMaxSize}
-            animateCell={cellTrigger ? { row: cellTrigger.row, col: cellTrigger.col, teamId: cellTrigger.teamId, wasSteal: cellTrigger.wasSteal } : null}
-            interactive={viewMode === '3d'}
-            entering={viewMode === 'transitioning'}
-          />
+          <>
+            <QQ3DGrid
+              state={s}
+              maxSize={gridMaxSize}
+              animateCell={cellTrigger ? { row: cellTrigger.row, col: cellTrigger.col, teamId: cellTrigger.teamId, wasSteal: cellTrigger.wasSteal } : null}
+              interactive={viewMode === '3d'}
+              entering={viewMode === 'transitioning'}
+              flyoverSignal={flyoverSignal}
+            />
+            {viewMode === '3d' && (
+              <div style={{
+                position: 'absolute', bottom: 18, right: 24, zIndex: 15,
+                padding: '5px 12px', borderRadius: 999,
+                background: 'rgba(15,23,42,0.55)',
+                border: '1px solid rgba(148,163,184,0.25)',
+                color: '#94a3b8', fontSize: 12, fontWeight: 700,
+                letterSpacing: 0.4, pointerEvents: 'none',
+                opacity: 0.7,
+              }}>
+                <kbd style={{
+                  fontFamily: 'inherit', fontSize: 11,
+                  padding: '1px 7px', borderRadius: 4,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  marginRight: 6, color: '#e2e8f0',
+                }}>F</kbd>
+                Flyover
+              </div>
+            )}
+          </>
         ) : (
           <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
         )}

@@ -386,47 +386,59 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     return () => clearTimeout(t);
   }, [entering]);
 
-  // Flyover: slow cinematic orbit — low tilt sweep then rise back up. ~7s total.
+  // Flyover: dramatic cinematic orbit — zoom in, low-angle 270° dolly, then pull back up. ~8s total.
   const prevFlySig = useRef(flyoverSignal);
   const flyoverTransitionRef = useRef<string | null>(null);
+  const flyoverBaseZoomRef = useRef<number>(1);
   useEffect(() => {
     if (flyoverSignal === prevFlySig.current) return;
     prevFlySig.current = flyoverSignal;
     const grid = gridRef.current;
     if (!grid) return;
 
-    // Remember the base transition to restore later
+    // Remember base transition + zoom to restore later.
+    // Only capture zoom the first time or if no flyover is currently running,
+    // so re-triggering mid-flyover doesn't save the already-zoomed value.
     if (flyoverTransitionRef.current === null) {
       flyoverTransitionRef.current = grid.style.transition;
+      flyoverBaseZoomRef.current = zoom;
     }
 
-    // Phase 1 (0 → 3.2s): swoop down to low angle + orbit halfway around
-    grid.style.transition = 'transform 3.2s cubic-bezier(.45,.05,.55,.95)';
-    setRx(28);
-    setRz(-45 + 200); // ~200° sweep, not a full spin
+    // Phase 1 (0 → 1.8s): "descend" — drop to ground level, zoom in close
+    grid.style.transition = 'transform 1.8s cubic-bezier(.5,.0,.3,1)';
+    setRx(15);
+    setRz(-45 + 40);
+    setZoom(flyoverBaseZoomRef.current * 1.6);
 
-    // Phase 2 (3.2s → 6.8s): rise up and complete the orbit back to default
+    // Phase 2 (1.8s → 6.0s): slow 270° orbit at low angle (the money shot)
     const t2 = setTimeout(() => {
       if (!gridRef.current) return;
-      gridRef.current.style.transition = 'transform 3.6s cubic-bezier(.4,.0,.2,1)';
-      setRx(55);
-      setRz(-45 + 360); // complete the circle
-    }, 3200);
+      gridRef.current.style.transition = 'transform 4.2s linear';
+      setRz(-45 + 40 + 270);
+    }, 1800);
 
-    // Phase 3: snap rz back to -45 (equivalent to 315°) without visible movement + restore base transition
+    // Phase 3 (6.0s → 8.2s): "ascend" — pull up and zoom out back to default
     const t3 = setTimeout(() => {
+      if (!gridRef.current) return;
+      gridRef.current.style.transition = 'transform 2.2s cubic-bezier(.4,0,.2,1)';
+      setRx(55);
+      setRz(-45 + 360);
+      setZoom(flyoverBaseZoomRef.current);
+    }, 6000);
+
+    // Phase 4: snap rz back to -45 (equivalent to 315°) without visible movement + restore base transition
+    const t4 = setTimeout(() => {
       if (!gridRef.current) return;
       gridRef.current.style.transition = 'none';
       setRz(-45);
-      // restore base transition next frame
       requestAnimationFrame(() => {
         if (gridRef.current && flyoverTransitionRef.current !== null) {
           gridRef.current.style.transition = flyoverTransitionRef.current;
         }
       });
-    }, 6850);
+    }, 8250);
 
-    return () => { clearTimeout(t2); clearTimeout(t3); };
+    return () => { clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [flyoverSignal]);
 
   // Inject CSS once
@@ -438,6 +450,11 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     document.head.appendChild(style);
     return () => { style.remove(); injectedCss.current = false; };
   }, []);
+
+  // Reset slam-down tracking when the question changes (so the next placement animates fresh)
+  useEffect(() => {
+    lastAnimatedKey.current = null;
+  }, [state.questionIndex]);
 
   // Team lookup
   const teamMap = useRef(new Map<string, TeamRGB>());

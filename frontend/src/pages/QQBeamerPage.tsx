@@ -239,13 +239,20 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
-  // ── 3D grid toggle (beamer-local, persisted in localStorage) ──
-  const [use3D, setUse3D] = useState(() => {
-    try { return localStorage.getItem('qq-beamer-3d') === '1'; } catch { return false; }
-  });
-  const toggle3D = useCallback(() => {
-    setUse3D(v => { const next = !v; try { localStorage.setItem('qq-beamer-3d', next ? '1' : '0'); } catch {} return next; });
-  }, []);
+  // ── 3D grid toggle (beamer-local) ──
+  // Not persisted: each new question restarts in 2D so the cinematic "Fahrt"
+  // (flat → isometric) plays again. Toggle is only a per-question override.
+  const [use3D, setUse3D] = useState(false);
+  const toggle3D = useCallback(() => { setUse3D(v => !v); }, []);
+
+  // Auto-reset to 2D whenever the question changes, so the Fahrt can replay
+  const use3DQIdxRef = useRef(s.questionIndex);
+  useEffect(() => {
+    if (use3DQIdxRef.current !== s.questionIndex) {
+      use3DQIdxRef.current = s.questionIndex;
+      setUse3D(false);
+    }
+  }, [s.questionIndex]);
 
   // ── Slide transition: gameshow-style flash-sweep between phase groups ──
   // Group QUESTION_ACTIVE + QUESTION_REVEAL together (reveal is not a "new slide")

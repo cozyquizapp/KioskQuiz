@@ -67,6 +67,9 @@ export interface QQRoomState {
   // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
   // 0 = keine Pins, 1 = Target allein, 2+ = Target + n schlechteste Teams, N+1 = Ranking-Panel
   mapRevealStep: number;
+  // Comeback-Erklärung — moderator-gesteuerte Intro-Slides vor den 3 Optionen
+  // 0 = Was ist Comeback, 1 = warum DIESES Team, 2 = Optionen zeigen
+  comebackIntroStep: number;
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
@@ -177,6 +180,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       frozenCells: [],
       imageRevealed: false,
       mapRevealStep: 0,
+      comebackIntroStep: 0,
       _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
@@ -1392,12 +1396,13 @@ export function qqTriggerComeback(room: QQRoomState): void {
     ? tiedTeams[Math.floor(Math.random() * tiedTeams.length)]
     : lastTeamId;
 
-  room.comebackTeamId = comebackTeam;
-  room.comebackAction = null;
-  room.pendingFor     = comebackTeam;
-  room.pendingAction  = 'COMEBACK';
-  room.phase          = 'COMEBACK_CHOICE';
-  room.lastActivityAt = Date.now();
+  room.comebackTeamId    = comebackTeam;
+  room.comebackAction    = null;
+  room.comebackIntroStep = 0;
+  room.pendingFor        = comebackTeam;
+  room.pendingAction     = 'COMEBACK';
+  room.phase             = 'COMEBACK_CHOICE';
+  room.lastActivityAt    = Date.now();
 }
 
 export function qqApplyComebackChoice(
@@ -1661,6 +1666,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
       : [],
     imageRevealed:    room.imageRevealed,
     mapRevealStep:    room.mapRevealStep,
+    comebackIntroStep: room.comebackIntroStep,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     theme:            room.theme,
@@ -1806,6 +1812,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.frozenCells           = [];
   room.imageRevealed         = false;
   room.mapRevealStep         = 0;
+  room.comebackIntroStep     = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

@@ -67,6 +67,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   allAnswered: false,
   enable3DTransition: false,
   teamsRevealStartedAt: null,
+  mapRevealStep: 0,
+  comebackIntroStep: 0,
 };
 
 const MOCK_QUESTION_BASE = {

@@ -861,6 +861,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── Comeback Intro Step (moderator steuert Erklärung Schritt für Schritt) ─
+    socket.on('qq:comebackIntroStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.phase !== 'COMEBACK_CHOICE') { ok(ack); return; }
+        const maxStep = 2; // 0=was ist das, 1=warum diese Team, 2=Optionen
+        if (room.comebackIntroStep < maxStep) {
+          room.comebackIntroStep += 1;
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── 2D/3D Toggle (moderator -> beamer) ─────────────────────────────────
     socket.on('qq:toggleView', (payload: { roomCode: string }, ack?: unknown) => {
       try {

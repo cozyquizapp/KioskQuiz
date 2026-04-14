@@ -159,6 +159,10 @@ export default function QQModeratorPage() {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
       }
+      // COMEBACK_CHOICE: Erklärung Step 0→1→2 progressiv aufdecken
+      else if (s.phase === 'COMEBACK_CHOICE') {
+        if ((s.comebackIntroStep ?? 0) < 2) emitRef.current('qq:comebackIntroStep', { roomCode });
+      }
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
@@ -224,6 +228,9 @@ export default function QQModeratorPage() {
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
+      }
+      else if (s.phase === 'COMEBACK_CHOICE') {
+        if ((s.comebackIntroStep ?? 0) < 2) emitRef.current('qq:comebackIntroStep', { roomCode });
       }
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
@@ -1385,6 +1392,20 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
 function ComebackControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.comebackTeamId);
   if (!team || s.comebackAction) return null;
+  const step = s.comebackIntroStep ?? 0;
+  if (step < 2) {
+    const label = step === 0 ? '▶ Team zeigen' : '▶ Optionen zeigen';
+    return (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
+          📖 Erklärung {step + 1}/3
+        </span>
+        <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
+          {label}
+        </PrimaryBtn>
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>

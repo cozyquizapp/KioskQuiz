@@ -3320,13 +3320,18 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
   const teamColor = team?.color ?? '#F59E0B';
+  const step = s.comebackIntroStep ?? 0;
+  // Wenn eine Aktion gewaehlt ist, immer die Bestaetigung zeigen (Step wird ignoriert)
+  const showChosen = !!s.comebackAction;
+  const showOptions = step >= 2 && !showChosen;
+  const showTeam    = step >= 1 || showChosen;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
-      padding: '48px 64px', gap: 28,
+      padding: '48px 64px', gap: 24,
     }}>
       <Fireflies color={`${teamColor}55`} />
 
@@ -3341,11 +3346,35 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         ⚡ {lang === 'en' ? 'Comeback Chance!' : 'Comeback-Chance!'}
       </div>
 
-      {/* Team hero */}
-      {team && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+      {/* Step 0: Erklärung "Was ist Comeback" */}
+      {step === 0 && !showChosen && (
+        <div key="intro0" style={{
+          maxWidth: 1100, textAlign: 'center',
+          padding: '36px 48px', borderRadius: 28,
+          background: 'rgba(251,191,36,0.08)',
+          border: '2px solid rgba(251,191,36,0.35)',
+          boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
           animation: 'contentReveal 0.5s ease 0.2s both',
+          position: 'relative', zIndex: 5,
+        }}>
+          <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 800, marginBottom: 18 }}>
+            {lang === 'en'
+              ? 'Before the final round every team gets a fair chance: the team currently in last place receives a Comeback-Boost.'
+              : 'Vor der letzten Runde bekommt jedes Team eine faire Chance: Das Team, das gerade auf dem letzten Platz liegt, erhält einen Comeback-Boost.'}
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
+            {lang === 'en'
+              ? 'Three options to catch up — place, steal or swap.'
+              : 'Drei Optionen zum Aufholen — setzen, klauen oder tauschen.'}
+          </div>
+        </div>
+      )}
+
+      {/* Step 1+: Team hero */}
+      {showTeam && team && (
+        <div key="team" style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          animation: 'contentReveal 0.5s ease both',
           position: 'relative', zIndex: 5,
         }}>
           <div style={{
@@ -3362,35 +3391,55 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
             textShadow: `0 0 24px ${teamColor}44`,
           }}>{team.name}</div>
+          {step === 1 && !showChosen && (
+            <div style={{
+              marginTop: 8, padding: '14px 28px', borderRadius: 18,
+              background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
+              fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
+              maxWidth: 900, textAlign: 'center',
+              animation: 'contentReveal 0.45s ease 0.15s both',
+            }}>
+              {lang === 'en'
+                ? `${team.name} is in last place right now and chooses one of three comeback moves.`
+                : `${team.name} liegt aktuell auf dem letzten Platz und wählt jetzt einen von drei Comeback-Moves.`}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Options or chosen action */}
-      {team && (
+      {/* Step 2: Options */}
+      {showOptions && team && (
         <div style={{
           width: '100%', maxWidth: 1100,
-          animation: 'contentReveal 0.5s ease 0.4s both',
+          animation: 'contentReveal 0.5s ease both',
           position: 'relative', zIndex: 5,
         }}>
-          {!s.comebackAction ? (
-            <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
-              <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
-              <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
-            </div>
-          ) : (
-            <div style={{
-              padding: '32px 48px', borderRadius: 24, textAlign: 'center',
-              background: cardBg, border: `2px solid ${teamColor}44`,
-              boxShadow: `0 0 50px ${teamColor}18, 0 8px 32px rgba(0,0,0,0.5)`,
-              fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#e2e8f0',
-              animation: 'bQuestionIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both',
-            }}>
-              {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
-              {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
-              {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
+            <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
+            <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
+          </div>
+        </div>
+      )}
+
+      {/* Chosen action confirmation */}
+      {showChosen && team && (
+        <div style={{
+          width: '100%', maxWidth: 1100,
+          animation: 'contentReveal 0.5s ease both',
+          position: 'relative', zIndex: 5,
+        }}>
+          <div style={{
+            padding: '32px 48px', borderRadius: 24, textAlign: 'center',
+            background: cardBg, border: `2px solid ${teamColor}44`,
+            boxShadow: `0 0 50px ${teamColor}18, 0 8px 32px rgba(0,0,0,0.5)`,
+            fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#e2e8f0',
+            animation: 'bQuestionIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both',
+          }}>
+            {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
+            {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
+            {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
+          </div>
         </div>
       )}
     </div>

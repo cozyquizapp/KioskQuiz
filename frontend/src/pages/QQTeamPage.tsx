@@ -13,6 +13,7 @@ import {
 import { QQ_CAT_ACCENT } from '../qqShared';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
+  setVolume, setSoundConfig,
 } from '../utils/sounds';
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
@@ -500,10 +501,18 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   const teamColor     = myTeam?.color ?? '#3B82F6';
 
   // ── Team sounds ──
+  useEffect(() => {
+    setVolume(s.sfxMuted ? 0 : (s.volume ?? 1));
+  }, [s.sfxMuted, s.volume]);
+  useEffect(() => {
+    if (s.soundConfig) setSoundConfig(s.soundConfig);
+  }, [s.soundConfig]);
+
   const prevPhaseRef = useRef(s.phase);
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = s.phase;
+    if (s.sfxMuted) return;
     resumeAudio();
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
       playFanfare();

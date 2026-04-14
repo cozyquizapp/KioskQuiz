@@ -334,11 +334,13 @@ const extractCloudinaryPublicId = (url: string): string | null => {
 
 const uploadLocalFileToCloudinary = async (
   localPath: string,
-  folder: 'questions' | 'blitz'
+  folder: 'questions' | 'blitz' | 'audio'
 ): Promise<string> => {
+  // Cloudinary behandelt Audio/Video unter resource_type 'video'.
+  const resourceType: 'image' | 'video' = folder === 'audio' ? 'video' : 'image';
   const result = await cloudinary.uploader.upload(localPath, {
     folder: `cozyquiz/${folder}`,
-    resource_type: 'image'
+    resource_type: resourceType,
   });
   return result.secure_url;
 };
@@ -4864,11 +4866,24 @@ app.post('/api/upload/question-image', upload.single('file'), async (req, res) =
   }
 });
 
-// Audio upload (music per question)
-app.post('/api/upload/question-audio', audioUpload.single('file'), (req, res) => {
+// Audio upload (music per question / sound slots)
+app.post('/api/upload/question-audio', audioUpload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Keine Audiodatei erhalten' });
   const localUrl = `/uploads/audio/${req.file.filename}`;
-  return res.json({ audioUrl: localUrl });
+
+  try {
+    const finalUrl = isCloudinaryEnabled
+      ? await uploadLocalFileToCloudinary(req.file.path, 'audio')
+      : localUrl;
+    return res.json({ audioUrl: finalUrl });
+  } catch (err) {
+    console.error('Fehler beim Audio-Upload:', err);
+    return res.status(500).json({ error: 'Audio konnte nicht hochgeladen werden' });
+  } finally {
+    if (isCloudinaryEnabled && req.file?.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
+    }
+  }
 });
 
 // Blitz image upload

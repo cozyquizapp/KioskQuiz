@@ -1330,9 +1330,10 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
 
-  // Sounds triggern pro Team (nur einmal je Index)
+  // Sounds triggern pro Team (nur einmal je Index) — respektiert globalen SFX-Mute
   const playedRef = useRef<Set<number>>(new Set());
   useEffect(() => {
+    if (s.sfxMuted) return;
     for (let i = 0; i < revealedCount; i++) {
       if (!playedRef.current.has(i)) {
         playedRef.current.add(i);
@@ -1343,7 +1344,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       playedRef.current.add(-1);
       try { playFanfare(); } catch {}
     }
-  }, [revealedCount, showGoodLuck]);
+  }, [revealedCount, showGoodLuck, s.sfxMuted]);
 
   return (
     <div style={{

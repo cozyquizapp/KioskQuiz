@@ -839,6 +839,28 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── CozyGuessr Map Reveal Step (moderator -> beamer, progressiv) ──────
+    socket.on('qq:mapRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const q = room.currentQuestion;
+        const isMap = q?.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'map';
+        if (room.phase !== 'QUESTION_REVEAL' || !isMap) { ok(ack); return; }
+        const validPinCount = room.answers.filter(a => {
+          const parts = String(a.text ?? '').split(',');
+          const lat = Number(parts[0]);
+          const lng = Number(parts[1]);
+          return Number.isFinite(lat) && Number.isFinite(lng);
+        }).length;
+        const maxStep = 1 + validPinCount + 1;
+        if (room.mapRevealStep < maxStep) {
+          room.mapRevealStep += 1;
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── 2D/3D Toggle (moderator -> beamer) ─────────────────────────────────
     socket.on('qq:toggleView', (payload: { roomCode: string }, ack?: unknown) => {
       try {

@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
@@ -2144,6 +2147,209 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// CozyGuessr Reveal — progressive map reveal (moderator steuert step-by-step)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const QQFitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }> = ({ bounds, trigger }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [80, 80], maxZoom: 9, animate: true, duration: 0.9 });
+  }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+};
+
+const QQMapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
+  const map = useMap();
+  useEffect(() => {
+    const t = window.setTimeout(() => map.invalidateSize(), 60);
+    return () => window.clearTimeout(t);
+  }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+};
+
+function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  const q = s.currentQuestion!;
+  const btt = (q.bunteTuete as any);
+  const tLat: number = btt.lat;
+  const tLng: number = btt.lng;
+  const step = s.mapRevealStep ?? 0;
+
+  // Distanzen + Sortierung worst→best (für dramatisches Aufdecken)
+  const scored = useMemo(() => {
+    return [...s.answers].map(a => {
+      const parts = String(a.text ?? '').split(',');
+      const lat = Number(parts[0]); const lng = Number(parts[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ...a, lat: null as any, lng: null as any, distKm: null as any };
+      const R = 6371;
+      const dLat = (lat - tLat) * Math.PI / 180;
+      const dLng = (lng - tLng) * Math.PI / 180;
+      const aa = Math.sin(dLat/2)**2 + Math.cos(tLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLng/2)**2;
+      return { ...a, lat, lng, distKm: R * 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1-aa)) };
+    }).filter(a => a.distKm !== null);
+  }, [s.answers, tLat, tLng]);
+
+  const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
+  const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
+
+  const showTarget  = step >= 1;
+  const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...
+  const revealedPins = worstFirst.slice(0, revealedCnt);
+  const validCount = scored.length;
+  const showRanking = step >= (1 + validCount + 1);
+
+  // FitBounds bounds aus aktuell sichtbaren Punkten
+  const bounds = useMemo(() => {
+    const b = L.latLngBounds([] as any);
+    if (showTarget) b.extend([tLat, tLng]);
+    for (const p of revealedPins) b.extend([p.lat, p.lng]);
+    if (!b.isValid()) b.extend([tLat, tLng]);
+    return b;
+  }, [showTarget, revealedPins, tLat, tLng]);
+
+  const targetIcon = useMemo(() => L.divIcon({
+    className: 'qq-target-pin',
+    html: `<div style="
+      width: 72px; height: 72px; border-radius: 50%;
+      background: radial-gradient(circle, #FDE68A 0%, #FBBF24 60%, #B45309 100%);
+      border: 4px solid #FEF3C7;
+      box-shadow: 0 0 0 8px rgba(251,191,36,0.25), 0 0 40px rgba(251,191,36,0.85), 0 8px 24px rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      animation: qqTargetPulse 2.1s ease-in-out infinite;
+      position: relative;
+    ">
+      <div style="position:absolute; inset:14px; border-radius:50%; border:3px solid #78350F;"></div>
+      <div style="position:absolute; left:50%; top:6px; bottom:6px; width:3px; background:#78350F; transform:translateX(-50%);"></div>
+      <div style="position:absolute; top:50%; left:6px; right:6px; height:3px; background:#78350F; transform:translateY(-50%);"></div>
+      <div style="width:14px; height:14px; border-radius:50%; background:#78350F; z-index:1;"></div>
+    </div>`,
+    iconSize: [72, 72] as any,
+    iconAnchor: [36, 36] as any,
+  }), []);
+
+  const makeTeamIcon = (color: string, emoji: string) => L.divIcon({
+    className: 'qq-team-pin',
+    html: `<div style="
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #0f172a;
+      border: 4px solid ${color};
+      box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}66;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; line-height: 1;
+      animation: qqTeamPinDrop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
+    ">${emoji}</div>`,
+    iconSize: [48, 48] as any,
+    iconAnchor: [24, 24] as any,
+  });
+
+  const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
+
+  return (
+    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: '#0D0A06' }}>
+      {/* Karte */}
+      <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s cubic-bezier(0.4,0,0.2,1)' }}>
+        <MapContainer
+          center={[tLat, tLng] as any}
+          zoom={4}
+          zoomControl={false}
+          attributionControl={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          dragging={false}
+          touchZoom={false}
+          style={{ width: '100%', height: '100%', background: '#0a1120' }}
+        >
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          <QQMapResizer trigger={showRanking} />
+          <QQFitBoundsOnTrigger bounds={bounds} trigger={step} />
+          {showTarget && (
+            <Marker position={[tLat, tLng] as any} icon={targetIcon} />
+          )}
+          {revealedPins.map(p => {
+            const team = s.teams.find(t => t.id === p.teamId);
+            if (!team) return null;
+            return (
+              <Marker
+                key={p.teamId}
+                position={[p.lat, p.lng] as any}
+                icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).emoji)}
+              />
+            );
+          })}
+        </MapContainer>
+
+        {/* Title-Overlay oben */}
+        <div style={{
+          position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
+          padding: '12px 28px', borderRadius: 999,
+          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(251,191,36,0.4)',
+          color: '#FDE68A', fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 32px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(251,191,36,0.25)',
+          zIndex: 1000, letterSpacing: 0.3,
+        }}>
+          🌍 {title}
+        </div>
+
+        {/* Antwort-Label unten (wenn Target sichtbar) */}
+        {showTarget && q.answer && (
+          <div style={{
+            position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+            padding: '14px 32px', borderRadius: 18,
+            background: 'rgba(34,197,94,0.14)', border: '2.5px solid rgba(34,197,94,0.45)',
+            color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8vw, 38px)',
+            boxShadow: '0 0 50px rgba(34,197,94,0.25)',
+            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+            zIndex: 1000,
+          }}>
+            ✓ {lang === 'en' && q.answerEn ? q.answerEn : q.answer}
+          </div>
+        )}
+      </div>
+
+      {/* Ranking-Panel rechts (slide-in) */}
+      {showRanking && (
+        <div style={{
+          flex: '0 0 36%', padding: '48px 28px 28px',
+          background: 'linear-gradient(180deg, rgba(15,23,42,0.96), rgba(13,10,6,0.96))',
+          borderLeft: '2px solid rgba(251,191,36,0.2)',
+          boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
+          animation: 'qqMapRankSlideIn 0.7s cubic-bezier(0.22,1,0.36,1) both',
+          display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto',
+        }}>
+          <div style={{
+            fontWeight: 900, fontSize: 'clamp(22px, 2.2vw, 30px)',
+            color: '#FDE68A', marginBottom: 8, textAlign: 'center', letterSpacing: 0.4,
+          }}>
+            🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
+          </div>
+          {bestFirst.map((p, i) => {
+            const team = s.teams.find(t => t.id === p.teamId);
+            if (!team) return null;
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+            const dist = p.distKm == null ? '—' : p.distKm < 1 ? `${Math.round(p.distKm * 1000)} m` : `${p.distKm.toFixed(1)} km`;
+            const isTop = i === 0;
+            return (
+              <div key={p.teamId} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '12px 16px', borderRadius: 14,
+                background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(255,255,255,0.04)',
+                border: `2px solid ${isTop ? team.color + '88' : 'rgba(255,255,255,0.08)'}`,
+                boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
+                animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
+              }}>
+                <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center' }}>{medal}</span>
+                <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                <span style={{ flex: 1, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color }}>{team.name}</span>
+                <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // QUESTION VIEW (active + reveal)
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2167,6 +2373,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const hasImg = img && img.url && (isCheese || img.layout !== 'none');
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
+
+  // ── CozyGuessr (map) full-screen reveal ─────────────────────────────────
+  const isMapReveal = revealed
+    && q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'map';
+  if (isMapReveal) {
+    return <CozyGuessrReveal state={s} lang={lang} />;
+  }
 
   // ── CHEESE "Overlay" layout ─────────────────────────────────────────────
   // Image stays fullscreen. Frosted card overlays with question/answer.

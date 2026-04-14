@@ -64,6 +64,9 @@ export interface QQRoomState {
   imposterEliminated: string[];     // teams who picked the false statement
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
+  // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
+  // 0 = keine Pins, 1 = Target allein, 2+ = Target + n schlechteste Teams, N+1 = Ranking-Panel
+  mapRevealStep: number;
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
@@ -173,6 +176,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       lastPlacedCell: null,
       frozenCells: [],
       imageRevealed: false,
+      mapRevealStep: 0,
       _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
@@ -493,6 +497,8 @@ export function qqActivateQuestion(
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately
   room.imageRevealed  = room.currentQuestion?.category === 'CHEESE';
+  // CozyGuessr (map) reveal — pro Frage bei 0 starten
+  room.mapRevealStep  = 0;
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
@@ -1646,6 +1652,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
       ? detectPlusForStuck(room.grid, room.gridSize, room.pendingFor).map(c => ({ row: c.r, col: c.c }))
       : [],
     imageRevealed:    room.imageRevealed,
+    mapRevealStep:    room.mapRevealStep,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     theme:            room.theme,
@@ -1790,6 +1797,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.lastPlacedCell        = null;
   room.frozenCells           = [];
   room.imageRevealed         = false;
+  room.mapRevealStep         = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

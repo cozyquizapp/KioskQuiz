@@ -124,6 +124,18 @@ export default function QQModeratorPage() {
     if (!s) return;
     if (startingRef.current && e.code !== 'KeyM') return; // blocked during game start
 
+    // CozyGuessr (map) reveal helpers — progressiv im QUESTION_REVEAL
+    const q = s.currentQuestion;
+    const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
+    const mapValidPinCount = s.answers?.filter((a: any) => {
+      const parts = String(a.text ?? '').split(',');
+      const lat = Number(parts[0]); const lng = Number(parts[1]);
+      return Number.isFinite(lat) && Number.isFinite(lng);
+    }).length ?? 0;
+    const mapMaxStep = 1 + mapValidPinCount + 1;
+    const mapRevealDone = isMapReveal && (s.mapRevealStep ?? 0) >= mapMaxStep;
+    const mapRevealInProgress = isMapReveal && !mapRevealDone;
+
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
       e.preventDefault();
@@ -142,9 +154,11 @@ export default function QQModeratorPage() {
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
         emitRef.current('qq:revealAnswer', { roomCode });
-      // QUESTION_REVEAL: start placement (show grid)
-      else if (s.phase === 'QUESTION_REVEAL')
-        emitRef.current('qq:startPlacement', { roomCode });
+      // QUESTION_REVEAL: bei CozyGuessr progressiv aufdecken, sonst direkt zum Grid
+      else if (s.phase === 'QUESTION_REVEAL') {
+        if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
+        else emitRef.current('qq:startPlacement', { roomCode });
+      }
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
@@ -207,8 +221,10 @@ export default function QQModeratorPage() {
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
         emitRef.current('qq:revealAnswer', { roomCode });
-      else if (s.phase === 'QUESTION_REVEAL')
-        emitRef.current('qq:startPlacement', { roomCode });
+      else if (s.phase === 'QUESTION_REVEAL') {
+        if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
+        else emitRef.current('qq:startPlacement', { roomCode });
+      }
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       else if (s.phase === 'GAME_OVER')

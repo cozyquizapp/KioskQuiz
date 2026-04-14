@@ -285,6 +285,20 @@ export const QQ_BEAMER_CSS = `
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
   }
 
+  @keyframes qqTargetPulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50%      { transform: scale(1.08); filter: brightness(1.15); }
+  }
+  @keyframes qqTeamPinDrop {
+    0%   { transform: translateY(-32px) scale(0.4); opacity: 0; }
+    70%  { transform: translateY(4px)   scale(1.08); opacity: 1; }
+    100% { transform: translateY(0)     scale(1);    opacity: 1; }
+  }
+  @keyframes qqMapRankSlideIn {
+    0%   { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0);    opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;

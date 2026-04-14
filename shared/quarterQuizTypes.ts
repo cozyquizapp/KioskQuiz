@@ -468,6 +468,9 @@ export interface QQStateUpdate {
   stuckCandidates: { row: number; col: number }[];
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
+  // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
+  // 0 = nichts, 1 = Target, 2..N+1 = Target + worst→best Team-Pins, N+2 = Ranking-Panel
+  mapRevealStep: number;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;

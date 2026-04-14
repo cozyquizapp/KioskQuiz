@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#F87171"/>
       <stop offset="1" stop-color="#B91C1C"/>
     </linearGradient>
   </defs>
-  <rect width="144" height="144" rx="20" fill="url(#g)"/>
-  <text x="72" y="72" font-size="80" text-anchor="middle" dominant-baseline="central" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">❌</text>
+  <rect width="144" height="144" rx="20" fill="url(#g2)"/>
+  <g stroke="#fff" stroke-width="14" stroke-linecap="round">
+    <line x1="46" y1="46" x2="98" y2="98"/>
+    <line x1="98" y1="46" x2="46" y2="98"/>
+  </g>
 </svg>

@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#64748B"/>
-      <stop offset="1" stop-color="#1E293B"/>
+    <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#5B21B6"/>
     </linearGradient>
   </defs>
-  <rect width="144" height="144" rx="20" fill="url(#g)"/>
-  <text x="72" y="72" font-size="80" text-anchor="middle" dominant-baseline="central" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">🔇</text>
+  <rect width="144" height="144" rx="20" fill="url(#g4)"/>
+  <g transform="translate(72 72)">
+    <path d="M-28 -10 L-10 -10 L6 -26 L6 26 L-10 10 L-28 10 Z"
+          fill="#fff" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+    <g stroke="#fff" stroke-width="7" stroke-linecap="round">
+      <line x1="16" y1="-14" x2="30" y2="0"/>
+      <line x1="30" y1="-14" x2="16" y2="0"/>
+    </g>
+    <line x1="-34" y1="-30" x2="34" y2="30" stroke="#0f172a" stroke-width="9" stroke-linecap="round"/>
+    <line x1="-34" y1="-30" x2="34" y2="30" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  </g>
 </svg>

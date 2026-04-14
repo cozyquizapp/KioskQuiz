@@ -3451,28 +3451,36 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
-      padding: '48px 64px',
+      padding: '32px 48px',
     }}>
       {/* Ambient glow behind winner */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: `radial-gradient(ellipse at 50% 35%, ${winnerColor}25 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
+        background: `radial-gradient(ellipse at 30% 35%, ${winnerColor}25 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
       }} />
 
       {/* Confetti */}
       <ConfettiOverlay />
       <Fireflies color={`${winnerColor}55`} />
 
-      {/* Stage 1: "Spielende!" title — appears first, fades up */}
+      {/* Stage 1: "Spielende!" title */}
       <div style={{
         fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800,
         color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
         animation: 'contentReveal 0.6s ease both',
-        position: 'relative', zIndex: 5, marginBottom: 8,
+        position: 'relative', zIndex: 5, marginBottom: 20,
       }}>
         {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
+      {/* Two-column: left = winner + rankings, right = final grid */}
+      <div style={{
+        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'clamp(24px, 3vw, 56px)',
+        width: '100%', maxWidth: 1500, justifyContent: 'center',
+        position: 'relative', zIndex: 5,
+      }}>
+        {/* Left column */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '0 1 auto' }}>
       {/* Stage 2: Winner hero — big entrance */}
       {winner && (
         <div style={{
@@ -3529,9 +3537,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       {/* Stage 3: Rankings — slide in staggered */}
       {sorted.length > 1 && (
         <div style={{
-          width: '100%', maxWidth: 800,
+          width: '100%', maxWidth: 640,
           display: 'flex', flexDirection: 'column', gap: 8,
-          position: 'relative', zIndex: 5,
         }}>
           {sorted.slice(1).map((tm, i) => {
             const rank = i + 2;
@@ -3572,7 +3579,30 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           })}
         </div>
       )}
-
+        </div>
+        {/* Right column — final grid trophy */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
+          flex: '0 0 auto',
+        }}>
+          <div style={{
+            fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: '#94a3b8',
+          }}>
+            {lang === 'en' ? 'Final Territory' : 'Finales Territorium'}
+          </div>
+          <div style={{
+            padding: 14, borderRadius: 20,
+            background: 'rgba(255,255,255,0.03)',
+            border: `2px solid ${winnerColor}44`,
+            boxShadow: `0 0 40px ${winnerColor}33, 0 10px 40px rgba(0,0,0,0.4)`,
+          }}>
+            <GridDisplay state={s} maxSize={Math.min(440, typeof window !== 'undefined' ? window.innerHeight * 0.48 : 400)} highlightTeam={winner?.id ?? null} showJoker />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

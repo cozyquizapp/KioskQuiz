@@ -738,6 +738,20 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         <textarea value={q.textEn ?? ''} onChange={e => onChange({ ...q, textEn: e.target.value })} style={textareaStyle} rows={2} placeholder="Question text in English…" />
       </div>
 
+      {/* Moderator host note — private, only visible in /moderator */}
+      <div>
+        <label style={labelStyle}>
+          🎙️ Moderator-Notiz <span style={{ color: '#334155' }}>nur für Moderator sichtbar</span>
+        </label>
+        <textarea
+          value={q.hostNote ?? ''}
+          onChange={e => onChange({ ...q, hostNote: e.target.value || undefined })}
+          style={{ ...textareaStyle, borderColor: 'rgba(251,191,36,0.3)' }}
+          rows={2}
+          placeholder="Anekdote, Hintergrundwissen oder Gag für den Moderator…"
+        />
+      </div>
+
       {/* ── Category-specific answer fields ── */}
       <CategoryFields question={q} onChange={onChange} catColor={catColor} onOptionImageUpload={onOptionImageUpload} />
 

@@ -636,8 +636,8 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'Frage → alle antworten gleichzeitig auf dem Handy.',
-      'Richtig? Setzt Felder auf dem Spielfeld.',
-      'Bei mehreren richtigen Antworten darf das schnellste Team zuerst wählen!',
+      'Jedes richtige Team darf ein Feld setzen.',
+      'Bei Gleichstand entscheidet die Geschwindigkeit, wer zuerst wählen darf!',
     ],
   },
   {
@@ -725,8 +725,8 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     color: '#8B5CF6',
     lines: [
       'Question → everyone answers on their phone at once.',
-      'Correct? Place cells on the grid.',
-      'If multiple teams are correct, the fastest one picks first!',
+      'Every correct team places a cell on the grid.',
+      'On a tie, speed decides who picks first!',
     ],
   },
   {

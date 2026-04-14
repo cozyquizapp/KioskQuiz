@@ -370,6 +370,9 @@ export default function QQModeratorPage() {
             );
           })()}
 
+          {/* ══ HOST NOTES — suggested talking points per phase ══ */}
+          <HostNotes state={s} />
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14 }}>
 
           {/* ── Left column ── */}
@@ -1012,6 +1015,96 @@ export default function QQModeratorPage() {
           </div>
         </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// ── Host notes (suggested moderator talking points per phase) ────────────────
+
+const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
+  LOBBY: {
+    title: 'Lobby — Teams einchecken',
+    text: 'Begrüße dein Publikum. Weise Teams darauf hin, den QR-Code zu scannen, einen Teamnamen und eine Farbe zu wählen. Warte, bis alle Teams bereit sind, bevor du startest.',
+  },
+  RULES: {
+    title: 'Regeln erklären',
+    text: 'Gehe die Regel-Folien kurz durch. Wichtig: Jedes Team, das richtig antwortet, darf ein Feld auf dem Gitter setzen. Bei Gleichstand entscheidet die Geschwindigkeit nur darüber, wer ZUERST wählen darf.',
+  },
+  PHASE_INTRO: {
+    title: 'Kategorie-Intro',
+    text: 'Stimme das Publikum auf die kommende Kategorie ein. Erwähne kurz, worum es geht — baue Spannung auf, bevor die erste Frage kommt.',
+  },
+  QUESTION_ACTIVE: {
+    title: 'Frage läuft',
+    text: 'Lies die Frage laut vor. Erinnere die Teams: "Alle gleichzeitig auf dem Handy antworten!" Beobachte den Timer und heize die Stimmung an.',
+  },
+  QUESTION_REVEAL: {
+    title: 'Antwort aufdecken',
+    text: 'Verkünde die richtige Antwort mit Nachdruck. Hebe knappe oder überraschende Antworten hervor. Erwähne, welche Teams richtig lagen.',
+  },
+  PLACEMENT: {
+    title: 'Feld-Platzierung',
+    text: 'Jedes richtige Team darf jetzt ein Feld setzen. Bei Gleichstand: Das schnellste Team wählt zuerst. Kommentiere strategische Züge ("ah, cleverer Block!").',
+  },
+  COMEBACK_CHOICE: {
+    title: 'Comeback-Runde',
+    text: 'Das zurückliegende Team darf einen Joker einsetzen. Erkläre kurz die Optionen und baue Spannung auf — das kann die Runde drehen!',
+  },
+  PAUSED: {
+    title: 'Pause',
+    text: 'Kurze Verschnaufpause. Nutze die Zeit für eine Anekdote, einen kurzen Überblick über den Spielstand oder um auf die nächste Runde einzustimmen.',
+  },
+  GAME_OVER: {
+    title: 'Spielende',
+    text: 'Verkünde den Gewinner! Bedanke dich bei allen Teams für ihre Teilnahme. Würdige besondere Momente oder Comebacks aus der Partie.',
+  },
+};
+
+function HostNotes({ state }: { state: QQStateUpdate }) {
+  const phase = state.phase;
+  const baseNote = HOST_NOTES_DE[phase] ?? { title: phase, text: 'Kein Hinweis für diese Phase.' };
+  const customNote = state.currentQuestion?.hostNote?.trim();
+  const showCustom = customNote && (phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL' || phase === 'PLACEMENT');
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.03))',
+      border: '1px solid rgba(251,191,36,0.35)',
+      borderLeft: '4px solid #FBBF24',
+      borderRadius: 10,
+      padding: '10px 14px',
+      marginBottom: 12,
+      fontSize: 13,
+      lineHeight: 1.5,
+      color: '#e5e7eb',
+    }}>
+      <div style={{
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+        color: '#FBBF24',
+        marginBottom: 4,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}>
+        <span>🎙️ Moderator-Tipp</span>
+        <span style={{ opacity: 0.6, fontWeight: 600 }}>· {baseNote.title}</span>
+      </div>
+      <div style={{ color: '#d1d5db' }}>{baseNote.text}</div>
+      {showCustom && (
+        <div style={{
+          marginTop: 8,
+          paddingTop: 8,
+          borderTop: '1px dashed rgba(251,191,36,0.3)',
+          color: '#fef3c7',
+          fontStyle: 'italic',
+        }}>
+          <span style={{ fontWeight: 800, fontStyle: 'normal', color: '#FBBF24' }}>Frage-Notiz: </span>
+          {customNote}
+        </div>
       )}
     </div>
   );

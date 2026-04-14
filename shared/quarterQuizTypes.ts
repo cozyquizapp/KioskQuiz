@@ -169,6 +169,8 @@ export interface QQQuestion {
   emojis?: string[];
   // Per-question background music (uploaded MP3)
   musicUrl?: string;
+  // Moderator host note — shown in /moderator during this question (private, not on beamer)
+  hostNote?: string;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────

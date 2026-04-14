@@ -72,41 +72,42 @@ function LinkCard({ link, accent }: { link: LinkItem; accent: string }) {
 
 // ── Expandable app panel ──────────────────────────────────────────────────────
 function AppPanel({
-  id, label, emoji, tagline, accent, links, defaultOpen = false,
+  id, label, emoji, tagline, accent, links, defaultOpen = false, compact = false,
 }: {
   id: string; label: string; emoji: string; tagline: string;
-  accent: string; links: LinkItem[]; defaultOpen?: boolean;
+  accent: string; links: LinkItem[]; defaultOpen?: boolean; compact?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div style={{
-      borderRadius: 18,
-      border: `1px solid ${open ? accent + '40' : 'rgba(255,255,255,0.09)'}`,
-      background: open ? `${accent}09` : 'rgba(255,255,255,0.025)',
+      borderRadius: compact ? 12 : 18,
+      border: `1px solid ${open ? accent + '40' : 'rgba(255,255,255,0.07)'}`,
+      background: open ? `${accent}09` : compact ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.025)',
       overflow: 'hidden',
-      transition: 'border-color 0.2s, background 0.2s',
+      opacity: compact && !open ? 0.7 : 1,
+      transition: 'border-color 0.2s, background 0.2s, opacity 0.2s',
     }}>
       {/* Header — always visible */}
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 14,
-          padding: '18px 20px', background: 'transparent', border: 'none',
+          width: '100%', display: 'flex', alignItems: 'center', gap: compact ? 10 : 14,
+          padding: compact ? '10px 14px' : '18px 20px', background: 'transparent', border: 'none',
           cursor: 'pointer', textAlign: 'left', color: '#e2e8f0',
         }}
       >
         <div style={{
-          width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+          width: compact ? 30 : 48, height: compact ? 30 : 48, borderRadius: compact ? 8 : 14, flexShrink: 0,
           background: `${accent}22`, border: `1.5px solid ${accent}44`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: compact ? 16 : 24,
         }}>
           {emoji}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#f8fafc', lineHeight: 1.2 }}>{label}</div>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{tagline}</div>
+          <div style={{ fontWeight: compact ? 700 : 900, fontSize: compact ? 14 : 18, color: compact ? '#cbd5e1' : '#f8fafc', lineHeight: 1.2 }}>{label}</div>
+          {!compact && <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{tagline}</div>}
         </div>
         <div style={{
           width: 28, height: 28, borderRadius: 8, flexShrink: 0,
@@ -174,16 +175,6 @@ const MenuPage = () => {
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         <AppPanel
-          id="cozy"
-          label="CozyQuiz 60"
-          emoji="🐺"
-          tagline="Das klassische Gemeinschaftsquiz — 60 Minuten, 5 Kategorien"
-          accent="#F59E0B"
-          links={cozyLinks}
-          defaultOpen={true}
-        />
-
-        <AppPanel
           id="qq"
           label="Quarter Quiz"
           emoji="🗺️"
@@ -191,6 +182,17 @@ const MenuPage = () => {
           accent="#3B82F6"
           links={qqLinks}
           defaultOpen={true}
+        />
+
+        <AppPanel
+          id="cozy"
+          label="CozyQuiz 60"
+          emoji="🐺"
+          tagline="Das klassische Gemeinschaftsquiz — 60 Minuten, 5 Kategorien"
+          accent="#F59E0B"
+          links={cozyLinks}
+          defaultOpen={false}
+          compact
         />
 
         {showLegacy && (

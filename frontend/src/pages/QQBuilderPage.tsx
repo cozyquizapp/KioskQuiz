@@ -277,6 +277,15 @@ export default function QQBuilderPage() {
   function deleteQuestion(draft: QQDraft, id: string): QQDraft {
     return { ...draft, questions: draft.questions.filter(q => q.id !== id), updatedAt: Date.now() };
   }
+  function duplicateQuestion(draft: QQDraft, id: string): { draft: QQDraft; newId: string | null } {
+    const src = draft.questions.find(q => q.id === id);
+    if (!src) return { draft, newId: null };
+    const newId = `${draft.id}-p${src.phaseIndex}-${src.category}-${Date.now().toString(36)}`;
+    const copy: QQQuestion = { ...src, id: newId };
+    const idx = draft.questions.findIndex(q => q.id === id);
+    const questions = [...draft.questions.slice(0, idx + 1), copy, ...draft.questions.slice(idx + 1)];
+    return { draft: { ...draft, questions, updatedAt: Date.now() }, newId };
+  }
   function moveQuestion(draft: QQDraft, id: string, dir: 'up' | 'down'): QQDraft {
     const qs = [...draft.questions];
     const idx = qs.findIndex(q => q.id === id);
@@ -694,6 +703,8 @@ export default function QQBuilderPage() {
                               style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', color: qIdx === 0 ? '#1e293b' : '#64748b', cursor: qIdx === 0 ? 'default' : 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>▲</button>
                             <button title="Nach unten" onClick={() => setActiveDraft(moveQuestion(activeDraft, q.id, 'down'))}
                               style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', color: qIdx >= phaseQs.length - 1 ? '#1e293b' : '#64748b', cursor: qIdx >= phaseQs.length - 1 ? 'default' : 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>▼</button>
+                            <button title="Duplizieren" onClick={() => { const r = duplicateQuestion(activeDraft, q.id); setActiveDraft(r.draft); if (r.newId) setActiveQId(r.newId); }}
+                              style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', color: '#64748b', cursor: 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>📋</button>
                             <button title="Löschen" onClick={() => { if (confirm('Frage löschen?')) { setActiveDraft(deleteQuestion(activeDraft, q.id)); if (activeQId === q.id) setActiveQId(null); }}}
                               style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>✕</button>
                           </div>

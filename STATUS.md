@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block C #10 — Game-Over QR-Code + Team-Summary-Seite.
+**Nächstes Todo**: Block D #11 — Emote-Rückmeldungen für Zuschauer.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -42,7 +42,7 @@ Details + Anleitungen zu allen offenen Blöcken:
 
 ### Block C — Show-Polish (Woche 3)
 - [x] Epische Team-Reveal-Folie (einmalig nach Rules vor Phase 1)
-- [ ] Game-Over QR-Code → Team-Summary-Seite
+- [x] Game-Over QR-Code → Team-Summary-Seite (Stats, Feedback, Upcoming)
 
 ### Block D — Spectator
 - [ ] Emote-Rückmeldungen für Zuschauer (ausschaltbar im Moderator)

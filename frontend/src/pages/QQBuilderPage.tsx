@@ -1044,7 +1044,8 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                   e.preventDefault();
                   const cur = img.scale ?? 1;
                   const delta = e.deltaY > 0 ? -0.05 : 0.05;
-                  setImg({ scale: Math.round(Math.max(0.1, Math.min(3, cur + delta)) * 100) / 100 });
+                  const minScale = q.category === 'CHEESE' ? 1 : 0.1;
+                  setImg({ scale: Math.round(Math.max(minScale, Math.min(3, cur + delta)) * 100) / 100 });
                 }}
                 onTouchStart={e => {
                   if (e.touches.length !== 1) return;
@@ -1064,14 +1065,49 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                   window.addEventListener('touchend', onEnd);
                 }}
               >
-                <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
-                  position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-                  transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
-                  pointerEvents: 'none', transition: 'transform 0.05s',
-                }} />
+                {q.category === 'CHEESE' ? (() => {
+                  // CHEESE: muss immer Vollbild bleiben. cover + scale(>=1) + position = Crop.
+                  const z = Math.max(1, img.scale ?? 1);
+                  const px = 50 + (img.offsetX ?? 0) / 2;
+                  const py = 50 + (img.offsetY ?? 0) / 2;
+                  return (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      backgroundImage: `url(${img.bgRemovedUrl ?? img.url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: `${px}% ${py}%`,
+                      backgroundRepeat: 'no-repeat',
+                      transform: `scale(${z})${img.rotation ? ` rotate(${img.rotation}deg)` : ''}`,
+                      transformOrigin: `${px}% ${py}%`,
+                      pointerEvents: 'none', transition: 'background-position 0.05s, transform 0.05s',
+                    }} />
+                  );
+                })() : (
+                  <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
+                    position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                    transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+                    pointerEvents: 'none', transition: 'transform 0.05s',
+                  }} />
+                )}
                 {/* Crosshair */}
                 <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
+                {/* CHEESE: Safe-Area-Overlay — zeigt wo die Frage-Card auf dem Beamer liegt */}
+                {q.category === 'CHEESE' && (
+                  <>
+                    <div style={{
+                      position: 'absolute', left: '8%', right: '8%', bottom: '8%', height: '32%',
+                      border: '1.5px dashed rgba(255,215,0,0.55)',
+                      background: 'rgba(13,10,6,0.25)',
+                      borderRadius: 8, pointerEvents: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,215,0,0.8)', letterSpacing: '0.08em' }}>
+                        FRAGE-CARD · nicht verdecken
+                      </span>
+                    </div>
+                  </>
+                )}
                 {/* Position indicator */}
                 <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: 4 }}>
                   X:{img.offsetX ?? 0} Y:{img.offsetY ?? 0} · {((img.scale ?? 1) * 100).toFixed(0)}%
@@ -1079,8 +1115,18 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Zoom ({((img.scale ?? 1) * 100).toFixed(0)}%)</div>
-                  <input type="range" min={10} max={300} value={(img.scale ?? 1) * 100} onChange={e => setImg({ scale: Number(e.target.value) / 100 })} style={{ width: '100%' }} />
+                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>
+                    Zoom ({((img.scale ?? 1) * 100).toFixed(0)}%)
+                    {q.category === 'CHEESE' && <span style={{ color: '#334155', fontSize: 9 }}> · min 100%</span>}
+                  </div>
+                  <input
+                    type="range"
+                    min={q.category === 'CHEESE' ? 100 : 10}
+                    max={300}
+                    value={Math.max((img.scale ?? 1) * 100, q.category === 'CHEESE' ? 100 : 10)}
+                    onChange={e => setImg({ scale: Number(e.target.value) / 100 })}
+                    style={{ width: '100%' }}
+                  />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Drehung ({img.rotation ?? 0}°)</div>

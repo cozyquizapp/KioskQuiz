@@ -1979,20 +1979,35 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
       {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
-      {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (
+      {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
+        // CHEESE Crop: offsetX/Y steuern background-position, scale steuert Zoom.
+        // scale wird ≥1 geclampt damit das Bild IMMER das volle Beamer-Bild füllt
+        // (keine schwarzen Ränder). backgroundSize 'cover' + positionX/Y = klassischer Crop.
+        const cheeseOX = img!.offsetX ?? 0;
+        const cheeseOY = img!.offsetY ?? 0;
+        const cheeseZoom = Math.max(1, img!.scale ?? 1);
+        // mappt -100..100 → 0..100% background-position (50 = center)
+        const cheesePosX = 50 + cheeseOX / 2;
+        const cheesePosY = 50 + cheeseOY / 2;
+        return (
         <>
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 50 : 1,
             backgroundImage: `url(${img!.url})`,
-            backgroundSize: 'cover', backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            backgroundPosition: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
+            backgroundRepeat: 'no-repeat',
             clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
             animation: cheeseFullscreen
               ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
               : ((revealed && !cheeseOverlay) ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s both'),
-            transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
-            transform: cheeseFullscreen ? undefined : `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
+            transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1), background-position 0.4s ease, transform 0.4s ease',
+            transform: cheeseFullscreen
+              ? `scale(${cheeseZoom})${img!.rotation ? ` rotate(${img!.rotation}deg)` : ''}`
+              : `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
+            transformOrigin: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
             opacity: img!.opacity ?? 1,
-            filter: cheeseFullscreen ? undefined : imgFilter(img!),
+            filter: imgFilter(img!),
           }} />
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 51 : 2,
@@ -2006,7 +2021,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             transition: 'opacity 0.8s ease',
           }} />
         </>
-      )}
+        );
+      })()}
 
 
       {/* Cutout floating image (bg-removed) */}

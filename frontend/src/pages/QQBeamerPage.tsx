@@ -463,7 +463,7 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {/* Placement flash overlay for custom template mode */}
           {placementFlash && (
             <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-              <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
+              <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
             </div>
           )}
         </>
@@ -476,10 +476,10 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
             <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
           )}
-          {s.phase === 'PLACEMENT'       && <PlacementView state={s} use3D={use3D} enable3DTransition={s.enable3DTransition} />}
+          {s.phase === 'PLACEMENT'       && <PlacementView key={`place-${s.questionIndex}`} state={s} use3D={use3D} enable3DTransition={s.enable3DTransition} />}
           {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
           {placementFlash && (
-            <PlacementView state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
+            <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
           )}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'PAUSED'          && <PausedView state={s} />}

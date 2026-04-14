@@ -2218,6 +2218,15 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     return t.placement.tapEmpty[lang];
   })();
 
+  // Undo-available: Comeback action gewählt, aber noch nichts ausgeführt
+  const myComebackStats = s.teamPhaseStats?.[myTeamId];
+  const canUndoComeback = isMyTurn
+    && pa === 'COMEBACK'
+    && !!s.comebackAction
+    && !swapFirst
+    && !freeMode
+    && !(s.comebackAction === 'PLACE_2' && myComebackStats && myComebackStats.placementsLeft < 2);
+
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
@@ -2357,6 +2366,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           </button>
         </>
       )}
+
+      {canUndoComeback && (
+        <button
+          onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); emit('qq:comebackUndo', { roomCode, teamId: myTeamId }); }}
+          style={{
+            marginTop: 14, width: '100%', padding: '10px 12px', borderRadius: 10,
+            border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
+            color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+          }}>
+          🔙 {lang === 'de' ? 'Andere Comeback-Aktion wählen' : 'Choose different comeback action'}
+        </button>
+      )}
     </CozyCard>
   );
 }
@@ -2408,32 +2429,74 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
     );
   }
 
+  // First-time choice or returning after undo — show options
+  /* fallthrough to return below */
+
+  // Availability check — only offer comeback actions that can actually be executed
+  const freeCellCount = s.grid.reduce((sum, row) => sum + row.filter(c => c.ownerId === null).length, 0);
+  const opponentCells: Record<string, number> = {};
+  for (const row of s.grid) {
+    for (const c of row) {
+      if (c.ownerId && c.ownerId !== myTeamId) {
+        opponentCells[c.ownerId] = (opponentCells[c.ownerId] ?? 0) + 1;
+      }
+    }
+  }
+  const opponentTotal = Object.values(opponentCells).reduce((s, n) => s + n, 0);
+  const distinctOpponents = Object.keys(opponentCells).length;
+
+  const canPlace2 = freeCellCount >= 2;
+  const canSteal1 = opponentTotal >= 1;
+  const canSwap2  = opponentTotal >= 2 && distinctOpponents >= 2;
+
+  const options = [
+    { action: 'PLACE_2', icon: '📍', label: t.comeback.place2[lang], desc: t.comeback.place2desc[lang], color: '#22C55E', available: canPlace2, reason: lang === 'de' ? 'zu wenig freie Felder' : 'not enough free cells' },
+    { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang], desc: t.comeback.steal1desc[lang], color: '#EF4444', available: canSteal1, reason: lang === 'de' ? 'keine gegnerischen Felder' : 'no opponent cells' },
+    { action: 'SWAP_2',  icon: '🔄', label: t.comeback.swap2[lang],  desc: t.comeback.swap2desc[lang],  color: '#8B5CF6', available: canSwap2,  reason: lang === 'de' ? 'weniger als 2 gegnerische Teams' : 'fewer than 2 opposing teams' },
+  ];
+  const anyAvailable = options.some(o => o.available);
+
   return (
     <CozyCard borderColor="#F59E0B">
       <div style={{ fontWeight: 900, fontSize: 18, color: '#F59E0B', marginBottom: 16, textAlign: 'center' }}>
         {t.comeback.title[lang]}
       </div>
+      {!anyAvailable && (
+        <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
+          {lang === 'de' ? 'Keine Aktion möglich — warte auf Moderator.' : 'No action possible — wait for moderator.'}
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {[
-          { action: 'PLACE_2', icon: '📍', label: t.comeback.place2[lang], desc: t.comeback.place2desc[lang], color: '#22C55E' },
-          { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang],   desc: t.comeback.steal1desc[lang],   color: '#EF4444' },
-          { action: 'SWAP_2',  icon: '🔄', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: '#8B5CF6' },
-        ].map(opt => (
-          <button key={opt.action} onClick={() => { if (navigator.vibrate) navigator.vibrate(30); emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action }); }}
-            style={{
-              padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
-              background: '#1B1510', border: `2px solid ${opt.color}44`,
-              textAlign: 'left', fontFamily: 'inherit',
-              display: 'flex', gap: 12, alignItems: 'center',
-              transition: 'all 0.15s',
-            }}>
-            <span style={{ fontSize: 28, lineHeight: 1 }}>{opt.icon}</span>
-            <div>
-              <div style={{ fontWeight: 800, color: opt.color, fontSize: 15 }}>{opt.label}</div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: '#475569', marginTop: 2 }}>{opt.desc}</div>
-            </div>
-          </button>
-        ))}
+        {options.map(opt => {
+          const disabled = !opt.available;
+          return (
+            <button key={opt.action} disabled={disabled}
+              onClick={() => {
+                if (disabled) return;
+                if (navigator.vibrate) navigator.vibrate(30);
+                emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action });
+              }}
+              style={{
+                padding: '14px 16px', borderRadius: 14,
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                background: '#1B1510',
+                border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : opt.color + '44'}`,
+                textAlign: 'left', fontFamily: 'inherit',
+                display: 'flex', gap: 12, alignItems: 'center',
+                transition: 'all 0.15s',
+                opacity: disabled ? 0.4 : 1,
+                filter: disabled ? 'grayscale(0.7)' : undefined,
+              }}>
+              <span style={{ fontSize: 28, lineHeight: 1 }}>{opt.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, color: disabled ? '#64748b' : opt.color, fontSize: 15 }}>{opt.label}</div>
+                <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: disabled ? '#475569' : '#475569', marginTop: 2 }}>
+                  {disabled ? `🚫 ${opt.reason}` : opt.desc}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </CozyCard>
   );

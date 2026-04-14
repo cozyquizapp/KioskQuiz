@@ -22,6 +22,7 @@ import {
   qqSwapOneCell, qqFreezeCell, qqStuckCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
+  qqUndoComebackChoice,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
@@ -695,6 +696,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqApplyComebackChoice(room, payload.teamId, payload.action);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:comebackUndo', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqUndoComebackChoice(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

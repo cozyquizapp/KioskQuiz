@@ -1415,6 +1415,32 @@ export function qqApplyComebackChoice(
   room.lastActivityAt = Date.now();
 }
 
+/** Undo a comeback action choice — only allowed if nothing was executed yet. */
+export function qqUndoComebackChoice(room: QQRoomState, teamId: string): void {
+  if (room.phase !== 'PLACEMENT' || room.pendingAction !== 'COMEBACK') {
+    throw new QQError('INVALID_STATE', 'Comeback kann jetzt nicht zurückgenommen werden.');
+  }
+  if (room.pendingFor !== teamId) {
+    throw new QQError('NOT_YOUR_TURN', 'Nur das Comeback-Team kann zurücknehmen.');
+  }
+  // PLACE_2 already used one placement? (placementsLeft dropped below 2)
+  const stats = room.teamPhaseStats[teamId];
+  if (room.comebackAction === 'PLACE_2' && stats && stats.placementsLeft < 2) {
+    throw new QQError('ALREADY_STARTED', 'Eine Platzierung wurde schon gemacht.');
+  }
+  // SWAP_2 already picked first cell?
+  if (room.comebackAction === 'SWAP_2' && room.swapFirstCell) {
+    room.swapFirstCell = null; // just clear partial swap, let them re-pick within same action
+    room.lastActivityAt = Date.now();
+    return;
+  }
+  // Reset to choice phase so team can pick again
+  room.phase = 'COMEBACK_CHOICE';
+  room.comebackAction = null;
+  if (stats) stats.placementsLeft = 0;
+  room.lastActivityAt = Date.now();
+}
+
 // ── Phase transitions ─────────────────────────────────────────────────────────
 export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): void {
   room.gamePhaseIndex = phaseIndex;

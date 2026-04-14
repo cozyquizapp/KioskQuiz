@@ -236,7 +236,7 @@ function buildBuilding(
 
   // Emoji
   const emoji = document.createElement('div');
-  emoji.style.cssText = `position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;transform-style:preserve-3d;transform:translateZ(${emojiZ + 4}px);display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));font-size:${Math.round(sz * .22)}px`;
+  emoji.style.cssText = `position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;transform-style:preserve-3d;transform:translateZ(${emojiZ + 4}px);display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));font-size:${Math.round(sz * .22)}px;will-change:transform,opacity`;
   if (opts.frozen) {
     emoji.innerHTML = `<span>${team.emoji}</span><span style="font-size:${Math.round(sz * .11)}px;margin-left:-1px;filter:drop-shadow(0 0 3px rgba(147,210,255,.8))">&#x2744;&#xFE0F;</span>`;
   } else if (opts.joker) {
@@ -266,13 +266,70 @@ function buildBuilding(
     mainTop.style.border = '2px solid rgba(251,191,36,.7)';
   }
 
-  // Animate: building grows from ground
-  if (animate && mainEl) {
-    mainEl.style.transform += ' scaleZ(0)';
-    mainEl.style.transition = 'transform .6s cubic-bezier(.34,1.56,.64,1)';
-    requestAnimationFrame(() => {
-      mainEl!.style.transform = mainEl!.style.transform.replace('scaleZ(0)', 'scaleZ(1)');
+  // Animate: building slams down from above with bounce + dust ring + shake
+  if (animate) {
+    // Collect all direct children of the tile that are NOT the ground (the building + emoji)
+    const parts = Array.from(tileEl.children).filter(ch => {
+      const el = ch as HTMLElement;
+      return !el.classList.contains('ground') && !el.classList.contains('qq3d-dust');
+    }) as HTMLElement[];
+
+    // Drop height: fall from way up
+    const dropFrom = Math.max(120, Math.round(sz * 1.8));
+
+    parts.forEach((p, i) => {
+      const origTransform = p.style.transform || '';
+      p.style.transform = `translateZ(${dropFrom}px) ${origTransform}`;
+      p.style.opacity = '0';
+      p.style.transition = 'none';
+      // Staggered: emoji (last child) drops slightly after the building body
+      const delay = i === parts.length - 1 ? 280 : 0;
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          p.style.transition = `transform .55s cubic-bezier(.34,1.8,.5,1), opacity .2s ease-out`;
+          p.style.transform = origTransform;
+          p.style.opacity = '1';
+        }, delay);
+      });
     });
+
+    // Ground flash
+    const ground = tileEl.querySelector('.ground') as HTMLElement | null;
+    if (ground) {
+      const origBg = ground.style.background;
+      const origShadow = ground.style.boxShadow;
+      ground.style.transition = 'background .4s ease-out, box-shadow .4s ease-out';
+      setTimeout(() => {
+        ground.style.background = rgba(team, .65);
+        ground.style.boxShadow = `0 0 30px ${rgba(team, .9)}, 0 0 60px ${rgba(team, .5)}`;
+        setTimeout(() => {
+          ground.style.background = origBg;
+          ground.style.boxShadow = origShadow;
+        }, 420);
+      }, 520);
+    }
+
+    // Dust ring — expanding flat disc at impact
+    const dust = document.createElement('div');
+    dust.className = 'qq3d-dust';
+    const dustSz = Math.round(sz * .9);
+    dust.style.cssText = `position:absolute;left:${Math.round((sz - dustSz) / 2)}px;top:${Math.round((sz - dustSz) / 2)}px;width:${dustSz}px;height:${dustSz}px;border-radius:50%;border:3px solid ${rgba(team, .9)};background:radial-gradient(circle,${rgba(team, .4)} 0%,${rgba(team, 0)} 70%);transform:translateZ(2px) scale(.1);opacity:0;pointer-events:none;transform-style:preserve-3d`;
+    tileEl.appendChild(dust);
+    setTimeout(() => {
+      dust.style.transition = 'transform .55s ease-out, opacity .55s ease-out';
+      dust.style.transform = 'translateZ(2px) scale(1.6)';
+      dust.style.opacity = '1';
+      requestAnimationFrame(() => {
+        setTimeout(() => { dust.style.opacity = '0'; }, 250);
+        setTimeout(() => { dust.remove(); }, 700);
+      });
+    }, 500);
+
+    // Tile shake on impact
+    setTimeout(() => {
+      tileEl.style.animation = 'qq3d-impactShake .35s ease-out';
+      setTimeout(() => { tileEl.style.animation = ''; }, 400);
+    }, 520);
   }
 }
 
@@ -287,6 +344,7 @@ const QQ3D_CSS = `
 @keyframes qq3d-frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4)}50%{box-shadow:0 0 16px rgba(147,210,255,.8)}}
 @keyframes qq3d-jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
 @keyframes qq3d-gridEnter{0%{transform:scale(var(--zoom,1)) rotateX(0deg) rotateZ(0deg)}100%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg))}}
+@keyframes qq3d-impactShake{0%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,1px)}80%{transform:translate(1px,0)}100%{transform:translate(0,0)}}
 `;
 
 // ── Component ─────────────────────────────────────────────────────────────────

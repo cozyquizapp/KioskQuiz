@@ -367,6 +367,9 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const injectedCss = useRef(false);
+  // Track last animated cell so we only play slam-down ONCE per new placement.
+  // Subsequent re-renders (score updates, flyover, etc.) must not retrigger.
+  const lastAnimatedKey = useRef<string | null>(null);
   // When entering, start flat (rx=0, rz=0) and animate to isometric
   const [rx, setRx] = useState(entering ? 0 : 55);
   const [rz, setRz] = useState(entering ? 0 : -45);
@@ -383,27 +386,47 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
     return () => clearTimeout(t);
   }, [entering]);
 
-  // Flyover: on each signal bump, orbit 360° over ~3s and return to default
+  // Flyover: slow cinematic orbit — low tilt sweep then rise back up. ~7s total.
   const prevFlySig = useRef(flyoverSignal);
+  const flyoverTransitionRef = useRef<string | null>(null);
   useEffect(() => {
     if (flyoverSignal === prevFlySig.current) return;
     prevFlySig.current = flyoverSignal;
-    const startRx = 35;
-    const endRx = 55;
-    const startRz = -45;
-    const midRz = -45 + 360; // one full spin
-    // Phase 1: tilt down + start spin
-    setRx(startRx);
-    setRz(startRz);
-    const t1 = setTimeout(() => {
-      setRz(midRz);
-    }, 80);
-    // Phase 2: return to default
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    // Remember the base transition to restore later
+    if (flyoverTransitionRef.current === null) {
+      flyoverTransitionRef.current = grid.style.transition;
+    }
+
+    // Phase 1 (0 → 3.2s): swoop down to low angle + orbit halfway around
+    grid.style.transition = 'transform 3.2s cubic-bezier(.45,.05,.55,.95)';
+    setRx(28);
+    setRz(-45 + 200); // ~200° sweep, not a full spin
+
+    // Phase 2 (3.2s → 6.8s): rise up and complete the orbit back to default
     const t2 = setTimeout(() => {
-      setRx(endRx);
+      if (!gridRef.current) return;
+      gridRef.current.style.transition = 'transform 3.6s cubic-bezier(.4,.0,.2,1)';
+      setRx(55);
+      setRz(-45 + 360); // complete the circle
+    }, 3200);
+
+    // Phase 3: snap rz back to -45 (equivalent to 315°) without visible movement + restore base transition
+    const t3 = setTimeout(() => {
+      if (!gridRef.current) return;
+      gridRef.current.style.transition = 'none';
       setRz(-45);
-    }, 2800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+      // restore base transition next frame
+      requestAnimationFrame(() => {
+        if (gridRef.current && flyoverTransitionRef.current !== null) {
+          gridRef.current.style.transition = flyoverTransitionRef.current;
+        }
+      });
+    }, 6850);
+
+    return () => { clearTimeout(t2); clearTimeout(t3); };
   }, [flyoverSignal]);
 
   // Inject CSS once
@@ -453,13 +476,16 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
             ground.style.cssText = `width:100%;height:100%;border-radius:3px;background:${rgba(team, .15)};border:1px solid ${rgba(team, .35)};box-shadow:0 0 10px ${rgba(team, .20)}`;
             tile.appendChild(ground);
 
-            const shouldAnimate = animateCell?.row === r && animateCell?.col === c;
+            const animKey = animateCell ? `${animateCell.row}-${animateCell.col}-${animateCell.teamId}` : null;
+            const isTargetCell = animateCell?.row === r && animateCell?.col === c;
+            const shouldAnimate = isTargetCell && animKey !== null && animKey !== lastAnimatedKey.current;
             const btype = cellBtype(r, c, gs);
             buildBuilding(tile, team, cellSize, btype, {
               frozen: cell.frozen,
               stuck: cell.stuck,
               joker: cell.jokerFormed,
             }, shouldAnimate);
+            if (shouldAnimate) lastAnimatedKey.current = animKey;
           } else {
             ground.style.cssText = 'width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
             tile.appendChild(ground);

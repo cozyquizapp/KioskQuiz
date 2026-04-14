@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block A #4 — CHEESE-Bild-Positionierung.
+**Nächstes Todo**: Block A #5 — Pause-Button mit Musik-Duck.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -32,7 +32,7 @@ Details + Anleitungen zu allen offenen Blöcken:
 - [x] Frage-Validierung beim Speichern (Top5 <5, Imposter ≠ 8, MUCHO/ZvZ-Options, Cheese-Bild, SCHAETZCHEN-Zielwert, Map-Koords)
 - [x] Sound-System konsolidieren: Default-WAVs, per-Slot-Mute, Upload-Override,
       Master-Mute, Volume
-- [ ] CHEESE-Bild-Positionierung (Zuschnitt + Verdeckung unten durch Textfeld)
+- [x] CHEESE-Bild-Positionierung (Crop via offsetX/Y, Zoom ≥100%, Safe-Area im Builder)
 - [ ] Pause-Button mit Musik-Duck
 
 ### Block B — Content & Partner (Woche 2-3)

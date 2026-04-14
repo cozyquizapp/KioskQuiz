@@ -3900,10 +3900,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </div>
         )}
         <div style={{
-          fontSize: 15, color: 'rgba(251,191,36,0.7)', fontWeight: 800,
+          display: 'flex', alignItems: 'center', gap: 18,
+          fontSize: 15, color: 'rgba(251,191,36,0.75)', fontWeight: 800,
           letterSpacing: '0.14em', textTransform: 'uppercase',
         }}>
-          play.cozyquiz.app
+          <span>play.cozyquiz.app</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>📸</span>
+            @cozywolf.events
+          </span>
         </div>
       </div>
     </div>

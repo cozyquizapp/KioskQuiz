@@ -29,6 +29,25 @@ export const QQ_BEAMER_CSS = `
     100% { opacity:0.7; transform:scale(0.5) translateY(-60px); }
   }
   @keyframes nbSlide { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
+
+  /* ── Gameshow slide transitions ──────────────────────────────────────────── */
+  /* New slide eases in with slight overshoot + blur clearing */
+  @keyframes qqSlideIn {
+    0%   { opacity: 0; transform: scale(1.04) translateY(-6px); filter: blur(3px); }
+    60%  { opacity: 1; filter: blur(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  }
+  /* Diagonal white sweep across the screen — TV-style cut */
+  @keyframes qqFlashSweep {
+    0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+    35%  { opacity: 0.85; }
+    100% { transform: translateX(120%) skewX(-18deg); opacity: 0; }
+  }
+  /* Subtle darkening pulse behind the sweep for weight */
+  @keyframes qqFlashDim {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 0.35; }
+  }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }

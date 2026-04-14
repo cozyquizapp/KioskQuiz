@@ -245,6 +245,22 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
     setUse3D(v => { const next = !v; try { localStorage.setItem('qq-beamer-3d', next ? '1' : '0'); } catch {} return next; });
   }, []);
 
+  // ── Slide transition: gameshow-style flash-sweep between phase groups ──
+  // Group QUESTION_ACTIVE + QUESTION_REVEAL together (reveal is not a "new slide")
+  const phaseGroup = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
+    ? `Q-${s.currentQuestion?.id ?? s.questionIndex}`
+    : s.phase === 'PLACEMENT'
+      ? `PLACE-${s.questionIndex}`
+      : s.phase;
+  const [flashKey, setFlashKey] = useState(0);
+  const prevGroupRef = useRef(phaseGroup);
+  useEffect(() => {
+    if (prevGroupRef.current !== phaseGroup) {
+      prevGroupRef.current = phaseGroup;
+      setFlashKey(k => k + 1);
+    }
+  }, [phaseGroup]);
+
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
   const prevPhaseRef = useRef(s.phase);
@@ -468,8 +484,15 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           )}
         </>
       ) : (
-        /* No template: built-in views */
-        <>
+        /* No template: built-in views, wrapped in transition container */
+        <div
+          key={phaseGroup}
+          style={{
+            flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
+            animation: 'qqSlideIn 420ms cubic-bezier(0.34,1.2,0.64,1) both',
+            willChange: 'transform, opacity, filter',
+          }}
+        >
           {s.phase === 'LOBBY'           && <LobbyView state={s} />}
           {s.phase === 'RULES'           && <RulesView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
@@ -484,7 +507,32 @@ function BeamerView({ state: s, slideTemplates }: { state: QQStateUpdate; slideT
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'PAUSED'          && <PausedView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} />}
-        </>
+        </div>
+      )}
+
+      {/* Gameshow flash-sweep overlay — runs once per phase group change */}
+      {flashKey > 0 && (
+        <div
+          key={flashKey}
+          style={{
+            position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9995,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Darkening pulse behind the sweep */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+            animation: 'qqFlashDim 440ms ease-out both',
+          }} />
+          {/* Diagonal white sweep */}
+          <div style={{
+            position: 'absolute', top: '-20%', left: 0, width: '40%', height: '140%',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0.06) 70%, transparent 100%)',
+            filter: 'blur(6px)',
+            animation: 'qqFlashSweep 420ms cubic-bezier(0.55,0.05,0.3,0.95) both',
+          }} />
+        </div>
       )}
     </div>
   );

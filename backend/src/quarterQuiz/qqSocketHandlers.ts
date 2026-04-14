@@ -839,6 +839,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── 2D/3D Toggle (moderator -> beamer) ─────────────────────────────────
+    socket.on('qq:toggleView', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        io.to(payload.roomCode).emit('qq:toggleView');
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Pause / Resume ──────────────────────────────────────────────────────
     socket.on('qq:pause', (payload: { roomCode: string }, ack?: unknown) => {
       try {

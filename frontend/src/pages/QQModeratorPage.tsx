@@ -270,6 +270,13 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // V — 2D/3D Toggle auf dem Beamer
+    if (e.code === 'KeyV') {
+      e.preventDefault();
+      emitRef.current('qq:toggleView', { roomCode });
+      return;
+    }
+
     // F18 — Reset (Notfall)
     // F20 — reserviert
   }, [roomCode]);

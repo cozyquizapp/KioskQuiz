@@ -192,8 +192,15 @@ export default function QQBeamerPage() {
     const onFlyover = () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
     };
+    const onToggleView = () => {
+      window.dispatchEvent(new CustomEvent('qq:toggleView'));
+    };
     sock.on('qq:flyover', onFlyover);
-    return () => { sock.off('qq:flyover', onFlyover); };
+    sock.on('qq:toggleView', onToggleView);
+    return () => {
+      sock.off('qq:flyover', onFlyover);
+      sock.off('qq:toggleView', onToggleView);
+    };
   }, [connected]);
 
   useEffect(() => {
@@ -257,6 +264,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // (flat → isometric) plays again. Toggle is only a per-question override.
   const [use3D, setUse3D] = useState(false);
   const toggle3D = useCallback(() => { setUse3D(v => !v); }, []);
+  useEffect(() => {
+    const onToggle = () => toggle3D();
+    window.addEventListener('qq:toggleView', onToggle);
+    return () => window.removeEventListener('qq:toggleView', onToggle);
+  }, [toggle3D]);
 
   // Auto-reset to 2D whenever the question changes, so the Fahrt can replay
   const use3DQIdxRef = useRef(s.questionIndex);

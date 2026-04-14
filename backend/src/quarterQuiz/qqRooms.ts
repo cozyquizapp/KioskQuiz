@@ -272,7 +272,7 @@ export function qqKickTeam(room: QQRoomState, teamId: string): void {
 }
 
 function emptyPhaseStats(): QQTeamPhaseStats {
-  return { stealsUsed: 0, jokersEarned: 0, placementsLeft: 0 };
+  return { stealsUsed: 0, jokersEarned: 0, placementsLeft: 0, pendingJokerBonus: 0 };
 }
 
 // ── Game start ────────────────────────────────────────────────────────────────
@@ -1139,29 +1139,31 @@ export function qqPlaceCell(
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
+  const stats = room.teamPhaseStats[teamId];
 
-  if (action === 'PLACE_2') {
-    room.teamPhaseStats[teamId].placementsLeft--;
-    if (room.teamPhaseStats[teamId].placementsLeft > 0) {
-      // Still need one more placement
+  // Jede PLACE_2 / COMEBACK-PLACE_2 / PLACE_1-Joker-Bonus-Runde benutzt placementsLeft.
+  // Erspielt sich ein Joker *während* noch Placements pending sind, wird der Bonus aufgeschoben.
+  const usesMultiSlot =
+    (action === 'PLACE_2') ||
+    (action === 'COMEBACK' && room.comebackAction === 'PLACE_2') ||
+    (action === 'PLACE_1' && stats.placementsLeft > 0); // joker-bonus-Runde
+
+  if (usesMultiSlot) {
+    stats.placementsLeft--;
+    if (jokersAwarded > 0) stats.pendingJokerBonus = (stats.pendingJokerBonus ?? 0) + jokersAwarded;
+    if (stats.placementsLeft > 0) {
       return { jokersAwarded };
     }
   }
 
-  if (action === 'COMEBACK' && room.comebackAction === 'PLACE_2') {
-    room.teamPhaseStats[teamId].placementsLeft--;
-    if (room.teamPhaseStats[teamId].placementsLeft > 0) {
-      return { jokersAwarded };
-    }
-  }
-
-  // Placement complete — check if we need joker bonus placements
-  if (jokersAwarded > 0) {
-    // Joker bonus: team gets to place jokersAwarded more free cells
-    // We keep pendingFor and set a special joker action
-    room.teamPhaseStats[teamId].placementsLeft = jokersAwarded;
-    room.pendingAction = 'PLACE_1'; // one at a time
-    return { jokersAwarded };
+  // Placement complete — gather all pending joker bonuses (aus Multi-Slot) + direktem Award
+  const direct = usesMultiSlot ? 0 : jokersAwarded;
+  const totalJokerBonus = (stats.pendingJokerBonus ?? 0) + direct;
+  if (totalJokerBonus > 0) {
+    stats.pendingJokerBonus = 0;
+    stats.placementsLeft = totalJokerBonus;
+    room.pendingAction = 'PLACE_1';
+    return { jokersAwarded: totalJokerBonus };
   }
 
   finishPlacement(room);

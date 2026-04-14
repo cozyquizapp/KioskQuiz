@@ -1463,6 +1463,10 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.comebackTeamId  = null;
   room.comebackAction  = null;
   room.swapFirstCell   = null;
+  for (const fc of room.frozenCells) {
+    const cell = room.grid[fc.row]?.[fc.col];
+    if (cell && !cell.stuck) cell.frozen = false;
+  }
   room.frozenCells     = [];
 
   // Reset per-phase stats — but preserve jokersEarned (it's per-game, not per-phase)
@@ -1506,6 +1510,13 @@ export function qqNextQuestion(room: QQRoomState): void {
     }
     return;
   }
+
+  // Einfrieren wirkt genau eine Frage — beim Übergang zur nächsten Frage auftauen.
+  for (const fc of room.frozenCells) {
+    const cell = room.grid[fc.row]?.[fc.col];
+    if (cell && !cell.stuck) cell.frozen = false;
+  }
+  room.frozenCells = [];
 
   room.questionIndex   = nextIndex;
   room.currentQuestion = room.questions[nextIndex] ?? null;
@@ -1598,12 +1609,7 @@ function finishPlacement(room: QQRoomState): void {
     }
   }
 
-  // Clear one-question frozen cells
-  for (const fc of room.frozenCells) {
-    const cell = room.grid[fc.row]?.[fc.col];
-    if (cell && !cell.stuck) cell.frozen = false;
-  }
-  room.frozenCells = [];
+  // Frozen cells bleiben bis zur nächsten Frage sichtbar — Reset passiert in qqNextQuestion.
 
   room.pendingFor    = null;
   room.pendingAction = null;

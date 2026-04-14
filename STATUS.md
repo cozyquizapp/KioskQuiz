@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block E #12 — Reconnect-Stresstest mit gedrosseltem WLAN.
+**Nächstes Todo**: Block F — Memory/Handoff aufräumen, dann ist die Roadmap durch.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -48,9 +48,9 @@ Details + Anleitungen zu allen offenen Blöcken:
 - [→] Emote-Rückmeldungen für Zuschauer — nach Longterm verschoben (2026-04-14)
 
 ### Block E — Betrieb
-- [ ] Reconnect-Stresstest mit gedrosseltem WLAN
-- [ ] Sentry (Error-Tracking)
-- [ ] Plausible Analytics
+- [x] Reconnect-Audit (Beamer-Rejoin-Bug gefixt, Team+Moderator sauber, Socket.IO buffert Offline-Emits)
+- [→] Sentry — nach Longterm (erst bei konkretem Kiosk-Deal)
+- [→] Plausible — nach Longterm (skippen bis Marketing-Landing existiert)
 
 ### Block F — Memory & Longterm-Memo
 - [ ] Handoff-Memo komprimieren

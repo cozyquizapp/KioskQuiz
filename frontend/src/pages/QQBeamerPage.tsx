@@ -2052,10 +2052,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           padding: '40px 48px 48px',
           pointerEvents: 'none',
         }}>
-          {/* Timer ring — top center, fade out on reveal */}
+          {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}
           {s.timerEndsAt && (
             <div style={{
-              position: 'absolute', top: 32, left: '50%', transform: 'translateX(-50%)',
+              position: 'absolute', top: 16, right: 48, zIndex: 10,
               animation: 'contentReveal 0.5s ease 0.3s both',
               pointerEvents: revealed ? 'none' : 'auto',
               opacity: revealed ? 0 : 1,
@@ -2068,10 +2068,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Frosted question/answer card — bottom */}
           <div style={{
             width: '100%', maxWidth: 900,
-            background: 'rgba(13,10,6,0.65)',
-            backdropFilter: 'blur(24px) saturate(1.3)',
-            WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
-            border: `1px solid ${isCheeseReveal ? 'rgba(255,255,255,0.12)' : `${accent}33`}`,
+            background: 'rgba(13,10,6,0.38)',
+            backdropFilter: 'blur(18px) saturate(1.25)',
+            WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
+            border: `1px solid ${isCheeseReveal ? 'rgba(255,255,255,0.10)' : `${accent}2a`}`,
             borderRadius: 28,
             padding: isCheeseReveal ? '28px 48px' : '36px 56px',
             boxShadow: `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
@@ -2154,21 +2154,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               );
             })()}
 
-            {/* Mobile hint — fade out on reveal */}
-            <div style={{
-              overflow: 'hidden',
-              maxHeight: revealed ? 0 : 40,
-              opacity: revealed ? 0 : 1,
-              marginTop: revealed ? 0 : 14,
-              transition: 'max-height 0.35s ease, opacity 0.25s ease, margin-top 0.35s ease',
-            }}>
-              <div style={{
-                fontSize: 'clamp(12px, 1.2vw, 16px)',
-                color: 'rgba(148,163,184,0.7)', fontWeight: 600,
-              }}>
-                {lang === 'en' ? 'What do you see in the picture?' : 'Was erkennt ihr auf dem Bild?'}
-              </div>
-            </div>
           </div>
         </div>
       )}

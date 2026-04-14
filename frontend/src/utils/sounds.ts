@@ -12,13 +12,26 @@
  *   playFieldPlaced()  // uses custom URL if set
  */
 
-import type { QQSoundConfig } from '../../../shared/quarterQuizTypes';
+import type { QQSoundConfig, QQSoundSlot } from '../../../shared/quarterQuizTypes';
+import { QQ_SOUND_DEFAULT_URLS } from '../../../shared/quarterQuizTypes';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let ctx: AudioContext | null = null;
 let masterVolume = 0.8;
 let soundConfig: QQSoundConfig = {};
+
+/** true wenn der Slot nicht per `enabled[slot] === false` stumm geschaltet wurde. */
+function isSlotEnabled(slot: QQSoundSlot): boolean {
+  return soundConfig.enabled?.[slot] !== false;
+}
+
+/** custom URL → default-WAV-URL → null (fall through to synth). */
+function resolveSlotUrl(slot: QQSoundSlot): string | null {
+  const custom = soundConfig[slot];
+  if (typeof custom === 'string' && custom.length > 0) return custom;
+  return QQ_SOUND_DEFAULT_URLS[slot] ?? null;
+}
 
 // Cache of preloaded HTMLAudioElement instances per URL
 const audioCache: Map<string, HTMLAudioElement> = new Map();
@@ -117,10 +130,12 @@ let loopAudioEl: HTMLAudioElement | null = null;
  */
 export function startTimerLoop() {
   if (loopActive) return;
+  if (!isSlotEnabled('timerLoop')) return;
   loopActive = true;
 
-  if (soundConfig.timerLoop) {
-    loopAudioEl = getOrCreateAudio(soundConfig.timerLoop);
+  const url = resolveSlotUrl('timerLoop');
+  if (url) {
+    loopAudioEl = getOrCreateAudio(url);
     loopAudioEl.volume = masterVolume;
     loopAudioEl.currentTime = 0;
     loopAudioEl.loop = true;
@@ -182,7 +197,9 @@ export function stopTimerLoop() {
 // ── One-shot sounds ───────────────────────────────────────────────────────────
 
 export function playCorrect() {
-  if (soundConfig.correct) { playAudioFile(soundConfig.correct); return; }
+  if (!isSlotEnabled('correct')) return;
+  const url = resolveSlotUrl('correct');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -191,7 +208,9 @@ export function playCorrect() {
 }
 
 export function playWrong() {
-  if (soundConfig.wrong) { playAudioFile(soundConfig.wrong); return; }
+  if (!isSlotEnabled('wrong')) return;
+  const url = resolveSlotUrl('wrong');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -216,7 +235,9 @@ export function playUrgentTick() {
 }
 
 export function playTimesUp() {
-  if (soundConfig.timesUp) { playAudioFile(soundConfig.timesUp); return; }
+  if (!isSlotEnabled('timesUp')) return;
+  const url = resolveSlotUrl('timesUp');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -235,7 +256,9 @@ export function playTimesUp() {
 }
 
 export function playFanfare() {
-  if (soundConfig.fanfare) { playAudioFile(soundConfig.fanfare); return; }
+  if (!isSlotEnabled('fanfare')) return;
+  const url = resolveSlotUrl('fanfare');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -249,7 +272,9 @@ export function playFanfare() {
 }
 
 export function playReveal() {
-  if (soundConfig.reveal) { playAudioFile(soundConfig.reveal); return; }
+  if (!isSlotEnabled('reveal')) return;
+  const url = resolveSlotUrl('reveal');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -276,7 +301,9 @@ export function playScoreUp() {
 }
 
 export function playFieldPlaced() {
-  if (soundConfig.fieldPlaced) { playAudioFile(soundConfig.fieldPlaced); return; }
+  if (!isSlotEnabled('fieldPlaced')) return;
+  const url = resolveSlotUrl('fieldPlaced');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -287,7 +314,9 @@ export function playFieldPlaced() {
 }
 
 export function playSteal() {
-  if (soundConfig.steal) { playAudioFile(soundConfig.steal); return; }
+  if (!isSlotEnabled('steal')) return;
+  const url = resolveSlotUrl('steal');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -308,7 +337,9 @@ export function playSteal() {
 }
 
 export function playLobbyWelcome() {
-  if (soundConfig.lobbyWelcome) { playAudioFile(soundConfig.lobbyWelcome); return; }
+  if (!isSlotEnabled('lobbyWelcome')) return;
+  const url = resolveSlotUrl('lobbyWelcome');
+  if (url) { playAudioFile(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -319,8 +350,10 @@ export function playLobbyWelcome() {
 }
 
 export function playGameOver() {
-  if (soundConfig.gameOver) { playAudioFile(soundConfig.gameOver); return; }
-  // Default: extended fanfare
+  if (!isSlotEnabled('gameOver')) return;
+  const url = resolveSlotUrl('gameOver');
+  if (url) { playAudioFile(url); return; }
+  // Default: extended fanfare (synth fallback)
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;

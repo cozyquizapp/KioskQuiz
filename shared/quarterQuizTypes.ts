@@ -352,9 +352,20 @@ export type QQSlideTemplates = Partial<Record<string, QQSlideTemplate>>;
 // ── QQ Sound Config ───────────────────────────────────────────────────────────
 /**
  * Per-draft custom sounds. Each slot maps to a game event.
- * If a URL is set, it overrides the built-in Web Audio synth for that event.
+ *
+ * Fallback chain pro Slot:
+ *   1. enabled[slot] === false → komplett stumm
+ *   2. config[slot] gesetzt    → custom URL abspielen
+ *   3. sonst                   → Default-WAV aus /sounds/<slot>.wav
+ *   4. Default-WAV fehlt       → Web-Audio-Synth (letzte Rettung)
+ *
  * Supported formats: MP3, OGG, WAV (browser-native via HTMLAudioElement).
  */
+export type QQSoundSlot =
+  | 'timerLoop' | 'timesUp' | 'fieldPlaced' | 'steal'
+  | 'correct'   | 'wrong'   | 'reveal'      | 'fanfare'
+  | 'lobbyWelcome' | 'gameOver';
+
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
   timesUp?: string;          // timer expired buzzer
@@ -366,9 +377,11 @@ export interface QQSoundConfig {
   fanfare?: string;          // phase intro / big moment
   lobbyWelcome?: string;     // lobby ambient / welcome
   gameOver?: string;         // game over jingle
+  /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
+  enabled?: Partial<Record<QQSoundSlot, boolean>>;
 }
 
-export const QQ_SOUND_SLOT_LABELS: Record<keyof QQSoundConfig, string> = {
+export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   timerLoop:    '⏱ Timer-Loop (läuft während Frage)',
   timesUp:      '⏰ Zeit abgelaufen',
   fieldPlaced:  '📍 Feld gesetzt',
@@ -379,6 +392,20 @@ export const QQ_SOUND_SLOT_LABELS: Record<keyof QQSoundConfig, string> = {
   fanfare:      '🎉 Phasen-Intro / großer Moment',
   lobbyWelcome: '🎵 Lobby-Musik',
   gameOver:     '🏆 Spielende',
+};
+
+/** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
+export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
+  timerLoop:    '/sounds/timer-loop.wav',
+  timesUp:      '/sounds/times-up.wav',
+  fieldPlaced:  '/sounds/field-placed.wav',
+  steal:        '/sounds/steal.wav',
+  correct:      '/sounds/correct.wav',
+  wrong:        '/sounds/wrong.wav',
+  reveal:       '/sounds/reveal.wav',
+  fanfare:      '/sounds/fanfare.wav',
+  lobbyWelcome: '/sounds/lobby-welcome.wav',
+  gameOver:     '/sounds/game-over.wav',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

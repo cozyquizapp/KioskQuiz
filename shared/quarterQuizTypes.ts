@@ -166,6 +166,10 @@ export interface QQQuestion {
   musicUrl?: string;
   // Moderator host note — shown in /moderator during this question (private, not on beamer)
   hostNote?: string;
+  // Fun/interesting fact about the topic — optional, moderator can drop it to lighten the mood.
+  // Private, shown only in /moderator + host cheatsheet, never on beamer or team.
+  funFact?: string;
+  funFactEn?: string;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────

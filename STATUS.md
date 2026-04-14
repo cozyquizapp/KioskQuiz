@@ -1,86 +1,68 @@
-# KioskQuiz — Status-Tracker
+# KioskQuiz — Status
 
-> Diese Datei wird bei jeder Session aktualisiert.  
-> Letztes Update: 2026-04-06 (Session 2)
+> Kompakte Übersicht. Letztes Update: 2026-04-14
 
----
+## Aktueller Stand
 
-## Erledigt ✅
+Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
+nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-### 2026-04-06 (Session 2) — QQ Audit: Bugfixes, Stabilität, i18n, Nice-to-haves
-- ✅ **B1–B5 Game-Breaking Bugs** (commit `dea2148`)
-  - B1: Imposter auto-advance bei 0 Survivors
-  - B2: Hot Potato Timer wird bei richtiger Antwort gelöscht
-  - B3: Game-Reset räumt alle Timer/Queues auf
-  - B4: Placement-Queue wird bei Phasenstart geleert
-  - B5: CHEESE-Eval akzeptiert min. 2 Zeichen
-- ✅ **S1–S6 Stabilität & UX** (commit `d7db456`)
-  - S1: Infinite Reconnection für Team-Socket
-  - S2: 10s Emit-Timeout
-  - S3: Defensive Guards in QuestionView/PlacementView
-  - S4: Moderator-Disconnect-Banner
-  - S5: Hot Potato isAlive-Guard
-  - S6: Room-Cleanup (4h TTL, 10min Sweep)
-- ✅ **i18n DE/EN** (commit `a64712d`)
-  - QQTeamPage: ~90 Keys, alle Sub-Components mit `lang` prop
-  - QQBeamerPage: ~40 Keys, `useLangFlip` für alle Views
-- ✅ **Nice-to-haves** (commit `b1e1bb8`)
-  - Dynamische Phase-Namen (letzter Phase = "Finale" unabhängig von totalPhases)
-  - Builder: beforeunload-Warnung bei ungespeicherten Änderungen
-  - Builder: Client-seitige Upload-Größenprüfung (max 2 MB)
-  - Moderator: QR-Code lokal generiert (QRCodeSVG statt CDN)
+**Nächstes Todo**: Block A #3 — Sound-System konsolidieren.
+Details + Anleitungen zu allen offenen Blöcken:
+`~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
-### 2026-04-06 — Bugfixes, QQ-Drafts & Editor-Preview
-- ✅ Slide-Editor zeigt jetzt echte Fragenbilder aus dem Draft in der Vorschau
-- ✅ Hot Potato startet automatisch wenn Frage aktiviert wird
-- ✅ Hot Potato: letztes Team gewinnt automatisch (Turn-Expired + Wrong-Answer)
-- ✅ Timer-Dauer kann mitten in der Runde geändert werden (Neustart mit neuer Dauer)
-- ✅ Slide-Editor TypeError behoben (template.elements ?? [] Guards)
-- ✅ `qqClearHotPotatoTimer` exportiert aus qqRooms.ts
-- ✅ QQ-Drafts werden persistent in `qqDrafts.json` gespeichert (überleben Server-Restart)
-- ✅ GET-Endpoint merged DB + File-Drafts, synct zu DB
-- ✅ 2 Sample-Drafts erstellt: "🧠 Allgemeinwissen" + "🎬 Pop & Kultur" (Seed bei leerem State)
-- ✅ SlidePreview + CustomSlide: defensive `?.` Zugriffe auf template
-- ✅ Beamer fällt auf Built-in-View zurück wenn Custom-Template keine Elemente hat
-- ✅ CHEESE-Bilder werden auf Beamer korrekt angezeigt (QuestionView-Fallback)
-- ✅ Triple-Placement-Fix + Bild auf Team-Page
+## Was läuft
 
-### Frühere Sessions
-- ✅ Quarter Quiz Grundgerüst (Types, Backend, Beamer, Moderator, Team-View)
-- ✅ Slide-Editor (WYSIWYG, Drag/Resize/Rotate, Platzhalter, Themes)
-- ✅ Alle Spielmechaniken (Mucho, Schätzchen, Bunte Tüte, 10v10, Cheese, Imposter, Hot Potato)
-- ✅ Placement-Flash Animation
-- ✅ Comeback-Wahl vor Phase 3
-- ✅ Avatar-Auswahl (vergeben = ausgegraut)
-- ✅ Slide-Transitions (fade/slideUp/zoom)
-- ✅ Sample-Quizze (Testquiz Wien, Berlin)
+- Alle 6 Kategorien: Schätzchen, Mucho, Bunte Tüte (Top5/Reihenfolge/Hot Potato),
+  10 von 10, Cheese, Mu-Cho
+- 3D-Grid mit Slam-Down-Animation und F-Flyover
+- 8 Avatare (Kopf-Only: Fuchs/Frosch/Panda/Hase/Einhorn/Waschbär/Kuh/Katze)
+  mit festen Signaturfarben
+- 2 Joker pro ganzes Spiel (Sterne im Team-Header)
+- Slide-Editor mit 25 Platzhaltern für Custom-Templates
+- Host-Notes pro Phase + per-Frage override
+- Bilingual DE/EN
+- QQ-Drafts persistent in `qqDrafts.json`
+- Reconnect-infinity, Timeout-Guards, Room-Cleanup
 
----
+## Roadmap (priorisiert)
 
-## Offen 🔲
+### Block A — Event-Readiness (Woche 1-2)
+- [x] Host-Cheatsheet PDF-Export (inkl. Fun-Fact-Feld, Moderator-Tipp, /menu-Einstieg)
+- [x] Frage-Validierung beim Speichern (Top5 <5, Imposter ≠ 8, MUCHO/ZvZ-Options, Cheese-Bild, SCHAETZCHEN-Zielwert, Map-Koords)
+- [ ] Sound-System konsolidieren: nur noch Moderator-Upload, Default-Sounds,
+      einzel-togglebar, Master-Mute, Volume
+- [ ] CHEESE-Bild-Positionierung (Zuschnitt + Verdeckung unten durch Textfeld)
+- [ ] Pause-Button mit Musik-Duck
 
-### Sonstiges
-- 🔲 MongoDB Films-Frage: falsches `bunteTuete`-Feld fixen (enthält Football oneOfEight) — DB-Fix
+### Block B — Content & Partner (Woche 2-3)
+- [ ] CSV/Excel-Import im Builder
+- [ ] Frage duplizieren
+- [ ] Live-Frage-Preview im Builder
 
-⚠️ **CozyQuiz 60 ist eine separate App — NICHT anfassen!**
+### Block C — Show-Polish (Woche 3)
+- [ ] Team-Intro-Animation bei PHASE_INTRO
+- [ ] Game-Over QR-Code → Team-Summary-Seite
 
----
+### Block D — Spectator
+- [ ] Emote-Rückmeldungen für Zuschauer (ausschaltbar im Moderator)
 
-## Bekannte Issues ⚠️
-- `CreatorCanvasPage.tsx` hat ~12 TypeScript-Errors (flexDirection, textAlign Typen) — pre-existing, nicht blockierend
-- Render Free Tier schläft nach Inaktivität → MongoDB Reconnect dauert bis 15s
+### Block E — Betrieb
+- [ ] Reconnect-Stresstest mit gedrosseltem WLAN
+- [ ] Sentry (Error-Tracking)
+- [ ] Plausible Analytics
 
----
+### Block F — Memory & Longterm-Memo
+- [ ] Handoff-Memo komprimieren
+- [ ] Longterm-TODO-File erweitern (Landing, Höher/Tiefer, Musik-Quiz — bereits drin)
 
-## Commits (aktuelle Session)
+## Offen / Bugs
 
-| Commit | Beschreibung |
-|---|---|
-| `b1e1bb8` | Nice-to-haves: Phase-Namen, beforeunload, Upload-Check, lokaler QR |
-| `a64712d` | i18n: bilingual DE/EN für QQ Team + Beamer |
-| `d7db456` | Stabilität & UX (S1–S6) |
-| `dea2148` | 5 Game-Breaking QQ Bugs (B1–B5) |
-| `540c1c0` | Echte Fragenbilder im Slide-Editor Preview |
-| `43db749` | Slide-Editor fixes + Beamer Fallback + Sample-Drafts |
-| `b7f77f2` | QQ-Draft Persistenz (qqDrafts.json) |
-| `2bb186e` | HP Auto-Start, Last-Team-Wins, Timer-Fix, Slide-Editor Guards |
+- MongoDB Films-Frage: falsches `bunteTuete`-Feld (enthält Football oneOfEight
+  statt Films) — DB-Fix
+- `CreatorCanvasPage.tsx` hat TypeScript-Errors — pre-existing, Cozy60, ignorieren
+- Render Free Tier schläft nach Inaktivität → MongoDB Reconnect bis 15s
+
+## Longterm / Nice-to-have
+
+Siehe `memory/project_qq_longterm_todos.md`

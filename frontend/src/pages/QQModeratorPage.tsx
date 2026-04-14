@@ -1065,7 +1065,10 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
   const phase = state.phase;
   const baseNote = HOST_NOTES_DE[phase] ?? { title: phase, text: 'Kein Hinweis für diese Phase.' };
   const customNote = state.currentQuestion?.hostNote?.trim();
-  const showCustom = customNote && (phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL' || phase === 'PLACEMENT');
+  const funFact = state.currentQuestion?.funFact?.trim();
+  const questionPhase = phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL' || phase === 'PLACEMENT';
+  const showCustom = customNote && questionPhase;
+  const showFunFact = funFact && questionPhase;
 
   return (
     <div style={{
@@ -1104,6 +1107,31 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         }}>
           <span style={{ fontWeight: 800, fontStyle: 'normal', color: '#FBBF24' }}>Frage-Notiz: </span>
           {customNote}
+        </div>
+      )}
+      {showFunFact && (
+        <div style={{
+          marginTop: 8,
+          padding: '8px 10px',
+          borderRadius: 8,
+          background: 'rgba(168,85,247,0.10)',
+          border: '1px solid rgba(168,85,247,0.35)',
+          borderLeft: '3px solid #A855F7',
+          color: '#ede9fe',
+          fontSize: 12,
+          lineHeight: 1.5,
+        }}>
+          <div style={{
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.6,
+            textTransform: 'uppercase',
+            color: '#A855F7',
+            marginBottom: 3,
+          }}>
+            💡 Fun Fact (optional einwerfen)
+          </div>
+          <div>{funFact}</div>
         </div>
       )}
     </div>

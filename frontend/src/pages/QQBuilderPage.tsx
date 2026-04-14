@@ -30,6 +30,8 @@ import {
   QQBunteTuetePayload, QQOptionImage,
   QQThemePreset, QQ_THEME_PRESETS,
 } from '../../../shared/quarterQuizTypes';
+import { exportHostCheatsheet } from './qqHostCheatsheet';
+import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const CATEGORIES: QQCategory[] = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'];
@@ -209,6 +211,7 @@ export default function QQBuilderPage() {
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
   const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const optionFileInputRef = useRef<HTMLInputElement>(null);
@@ -294,7 +297,7 @@ export default function QQBuilderPage() {
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
-  async function saveDraft(draft: QQDraft) {
+  async function saveDraftRaw(draft: QQDraft) {
     setSaving(true);
     try {
       const res = await fetch(`/api/qq/drafts/${draft.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
@@ -305,6 +308,15 @@ export default function QQBuilderPage() {
         try { localStorage.removeItem(`qq-draft-backup-${draft.id}`); } catch {}
       }
     } finally { setSaving(false); }
+  }
+  // Validiert Draft und zeigt Prompt bei Problemen — sonst direkt speichern.
+  async function saveDraft(draft: QQDraft) {
+    const v = validateDraft(draft);
+    if (v.totalErrors > 0 || v.totalWarnings > 0) {
+      setValidationPrompt({ draft });
+      return;
+    }
+    await saveDraftRaw(draft);
   }
   async function translateAllToEnglish() {
     if (!activeDraft || translating) return;
@@ -328,6 +340,7 @@ export default function QQBuilderPage() {
         // Core fields
         if (!q.textEn)   updated.textEn   = await tr(q.text);
         if (!q.answerEn) updated.answerEn = await tr(q.answer);
+        if (q.funFact && !q.funFactEn) updated.funFactEn = await tr(q.funFact);
         // SCHAETZCHEN unit
         if (q.unit && !q.unitEn) updated.unitEn = await tr(q.unit);
         // Multiple choice options
@@ -370,7 +383,7 @@ export default function QQBuilderPage() {
 
       const newDraft = { ...activeDraft, questions: translatedQuestions };
       setActiveDraft(newDraft);
-      await saveDraft(newDraft);
+      await saveDraftRaw(newDraft);
     } finally {
       setTranslating(false);
     }
@@ -490,8 +503,69 @@ export default function QQBuilderPage() {
           </div>
         </div>
       )}
+      {/* Validation prompt modal */}
+      {validationPrompt && (() => {
+        const v = validateDraft(validationPrompt.draft);
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: '#1e293b', borderRadius: 16, padding: '24px 28px', maxWidth: 560, width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: v.totalErrors > 0 ? '#EF4444' : '#F59E0B' }}>
+                {v.totalErrors > 0 ? '🛑 Probleme gefunden' : '⚠️ Warnungen'}
+              </div>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+                {v.totalErrors > 0 && <><b style={{ color: '#EF4444' }}>{v.totalErrors}</b> Fehler</>}
+                {v.totalErrors > 0 && v.totalWarnings > 0 && ' · '}
+                {v.totalWarnings > 0 && <><b style={{ color: '#F59E0B' }}>{v.totalWarnings}</b> Warnungen</>}
+                {' — du kannst trotzdem speichern, aber das Event könnte daran scheitern.'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {v.byQuestion.map(qv => {
+                  const q = validationPrompt.draft.questions.find(x => x.id === qv.questionId);
+                  if (!q) return null;
+                  const catLbl = QQ_CATEGORY_LABELS[q.category];
+                  const catColor = QQ_CATEGORY_COLORS[q.category];
+                  const preview = q.text.trim().slice(0, 60) || '—';
+                  return (
+                    <div key={qv.questionId} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}
+                        onClick={() => { setActiveQId(qv.questionId); setValidationPrompt(null); }}
+                      >
+                        <span style={{ fontSize: 10, fontWeight: 900, color: catColor, padding: '2px 8px', borderRadius: 6, background: catColor + '22', border: `1px solid ${catColor}44` }}>
+                          {catLbl.emoji} P{qv.phaseIndex}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#cbd5e1', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</span>
+                        <span style={{ fontSize: 10, color: '#3B82F6', fontWeight: 700 }}>→ öffnen</span>
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: '#94a3b8' }}>
+                        {qv.issues.map((iss, i) => (
+                          <li key={i} style={{ color: iss.level === 'error' ? '#FCA5A5' : '#FCD34D', marginBottom: 2 }}>
+                            {iss.level === 'error' ? '🛑' : '⚠️'} {iss.message}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setValidationPrompt(null)} style={{ ...btnStyle('#475569'), flex: 1 }}>Abbrechen</button>
+                <button
+                  onClick={async () => {
+                    const d = validationPrompt.draft;
+                    setValidationPrompt(null);
+                    await saveDraftRaw(d);
+                  }}
+                  style={{ ...btnStyle(v.totalErrors > 0 ? '#EF4444' : '#F59E0B'), flex: 1 }}
+                >
+                  {v.totalErrors > 0 ? 'Trotzdem speichern' : 'Speichern'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* Shared tab bar */}
-      <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraft(activeDraft)} />
+      <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraftRaw(activeDraft)} />
 
       {/* Header */}
       <div style={{ padding: '12px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
@@ -533,10 +607,30 @@ export default function QQBuilderPage() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
           <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
-          <button onClick={async () => { await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
+          <button onClick={async () => { await saveDraftRaw(activeDraft); navigate(`/slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
           <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
-          <button onClick={() => saveDraft(activeDraft)} style={btnStyle('#22C55E')} disabled={saving}>{saving ? '…' : '💾 Speichern'}</button>
+          {(() => {
+            const v = validateDraft(activeDraft);
+            const hasIssues = v.totalErrors > 0 || v.totalWarnings > 0;
+            const saveColor = v.totalErrors > 0 ? '#EF4444' : hasIssues ? '#F59E0B' : '#22C55E';
+            const label = saving
+              ? '…'
+              : v.totalErrors > 0
+                ? `🛑 Speichern (${v.totalErrors})`
+                : v.totalWarnings > 0
+                  ? `⚠️ Speichern (${v.totalWarnings})`
+                  : '💾 Speichern';
+            return (
+              <button
+                onClick={() => saveDraft(activeDraft)}
+                style={btnStyle(saveColor)}
+                disabled={saving}
+                title={hasIssues ? `${v.totalErrors} Fehler, ${v.totalWarnings} Warnungen — Klick zum Prüfen` : 'Alles ok'}
+              >{label}</button>
+            );
+          })()}
         </div>
       </div>
 
@@ -569,6 +663,8 @@ export default function QQBuilderPage() {
                     {cellQs.map((q) => {
                       const isActive = activeQId === q.id;
                       const preview = cellPreview(q);
+                      const qIssues = validateQuestion(q);
+                      const qLevel = worstLevel(qIssues);
                       // find position in phase for move buttons
                       const phaseQs = activeDraft.questions.filter(x => x.phaseIndex === phaseNum);
                       const qIdx = phaseQs.findIndex(x => x.id === q.id);
@@ -589,6 +685,20 @@ export default function QQBuilderPage() {
                               style={{ padding: '1px 4px', borderRadius: 3, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 9, lineHeight: 1, fontFamily: 'inherit' }}>✕</button>
                           </div>
                           {q.image?.url && <div style={{ position: 'absolute', top: 4, left: 8, fontSize: 11 }}>🖼</div>}
+                          {qLevel && (
+                            <div title={qIssues.map(i => `${i.level === 'error' ? '🛑' : '⚠️'} ${i.message}`).join('\n')}
+                              style={{
+                                position: 'absolute', top: 4, left: q.image?.url ? 26 : 8,
+                                fontSize: 10, lineHeight: 1,
+                                padding: '2px 5px', borderRadius: 4,
+                                background: qLevel === 'error' ? '#EF444455' : '#F59E0B55',
+                                border: `1px solid ${qLevel === 'error' ? '#EF4444' : '#F59E0B'}`,
+                                color: qLevel === 'error' ? '#FCA5A5' : '#FCD34D',
+                                fontWeight: 900,
+                              }}>
+                              {qLevel === 'error' ? '🛑' : '⚠️'}{qIssues.length > 1 ? ` ${qIssues.length}` : ''}
+                            </div>
+                          )}
                           {preview.sub && <div style={{ fontSize: 10, fontWeight: 800, color: QQ_CATEGORY_COLORS[cat], marginBottom: 2, opacity: 0.8, paddingRight: 52 }}>{preview.sub}</div>}
                           <div style={{ fontSize: 11, color: preview.text ? '#94a3b8' : '#334155', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', paddingRight: 52 }}>
                             {preview.text || <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>Leer…</span>}
@@ -649,7 +759,7 @@ export default function QQBuilderPage() {
                       </div>
                       <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: '#475569', fontWeight: 700 }}>#{i + 1}</div>
                       <div className="qq-filmstrip-design-btn"
-                        onClick={async e => { e.stopPropagation(); await saveDraft(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
+                        onClick={async e => { e.stopPropagation(); await saveDraftRaw(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
                         style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
                         <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
                       </div>
@@ -707,6 +817,9 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const img = q.image;
   const showImage = q.category !== 'CHEESE'; // Picture This always shows image; others optional
+  const issues = validateQuestion(q);
+  const errorCount = issues.filter(i => i.level === 'error').length;
+  const warnCount = issues.filter(i => i.level === 'warning').length;
 
   function setImg(patch: Partial<QQQuestionImage>) {
     onChange({ ...q, image: { ...(img ?? { url: '', layout: 'fullscreen', animation: 'none' }), ...patch } });
@@ -714,6 +827,27 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
 
   return (
     <div className="qq-builder-editor" style={{ width: 480, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Validation summary */}
+      {issues.length > 0 && (
+        <div style={{
+          padding: '10px 12px', borderRadius: 10,
+          background: errorCount > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+          border: `1px solid ${errorCount > 0 ? 'rgba(239,68,68,0.35)' : 'rgba(245,158,11,0.35)'}`,
+          borderLeft: `4px solid ${errorCount > 0 ? '#EF4444' : '#F59E0B'}`,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5, color: errorCount > 0 ? '#FCA5A5' : '#FCD34D', marginBottom: 6 }}>
+            {errorCount > 0 ? `🛑 ${errorCount} Fehler` : ''}{errorCount > 0 && warnCount > 0 ? ' · ' : ''}{warnCount > 0 ? `⚠️ ${warnCount} Warnungen` : ''}
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
+            {issues.map((iss, i) => (
+              <li key={i} style={{ color: iss.level === 'error' ? '#FCA5A5' : '#FCD34D' }}>
+                {iss.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Category header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
@@ -748,7 +882,31 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
           onChange={e => onChange({ ...q, hostNote: e.target.value || undefined })}
           style={{ ...textareaStyle, borderColor: 'rgba(251,191,36,0.3)' }}
           rows={2}
-          placeholder="Anekdote, Hintergrundwissen oder Gag für den Moderator…"
+          placeholder="Ablauf-Tipp oder Hinweis zur Mechanik für diese Frage…"
+        />
+      </div>
+
+      {/* Fun Fact — optional mood-lightener for moderator */}
+      <div>
+        <label style={labelStyle}>
+          💡 Fun Fact <span style={{ color: '#334155' }}>optional, zum Auflockern</span>
+        </label>
+        <textarea
+          value={q.funFact ?? ''}
+          onChange={e => onChange({ ...q, funFact: e.target.value || undefined })}
+          style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.35)' }}
+          rows={2}
+          placeholder="Witziger oder überraschender Fakt zum Thema — wirft der Moderator bei Bedarf ein."
+        />
+        <label style={{ ...labelStyle, marginTop: 6 }}>
+          Fun Fact (EN) <span style={{ color: '#334155' }}>optional</span>
+        </label>
+        <textarea
+          value={q.funFactEn ?? ''}
+          onChange={e => onChange({ ...q, funFactEn: e.target.value || undefined })}
+          style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.2)' }}
+          rows={2}
+          placeholder="Fun fact in English…"
         />
       </div>
 

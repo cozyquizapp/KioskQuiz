@@ -7,7 +7,7 @@
 Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
 nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
 
-**Nächstes Todo**: Block A #3 — Sound-System konsolidieren.
+**Nächstes Todo**: Block A #4 — CHEESE-Bild-Positionierung.
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -30,8 +30,8 @@ Details + Anleitungen zu allen offenen Blöcken:
 ### Block A — Event-Readiness (Woche 1-2)
 - [x] Host-Cheatsheet PDF-Export (inkl. Fun-Fact-Feld, Moderator-Tipp, /menu-Einstieg)
 - [x] Frage-Validierung beim Speichern (Top5 <5, Imposter ≠ 8, MUCHO/ZvZ-Options, Cheese-Bild, SCHAETZCHEN-Zielwert, Map-Koords)
-- [ ] Sound-System konsolidieren: nur noch Moderator-Upload, Default-Sounds,
-      einzel-togglebar, Master-Mute, Volume
+- [x] Sound-System konsolidieren: Default-WAVs, per-Slot-Mute, Upload-Override,
+      Master-Mute, Volume
 - [ ] CHEESE-Bild-Positionierung (Zuschnitt + Verdeckung unten durch Textfeld)
 - [ ] Pause-Button mit Musik-Duck
 

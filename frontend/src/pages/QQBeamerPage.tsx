@@ -416,7 +416,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
   // These phases always use built-in views — custom templates not supported
-  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'TEAMS_REVEAL' || s.phase === 'PLACEMENT';
+  const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'TEAMS_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'THANKS';
   // Per-question override takes priority over category template
   const perQKey = !builtinOnly && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
   const rawPerQ = perQKey ? slideTemplates[perQKey] : undefined;
@@ -540,6 +540,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
           {s.phase === 'PAUSED'          && <PausedView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} roomCode={roomCode} />}
+          {s.phase === 'THANKS'          && <ThanksView state={s} roomCode={roomCode} />}
         </div>
       )}
 
@@ -3438,10 +3439,7 @@ export function PausedView({ state: s }: { state: QQStateUpdate }) {
 // GAME OVER — Notebook style
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function GameOverView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
-  const summaryUrl = typeof window !== 'undefined' && roomCode
-    ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
-    : '';
+export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const winner = sorted[0];
@@ -3574,68 +3572,72 @@ export function GameOverView({ state: s, roomCode }: { state: QQStateUpdate; roo
         </div>
       )}
 
-      {/* Danke-Overlay + QR — erscheint NACH der Siegerehrung */}
-      {summaryUrl && (
+    </div>
+  );
+}
+
+export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
+  const lang = useLangFlip(s.language);
+  const summaryUrl = typeof window !== 'undefined' && roomCode
+    ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
+    : '';
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '48px 64px', position: 'relative',
+    }}>
+      <Fireflies color="rgba(234,179,8,0.35)" />
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
+        padding: '48px 64px', borderRadius: 36,
+        background: 'rgba(255,255,255,0.98)', color: '#0f172a',
+        boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 120px rgba(234,179,8,0.25)',
+        maxWidth: 820,
+        animation: 'contentReveal 0.6s ease both',
+      }}>
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(3,7,18,0.88)',
-          backdropFilter: 'blur(6px)',
-          animation: 'contentReveal 0.8s ease 6s both',
-          pointerEvents: 'none',
+          fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900,
+          color: '#0f172a', textAlign: 'center', lineHeight: 1.1,
         }}>
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-            padding: '40px 56px', borderRadius: 32,
-            background: 'rgba(255,255,255,0.98)', color: '#0f172a',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 120px rgba(234,179,8,0.25)',
-            maxWidth: 720,
-          }}>
+          🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+        </div>
+        <div style={{
+          fontSize: 'clamp(18px, 1.9vw, 24px)', fontWeight: 600,
+          color: '#475569', textAlign: 'center', lineHeight: 1.45,
+          maxWidth: 640,
+        }}>
+          {lang === 'de'
+            ? '📣 Erzählt euren Freunden vom Quarter Quiz — und scannt den Code für ein kleines Goodie 🎁'
+            : '📣 Tell your friends about Quarter Quiz — and scan the code for a little goodie 🎁'}
+        </div>
+        {summaryUrl && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginTop: 8 }}>
             <div style={{
-              fontSize: 'clamp(28px, 3.4vw, 46px)', fontWeight: 900,
-              color: '#0f172a', textAlign: 'center', lineHeight: 1.1,
+              padding: 14, borderRadius: 18,
+              background: '#ffffff',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
             }}>
-              🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0f172a" level="M" />
             </div>
-            <div style={{
-              fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 600,
-              color: '#475569', textAlign: 'center', lineHeight: 1.4,
-              maxWidth: 560,
-            }}>
-              {lang === 'de'
-                ? '📣 Erzählt euren Freunden vom Quarter Quiz — und scannt den Code für ein kleines Goodie 🎁'
-                : '📣 Tell your friends about Quarter Quiz — and scan the code for a little goodie 🎁'}
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 28, marginTop: 8,
-            }}>
-              <div style={{
-                padding: 12, borderRadius: 16,
-                background: '#ffffff',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-              }}>
-                <QRCodeSVG value={summaryUrl} size={200} bgColor="#ffffff" fgColor="#0f172a" level="M" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a' }}>
+                📱 {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 280 }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>
-                  📱 {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
-                </div>
-                <div style={{ fontSize: 15, color: '#475569', lineHeight: 1.5 }}>
-                  {lang === 'de'
-                    ? '• Eure Team-Stats\n• Feedback & Bugs\n• Nächste Quiz-Termine'
-                    : '• Your team stats\n• Feedback & bugs\n• Upcoming events'}
-                </div>
+              <div style={{ fontSize: 17, color: '#475569', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
+                {lang === 'de'
+                  ? '• Eure Team-Stats\n• Feedback & Bugs\n• Nächste Quiz-Termine'
+                  : '• Your team stats\n• Feedback & bugs\n• Upcoming events'}
               </div>
-            </div>
-            <div style={{
-              fontSize: 13, color: '#94a3b8', fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-            }}>
-              play.cozyquiz.app
             </div>
           </div>
+        )}
+        <div style={{
+          fontSize: 14, color: '#94a3b8', fontWeight: 700,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+        }}>
+          play.cozyquiz.app
         </div>
-      )}
+      </div>
     </div>
   );
 }

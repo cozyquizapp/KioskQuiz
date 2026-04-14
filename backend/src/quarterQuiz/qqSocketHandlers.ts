@@ -791,6 +791,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    socket.on('qq:showThanks', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.phase !== 'GAME_OVER') throw new Error('Nur von GAME_OVER aus');
+        room.phase = 'THANKS';
+        room.lastActivityAt = Date.now();
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Utility ─────────────────────────────────────────────────────────────
     socket.on('qq:setLanguage', (payload: QQSetLanguagePayload, ack?: unknown) => {
       try {

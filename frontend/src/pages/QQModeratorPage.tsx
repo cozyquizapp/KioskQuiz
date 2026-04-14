@@ -151,6 +151,8 @@ export default function QQModeratorPage() {
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'GAME_OVER')
+        emitRef.current('qq:showThanks', { roomCode });
       return;
     }
 
@@ -212,6 +214,8 @@ export default function QQModeratorPage() {
         emitRef.current('qq:startPlacement', { roomCode });
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
+      else if (s.phase === 'GAME_OVER')
+        emitRef.current('qq:showThanks', { roomCode });
       return;
     }
 
@@ -257,7 +261,7 @@ export default function QQModeratorPage() {
     if (e.code === 'KeyP') {
       e.preventDefault();
       if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
-      else if (!['LOBBY', 'GAME_OVER', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
+      else if (!['LOBBY', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
         emitRef.current('qq:pause', { roomCode });
       return;
     }
@@ -298,6 +302,7 @@ export default function QQModeratorPage() {
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
+      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#F59E0B', sub: 'QR-Code für Summary' };
       default: return { text: s.phase, color: '#475569' };
     }
   }
@@ -567,7 +572,17 @@ export default function QQModeratorPage() {
 
                 {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (
-                  <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}>🏆 Spiel beendet</div>
+                  <>
+                    <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}>🏆 Spiel beendet</div>
+                    <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                      ▶ Danke-Folie & QR
+                    </PrimaryBtn>
+                  </>
+                )}
+
+                {/* ── THANKS ── */}
+                {s.phase === 'THANKS' && (
+                  <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}>🙏 Danke-Folie läuft</div>
                 )}
 
                 {/* ── PAUSED ── */}
@@ -581,7 +596,7 @@ export default function QQModeratorPage() {
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} />
 
                 {/* ── Secondary: Pause ── */}
-                {!['LOBBY', 'PAUSED', 'GAME_OVER', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
+                {!['LOBBY', 'PAUSED', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
                   <Btn color="#F59E0B" outline onClick={() => emit('qq:pause', { roomCode })}>
                     ⏸ Pause <span style={{ fontSize: 10, opacity: 0.6 }}>P</span>
                   </Btn>
@@ -1072,7 +1087,11 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
   },
   GAME_OVER: {
     title: 'Spielende',
-    text: 'Verkünde den Gewinner! Bedanke dich bei allen Teams für ihre Teilnahme. Würdige besondere Momente oder Comebacks aus der Partie.',
+    text: 'Verkünde den Gewinner! Bedanke dich bei allen Teams für ihre Teilnahme. Würdige besondere Momente oder Comebacks aus der Partie. Dann mit Space die Danke-Folie starten.',
+  },
+  THANKS: {
+    title: 'Danke-Folie',
+    text: 'Weise auf den QR-Code hin: Team-Stats, Feedback und nächste Quiz-Termine auf dem Handy. Social-Media-Push und Goodie.',
   },
 };
 

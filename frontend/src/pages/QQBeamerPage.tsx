@@ -3286,6 +3286,37 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                       transition: 'color 0.3s ease',
                     }}>{optText}</div>
+                    {revealed && q.category === 'MUCHO' && (() => {
+                      const voters = s.answers
+                        .filter(a => a.text === String(i))
+                        .map(a => s.teams.find(t => t.id === a.teamId))
+                        .filter((t): t is NonNullable<typeof t> => !!t);
+                      if (voters.length === 0) return null;
+                      return (
+                        <div style={{
+                          position: 'absolute', top: 8, right: 8, zIndex: 2,
+                          display: 'flex', alignItems: 'center', gap: -8,
+                          animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
+                        }}>
+                          {voters.map((tm, vi) => (
+                            <div key={tm.id} title={tm.name} style={{
+                              width: 'clamp(40px, 4.5vw, 60px)',
+                              height: 'clamp(40px, 4.5vw, 60px)',
+                              borderRadius: '50%',
+                              background: tm.color,
+                              border: '3px solid #fff',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 'clamp(22px, 2.6vw, 34px)',
+                              marginLeft: vi === 0 ? 0 : -12,
+                              zIndex: 10 - vi,
+                            }}>
+                              {qqGetAvatar(tm.avatarId).emoji}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

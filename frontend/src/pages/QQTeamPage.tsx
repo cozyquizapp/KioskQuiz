@@ -1534,6 +1534,10 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
       }
     }
+    // CozyGuessr map: raw coordinates are meaningless to players — show friendly confirmation
+    if (q && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map') {
+      displayText = lang === 'de' ? '📍 Pin auf Karte gesetzt' : '📍 Pin placed on map';
+    }
     return <SubmittedBadge text={displayText} lang={lang} answeredCount={s.answers.length} totalTeams={s.teams.length} />;
   }
   if (!q) return null;

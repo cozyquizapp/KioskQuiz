@@ -2053,30 +2053,80 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         );
       })()}
 
-      {/* CHEESE: speed-ranked */}
-      {q.category === 'CHEESE' && (
-        <div style={{ animation: 'contentReveal 0.5s ease 0.1s both' }}>
-          {[...s.answers].sort((a, b) => a.submittedAt - b.submittedAt).map((a, i) => {
-            const team = s.teams.find(t => t.id === a.teamId);
-            const isWinner = a.teamId === s.correctTeamId;
-            return (
-              <div key={a.teamId} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 14px', borderRadius: 10, marginBottom: 4,
-                background: isWinner ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-                border: isWinner ? '1.5px solid rgba(34,197,94,0.30)' : '1px solid rgba(255,255,255,0.06)',
-                animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
-              }}>
-                <span style={{ fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#475569', width: 22 }}>#{i + 1}</span>
-                {team && <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)' }}>{qqGetAvatar(team.avatarId).emoji}</span>}
-                <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 'clamp(13px, 1.4vw, 18px)' }}>{team?.name}</span>
-                <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
-                {isWinner && <span style={{ color: '#4ade80' }}>✓</span>}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* CHEESE: typed answers with speed for ties */}
+      {q.category === 'CHEESE' && (() => {
+        const sorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
+        const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (sorted[0]?.submittedAt ?? 0);
+        const winners = sorted.filter(a => a.teamId === s.correctTeamId);
+        const hasTie = winners.length > 1 || sorted.filter(a => {
+          // Count teams with same answer as winner
+          if (!s.correctTeamId) return false;
+          const winAns = sorted.find(x => x.teamId === s.correctTeamId)?.text?.trim().toLowerCase();
+          return winAns && a.text?.trim().toLowerCase() === winAns;
+        }).length > 1;
+        return (
+          <div style={{ animation: 'contentReveal 0.5s ease 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {sorted.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isWinner = a.teamId === s.correctTeamId;
+              const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
+              if (!team) return null;
+              return (
+                <div key={a.teamId} style={{
+                  display: 'flex', alignItems: 'stretch', gap: 0,
+                  borderRadius: 14, overflow: 'hidden',
+                  background: isWinner ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.035)',
+                  border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  boxShadow: isWinner ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
+                  animation: `contentReveal 0.45s ease ${0.1 + i * 0.08}s both`,
+                  minHeight: 60,
+                }}>
+                  <div style={{
+                    width: 'clamp(60px, 6.5vw, 90px)',
+                    background: isWinner ? 'linear-gradient(135deg,#22C55E,#16A34A)' : `${team.color}30`,
+                    borderRight: `2px solid ${isWinner ? 'rgba(34,197,94,0.5)' : team.color + '50'}`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, gap: 2,
+                  }}>
+                    <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                    <span style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900, color: isWinner ? '#fff' : team.color, letterSpacing: 0.3 }}>
+                      {team.name}
+                    </span>
+                  </div>
+                  <div style={{
+                    flex: 1, padding: '10px 16px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                  }}>
+                    <span style={{
+                      flex: 1,
+                      fontSize: 'clamp(18px, 2.4vw, 32px)', fontWeight: 900,
+                      color: isWinner ? '#86efac' : '#e2e8f0',
+                      lineHeight: 1.2,
+                    }}>
+                      {a.text || '—'}
+                    </span>
+                    {hasTie && timeSec && (
+                      <span style={{
+                        padding: '4px 10px', borderRadius: 999,
+                        background: i === 0 && isWinner ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.28)',
+                        border: i === 0 && isWinner ? '1.5px solid rgba(251,191,36,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                        fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800,
+                        color: i === 0 && isWinner ? '#FBBF24' : '#94a3b8',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {i === 0 && isWinner ? '⚡ ' : ''}{timeSec}s
+                      </span>
+                    )}
+                    {isWinner && (
+                      <span style={{ fontSize: 'clamp(20px, 2.4vw, 30px)', color: '#4ade80', fontWeight: 900 }}>✓</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* BUNTE TÜTE top5 */}
       {q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {

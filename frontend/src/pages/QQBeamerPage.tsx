@@ -3739,7 +3739,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     if (use3D) {
       setViewMode('3d');
       hasTransitioned.current = true;
-    } else if (!enable3DTransition) {
+    } else {
       setViewMode('flat');
       hasTransitioned.current = false;
     }

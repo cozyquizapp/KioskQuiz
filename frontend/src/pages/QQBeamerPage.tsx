@@ -2381,7 +2381,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
   // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
-  const qFontSize = qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
+  const isOrderBt = q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order';
+  const qFontSize = isOrderBt
+    ? (qText.length > 120 ? 'clamp(22px, 2.4vw, 36px)'
+      : qText.length > 60 ? 'clamp(26px, 3vw, 44px)'
+      : 'clamp(30px, 3.4vw, 50px)')
+    : qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
     : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
     : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
     : 'clamp(52px, 7vw, 108px)';

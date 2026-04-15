@@ -1207,6 +1207,50 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return null;
       })()}
 
+      {/* Reihenfolge: eigene Sortierung mit ✓/✗ pro Position */}
+      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
+        const btt = q.bunteTuete as any;
+        const items: string[] = btt.items ?? [];
+        const correctOrder: number[] = btt.correctOrder ?? items.map((_: any, i: number) => i);
+        const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim());
+        const myAns = s.answers.find(a => a.teamId === myTeamId);
+        if (!myAns) return null;
+        const mine = String(myAns.text ?? '').split('|').map(x => x.trim()).filter(Boolean);
+        const hits = mine.filter((p, i) => p.toLowerCase() === (correctSeq[i] ?? '').toLowerCase()).length;
+        return (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+              <span>📊 {lang === 'en' ? 'Your order' : 'Eure Reihenfolge'}</span>
+              <span style={{ color: hits === correctSeq.length ? '#4ade80' : '#94a3b8' }}>
+                {hits}/{correctSeq.length} {lang === 'en' ? 'correct' : 'richtig'}
+              </span>
+            </div>
+            {mine.map((g, i) => {
+              const correct = correctSeq[i] ?? '';
+              const ok = g.toLowerCase() === correct.toLowerCase();
+              return (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: ok ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
+                  border: `1.5px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                  animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
+                }}>
+                  <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: '#64748b' }}>#{i+1}</span>
+                  <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{ok ? '✓' : '✗'}</span>
+                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: ok ? '#4ade80' : '#f87171' }}>{g}</span>
+                  {!ok && correct && (
+                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
+                      → {correct}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Top-5: eigene Antworten mit ✓/✗ + Team-Badges wer es auch hatte */}
       {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
         const btt = q.bunteTuete as any;

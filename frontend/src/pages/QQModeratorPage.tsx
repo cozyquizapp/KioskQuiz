@@ -1564,6 +1564,7 @@ function SetupView({
   const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
   const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});
   const [savingSound, setSavingSound] = useState(false);
+  const [customSoundsOpen, setCustomSoundsOpen] = useState(false);
 
   // Reload the draft's soundConfig whenever the selected draft changes.
   useEffect(() => {
@@ -1898,15 +1899,33 @@ function SetupView({
           </div>
         </div>
 
-        <QQSoundPanel
-          config={draftSoundConfig}
-          onChange={cfg => {
-            setDraftSoundConfig(cfg);
-            setLocalSoundConfig(cfg);
-            emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
-            persistDraftSoundConfig(cfg);
+        <button
+          onClick={() => setCustomSoundsOpen(v => !v)}
+          style={{
+            width: '100%', padding: '10px 14px', borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)', color: '#94a3b8',
+            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}
-        />
+        >
+          <span>🎵 Custom Sounds pro Slot (Timer-Loop, Korrekt, Falsch …)</span>
+          <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: customSoundsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+        </button>
+
+        {customSoundsOpen && (
+          <div style={{ marginTop: 10 }}>
+            <QQSoundPanel
+              config={draftSoundConfig}
+              onChange={cfg => {
+                setDraftSoundConfig(cfg);
+                setLocalSoundConfig(cfg);
+                emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
+                persistDraftSoundConfig(cfg);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Sticky Start-Footer ── */}

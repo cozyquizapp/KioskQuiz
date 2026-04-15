@@ -679,7 +679,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
-        {s.phase === 'GAME_OVER' && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
+        {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
 
         {/* Phase stats */}
@@ -2995,24 +2995,43 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
           })}
         </div>
 
-        {/* Summary link button */}
-        {roomCode && (
-          <a
-            href={`/summary/${encodeURIComponent(roomCode)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'block', marginTop: 18, padding: '14px 16px',
-              borderRadius: 14, textAlign: 'center',
-              background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-              color: '#0D0A06', fontWeight: 900, fontSize: 16,
-              textDecoration: 'none',
-              boxShadow: '0 4px 0 #B45309, 0 0 24px rgba(251,191,36,0.35)',
-              animation: 'tcreveal 0.5s ease 0.7s both',
-            }}
-          >
-            {lang === 'en' ? '📊 View full results' : '📊 Zur Ergebnisseite'}
-          </a>
+        {/* Thanks message + summary link — only on THANKS phase */}
+        {s.phase === 'THANKS' && (
+          <div style={{
+            marginTop: 18,
+            animation: 'tcreveal 0.5s ease 0.5s both',
+          }}>
+            <div style={{
+              fontSize: 17, fontWeight: 800, color: '#FDE68A',
+              textAlign: 'center', marginBottom: 4, lineHeight: 1.35,
+            }}>
+              {lang === 'en' ? '✨ Thanks for playing! ✨' : '✨ Danke fürs Mitspielen! ✨'}
+            </div>
+            <div style={{
+              fontSize: 14, fontWeight: 600, color: '#94a3b8',
+              textAlign: 'center', marginBottom: 14,
+            }}>
+              {lang === 'en' ? 'We hope you had fun — see you next round!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
+            </div>
+            {roomCode && (
+              <a
+                href={`/summary/${encodeURIComponent(roomCode)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block', padding: '14px 16px',
+                  borderRadius: 14, textAlign: 'center',
+                  background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
+                  color: '#0D0A06', fontWeight: 900, fontSize: 16,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 0 #B45309, 0 0 24px rgba(251,191,36,0.35)',
+                  animation: 'tcreveal 0.5s ease 0.7s both',
+                }}
+              >
+                {lang === 'en' ? '📊 View full results' : '📊 Zur Ergebnisseite'}
+              </a>
+            )}
+          </div>
         )}
       </div>
     </CozyCard>

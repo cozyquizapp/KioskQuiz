@@ -112,6 +112,7 @@ export interface QQRoomState {
     category: string;
     answers: Array<{ teamId: string; teamName: string; text: string; submittedAt: number }>;
     correctTeamId: string | null;
+    correctTeamIds?: string[];
   }>;
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
 }
@@ -482,6 +483,10 @@ export function qqActivateQuestion(
         submittedAt: a.submittedAt,
       })),
       correctTeamId: room.correctTeamId,
+      correctTeamIds: [
+        ...(room.correctTeamId ? [room.correctTeamId] : []),
+        ...((room['_placementQueue'] as string[] | undefined) ?? []),
+      ],
     });
   }
   room.phase          = 'QUESTION_ACTIVE';

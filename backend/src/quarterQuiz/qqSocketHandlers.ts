@@ -96,11 +96,16 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     };
   }
   for (const qh of room.questionHistory) {
+    const winners = new Set<string>(
+      (qh.correctTeamIds && qh.correctTeamIds.length > 0)
+        ? qh.correctTeamIds
+        : (qh.correctTeamId ? [qh.correctTeamId] : [])
+    );
     for (const a of qh.answers) {
       const s = teamStats[a.teamId];
       if (!s) continue;
       s.answered += 1;
-      if (qh.correctTeamId === a.teamId) s.correct += 1;
+      if (winners.has(a.teamId)) s.correct += 1;
     }
   }
 

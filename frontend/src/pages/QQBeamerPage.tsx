@@ -1934,68 +1934,121 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 
       {/* MUCHO / ZEHN: who chose which option */}
       {(q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && q.options && (() => {
-        // Pre-compute correct voters sorted by speed for ranking
         const correctVoters = q.category === 'MUCHO' && q.correctOptionIndex != null
           ? s.answers
               .filter(a => a.text === String(q.correctOptionIndex))
               .sort((a, b) => a.submittedAt - b.submittedAt)
           : [];
         const showSpeedRank = correctVoters.length > 1;
-        // Map teamId → speed rank (1-based)
         const speedRank: Record<string, number> = {};
         correctVoters.forEach((a, i) => { speedRank[a.teamId] = i + 1; });
-        // Earliest answer timestamp for relative time display
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (correctVoters[0]?.submittedAt ?? 0);
+        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
 
         return (
-          <div style={{ animation: 'contentReveal 0.5s ease 0.1s both' }}>
-            {q.options!.map((_, optIdx) => {
-              const voterAnswers = s.answers
+          <div style={{ animation: 'contentReveal 0.5s ease 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {q.options!.map((optText, optIdx) => {
+              const voters = s.answers
                 .filter(a => a.text === String(optIdx))
-                .sort((a, b) => a.submittedAt - b.submittedAt);
-              const voters = voterAnswers
+                .sort((a, b) => a.submittedAt - b.submittedAt)
                 .map(a => ({ team: s.teams.find(t => t.id === a.teamId), answer: a }))
                 .filter((v): v is { team: NonNullable<typeof v.team>; answer: typeof v.answer } => !!v.team);
-              if (!voters.length) return null;
               const isCorrect = optIdx === q.correctOptionIndex;
-              const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
               const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
               return (
                 <div key={optIdx} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '7px 12px', borderRadius: 10, marginBottom: 4,
-                  background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)',
-                  border: isCorrect ? '1.5px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex', alignItems: 'stretch', gap: 0,
+                  borderRadius: 14, overflow: 'hidden',
+                  background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.035)',
+                  border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.07}s both`,
+                  minHeight: 54,
                 }}>
-                  <span style={{ width: 26, height: 26, borderRadius: 7, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(12px, 1.3vw, 15px)', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                  <div style={{
+                    width: 'clamp(44px, 5vw, 64px)', background: optColor,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900, color: '#fff',
+                    flexShrink: 0,
+                  }}>
                     {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
-                  </span>
-                  {voters.map(({ team: tm, answer: a }, vi) => {
-                    const rank = speedRank[tm.id];
-                    const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
-                    return (
-                      <span key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 5, animation: `contentReveal 0.3s ease ${vi * 0.08}s both` }}>
-                        <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-                        <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
-                        {/* Speed rank badge for correct voters when multiple got it right */}
-                        {showSpeedRank && isCorrect && rank != null && (
-                          <span style={{
-                            fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
-                            padding: '1px 7px', borderRadius: 999, marginLeft: 2,
-                            background: rank === 1 ? 'rgba(251,191,36,0.20)' : 'rgba(255,255,255,0.06)',
-                            border: rank === 1 ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                            color: rank === 1 ? '#FBBF24' : '#64748b',
+                  </div>
+                  <div style={{
+                    flex: 1, padding: '8px 14px',
+                    display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+                  }}>
+                    <span style={{
+                      fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 800,
+                      color: isCorrect ? '#86efac' : '#cbd5e1',
+                      minWidth: 0, flex: '0 1 auto',
+                    }}>
+                      {optText}
+                    </span>
+                    {voters.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
+                        {voters.map(({ team: tm }, vi) => (
+                          <div key={tm.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '4px 10px 4px 4px', borderRadius: 999,
+                            background: 'rgba(0,0,0,0.28)',
+                            border: `1.5px solid ${tm.color}`,
+                            animation: `contentReveal 0.3s ease ${vi * 0.08}s both`,
                           }}>
-                            {rank === 1 ? '⚡' : `#${rank}`}{timeSec ? ` ${timeSec}s` : ''}
-                          </span>
-                        )}
-                      </span>
-                    );
-                  })}
+                            <span style={{
+                              width: 'clamp(26px, 3vw, 36px)', height: 'clamp(26px, 3vw, 36px)',
+                              borderRadius: '50%', background: tm.color,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 'clamp(16px, 1.9vw, 22px)',
+                            }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                            <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
+
+            {/* Speed ranking row for correct voters (ties) */}
+            {showSpeedRank && (
+              <div style={{
+                marginTop: 6, padding: '10px 14px', borderRadius: 12,
+                background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(234,179,8,0.06))',
+                border: '1.5px solid rgba(251,191,36,0.35)',
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                animation: `contentReveal 0.4s ease ${0.1 + q.options!.length * 0.07 + 0.1}s both`,
+              }}>
+                <span style={{
+                  fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
+                  color: '#FBBF24', letterSpacing: '0.05em', textTransform: 'uppercase',
+                }}>⚡ Schnellster zuerst</span>
+                {correctVoters.map((a, i) => {
+                  const tm = s.teams.find(t => t.id === a.teamId);
+                  if (!tm) return null;
+                  const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
+                  const rank = i + 1;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '4px 10px', borderRadius: 999,
+                      background: rank === 1 ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.28)',
+                      border: rank === 1 ? '1.5px solid rgba(251,191,36,0.6)' : `1.5px solid ${tm.color}`,
+                    }}>
+                      <span style={{
+                        fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
+                        color: rank === 1 ? '#FBBF24' : '#cbd5e1',
+                      }}>#{rank}</span>
+                      <span style={{ fontSize: 'clamp(16px, 1.9vw, 22px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                      {timeSec && (
+                        <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700, color: '#94a3b8' }}>{timeSec}s</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })()}

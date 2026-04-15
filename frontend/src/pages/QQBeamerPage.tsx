@@ -1932,9 +1932,9 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         </div>
       )}
 
-      {/* MUCHO / ZEHN: who chose which option */}
-      {(q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && q.options && (() => {
-        const correctVoters = q.category === 'MUCHO' && q.correctOptionIndex != null
+      {/* MUCHO: who chose which option */}
+      {q.category === 'MUCHO' && q.options && (() => {
+        const correctVoters = q.correctOptionIndex != null
           ? s.answers
               .filter(a => a.text === String(q.correctOptionIndex))
               .sort((a, b) => a.submittedAt - b.submittedAt)
@@ -1954,7 +1954,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 .map(a => ({ team: s.teams.find(t => t.id === a.teamId), answer: a }))
                 .filter((v): v is { team: NonNullable<typeof v.team>; answer: typeof v.answer } => !!v.team);
               const isCorrect = optIdx === q.correctOptionIndex;
-              const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
+              const optColor = MUCHO_COLORS[optIdx] ?? '#475569';
               return (
                 <div key={optIdx} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
@@ -1971,7 +1971,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900, color: '#fff',
                     flexShrink: 0,
                   }}>
-                    {q.category === 'MUCHO' ? ['A','B','C','D'][optIdx] : optIdx + 1}
+                    {['A','B','C','D'][optIdx] ?? optIdx + 1}
                   </div>
                   <div style={{
                     flex: 1, padding: '8px 14px',
@@ -2044,6 +2044,138 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       {timeSec && (
                         <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700, color: '#94a3b8' }}>{timeSec}s</span>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ZEHN_VON_ZEHN (All-In): stacked bar per option — who put how many points */}
+      {q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
+        const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
+        // Parse each answer to per-option point arrays
+        const parsed = s.answers.map(a => {
+          const pts = String(a.text ?? '').split(',').map(x => parseInt(x.trim(), 10));
+          return { teamId: a.teamId, pts, submittedAt: a.submittedAt };
+        }).filter(p => p.pts.length === q.options!.length && !p.pts.some(Number.isNaN));
+        // Total points per option across all teams
+        const totalsPerOption = q.options!.map((_, i) => parsed.reduce((sum, p) => sum + (p.pts[i] ?? 0), 0));
+        const globalMax = Math.max(1, ...totalsPerOption);
+
+        return (
+          <div style={{ animation: 'contentReveal 0.5s ease 0.1s both', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {q.options!.map((optText, optIdx) => {
+              const isCorrect = optIdx === q.correctOptionIndex;
+              const color = isCorrect ? '#22C55E' : (ALLIN_COLORS[optIdx] ?? '#64748b');
+              // Team contributions on this option (only teams with >0 pts), sorted desc
+              const contribs = parsed
+                .map(p => ({ team: s.teams.find(t => t.id === p.teamId), pts: p.pts[optIdx] ?? 0 }))
+                .filter((c): c is { team: NonNullable<typeof c.team>; pts: number } => !!c.team && c.pts > 0)
+                .sort((a, b) => b.pts - a.pts);
+              const totalPts = totalsPerOption[optIdx];
+              const barPct = (totalPts / globalMax) * 100;
+              return (
+                <div key={optIdx} style={{
+                  borderRadius: 14, overflow: 'hidden',
+                  background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.035)',
+                  border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
+                  animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.08}s both`,
+                }}>
+                  {/* Row 1: label + total */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
+                    <span style={{
+                      width: 'clamp(36px, 4vw, 52px)', height: 'clamp(36px, 4vw, 52px)',
+                      borderRadius: 10, background: color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 'clamp(16px, 1.9vw, 24px)', fontWeight: 900, color: '#fff',
+                      flexShrink: 0,
+                    }}>
+                      {isCorrect ? '✓' : optIdx + 1}
+                    </span>
+                    <span style={{
+                      flex: 1,
+                      fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 800,
+                      color: isCorrect ? '#86efac' : '#e2e8f0',
+                    }}>
+                      {optText}
+                    </span>
+                    <span style={{
+                      fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
+                      color: isCorrect ? '#4ade80' : color,
+                      minWidth: 56, textAlign: 'right',
+                    }}>
+                      💰 {totalPts}
+                    </span>
+                  </div>
+                  {/* Row 2: stacked bar — each segment = one team's contribution */}
+                  <div style={{
+                    height: 28, position: 'relative', margin: '0 14px 10px',
+                    borderRadius: 8, overflow: 'hidden',
+                    background: 'rgba(0,0,0,0.35)',
+                    width: `${barPct}%`,
+                    transition: 'width 0.7s cubic-bezier(0.22,1,0.36,1)',
+                    display: 'flex',
+                  }}>
+                    {contribs.map((c, ci) => {
+                      const segPct = totalPts > 0 ? (c.pts / totalPts) * 100 : 0;
+                      return (
+                        <div key={c.team.id} style={{
+                          width: `${segPct}%`,
+                          background: c.team.color,
+                          borderRight: ci < contribs.length - 1 ? '2px solid rgba(0,0,0,0.4)' : 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          gap: 4, minWidth: 0, overflow: 'hidden',
+                          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900, color: '#fff',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                          animation: `contentReveal 0.5s ease ${0.2 + optIdx * 0.08 + ci * 0.05}s both`,
+                        }}>
+                          <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(c.team.avatarId).emoji}</span>
+                          <span>{c.pts}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Legend: teams */}
+            {parsed.length > 0 && (
+              <div style={{
+                marginTop: 2, padding: '8px 14px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                animation: `contentReveal 0.4s ease ${0.1 + q.options!.length * 0.08 + 0.1}s both`,
+              }}>
+                <span style={{
+                  fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900, color: '#64748b',
+                  letterSpacing: '0.05em', textTransform: 'uppercase',
+                }}>Teams</span>
+                {s.teams.map(tm => {
+                  const p = parsed.find(x => x.teamId === tm.id);
+                  const earned = p && q.correctOptionIndex != null ? (p.pts[q.correctOptionIndex] ?? 0) : 0;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '3px 10px', borderRadius: 999,
+                      background: 'rgba(0,0,0,0.28)',
+                      border: `1.5px solid ${tm.color}`,
+                    }}>
+                      <span style={{
+                        width: 22, height: 22, borderRadius: '50%', background: tm.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 14,
+                      }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                      <span style={{
+                        fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+                        color: earned > 0 ? '#4ade80' : '#64748b',
+                      }}>+{earned}</span>
                     </div>
                   );
                 })}

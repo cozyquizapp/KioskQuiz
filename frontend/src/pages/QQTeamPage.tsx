@@ -1207,6 +1207,65 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return null;
       })()}
 
+      {/* All-In: Punkteverteilung der eigenen Tipps */}
+      {isRevealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
+        const myAns = s.answers.find(a => a.teamId === myTeamId);
+        if (!myAns) return null;
+        const parts = String(myAns.text ?? '').split(',').map(x => parseInt(x.trim(), 10));
+        if (parts.length !== q.options.length || parts.some(Number.isNaN)) return null;
+        const correctIdx = q.correctOptionIndex;
+        const earned = correctIdx != null ? (parts[correctIdx] ?? 0) : 0;
+        const maxPts = Math.max(...parts, 1);
+        const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
+        return (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+              <span>💰 {lang === 'en' ? 'Your bets' : 'Eure Punkte'}</span>
+              <span style={{ color: earned > 0 ? '#4ade80' : '#94a3b8' }}>
+                {lang === 'en' ? `+${earned} pts` : `+${earned} Pkt`}
+              </span>
+            </div>
+            {q.options.map((opt, i) => {
+              const pts = parts[i] ?? 0;
+              const isCorrect = i === correctIdx;
+              const color = ALLIN_COLORS[i] ?? catColor;
+              const pct = (pts / maxPts) * 100;
+              return (
+                <div key={i} style={{
+                  position: 'relative', overflow: 'hidden',
+                  padding: '8px 10px', borderRadius: 10,
+                  background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+                  border: `1.5px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                  animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
+                }}>
+                  {/* Bar */}
+                  <div style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0,
+                    width: `${pct}%`, background: `${color}22`,
+                    transition: 'width 0.6s ease',
+                  }} />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>
+                      {isCorrect ? '✓' : ''}
+                    </span>
+                    <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: isCorrect ? '#4ade80' : '#e2e8f0' }}>
+                      {opt}
+                    </span>
+                    <span style={{
+                      fontWeight: 900, fontSize: 14,
+                      color: pts === 0 ? '#475569' : isCorrect ? '#4ade80' : color,
+                      minWidth: 28, textAlign: 'right',
+                    }}>
+                      {pts}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Reihenfolge: eigene Sortierung mit ✓/✗ pro Position */}
       {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
         const btt = q.bunteTuete as any;

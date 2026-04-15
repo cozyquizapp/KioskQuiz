@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'Cozy Quiz Team',
         short_name: 'CozyQuiz',
-        description: 'Cozy Kiosk Quiz — Team View',
+        description: 'Cozy Wolf Quiz — Team View',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

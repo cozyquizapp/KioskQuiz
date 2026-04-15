@@ -78,12 +78,14 @@ export default function QQModeratorPage() {
 
   async function startGame() {
     if (startingRef.current) return;
+    if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
+    const teamCount = state?.teams.length ?? 0;
+    if (teamCount === 0 && !window.confirm('Noch keine Teams verbunden — wirklich starten?')) return;
     startingRef.current = true;
     let questions: QQQuestion[];
     let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
     let slideTemplates: undefined | import('../../../shared/quarterQuizTypes').QQSlideTemplates;
     let soundConfig: undefined | import('../../../shared/quarterQuizTypes').QQSoundConfig;
-    if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
     // QQ Builder draft — questions already in QQ format
     const qqId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
     const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
@@ -663,22 +665,18 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
-                {/* ── Quiz neustarten (Teams bleiben) ── */}
-                <Btn color="#F59E0B" outline onClick={() => {
-                  if (!window.confirm('Quiz neu starten? Punkte & Grid werden zurückgesetzt, Teams bleiben verbunden.')) return;
-                  emit('qq:resetRoom', { roomCode });
-                }}>
-                  ↺ Quiz neustarten
-                </Btn>
-
-                {/* ── Zurück zum Setup (alle Teams kicken) ── */}
-                <Btn color="#EF4444" outline onClick={() => {
-                  if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
-                  for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
-                  emit('qq:resetRoom', { roomCode });
-                }}>
-                  ⎌ Zurück zum Setup
-                </Btn>
+                {/* ── Danger-Menu (Reset-Aktionen, weggedrückt) ── */}
+                <DangerMenu
+                  onRestart={() => {
+                    if (!window.confirm('Quiz neu starten? Punkte & Grid werden zurückgesetzt, Teams bleiben verbunden.')) return;
+                    emit('qq:resetRoom', { roomCode });
+                  }}
+                  onBackToSetup={() => {
+                    if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
+                    for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
+                    emit('qq:resetRoom', { roomCode });
+                  }}
+                />
 
               </div>
             </div>
@@ -1537,6 +1535,62 @@ function badgeStyle(color: string): React.CSSProperties {
     textTransform: 'uppercase', letterSpacing: '0.08em',
   };
 }
+
+// ── Danger-Menu (Reset-Aktionen) ──────────────────────────────────────────────
+
+function DangerMenu({ onRestart, onBackToSetup }: { onRestart: () => void; onBackToSetup: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+  return (
+    <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+          border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)',
+          color: '#EF4444', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+        }}
+        title="Reset-Aktionen"
+      >⋯ Reset</button>
+      {open && (
+        <div style={{
+          position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 20,
+          background: '#1B1510', border: '1px solid rgba(239,68,68,0.3)',
+          borderRadius: 10, padding: 6, minWidth: 240,
+          boxShadow: '0 12px 28px rgba(0,0,0,0.6)',
+        }}>
+          <button
+            onClick={() => { setOpen(false); onRestart(); }}
+            style={menuItemStyle('#F59E0B')}
+          >↺ Quiz neustarten
+            <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Punkte & Grid reset, Teams bleiben</span>
+          </button>
+          <button
+            onClick={() => { setOpen(false); onBackToSetup(); }}
+            style={menuItemStyle('#EF4444')}
+          >⎌ Zurück zum Setup
+            <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Teams kicken, Einstellungen neu</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const menuItemStyle = (accent: string): React.CSSProperties => ({
+  display: 'block', width: '100%', textAlign: 'left',
+  padding: '8px 10px', borderRadius: 6, border: 'none',
+  background: 'transparent', color: accent,
+  cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
+});
 
 // ── Setup View ────────────────────────────────────────────────────────────────
 

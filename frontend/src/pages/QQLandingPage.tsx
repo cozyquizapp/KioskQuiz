@@ -47,7 +47,7 @@ export default function QQLandingPage() {
           <img
             src="/logo.png"
             alt="CozyWolf"
-            style={{ width: 96, height: 96, objectFit: 'contain', filter: 'drop-shadow(0 8px 20px rgba(245,158,11,0.3))' }}
+            style={{ width: 128, height: 128, objectFit: 'contain', filter: 'drop-shadow(0 8px 20px rgba(245,158,11,0.3))' }}
           />
 
           <div>
@@ -127,8 +127,7 @@ export default function QQLandingPage() {
               ist alles gelaufen.
             </Feature>
             <Feature emoji="🏟️" title="Bis 5 Teams">
-              Von der kleinen Runde bis zur ausgebuchten Bar — 2 bis 5 Teams
-              à 2–6 Personen.
+              Von der kleinen Runde bis zur ausgebuchten Bar — 2 bis 5 Teams.
             </Feature>
           </div>
         </section>
@@ -220,7 +219,7 @@ const paragraph: React.CSSProperties = {
 const featureGrid: React.CSSProperties = {
   marginTop: 20,
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gridTemplateColumns: 'repeat(2, 1fr)',
   gap: 14,
 };
 

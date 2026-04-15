@@ -373,7 +373,7 @@ export default function QQModeratorPage() {
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
       )}
 
-      {joined && s && s.phase === 'LOBBY' && teamList.length === 0 && (
+      {joined && s && s.phase === 'LOBBY' && (
         <SetupView
           s={s}
           drafts={drafts}
@@ -392,7 +392,7 @@ export default function QQModeratorPage() {
         />
       )}
 
-      {joined && s && !(s.phase === 'LOBBY' && teamList.length === 0) && (
+      {joined && s && s.phase !== 'LOBBY' && (
         <>
           {/* ══ BIG STATUS BANNER ══ */}
           {(() => {
@@ -459,36 +459,6 @@ export default function QQModeratorPage() {
               padding: '12px 16px',
             }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-
-                {/* ── LOBBY: setup + start ── */}
-                {s.phase === 'LOBBY' && (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Runden:</span>
-                      {([3, 4] as const).map(n => (
-                        <button key={n} onClick={() => setPhases(n)} style={{
-                          padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                          fontWeight: 800, fontSize: 12,
-                          background: phases === n ? '#3B82F6' : 'rgba(255,255,255,0.05)',
-                          color: phases === n ? '#fff' : '#64748b',
-                        }}>{n}</button>
-                      ))}
-                    </div>
-                    <select
-                      value={selectedDraftId}
-                      onChange={e => setSelectedDraftId(e.target.value)}
-                      style={{ ...selectStyle, maxWidth: 220 }}
-                    >
-                      {drafts.length === 0 && <option value="">— keine Drafts —</option>}
-                      {drafts.map(d => (
-                        <option key={d.id} value={d.id}>
-                          📄 {d.title}{d.date ? ` (${d.date})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <PrimaryBtn color="#22C55E" onClick={startGame} hotkey="Space">▶ Spiel starten</PrimaryBtn>
-                  </>
-                )}
 
                 {/* ── RULES ── */}
                 {s.phase === 'RULES' && (
@@ -710,14 +680,6 @@ export default function QQModeratorPage() {
                   ⎌ Zurück zum Setup
                 </Btn>
 
-                {s.phase === 'LOBBY' && (
-                  <Btn color="#475569" outline onClick={async () => {
-                    if (!window.confirm('Ewige Tabelle wirklich komplett löschen?')) return;
-                    await fetch('/api/qq/gameresults', { method: 'DELETE' });
-                  }}>
-                    🗑 Tabelle löschen
-                  </Btn>
-                )}
               </div>
             </div>
 
@@ -777,33 +739,6 @@ export default function QQModeratorPage() {
                     ✓ {s.revealedAnswer}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Team join info */}
-            {s.phase === 'LOBBY' && (
-              <div style={card}>
-                <div style={sectionLabel}>Teams einladen</div>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                  <QRCodeSVG
-                    value={`${window.location.origin}/team?room=${roomCode}`}
-                    size={90}
-                    bgColor="#1B1510"
-                    fgColor="#e2e8f0"
-                    level="M"
-                    style={{ borderRadius: 8 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>Team-URL:</div>
-                    <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e2e8f0', background: 'rgba(255,255,255,0.06)', padding: '4px 8px', borderRadius: 6, marginBottom: 8 }}>
-                      /team?room={roomCode}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#475569' }}>
-                      Teams öffnen diese URL auf ihrem Handy.<br />
-                      Beamer: <span style={{ fontFamily: 'monospace' }}>/beamer?room={roomCode}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -1771,6 +1706,75 @@ function SetupView({
             Ausgewählt: <strong style={{ color: GOLD }}>{selectedDraft.title}</strong> · {selectedDraft.questionCount} Fragen
           </div>
         )}
+      </div>
+
+      {/* ── Lobby-Card: QR + Teams (bereits joinbar während Setup) ── */}
+      <div style={sectionCard}>
+        <div style={sectionTitle}>
+          👥 Teams-Lobby
+          <span style={{ color: '#64748b', fontWeight: 600, fontSize: 11 }}>
+            · Teams können bereits joinen
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Kompakter QR links */}
+          <div style={{
+            background: '#fff', padding: 10, borderRadius: 12,
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+          }}>
+            <QRCodeSVG
+              value={`${window.location.origin}/team?room=${roomCode}`}
+              size={120}
+              bgColor="#ffffff"
+              fgColor="#0D0A06"
+            />
+          </div>
+          {/* Join-URL + Team-Status rechts */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={fieldLabel}>Team-URL</div>
+            <div style={{
+              padding: '8px 12px', borderRadius: 8,
+              background: 'rgba(0,0,0,0.35)', color: '#e2e8f0',
+              fontFamily: 'monospace', fontSize: 13, marginBottom: 12,
+              border: '1px solid rgba(255,255,255,0.08)', userSelect: 'all',
+            }}>/team?room={roomCode}</div>
+
+            <div style={fieldLabel}>
+              Verbundene Teams ({s.teams.filter(t => t.connected).length}/{s.teams.length})
+            </div>
+            {s.teams.length === 0 ? (
+              <div style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
+                Noch keine Teams beigetreten — der Start funktioniert trotzdem.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {s.teams.map(t => {
+                  const av = qqGetAvatar(t.avatarId);
+                  return (
+                    <div key={t.id} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '5px 10px 5px 6px', borderRadius: 999,
+                      background: t.connected ? `${t.color}22` : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${t.connected ? t.color : 'rgba(255,255,255,0.08)'}`,
+                      opacity: t.connected ? 1 : 0.5,
+                    }}>
+                      <span style={{
+                        fontSize: 16, width: 22, height: 22, borderRadius: '50%',
+                        background: t.color, display: 'inline-flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        border: '1.5px solid #fff',
+                      }}>{av.emoji}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: t.connected ? '#e2e8f0' : '#64748b' }}>
+                        {t.name}
+                      </span>
+                      {!t.connected && <span style={{ fontSize: 9, color: '#EF4444', marginLeft: 2 }}>●</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Zwei-Spalten-Grid: Spielregeln | Show-Feel ── */}

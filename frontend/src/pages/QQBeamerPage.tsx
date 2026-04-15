@@ -2260,42 +2260,137 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         );
       })()}
 
-      {/* BUNTE TÜTE top5 */}
+      {/* BUNTE TÜTE top5 — answer-centric: list correct answers, pin teams who had each */}
       {q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
         const btt = q.bunteTuete as any;
-        const correctDE: string[] = (btt.answers ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
-        const correctEN: string[] = (btt.answersEn ?? []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
-        const allCorrect = new Set([...correctDE, ...correctEN]);
-        const scored = [...s.answers].map(a => {
-          const parts = a.text.split('|').map((p: string) => p.trim()).filter(Boolean);
-          const hits = parts.filter((p: string) => [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase()))));
-          return { ...a, parts, hits: hits.length };
-        }).sort((a, b) => b.hits - a.hits || a.submittedAt - b.submittedAt);
-        return scored.map((a, i) => {
-          const team = s.teams.find(t => t.id === a.teamId);
-          const isWinner = a.teamId === s.correctTeamId;
-          return (
-            <div key={a.teamId} style={{
-              padding: '7px 12px', borderRadius: 10, marginBottom: 4,
-              background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-              border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
-              animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#475569', width: 20 }}>#{i + 1}</span>
-                {team && <span style={{ fontSize: 16 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
-                <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 13 }}>{team?.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5} {lang === 'en' ? 'hits' : 'Treffer'}</span>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingLeft: 28 }}>
-                {a.parts.map((p: string, pi: number) => {
-                  const hit = [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase())));
-                  return <span key={pi} style={{ padding: '1px 6px', borderRadius: 5, fontSize: 11, fontWeight: 700, background: hit ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', color: hit ? '#4ade80' : '#64748b' }}>{hit ? '✓ ' : ''}{p}</span>;
-                })}
-              </div>
-            </div>
-          );
+        const correctListDE: string[] = (btt.answers ?? []).map((s: string) => s.trim()).filter(Boolean);
+        const correctListEN: string[] = (btt.answersEn ?? []).map((s: string) => s.trim()).filter(Boolean);
+        const correctList = lang === 'en' && correctListEN.length ? correctListEN : correctListDE;
+        // Set of ALL accepted variants (DE+EN) lowercased for matching
+        const acceptedLower = new Set<string>([
+          ...correctListDE.map(x => x.toLowerCase()),
+          ...correctListEN.map(x => x.toLowerCase()),
+        ]);
+        // Build: per accepted answer, which teams had it
+        const matches = (p: string, c: string) =>
+          p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
+        const teamAnswers = s.answers.map(a => ({
+          teamId: a.teamId,
+          parts: a.text.split('|').map(p => p.trim()).filter(Boolean),
+        }));
+        // For each correct answer: list of teams that hit it
+        const perAnswer = correctList.map((correct, ci) => {
+          const correctDELower = correctListDE[ci]?.toLowerCase() ?? '';
+          const correctENLower = correctListEN[ci]?.toLowerCase() ?? '';
+          const hitters = teamAnswers
+            .filter(ta => ta.parts.some(p => (correctDELower && matches(p, correctDELower)) || (correctENLower && matches(p, correctENLower))))
+            .map(ta => s.teams.find(t => t.id === ta.teamId))
+            .filter((t): t is NonNullable<typeof t> => !!t);
+          return { correct, hitters };
         });
+        // Hit-count + ranking summary per team
+        const teamScore = teamAnswers.map(ta => {
+          const hits = ta.parts.filter(p => {
+            return [...acceptedLower].some(c => c && matches(p, c));
+          }).length;
+          return { teamId: ta.teamId, hits };
+        }).sort((a, b) => b.hits - a.hits);
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+            {/* The 5 correct answers */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {perAnswer.map(({ correct, hitters }, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 12,
+                  background: hitters.length > 0
+                    ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.06))'
+                    : 'rgba(255,255,255,0.035)',
+                  border: hitters.length > 0 ? '1.5px solid rgba(34,197,94,0.4)' : '1.5px solid rgba(255,255,255,0.08)',
+                  animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
+                }}>
+                  <span style={{
+                    width: 'clamp(32px, 3.5vw, 44px)', height: 'clamp(32px, 3.5vw, 44px)',
+                    borderRadius: 10,
+                    background: hitters.length > 0 ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : 'rgba(100,116,139,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 900, color: '#fff',
+                    flexShrink: 0,
+                  }}>
+                    #{i + 1}
+                  </span>
+                  <span style={{
+                    flex: 1,
+                    fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 900,
+                    color: '#F1F5F9',
+                  }}>
+                    {correct}
+                  </span>
+                  {hitters.length > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {hitters.map((tm, hi) => (
+                        <div key={tm.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          padding: '3px 10px 3px 3px', borderRadius: 999,
+                          background: 'rgba(0,0,0,0.28)',
+                          border: `1.5px solid ${tm.color}`,
+                          animation: `contentReveal 0.3s ease ${0.2 + i * 0.08 + hi * 0.05}s both`,
+                        }}>
+                          <span style={{
+                            width: 'clamp(24px, 2.8vw, 32px)', height: 'clamp(24px, 2.8vw, 32px)',
+                            borderRadius: '50%', background: tm.color,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 'clamp(14px, 1.6vw, 18px)',
+                          }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          <span style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 700, color: '#64748b', fontStyle: 'italic' }}>
+                      {lang === 'en' ? 'nobody' : 'niemand'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Team score summary */}
+            <div style={{
+              marginTop: 4, padding: '8px 14px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+              animation: `contentReveal 0.4s ease ${0.1 + correctList.length * 0.08 + 0.1}s both`,
+            }}>
+              <span style={{
+                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900, color: '#64748b',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
+              }}>🏆 Treffer</span>
+              {teamScore.map(ts => {
+                const tm = s.teams.find(t => t.id === ts.teamId);
+                if (!tm) return null;
+                const isWinner = ts.teamId === s.correctTeamId;
+                return (
+                  <div key={tm.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '3px 10px', borderRadius: 999,
+                    background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
+                    border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
+                  }}>
+                    <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                    <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                    <span style={{
+                      fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
+                      color: isWinner ? '#4ade80' : '#cbd5e1',
+                    }}>{ts.hits}/{correctList.length}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
       })()}
 
       {/* BUNTE TÜTE order */}

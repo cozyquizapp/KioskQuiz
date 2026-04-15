@@ -1009,27 +1009,6 @@ export default function QQModeratorPage() {
                 </div>
               </div>
 
-              {/* Avatars */}
-              <div>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🐾 Avatar-Auswahl</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    onClick={() => emit('qq:setAvatars', { roomCode, enabled: !s.avatarsEnabled })}
-                    style={{
-                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                      fontWeight: 800, fontSize: 13,
-                      border: `1px solid ${s.avatarsEnabled ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
-                      background: s.avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-                      color: s.avatarsEnabled ? '#22C55E' : '#64748b',
-                    }}>
-                    {s.avatarsEnabled ? '✓ Avatare aktiviert' : '○ Avatare deaktiviert'}
-                  </button>
-                  <span style={{ fontSize: 11, color: '#475569' }}>
-                    {s.avatarsEnabled ? 'Teams wählen selbst' : 'Zufällig zugewiesen'}
-                  </span>
-                </div>
-              </div>
-
               {/* 3D Grid */}
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🏙️ 3D Grid</div>
@@ -1703,158 +1682,192 @@ function SetupView({
 
   const selectedDraft = drafts.find(d => d.id === selectedDraftId);
 
+  // ── Farb-Tokens für Setup (wärmer als der Live-Modus) ─────────────────────
+  const GOLD = '#F59E0B';
+  const GOLD_SOFT = 'rgba(245,158,11,0.15)';
+  const GOLD_BORDER = 'rgba(245,158,11,0.45)';
+
+  const sectionCard: React.CSSProperties = {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02))',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 20,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+  };
+
+  const sectionTitle: React.CSSProperties = {
+    fontSize: 13, fontWeight: 900, color: '#e2e8f0',
+    marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
+    letterSpacing: '0.02em',
+  };
+
+  const fieldLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 800, color: '#64748b',
+    marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em',
+  };
+
+  // Warm selector pill (Gold-Akzent statt blau)
+  const pillBtn = (active: boolean): React.CSSProperties => ({
+    padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+    fontWeight: 800, fontSize: 13, fontFamily: 'inherit',
+    background: active ? GOLD : 'rgba(255,255,255,0.05)',
+    color: active ? '#1a1206' : '#94a3b8',
+    boxShadow: active ? '0 3px 10px rgba(245,158,11,0.35)' : 'none',
+    transition: 'all 0.15s',
+  });
+
+  const toggleBtn = (active: boolean, activeColor = '#22C55E'): React.CSSProperties => ({
+    padding: '9px 14px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
+    fontWeight: 800, fontSize: 13, width: '100%', textAlign: 'left' as const,
+    border: `1px solid ${active ? activeColor : 'rgba(255,255,255,0.09)'}`,
+    background: active ? `${activeColor}1a` : 'rgba(255,255,255,0.03)',
+    color: active ? activeColor : '#94a3b8',
+    transition: 'all 0.15s',
+  });
+
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ ...card, padding: 24 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginBottom: 4 }}>
-          Quiz-Setup
-        </div>
-        <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 18 }}>
-          Konfiguriere deinen Quiz-Abend, bevor die Teams joinen.
-        </div>
+    <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18, paddingBottom: 100 }}>
 
-        {/* Draft-Auswahl */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-            📚 Fragensatz
+      {/* ── Hero ── */}
+      <div style={{
+        textAlign: 'center', padding: '16px 0 8px',
+      }}>
+        <div style={{ fontSize: 32, marginBottom: 4 }}>🐺</div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.01em' }}>
+          Quiz-Abend vorbereiten
+        </div>
+        <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>
+          Stell alles ein, bevor die Teams den QR scannen.
+        </div>
+      </div>
+
+      {/* ── Fragensatz-Auswahl (Hero-Card) ── */}
+      <div style={{
+        ...sectionCard,
+        background: `linear-gradient(180deg, ${GOLD_SOFT}, rgba(245,158,11,0.03))`,
+        border: `1px solid ${GOLD_BORDER}`,
+      }}>
+        <div style={sectionTitle}>📚 Fragensatz</div>
+        <select
+          value={selectedDraftId}
+          onChange={e => setSelectedDraftId(e.target.value)}
+          style={{
+            width: '100%', padding: '12px 16px', borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(0,0,0,0.35)', color: '#f8fafc',
+            fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
+            cursor: 'pointer', outline: 'none',
+          }}
+        >
+          {drafts.length === 0 && <option value="">— keine Drafts —</option>}
+          {drafts.map(d => (
+            <option key={d.id} value={d.id}>
+              {d.title} · {d.questionCount} Fragen
+            </option>
+          ))}
+        </select>
+        {selectedDraft && (
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+            Ausgewählt: <strong style={{ color: GOLD }}>{selectedDraft.title}</strong> · {selectedDraft.questionCount} Fragen
           </div>
-          <select
-            value={selectedDraftId}
-            onChange={e => setSelectedDraftId(e.target.value)}
-            style={{ ...selectStyle, width: '100%', maxWidth: 400, fontSize: 15, padding: '10px 14px' }}
-          >
-            {drafts.length === 0 && <option value="">— keine Drafts —</option>}
-            {drafts.map(d => (
-              <option key={d.id} value={d.id}>
-                📄 {d.title} ({d.questionCount} Fragen)
-              </option>
-            ))}
-          </select>
-        </div>
+        )}
+      </div>
 
-        {/* Grid: Einstellungen */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 20 }}>
+      {/* ── Zwei-Spalten-Grid: Spielregeln | Show-Feel ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
 
-          {/* Runden */}
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🎯 Runden</div>
+        {/* Spielregeln */}
+        <div style={sectionCard}>
+          <div style={sectionTitle}>🎮 Spielregeln</div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={fieldLabel}>Runden</div>
             <div style={{ display: 'flex', gap: 6 }}>
               {([3, 4] as const).map(n => (
-                <button key={n} onClick={() => setPhases(n)} style={{
-                  padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                  fontWeight: 800, fontSize: 14,
-                  background: phases === n ? '#3B82F6' : 'rgba(255,255,255,0.05)',
-                  color: phases === n ? '#fff' : '#64748b',
-                }}>{n}</button>
+                <button key={n} onClick={() => setPhases(n)} style={pillBtn(phases === n)}>{n}</button>
               ))}
             </div>
           </div>
 
-          {/* Timer */}
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>⏱ Timer-Default</div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={fieldLabel}>Timer-Default</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {[15, 30, 45, 60, 90].map(t => (
-                <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
-                  style={{
-                    padding: '6px 10px', borderRadius: 6,
-                    border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
-                    background: s.timerDurationSec === t ? 'rgba(59,130,246,0.2)' : 'transparent',
-                    color: s.timerDurationSec === t ? '#3B82F6' : '#64748b',
-                    cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
-                  }}>{t}s</button>
+                <button
+                  key={t}
+                  onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
+                  style={pillBtn(s.timerDurationSec === t)}
+                >{t}s</button>
               ))}
             </div>
           </div>
 
-          {/* Sprache */}
           <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🌐 Sprache</div>
+            <div style={fieldLabel}>Sprache</div>
             <div style={{ display: 'flex', gap: 6 }}>
               {(['de', 'en', 'both'] as const).map(lang => (
-                <button key={lang} onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
+                <button
+                  key={lang}
+                  onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
                   style={{
-                    border: s.language === lang ? '2px solid #3B82F6' : '1px solid #475569',
-                    background: s.language === lang ? '#3B82F622' : 'transparent',
-                    color: '#e2e8f0', fontSize: 20, borderRadius: 8, padding: '4px 12px',
-                    cursor: 'pointer', fontWeight: 900,
-                    opacity: s.language === lang ? 1 : 0.6,
+                    ...pillBtn(s.language === lang),
+                    fontSize: 22, padding: '6px 14px',
                   }}
                 >{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</button>
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Avatare */}
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🐾 Avatar-Auswahl</div>
-            <button
-              onClick={() => emit('qq:setAvatars', { roomCode, enabled: !s.avatarsEnabled })}
-              style={{
-                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                fontWeight: 800, fontSize: 13,
-                border: `1px solid ${s.avatarsEnabled ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
-                background: s.avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-                color: s.avatarsEnabled ? '#22C55E' : '#64748b',
-              }}>
-              {s.avatarsEnabled ? '✓ Teams wählen selbst' : '○ Zufällig'}
-            </button>
-          </div>
+        {/* Show-Feel */}
+        <div style={sectionCard}>
+          <div style={sectionTitle}>🎨 Show-Feel</div>
 
-          {/* 3D */}
           <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🏙️ 3D Grid</div>
+            <div style={fieldLabel}>3D-Grid-Transition</div>
             <button
               onClick={() => emit('qq:setEnable3D', { roomCode, enabled: !s.enable3DTransition })}
-              style={{
-                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                fontWeight: 800, fontSize: 13,
-                border: `1px solid ${s.enable3DTransition ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
-                background: s.enable3DTransition ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-                color: s.enable3DTransition ? '#22C55E' : '#64748b',
-              }}>
-              {s.enable3DTransition ? '✓ 3D Transition an' : '○ Nur 2D'}
+              style={toggleBtn(s.enable3DTransition)}
+            >
+              {s.enable3DTransition ? '✓ 2D → 3D Fahrt beim Placement' : '○ Nur 2D Grid'}
             </button>
           </div>
         </div>
 
-        {/* Sounds — pro Draft persistiert */}
-        <div style={{ marginBottom: 24, padding: 14, background: 'rgba(0,0,0,0.25)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-              🔊 Sounds {selectedDraft ? `für ${selectedDraft.title}` : ''}
-              {savingSound && <span style={{ marginLeft: 8, fontSize: 10, color: '#3B82F6' }}>(speichert…)</span>}
-            </div>
-            {qqDraftId && (
-              <button
-                onClick={applySoundsToAllDrafts}
-                disabled={savingSound}
-                style={{
-                  padding: '5px 10px', borderRadius: 7, cursor: savingSound ? 'wait' : 'pointer',
-                  border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(139,92,246,0.12)',
-                  color: '#a78bfa', fontSize: 11, fontWeight: 800, fontFamily: 'inherit',
-                }}
-                title="Diese Sounds auf alle Fragensätze übernehmen"
-              >📋 Auf alle Fragensätze</button>
-            )}
+      </div>
+
+      {/* ── Sound-Card (volle Breite) ── */}
+      <div style={sectionCard}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+          <div style={sectionTitle}>
+            🔊 Sounds
+            {selectedDraft && <span style={{ color: '#64748b', fontWeight: 600, fontSize: 11 }}>für {selectedDraft.title}</span>}
+            {savingSound && <span style={{ fontSize: 10, color: GOLD, fontWeight: 700 }}>• speichert…</span>}
           </div>
-          <QQSoundPanel
-            config={draftSoundConfig}
-            onChange={cfg => {
-              setDraftSoundConfig(cfg);
-              setLocalSoundConfig(cfg);
-              emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
-              persistDraftSoundConfig(cfg);
-            }}
-          />
+          {qqDraftId && (
+            <button
+              onClick={applySoundsToAllDrafts}
+              disabled={savingSound}
+              style={{
+                padding: '6px 12px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
+                border: `1px solid ${GOLD_BORDER}`, background: GOLD_SOFT,
+                color: GOLD, fontSize: 11, fontWeight: 800, fontFamily: 'inherit',
+              }}
+              title="Diese Sounds auf alle Fragensätze übernehmen"
+            >📋 Auf alle Fragensätze übernehmen</button>
+          )}
         </div>
 
-        {/* Lautstärke + Mutes */}
-        <div style={{ marginBottom: 24, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Master-Steuerung */}
+        <div style={{
+          display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+          padding: '10px 14px', borderRadius: 10, background: 'rgba(0,0,0,0.2)',
+          marginBottom: 14, border: '1px solid rgba(255,255,255,0.05)',
+        }}>
           <button
             onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
             style={{
-              padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+              padding: '7px 13px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
               border: `1px solid ${s.musicMuted ? '#EF4444' : '#22C55E'}`,
               background: s.musicMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
               color: s.musicMuted ? '#EF4444' : '#22C55E',
@@ -1862,42 +1875,78 @@ function SetupView({
           <button
             onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
             style={{
-              padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+              padding: '7px 13px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
               border: `1px solid ${s.sfxMuted ? '#EF4444' : '#22C55E'}`,
               background: s.sfxMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
               color: s.sfxMuted ? '#EF4444' : '#22C55E',
             }}>{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
-          <input
-            type="range" min={0} max={100} step={5}
-            value={Math.round((s.volume ?? 0.8) * 100)}
-            onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
-            style={{ flex: 1, maxWidth: 180, accentColor: '#3B82F6' }}
-          />
-          <span style={{ fontSize: 11, color: '#475569' }}>{Math.round((s.volume ?? 0.8) * 100)}%</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
+            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Lautstärke</span>
+            <input
+              type="range" min={0} max={100} step={5}
+              value={Math.round((s.volume ?? 0.8) * 100)}
+              onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
+              style={{ flex: 1, accentColor: GOLD }}
+            />
+            <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 30, fontWeight: 700 }}>
+              {Math.round((s.volume ?? 0.8) * 100)}%
+            </span>
+          </div>
         </div>
 
-        {/* Spiel starten */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <QQSoundPanel
+          config={draftSoundConfig}
+          onChange={cfg => {
+            setDraftSoundConfig(cfg);
+            setLocalSoundConfig(cfg);
+            emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
+            persistDraftSoundConfig(cfg);
+          }}
+        />
+      </div>
+
+      {/* ── Sticky Start-Footer ── */}
+      <div style={{
+        position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50,
+        background: 'linear-gradient(180deg, rgba(13,10,6,0) 0%, rgba(13,10,6,0.95) 40%, #0D0A06 100%)',
+        padding: '20px 20px 18px', pointerEvents: 'none',
+      }}>
+        <div style={{
+          maxWidth: 1000, margin: '0 auto', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', gap: 14, pointerEvents: 'auto',
+        }}>
           <button
             onClick={startGame}
             disabled={!selectedDraftId}
             style={{
-              padding: '16px 44px', borderRadius: 14,
+              padding: '18px 56px', borderRadius: 16,
               border: 'none', cursor: selectedDraftId ? 'pointer' : 'not-allowed',
-              fontFamily: 'inherit', fontWeight: 900, fontSize: 20,
+              fontFamily: 'inherit', fontWeight: 900, fontSize: 22,
+              letterSpacing: '0.02em',
               background: selectedDraftId
-                ? 'linear-gradient(180deg, #22C55E, #16A34A)'
+                ? 'linear-gradient(180deg, #22C55E, #15803D)'
                 : 'rgba(255,255,255,0.05)',
               color: selectedDraftId ? '#fff' : '#475569',
-              boxShadow: selectedDraftId ? '0 6px 20px rgba(34,197,94,0.35)' : 'none',
+              boxShadow: selectedDraftId
+                ? '0 10px 30px rgba(34,197,94,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset'
+                : 'none',
+              transition: 'transform 0.12s, box-shadow 0.2s',
+              transform: 'translateY(0)',
             }}
-          >▶ Spiel starten <span style={{ fontSize: 12, opacity: 0.7, marginLeft: 8 }}>Space</span></button>
+            onMouseEnter={e => { if (selectedDraftId) (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; }}
+          >▶ Spiel starten
+            <span style={{
+              fontSize: 11, marginLeft: 12, padding: '3px 8px', borderRadius: 6,
+              background: 'rgba(0,0,0,0.25)', opacity: 0.85, fontWeight: 700,
+            }}>SPACE</span>
+          </button>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 10, pointerEvents: 'none' }}>
+          Teams joinen erst nach Start über den QR-Code auf dem Beamer.
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', fontSize: 11, color: '#475569' }}>
-        Teams joinen erst nach Spielstart über den QR-Code.
-      </div>
     </div>
   );
 }

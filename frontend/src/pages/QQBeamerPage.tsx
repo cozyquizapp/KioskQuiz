@@ -1925,38 +1925,119 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
   if (!s.answers.length) return null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* Schätzchen */}
-      {q.category === 'SCHAETZCHEN' && (
-        <div style={{ animation: 'contentReveal 0.5s ease 0.1s both' }}>
-          {[...s.answers]
-            .map(a => {
-              const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
-              const team = s.teams.find(t => t.id === a.teamId);
-              const distance = Number.isNaN(num) || q.targetValue == null ? Infinity : Math.abs(num - q.targetValue);
-              return { ...a, num, distance, team };
-            })
-            .sort((a, b) => a.distance - b.distance)
-            .map((a, i) => (
-              <div key={a.teamId} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 14px', borderRadius: 12, marginBottom: 5,
-                background: i === 0 ? 'rgba(234,179,8,0.14)' : 'rgba(255,255,255,0.04)',
-                border: i === 0 ? '1.5px solid rgba(234,179,8,0.35)' : '1px solid rgba(255,255,255,0.07)',
-                animation: `contentReveal 0.4s ease ${0.15 + i * 0.1}s both`,
+      {/* Schätzchen — target banner + estimates with delta bars */}
+      {q.category === 'SCHAETZCHEN' && (() => {
+        const scored = [...s.answers].map(a => {
+          const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+          const team = s.teams.find(t => t.id === a.teamId);
+          const distance = Number.isNaN(num) || q.targetValue == null ? Infinity : Math.abs(num - q.targetValue);
+          return { ...a, num, distance, team };
+        }).sort((a, b) => a.distance - b.distance);
+        const maxDistance = Math.max(1, ...scored.filter(s => Number.isFinite(s.distance)).map(s => s.distance));
+        const targetStr = q.targetValue != null ? q.targetValue.toLocaleString('de-DE') : '—';
+        const unitStr = (q as any).unit ?? '';
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+            {/* Target banner */}
+            <div style={{
+              padding: '14px 20px', borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(245,158,11,0.10))',
+              border: '2px solid rgba(251,191,36,0.55)',
+              boxShadow: '0 0 0 3px rgba(251,191,36,0.12), 0 8px 24px rgba(0,0,0,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+              animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both',
+            }}>
+              <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}>🎯</span>
+              <span style={{
+                fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
+                color: '#FDE68A', letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>{lang === 'en' ? 'Target' : 'Lösung'}</span>
+              <span style={{
+                fontSize: 'clamp(30px, 4vw, 56px)', fontWeight: 900,
+                color: '#FBBF24',
+                textShadow: '0 2px 12px rgba(251,191,36,0.45)',
               }}>
-                <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: i === 0 ? '#EAB308' : '#475569', width: 24 }}>#{i + 1}</span>
-                {a.team && <span style={{ fontSize: 'clamp(20px, 2.4vw, 32px)', lineHeight: 1 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
-                <span style={{ fontWeight: 800, fontSize: 'clamp(14px, 1.6vw, 22px)', color: a.team?.color ?? '#e2e8f0', flex: 1 }}>{a.team?.name ?? a.teamId}</span>
-                <span style={{ fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
-                {q.targetValue != null && (
-                  <span style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(12px, 1.2vw, 16px)', color: '#64748b' }}>
-                    {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
-                  </span>
-                )}
-              </div>
-            ))}
-        </div>
-      )}
+                {targetStr}{unitStr ? ` ${unitStr}` : ''}
+              </span>
+            </div>
+
+            {/* Estimates list with delta bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {scored.map((a, i) => {
+                const isWinner = i === 0;
+                const pct = Number.isFinite(a.distance) ? (a.distance / maxDistance) * 100 : 100;
+                const distStr = Number.isFinite(a.distance)
+                  ? `Δ ${a.distance.toLocaleString('de-DE')}${unitStr ? ` ${unitStr}` : ''}`
+                  : '—';
+                return (
+                  <div key={a.teamId} style={{
+                    position: 'relative', overflow: 'hidden',
+                    padding: '10px 14px', borderRadius: 12,
+                    background: isWinner
+                      ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
+                      : 'rgba(255,255,255,0.035)',
+                    border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                    boxShadow: isWinner ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
+                    animation: `contentReveal 0.4s ease ${0.2 + i * 0.08}s both`,
+                  }}>
+                    {/* Distance bar (background) */}
+                    {Number.isFinite(a.distance) && (
+                      <div style={{
+                        position: 'absolute', left: 0, top: 0, bottom: 0,
+                        width: `${100 - pct}%`,
+                        background: isWinner
+                          ? 'linear-gradient(90deg, rgba(34,197,94,0.22), rgba(34,197,94,0.04))'
+                          : `linear-gradient(90deg, ${a.team?.color ?? '#64748b'}30, transparent)`,
+                        transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)',
+                      }} />
+                    )}
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{
+                        width: 'clamp(26px, 2.8vw, 34px)', height: 'clamp(26px, 2.8vw, 34px)',
+                        borderRadius: 8,
+                        background: isWinner ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : 'rgba(100,116,139,0.25)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#fff',
+                        flexShrink: 0,
+                      }}>
+                        {isWinner ? '🥇' : `#${i + 1}`}
+                      </span>
+                      {a.team && (
+                        <span style={{
+                          width: 'clamp(28px, 3vw, 38px)', height: 'clamp(28px, 3vw, 38px)',
+                          borderRadius: '50%', background: a.team.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 'clamp(16px, 1.8vw, 22px)',
+                          flexShrink: 0,
+                        }}>{qqGetAvatar(a.team.avatarId).emoji}</span>
+                      )}
+                      <span style={{
+                        fontWeight: 900, fontSize: 'clamp(14px, 1.5vw, 20px)',
+                        color: a.team?.color ?? '#e2e8f0', flex: '0 1 auto',
+                      }}>{a.team?.name ?? a.teamId}</span>
+                      <span style={{
+                        flex: 1, textAlign: 'right',
+                        fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
+                        color: isWinner ? '#4ade80' : '#e2e8f0',
+                      }}>
+                        {a.text}{unitStr ? ` ${unitStr}` : ''}
+                      </span>
+                      <span style={{
+                        minWidth: 'clamp(64px, 8vw, 110px)', textAlign: 'right',
+                        fontFamily: "'Caveat', cursive",
+                        fontSize: 'clamp(14px, 1.5vw, 20px)',
+                        color: isWinner ? '#86efac' : '#64748b', fontWeight: 700,
+                      }}>
+                        {distStr}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* MUCHO: who chose which option */}
       {q.category === 'MUCHO' && q.options && (() => {

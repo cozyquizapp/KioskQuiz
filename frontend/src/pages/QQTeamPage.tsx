@@ -667,6 +667,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         <div aria-live="polite" aria-atomic="false">
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
         {s.phase === 'RULES'           && <RulesCard lang={lang} />}
+        {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealCard myTeam={myTeam} lang={lang} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
         {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
           <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
@@ -879,6 +880,108 @@ function RulesCard({ lang }: { lang: 'de' | 'en' }) {
             }}>{e}</div>
           ))}
         </div>
+      </div>
+    </CozyCard>
+  );
+}
+
+function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' | 'en' }) {
+  if (!myTeam) return null;
+  const av = qqGetAvatar(myTeam.avatarId);
+  const color = myTeam.color;
+  return (
+    <CozyCard borderColor={`${color}cc`} pulse>
+      <style>{`
+        @keyframes tcTeamPop {
+          0% { opacity: 0; transform: scale(0.5) rotate(-12deg); }
+          55% { opacity: 1; transform: scale(1.1) rotate(4deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes tcFloat {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes tcGlow {
+          0%,100% { box-shadow: 0 0 0 0 ${color}55, 0 10px 36px ${color}44; }
+          50%     { box-shadow: 0 0 0 14px ${color}00, 0 10px 36px ${color}88; }
+        }
+        @keyframes tcSparkle {
+          0%,100% { opacity: 0.5; transform: scale(1); }
+          50%     { opacity: 1;   transform: scale(1.2); }
+        }
+      `}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 22, padding: '18px 8px 10px', position: 'relative',
+      }}>
+        {/* Top label */}
+        <div style={{
+          fontSize: 12, fontWeight: 900, letterSpacing: '0.18em',
+          textTransform: 'uppercase', color: '#FEF08A',
+          animation: 'tcreveal 0.4s ease both',
+        }}>
+          🎬 {lang === 'en' ? "Today's players" : 'Heute spielen'}
+        </div>
+
+        {/* Big avatar disc */}
+        <div style={{
+          width: 160, height: 160, borderRadius: '50%',
+          background: `radial-gradient(circle at 35% 30%, ${color} 0%, ${color}cc 45%, ${color}88 100%)`,
+          border: `5px solid ${color}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 100, lineHeight: 1,
+          animation: 'tcTeamPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
+        }}>
+          {av.emoji}
+        </div>
+
+        {/* Team name banner */}
+        <div style={{
+          padding: '10px 22px', borderRadius: 16,
+          background: color, color: '#fff',
+          fontSize: 26, fontWeight: 900, letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          boxShadow: `0 6px 20px ${color}88`,
+          animation: 'tcTeamPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both',
+        }}>
+          {myTeam.name}
+        </div>
+
+        {/* Motivational line */}
+        <div style={{
+          fontSize: 22, fontWeight: 900,
+          color: '#FBBF24', textAlign: 'center',
+          letterSpacing: '0.06em',
+          textShadow: '0 2px 14px rgba(251,191,36,0.4)',
+          animation: 'tcreveal 0.5s ease 0.4s both',
+        }}>
+          ✨ {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} ✨
+        </div>
+
+        {/* Tagline */}
+        <div style={{
+          fontSize: 14, fontWeight: 700, color: '#94a3b8', textAlign: 'center',
+          fontStyle: 'italic', lineHeight: 1.5, maxWidth: 280,
+          animation: 'tcreveal 0.5s ease 0.55s both',
+        }}>
+          {lang === 'en'
+            ? 'Handys bereit halten — gleich geht\'s los!'
+            : 'Handy bereithalten — gleich geht\'s los!'}
+        </div>
+
+        {/* Sparkles */}
+        <div style={{
+          position: 'absolute', top: 12, left: 16, fontSize: 20,
+          animation: 'tcSparkle 1.8s ease-in-out infinite',
+        }}>✨</div>
+        <div style={{
+          position: 'absolute', top: 40, right: 18, fontSize: 16,
+          animation: 'tcSparkle 2.2s ease-in-out 0.4s infinite',
+        }}>⭐</div>
+        <div style={{
+          position: 'absolute', bottom: 30, left: 22, fontSize: 16,
+          animation: 'tcSparkle 2s ease-in-out 0.8s infinite',
+        }}>⭐</div>
       </div>
     </CozyCard>
   );

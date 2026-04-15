@@ -179,7 +179,8 @@ export interface QQTeamPhaseStats {
   stealsUsed: number;       // Phase 2: max QQ_MAX_STEALS_PER_PHASE
   jokersEarned: number;     // max QQ_MAX_JOKERS_PER_GAME over the whole game (not reset per phase)
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
-  pendingJokerBonus?: number; // joker bonus placements to apply after current PLACE_2 / multi-placement finishes
+  pendingJokerBonus?: number; // legacy: joker bonus postponed until PLACE_2 finishes (no longer used, kept for state compatibility)
+  pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────

@@ -1146,7 +1146,6 @@ export function qqPlaceCell(
   const stats = room.teamPhaseStats[teamId];
 
   // Jede PLACE_2 / COMEBACK-PLACE_2 / PLACE_1-Joker-Bonus-Runde benutzt placementsLeft.
-  // Erspielt sich ein Joker *während* noch Placements pending sind, wird der Bonus aufgeschoben.
   const usesMultiSlot =
     (action === 'PLACE_2') ||
     (action === 'COMEBACK' && room.comebackAction === 'PLACE_2') ||
@@ -1154,20 +1153,35 @@ export function qqPlaceCell(
 
   if (usesMultiSlot) {
     stats.placementsLeft--;
-    if (jokersAwarded > 0) stats.pendingJokerBonus = (stats.pendingJokerBonus ?? 0) + jokersAwarded;
+    // Joker während laufender Multi-Slot-Runde: SOFORT platzieren (vor verbleibenden Regulär-Steinen)
+    // Die noch offenen Multi-Slot-Placements werden aufgeschoben in pendingMultiSlot.
+    if (jokersAwarded > 0) {
+      if (stats.placementsLeft > 0) {
+        stats.pendingMultiSlot = (stats.pendingMultiSlot ?? 0) + stats.placementsLeft;
+      }
+      stats.placementsLeft = jokersAwarded;
+      room.pendingAction = 'PLACE_1';
+      return { jokersAwarded };
+    }
     if (stats.placementsLeft > 0) {
       return { jokersAwarded };
     }
   }
 
-  // Placement complete — gather all pending joker bonuses (aus Multi-Slot) + direktem Award
+  // Placement complete — direkter Joker-Bonus (aus PLACE_1 ohne pending)?
   const direct = usesMultiSlot ? 0 : jokersAwarded;
-  const totalJokerBonus = (stats.pendingJokerBonus ?? 0) + direct;
-  if (totalJokerBonus > 0) {
-    stats.pendingJokerBonus = 0;
-    stats.placementsLeft = totalJokerBonus;
+  if (direct > 0) {
+    stats.placementsLeft = direct;
     room.pendingAction = 'PLACE_1';
-    return { jokersAwarded: totalJokerBonus };
+    return { jokersAwarded: direct };
+  }
+
+  // Falls noch aufgeschobene Multi-Slot-Placements existieren (nach Joker-Bonus) → wiederaufnehmen
+  if ((stats.pendingMultiSlot ?? 0) > 0) {
+    stats.placementsLeft = stats.pendingMultiSlot!;
+    stats.pendingMultiSlot = 0;
+    room.pendingAction = 'PLACE_1';
+    return { jokersAwarded };
   }
 
   finishPlacement(room);

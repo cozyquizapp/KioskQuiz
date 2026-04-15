@@ -1627,51 +1627,77 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {rule}
               </div>
             ))}
-            {/* Round 4: Stacking example grid with + symbol */}
-            {s.gamePhaseIndex === 4 && (
-              <div style={{
-                marginTop: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-                  {/* Before: 3 stones team color */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 56px)', gap: 5 }}>
-                    {[0,1,2,3,4,5,6,7,8].map(i => (
-                      <div key={i} style={{
-                        width: 56, height: 56, borderRadius: 10,
-                        background: i < 3 ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.06)',
-                        border: i < 3 ? `1px solid ${color}` : '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: i < 3 ? `0 0 10px ${color}66` : 'none',
-                      }} />
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 48, fontWeight: 900, color: `${color}cc` }}>+</div>
-                  <div style={{ fontSize: 48 }}>📌</div>
-                  <div style={{ fontSize: 48, fontWeight: 900, color: `${color}cc` }}>=</div>
-                  {/* After: same 3 stones, one stuck with 📌 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 56px)', gap: 5 }}>
-                    {[0,1,2,3,4,5,6,7,8].map(i => (
-                      <div key={i} style={{
-                        width: 56, height: 56, borderRadius: 10,
-                        background: i < 3 ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.06)',
-                        border: i === 1 ? '2px solid rgba(251,191,36,0.95)' : i < 3 ? `1px solid ${color}` : '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: i === 1 ? '0 0 14px rgba(251,191,36,0.7)' : i < 3 ? `0 0 10px ${color}66` : 'none',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 26,
-                      }}>{i === 1 ? '📌' : ''}</div>
-                    ))}
-                  </div>
-                </div>
+            {/* Round 4: Plus-shape stacking example — showing the 5 plus-tiles + stacked tile */}
+            {s.gamePhaseIndex === 4 && (() => {
+              // Plus shape in a 3x3 grid: positions 1 (top), 3 (left), 4 (center), 5 (right), 7 (bottom)
+              const plusPositions = new Set([1, 3, 4, 5, 7]);
+              const stackTarget = 4; // center = the tile to stack on
+              return (
                 <div style={{
-                  fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 800,
-                  color: `${color}aa`, textAlign: 'center', maxWidth: 700,
+                  marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                  animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                 }}>
-                  {lang === 'en'
-                    ? '📌 Stack locks a tile — it can\'t be stolen or swapped anymore'
-                    : '📌 Stucken macht ein Feld unklaubbar und untauschbar'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                    {/* Before: plus shape in team color */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
+                      {[0,1,2,3,4,5,6,7,8].map(i => {
+                        const isPlus = plusPositions.has(i);
+                        return (
+                          <div key={i} style={{
+                            width: 52, height: 52, borderRadius: 9,
+                            background: isPlus ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
+                            border: isPlus ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
+                            boxShadow: isPlus ? `0 0 8px ${color}55` : 'none',
+                          }} />
+                        );
+                      })}
+                    </div>
+                    <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>+</div>
+                    <div style={{ fontSize: 44 }}>📌</div>
+                    <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>=</div>
+                    {/* After: plus shape with center stacked/pinned */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
+                      {[0,1,2,3,4,5,6,7,8].map(i => {
+                        const isPlus = plusPositions.has(i);
+                        const isStacked = i === stackTarget;
+                        return (
+                          <div key={i} style={{
+                            position: 'relative',
+                            width: 52, height: 52, borderRadius: 9,
+                            background: isPlus ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
+                            border: isStacked ? '2.5px solid rgba(251,191,36,0.95)' : isPlus ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
+                            boxShadow: isStacked ? '0 0 16px rgba(251,191,36,0.75)' : isPlus ? `0 0 8px ${color}55` : 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {isStacked && (
+                              <>
+                                {/* Stacked second tile (behind, slightly offset) */}
+                                <div style={{
+                                  position: 'absolute', inset: -4, borderRadius: 9,
+                                  background: `linear-gradient(135deg, ${color}dd, ${color}88)`,
+                                  border: `1px solid ${color}`,
+                                  transform: 'translate(3px, -3px)',
+                                  zIndex: -1,
+                                }} />
+                                <span style={{ fontSize: 24 }}>📌</span>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(15px, 1.7vw, 20px)', fontWeight: 800,
+                    color: `${color}aa`, textAlign: 'center', maxWidth: 720, lineHeight: 1.4,
+                  }}>
+                    {lang === 'en'
+                      ? 'Place a second tile ON an existing one (Plus-shape) — stacked tiles can\'t be stolen or swapped'
+                      : 'Zweiten Stein AUF einen bestehenden setzen (Plus-Form) — gestapelte Felder sind unklaubbar & untauschbar'}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </>
       ) : s.categoryIsNew ? (
@@ -2393,36 +2419,133 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         );
       })()}
 
-      {/* BUNTE TÜTE order */}
+      {/* BUNTE TÜTE order — correct sequence big, per-position stats + team summary */}
       {q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
         const btt = q.bunteTuete as any;
         const items: string[] = btt.items ?? [];
         const correctOrder: number[] = btt.correctOrder ?? items.map((_: any, i: number) => i);
-        const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim().toLowerCase());
-        const scored = [...s.answers].map(a => {
-          const parts = a.text.split('|').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
-          const score = parts.filter((p: string, i: number) => p === correctSeq[i]).length;
-          return { ...a, parts, score };
-        }).sort((a, b) => b.score - a.score || a.submittedAt - b.submittedAt);
-        return scored.map((a, i) => {
-          const team = s.teams.find(t => t.id === a.teamId);
-          const isWinner = a.teamId === s.correctTeamId;
-          return (
-            <div key={a.teamId} style={{
-              padding: '7px 12px', borderRadius: 10, marginBottom: 4,
-              background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-              border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
-              animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#475569', width: 20 }}>#{i + 1}</span>
-                {team && <span style={{ fontSize: 16 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
-                <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 13 }}>{team?.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length} {lang === 'en' ? 'correct' : 'richtig'}</span>
-              </div>
-            </div>
-          );
+        const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim());
+        const correctSeqLower = correctSeq.map(x => x.toLowerCase());
+        // Parse each team's ordering
+        const teamOrderings = s.answers.map(a => ({
+          teamId: a.teamId,
+          parts: a.text.split('|').map(p => p.trim()),
+        }));
+        // Per-position: how many teams got this right
+        const perPositionHits = correctSeq.map((_, posIdx) => {
+          const hitters = teamOrderings
+            .filter(to => (to.parts[posIdx] ?? '').toLowerCase() === correctSeqLower[posIdx])
+            .map(to => s.teams.find(t => t.id === to.teamId))
+            .filter((t): t is NonNullable<typeof t> => !!t);
+          return { hitters, total: teamOrderings.length };
         });
+        // Per-team: how many positions correct
+        const teamScores = teamOrderings.map(to => {
+          const score = to.parts.filter((p, i) => p.toLowerCase() === correctSeqLower[i]).length;
+          return { teamId: to.teamId, score };
+        }).sort((a, b) => b.score - a.score);
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
+            {/* Correct sequence as numbered chain */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {correctSeq.map((item, pi) => {
+                const { hitters, total } = perPositionHits[pi];
+                const allRight = hitters.length === total && total > 0;
+                const noneRight = hitters.length === 0;
+                return (
+                  <div key={pi} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 14px', borderRadius: 12,
+                    background: allRight
+                      ? 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.08))'
+                      : noneRight ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
+                    border: allRight
+                      ? '1.5px solid rgba(34,197,94,0.55)'
+                      : noneRight ? '1.5px solid rgba(239,68,68,0.3)' : '1.5px solid rgba(255,255,255,0.08)',
+                    animation: `contentReveal 0.4s ease ${0.1 + pi * 0.08}s both`,
+                  }}>
+                    <span style={{
+                      width: 'clamp(32px, 3.5vw, 44px)', height: 'clamp(32px, 3.5vw, 44px)',
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg,#F59E0B,#EA580C)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 900, color: '#fff',
+                      flexShrink: 0,
+                    }}>
+                      {pi + 1}
+                    </span>
+                    <span style={{
+                      flex: 1,
+                      fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 900,
+                      color: '#F1F5F9',
+                    }}>
+                      {item}
+                    </span>
+                    {/* Team avatars who got this position right */}
+                    {hitters.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {hitters.map((tm, hi) => (
+                          <span key={tm.id} title={tm.name} style={{
+                            width: 'clamp(24px, 2.6vw, 32px)', height: 'clamp(24px, 2.6vw, 32px)',
+                            borderRadius: '50%', background: tm.color,
+                            border: '2px solid rgba(0,0,0,0.3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 'clamp(13px, 1.5vw, 17px)',
+                            marginLeft: hi > 0 ? -6 : 0,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                            animation: `contentReveal 0.3s ease ${0.2 + pi * 0.08 + hi * 0.04}s both`,
+                          }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                        ))}
+                      </div>
+                    )}
+                    <span style={{
+                      minWidth: 44, textAlign: 'right',
+                      fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 900,
+                      color: allRight ? '#4ade80' : noneRight ? '#f87171' : '#94a3b8',
+                    }}>
+                      {hitters.length}/{total}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Team summary bar */}
+            <div style={{
+              marginTop: 4, padding: '8px 14px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+              animation: `contentReveal 0.4s ease ${0.1 + correctSeq.length * 0.08 + 0.1}s both`,
+            }}>
+              <span style={{
+                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900, color: '#64748b',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
+              }}>🎯 Richtige Positionen</span>
+              {teamScores.map(ts => {
+                const tm = s.teams.find(t => t.id === ts.teamId);
+                if (!tm) return null;
+                const isWinner = ts.teamId === s.correctTeamId;
+                return (
+                  <div key={tm.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '3px 10px', borderRadius: 999,
+                    background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
+                    border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
+                  }}>
+                    <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                    <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
+                    <span style={{
+                      fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
+                      color: isWinner ? '#4ade80' : '#cbd5e1',
+                    }}>{ts.score}/{correctSeq.length}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
       })()}
 
       {/* BUNTE TÜTE map */}

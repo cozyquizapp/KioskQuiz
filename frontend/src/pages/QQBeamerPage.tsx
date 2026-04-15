@@ -1407,19 +1407,24 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         })}
       </div>
 
-      {/* "Viel Glück!" */}
-      {showGoodLuck && (
+      {/* "Viel Glück!" — reserve space from the start to prevent layout jump when it fades in */}
+      <div style={{
+        marginTop: 'clamp(32px, 4vw, 64px)',
+        height: 'clamp(38px, 5.2vw, 80px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
         <div style={{
-          marginTop: 'clamp(32px, 4vw, 64px)',
           fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900,
           color: '#fbbf24',
           textTransform: 'uppercase', letterSpacing: '0.15em',
           textShadow: '0 4px 24px rgba(251,191,36,0.5)',
-          animation: 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both',
+          opacity: showGoodLuck ? 1 : 0,
+          transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
+          animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
         }}>
           ✨ Viel Glück! ✨
         </div>
-      )}
+      </div>
 
       {/* Skip-Hint */}
       <div style={{

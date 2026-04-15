@@ -1756,6 +1756,8 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
     if (!val.trim()) return;
     if (navigator.vibrate) navigator.vibrate(40);
     await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
+    setVal('');
+    setTimeout(() => ref.current?.focus(), 60);
   }
 
   const urgency = secondsLeft !== null && secondsLeft <= 5;

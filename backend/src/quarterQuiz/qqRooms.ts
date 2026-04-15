@@ -827,7 +827,7 @@ function evalMap(
 
 // ── Hot Potato (Bunte Tüte) ───────────────────────────────────────────────────
 
-const HOT_POTATO_TURN_SEC = 15;
+const HOT_POTATO_TURN_SEC = 30;
 
 /** Clear turn timer for hot potato. */
 export function qqClearHotPotatoTimer(room: QQRoomState): void {

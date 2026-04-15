@@ -428,7 +428,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const trimmed = payload.answer.slice(0, 500);
-        qqHotPotatoSubmitAnswer(room, payload.teamId, trimmed);
+        // Validate turn, but do NOT finalize lastAnswer yet — we decide per branch
+        if (room.phase !== 'QUESTION_ACTIVE') { ok(ack); return; }
+        if (room.hotPotatoActiveTeamId !== payload.teamId) { ok(ack); return; }
+        room.lastActivityAt = Date.now();
 
         // Auto-check: duplicate used answer → eliminate
         const normalizedAnswer = normalizeText(trimmed);
@@ -436,7 +439,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
           used => normalizeText(used) === normalizedAnswer
         );
         if (isDuplicate && normalizedAnswer.length > 0) {
-          // Duplicate — auto-eliminate
+          // Duplicate — auto-eliminate (record answer for reveal display)
+          room.hotPotatoLastAnswer = trimmed;
           const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(payload.roomCode));
           if (!next) {
             qqRevealAnswer(room);

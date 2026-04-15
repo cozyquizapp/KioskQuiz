@@ -1207,6 +1207,50 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return null;
       })()}
 
+      {/* Eigene Antwort (Schätzchen / Mucho / Cheese) — "Was hatten wir nochmal?" */}
+      {isRevealed && (q.category === 'SCHAETZCHEN' || q.category === 'MUCHO' || q.category === 'CHEESE') && (() => {
+        const myAns = s.answers.find(a => a.teamId === myTeamId);
+        if (!myAns) return null;
+        let displayText = myAns.text;
+        let isCorrect: boolean | null = null;
+        if (q.category === 'MUCHO' && q.options) {
+          const idx = parseInt(myAns.text, 10);
+          if (!isNaN(idx) && q.options[idx]) {
+            const optText = lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx];
+            displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
+          }
+          isCorrect = q.correctOptionIndex != null && myAns.text === String(q.correctOptionIndex);
+        } else if (q.category === 'SCHAETZCHEN') {
+          isCorrect = myAns.teamId === s.correctTeamId;
+        } else if (q.category === 'CHEESE') {
+          isCorrect = myAns.teamId === s.correctTeamId;
+        }
+        return (
+          <div style={{
+            marginTop: 10,
+            padding: '10px 14px', borderRadius: 12,
+            background: isCorrect === true ? 'rgba(34,197,94,0.10)'
+              : isCorrect === false ? 'rgba(255,255,255,0.04)'
+              : 'rgba(255,255,255,0.04)',
+            border: `1.5px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+            animation: 'tcreveal 0.35s ease 0.15s both',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', letterSpacing: 0.4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+              {lang === 'en' ? 'Your answer' : 'Eure Antwort'}
+            </span>
+            <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? '#4ade80' : '#e2e8f0', wordBreak: 'break-word' }}>
+              {displayText || '—'}
+            </span>
+            {isCorrect !== null && (
+              <span style={{ fontSize: 18, fontWeight: 900, color: isCorrect ? '#4ade80' : '#f87171', flexShrink: 0 }}>
+                {isCorrect ? '✓' : '✗'}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {/* All-In: Punkteverteilung der eigenen Tipps */}
       {isRevealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
         const myAns = s.answers.find(a => a.teamId === myTeamId);

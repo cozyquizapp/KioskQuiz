@@ -346,6 +346,19 @@ export default function QQModeratorPage() {
       {/* ── Header ── */}
       <div style={header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => {
+              const hasGame = s && s.phase !== 'LOBBY';
+              if (hasGame && !window.confirm('Zurück zum Hauptmenü? Laufendes Spiel wird nicht gespeichert.')) return;
+              window.location.href = '/menu';
+            }}
+            style={{
+              padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
+            }}
+            title="Zurück zum Hauptmenü"
+          >⌂ Menü</button>
           <span style={badgeStyle('#3B82F6')}>Quartier Quiz</span>
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
         </div>
@@ -360,7 +373,26 @@ export default function QQModeratorPage() {
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
       )}
 
-      {joined && s && (
+      {joined && s && s.phase === 'LOBBY' && teamList.length === 0 && (
+        <SetupView
+          s={s}
+          drafts={drafts}
+          selectedDraftId={selectedDraftId}
+          setSelectedDraftId={setSelectedDraftId}
+          phases={phases}
+          setPhases={setPhases}
+          timerInput={timerInput}
+          setTimerInput={setTimerInput}
+          applyTimer={applyTimer}
+          localSoundConfig={localSoundConfig}
+          setLocalSoundConfig={setLocalSoundConfig}
+          roomCode={roomCode}
+          emit={emit}
+          startGame={startGame}
+        />
+      )}
+
+      {joined && s && !(s.phase === 'LOBBY' && teamList.length === 0) && (
         <>
           {/* ══ BIG STATUS BANNER ══ */}
           {(() => {
@@ -661,12 +693,21 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
-                {/* ── Danger: Reset ── */}
-                <Btn color="#EF4444" outline onClick={() => {
-                  if (s.phase !== 'LOBBY' && !window.confirm('Spiel wirklich zurücksetzen?')) return;
+                {/* ── Quiz neustarten (Teams bleiben) ── */}
+                <Btn color="#F59E0B" outline onClick={() => {
+                  if (!window.confirm('Quiz neu starten? Punkte & Grid werden zurückgesetzt, Teams bleiben verbunden.')) return;
                   emit('qq:resetRoom', { roomCode });
                 }}>
-                  ↺ Reset
+                  ↺ Quiz neustarten
+                </Btn>
+
+                {/* ── Zurück zum Setup (alle Teams kicken) ── */}
+                <Btn color="#EF4444" outline onClick={() => {
+                  if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
+                  for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
+                  emit('qq:resetRoom', { roomCode });
+                }}>
+                  ⎌ Zurück zum Setup
                 </Btn>
 
                 {s.phase === 'LOBBY' && (
@@ -1581,6 +1622,284 @@ function badgeStyle(color: string): React.CSSProperties {
     color, fontSize: 11, fontWeight: 800,
     textTransform: 'uppercase', letterSpacing: '0.08em',
   };
+}
+
+// ── Setup View ────────────────────────────────────────────────────────────────
+
+function SetupView({
+  s, drafts, selectedDraftId, setSelectedDraftId, phases, setPhases,
+  timerInput, setTimerInput, applyTimer, localSoundConfig, setLocalSoundConfig,
+  roomCode, emit, startGame,
+}: {
+  s: QQStateUpdate;
+  drafts: DraftSummary[];
+  selectedDraftId: string;
+  setSelectedDraftId: (v: string) => void;
+  phases: 3 | 4;
+  setPhases: (v: 3 | 4) => void;
+  timerInput: number;
+  setTimerInput: (v: number) => void;
+  applyTimer: () => void;
+  localSoundConfig: QQSoundConfig;
+  setLocalSoundConfig: (v: QQSoundConfig) => void;
+  roomCode: string;
+  emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
+  startGame: () => void;
+}) {
+  // Load the currently-selected draft's soundConfig (persistent per draft).
+  const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
+  const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});
+  const [savingSound, setSavingSound] = useState(false);
+
+  // Reload the draft's soundConfig whenever the selected draft changes.
+  useEffect(() => {
+    if (!qqDraftId) { setDraftSoundConfig({}); return; }
+    let cancelled = false;
+    fetch(`/api/qq/drafts/${encodeURIComponent(qqDraftId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d) setDraftSoundConfig(d.soundConfig ?? {}); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [qqDraftId]);
+
+  // Save soundConfig back into the draft (PUT).
+  async function persistDraftSoundConfig(cfg: QQSoundConfig) {
+    if (!qqDraftId) return;
+    setSavingSound(true);
+    try {
+      // GET current draft, patch soundConfig, PUT it back (preserve other fields).
+      const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqDraftId)}`);
+      if (!res.ok) return;
+      const draft = await res.json();
+      draft.soundConfig = cfg;
+      await fetch(`/api/qq/drafts/${encodeURIComponent(qqDraftId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+    } finally { setSavingSound(false); }
+  }
+
+  // Apply current soundConfig to ALL drafts.
+  async function applySoundsToAllDrafts() {
+    if (!window.confirm(`Diese Sound-Einstellungen auf alle ${drafts.length} Fragensätze übernehmen?`)) return;
+    setSavingSound(true);
+    try {
+      for (const d of drafts) {
+        const id = d.id.startsWith('qq:') ? d.id.slice(3) : d.id;
+        const res = await fetch(`/api/qq/drafts/${encodeURIComponent(id)}`);
+        if (!res.ok) continue;
+        const draft = await res.json();
+        draft.soundConfig = draftSoundConfig;
+        await fetch(`/api/qq/drafts/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(draft),
+        });
+      }
+      alert('Sounds auf alle Fragensätze übernommen.');
+    } finally { setSavingSound(false); }
+  }
+
+  const selectedDraft = drafts.find(d => d.id === selectedDraftId);
+
+  return (
+    <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ ...card, padding: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginBottom: 4 }}>
+          Quiz-Setup
+        </div>
+        <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 18 }}>
+          Konfiguriere deinen Quiz-Abend, bevor die Teams joinen.
+        </div>
+
+        {/* Draft-Auswahl */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            📚 Fragensatz
+          </div>
+          <select
+            value={selectedDraftId}
+            onChange={e => setSelectedDraftId(e.target.value)}
+            style={{ ...selectStyle, width: '100%', maxWidth: 400, fontSize: 15, padding: '10px 14px' }}
+          >
+            {drafts.length === 0 && <option value="">— keine Drafts —</option>}
+            {drafts.map(d => (
+              <option key={d.id} value={d.id}>
+                📄 {d.title} ({d.questionCount} Fragen)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Grid: Einstellungen */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 20 }}>
+
+          {/* Runden */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🎯 Runden</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {([3, 4] as const).map(n => (
+                <button key={n} onClick={() => setPhases(n)} style={{
+                  padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontWeight: 800, fontSize: 14,
+                  background: phases === n ? '#3B82F6' : 'rgba(255,255,255,0.05)',
+                  color: phases === n ? '#fff' : '#64748b',
+                }}>{n}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>⏱ Timer-Default</div>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+              {[15, 30, 45, 60, 90].map(t => (
+                <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
+                  style={{
+                    padding: '6px 10px', borderRadius: 6,
+                    border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
+                    background: s.timerDurationSec === t ? 'rgba(59,130,246,0.2)' : 'transparent',
+                    color: s.timerDurationSec === t ? '#3B82F6' : '#64748b',
+                    cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
+                  }}>{t}s</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sprache */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🌐 Sprache</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['de', 'en', 'both'] as const).map(lang => (
+                <button key={lang} onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
+                  style={{
+                    border: s.language === lang ? '2px solid #3B82F6' : '1px solid #475569',
+                    background: s.language === lang ? '#3B82F622' : 'transparent',
+                    color: '#e2e8f0', fontSize: 20, borderRadius: 8, padding: '4px 12px',
+                    cursor: 'pointer', fontWeight: 900,
+                    opacity: s.language === lang ? 1 : 0.6,
+                  }}
+                >{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Avatare */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🐾 Avatar-Auswahl</div>
+            <button
+              onClick={() => emit('qq:setAvatars', { roomCode, enabled: !s.avatarsEnabled })}
+              style={{
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                fontWeight: 800, fontSize: 13,
+                border: `1px solid ${s.avatarsEnabled ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+                background: s.avatarsEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+                color: s.avatarsEnabled ? '#22C55E' : '#64748b',
+              }}>
+              {s.avatarsEnabled ? '✓ Teams wählen selbst' : '○ Zufällig'}
+            </button>
+          </div>
+
+          {/* 3D */}
+          <div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, marginBottom: 8 }}>🏙️ 3D Grid</div>
+            <button
+              onClick={() => emit('qq:setEnable3D', { roomCode, enabled: !s.enable3DTransition })}
+              style={{
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                fontWeight: 800, fontSize: 13,
+                border: `1px solid ${s.enable3DTransition ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+                background: s.enable3DTransition ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+                color: s.enable3DTransition ? '#22C55E' : '#64748b',
+              }}>
+              {s.enable3DTransition ? '✓ 3D Transition an' : '○ Nur 2D'}
+            </button>
+          </div>
+        </div>
+
+        {/* Sounds — pro Draft persistiert */}
+        <div style={{ marginBottom: 24, padding: 14, background: 'rgba(0,0,0,0.25)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              🔊 Sounds {selectedDraft ? `für ${selectedDraft.title}` : ''}
+              {savingSound && <span style={{ marginLeft: 8, fontSize: 10, color: '#3B82F6' }}>(speichert…)</span>}
+            </div>
+            {qqDraftId && (
+              <button
+                onClick={applySoundsToAllDrafts}
+                disabled={savingSound}
+                style={{
+                  padding: '5px 10px', borderRadius: 7, cursor: savingSound ? 'wait' : 'pointer',
+                  border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(139,92,246,0.12)',
+                  color: '#a78bfa', fontSize: 11, fontWeight: 800, fontFamily: 'inherit',
+                }}
+                title="Diese Sounds auf alle Fragensätze übernehmen"
+              >📋 Auf alle Fragensätze</button>
+            )}
+          </div>
+          <QQSoundPanel
+            config={draftSoundConfig}
+            onChange={cfg => {
+              setDraftSoundConfig(cfg);
+              setLocalSoundConfig(cfg);
+              emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
+              persistDraftSoundConfig(cfg);
+            }}
+          />
+        </div>
+
+        {/* Lautstärke + Mutes */}
+        <div style={{ marginBottom: 24, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
+            style={{
+              padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+              border: `1px solid ${s.musicMuted ? '#EF4444' : '#22C55E'}`,
+              background: s.musicMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+              color: s.musicMuted ? '#EF4444' : '#22C55E',
+            }}>{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
+          <button
+            onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
+            style={{
+              padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+              border: `1px solid ${s.sfxMuted ? '#EF4444' : '#22C55E'}`,
+              background: s.sfxMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+              color: s.sfxMuted ? '#EF4444' : '#22C55E',
+            }}>{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
+          <input
+            type="range" min={0} max={100} step={5}
+            value={Math.round((s.volume ?? 0.8) * 100)}
+            onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
+            style={{ flex: 1, maxWidth: 180, accentColor: '#3B82F6' }}
+          />
+          <span style={{ fontSize: 11, color: '#475569' }}>{Math.round((s.volume ?? 0.8) * 100)}%</span>
+        </div>
+
+        {/* Spiel starten */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button
+            onClick={startGame}
+            disabled={!selectedDraftId}
+            style={{
+              padding: '16px 44px', borderRadius: 14,
+              border: 'none', cursor: selectedDraftId ? 'pointer' : 'not-allowed',
+              fontFamily: 'inherit', fontWeight: 900, fontSize: 20,
+              background: selectedDraftId
+                ? 'linear-gradient(180deg, #22C55E, #16A34A)'
+                : 'rgba(255,255,255,0.05)',
+              color: selectedDraftId ? '#fff' : '#475569',
+              boxShadow: selectedDraftId ? '0 6px 20px rgba(34,197,94,0.35)' : 'none',
+            }}
+          >▶ Spiel starten <span style={{ fontSize: 12, opacity: 0.7, marginLeft: 8 }}>Space</span></button>
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#475569' }}>
+        Teams joinen erst nach Spielstart über den QR-Code.
+      </div>
+    </div>
+  );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────

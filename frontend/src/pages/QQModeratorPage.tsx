@@ -1956,7 +1956,8 @@ function SetupView({
               </div>
             )}
 
-            {import.meta.env.DEV && (
+            {/* TEMP: sichtbar in Production für 8-Team-Test. Nach dem Test wieder auf `import.meta.env.DEV` gaten. */}
+            {true && (
               <div style={{
                 marginTop: 12, padding: '10px 12px', borderRadius: 8,
                 background: 'rgba(245,158,11,0.08)',
@@ -1964,7 +1965,7 @@ function SetupView({
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               }}>
                 <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.08em' }}>
-                  🧪 DEV
+                  🧪 TEST
                 </span>
                 <button
                   onClick={async () => {

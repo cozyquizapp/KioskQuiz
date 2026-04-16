@@ -30,6 +30,7 @@ import {
   qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer,
   qqImposterStart, qqImposterChoose,
+  qqFlushQuestionToHistory,
 } from './qqRooms';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 
@@ -69,20 +70,8 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   const sorted = [...teamList].sort((a: any, b: any) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
   const winner = (sorted[0] as any)?.name ?? null;
 
-  // Flush last question's answers into history
-  if (room.currentQuestion && room.answers.length > 0) {
-    room.questionHistory.push({
-      questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
-      category: room.currentQuestion.category,
-      answers: room.answers.map(a => ({
-        teamId: a.teamId,
-        teamName: room.teams[a.teamId]?.name ?? a.teamId,
-        text: a.text,
-        submittedAt: a.submittedAt,
-      })),
-      correctTeamId: room.correctTeamId,
-    });
-  }
+  // Flush last question's answers into history (covers GAME_OVER / last-of-final-phase)
+  qqFlushQuestionToHistory(room);
 
   // Per-Team Aggregat-Stats für die Summary-Seite
   const teamStats: Record<string, { correct: number; answered: number; jokersEarned: number; stealsUsed: number }> = {};

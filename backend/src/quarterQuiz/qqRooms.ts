@@ -408,6 +408,34 @@ export function qqClearAnswers(room: QQRoomState): void {
   room.allAnswered = false;
 }
 
+// Push current question + answers into history (idempotent per question).
+// Called whenever we transition away from a question so every question is
+// captured for summary stats — not just phase boundaries.
+export function qqFlushQuestionToHistory(room: QQRoomState): void {
+  if (!room.currentQuestion || room.answers.length === 0) return;
+  const qIdx = room.questionIndex;
+  const alreadyPushed = (room.questionHistory as any[]).some(h => h._qIndex === qIdx);
+  if (alreadyPushed) return;
+  const correctIds = [
+    ...(room.correctTeamId ? [room.correctTeamId] : []),
+    ...((room['_placementQueue'] as string[] | undefined) ?? []),
+  ];
+  const uniqueIds = Array.from(new Set(correctIds));
+  room.questionHistory.push({
+    _qIndex: qIdx,
+    questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
+    category: room.currentQuestion.category,
+    answers: room.answers.map(a => ({
+      teamId: a.teamId,
+      teamName: room.teams[a.teamId]?.name ?? a.teamId,
+      text: a.text,
+      submittedAt: a.submittedAt,
+    })),
+    correctTeamId: room.correctTeamId,
+    correctTeamIds: uniqueIds,
+  } as any);
+}
+
 // ── Buzz in ───────────────────────────────────────────────────────────────────
 export function qqBuzzIn(room: QQRoomState, teamId: string): void {
   if (room.phase !== 'QUESTION_ACTIVE') {
@@ -477,23 +505,7 @@ export function qqActivateQuestion(
     // At explanation step: fall through to activate
   }
   // Accumulate previous question's answers into history before clearing
-  if (room.currentQuestion && room.answers.length > 0) {
-    room.questionHistory.push({
-      questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
-      category: room.currentQuestion.category,
-      answers: room.answers.map(a => ({
-        teamId: a.teamId,
-        teamName: room.teams[a.teamId]?.name ?? a.teamId,
-        text: a.text,
-        submittedAt: a.submittedAt,
-      })),
-      correctTeamId: room.correctTeamId,
-      correctTeamIds: [
-        ...(room.correctTeamId ? [room.correctTeamId] : []),
-        ...((room['_placementQueue'] as string[] | undefined) ?? []),
-      ],
-    });
-  }
+  qqFlushQuestionToHistory(room);
   room.phase          = 'QUESTION_ACTIVE';
   room.revealedAnswer = null;
   room.correctTeamId  = null;
@@ -1529,6 +1541,10 @@ export function qqNextQuestion(room: QQRoomState): void {
   }
 
   qqStopTimer(room);
+
+  // Persist this question's answers into history BEFORE clearing, so every
+  // question (not just the last-of-phase) contributes to summary stats.
+  qqFlushQuestionToHistory(room);
 
   const nextIndex = room.questionIndex + 1;
 

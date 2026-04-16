@@ -1,40 +1,35 @@
-// QQ City Lab — zwei Ideen, wie die echten App-Avatare (8 SVG-Tiere)
+// QQ City Lab — zwei Ideen, wie die echten QQ-Avatare (8 Emoji-Tiere)
 // als Spielstein im 3D-Grid aussehen könnten.
 //
-// ① Standups   — SVG auf extrudierter Plane, Pappfiguren-Look
-// ② Sockel     — Team-farbiger 3D-Sockel + SVG als Kopf/Portrait
+// ① Standups   — Emoji auf extrudierter Plane, Pappfiguren-Look
+// ② Sockel     — Team-farbiger 3D-Sockel + Emoji als Kopf/Portrait
 //
-// Alle Tiere kommen aus frontend/public/avatars/ (normal.svg).
+// Alle Tiere kommen aus shared/quarterQuizTypes.ts (QQ_AVATARS).
 // Demo-Grid 5×5 mit 8 Teams gemischt + Joker.
 
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
-// ── App-Avatare (passend zu frontend/src/config/avatars.ts) ────────────────
+// Map QQ-Avatar-Id → Anzeige-Info (Name, Farbe, Emoji) direkt aus shared.
+type AvatarKey = typeof QQ_AVATARS[number]['id'];
 
-type AvatarKey = 'giraffe' | 'pferd' | 'blauwal' | 'wolf' | 'pandabaer' | 'katze' | 'igel' | 'eichhoernchen';
-
-const AVATARS: Record<AvatarKey, { name: string; color: string; svg: string }> = {
-  giraffe:       { name: 'Giraffe',      color: '#F59E0B', svg: '/avatars/giraffe/normal.svg' },
-  pferd:         { name: 'Pferd',        color: '#8B5A2B', svg: '/avatars/pferd/normal.svg' },
-  blauwal:       { name: 'Blauwal',      color: '#3B82F6', svg: '/avatars/blauwal/normal.svg' },
-  wolf:          { name: 'Wolf',         color: '#64748B', svg: '/avatars/wolf/normal.svg' },
-  pandabaer:     { name: 'Pandabär',     color: '#E5E7EB', svg: '/avatars/pandabaer/normal.svg' },
-  katze:         { name: 'Katze',        color: '#EF4444', svg: '/avatars/katze/normal.svg' },
-  igel:          { name: 'Igel',         color: '#A16207', svg: '/avatars/igel/normal.svg' },
-  eichhoernchen: { name: 'Eichhörnchen', color: '#EA580C', svg: '/avatars/eichhoernchen/normal.svg' },
-};
+const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }> =
+  QQ_AVATARS.reduce((acc, a) => {
+    acc[a.id as AvatarKey] = { name: a.label, color: a.color, emoji: a.emoji };
+    return acc;
+  }, {} as Record<AvatarKey, { name: string; color: string; emoji: string }>);
 
 type Cell = { owner: AvatarKey | null; joker?: boolean };
 
 const DEMO_GRID: Cell[][] = [
-  [{ owner: 'giraffe' }, { owner: 'giraffe' }, { owner: null }, { owner: 'blauwal' }, { owner: 'blauwal' }],
-  [{ owner: 'giraffe', joker: true }, { owner: 'pferd' }, { owner: 'katze' }, { owner: 'blauwal' }, { owner: null }],
-  [{ owner: null }, { owner: 'katze' }, { owner: 'wolf' }, { owner: 'pandabaer' }, { owner: 'pandabaer' }],
-  [{ owner: 'eichhoernchen' }, { owner: 'katze' }, { owner: null }, { owner: 'igel', joker: true }, { owner: null }],
-  [{ owner: 'eichhoernchen' }, { owner: null }, { owner: 'wolf' }, { owner: 'wolf' }, { owner: 'igel' }],
+  [{ owner: 'fox' },   { owner: 'fox' },             { owner: null },    { owner: 'frog' },    { owner: 'frog' }],
+  [{ owner: 'fox', joker: true }, { owner: 'panda' }, { owner: 'cat' },  { owner: 'frog' },    { owner: null }],
+  [{ owner: null },    { owner: 'cat' },             { owner: 'unicorn' }, { owner: 'rabbit' }, { owner: 'rabbit' }],
+  [{ owner: 'cow' },   { owner: 'cat' },             { owner: null },    { owner: 'raccoon', joker: true }, { owner: null }],
+  [{ owner: 'cow' },   { owner: null },              { owner: 'unicorn' }, { owner: 'unicorn' }, { owner: 'raccoon' }],
 ];
 
 const SIZE = 5;
@@ -43,33 +38,26 @@ const OFFSET = ((SIZE - 1) * TILE) / 2;
 
 type Variant = 1 | 2;
 
-// ── Avatar-Textur-Cache (SVG → CanvasTexture) ──────────────────────────────
-// SVGs enthalten eingebettete Bitmaps, also laden wir sie als <img>,
-// zeichnen sie ins Canvas und benutzen das als THREE.Texture.
-function useAvatarTexture(url: string): THREE.Texture | null {
-  const [tex, setTex] = useState<THREE.Texture | null>(null);
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const size = 512;
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d')!;
-      ctx.clearRect(0, 0, size, size);
-      // Tier zentriert + etwas kleiner als voller canvas, damit es nicht beschnitten wirkt
-      const pad = 24;
-      ctx.drawImage(img, pad, pad, size - pad * 2, size - pad * 2);
-      const t = new THREE.CanvasTexture(canvas);
-      t.anisotropy = 8;
-      t.needsUpdate = true;
-      setTex(t);
-    };
-    img.src = url;
-    return () => { setTex(null); };
-  }, [url]);
-  return tex;
+// ── Avatar-Textur-Cache (Emoji → CanvasTexture) ────────────────────────────
+// Emojis werden via 2D-Canvas mit System-Emoji-Fonts gerendert und
+// als THREE.Texture auf Billboards/Planes verwendet.
+function useAvatarTexture(emoji: string): THREE.Texture {
+  return useMemo(() => {
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    ctx.clearRect(0, 0, size, size);
+    ctx.font = `${size * 0.78}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, size / 2, size / 2 + size * 0.04);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+    return tex;
+  }, [emoji]);
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -127,8 +115,8 @@ export default function QQCityLabPage() {
 }
 
 const VARIANTS: { id: Variant; title: string; sub: string; accent: string }[] = [
-  { id: 1, title: '① Standups',     sub: 'SVG auf extrudierter Plane (Pappfiguren-Look)', accent: '#F59E0B' },
-  { id: 2, title: '② Sockel + Kopf', sub: 'Team-farbiger 3D-Sockel mit Tier-Portrait',    accent: '#3B82F6' },
+  { id: 1, title: '① Standups',     sub: 'Emoji auf extrudierter Plane (Pappfiguren-Look)', accent: '#F59E0B' },
+  { id: 2, title: '② Sockel + Kopf', sub: 'Team-farbiger 3D-Sockel mit Emoji-Portrait',      accent: '#3B82F6' },
 ];
 
 // ── Scene ──────────────────────────────────────────────────────────────────
@@ -266,7 +254,7 @@ function StandupFigure({ x, z, avatar, joker, seed }: {
   x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; seed: number;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const tex = useAvatarTexture(avatar.svg);
+  const tex = useAvatarTexture(avatar.emoji);
   const bob = seed * 0.7;
 
   useFrame((state) => {
@@ -297,20 +285,16 @@ function StandupFigure({ x, z, avatar, joker, seed }: {
           <meshStandardMaterial color="#f8fafc" roughness={0.6} />
         </mesh>
 
-        {/* SVG vorne */}
-        {tex && (
-          <mesh position={[0, 0, D / 2 + 0.001]}>
-            <planeGeometry args={[W * 0.92, H * 0.92]} />
-            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-          </mesh>
-        )}
-        {/* SVG hinten (gespiegelt via rotation) */}
-        {tex && (
-          <mesh position={[0, 0, -D / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
-            <planeGeometry args={[W * 0.92, H * 0.92]} />
-            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-          </mesh>
-        )}
+        {/* Emoji vorne */}
+        <mesh position={[0, 0, D / 2 + 0.001]}>
+          <planeGeometry args={[W * 0.92, H * 0.92]} />
+          <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+        </mesh>
+        {/* Emoji hinten (gespiegelt via rotation) */}
+        <mesh position={[0, 0, -D / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[W * 0.92, H * 0.92]} />
+          <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+        </mesh>
 
         {/* Rand in Team-Farbe (Top + Seiten als schmale Boxen) */}
         <mesh position={[0, H / 2 + 0.01, 0]}>
@@ -336,7 +320,7 @@ function StandupFigure({ x, z, avatar, joker, seed }: {
 function PedestalFigure({ x, z, avatar, joker, seed }: {
   x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; seed: number;
 }) {
-  const tex = useAvatarTexture(avatar.svg);
+  const tex = useAvatarTexture(avatar.emoji);
   const headRef = useRef<THREE.Group>(null);
   const bob = seed * 0.6;
 
@@ -383,13 +367,11 @@ function PedestalFigure({ x, z, avatar, joker, seed }: {
             <ringGeometry args={[0.36, 0.42, 40]} />
             <meshBasicMaterial color={avatar.color} toneMapped={false} />
           </mesh>
-          {/* Avatar-SVG */}
-          {tex && (
-            <mesh position={[0, 0, 0.005]}>
-              <planeGeometry args={[0.6, 0.6]} />
-              <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-            </mesh>
-          )}
+          {/* Avatar-Emoji */}
+          <mesh position={[0, 0, 0.005]}>
+            <planeGeometry args={[0.6, 0.6]} />
+            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+          </mesh>
         </Billboard>
       </group>
 
@@ -428,8 +410,8 @@ function Header({ variant, setVariant, showAll, setShowAll }: {
         Deine 8 Tier-Avatare als Spielstein
       </h1>
       <div style={{ color: '#94a3b8', fontSize: 15, maxWidth: 820, lineHeight: 1.5 }}>
-        Die echten SVGs aus der App — auf zwei Arten in 3D gebracht.
-        Demo-Grid 5×5 mit gemischten Teams + Joker.
+        Die echten 8 QQ-Avatare (Fox · Frog · Panda · Rabbit · Unicorn · Raccoon · Cow · Cat) —
+        auf zwei Arten in 3D gebracht. Demo-Grid 5×5 mit gemischten Teams + Joker.
       </div>
 
       <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -499,11 +481,12 @@ function Legend() {
       </div>
       {(Object.keys(AVATARS) as AvatarKey[]).map(k => (
         <div key={k} style={{
-          display: 'flex', alignItems: 'center', gap: 8,
+          display: 'flex', alignItems: 'center', gap: 6,
           padding: '5px 10px', borderRadius: 999,
           background: `${AVATARS[k].color}22`,
           border: `1px solid ${AVATARS[k].color}66`,
         }}>
+          <span style={{ fontSize: 14 }}>{AVATARS[k].emoji}</span>
           <span style={{ color: AVATARS[k].color, fontWeight: 800, fontSize: 12 }}>{AVATARS[k].name}</span>
         </div>
       ))}

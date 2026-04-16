@@ -15,6 +15,7 @@ interface DraftSummary {
   date: string | null;
   updatedAt: number;
   questionCount: number;
+  phases?: 3 | 4;
 }
 
 export default function QQModeratorPage() {
@@ -58,6 +59,17 @@ export default function QQModeratorPage() {
     }
   }, [state?.soundConfig]);
 
+  // Auto-sync phases when user selects a draft (take draft's own phases, or derive from questionCount)
+  useEffect(() => {
+    if (!selectedDraftId) return;
+    const d = drafts.find(x => x.id === selectedDraftId);
+    if (!d) return;
+    // Prefer draft's saved phases; else derive from question count (15 → 3, 20 → 4)
+    const derived = d.phases ?? (d.questionCount === 20 ? 4 : d.questionCount === 15 ? 3 : null);
+    if (derived && derived !== phases) setPhases(derived);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDraftId, drafts]);
+
   // Load available drafts once (Cozy60 + QQ Builder)
   useEffect(() => {
     fetch('/api/qq/drafts').then(r => r.json()).catch(() => []).then((qqDrafts: any[]) => {
@@ -68,6 +80,7 @@ export default function QQModeratorPage() {
             date: null,
             updatedAt: d.updatedAt ?? 0,
             questionCount: d.questions?.length ?? 0,
+            phases: (d.phases === 4 ? 4 : 3) as 3 | 4,
           }))
         : [];
       const sorted = qq.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -81,6 +94,16 @@ export default function QQModeratorPage() {
     if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
     const teamCount = state?.teams.length ?? 0;
     if (teamCount === 0 && !window.confirm('Noch keine Teams verbunden — wirklich starten?')) return;
+    // Preflight: phases * 5 must match the draft's question count
+    const summary = drafts.find(d => d.id === selectedDraftId);
+    if (summary && summary.questionCount !== phases * 5) {
+      const suggest = summary.questionCount === 20 ? 4 : summary.questionCount === 15 ? 3 : null;
+      alert(
+        `Das Set hat ${summary.questionCount} Fragen, aber ${phases} Runden brauchen ${phases * 5}.` +
+        (suggest ? `\n\nTipp: Stelle die Runden auf ${suggest}.` : '\n\nBitte Set prüfen oder Runden anpassen.')
+      );
+      return;
+    }
     startingRef.current = true;
     let questions: QQQuestion[];
     let theme: undefined | import('../../../shared/quarterQuizTypes').QQTheme;
@@ -1945,10 +1968,27 @@ function SetupView({
 
           <div style={{ marginBottom: 14 }}>
             <div style={fieldLabel}>Runden</div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {([3, 4] as const).map(n => (
                 <button key={n} onClick={() => setPhases(n)} style={pillBtn(phases === n)}>{n}</button>
               ))}
+              {(() => {
+                const d = drafts.find(x => x.id === selectedDraftId);
+                if (!d) return null;
+                const needed = phases * 5;
+                if (d.questionCount === needed) {
+                  return (
+                    <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 700, marginLeft: 4 }}>
+                      ✓ {d.questionCount} Fragen passen
+                    </span>
+                  );
+                }
+                return (
+                  <span style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, marginLeft: 4 }}>
+                    ⚠ {d.questionCount}/{needed} Fragen — Set hat {d.questionCount === 20 ? '4' : d.questionCount === 15 ? '3' : '?'} Runden
+                  </span>
+                );
+              })()}
             </div>
           </div>
 

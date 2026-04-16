@@ -4850,83 +4850,74 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     return () => window.removeEventListener('keydown', onKey);
   }, [viewMode]);
 
-  // Claim toast state
-  const [toast, setToast] = useState<{ text: string; color: string; key: number } | null>(null);
-  const prevPendingRef = useRef(s.pendingFor);
-  useEffect(() => {
-    if (prevPendingRef.current && prevPendingRef.current !== s.pendingFor) {
-      const prevTeam = s.teams.find(t => t.id === prevPendingRef.current);
-      if (prevTeam) {
-        const isSteal = s.pendingAction === 'STEAL_1';
-        const msg = isSteal
-          ? (lang === 'de' ? `⚡ ${prevTeam.name} hat ein Feld geklaut!` : `⚡ ${prevTeam.name} stole a field!`)
-          : (lang === 'de' ? `✅ ${prevTeam.name} hat ein Feld gesetzt!` : `✅ ${prevTeam.name} placed a field!`);
-        setToast({ text: msg, color: prevTeam.color, key: Date.now() });
-        setTimeout(() => setToast(null), 2500);
-      }
-    }
-    prevPendingRef.current = s.pendingFor;
-  }, [s.pendingFor]);
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Fireflies color={`${teamColor}77`} />
 
-      {/* Top banner — nur rendern, wenn ein Team aktiv ist (kein leerer "Waiting…"-Platzhalter) */}
-      {team && (
-        <div style={{
-          padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
-          position: 'relative', zIndex: 5,
-          background: `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)`,
-          borderBottom: `2px solid ${teamColor}22`,
-        }}>
-          <div style={{
-            position: 'relative',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 72, height: 72, borderRadius: '50%',
-            background: `${teamColor}20`,
-            border: `3px solid ${teamColor}88`,
-            boxShadow: `0 0 20px ${teamColor}44`,
-            animation: 'activeTeamGlow 2s ease-in-out infinite',
-            ['--team-color' as string]: `${teamColor}55`,
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{
-              fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
-              textShadow: `0 0 24px ${teamColor}44`,
-            }}>{team.name}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{
-                fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
-                color: '#e2e8f0',
-              }}>
-                {actionVerb(s.pendingAction, lang)}
-              </span>
-              {s.teamPhaseStats[team.id] && (
-                <span style={{
-                  padding: '3px 12px', borderRadius: 999,
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                  color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
-                }}>
-                  {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
-                </span>
-              )}
+      {/* Top banner — feste Höhe (auch wenn kein Team aktiv ist), sonst springt das
+          Grid darunter, sobald die Leiste verschwindet/erscheint. */}
+      <div style={{
+        height: 112, flexShrink: 0,
+        padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
+        position: 'relative', zIndex: 5,
+        background: team ? `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)` : 'transparent',
+        borderBottom: team ? `2px solid ${teamColor}22` : '2px solid transparent',
+        visibility: team ? 'visible' : 'hidden',
+      }}>
+        {team && (
+          <>
+            <div style={{
+              position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 72, height: 72, borderRadius: '50%',
+              background: `${teamColor}20`,
+              border: `3px solid ${teamColor}88`,
+              boxShadow: `0 0 20px ${teamColor}44`,
+              animation: 'activeTeamGlow 2s ease-in-out infinite',
+              ['--team-color' as string]: `${teamColor}55`,
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
             </div>
-          </div>
-        </div>
-      )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{
+                fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
+                textShadow: `0 0 24px ${teamColor}44`,
+              }}>{team.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{
+                  fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
+                  color: '#e2e8f0',
+                }}>
+                  {actionVerb(s.pendingAction, lang)}
+                </span>
+                {s.teamPhaseStats[team.id] && (
+                  <span style={{
+                    padding: '3px 12px', borderRadius: 999,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                  }}>
+                    {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll).
-          alignItems: stretch sorgt dafür dass die Team-Liste vertikal genauso hoch wird
-          wie das Grid (statt in der Mitte zusammengequetscht zu schweben). */}
+          Beide Spalten bekommen height = gridMaxSize (fix quadratisches Grid) damit
+          die Team-Liste exakt so hoch ist wie das Grid — nicht länger. */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center',
+        flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         padding: '12px 36px', position: 'relative', zIndex: 5, gap: 32,
+        minHeight: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{
+          width: gridMaxSize, height: gridMaxSize,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
           {show3D ? (
             <QQ3DGrid
               state={s}
@@ -4942,30 +4933,15 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
         </div>
         <div style={{
           // Fixe Breite statt flex:1 + maxWidth — sonst verschiebt sich der Grid-
-          // Container, sobald ein Team-Name die intrinsische Spaltenbreite ändert
-          // (z. B. beim Sortieren nach Punkten). Fixe Breite = stabiles Layout.
-          width: 540, flexShrink: 0,
-          alignSelf: 'stretch',
+          // Container, sobald ein Team-Name die intrinsische Spaltenbreite ändert.
+          // Höhe = gridMaxSize sorgt dafür dass die Liste exakt Grid-Höhe hat.
+          width: 540, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
           <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
         </div>
       </div>
 
-      {/* Claim toast */}
-      {toast && (
-        <div key={toast.key} style={{
-          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 20, padding: '14px 32px', borderRadius: 999,
-          background: `${toast.color}22`, border: `2px solid ${toast.color}55`,
-          boxShadow: `0 0 30px ${toast.color}33`,
-          fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900, color: '#e2e8f0',
-          animation: 'claimToast 2.5s ease both',
-          whiteSpace: 'nowrap',
-        }}>
-          {toast.text}
-        </div>
-      )}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
-  setMusicDucked, getMusicDuckFactor,
+  setMusicDucked, getMusicDuckFactor, fadeOutAudio,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -400,12 +400,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   useEffect(() => {
     const url = s.currentQuestion?.musicUrl;
     if (!url) {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (audioRef.current) { fadeOutAudio(audioRef.current, 600); audioRef.current = null; }
       return;
     }
     // Während PAUSE nicht stoppen — nur runterducken (Musik bleibt im Hintergrund).
     if (s.phase !== 'QUESTION_ACTIVE' && s.phase !== 'QUESTION_REVEAL' && s.phase !== 'PAUSED') {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (audioRef.current) { fadeOutAudio(audioRef.current, 600); audioRef.current = null; }
       return;
     }
     const effVol = s.musicMuted ? 0 : Math.min(1, s.volume * 0.5 * duckFactor);
@@ -413,13 +413,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       audioRef.current.volume = effVol;
       return;
     }
-    if (audioRef.current) audioRef.current.pause();
+    if (audioRef.current) fadeOutAudio(audioRef.current, 400);
     const a = new Audio(url);
     a.loop = true;
     a.volume = effVol;
     a.play().catch(() => {});
     audioRef.current = a;
-    return () => { a.pause(); };
+    return () => { fadeOutAudio(a, 500); };
   }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume, duckFactor]);
 
   // Fullscreen toggle — detect both JS Fullscreen API and F11/native fullscreen

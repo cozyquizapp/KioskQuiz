@@ -43,6 +43,40 @@ function resolveSlotUrl(slot: QQSoundSlot): string | null {
 // Cache of preloaded HTMLAudioElement instances per URL
 const audioCache: Map<string, HTMLAudioElement> = new Map();
 
+/**
+ * Fade ein HTMLAudioElement smooth aus und pausiere es danach.
+ * Verhindert abrupte Abbrüche beim Timer-Stopp oder Question-Ende.
+ *
+ * @param el Audio-Element
+ * @param durationMs Fade-Dauer (Default 500ms)
+ * @param resetAfter currentTime auf 0 setzen nach dem Fade (für Loops sinnvoll)
+ */
+export function fadeOutAudio(
+  el: HTMLAudioElement,
+  durationMs = 500,
+  resetAfter = false
+) {
+  if (el.paused || el.volume === 0) {
+    el.pause();
+    if (resetAfter) el.currentTime = 0;
+    return;
+  }
+  const startVol = el.volume;
+  const startTime = performance.now();
+  const step = () => {
+    const progress = (performance.now() - startTime) / durationMs;
+    if (progress >= 1) {
+      el.pause();
+      el.volume = startVol;
+      if (resetAfter) el.currentTime = 0;
+      return;
+    }
+    el.volume = startVol * (1 - progress);
+    window.setTimeout(step, 16);
+  };
+  step();
+}
+
 export function setVolume(v: number) {
   masterVolume = Math.max(0, Math.min(1, v));
   // Update any playing audio elements
@@ -226,9 +260,10 @@ export function stopTimerLoop() {
     loopScheduleTimeout = null;
   }
   if (loopAudioEl) {
-    loopAudioEl.pause();
-    loopAudioEl.currentTime = 0;
+    // Smoother Abgang: ~450ms fade statt hartem pause().
+    const el = loopAudioEl;
     loopAudioEl = null;
+    fadeOutAudio(el, 450, true);
   }
 }
 

@@ -488,40 +488,49 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
       flyoverBaseZoomRef.current = zoom;
     }
 
-    // Phase 1 (0 → 1.8s): "descend" — drop to ground level, zoom in close
-    grid.style.transition = 'transform 1.8s cubic-bezier(.5,.0,.3,1)';
-    setRx(15);
-    setRz(-45 + 40);
-    setZoom(flyoverBaseZoomRef.current * 1.6);
+    // Smoother flyover: one continuous motion with matched easings at the seams.
+    // Total: 2.2s dive + 3.8s orbit + 3.0s rise = 9.0s. No linear segment, no snap at end.
+    // Winkel-Plan: rz startet bei -45 (≡ 315), geht über -45+360=315° nach oben
+    // und landet bei -45+720 = 675° (≡ 315°). Kein sichtbarer Snap nötig.
+    const baseRz = -45;
 
-    // Phase 2 (1.8s → 6.0s): slow 270° orbit at low angle (the money shot)
+    // Phase 1 (0 → 2.2s): dive — tiefer Winkel, dichter ran. easeOut für weiches Ankommen.
+    grid.style.transition = 'transform 2.2s cubic-bezier(.33,.0,.2,1)';
+    setRx(18);
+    setRz(baseRz + 30);
+    setZoom(flyoverBaseZoomRef.current * 1.55);
+
+    // Phase 2 (2.2s → 6.0s): 300° Orbit am Boden. easeInOut, damit der Übergang
+    // aus Phase 1 nahtlos weitergeht und Phase 3 nahtlos übernimmt.
     const t2 = setTimeout(() => {
       if (!gridRef.current) return;
-      gridRef.current.style.transition = 'transform 4.2s linear';
-      setRz(-45 + 40 + 270);
-    }, 1800);
+      gridRef.current.style.transition = 'transform 3.8s cubic-bezier(.4,.0,.6,1)';
+      setRz(baseRz + 30 + 300);
+    }, 2200);
 
-    // Phase 3 (6.0s → 9.6s): "ascend" — pull up and zoom out back to default (laenger & weicher)
+    // Phase 3 (6.0s → 9.0s): ascend — hoch + weit, zurück zur Ausgangs-Zoom-Stufe.
+    // Letzte Drehung auf baseRz + 720 (≡ 315° ≡ -45°) — landet exakt bei Ausgangs-Rotation.
     const t3 = setTimeout(() => {
       if (!gridRef.current) return;
-      gridRef.current.style.transition = 'transform 3.6s cubic-bezier(.25,.1,.25,1)';
+      gridRef.current.style.transition = 'transform 3s cubic-bezier(.33,.0,.2,1)';
       setRx(55);
-      setRz(-45 + 360);
+      setRz(baseRz + 720);
       setZoom(flyoverBaseZoomRef.current);
     }, 6000);
 
-    // Phase 4: snap rz back to -45 (equivalent to 315°) without visible movement + restore base transition
-    // Weit nach Phase 3 Ende, damit kein frueher Abbruch sichtbar wird.
+    // Phase 4 (nach Ende der Bewegung): rz-Wert stillschweigend auf -45 normalisieren
+    // (720 → 0 Umdrehungen), ohne sichtbaren Sprung, da visuell identische Orientierung.
     const t4 = setTimeout(() => {
       if (!gridRef.current) return;
       gridRef.current.style.transition = 'none';
-      setRz(-45);
+      setRz(baseRz);
       requestAnimationFrame(() => {
         if (gridRef.current && flyoverTransitionRef.current !== null) {
           gridRef.current.style.transition = flyoverTransitionRef.current;
+          flyoverTransitionRef.current = null;
         }
       });
-    }, 9800);
+    }, 9100);
 
     return () => { clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [flyoverSignal]);

@@ -677,11 +677,26 @@ export default function QQModeratorPage() {
                 {s.phase === 'PLACEMENT' && s.pendingAction && (
                   <PlacementControls state={s} roomCode={roomCode} emit={emit} />
                 )}
-                {s.phase === 'PLACEMENT' && !s.pendingFor && (
-                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
-                    → Nächste Frage
-                  </PrimaryBtn>
-                )}
+                {s.phase === 'PLACEMENT' && !s.pendingFor && (() => {
+                  // Was kommt nach diesem qq:nextQuestion? Gleiche Logik wie im Backend.
+                  const nextIdx = s.questionIndex + 1;
+                  const QPP = 5;
+                  const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
+                  const isGameOver = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
+                  const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
+                  const label = isGameOver
+                    ? '🏆 Spielende'
+                    : isBeforeFinal
+                      ? '⚡ Comeback-Phase'
+                      : isEndOfPhase
+                        ? `→ Runde ${s.gamePhaseIndex + 1}`
+                        : '→ Nächste Frage';
+                  return (
+                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                      {label}
+                    </PrimaryBtn>
+                  );
+                })()}
 
                 {/* ── COMEBACK ── */}
                 {s.phase === 'COMEBACK_CHOICE' && (

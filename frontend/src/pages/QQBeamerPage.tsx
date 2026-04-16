@@ -5445,14 +5445,15 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
-      {/* Two-column: left = winner + rankings, right = final grid */}
+      {/* Two-column: left = winner + rankings, right = final grid.
+          alignItems:flex-start + feste Breiten verhindern Overlap bei 8 Teams. */}
       <div style={{
-        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'clamp(24px, 3vw, 56px)',
-        width: '100%', maxWidth: 1500, justifyContent: 'center',
+        display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 'clamp(24px, 3vw, 56px)',
+        width: '100%', maxWidth: 1600, justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
-        {/* Left column */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '0 1 auto' }}>
+        {/* Left column — maxWidth verhindert dass er ins Grid läuft */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0, maxWidth: 1050 }}>
       {/* Stage 2: Winner hero — big entrance */}
       {winner && (
         <div style={{
@@ -5506,12 +5507,14 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         </div>
       )}
 
-      {/* Stage 3: Rankings — slide in staggered */}
-      {sorted.length > 1 && (
+      {/* Stage 3: Rankings — slide in staggered. Bei vielen Teams kompakter. */}
+      {sorted.length > 1 && (() => {
+        const many = sorted.length > 5;
+        return (
         <div style={{
-          width: '100%', maxWidth: sorted.length > 5 ? 920 : 640,
+          width: '100%', maxWidth: many ? 1000 : 640,
           display: 'grid',
-          gridTemplateColumns: sorted.length > 5 ? '1fr 1fr' : '1fr',
+          gridTemplateColumns: many ? '1fr 1fr' : '1fr',
           gap: 8,
         }}>
           {sorted.slice(1).map((tm, i) => {
@@ -5519,40 +5522,50 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
             return (
               <div key={tm.id} style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '12px 24px', borderRadius: 16,
+                display: 'flex', alignItems: 'center', gap: many ? 10 : 16,
+                padding: many ? '8px 14px' : '12px 24px', borderRadius: 14,
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.10}s both`,
+                minWidth: 0,
               }}>
                 <span style={{
-                  fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, width: 40,
+                  fontSize: many ? 'clamp(16px, 1.6vw, 22px)' : 'clamp(20px, 2.2vw, 28px)',
+                  fontWeight: 900, width: many ? 30 : 40, flexShrink: 0,
                   color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569',
                 }}>
                   {rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
                 </span>
-                <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1 }}>
+                <span style={{ fontSize: many ? 'clamp(22px, 2.2vw, 30px)' : 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>
                   {qqGetAvatar(tm.avatarId).emoji}
                 </span>
                 <span style={{
-                  flex: 1, fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900, color: tm.color,
+                  flex: 1, minWidth: 0,
+                  fontSize: many ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(20px, 2.5vw, 32px)',
+                  fontWeight: 900, color: tm.color,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{tm.name}</span>
                 <span style={{
-                  fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 700,
-                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: many ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(16px, 1.8vw, 22px)',
+                  fontWeight: 800,
+                  color: 'rgba(255,255,255,0.7)',
+                  flexShrink: 0,
+                  fontVariantNumeric: 'tabular-nums',
                 }}>
-                  {tm.largestConnected} {lang === 'de' ? 'verbunden' : 'connected'}
+                  {tm.largestConnected}
                 </span>
                 <span style={{
-                  fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#475569', fontWeight: 600,
+                  fontSize: many ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(13px, 1.4vw, 18px)',
+                  color: '#475569', fontWeight: 600, flexShrink: 0,
                 }}>
-                  ({cellCount} {lang === 'de' ? 'gesamt' : 'total'})
+                  ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
                 </span>
               </div>
             );
           })}
         </div>
-      )}
+        );
+      })()}
         </div>
         {/* Right column — final grid trophy */}
         <div style={{

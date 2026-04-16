@@ -3303,11 +3303,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const isOrderBt = q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order';
-  const qFontSize = isOrderBt
-    ? (qText.length > 120 ? 'clamp(22px, 2.4vw, 36px)'
-      : qText.length > 60 ? 'clamp(26px, 3vw, 44px)'
-      : 'clamp(30px, 3.4vw, 50px)')
-    : qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
+  // Order-BunteTüte hat in der Question-Phase keine Items am Beamer (Phone-Eingabe),
+  // deshalb gleiche Größen wie normale Kategorien. Nur im Reveal wird geshrunken
+  // (qFontSizeShrunk weiter unten), damit die Rangfolge darunter passt.
+  const qFontSize = qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
     : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
     : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
     : 'clamp(52px, 7vw, 108px)';
@@ -4631,9 +4630,12 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           )}
         </div>
         <div style={{
-          flex: 1, maxWidth: 560, minWidth: 320,
+          // Fixe Breite statt flex:1 + maxWidth — sonst verschiebt sich der Grid-
+          // Container, sobald ein Team-Name die intrinsische Spaltenbreite ändert
+          // (z. B. beim Sortieren nach Punkten). Fixe Breite = stabiles Layout.
+          width: 540, flexShrink: 0,
           alignSelf: 'stretch',
-          display: 'flex', alignItems: 'stretch', justifyContent: 'center',
+          display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
           <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
         </div>

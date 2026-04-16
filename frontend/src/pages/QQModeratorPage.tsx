@@ -676,6 +676,8 @@ export default function QQModeratorPage() {
                     for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
                     emit('qq:resetRoom', { roomCode });
                   }}
+                  roomCode={roomCode}
+                  phase={s.phase}
                 />
 
               </div>
@@ -1538,9 +1540,14 @@ function badgeStyle(color: string): React.CSSProperties {
 
 // ── Danger-Menu (Reset-Aktionen) ──────────────────────────────────────────────
 
-function DangerMenu({ onRestart, onBackToSetup }: { onRestart: () => void; onBackToSetup: () => void }) {
+function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
+  onRestart: () => void; onBackToSetup: () => void;
+  roomCode: string; phase: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
+  const devEnabled = import.meta.env.DEV;
   useEffect(() => {
     if (!open) return;
     function onDoc(e: MouseEvent) {
@@ -1549,6 +1556,30 @@ function DangerMenu({ onRestart, onBackToSetup }: { onRestart: () => void; onBac
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
+
+  async function devFillTeams() {
+    setBusy('fill');
+    try {
+      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 8 }),
+      });
+      const data = await r.json();
+      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+    } finally { setBusy(null); }
+  }
+  async function devSimAnswers() {
+    setBusy('sim');
+    try {
+      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/simAnswers`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correctRate: 0.6 }),
+      });
+      const data = await r.json();
+      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+    } finally { setBusy(null); }
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
       <button
@@ -1564,7 +1595,7 @@ function DangerMenu({ onRestart, onBackToSetup }: { onRestart: () => void; onBac
         <div style={{
           position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 20,
           background: '#1B1510', border: '1px solid rgba(239,68,68,0.3)',
-          borderRadius: 10, padding: 6, minWidth: 240,
+          borderRadius: 10, padding: 6, minWidth: 260,
           boxShadow: '0 12px 28px rgba(0,0,0,0.6)',
         }}>
           <button
@@ -1579,6 +1610,41 @@ function DangerMenu({ onRestart, onBackToSetup }: { onRestart: () => void; onBac
           >⎌ Zurück zum Setup
             <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Teams kicken, Einstellungen neu</span>
           </button>
+          {devEnabled && (
+            <>
+              <div style={{
+                marginTop: 6, padding: '4px 10px',
+                fontSize: 9, color: '#64748b', fontWeight: 900, letterSpacing: '0.1em',
+                textTransform: 'uppercase', borderTop: '1px solid rgba(255,255,255,0.05)',
+              }}>🧪 Dev</div>
+              <button
+                disabled={phase !== 'LOBBY' || busy !== null}
+                onClick={() => devFillTeams()}
+                style={{
+                  ...menuItemStyle('#22C55E'),
+                  opacity: phase !== 'LOBBY' || busy !== null ? 0.4 : 1,
+                  cursor: phase !== 'LOBBY' || busy !== null ? 'not-allowed' : 'pointer',
+                }}
+              >{busy === 'fill' ? '…' : '👥'} 8 Dummy-Teams
+                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
+                  {phase === 'LOBBY' ? 'Fülle Lobby für Layout-Tests' : 'Nur in Lobby verfügbar'}
+                </span>
+              </button>
+              <button
+                disabled={phase !== 'QUESTION_ACTIVE' || busy !== null}
+                onClick={() => devSimAnswers()}
+                style={{
+                  ...menuItemStyle('#06B6D4'),
+                  opacity: phase !== 'QUESTION_ACTIVE' || busy !== null ? 0.4 : 1,
+                  cursor: phase !== 'QUESTION_ACTIVE' || busy !== null ? 'not-allowed' : 'pointer',
+                }}
+              >{busy === 'sim' ? '…' : '🎲'} Zufalls-Antworten
+                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
+                  {phase === 'QUESTION_ACTIVE' ? 'Offene Teams antworten (60% richtig)' : 'Nur bei aktiver Frage'}
+                </span>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

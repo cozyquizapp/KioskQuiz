@@ -89,7 +89,9 @@ import { mixedMechanicMap } from '../../shared/mixedMechanics';
 import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
-import { registerQQHandlers } from './quarterQuiz/qqSocketHandlers';
+import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
+import { getQQRoom, qqJoinTeam, qqSubmitAnswer } from './quarterQuiz/qqRooms';
+import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -8368,6 +8370,83 @@ function saveQQFeedback(list: QQFeedbackEntry[]): void {
     console.error('QQ feedback write failed:', err);
   }
 }
+// ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
+const QQ_DEV_ENABLED = process.env.NODE_ENV !== 'production';
+const DUMMY_NAMES = ['Rotkäppchen','Blaubeeren','Grünschnabel','Goldfisch','Orangina','Lilalaune','Cyansturm','Rotziege'];
+app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
+  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  const { roomCode } = req.params;
+  const room = getQQRoom(roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Nur in Lobby möglich' });
+  const count = Math.min(8, Math.max(1, Number(req.body?.count) || 8));
+  const existing = Object.keys(room.teams).length;
+  const toAdd = Math.max(0, count - existing);
+  let added = 0;
+  const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));
+  for (const av of QQ_AVATARS) {
+    if (added >= toAdd) break;
+    if (usedAvatars.has(av.id)) continue;
+    const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
+    const name = DUMMY_NAMES[added] ?? `Team ${av.label}`;
+    try {
+      qqJoinTeam(room, teamId, name, av.id);
+      added++;
+    } catch { /* skip on error (avatar taken etc.) */ }
+  }
+  broadcastQQ(io, roomCode);
+  res.json({ added, total: Object.keys(room.teams).length });
+});
+
+app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
+  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  const { roomCode } = req.params;
+  const room = getQQRoom(roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (room.phase !== 'QUESTION_ACTIVE') return res.status(400).json({ error: 'Nur bei aktiver Frage' });
+  const q = room.currentQuestion;
+  if (!q) return res.status(400).json({ error: 'Keine Frage geladen' });
+  const correctRate = Math.min(1, Math.max(0, Number(req.body?.correctRate ?? 0.6)));
+  let answered = 0;
+  const teams = Object.values(room.teams).filter((t: any) => !room.answers.some((a: any) => a.teamId === t.id));
+  for (const t of teams as any[]) {
+    let answer = '';
+    const beCorrect = Math.random() < correctRate;
+    if (q.category === 'MUCHO' && q.options) {
+      const idx = beCorrect && q.correctOptionIndex != null
+        ? q.correctOptionIndex
+        : Math.floor(Math.random() * q.options.length);
+      answer = String(idx);
+    } else if (q.category === 'SCHAETZCHEN') {
+      const target = q.targetValue ?? 100;
+      const noise = beCorrect ? target * 0.1 : target * (0.5 + Math.random());
+      answer = String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
+    } else if (q.category === 'ZEHN_VON_ZEHN' && q.options) {
+      // Distribute 10 points randomly across options
+      const pts = Array(q.options.length).fill(0);
+      let remaining = 10;
+      while (remaining > 0) {
+        const idx = Math.floor(Math.random() * q.options.length);
+        const give = Math.min(remaining, Math.ceil(Math.random() * 5));
+        pts[idx] += give;
+        remaining -= give;
+      }
+      answer = pts.join(',');
+    } else if (q.category === 'CHEESE' || q.category === 'BUNTE_TUETE') {
+      const fallback = (q as any).correctAnswer || (q as any).answer || 'Test';
+      answer = beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+    } else {
+      answer = `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+    }
+    try {
+      qqSubmitAnswer(room, t.id, answer);
+      answered++;
+    } catch { /* skip */ }
+  }
+  broadcastQQ(io, roomCode);
+  res.json({ answered });
+});
+
 app.post('/api/qq/feedback', (req, res) => {
   const body = req.body as Partial<QQFeedbackEntry> & { text?: string };
   const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';

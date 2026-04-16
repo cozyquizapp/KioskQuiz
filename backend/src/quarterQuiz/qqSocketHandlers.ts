@@ -50,11 +50,15 @@ function fail(ack: unknown, error: unknown): void {
   }
 }
 
-function broadcast(io: SocketIOServer, roomCode: string): void {
+export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
   if (room.phase === 'GAME_OVER') persistGameResult(room);
+}
+
+function broadcast(io: SocketIOServer, roomCode: string): void {
+  broadcastQQ(io, roomCode);
 }
 
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {

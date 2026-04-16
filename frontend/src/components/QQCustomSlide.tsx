@@ -116,6 +116,7 @@ const MOCK_GRID = Array.from({ length: MOCK_GRID_SIZE }, (_, r) =>
 const MOCK_STATE_BASE: QQStateUpdate = {
   roomCode: 'DEMO',
   phase: 'LOBBY',
+  setupDone: true,
   gamePhaseIndex: 1,
   questionIndex: 0,
   gridSize: MOCK_GRID_SIZE,

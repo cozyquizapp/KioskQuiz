@@ -1603,7 +1603,8 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
-  const devEnabled = import.meta.env.DEV;
+  // TEMP: auch in Production sichtbar für 8-Team-Test. Nach Test zurück auf `import.meta.env.DEV`.
+  const devEnabled = true;
   useEffect(() => {
     if (!open) return;
     function onDoc(e: MouseEvent) {
@@ -1624,28 +1625,6 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
       if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
     } finally { setBusy(null); }
   }
-  async function devSimAnswers() {
-    setBusy('sim');
-    try {
-      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/simAnswers`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correctRate: 0.6 }),
-      });
-      const data = await r.json();
-      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
-    } finally { setBusy(null); }
-  }
-  async function devAutoPlace() {
-    setBusy('place');
-    try {
-      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/autoPlace`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await r.json();
-      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
-    } finally { setBusy(null); }
-  }
-
   return (
     <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
       <button
@@ -1693,33 +1672,7 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
                 }}
               >{busy === 'fill' ? '…' : '👥'} 8 Dummy-Teams
                 <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
-                  {phase === 'LOBBY' ? 'Fülle Lobby für Layout-Tests' : 'Nur in Lobby verfügbar'}
-                </span>
-              </button>
-              <button
-                disabled={phase !== 'QUESTION_ACTIVE' || busy !== null}
-                onClick={() => devSimAnswers()}
-                style={{
-                  ...menuItemStyle('#06B6D4'),
-                  opacity: phase !== 'QUESTION_ACTIVE' || busy !== null ? 0.4 : 1,
-                  cursor: phase !== 'QUESTION_ACTIVE' || busy !== null ? 'not-allowed' : 'pointer',
-                }}
-              >{busy === 'sim' ? '…' : '🎲'} Zufalls-Antworten
-                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
-                  {phase === 'QUESTION_ACTIVE' ? 'Offene Teams antworten (60% richtig)' : 'Nur bei aktiver Frage'}
-                </span>
-              </button>
-              <button
-                disabled={phase !== 'PLACEMENT' || busy !== null}
-                onClick={() => devAutoPlace()}
-                style={{
-                  ...menuItemStyle('#8B5CF6'),
-                  opacity: phase !== 'PLACEMENT' || busy !== null ? 0.4 : 1,
-                  cursor: phase !== 'PLACEMENT' || busy !== null ? 'not-allowed' : 'pointer',
-                }}
-              >{busy === 'place' ? '…' : '🤖'} Auto-Platzierung
-                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
-                  {phase === 'PLACEMENT' ? 'Aktives Team setzt/klaut zufällig' : 'Nur in Platzier-Phase'}
+                  {phase === 'LOBBY' ? 'Antworten + Platzieren passieren automatisch' : 'Nur in Lobby verfügbar'}
                 </span>
               </button>
             </>

@@ -173,6 +173,165 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   // No winner: correctTeamId stays null — moderator can manually mark or mark wrong
 }
 
+// ── Dummy-Team Automation ────────────────────────────────────────────────────
+// Wenn Dummy-Teams im Raum sind, sollen sie automatisch antworten und Felder
+// platzieren — keine manuellen Dev-Buttons nötig. Trigger läuft nach jedem
+// relevanten Phasenwechsel.
+
+function hasDummyTeams(room: import('./qqRooms').QQRoomState): boolean {
+  return Object.values(room.teams).some((t: any) => t._dummy);
+}
+
+function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], correctRate = 0.6): string {
+  if (!q) return 'Dummy';
+  const beCorrect = Math.random() < correctRate;
+  if (q.category === 'MUCHO' && q.options) {
+    const idx = beCorrect && q.correctOptionIndex != null
+      ? q.correctOptionIndex
+      : Math.floor(Math.random() * q.options.length);
+    return String(idx);
+  }
+  if (q.category === 'SCHAETZCHEN') {
+    const target = q.targetValue ?? 100;
+    const noise = beCorrect ? target * 0.1 : target * (0.5 + Math.random());
+    return String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
+  }
+  if (q.category === 'ZEHN_VON_ZEHN' && q.options) {
+    const pts = Array(q.options.length).fill(0);
+    let remaining = 10;
+    while (remaining > 0) {
+      const idx = Math.floor(Math.random() * q.options.length);
+      const give = Math.min(remaining, Math.ceil(Math.random() * 5));
+      pts[idx] += give;
+      remaining -= give;
+    }
+    return pts.join(',');
+  }
+  if (q.category === 'CHEESE' || q.category === 'BUNTE_TUETE') {
+    const fallback = (q as any).correctAnswer || (q as any).answer || 'Test';
+    return beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+  }
+  return `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/**
+ * Wenn QUESTION_ACTIVE + Dummies im Raum, lass Dummies gestaffelt antworten
+ * (gleichmäßig über das Timer-Fenster verteilt, mit Jitter).
+ * Echte Teams bleiben unberührt — sie antworten selbst via Socket.
+ */
+export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'QUESTION_ACTIVE') return;
+  if (!hasDummyTeams(room)) return;
+  const q = room.currentQuestion;
+  if (!q) return;
+
+  // Hot Potato + Imposter laufen selbst-gesteuert — skip
+  if (q.category === 'BUNTE_TUETE' && (q.bunteTuete?.kind === 'hotPotato' || q.bunteTuete?.kind === 'oneOfEight')) {
+    return;
+  }
+
+  const dummies = Object.values(room.teams).filter((t: any) =>
+    t._dummy && !room.answers.some((a: any) => a.teamId === t.id)
+  ) as any[];
+  if (dummies.length === 0) return;
+
+  // Dummies immer als connected markieren (sonst blockiert allAnswered)
+  for (const t of dummies) t.connected = true;
+
+  const now = Date.now();
+  const rawRemaining = room.timerEndsAt ? room.timerEndsAt - now : 15_000;
+  const safeWindow = Math.min(18_000, rawRemaining - 1_200);
+
+  // Zu wenig Zeit? Alle sofort submitten
+  if (safeWindow < 500) {
+    for (const t of dummies) {
+      try { qqSubmitAnswer(room, t.id, pickDummyAnswer(q)); } catch { /* skip */ }
+    }
+    broadcastQQ(io, roomCode);
+    return;
+  }
+
+  // Gleichmäßig verteilen mit Jitter — Reihenfolge random
+  const slot = safeWindow / dummies.length;
+  const order = [...dummies].sort(() => Math.random() - 0.5);
+  order.forEach((t: any, i: number) => {
+    const base = 250 + slot * i;
+    const jitter = slot * 0.3 * (Math.random() - 0.5);
+    const delay = Math.max(250, Math.min(safeWindow, base + jitter));
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'QUESTION_ACTIVE' || live.currentQuestion?.id !== q.id) return;
+      if (live.answers.some((a: any) => a.teamId === t.id)) return;
+      try {
+        qqSubmitAnswer(live, t.id, pickDummyAnswer(q));
+        broadcastQQ(io, roomCode);
+      } catch { /* skip */ }
+    }, delay);
+  });
+}
+
+/**
+ * Wenn PLACEMENT + pendingFor ist ein Dummy, setze/klau automatisch ein Feld.
+ * Kleine Verzögerung (1.2s), damit Moderator/Beamer den Übergang noch sehen.
+ */
+export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'PLACEMENT') return;
+  const teamId = room.pendingFor;
+  if (!teamId) return;
+  const team = (room.teams as any)[teamId];
+  if (!team || !team._dummy) return;
+  const action = room.pendingAction;
+  if (!action) return;
+
+  setTimeout(() => {
+    const live = getQQRoom(roomCode);
+    if (!live || live.phase !== 'PLACEMENT') return;
+    if (live.pendingFor !== teamId || live.pendingAction !== action) return;
+
+    const free: Array<{ row: number; col: number }> = [];
+    const oppFree: Array<{ row: number; col: number }> = [];
+    for (let r = 0; r < live.grid.length; r++) {
+      for (let c = 0; c < live.grid[r].length; c++) {
+        const cell = live.grid[r][c];
+        if (cell.ownerId === null) free.push({ row: r, col: c });
+        else if (cell.ownerId !== teamId && !cell.frozen && !cell.stuck) oppFree.push({ row: r, col: c });
+      }
+    }
+
+    const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    let mode: 'place' | 'steal' | null = null;
+    let target: { row: number; col: number } | undefined;
+
+    if (action === 'PLACE_1' || action === 'PLACE_2') {
+      if (!free.length) return;
+      mode = 'place'; target = pick(free);
+    } else if (action === 'STEAL_1') {
+      if (!oppFree.length) return;
+      mode = 'steal'; target = pick(oppFree);
+    } else if (action === 'FREE' || action === 'COMEBACK') {
+      if (free.length) { mode = 'place'; target = pick(free); }
+      else if (oppFree.length) { mode = 'steal'; target = pick(oppFree); }
+      else return;
+    } else {
+      return;
+    }
+
+    try {
+      if (mode === 'place') qqPlaceCell(live, teamId, target!.row, target!.col);
+      else qqStealCell(live, teamId, target!.row, target!.col);
+      broadcastQQ(io, roomCode);
+      // PLACE_2 lässt pendingFor bestehen für zweite Platzierung — erneut triggern
+      if (live.phase === 'PLACEMENT' && live.pendingFor === teamId) {
+        maybeAutoPlace(io, roomCode);
+      }
+    } catch { /* skip */ }
+  }, 1200);
+}
+
 export function registerQQHandlers(io: SocketIOServer): void {
   io.on('connection', (socket) => {
 
@@ -236,6 +395,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
           qqStopTimer(room);
         }
         broadcast(io, payload.roomCode);
+        // Dummies automatisch antworten lassen
+        maybeAutoSimulateAnswers(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -292,6 +453,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqStartPlacement(room);
         broadcast(io, payload.roomCode);
+        // Falls Dummy am Zug → automatisch platzieren
+        maybeAutoPlace(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -697,6 +860,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqPlaceCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
+        // Falls noch Dummy in der placementQueue → weiter automatisch platzieren
+        maybeAutoPlace(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });
@@ -706,6 +871,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqStealCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
+        maybeAutoPlace(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });
@@ -715,6 +881,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqChooseFreeAction(room, payload.teamId, payload.action);
         broadcast(io, payload.roomCode);
+        maybeAutoPlace(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -724,6 +891,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqApplyComebackChoice(room, payload.teamId, payload.action);
         broadcast(io, payload.roomCode);
+        maybeAutoPlace(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

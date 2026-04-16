@@ -2693,6 +2693,302 @@ const QQMapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
   return null;
 };
 
+/**
+ * Top-5 Reveal: zweispaltige Show-Seite.
+ * Links: Frage + Gewinner-Block. Rechts: Top-5-Liste die sequentiell 5→1 aufdeckt.
+ * Nach jeder Antwort erscheinen Avatare (oder X-Kreis wenn niemand) mit Pop-Animation.
+ */
+function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  const q = s.currentQuestion!;
+  const btt = q.bunteTuete as any;
+  const correctListDE: string[] = (btt.answers ?? []).map((x: string) => x.trim()).filter(Boolean);
+  const correctListEN: string[] = (btt.answersEn ?? []).map((x: string) => x.trim()).filter(Boolean);
+  const correctList = lang === 'en' && correctListEN.length ? correctListEN : correctListDE;
+  const n = correctList.length;
+
+  // perAnswer in Original-Reihenfolge (Platz 1 = Index 0).
+  const perAnswer = useMemo(() => {
+    const matches = (p: string, c: string) =>
+      p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
+    const teamAnswers = s.answers.map(a => ({
+      teamId: a.teamId,
+      parts: a.text.split('|').map(p => p.trim()).filter(Boolean),
+    }));
+    return correctList.map((correct, ci) => {
+      const deLower = correctListDE[ci]?.toLowerCase() ?? '';
+      const enLower = correctListEN[ci]?.toLowerCase() ?? '';
+      const hitters = teamAnswers
+        .filter(ta => ta.parts.some(p => (deLower && matches(p, deLower)) || (enLower && matches(p, enLower))))
+        .map(ta => s.teams.find(t => t.id === ta.teamId))
+        .filter((t): t is NonNullable<typeof t> => !!t);
+      return { correct, hitters };
+    });
+  }, [s.answers, s.teams, correctList, correctListDE, correctListEN]);
+
+  // Treffer pro Team — für Winner-Block.
+  const teamScore = useMemo(() => {
+    const acceptedLower = new Set<string>([
+      ...correctListDE.map(x => x.toLowerCase()),
+      ...correctListEN.map(x => x.toLowerCase()),
+    ]);
+    const matches = (p: string, c: string) =>
+      p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
+    return s.answers.map(a => {
+      const parts = a.text.split('|').map(p => p.trim()).filter(Boolean);
+      const hits = parts.filter(p => [...acceptedLower].some(c => c && matches(p, c))).length;
+      return { teamId: a.teamId, hits };
+    }).sort((x, y) => y.hits - x.hits);
+  }, [s.answers, correctListDE, correctListEN]);
+
+  const topHits = teamScore[0]?.hits ?? 0;
+  const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);
+
+  // Sequentielles Reveal: Start mit -1 (noch nichts), dann 5, 4, 3, 2, 1 (Indizes: n-1 … 0).
+  // revealedMinIdx ist der kleinste Index, der bereits aufgedeckt wurde.
+  // Start: n (keiner), Ende: 0 (alle).
+  const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const STEP_MS = 2400;
+  const INITIAL_DELAY_MS = 600;
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < n; i++) {
+      const targetIdx = n - 1 - i; // Erst Platz n (höchster Index), dann runter
+      const t = setTimeout(() => {
+        setRevealedMinIdx(targetIdx);
+        // Sound: jeder Reveal ein sanfter Tick; letzter (Platz 1) eine Fanfare
+        if (!s.sfxMuted) {
+          if (targetIdx === 0) playFanfare(); else playReveal();
+        }
+      }, INITIAL_DELAY_MS + i * STEP_MS);
+      timers.push(t);
+    }
+    return () => { timers.forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+
+  return (
+    <div style={{
+      flex: 1, display: 'grid',
+      gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
+      gap: 'clamp(16px, 2.5vw, 36px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
+      alignItems: 'stretch',
+      animation: 'contentReveal 0.45s ease both',
+    }}>
+      {/* ── Left column: Question + Winners ─────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)', minWidth: 0 }}>
+        {/* Question card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '2px solid rgba(255,255,255,0.08)',
+          borderRadius: 26,
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+          animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#F59E0B',
+            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
+          }}>
+            🎁 {lang === 'en' ? 'Top 5 — Reveal' : 'Top 5 — Auflösung'}
+          </div>
+          <div key={lang} style={{
+            fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 42px)',
+            fontWeight: 900, lineHeight: 1.22, color: '#F1F5F9',
+            animation: 'langFadeIn 0.4s ease both',
+          }}>
+            {qText}
+          </div>
+        </div>
+
+        {/* Winner card — erst nach komplettem Reveal komplett sichtbar */}
+        <div style={{
+          flex: 1,
+          background: winners.length > 0
+            ? `linear-gradient(135deg, ${winners[0] && s.teams.find(t => t.id === winners[0].teamId)?.color}22, rgba(0,0,0,0.25))`
+            : 'rgba(239,68,68,0.06)',
+          border: winners.length > 0
+            ? `2px solid ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}55`
+            : '2px solid rgba(239,68,68,0.25)',
+          borderRadius: 26,
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          gap: 14, minHeight: 0,
+          opacity: revealedMinIdx === 0 ? 1 : 0.35,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
+          transition: 'opacity 0.7s ease, filter 0.7s ease',
+          boxShadow: revealedMinIdx === 0 && winners.length > 0
+            ? `0 0 60px ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}33`
+            : 'none',
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            🏆 {winners.length > 1
+              ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
+              : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
+          </div>
+          {winners.length === 0 ? (
+            <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
+              {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {winners.map(w => {
+                const tm = s.teams.find(t => t.id === w.teamId);
+                if (!tm) return null;
+                return (
+                  <div key={tm.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
+                  }}>
+                    <span style={{
+                      fontSize: 'clamp(48px, 6vw, 84px)', lineHeight: 1,
+                      width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
+                      borderRadius: '50%', background: tm.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, boxShadow: `0 0 30px ${tm.color}66`,
+                      animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+                    }}>
+                      {qqGetAvatar(tm.avatarId).emoji}
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: 'clamp(26px, 3.2vw, 50px)', fontWeight: 900, color: tm.color,
+                        textShadow: `0 0 20px ${tm.color}44`, lineHeight: 1.1,
+                      }}>{tm.name}</div>
+                      <div style={{
+                        fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                      }}>
+                        {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Right column: Top-5 List (bottom-up reveal) ─────── */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
+        justifyContent: 'flex-end',
+        minHeight: 0,
+      }}>
+        {perAnswer.map(({ correct, hitters }, idx) => {
+          const rank = idx + 1;
+          const isVisible = idx >= revealedMinIdx;
+          const hasHits = hitters.length > 0;
+          const rankGradient = rank === 1
+            ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
+            : rank === 2
+              ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
+              : rank === 3
+                ? 'linear-gradient(135deg,#F97316,#B45309)'
+                : 'linear-gradient(135deg,#475569,#334155)';
+          return (
+            <div
+              key={idx}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                alignItems: 'center',
+                gap: 'clamp(10px, 1.2vw, 18px)',
+                padding: 'clamp(10px, 1.4vh, 18px) clamp(14px, 1.6vw, 22px)',
+                borderRadius: 18,
+                background: hasHits
+                  ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
+                  : 'rgba(148,163,184,0.06)',
+                border: hasHits
+                  ? '2px solid rgba(34,197,94,0.4)'
+                  : '2px solid rgba(148,163,184,0.15)',
+                visibility: isVisible ? 'visible' : 'hidden',
+                animation: isVisible
+                  ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
+                  : 'none',
+                minHeight: 'clamp(64px, 8vh, 92px)',
+              }}
+            >
+              {/* Rank badge */}
+              <div style={{
+                width: 'clamp(52px, 5vw, 72px)', height: 'clamp(52px, 5vw, 72px)',
+                borderRadius: 16,
+                background: rankGradient,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
+                flexShrink: 0,
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.1s both' : 'none',
+                boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
+              }}>
+                #{rank}
+              </div>
+
+              {/* Answer text */}
+              <div style={{
+                fontSize: 'clamp(20px, 2.3vw, 34px)', fontWeight: 900,
+                color: hasHits ? '#86efac' : '#cbd5e1',
+                lineHeight: 1.2,
+                minWidth: 0, wordBreak: 'break-word',
+              }}>
+                {hasHits ? '✓ ' : ''}{correct}
+              </div>
+
+              {/* Hitters / No-hit X */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                flexShrink: 0,
+              }}>
+                {hasHits ? (
+                  hitters.map((tm, hi) => (
+                    <div
+                      key={tm.id}
+                      title={tm.name}
+                      style={{
+                        width: 'clamp(36px, 3.8vw, 54px)', height: 'clamp(36px, 3.8vw, 54px)',
+                        borderRadius: '50%', background: tm.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'clamp(20px, 2.2vw, 30px)',
+                        border: '2px solid rgba(0,0,0,0.25)',
+                        boxShadow: `0 0 14px ${tm.color}66`,
+                        animation: isVisible
+                          ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
+                          : 'none',
+                      }}
+                    >
+                      {qqGetAvatar(tm.avatarId).emoji}
+                    </div>
+                  ))
+                ) : (
+                  <div style={{
+                    width: 'clamp(36px, 3.8vw, 54px)', height: 'clamp(36px, 3.8vw, 54px)',
+                    borderRadius: '50%',
+                    background: 'rgba(148,163,184,0.15)',
+                    border: '2px dashed rgba(148,163,184,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, color: '#94a3b8',
+                    animation: isVisible
+                      ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both`
+                      : 'none',
+                  }}>
+                    ✕
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   const btt = (q.bunteTuete as any);
@@ -2906,6 +3202,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'map';
   if (isMapReveal) {
     return <CozyGuessrReveal state={s} lang={lang} />;
+  }
+
+  // ── Top-5 two-column reveal ─────────────────────────────────────────────
+  const isTop5Reveal = revealed
+    && q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'top5';
+  if (isTop5Reveal) {
+    return <Top5Reveal state={s} lang={lang} />;
   }
 
   // ── CHEESE "Overlay" layout ─────────────────────────────────────────────

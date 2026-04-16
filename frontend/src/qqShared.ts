@@ -213,6 +213,26 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  @keyframes top5RowSlideIn {
+    0%   { opacity: 0; transform: translateX(60px) scale(0.92); filter: blur(6px); }
+    60%  { opacity: 1; transform: translateX(-4px) scale(1.01); filter: blur(0); }
+    100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+  }
+  @keyframes top5RowGlow {
+    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.0); }
+    40%  { box-shadow: 0 0 40px 8px rgba(74,222,128,0.35); }
+    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.0); }
+  }
+  @keyframes top5RankPop {
+    0%   { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  @keyframes top5AvatarPop {
+    0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+    70%  { transform: scale(1.15) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
   @keyframes gridIdle {
     0%, 100% { box-shadow: 0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.03); }
     50%      { box-shadow: 0 0 50px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.05); }

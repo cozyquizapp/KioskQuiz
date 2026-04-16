@@ -1908,9 +1908,10 @@ const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
 const POOL = 10;
 
 function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
-  const [bets, setBets] = useState([0, 0, 0]);
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
+  // Bets-Array flexibel zur Options-Anzahl (früher hardcoded 3 → brach bei Ja/Nein-Fragen)
+  const [bets, setBets] = useState(() => new Array(Math.max(opts.length, 2)).fill(0));
   const remaining = POOL - bets.reduce((a, b) => a + b, 0);
 
   function updateBet(i: number, delta: number) {

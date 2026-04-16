@@ -638,12 +638,17 @@ function evalMucho(room: QQRoomState, q: QQQuestion): QQEvalResult {
 function evalAllIn(room: QQRoomState, q: QQQuestion): QQEvalResult {
   if (q.correctOptionIndex == null) return { winnerTeamIds: [], earnedPoints: {} };
 
+  // Anzahl Optionen flexibel — historisch war's hardcoded 3, aber die UI erlaubt
+  // 2-4 Optionen (Ja/Nein bis vierfach). parts.length muss zu q.options passen.
+  const expectedLen = q.options?.length ?? 0;
+
   const earnedPoints: Record<string, number> = {};
   let maxPoints = 0;
 
   for (const ans of room.answers) {
     const parts = ans.text.split(',').map(s => parseInt(s.trim(), 10));
-    if (parts.length !== 3 || parts.some(Number.isNaN)) continue;
+    if (expectedLen > 0 && parts.length !== expectedLen) continue;
+    if (parts.length < 2 || parts.some(Number.isNaN)) continue;
     const earned = parts[q.correctOptionIndex] ?? 0;
     earnedPoints[ans.teamId] = earned;
     if (earned > maxPoints) maxPoints = earned;

@@ -4609,9 +4609,11 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
         </div>
       )}
 
-      {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll) */}
+      {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll).
+          alignItems: stretch sorgt dafür dass die Team-Liste vertikal genauso hoch wird
+          wie das Grid (statt in der Mitte zusammengequetscht zu schweben). */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center',
         padding: '12px 36px', position: 'relative', zIndex: 5, gap: 32,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -4628,7 +4630,11 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
           )}
         </div>
-        <div style={{ flex: 1, maxWidth: 560, minWidth: 320 }}>
+        <div style={{
+          flex: 1, maxWidth: 560, minWidth: 320,
+          alignSelf: 'stretch',
+          display: 'flex', alignItems: 'stretch', justifyContent: 'center',
+        }}>
           <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
         </div>
       </div>
@@ -5729,24 +5735,31 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
   // Bei vielen Teams (≥6) wird die Liste kompakter, sonst passen 8 Zeilen nicht
   // nebeneinander neben das Grid auf den Beamer.
   const dense = sorted.length >= 6;
-  const rowGap = dense ? 10 : 16;
-  const avatarSize = dense ? 36 : 44;
-  const avatarBox = dense ? 46 : 56;
-  const nameFs = dense ? 24 : 30;
-  const valFs = dense ? 24 : 30;
-  const unitFs = dense ? 14 : 17;
-  const barH = dense ? 8 : 11;
+  const avatarSize = dense ? 42 : 50;
+  const avatarBox = dense ? 52 : 62;
+  const nameFs = dense ? 28 : 34;
+  const valFs = dense ? 28 : 34;
+  const unitFs = dense ? 15 : 18;
+  const barH = dense ? 7 : 10;
   // Balken bewusst schmal halten — die Info steckt in der Zahl, nicht in der Balkenbreite.
-  const barMaxW = 220;
+  const barMaxW = 160;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, width: '100%', maxWidth: 560 }}>
+    // Die Liste füllt die volle Höhe ihres Parent-Flex-Childs und verteilt die
+    // Zeilen gleichmäßig — dadurch wirkt sie auf gleicher Höhe wie das Grid
+    // und nicht in der Mitte zusammengequetscht.
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      justifyContent: 'space-between',
+      width: '100%', maxWidth: 560, height: '100%',
+      paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
+    }}>
       {sorted.map((t, i) => {
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
         return (
         <div key={t.id} style={{
-          display: 'flex', alignItems: 'center', gap: dense ? 12 : 16,
+          display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
           opacity: activeTeamId && !isActive ? 0.6 : 1,
           transition: 'opacity 0.3s ease',

@@ -3501,31 +3501,48 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Question card — stays same size on reveal, just dims + blurs */}
-          <div style={{
-            background: cardBg,
-            border: `2px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}22`}`,
-            borderRadius: 28,
-            boxShadow: revealed
-              ? '0 4px 16px rgba(0,0,0,0.3)'
-              : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            padding: 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
-            marginBottom: 'clamp(8px, 1.2vh, 20px)',
-            width: '100%', maxWidth: 1400,
-            textAlign: 'center',
-            animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-            transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease',
-            opacity: revealed ? 0.45 : 1,
-          }}>
-            <div key={lang} style={{
-              fontSize: qFontSize,
-              fontWeight: 900, lineHeight: 1.22,
-              color: '#F1F5F9',
-              animation: 'langFadeIn 0.4s ease both',
-            }}>
-              {qText}
-            </div>
-          </div>
+          {/* Question card — beim Schätzchen-Reveal schrumpft Text + Padding via transition, damit mehr Platz für den Zeitstrahl entsteht (kein Reflow / Umbruch) */}
+          {(() => {
+            const shrinkOnReveal = revealed && q.category === 'SCHAETZCHEN';
+            // Gleiche Größen-Staffelung wie qFontSize, nur kleiner — Text fließt gleich um
+            const qFontSizeShrunk = isOrderBt
+              ? (qText.length > 120 ? 'clamp(14px, 1.4vw, 22px)'
+                : qText.length > 60 ? 'clamp(16px, 1.8vw, 26px)'
+                : 'clamp(18px, 2vw, 30px)')
+              : qText.length > 200 ? 'clamp(18px, 2.1vw, 30px)'
+              : qText.length > 120 ? 'clamp(22px, 2.7vw, 40px)'
+              : qText.length > 60  ? 'clamp(26px, 3.6vw, 52px)'
+              : 'clamp(32px, 4.2vw, 64px)';
+            return (
+              <div style={{
+                background: cardBg,
+                border: `2px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}22`}`,
+                borderRadius: 28,
+                boxShadow: revealed
+                  ? '0 4px 16px rgba(0,0,0,0.3)'
+                  : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                padding: shrinkOnReveal
+                  ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'
+                  : 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
+                marginBottom: 'clamp(8px, 1.2vh, 20px)',
+                width: '100%', maxWidth: 1400,
+                textAlign: 'center',
+                animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease, padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
+                opacity: revealed ? 0.45 : 1,
+              }}>
+                <div key={lang} style={{
+                  fontSize: shrinkOnReveal ? qFontSizeShrunk : qFontSize,
+                  fontWeight: 900, lineHeight: 1.22,
+                  color: '#F1F5F9',
+                  animation: 'langFadeIn 0.4s ease both',
+                  transition: 'font-size 0.55s cubic-bezier(0.34,1.4,0.64,1)',
+                }}>
+                  {qText}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Mobile hint — fade out on reveal */}
           {(() => {
@@ -3819,16 +3836,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const sorted = [...parsed].sort((a, b) =>
               Math.abs(b.num - target) - Math.abs(a.num - target)
             );
-            // Nicht-kollidierende vertikale Spur: wenn zwei Pins <6% auseinander,
-            // zweiter bekommt höhere Spur
+            // Avatare alternieren über/unter dem Zahlenstrahl, um Überlappung zu
+            // vermeiden — links nach rechts durchnummeriert (0=oben, 1=unten, 2=weit oben, 3=weit unten).
+            // Zusätzlich: wenn genug Abstand zum vorherigen Pin, Reihe resetten.
             const pinRows = new Map<string, number>();
             const sortedByPos = [...parsed].sort((a, b) => a.num - b.num);
             let lastPct = -Infinity;
-            let row = 0;
+            let altIdx = 0;
             sortedByPos.forEach(p => {
               const pct = pctOf(p.num);
-              if (pct - lastPct < 7) row = (row + 1) % 3; else row = 0;
-              pinRows.set(p.teamId, row);
+              if (pct - lastPct < 9) {
+                altIdx = (altIdx + 1) % 4;
+              } else {
+                altIdx = altIdx % 2; // weiter alternieren, aber ohne weit-oben/unten
+              }
+              pinRows.set(p.teamId, altIdx);
               lastPct = pct;
             });
             const targetPct = pctOf(target);
@@ -3873,30 +3895,35 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
                   }}>{fmt(axMax)}</div>
 
-                  {/* Target marker — prominent */}
+                  {/* Target marker — runder Avatar-Button mit Ziel-Emoji */}
                   <div style={{
-                    position: 'absolute', left: `${targetPct}%`, top: 0, bottom: 0,
-                    transform: 'translateX(-50%)',
+                    position: 'absolute', left: `${targetPct}%`, top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+                    zIndex: 30,
                   }}>
+                    {/* Avatar-Button */}
                     <div style={{
-                      position: 'absolute', left: '50%', top: '50%',
-                      transform: 'translate(-50%,-50%)',
-                      width: 5, height: 'clamp(80px, 10vh, 120px)',
-                      background: 'linear-gradient(180deg, #22C55E, #16A34A)',
-                      borderRadius: 3,
-                      boxShadow: '0 0 20px rgba(34,197,94,0.7)',
-                    }} />
+                      width: 'clamp(52px, 5.4vw, 72px)',
+                      height: 'clamp(52px, 5.4vw, 72px)',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 'clamp(28px, 3vw, 40px)',
+                      border: '3px solid rgba(255,255,255,0.9)',
+                      boxShadow: '0 0 28px rgba(34,197,94,0.8), 0 6px 16px rgba(0,0,0,0.4)',
+                    }}>🎯</div>
+                    {/* Wert-Chip darunter */}
                     <div style={{
-                      position: 'absolute', left: '50%', top: '-4px',
-                      transform: 'translate(-50%,-100%)',
-                      padding: '6px 14px', borderRadius: 999,
+                      marginTop: 6,
+                      padding: '3px 10px', borderRadius: 999,
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(14px, 1.7vw, 22px)',
+                      fontSize: 'clamp(13px, 1.5vw, 18px)',
                       whiteSpace: 'nowrap',
-                      boxShadow: '0 4px 16px rgba(34,197,94,0.5)',
-                      border: '2px solid rgba(255,255,255,0.2)',
+                      boxShadow: '0 3px 10px rgba(34,197,94,0.45)',
+                      border: '2px solid rgba(255,255,255,0.25)',
                     }}>
                       ✓ {fmt(target)}
                     </div>
@@ -3910,8 +3937,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const orderIdx = sorted.findIndex(x => x.teamId === p.teamId); // 0 = worst
                     const delay = 0.7 + orderIdx * 0.18;
                     const tColor = p.team!.color;
-                    // Vertical offset: row 0 = above rail, 1 = below, 2 = far above
-                    const yOffset = r === 0 ? -44 : r === 1 ? 44 : -88;
+                    // Vertical offset: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
+                    // Alterniert über/unter dem Strahl, damit sich die Avatare nicht überlappen.
+                    const yOffset = r === 0 ? -54 : r === 1 ? 54 : r === 2 ? -100 : 100;
                     return (
                       <div key={p.teamId} style={{
                         position: 'absolute', left: `${pct}%`, top: '50%',
@@ -3962,7 +3990,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Schätzchen: combined leaderboard with all estimates */}
+          {/* Schätzchen: nur die Gewinner-Karte zeigen (alle Werte sind am Zeitstrahl oben schon sichtbar) */}
           {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (() => {
             const ranked = s.answers
               .map(a => {
@@ -3972,62 +4000,46 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 return { ...a, num, distance, team };
               })
               .sort((a, b) => a.distance - b.distance);
+            const w = ranked[0];
+            if (!w || w.distance === Infinity) return null;
+            const tColor = w.team?.color ?? '#94a3b8';
             return (
               <div style={{
-                display: 'flex', gap: 'clamp(8px, 1.2vw, 16px)', width: '100%', maxWidth: 1400,
+                width: '100%', maxWidth: 1400,
                 animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-                flexWrap: 'wrap', justifyContent: 'center',
+                display: 'flex', justifyContent: 'center',
               }}>
-                {ranked.map((r, i) => {
-                  const isWinner = i === 0 && r.distance !== Infinity;
-                  const tColor = r.team?.color ?? '#94a3b8';
-                  return (
-                    <div key={r.teamId} style={{
-                      flex: isWinner ? '1 1 100%' : '1 1 0',
-                      minWidth: isWinner ? undefined : 'clamp(120px, 18vw, 220px)',
-                      display: 'flex', alignItems: 'center', gap: isWinner ? 20 : 10,
-                      padding: isWinner ? 'clamp(14px, 2vw, 24px) clamp(20px, 3vw, 40px)' : 'clamp(8px, 1vw, 14px) clamp(10px, 1.5vw, 18px)',
-                      borderRadius: isWinner ? 24 : 16,
-                      background: isWinner ? `linear-gradient(135deg, ${tColor}22, ${tColor}0a)` : 'rgba(255,255,255,0.04)',
-                      border: isWinner ? `2px solid ${tColor}66` : '1px solid rgba(255,255,255,0.08)',
-                      boxShadow: isWinner ? `0 0 40px ${tColor}33` : 'none',
-                      animation: `contentReveal 0.4s ease ${0.7 + i * 0.12}s both`,
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 24,
+                  padding: 'clamp(14px, 2vw, 24px) clamp(24px, 3.5vw, 48px)',
+                  borderRadius: 24,
+                  background: `linear-gradient(135deg, ${tColor}22, ${tColor}0a)`,
+                  border: `2px solid ${tColor}66`,
+                  boxShadow: `0 0 40px ${tColor}33`,
+                }}>
+                  <span style={{
+                    fontSize: 'clamp(40px, 5vw, 72px)', lineHeight: 1, flexShrink: 0,
+                    animation: 'celebShake 0.6s ease 1.1s both',
+                  }}>
+                    {w.team ? qqGetAvatar(w.team.avatarId).emoji : '?'}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: 900, fontSize: 'clamp(22px, 3vw, 40px)',
+                      color: tColor, lineHeight: 1.2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{w.team?.name ?? w.teamId}</div>
+                    <div style={{
+                      fontWeight: 900, fontSize: 'clamp(28px, 4vw, 52px)',
+                      color: '#e2e8f0', lineHeight: 1.2,
+                    }}>{w.text}</div>
+                    <div style={{
+                      color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, marginTop: 2,
                     }}>
-                      <span style={{
-                        fontSize: isWinner ? 'clamp(40px, 5vw, 72px)' : 'clamp(24px, 3vw, 38px)',
-                        lineHeight: 1, flexShrink: 0,
-                        animation: isWinner ? 'celebShake 0.6s ease 1.1s both' : undefined,
-                      }}>
-                        {r.team ? qqGetAvatar(r.team.avatarId).emoji : '?'}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(22px, 3vw, 40px)' : 'clamp(13px, 1.5vw, 20px)',
-                          color: tColor, lineHeight: 1.2,
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>{r.team?.name ?? r.teamId}</div>
-                        <div style={{
-                          fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(28px, 4vw, 52px)' : 'clamp(18px, 2.2vw, 30px)',
-                          color: '#e2e8f0', lineHeight: 1.2,
-                        }}>{r.text}</div>
-                        {isWinner && (
-                          <div style={{
-                            color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, marginTop: 2,
-                          }}>
-                            {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
-                          </div>
-                        )}
-                      </div>
-                      {!isWinner && r.distance !== Infinity && (
-                        <div style={{
-                          fontSize: 'clamp(10px, 1vw, 14px)', color: '#475569', fontWeight: 700, whiteSpace: 'nowrap',
-                        }}>Δ {r.distance.toLocaleString()}</div>
-                      )}
+                      {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
             );
           })()}

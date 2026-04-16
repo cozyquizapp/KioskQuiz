@@ -273,6 +273,32 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
 }
 
 /**
+ * Wenn COMEBACK_CHOICE + pendingFor ist ein Dummy, wähle automatisch
+ * PLACE_2 (einfachste Comeback-Action, kein SWAP-Doppelklick nötig).
+ * Danach greift maybeAutoPlace automatisch.
+ */
+export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'COMEBACK_CHOICE') return;
+  const teamId = room.pendingFor;
+  if (!teamId) return;
+  const team = (room.teams as any)[teamId];
+  if (!team || !team._dummy) return;
+
+  setTimeout(() => {
+    const live = getQQRoom(roomCode);
+    if (!live || live.phase !== 'COMEBACK_CHOICE') return;
+    if (live.pendingFor !== teamId) return;
+    try {
+      qqApplyComebackChoice(live, teamId, 'PLACE_2');
+      broadcastQQ(io, roomCode);
+      maybeAutoPlace(io, roomCode);
+    } catch { /* skip */ }
+  }, 1500);
+}
+
+/**
  * Wenn PLACEMENT + pendingFor ist ein Dummy, setze/klau automatisch ein Feld.
  * Kleine Verzögerung (1.2s), damit Moderator/Beamer den Übergang noch sehen.
  */
@@ -324,8 +350,9 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       if (mode === 'place') qqPlaceCell(live, teamId, target!.row, target!.col);
       else qqStealCell(live, teamId, target!.row, target!.col);
       broadcastQQ(io, roomCode);
-      // PLACE_2 lässt pendingFor bestehen für zweite Platzierung — erneut triggern
-      if (live.phase === 'PLACEMENT' && live.pendingFor === teamId) {
+      // Immer erneut prüfen: PLACE_2 oder nächstes Team aus placementQueue (Multi-Winner).
+      // maybeAutoPlace selbst filtert (nur Dummies, nur wenn pendingFor gesetzt).
+      if (live.phase === 'PLACEMENT' && live.pendingFor) {
         maybeAutoPlace(io, roomCode);
       }
     } catch { /* skip */ }
@@ -473,6 +500,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqTriggerComeback(room);
         broadcast(io, payload.roomCode);
+        // Falls Comeback-Team ein Dummy ist → automatisch PLACE_2 wählen
+        maybeAutoComebackChoice(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

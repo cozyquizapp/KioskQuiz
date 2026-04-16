@@ -8392,8 +8392,15 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
     const name = DUMMY_NAMES[added] ?? `Team ${av.label}`;
     try {
       qqJoinTeam(room, teamId, name, av.id);
+      // Dummies haben keinen Socket — connected-Flag explizit true lassen
+      // (markiert sie auch nach eventuellen Reconnect-Checks als „anwesend")
+      if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
       added++;
     } catch { /* skip on error (avatar taken etc.) */ }
+  }
+  // Auch bestehende Dummies sicher auf connected=true halten
+  for (const t of Object.values(room.teams) as any[]) {
+    if (t._dummy) t.connected = true;
   }
   broadcastQQ(io, roomCode);
   res.json({ added, total: Object.keys(room.teams).length });
@@ -8409,6 +8416,10 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
   if (!q) return res.status(400).json({ error: 'Keine Frage geladen' });
   const correctRate = Math.min(1, Math.max(0, Number(req.body?.correctRate ?? 0.6)));
   const stagger = req.body?.stagger !== false; // default: staggered
+  // Für Dummies vor dem Simulieren sicherstellen, dass sie connected sind (sonst bleibt allAnswered=false)
+  for (const t of Object.values(room.teams) as any[]) {
+    if (t._dummy) t.connected = true;
+  }
   const teams = Object.values(room.teams).filter((t: any) => !room.answers.some((a: any) => a.teamId === t.id));
 
   function pickAnswer(forTeam: any): string {
@@ -8451,15 +8462,31 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
     return res.json({ answered, staggered: false });
   }
 
-  // Gestaffelt: jede Antwort kriegt einen Random-Delay innerhalb des verbleibenden Timers
-  // (min 400ms, max min(18s, Timer-Ende - 800ms)).
+  // Gestaffelt: verteile Submits gleichmäßig über das sichere Fenster, bevor der Timer ausläuft.
+  // Sicherheitsmarge: mind. 1.2s vor timerEndsAt, damit der Phasenwechsel uns nicht abschneidet.
   const now = Date.now();
-  const maxWindow = Math.max(1500, Math.min(18_000, (room.timerEndsAt ?? (now + 20_000)) - now - 800));
-  const scheduled = teams.length;
-  for (const t of teams as any[]) {
-    const delay = 400 + Math.floor(Math.random() * maxWindow);
+  const rawRemaining = room.timerEndsAt ? room.timerEndsAt - now : 15_000;
+  const safeWindow = Math.min(18_000, rawRemaining - 1_200);
+
+  // Zu wenig Zeit übrig → sofort alle submitten
+  if (safeWindow < 500 || teams.length === 0) {
+    let answered = 0;
+    for (const t of teams as any[]) {
+      try { qqSubmitAnswer(room, t.id, pickAnswer(t)); answered++; } catch { /* skip */ }
+    }
+    broadcastQQ(io, roomCode);
+    return res.json({ answered, staggered: false, reason: 'timer-too-short' });
+  }
+
+  // Gleichmäßig verteilen mit leichtem Jitter (±15% des Slots)
+  const slot = safeWindow / teams.length;
+  // Reihenfolge shufflen, damit nicht immer Team1 zuerst
+  const order = [...teams].sort(() => Math.random() - 0.5);
+  order.forEach((t: any, i: number) => {
+    const base = 250 + slot * i;
+    const jitter = slot * 0.3 * (Math.random() - 0.5);
+    const delay = Math.max(250, Math.min(safeWindow, base + jitter));
     setTimeout(() => {
-      // Raum-Zustand kann sich bis dahin geändert haben — nur submitten wenn noch aktive Frage + nicht schon beantwortet
       const live = getQQRoom(roomCode);
       if (!live || live.phase !== 'QUESTION_ACTIVE' || live.currentQuestion?.id !== q.id) return;
       if (live.answers.some((a: any) => a.teamId === t.id)) return;
@@ -8468,8 +8495,8 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
         broadcastQQ(io, roomCode);
       } catch { /* skip */ }
     }, delay);
-  }
-  res.json({ scheduled, staggered: true, windowMs: maxWindow });
+  });
+  res.json({ scheduled: teams.length, staggered: true, windowMs: safeWindow });
 });
 
 app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {

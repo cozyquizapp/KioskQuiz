@@ -8,7 +8,9 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Billboard } from '@react-three/drei';
+import { OrbitControls, Billboard, MeshReflectorMaterial } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
@@ -133,31 +135,43 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [8, 8.5, 10], fov: 35 }}
-        gl={{ antialias: true }}
+        camera={{ position: [7.5, 7, 9.5], fov: 34 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
       >
-        {/* Slate-Palette wie QQ-Beamer: #1e293b → #0f172a → #020617 */}
-        <color attach="background" args={['#0f172a']} />
-        <fog attach="fog" args={['#020617', 18, 42]} />
+        {/* Tief-dunkler Bühnen-Hintergrund */}
+        <color attach="background" args={['#05060d']} />
+        <fog attach="fog" args={['#05060d', 14, 36]} />
 
-        {/* Warmes Amber-Key (wie der Beamer-Scheinwerfer) */}
-        <ambientLight intensity={0.55} color="#cbd5e1" />
-        <directionalLight
-          position={[6, 10, 4]}
-          intensity={1.25}
+        {/* Dunkles Ambient — Stage hat nur Spotlights, kein Tageslicht */}
+        <ambientLight intensity={0.12} color="#6b7db8" />
+
+        {/* Key-Light: goldenes Amber-Spotlight von schräg oben */}
+        <spotLight
+          position={[5, 11, 5]}
+          angle={0.6}
+          penumbra={0.5}
+          intensity={3.2}
           color="#fbbf24"
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
-          shadow-camera-left={-8}
-          shadow-camera-right={8}
-          shadow-camera-top={8}
-          shadow-camera-bottom={-8}
+          shadow-bias={-0.0005}
         />
-        {/* Kühler Rim-Fill von hinten */}
-        <pointLight position={[-4, 3, -6]} intensity={0.45} color="#60a5fa" />
-        {/* Oberer Amber-Glow (Scheinwerfer-Effekt) */}
-        <pointLight position={[0, 8, 0]} intensity={0.35} color="#f59e0b" distance={14} decay={2} />
+
+        {/* Fill: kühles Cyan-Spot von der Gegenseite (Rim-Effekt) */}
+        <spotLight
+          position={[-5, 8, -5]}
+          angle={0.7}
+          penumbra={0.7}
+          intensity={1.8}
+          color="#06b6d4"
+        />
+
+        {/* Akzent: violettes Punktlicht unten/hinten — Bühnen-Ambient */}
+        <pointLight position={[0, 1.5, -7]} intensity={1.4} color="#a855f7" distance={12} decay={2} />
+
+        {/* Mittiger Down-Light Scheinwerfer (volumetrisch angedeutet) */}
+        <pointLight position={[0, 6, 0]} intensity={0.9} color="#fde68a" distance={10} decay={2} />
 
         <Ground />
         <GridLines />
@@ -185,8 +199,25 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           minDistance={7}
           maxDistance={22}
           autoRotate
-          autoRotateSpeed={0.5}
+          autoRotateSpeed={0.4}
         />
+
+        {/* Post-Processing: Bloom auf emissive + leichte Vignette + Chromatic Aberration */}
+        <EffectComposer multisampling={0}>
+          <Bloom
+            intensity={1.35}
+            luminanceThreshold={0.55}
+            luminanceSmoothing={0.5}
+            mipmapBlur
+          />
+          <ChromaticAberration
+            blendFunction={BlendFunction.NORMAL}
+            offset={new THREE.Vector2(0.0006, 0.0006)}
+            radialModulation={false}
+            modulationOffset={0}
+          />
+          <Vignette eskil={false} offset={0.2} darkness={0.75} />
+        </EffectComposer>
       </Canvas>
     </div>
   );
@@ -194,10 +225,36 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 
 function Ground() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
-      <planeGeometry args={[SIZE * TILE + 2, SIZE * TILE + 2]} />
-      <meshStandardMaterial color="#0b1221" roughness={0.95} />
-    </mesh>
+    <group>
+      {/* Äußerer Bühnenboden: großer spiegelnder Ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[60, 60]} />
+        <MeshReflectorMaterial
+          blur={[300, 80]}
+          resolution={512}
+          mixBlur={1}
+          mixStrength={3.5}
+          roughness={0.85}
+          depthScale={0.5}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.2}
+          color="#050810"
+          metalness={0.7}
+          mirror={0.55}
+        />
+      </mesh>
+      {/* Inneres Bühnen-Tile: subtil heller, damit Grid darauf sichtbar ist */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[SIZE * TILE + 1.8, SIZE * TILE + 1.8]} />
+        <meshStandardMaterial
+          color="#0b1221"
+          roughness={0.35}
+          metalness={0.55}
+          emissive="#fbbf24"
+          emissiveIntensity={0.04}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -206,13 +263,13 @@ function GridLines() {
   for (let i = 0; i <= SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
     lines.push(
-      <mesh key={`h-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, p]}>
-        <planeGeometry args={[SIZE * TILE + 0.4, 0.025]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.18} toneMapped={false} />
+      <mesh key={`h-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, p]}>
+        <planeGeometry args={[SIZE * TILE + 0.4, 0.035]} />
+        <meshBasicMaterial color="#fde68a" toneMapped={false} />
       </mesh>,
-      <mesh key={`v-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.015, 0]}>
-        <planeGeometry args={[0.025, SIZE * TILE + 0.4]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.18} toneMapped={false} />
+      <mesh key={`v-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.02, 0]}>
+        <planeGeometry args={[0.035, SIZE * TILE + 0.4]} />
+        <meshBasicMaterial color="#fde68a" toneMapped={false} />
       </mesh>
     );
   }
@@ -221,9 +278,9 @@ function GridLines() {
 
 function EmptyPlot({ x, z }: { x: number; z: number }) {
   return (
-    <mesh position={[x, 0.03, z]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[1.2, 1.2]} />
-      <meshStandardMaterial color="#1e293b" roughness={0.95} />
+    <mesh position={[x, 0.025, z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[1.22, 1.22]} />
+      <meshStandardMaterial color="#0d1626" roughness={0.4} metalness={0.3} />
     </mesh>
   );
 }
@@ -367,184 +424,397 @@ function Building({ x, z, avatar, joker, btype }: {
 
 type BProps = { color: string; joker: boolean; tex: THREE.Texture };
 
-// 0: HAUS — niedrig, breit, Satteldach
+// Helper: emissive strip (für neon-style Akzente, toneMapped off = bloom-ready)
+function NeonStrip({ w, h, d, y, x = 0, z = 0, color, intensity = 2.2 }: {
+  w: number; h: number; d: number; y: number; x?: number; z?: number; color: string; intensity?: number;
+}) {
+  return (
+    <mesh position={[x, y, z]}>
+      <boxGeometry args={[w, h, d]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={intensity}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+// 0: HAUS — kubistisches Stadthaus, warm beleuchtete Etage, Lichtkrone
 function HouseB({ color, joker, tex }: BProps) {
-  const w = 0.9, d = 0.9, h = 0.45;
+  const w = 0.92, d = 0.92, h = 0.55;
   return (
     <group>
       <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      {/* Satteldach — Prisma */}
-      <mesh position={[0, h + 0.15, 0]} castShadow rotation={[0, 0, 0]}>
-        <boxGeometry args={[w + 0.04, 0.3, d + 0.04]} />
-        <meshStandardMaterial color={color} roughness={0.5} metalness={0.05} />
+      {/* Erdgeschoss-Lichtband (warm gelb, umlaufend) */}
+      <NeonStrip w={w + 0.01} h={0.05} d={d + 0.01} y={0.12} color="#fbbf24" intensity={1.6} />
+      {/* Oberes Lichtband in Team-Farbe */}
+      <NeonStrip w={w + 0.01} h={0.025} d={d + 0.01} y={h - 0.06} color={color} intensity={2.4} />
+      {/* Satteldach als Prisma (gedreht) */}
+      <mesh position={[0, h + 0.18, 0]} castShadow rotation={[0, Math.PI / 4, 0]}>
+        <coneGeometry args={[w * 0.78, 0.36, 4]} />
+        <meshStandardMaterial color={color} roughness={0.45} metalness={0.1} />
       </mesh>
-      <WindowGrid width={w} height={h} rows={1} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={h + 0.3} joker={joker} />
+      {/* Dachspitze: leuchtende Kugel */}
+      <mesh position={[0, h + 0.4, 0]}>
+        <sphereGeometry args={[0.05, 16, 12]} />
+        <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={3} toneMapped={false} />
+      </mesh>
+      <WindowGrid width={w} height={h} rows={2} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
+      <WindowGrid width={d} height={h} rows={2} cols={3} side="right" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={h + 0.48} joker={joker} />
     </group>
   );
 }
 
-// 1: TURM — schmal, hoch, gestuft
+// 1: TURM — Uhrturm mit glühendem Zifferblatt
 function TowerB({ color, joker, tex }: BProps) {
-  const w = 0.38, d = 0.38, h = 1.1;
+  const w = 0.44, d = 0.44, h = 1.25;
   return (
     <group>
       <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      <BodyBox w={w * 0.7} h={0.22} d={d * 0.7} y={h} color={color} joker={joker} />
-      <BodyBox w={w * 0.45} h={0.15} d={d * 0.45} y={h + 0.22} color={color} joker={joker} />
-      <mesh position={[0, h + 0.42, 0]} castShadow>
-        <coneGeometry args={[w * 0.3, 0.2, 4]} />
+      {/* Vertikale Neon-Stripes (4 Kanten) */}
+      {[[-w/2 + 0.012, -d/2 + 0.012], [w/2 - 0.012, -d/2 + 0.012],
+        [-w/2 + 0.012,  d/2 - 0.012], [w/2 - 0.012,  d/2 - 0.012]].map(([sx, sz], i) => (
+        <mesh key={i} position={[sx, h / 2, sz]}>
+          <boxGeometry args={[0.025, h - 0.05, 0.025]} />
+          <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.4} toneMapped={false} />
+        </mesh>
+      ))}
+      {/* Uhr-Zifferblatt (emissive Disc) */}
+      <mesh position={[0, h * 0.72, d / 2 + 0.002]}>
+        <circleGeometry args={[w * 0.32, 32]} />
+        <meshStandardMaterial color="#fef9c3" emissive="#fbbf24" emissiveIntensity={2.6} toneMapped={false} />
+      </mesh>
+      {/* Uhrzeiger (dark) */}
+      <mesh position={[0, h * 0.72, d / 2 + 0.004]}>
+        <boxGeometry args={[0.012, w * 0.24, 0.004]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0, h * 0.72, d / 2 + 0.004]} rotation={[0, 0, Math.PI / 3]}>
+        <boxGeometry args={[0.012, w * 0.18, 0.004]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      {/* Gestufte Spitze */}
+      <BodyBox w={w * 0.7} h={0.18} d={d * 0.7} y={h} color={color} joker={joker} />
+      <mesh position={[0, h + 0.36, 0]} castShadow>
+        <coneGeometry args={[w * 0.4, 0.3, 4]} />
+        <meshStandardMaterial color={color} roughness={0.45} />
+      </mesh>
+      {/* Fahne auf der Spitze */}
+      <mesh position={[0, h + 0.62, 0]}>
+        <sphereGeometry args={[0.035, 16, 12]} />
+        <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={3.2} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h + 0.78} joker={joker} />
+    </group>
+  );
+}
+
+// 2: HOCHHAUS — Wolkenkratzer mit LED-Ring-Krone
+function HighriseB({ color, joker, tex }: BProps) {
+  const w = 0.58, d = 0.58, h = 1.4;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      {/* Horizontale Etagen-Lichter (mehrere emissive Bänder) */}
+      {[0.22, 0.48, 0.74, 1.0, 1.24].map((yp, i) => (
+        <NeonStrip key={i} w={w + 0.012} h={0.02} d={d + 0.012} y={yp} color={color} intensity={2.6} />
+      ))}
+      {/* LED-Ring-Krone */}
+      <mesh position={[0, h + 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[w * 0.55, w * 0.68, 32]} />
+        <meshBasicMaterial color="#fbbf24" toneMapped={false} />
+      </mesh>
+      {/* Penthouse-Box */}
+      <BodyBox w={w * 0.55} h={0.16} d={d * 0.55} y={h + 0.08} color={color} joker={joker} />
+      {/* Antennen-Mast */}
+      <mesh position={[0, h + 0.45, 0]} castShadow>
+        <cylinderGeometry args={[0.008, 0.014, 0.45, 8]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.8} />
+      </mesh>
+      {/* Warning-Light rot */}
+      <mesh position={[0, h + 0.7, 0]}>
+        <sphereGeometry args={[0.035, 16, 12]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3.5} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h + 0.25} joker={joker} />
+    </group>
+  );
+}
+
+// 3: LADEN — Neon-Storefront mit beleuchteter Markise
+function ShopB({ color, joker, tex }: BProps) {
+  const w = 1.05, d = 0.8, h = 0.42;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      {/* Neon-Schriftband unterhalb der Markise */}
+      <NeonStrip w={w - 0.1} h={0.06} d={0.02} y={h * 0.78} z={d / 2 + 0.01} color={color} intensity={3} />
+      {/* Markise (breit, tiefer) mit Lampen-Unterseite */}
+      <mesh position={[0, h + 0.06, d / 2 + 0.16]} castShadow rotation={[0.35, 0, 0]}>
+        <boxGeometry args={[w + 0.14, 0.04, 0.32]} />
         <meshStandardMaterial color={color} roughness={0.5} />
       </mesh>
-      <WindowGrid width={w} height={h} rows={4} cols={1} side="front" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={h + 0.55} joker={joker} />
+      <NeonStrip w={w + 0.14} h={0.015} d={0.02} y={h + 0.02} z={d / 2 + 0.28} color="#fde68a" intensity={2.4} />
+      {/* Flache Dachplattform mit Lichtband */}
+      <NeonStrip w={w + 0.02} h={0.02} d={d + 0.02} y={h + 0.015} color={color} intensity={2.2} />
+      {/* Schaufenster (großes warmes Licht) */}
+      <mesh position={[0, h * 0.38, d / 2 + 0.002]}>
+        <planeGeometry args={[w * 0.82, h * 0.55]} />
+        <meshStandardMaterial color="#fef3c7" emissive="#fbbf24" emissiveIntensity={1.8} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h + 0.15} joker={joker} />
     </group>
   );
 }
 
-// 2: HOCHHAUS — quadratisch, hoch, Antenne
-function HighriseB({ color, joker, tex }: BProps) {
-  const w = 0.62, d = 0.62, h = 0.95;
-  return (
-    <group>
-      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      <WindowGrid width={w} height={h} rows={3} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
-      <WindowGrid width={d} height={h} rows={3} cols={2} side="right" buildingDepth={d} buildingWidth={w} />
-      {/* Antenne */}
-      <mesh position={[0, h + 0.15, 0]} castShadow>
-        <cylinderGeometry args={[0.01, 0.012, 0.3, 8]} />
-        <meshStandardMaterial color="#f1f5f9" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, h + 0.32, 0]}>
-        <sphereGeometry args={[0.025, 12, 10]} />
-        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.2} toneMapped={false} />
-      </mesh>
-      <RoofAvatar tex={tex} y={h} joker={joker} />
-    </group>
-  );
-}
-
-// 3: LADEN — flach, breit, mit Markise
-function ShopB({ color, joker, tex }: BProps) {
-  const w = 1.0, d = 0.75, h = 0.25;
-  return (
-    <group>
-      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      {/* Markise */}
-      <mesh position={[0, h * 0.6, d / 2 + 0.09]} castShadow rotation={[0.3, 0, 0]}>
-        <boxGeometry args={[w + 0.1, 0.03, 0.2]} />
-        <meshStandardMaterial color={color} roughness={0.55} />
-      </mesh>
-      <WindowGrid width={w} height={h} rows={1} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={h} joker={joker} />
-    </group>
-  );
-}
-
-// 4: FABRIK — zwei Hallen + Schornstein
+// 4: FABRIK — Industriehalle mit glühendem Rauch + Logo-Leuchte
 function FactoryB({ color, joker, tex }: BProps) {
-  const wA = 0.55, wB = 0.4, d = 0.7, hA = 0.65, hB = 0.3;
+  const wA = 0.6, wB = 0.45, d = 0.78, hA = 0.7, hB = 0.35;
   return (
     <group>
+      {/* Haupthalle */}
       <group position={[-wB * 0.5, 0, 0]}>
         <BodyBox w={wA} h={hA} d={d} y={0} color={color} joker={joker} />
-        <WindowGrid width={wA} height={hA} rows={2} cols={1} side="front" buildingDepth={d} buildingWidth={wA} />
+        {/* Sägezahn-Dach (3 kleine Prismen) */}
+        {[-0.2, 0, 0.2].map((sx, i) => (
+          <mesh key={i} position={[sx, hA + 0.05, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+            <coneGeometry args={[0.13, 0.12, 4]} />
+            <meshStandardMaterial color={color} roughness={0.5} />
+          </mesh>
+        ))}
+        <WindowGrid width={wA} height={hA} rows={3} cols={2} side="front" buildingDepth={d} buildingWidth={wA} />
       </group>
+      {/* Nebenhalle */}
       <group position={[wA * 0.5, 0, 0]}>
         <BodyBox w={wB} h={hB} d={d} y={0} color={color} joker={joker} />
+        <NeonStrip w={wB + 0.01} h={0.025} d={d + 0.01} y={hB - 0.05} color="#fbbf24" intensity={2.4} />
       </group>
-      {/* Schornstein */}
-      <mesh position={[-wB * 0.5, hA + 0.18, 0]} castShadow>
-        <cylinderGeometry args={[0.07, 0.08, 0.36, 12]} />
-        <meshStandardMaterial color="#475569" roughness={0.75} />
+      {/* Logo-Disc an der Seite */}
+      <mesh position={[-wB * 0.5, hA * 0.55, d / 2 + 0.002]}>
+        <circleGeometry args={[0.1, 32]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.4} toneMapped={false} />
       </mesh>
-      <RoofAvatar tex={tex} y={hA + 0.4} joker={joker} />
+      {/* Schornstein (höher, konischer) */}
+      <mesh position={[-wB * 0.5 - wA * 0.3, hA + 0.28, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.09, 0.56, 12]} />
+        <meshStandardMaterial color="#334155" roughness={0.75} metalness={0.3} />
+      </mesh>
+      {/* Rotes Warn-Band am Schornstein */}
+      <mesh position={[-wB * 0.5 - wA * 0.3, hA + 0.42, 0]}>
+        <cylinderGeometry args={[0.065, 0.065, 0.04, 12]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2.2} toneMapped={false} />
+      </mesh>
+      {/* Glühender "Rauch" — 3 aufsteigende Kugeln */}
+      <FactorySmoke x={-wB * 0.5 - wA * 0.3} baseY={hA + 0.56} />
+      <RoofAvatar tex={tex} y={hA + 0.3} joker={joker} />
     </group>
   );
 }
 
-// 5: KIRCHE — Kirchenschiff + Turm + Spitze + Kreuz
+function FactorySmoke({ x, baseY }: { x: number; baseY: number }) {
+  const r1 = useRef<THREE.Mesh>(null);
+  const r2 = useRef<THREE.Mesh>(null);
+  const r3 = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    [r1, r2, r3].forEach((r, i) => {
+      if (!r.current) return;
+      const phase = (t + i * 0.6) % 1.8;
+      r.current.position.y = baseY + phase * 0.35;
+      (r.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.6 - phase * 0.35);
+      const s = 0.8 + phase * 0.6;
+      r.current.scale.setScalar(s);
+    });
+  });
+  return (
+    <>
+      {[r1, r2, r3].map((r, i) => (
+        <mesh key={i} ref={r} position={[x, baseY, 0]}>
+          <sphereGeometry args={[0.05, 12, 10]} />
+          <meshBasicMaterial color="#fde68a" transparent opacity={0.5} toneMapped={false} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// 5: KIRCHE — Kathedrale mit leuchtendem Rosettenfenster + Kreuz
 function ChurchB({ color, joker, tex }: BProps) {
-  const w = 0.55, d = 0.75, h = 0.4;
-  const tw = 0.28, th = 0.55;
+  const w = 0.6, d = 0.85, h = 0.48;
+  const tw = 0.3, th = 0.85;
   return (
     <group>
+      {/* Kirchenschiff */}
       <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      <BodyBox w={tw} h={th} d={tw} y={0} color={color} joker={joker} />
-      <mesh position={[0, th + 0.13, 0]} castShadow>
-        <coneGeometry args={[tw * 0.7, 0.26, 4]} />
-        <meshStandardMaterial color={color} roughness={0.5} />
+      {/* Steil-Dach */}
+      <mesh position={[0, h + 0.18, 0]} castShadow rotation={[0, Math.PI / 2, 0]}>
+        <coneGeometry args={[d * 0.55, 0.4, 4]} />
+        <meshStandardMaterial color={color} roughness={0.55} />
       </mesh>
-      {/* Kreuz */}
-      <group position={[0, th + 0.32, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.018, 0.12, 0.018]} />
-          <meshStandardMaterial color="#f8fafc" emissive="#fbbf24" emissiveIntensity={0.4} />
+      {/* Rosetten-Fenster (großes emissive Rund) */}
+      <mesh position={[0, h * 0.62, d / 2 + 0.002]}>
+        <circleGeometry args={[0.13, 32]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={3.2} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, h * 0.62, d / 2 + 0.003]}>
+        <ringGeometry args={[0.13, 0.15, 32]} />
+        <meshBasicMaterial color="#fde68a" toneMapped={false} />
+      </mesh>
+      {/* Turm */}
+      <group position={[0, 0, -d / 2 + tw / 2]}>
+        <BodyBox w={tw} h={th} d={tw} y={0} color={color} joker={joker} />
+        {/* Turmfenster (hoch, schmal, emissive) */}
+        <mesh position={[0, th * 0.7, tw / 2 + 0.002]}>
+          <planeGeometry args={[0.08, 0.24]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={2.8} toneMapped={false} />
         </mesh>
-        <mesh castShadow position={[0, 0.02, 0]}>
-          <boxGeometry args={[0.065, 0.018, 0.018]} />
-          <meshStandardMaterial color="#f8fafc" emissive="#fbbf24" emissiveIntensity={0.4} />
+        {/* Spitze */}
+        <mesh position={[0, th + 0.15, 0]} castShadow>
+          <coneGeometry args={[tw * 0.72, 0.32, 4]} />
+          <meshStandardMaterial color={color} roughness={0.5} />
         </mesh>
+        {/* Leuchtendes Kreuz */}
+        <group position={[0, th + 0.42, 0]}>
+          <mesh>
+            <boxGeometry args={[0.022, 0.16, 0.022]} />
+            <meshStandardMaterial color="#fef9c3" emissive="#fbbf24" emissiveIntensity={3} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0.02, 0]}>
+            <boxGeometry args={[0.085, 0.022, 0.022]} />
+            <meshStandardMaterial color="#fef9c3" emissive="#fbbf24" emissiveIntensity={3} toneMapped={false} />
+          </mesh>
+        </group>
       </group>
-      <WindowGrid width={w} height={h} rows={1} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={th + 0.5} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.42} joker={joker} />
     </group>
   );
 }
 
-// 6: BURG — breite Basis + zwei hohe Ecktürme mit Zinnen
+// 6: BURG — gedrungene Festung mit zwei Ecktürmen + Banner + Fackeln
 function CastleB({ color, joker, tex }: BProps) {
-  const w = 0.95, d = 0.8, h = 0.35;
-  const tw = 0.22, th = 0.85;
+  const w = 1.0, d = 0.88, h = 0.45;
+  const tw = 0.26, th = 1.0;
   return (
     <group>
+      {/* Burgmauer */}
       <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
-      {/* Zinnen auf der Mauer */}
-      {[-0.28, 0, 0.28].map((px, i) => (
-        <mesh key={i} position={[px, h + 0.04, d / 2 - 0.04]} castShadow>
-          <boxGeometry args={[0.08, 0.08, 0.08]} />
+      {/* Zinnenkranz vorne */}
+      {[-0.35, -0.12, 0.12, 0.35].map((px, i) => (
+        <mesh key={i} position={[px, h + 0.05, d / 2 - 0.05]} castShadow>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
           <meshStandardMaterial color={color} roughness={0.55} />
         </mesh>
       ))}
-      {/* Zwei Ecktürme */}
-      {[[-w / 2 + tw / 2, d / 2 - tw / 2], [w / 2 - tw / 2, d / 2 - tw / 2]].map(([tx, tz], i) => (
-        <group key={i} position={[tx, 0, tz]}>
-          <BodyBox w={tw} h={th} d={tw} y={0} color={color} joker={joker} />
-          {/* Zinnen oben */}
-          {[-0.06, 0.06].map((cx, j) => (
-            <mesh key={j} position={[cx, th + 0.04, 0]} castShadow>
-              <boxGeometry args={[0.05, 0.08, 0.05]} />
-              <meshStandardMaterial color={color} roughness={0.55} />
-            </mesh>
-          ))}
+      {/* Tor (dunkle emissive Öffnung) */}
+      <mesh position={[0, h * 0.45, d / 2 + 0.002]}>
+        <planeGeometry args={[0.16, 0.28]} />
+        <meshStandardMaterial color="#78350f" emissive="#fb923c" emissiveIntensity={1.6} toneMapped={false} />
+      </mesh>
+      {/* Fackeln neben dem Tor (leuchten + Glühkugel) */}
+      {[-0.15, 0.15].map((fx, i) => (
+        <group key={i}>
+          <mesh position={[fx, h * 0.58, d / 2 + 0.01]}>
+            <boxGeometry args={[0.015, 0.18, 0.015]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+          <mesh position={[fx, h * 0.78, d / 2 + 0.01]}>
+            <sphereGeometry args={[0.04, 14, 10]} />
+            <meshStandardMaterial color="#fb923c" emissive="#f97316" emissiveIntensity={3.5} toneMapped={false} />
+          </mesh>
         </group>
       ))}
-      <WindowGrid width={w} height={h} rows={1} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={th + 0.1} joker={joker} />
+      {/* Zwei hohe Ecktürme mit Kegeldach + Banner */}
+      {[[-w / 2 + tw / 2, d / 2 - tw / 2], [w / 2 - tw / 2, d / 2 - tw / 2]].map(([tx, tz], i) => (
+        <group key={i} position={[tx, 0, tz]}>
+          <mesh position={[0, th / 2, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[tw * 0.55, tw * 0.6, th, 16]} />
+            <meshStandardMaterial color={color} roughness={0.55} emissive={joker ? '#fbbf24' : '#000'} emissiveIntensity={joker ? 0.15 : 0} />
+          </mesh>
+          {/* Zinnen */}
+          {[0, Math.PI / 2, Math.PI, 3 * Math.PI / 2].map((a, j) => (
+            <mesh key={j} position={[Math.cos(a) * tw * 0.48, th + 0.05, Math.sin(a) * tw * 0.48]} castShadow>
+              <boxGeometry args={[0.05, 0.1, 0.05]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+          ))}
+          {/* Kegeldach */}
+          <mesh position={[0, th + 0.22, 0]} castShadow>
+            <coneGeometry args={[tw * 0.62, 0.3, 18]} />
+            <meshStandardMaterial color={color} roughness={0.5} />
+          </mesh>
+          {/* Banner-Stange + Fahne */}
+          <mesh position={[0, th + 0.48, 0]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.16, 8]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+          <mesh position={[0.08, th + 0.5, 0]}>
+            <planeGeometry args={[0.14, 0.1]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} side={THREE.DoubleSide} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+      <RoofAvatar tex={tex} y={h + 0.2} joker={joker} />
     </group>
   );
 }
 
-// 7: SILO — Zylinder mit Kuppel
+// 7: SILO — Doppel-Silo mit pulsierendem Leuchtring
 function SiloB({ color, joker, tex }: BProps) {
-  const r = 0.28, h = 0.75;
+  const r = 0.26, h = 0.9;
+  const pulseRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (pulseRef.current) {
+      const t = state.clock.elapsedTime;
+      const s = 1 + Math.sin(t * 2) * 0.08;
+      pulseRef.current.scale.set(s, 1, s);
+      (pulseRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 2.2 + Math.sin(t * 2) * 1.0;
+    }
+  });
   return (
     <group>
-      <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[r, r, h, 20]} />
-        <meshStandardMaterial
-          color={color}
-          roughness={0.55}
-          emissive={joker ? '#fbbf24' : '#000'}
-          emissiveIntensity={joker ? 0.15 : 0}
-        />
+      {/* Silo 1 (links, groß) */}
+      <group position={[-r * 0.55, 0, 0]}>
+        <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[r, r, h, 20]} />
+          <meshStandardMaterial color={color} roughness={0.45} metalness={0.2} emissive={joker ? '#fbbf24' : '#000'} emissiveIntensity={joker ? 0.15 : 0} />
+        </mesh>
+        {/* Pulsierender Ring in der Mitte */}
+        <mesh ref={pulseRef} position={[0, h * 0.5, 0]}>
+          <cylinderGeometry args={[r + 0.012, r + 0.012, 0.04, 20]} />
+          <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.2} toneMapped={false} />
+        </mesh>
+        {/* Kuppel */}
+        <mesh position={[0, h, 0]} castShadow>
+          <sphereGeometry args={[r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={color} roughness={0.3} metalness={0.35} />
+        </mesh>
+        {/* Warnlicht-Kugel oben */}
+        <mesh position={[0, h + r + 0.02, 0]}>
+          <sphereGeometry args={[0.03, 14, 10]} />
+          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3} toneMapped={false} />
+        </mesh>
+      </group>
+      {/* Silo 2 (rechts, kleiner) */}
+      <group position={[r * 0.85, 0, 0]}>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <cylinderGeometry args={[r * 0.65, r * 0.65, 0.7, 18]} />
+          <meshStandardMaterial color={color} roughness={0.45} metalness={0.2} />
+        </mesh>
+        <NeonStrip w={r * 1.35} h={0.03} d={r * 1.35} y={0.62} color={color} intensity={2.4} />
+        <mesh position={[0, 0.7, 0]} castShadow>
+          <sphereGeometry args={[r * 0.65, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={color} roughness={0.3} metalness={0.35} />
+        </mesh>
+      </group>
+      {/* Verbindungs-Röhre */}
+      <mesh position={[r * 0.15, h * 0.75, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.03, 0.03, r * 1.4, 10]} />
+        <meshStandardMaterial color="#64748b" roughness={0.45} metalness={0.6} />
       </mesh>
-      {/* Kuppel */}
-      <mesh position={[0, h, 0]} castShadow>
-        <sphereGeometry args={[r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color={color} roughness={0.4} metalness={0.2} />
-      </mesh>
-      <RoofAvatar tex={tex} y={h + r + 0.02} joker={joker} />
+      <RoofAvatar tex={tex} y={h + r + 0.2} joker={joker} />
     </group>
   );
 }

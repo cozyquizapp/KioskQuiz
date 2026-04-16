@@ -6,7 +6,10 @@
 //   2. Isometrisches Quartier (feste Iso-Perspektive, "Stadtplan-Look")
 //   3. Parzellen-Stil (flache Iso-Tiles mit Nutzungstypen: Park, Platz, Block, Markt)
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 
 type TeamId = 'A' | 'B' | 'C' | 'D' | null;
 
@@ -34,8 +37,8 @@ function heightFor(r: number, c: number, owner: TeamId): number {
 }
 
 export default function QQCityLabPage() {
-  const [variant, setVariant] = useState<1 | 2 | 3>(2);
-  const [showAll, setShowAll] = useState(true);
+  const [variant, setVariant] = useState<1 | 2 | 3 | 4>(4);
+  const [showAll, setShowAll] = useState(false);
 
   return (
     <div style={{
@@ -51,7 +54,7 @@ export default function QQCityLabPage() {
         {showAll ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: 18,
             marginTop: 28,
           }}>
@@ -64,21 +67,26 @@ export default function QQCityLabPage() {
             <Card title="③ Parzellen-Stil" subtitle="Nutzungstypen statt Gebäude" accent="#22C55E">
               <Parcels />
             </Card>
+            <Card title="④ Three.js Stadt" subtitle="Echtes 3D, warme Abendstimmung" accent="#A855F7">
+              <ThreeCity />
+            </Card>
           </div>
         ) : (
           <div style={{ marginTop: 28, display: 'flex', justifyContent: 'center' }}>
             <div style={{ width: 'min(920px, 100%)' }}>
               <Card
-                title={variant === 1 ? '① Stilisierte Stadt' : variant === 2 ? '② Iso-Quartier' : '③ Parzellen-Stil'}
+                title={variant === 1 ? '① Stilisierte Stadt' : variant === 2 ? '② Iso-Quartier' : variant === 3 ? '③ Parzellen-Stil' : '④ Three.js Stadt'}
                 subtitle={variant === 1 ? 'Low-Poly, klare Dächer, Team-Farbe am Kopf'
                   : variant === 2 ? 'Feste Iso-Kamera, Stadtplan-Look'
-                  : 'Nutzungstypen statt Gebäude'}
-                accent={variant === 1 ? '#F59E0B' : variant === 2 ? '#3B82F6' : '#22C55E'}
+                  : variant === 3 ? 'Nutzungstypen statt Gebäude'
+                  : 'Echtes 3D mit warmem Abendlicht & leuchtenden Fenstern'}
+                accent={variant === 1 ? '#F59E0B' : variant === 2 ? '#3B82F6' : variant === 3 ? '#22C55E' : '#A855F7'}
                 big
               >
                 {variant === 1 && <StylizedCity big />}
                 {variant === 2 && <IsoQuarter big />}
                 {variant === 3 && <Parcels big />}
+                {variant === 4 && <ThreeCity big />}
               </Card>
             </div>
           </div>
@@ -95,7 +103,7 @@ export default function QQCityLabPage() {
 // ── Header ──────────────────────────────────────────────────────────────────
 
 function Header({ variant, setVariant, showAll, setShowAll }: {
-  variant: 1 | 2 | 3; setVariant: (v: 1 | 2 | 3) => void;
+  variant: 1 | 2 | 3 | 4; setVariant: (v: 1 | 2 | 3 | 4) => void;
   showAll: boolean; setShowAll: (v: boolean) => void;
 }) {
   return (
@@ -116,10 +124,11 @@ function Header({ variant, setVariant, showAll, setShowAll }: {
       </div>
 
       <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <TabBtn active={showAll}  onClick={() => setShowAll(true)}>Alle 3 nebeneinander</TabBtn>
-        <TabBtn active={!showAll && variant === 1} onClick={() => { setShowAll(false); setVariant(1); }}>Nur ① Stadt</TabBtn>
+        <TabBtn active={showAll}  onClick={() => setShowAll(true)}>Alle 4 nebeneinander</TabBtn>
+        <TabBtn active={!showAll && variant === 1} onClick={() => { setShowAll(false); setVariant(1); }}>Nur ① Stadt (CSS)</TabBtn>
         <TabBtn active={!showAll && variant === 2} onClick={() => { setShowAll(false); setVariant(2); }}>Nur ② Iso</TabBtn>
         <TabBtn active={!showAll && variant === 3} onClick={() => { setShowAll(false); setVariant(3); }}>Nur ③ Parzellen</TabBtn>
+        <TabBtn active={!showAll && variant === 4} onClick={() => { setShowAll(false); setVariant(4); }}>Nur ④ Three.js ✨</TabBtn>
       </div>
     </div>
   );
@@ -601,7 +610,7 @@ function Legend() {
 function Notes() {
   return (
     <div style={{
-      marginTop: 22, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14,
+      marginTop: 22, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14,
     }}>
       <Note title="① Stilisierte Stadt" color="#F59E0B">
         <b>Pro:</b> nah am aktuellen 3D — klein aufrüstbar. Dach in Team-Farbe
@@ -622,6 +631,13 @@ function Notes() {
         <br /><b>Contra:</b> braucht Content-Design (Parzellen-Typen pflegen);
         Team-Zuordnung subtiler, bei vielen Teams evtl. schwerer zu trennen.
       </Note>
+      <Note title="④ Three.js Stadt" color="#A855F7">
+        <b>Pro:</b> echtes 3D mit Licht, Schatten, Emissive-Fenstern — wirklich
+        Gimmick-Tier. Skaliert Dach- & Höhen-Varianten beliebig; Joker als Landmark
+        (goldene Laterne) sticht sofort raus. Optional orbit für Staunen-Effekt.
+        <br /><b>Contra:</b> Bundle-Weight (~600kb three + R3F), Mobile-Perf muss
+        getestet werden. Für 8-Team-Live besser 2D, für 4-Team als Eyecandy top.
+      </Note>
     </div>
   );
 }
@@ -636,6 +652,227 @@ function Note({ title, color, children }: { title: string; color: string; childr
       <div style={{ fontSize: 13, fontWeight: 900, color, marginBottom: 6 }}>{title}</div>
       <div style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.55 }}>{children}</div>
     </div>
+  );
+}
+
+// ── ④ Three.js Stadt (echtes 3D) ────────────────────────────────────────────
+// Low-Poly Stadt in R3F. Warme Abendstimmung, Team-Farbe als Dach/Laterne,
+// neutrale Körper. Joker = goldene Laterne (Landmark). 3-4 Höhen, 2 Dachformen.
+function ThreeCity({ big }: { big?: boolean }) {
+  const h = big ? 520 : 300;
+  return (
+    <div style={{ width: '100%', height: h, borderRadius: 12, overflow: 'hidden' }}>
+      <Canvas
+        shadows
+        dpr={[1, 2]}
+        camera={{ position: [8, 9, 10], fov: 35 }}
+        gl={{ antialias: true }}
+      >
+        <color attach="background" args={['#1a1633']} />
+        <fog attach="fog" args={['#1a1633', 18, 38]} />
+
+        {/* Abend-Licht: warmer Key + kühlerer Fill + Bodenlicht */}
+        <ambientLight intensity={0.45} color="#8b7fb8" />
+        <directionalLight
+          position={[6, 10, 4]}
+          intensity={1.3}
+          color="#ffd79a"
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-camera-left={-8}
+          shadow-camera-right={8}
+          shadow-camera-top={8}
+          shadow-camera-bottom={-8}
+        />
+        <pointLight position={[-4, 3, -4]} intensity={0.4} color="#6b5fb8" />
+
+        <CityScene />
+
+        <OrbitControls
+          enablePan={false}
+          minPolarAngle={Math.PI / 6}
+          maxPolarAngle={Math.PI / 2.4}
+          minDistance={8}
+          maxDistance={22}
+          autoRotate
+          autoRotateSpeed={0.6}
+        />
+      </Canvas>
+    </div>
+  );
+}
+
+function CityScene() {
+  const group = useRef<THREE.Group>(null);
+  const size = 5;
+  const tile = 1.6;
+  const offset = ((size - 1) * tile) / 2;
+
+  const buildings = useMemo(() => {
+    const items: Array<{
+      x: number; z: number;
+      height: number;
+      color: string;
+      roofStyle: 'flat' | 'pyramid';
+      joker: boolean;
+      owner: TeamId;
+    }> = [];
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const cell = DEMO_GRID[r][c];
+        const owner = cell.owner;
+        const seed = (r * 17 + c * 31) % 7;
+        const heightIdx = seed % 4; // 0..3
+        const height = owner ? 0.6 + heightIdx * 0.55 : 0.12;
+        const roofStyle: 'flat' | 'pyramid' = (seed % 2 === 0) ? 'flat' : 'pyramid';
+        const color = owner ? TEAMS[owner].color : '#2a3349';
+        items.push({
+          x: (c * tile) - offset,
+          z: (r * tile) - offset,
+          height,
+          color,
+          roofStyle,
+          joker: !!cell.joker,
+          owner,
+        });
+      }
+    }
+    return items;
+  }, []);
+
+  return (
+    <group ref={group}>
+      {/* Boden */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
+        <planeGeometry args={[size * tile + 2, size * tile + 2]} />
+        <meshStandardMaterial color="#14172a" roughness={0.9} />
+      </mesh>
+
+      {/* Straßen-Grid (subtil) */}
+      {Array.from({ length: size + 1 }).map((_, i) => (
+        <mesh
+          key={`gh-${i}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.01, (i * tile) - offset - tile / 2]}
+        >
+          <planeGeometry args={[size * tile + 0.4, 0.04]} />
+          <meshBasicMaterial color="#2a2f47" transparent opacity={0.6} />
+        </mesh>
+      ))}
+      {Array.from({ length: size + 1 }).map((_, i) => (
+        <mesh
+          key={`gv-${i}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[(i * tile) - offset - tile / 2, 0.01, 0]}
+        >
+          <planeGeometry args={[0.04, size * tile + 0.4]} />
+          <meshBasicMaterial color="#2a2f47" transparent opacity={0.6} />
+        </mesh>
+      ))}
+
+      {/* Gebäude */}
+      {buildings.map((b, i) => (
+        <Building
+          key={i}
+          x={b.x}
+          z={b.z}
+          height={b.height}
+          color={b.color}
+          roofStyle={b.roofStyle}
+          joker={b.joker}
+          hasOwner={!!b.owner}
+        />
+      ))}
+    </group>
+  );
+}
+
+function Building({ x, z, height, color, roofStyle, joker, hasOwner }: {
+  x: number; z: number; height: number; color: string;
+  roofStyle: 'flat' | 'pyramid'; joker: boolean; hasOwner: boolean;
+}) {
+  const bodyW = 1.15;
+  const bodyColor = hasOwner ? '#cbb9a0' : '#3b4160';
+  const windowColor = hasOwner ? '#ffd27a' : '#4a5278';
+  const windowEmissive = hasOwner ? '#ff9f4a' : '#2a3355';
+  const windowIntensity = hasOwner ? 0.7 : 0.15;
+
+  return (
+    <group position={[x, 0, z]}>
+      {/* Körper */}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[bodyW, height, bodyW]} />
+        <meshStandardMaterial color={bodyColor} roughness={0.75} />
+      </mesh>
+
+      {/* Fenster-Strips (emissive, vorne + seitlich) */}
+      {hasOwner && Array.from({ length: Math.max(1, Math.floor(height / 0.35)) }).map((_, i) => {
+        const y = 0.25 + i * 0.38;
+        if (y > height - 0.15) return null;
+        return (
+          <group key={i}>
+            <mesh position={[0, y, bodyW / 2 + 0.001]}>
+              <planeGeometry args={[bodyW * 0.75, 0.14]} />
+              <meshStandardMaterial
+                color={windowColor}
+                emissive={windowEmissive}
+                emissiveIntensity={windowIntensity}
+                roughness={0.3}
+              />
+            </mesh>
+            <mesh position={[bodyW / 2 + 0.001, y, 0]} rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[bodyW * 0.75, 0.14]} />
+              <meshStandardMaterial
+                color={windowColor}
+                emissive={windowEmissive}
+                emissiveIntensity={windowIntensity}
+                roughness={0.3}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Dach in Team-Farbe */}
+      {hasOwner && roofStyle === 'flat' && (
+        <mesh position={[0, height + 0.06, 0]} castShadow>
+          <boxGeometry args={[bodyW + 0.08, 0.12, bodyW + 0.08]} />
+          <meshStandardMaterial color={color} roughness={0.5} />
+        </mesh>
+      )}
+      {hasOwner && roofStyle === 'pyramid' && (
+        <mesh position={[0, height + 0.28, 0]} castShadow rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[bodyW * 0.78, 0.55, 4]} />
+          <meshStandardMaterial color={color} roughness={0.5} />
+        </mesh>
+      )}
+
+      {/* Joker = goldene Landmark-Laterne auf dem Dach */}
+      {hasOwner && joker && (
+        <group position={[0, height + 0.55, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.22, 16, 12]} />
+            <meshStandardMaterial
+              color="#fde68a"
+              emissive="#fbbf24"
+              emissiveIntensity={1.6}
+              roughness={0.25}
+              metalness={0.6}
+            />
+          </mesh>
+          <pointLight color="#fbbf24" intensity={0.9} distance={3.5} decay={2} />
+        </group>
+      )}
+
+      {/* Leeres Feld = flacher Platz */}
+      {!hasOwner && (
+        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[bodyW, bodyW]} />
+          <meshStandardMaterial color="#242a44" roughness={0.95} />
+        </mesh>
+      )}
+    </group>
   );
 }
 

@@ -14,9 +14,12 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@react-leaflet/core": "^2.1.0",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@sentry/browser": "^7.57.0",
     "@sentry/react": "^7.57.0",
     "@types/leaflet": "^1.9.21",
+    "@types/three": "^0.184.0",
     "jspdf": "^3.0.4",
     "leaflet": "^1.9.4",
     "qrcode.react": "^4.2.0",
@@ -25,7 +28,8 @@
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.22.3",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

@@ -3771,30 +3771,116 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN + Hot Potato — handled separately) */}
+          {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN + Hot Potato — handled separately).
+              Rechts im Feld: Avatare der Teams, die das Richtige getippt haben,
+              sortiert nach Reaktionszeit (schnellster mit ⚡-Krone). */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN'
-            && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
-            <div style={{
-              position: 'relative', overflow: 'hidden',
-              padding: 'clamp(16px, 2vh, 32px) clamp(24px, 3vw, 52px)', borderRadius: 28,
-              background: 'rgba(34,197,94,0.12)',
-              border: '3px solid rgba(34,197,94,0.50)',
-              boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
-              fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900,
-              color: '#4ade80', marginBottom: 'clamp(8px, 1.2vh, 24px)',
-              width: '100%', maxWidth: 1400, textAlign: 'center',
-              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
-            }}>
-              {/* Shimmer sweep */}
-              <div style={{
-                position: 'absolute', top: 0, width: '60%', height: '100%',
-                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
-                animation: 'revealShimmer 0.8s ease 0.5s both',
-                pointerEvents: 'none',
-              }} />
-              ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
-            </div>
-          )}
+            && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (() => {
+              // Korrekte Teams: wir nehmen alle, deren Antwort mit revealedAnswer (oder answerEn)
+              // fuzzy matcht (lowercase, whitespace-trim). Bei SCHAETZCHEN gibt's nichts zu matchen →
+              // leeres Array, dort macht die Zeitstrahl-Darstellung den Job.
+              const corrList: string[] = [];
+              if (s.revealedAnswer) corrList.push(s.revealedAnswer.toLowerCase().trim());
+              if (q.answerEn) corrList.push(String(q.answerEn).toLowerCase().trim());
+              const isSchaetz = q.category === 'SCHAETZCHEN';
+              const correctTeams = isSchaetz ? [] : [...s.answers]
+                .filter(a => {
+                  const t = (a.text ?? '').toLowerCase().trim();
+                  if (!t) return false;
+                  return corrList.some(c => c === t || (c.length > 2 && (t.includes(c) || c.includes(t))));
+                })
+                .sort((a, b) => a.submittedAt - b.submittedAt)
+                .map(a => {
+                  const team = s.teams.find(t => t.id === a.teamId);
+                  return team ? { team, submittedAt: a.submittedAt } : null;
+                })
+                .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
+              const t0 = s.timerEndsAt && s.timerDurationSec
+                ? s.timerEndsAt - s.timerDurationSec * 1000
+                : correctTeams[0]?.submittedAt;
+              return (
+                <div style={{
+                  position: 'relative', overflow: 'hidden',
+                  padding: 'clamp(16px, 2vh, 32px) clamp(24px, 3vw, 52px)', borderRadius: 28,
+                  background: 'rgba(34,197,94,0.12)',
+                  border: '3px solid rgba(34,197,94,0.50)',
+                  boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
+                  marginBottom: 'clamp(8px, 1.2vh, 24px)',
+                  width: '100%', maxWidth: 1400,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px, 2vw, 32px)',
+                  animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                }}>
+                  {/* Shimmer sweep */}
+                  <div style={{
+                    position: 'absolute', top: 0, width: '60%', height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                    animation: 'revealShimmer 0.8s ease 0.5s both',
+                    pointerEvents: 'none',
+                  }} />
+                  <span style={{
+                    fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900, color: '#4ade80',
+                    flexShrink: 1, minWidth: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    position: 'relative', zIndex: 1,
+                  }}>
+                    ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
+                  </span>
+                  {correctTeams.length > 0 && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      flexShrink: 0,
+                      position: 'relative', zIndex: 1,
+                      animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
+                    }}>
+                      {correctTeams.map((ct, vi) => {
+                        const timeSec = t0 ? Math.max(0, (ct.submittedAt - t0) / 1000) : null;
+                        const isFastest = vi === 0;
+                        return (
+                          <div key={ct.team.id} style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                          }}>
+                            <div style={{
+                              position: 'relative',
+                              width: 'clamp(44px, 5vw, 64px)',
+                              height: 'clamp(44px, 5vw, 64px)',
+                              borderRadius: '50%',
+                              background: ct.team.color,
+                              border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                              boxShadow: isFastest
+                                ? `0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
+                                : '0 4px 12px rgba(0,0,0,0.4)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 'clamp(22px, 2.6vw, 34px)',
+                            }}>
+                              {qqGetAvatar(ct.team.avatarId).emoji}
+                              {isFastest && (
+                                <span style={{
+                                  position: 'absolute', top: -10, right: -10,
+                                  fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
+                                }}>⚡</span>
+                              )}
+                            </div>
+                            {timeSec != null && (
+                              <span style={{
+                                padding: '2px 8px', borderRadius: 999,
+                                background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
+                                border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                color: isFastest ? '#FBBF24' : '#cbd5e1',
+                                fontWeight: 900,
+                                fontSize: 'clamp(12px, 1.2vw, 15px)',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {timeSec.toFixed(1)}s
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           {/* Hot Potato reveal: show full answer list as chips, mark which were named */}
           {revealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
@@ -3971,12 +4057,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }} />
                   {/* Axis endpoints labels */}
                   <div style={{
-                    position: 'absolute', left: 0, top: 'calc(50% + 14px)',
-                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
+                    position: 'absolute', left: 0, top: 'calc(50% + 18px)',
+                    fontSize: 'clamp(14px, 1.5vw, 20px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMin)}</div>
                   <div style={{
-                    position: 'absolute', right: 0, top: 'calc(50% + 14px)',
-                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
+                    position: 'absolute', right: 0, top: 'calc(50% + 18px)',
+                    fontSize: 'clamp(14px, 1.5vw, 20px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMax)}</div>
 
                   {/* Target marker — runder Avatar-Button mit Ziel-Emoji.
@@ -4003,11 +4089,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     }}>🎯</div>
                     {/* Wert-Chip darunter */}
                     <div style={{
-                      marginTop: 6,
-                      padding: '3px 10px', borderRadius: 999,
+                      marginTop: 8,
+                      padding: '6px 16px', borderRadius: 999,
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(13px, 1.5vw, 18px)',
+                      fontSize: 'clamp(18px, 2.1vw, 26px)',
                       whiteSpace: 'nowrap',
                       boxShadow: '0 3px 10px rgba(34,197,94,0.45)',
                       border: '2px solid rgba(255,255,255,0.25)',
@@ -4024,58 +4110,67 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     }} />
                   </div>
 
-                  {/* Team pins */}
+                  {/* Team pins — Avatar und Wert-Chip liegen als stack klar ÜBER bzw.
+                      UNTER der Rail. Bei "oben" (negative yOffset) kommt der Chip
+                      über den Avatar, die Verbindungslinie zieht unterhalb des
+                      Avatars Richtung Rail. Bei "unten" (positive yOffset) steht der
+                      Avatar unter der Rail, der Chip darunter. Dadurch sind Avatare
+                      eindeutig nicht mehr "auf der Linie". */}
                   {parsed.map((p) => {
                     const pct = pctOf(p.num);
                     const r = pinRows.get(p.teamId) ?? 0;
                     const xNudge = pinXNudge.get(p.teamId) ?? 0;
                     const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
-                    const orderIdx = sorted.findIndex(x => x.teamId === p.teamId); // 0 = worst
+                    const orderIdx = sorted.findIndex(x => x.teamId === p.teamId);
                     const delay = 0.7 + orderIdx * 0.18;
                     const tColor = p.team!.color;
-                    // Vertical offset: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
-                    // Alterniert über/unter dem Strahl, damit sich die Avatare nicht überlappen.
-                    // Deutlich über/unter der Schiene platzieren, damit Avatare eindeutig
-                    // getrennt sichtbar sind (nicht "auf einer Linie" wirken).
-                    const yOffset = r === 0 ? -96 : r === 1 ? 96 : r === 2 ? -172 : 172;
-                    // Gewinner hüpft nach dem Reveal 2× Richtung Ziel (percent-basiert,
-                    // damit der Nudge zur echten Entfernung passt — weit weg vom Ziel
-                    // = größerer Hüpfer).
-                    const nudgePctDelta = targetPct - pct; // signed %
-                    // Umrechnen in px (Axis-Breite = 100% des Container, Container ist ca. 1400*0.9 = ~1250).
-                    // Wir nehmen einen konservativen Wert, kappen auf ±160px.
+                    // r: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
+                    const isTop = r === 0 || r === 2;
+                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt
+                    const gap = r === 0 || r === 1 ? 110 : 186;
+                    const avatarSize = isWinner ? 64 : 52;
+                    // Nudge/Animation-Deltas (Gewinner hüpft Richtung Ziel)
+                    const nudgePctDelta = targetPct - pct;
                     const nudgeXPx = Math.max(-160, Math.min(160, nudgePctDelta * 12));
-                    const nudgeDelay = delay + 0.8; // nach revealWinnerIn zusätzlich 0.25s Puffer
+                    const nudgeDelay = delay + 0.8;
+                    // Das äußere Wrapper-Div wird per translate auf Rail-Ebene
+                    // bzw. Avatar-Ebene zentriert — isTop: nach oben, sonst nach
+                    // unten. Wrapper ist ein Punkt; die Kinder werden relativ
+                    // zum Avatar-Zentrum absolut positioniert.
+                    const wrapperY = isTop ? -gap : gap;
                     return (
                       <div key={p.teamId} style={{
                         position: 'absolute', left: `${pct}%`, top: '50%',
-                        transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${yOffset}px))`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${wrapperY}px))`,
+                        width: 0, height: 0,
                         animation: isWinner
                           ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
                           : `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
                         ...(isWinner ? {
                           ['--nudge-x' as any]: `${nudgeXPx}px`,
-                          ['--nudge-y' as any]: `${yOffset}px`,
+                          ['--nudge-y' as any]: `${wrapperY}px`,
                           ['--base-x' as any]: `${xNudge}px`,
                         } : {}),
                         zIndex: isWinner ? 20 : 10,
                       }}>
-                        {/* Connector line to rail */}
+                        {/* Verbindungslinie vom Avatar zur Rail (in Richtung Rail) */}
                         <div style={{
-                          position: 'absolute', left: '50%', top: '50%',
-                          width: 2, height: Math.abs(yOffset),
+                          position: 'absolute', left: '50%',
+                          top: isTop ? `${avatarSize / 2}px` : `${-gap}px`,
+                          width: 2, height: gap - avatarSize / 2,
                           background: `${tColor}88`,
-                          transform: `translate(-50%, ${yOffset < 0 ? '0' : '-100%'})`,
+                          transform: 'translateX(-50%)',
                           zIndex: -1,
                         }} />
-                        {/* Avatar pin */}
+                        {/* Avatar pin (zentriert auf Wrapper-Punkt) */}
                         <div style={{
-                          width: isWinner ? 'clamp(44px, 4.8vw, 64px)' : 'clamp(36px, 4vw, 52px)',
-                          height: isWinner ? 'clamp(44px, 4.8vw, 64px)' : 'clamp(36px, 4vw, 52px)',
+                          position: 'absolute', left: '50%', top: 0,
+                          transform: 'translate(-50%, -50%)',
+                          width: isWinner ? 'clamp(52px, 5.4vw, 72px)' : 'clamp(42px, 4.6vw, 58px)',
+                          height: isWinner ? 'clamp(52px, 5.4vw, 72px)' : 'clamp(42px, 4.6vw, 58px)',
                           borderRadius: '50%', background: tColor,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: isWinner ? 'clamp(22px, 2.6vw, 34px)' : 'clamp(18px, 2.2vw, 28px)',
+                          fontSize: isWinner ? 'clamp(26px, 3vw, 40px)' : 'clamp(22px, 2.6vw, 32px)',
                           border: isWinner ? '3px solid #FBBF24' : '2px solid rgba(0,0,0,0.3)',
                           boxShadow: isWinner
                             ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
@@ -4083,15 +4178,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           {qqGetAvatar(p.team!.avatarId).emoji}
                         </div>
-                        {/* Value chip */}
+                        {/* Value chip — isTop: ÜBER dem Avatar, sonst UNTER dem Avatar */}
                         <div style={{
-                          padding: '2px 8px', borderRadius: 8,
-                          background: 'rgba(0,0,0,0.7)',
+                          position: 'absolute', left: '50%',
+                          top: isTop ? `${-avatarSize / 2 - 10}px` : `${avatarSize / 2 + 10}px`,
+                          transform: isTop ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+                          padding: '4px 12px', borderRadius: 10,
+                          background: 'rgba(0,0,0,0.78)',
                           border: `1.5px solid ${tColor}`,
                           color: '#fff', fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(13px, 1.4vw, 17px)' : 'clamp(11px, 1.15vw, 14px)',
+                          fontSize: isWinner ? 'clamp(18px, 2vw, 26px)' : 'clamp(15px, 1.7vw, 20px)',
                           whiteSpace: 'nowrap',
-                          marginTop: 4,
                         }}>
                           {fmt(p.num)}
                         </div>

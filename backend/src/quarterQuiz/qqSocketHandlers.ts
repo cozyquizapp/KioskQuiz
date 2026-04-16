@@ -401,7 +401,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const teamId = room.hotPotatoActiveTeamId;
         if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
         // Record used answer
-        if (room.hotPotatoLastAnswer) room.hotPotatoUsedAnswers.push(room.hotPotatoLastAnswer);
+        if (room.hotPotatoLastAnswer) {
+          room.hotPotatoUsedAnswers.push(room.hotPotatoLastAnswer);
+          room.hotPotatoAnswerAuthors.push(teamId);
+        }
         // Advance to next team (correct = survive, not win)
         const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
         if (!next) {
@@ -478,6 +481,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
           if (isMatch) {
             // Correct — record answer
             room.hotPotatoUsedAnswers.push(trimmed);
+            room.hotPotatoAnswerAuthors.push(payload.teamId);
 
             // Pool exhausted? All survivors win, random placement order
             const usedNorm = room.hotPotatoUsedAnswers.map(u => normalizeText(u));

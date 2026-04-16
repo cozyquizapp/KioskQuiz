@@ -3692,10 +3692,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
             const raw = (lang === 'en' && q.answerEn ? q.answerEn : q.answer) ?? '';
             const allAnswers = raw.split(/[,;]/).map(a => a.replace(/[…\.]+$/, '').trim()).filter(Boolean);
-            const usedNorm = (s.hotPotatoUsedAnswers ?? []).map((u: string) => u.toLowerCase().trim());
-            const wasNamed = (a: string) => usedNorm.some((u: string) =>
-              u === a.toLowerCase().trim() || u.includes(a.toLowerCase().trim()) || a.toLowerCase().trim().includes(u)
-            );
+            const used = s.hotPotatoUsedAnswers ?? [];
+            const authors = s.hotPotatoAnswerAuthors ?? [];
+            const usedNorm = used.map((u: string) => u.toLowerCase().trim());
+            // Map each revealed answer (from q.answer) → authoring team (if any)
+            const findAuthor = (a: string): string | null => {
+              const aLower = a.toLowerCase().trim();
+              for (let i = 0; i < usedNorm.length; i++) {
+                const u = usedNorm[i];
+                if (u === aLower || u.includes(aLower) || aLower.includes(u)) return authors[i] ?? null;
+              }
+              return null;
+            };
             return (
               <div style={{
                 width: '100%', maxWidth: 1400, marginBottom: 'clamp(8px, 1.2vh, 24px)',
@@ -3715,17 +3723,35 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   border: '2px solid rgba(34,197,94,0.3)',
                 }}>
                   {allAnswers.map((a, i) => {
-                    const named = wasNamed(a);
+                    const authorId = findAuthor(a);
+                    const named = authorId !== null || usedNorm.some((u: string) =>
+                      u === a.toLowerCase().trim() || u.includes(a.toLowerCase().trim()) || a.toLowerCase().trim().includes(u)
+                    );
+                    const authorTeam = authorId ? s.teams.find(t => t.id === authorId) : null;
                     return (
                       <div key={`${a}-${i}`} style={{
-                        padding: '8px 18px', borderRadius: 999,
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                        padding: authorTeam ? '4px 16px 4px 4px' : '8px 18px',
+                        borderRadius: 999,
                         fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
                         background: named ? 'rgba(34,197,94,0.22)' : 'rgba(15,23,42,0.5)',
-                        border: `2px solid ${named ? '#22C55E' : 'rgba(148,163,184,0.25)'}`,
+                        border: `2px solid ${authorTeam ? authorTeam.color : (named ? '#22C55E' : 'rgba(148,163,184,0.25)')}`,
                         color: named ? '#86efac' : '#94a3b8',
                         animation: `contentReveal 0.4s ease ${0.2 + i * 0.05}s both`,
+                        boxShadow: authorTeam ? `0 0 12px ${authorTeam.color}44` : 'none',
                       }}>
-                        {named ? '✓ ' : ''}{a}
+                        {authorTeam && (
+                          <span title={authorTeam.name} style={{
+                            width: 'clamp(30px, 3vw, 40px)', height: 'clamp(30px, 3vw, 40px)',
+                            borderRadius: '50%', background: authorTeam.color,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 'clamp(16px, 1.8vw, 22px)', flexShrink: 0,
+                            border: '2px solid rgba(0,0,0,0.25)',
+                          }}>
+                            {qqGetAvatar(authorTeam.avatarId).emoji}
+                          </span>
+                        )}
+                        <span>{named ? '✓ ' : ''}{a}</span>
                       </div>
                     );
                   })}

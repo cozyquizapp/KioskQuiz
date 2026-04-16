@@ -56,6 +56,7 @@ export interface QQRoomState {
   hotPotatoLastAnswer: string | null;
   hotPotatoTurnEndsAt: number | null;
   hotPotatoUsedAnswers: string[];
+  hotPotatoAnswerAuthors: string[];     // parallel array of teamIds
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   // Imposter (oneOfEight) round-robin state
   imposterActiveTeamId: string | null;
@@ -172,6 +173,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       hotPotatoLastAnswer: null,
       hotPotatoTurnEndsAt: null,
       hotPotatoUsedAnswers: [],
+      hotPotatoAnswerAuthors: [],
       _hotPotatoTimerHandle: null,
       imposterActiveTeamId: null,
       imposterQueue: [],
@@ -502,6 +504,7 @@ export function qqActivateQuestion(
   room.hotPotatoLastAnswer   = null;
   room.hotPotatoTurnEndsAt   = null;
   room.hotPotatoUsedAnswers  = [];
+  room.hotPotatoAnswerAuthors = [];
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately
@@ -857,6 +860,7 @@ export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): v
   room.hotPotatoEliminated = [];
   room.hotPotatoLastAnswer = null;
   room.hotPotatoUsedAnswers = [];
+  room.hotPotatoAnswerAuthors = [];
   const alive = getAliveTeams(room);
   if (alive.length === 0) return;
   // Random start index stored in room for round-robin tracking
@@ -1675,6 +1679,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoLastAnswer:   room.hotPotatoLastAnswer,
     hotPotatoTurnEndsAt:   room.hotPotatoTurnEndsAt,
     hotPotatoUsedAnswers:  room.hotPotatoUsedAnswers,
+    hotPotatoAnswerAuthors: room.hotPotatoAnswerAuthors,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
@@ -1823,6 +1828,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];
   room.hotPotatoUsedAnswers  = [];
+  room.hotPotatoAnswerAuthors = [];
   room.imposterActiveTeamId  = null;
   room.imposterQueue         = [];
   room.imposterChosenIndices = [];

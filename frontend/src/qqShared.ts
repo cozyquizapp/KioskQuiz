@@ -213,6 +213,15 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Pin-Reveal für Schätzchen-Zeitstrahl — bewahrt das Wrapper-translate
+     (--pin-x, --pin-y) und animiert nur opacity + scale. Ohne diese Keyframe
+     würde revealWinnerIn die Position auf translateY(0) setzen und der
+     Avatar würde auf die Rail zurückspringen. */
+  @keyframes pinRevealIn {
+    0%   { opacity: 0; transform: translate(calc(-50% + var(--pin-x, 0px)), calc(-50% + var(--pin-y, 0px))) scale(0.6); }
+    60%  { opacity: 1; transform: translate(calc(-50% + var(--pin-x, 0px)), calc(-50% + var(--pin-y, 0px))) scale(1.08); }
+    100% { opacity: 1; transform: translate(calc(-50% + var(--pin-x, 0px)), calc(-50% + var(--pin-y, 0px))) scale(1); }
+  }
   /* Winner-Nudge: Gewinner-Avatar am Zeitstrahl hüpft 2x Richtung Ziel.
      Nutzt CSS-Vars --nudge-x (horizontal offset zum Ziel, z.B. "20px")
      und --nudge-y (vertikal offset des Pins auf dem Strahl, z.B. "-44px"),

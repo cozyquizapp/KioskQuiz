@@ -4382,8 +4382,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                // Mehr Luft oben/unten für größere Pins — aber kompakter drumherum
-                padding: 'clamp(240px, 26vh, 320px) clamp(24px, 3vw, 48px) clamp(240px, 26vh, 320px)',
+                // Oben: Target-Stack (-260 + Avatar 48 = 308). Unten: far row (+250 + Avatar 41 = 291).
+                // Exakt knapp: 320px oben, 300px unten — keine ungenutzte Luft mehr.
+                padding: '320px clamp(24px, 3vw, 48px) 300px',
                 marginBottom: 'clamp(8px, 1vh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
@@ -4413,15 +4414,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontSize: 'clamp(18px, 1.8vw, 26px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMax)}</div>
 
-                  {/* Target marker — runder Avatar-Button mit Ziel-Emoji.
-                      Position: hoch über der Rail-Mittellinie (weit über den
-                      Pins), damit nichts mit Team-Avataren kollidiert. Eine
-                      gestrichelte Verbindungslinie zeigt nach unten zur Rail. */}
+                  {/* Target marker — grün hervorgehoben ÜBER der Rail.
+                      Stack: Avatar → Wert-Chip → kurze gestrichelte Linie zur Rail.
+                      Animation nutzt pinRevealIn (CSS-Vars), damit das translate
+                      nicht von einem generischen revealWinnerIn zurückgesetzt wird. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
+                    ['--pin-x' as any]: '0px',
+                    ['--pin-y' as any]: '-260px',
                     transform: 'translate(-50%, calc(-50% - 260px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+                    animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
                   }}>
                     {/* Avatar-Button */}
@@ -4435,28 +4438,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       border: '3px solid rgba(255,255,255,0.9)',
                       boxShadow: '0 0 28px rgba(34,197,94,0.8), 0 6px 16px rgba(0,0,0,0.4)',
                     }}>🎯</div>
-                    {/* Wert-Chip darunter */}
+                    {/* Wert-Chip direkt darunter */}
                     <div style={{
-                      marginTop: 10,
-                      padding: '8px 22px', borderRadius: 999,
+                      marginTop: 8,
+                      padding: '6px 18px', borderRadius: 999,
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(24px, 2.8vw, 36px)',
+                      fontSize: 'clamp(22px, 2.6vw, 32px)',
                       whiteSpace: 'nowrap',
                       boxShadow: '0 3px 10px rgba(34,197,94,0.45)',
                       border: '2px solid rgba(255,255,255,0.25)',
                     }}>
                       ✓ {fmt(target)}
                     </div>
-                    {/* Gestrichelte Linie vom Chip nach unten zur Rail */}
-                    <div style={{
-                      width: 2, height: 150,
-                      backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.85) 50%, transparent 50%)',
-                      backgroundSize: '2px 8px',
-                      backgroundRepeat: 'repeat-y',
-                      marginTop: 2,
-                    }} />
                   </div>
+                  {/* Gestrichelte Vertikal-Linie Rail → Ziel-Chip — separat positioniert,
+                      Länge exakt passend (Rail bis Unterkante des Chips). */}
+                  <div style={{
+                    position: 'absolute', left: `${targetPct}%`, top: '50%',
+                    transform: 'translate(-50%, -100%)',
+                    width: 2, height: 140,
+                    backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.75) 50%, transparent 50%)',
+                    backgroundSize: '2px 8px',
+                    backgroundRepeat: 'repeat-y',
+                    zIndex: 25,
+                    animation: 'contentReveal 0.4s ease 0.7s both',
+                    pointerEvents: 'none',
+                  }} />
 
                   {/* Team pins — Avatar und Wert-Chip liegen als stack klar ÜBER bzw.
                       UNTER der Rail. Bei "oben" (negative yOffset) kommt der Chip
@@ -4474,8 +4482,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const tColor = p.team!.color;
                     // r: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
                     const isTop = r === 0 || r === 2;
-                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt — größere Pins brauchen mehr Abstand
-                    const gap = r === 0 || r === 1 ? 130 : 230;
+                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt — größere Pins brauchen mehr Abstand.
+                    // Nah: 150 (Avatar klar > rail weg), Weit: 250 (doppelte Reihe weit außen)
+                    const gap = r === 0 || r === 1 ? 150 : 250;
                     const avatarSize = isWinner ? 86 : 72;
                     // Nudge/Animation-Deltas (Gewinner hüpft Richtung Ziel)
                     const nudgePctDelta = targetPct - pct;
@@ -4489,16 +4498,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     return (
                       <div key={p.teamId} style={{
                         position: 'absolute', left: `${pct}%`, top: '50%',
-                        transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${wrapperY}px))`,
                         width: 0, height: 0,
+                        // CSS-Vars für pinRevealIn + winnerNudge — Wrapper-Position
+                        // bleibt erhalten (nicht von animation overschrieben).
+                        ['--pin-x' as any]: `${xNudge}px`,
+                        ['--pin-y' as any]: `${wrapperY}px`,
+                        ['--base-x' as any]: `${xNudge}px`,
+                        ['--nudge-x' as any]: `${nudgeXPx}px`,
+                        ['--nudge-y' as any]: `${wrapperY}px`,
+                        transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${wrapperY}px))`,
                         animation: isWinner
-                          ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
-                          : `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
-                        ...(isWinner ? {
-                          ['--nudge-x' as any]: `${nudgeXPx}px`,
-                          ['--nudge-y' as any]: `${wrapperY}px`,
-                          ['--base-x' as any]: `${xNudge}px`,
-                        } : {}),
+                          ? `pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
+                          : `pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
                         zIndex: isWinner ? 20 : 10,
                       }}>
                         {/* Verbindungslinie vom Avatar zur Rail (in Richtung Rail) */}

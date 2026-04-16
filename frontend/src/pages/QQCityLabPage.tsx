@@ -1,10 +1,9 @@
-// QQ City Lab — zwei Ideen, wie die echten QQ-Avatare (8 Emoji-Tiere)
-// als Spielstein im 3D-Grid aussehen könnten.
+// QQ City Lab — zwei Ideen für das Stadt-Grid.
 //
-// ① Standups   — Emoji auf extrudierter Plane, Pappfiguren-Look
-// ② Sockel     — Team-farbiger 3D-Sockel + Emoji als Kopf/Portrait
+// ① Häuser (Three.js)  — 8 Gebäudetypen wie QQ3DGrid, aber mit echtem
+//                        Licht/Schatten/emissive Fenstern + Team-Avatar auf dem Dach
+// ② Sockel + Kopf       — Team-farbiger 3D-Sockel mit Avatar-Portrait
 //
-// Alle Tiere kommen aus shared/quarterQuizTypes.ts (QQ_AVATARS).
 // Demo-Grid 5×5 mit 8 Teams gemischt + Joker.
 
 import { useMemo, useRef, useState } from 'react';
@@ -115,9 +114,15 @@ export default function QQCityLabPage() {
 }
 
 const VARIANTS: { id: Variant; title: string; sub: string; accent: string }[] = [
-  { id: 1, title: '① Standups',     sub: 'Emoji auf extrudierter Plane (Pappfiguren-Look)', accent: '#F59E0B' },
-  { id: 2, title: '② Sockel + Kopf', sub: 'Team-farbiger 3D-Sockel mit Emoji-Portrait',      accent: '#3B82F6' },
+  { id: 1, title: '① Häuser (Three.js)', sub: '8 Gebäudetypen wie QQ3DGrid, mit echtem Licht & emissive Fenstern', accent: '#F59E0B' },
+  { id: 2, title: '② Sockel + Kopf',      sub: 'Team-farbiger 3D-Sockel mit Avatar-Portrait',                       accent: '#3B82F6' },
 ];
+
+// Gebäude-Typ pro Zelle deterministisch bestimmen (wie QQ3DGrid-Ansatz)
+const BTYPE_NAMES = ['Haus', 'Turm', 'Hochhaus', 'Laden', 'Fabrik', 'Kirche', 'Burg', 'Silo'];
+function cellBType(r: number, c: number): number {
+  return (r * 5 + c * 3 + 1) % 8;
+}
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
@@ -168,7 +173,7 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 
           const avatar = AVATARS[owner];
 
-          if (variant === 1) return <StandupFigure key={key} x={x} z={z} avatar={avatar} joker={joker} seed={r * 5 + c} />;
+          if (variant === 1) return <Building key={key} x={x} z={z} avatar={avatar} joker={joker} btype={cellBType(r, c)} />;
           if (variant === 2) return <PedestalFigure key={key} x={x} z={z} avatar={avatar} joker={joker} seed={r * 5 + c} />;
           return null;
         }))}
@@ -247,69 +252,299 @@ function TeamBase({ x, z, color, joker }: { x: number; z: number; color: string;
   );
 }
 
-// ── ① Standups — SVG auf Plane mit Tiefe ──────────────────────────────────
-// Dünne Box (Tiefe 0.06) mit dem Tier-Bild auf beiden Seiten (gespiegelt).
-// Dreht sich sanft, damit die Rotation das "Flache" aufhebt.
-function StandupFigure({ x, z, avatar, joker, seed }: {
-  x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; seed: number;
-}) {
-  const ref = useRef<THREE.Group>(null);
-  const tex = useAvatarTexture(avatar.emoji);
-  const bob = seed * 0.7;
+// ── ① Häuser (Three.js) — 8 Gebäudetypen ───────────────────────────────────
+// Reimplementation des QQ3DGrid-Looks: 8 Gebäudetypen, Team-Farbe als Body,
+// echte Three.js-Schatten, emissive Fenster (warmes Gelb), Avatar auf dem Dach.
 
-  useFrame((state) => {
-    if (ref.current) {
-      ref.current.position.y = 0.7 + Math.sin(state.clock.elapsedTime * 1.5 + bob) * 0.03;
-      ref.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.6 + bob) * 0.2;
-    }
+// Emissive Fenster-Material (warm gelb, wird vom Licht nicht ausgeblasen)
+function windowMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: '#fde68a',
+    emissive: '#fbbf24',
+    emissiveIntensity: 1.1,
+    roughness: 0.3,
+    toneMapped: false,
   });
+}
 
-  const W = 0.9;
-  const H = 1.1;
-  const D = 0.08;
+// Fenster-Reihe auf eine Gebäudeseite (rows × cols kleine emissive Planes)
+function WindowGrid({ width, height, rows, cols, side = 'front', buildingDepth, buildingWidth }: {
+  width: number; height: number; rows: number; cols: number;
+  side?: 'front' | 'back' | 'left' | 'right';
+  buildingDepth: number; buildingWidth: number;
+}) {
+  const mat = useMemo(() => windowMaterial(), []);
+  const winW = (width / (cols + 1)) * 0.7;
+  const winH = (height / (rows + 1)) * 0.55;
+  const planes: JSX.Element[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const px = (c + 1) * (width / (cols + 1)) - width / 2;
+      const py = (r + 1) * (height / (rows + 1));
+      let position: [number, number, number];
+      let rotation: [number, number, number] = [0, 0, 0];
+      if (side === 'front')      { position = [px, py, buildingDepth / 2 + 0.001]; }
+      else if (side === 'back')  { position = [px, py, -buildingDepth / 2 - 0.001]; rotation = [0, Math.PI, 0]; }
+      else if (side === 'right') { position = [buildingWidth / 2 + 0.001, py, -px]; rotation = [0, Math.PI / 2, 0]; }
+      else                       { position = [-buildingWidth / 2 - 0.001, py, px]; rotation = [0, -Math.PI / 2, 0]; }
+      planes.push(
+        <mesh key={`${side}-${r}-${c}`} position={position} rotation={rotation} material={mat}>
+          <planeGeometry args={[winW, winH]} />
+        </mesh>
+      );
+    }
+  }
+  return <>{planes}</>;
+}
 
+// Haupt-Body eines Gebäudes: gefärbte Box
+function BodyBox({ w, h, d, y, color, joker }: {
+  w: number; h: number; d: number; y: number; color: string; joker: boolean;
+}) {
   return (
-    <group>
-      <TeamBase x={x} z={z} color={avatar.color} joker={joker} />
+    <mesh position={[0, y + h / 2, 0]} castShadow receiveShadow>
+      <boxGeometry args={[w, h, d]} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.6}
+        emissive={joker ? '#fbbf24' : '#000'}
+        emissiveIntensity={joker ? 0.15 : 0}
+      />
+    </mesh>
+  );
+}
 
-      {/* Fuß-Sockel in Team-Farbe */}
-      <mesh position={[x, 0.09, z]} castShadow>
-        <cylinderGeometry args={[0.32, 0.36, 0.18, 20]} />
-        <meshStandardMaterial color={avatar.color} roughness={0.55} />
-      </mesh>
-
-      <group ref={ref} position={[x, 0.7, z]}>
-        {/* Körper der Pappfigur: dünner Block */}
-        <mesh castShadow>
-          <boxGeometry args={[W, H, D]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.6} />
-        </mesh>
-
-        {/* Emoji vorne */}
-        <mesh position={[0, 0, D / 2 + 0.001]}>
-          <planeGeometry args={[W * 0.92, H * 0.92]} />
-          <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-        </mesh>
-        {/* Emoji hinten (gespiegelt via rotation) */}
-        <mesh position={[0, 0, -D / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[W * 0.92, H * 0.92]} />
-          <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-        </mesh>
-
-        {/* Rand in Team-Farbe (Top + Seiten als schmale Boxen) */}
-        <mesh position={[0, H / 2 + 0.01, 0]}>
-          <boxGeometry args={[W + 0.02, 0.03, D + 0.02]} />
-          <meshStandardMaterial color={avatar.color} roughness={0.5} />
-        </mesh>
-
-        {/* Krone bei Joker */}
-        {joker && (
-          <mesh position={[0, H / 2 + 0.18, 0]} castShadow rotation={[0, Math.PI / 8, 0]}>
-            <coneGeometry args={[0.17, 0.24, 5]} />
-            <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={0.9} metalness={0.7} roughness={0.3} />
+// Avatar-Billboard auf dem Dach
+function RoofAvatar({ tex, y, joker }: { tex: THREE.Texture; y: number; joker: boolean }) {
+  return (
+    <>
+      <Billboard position={[0, y + 0.28, 0]}>
+        {joker ? (
+          // Joker: goldener Stern-Look durch goldenen Kreis hinter dem Avatar
+          <>
+            <mesh position={[0, 0, -0.01]}>
+              <circleGeometry args={[0.28, 32]} />
+              <meshBasicMaterial color="#fbbf24" toneMapped={false} />
+            </mesh>
+            <mesh position={[0, 0, 0]}>
+              <planeGeometry args={[0.4, 0.4]} />
+              <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+            </mesh>
+          </>
+        ) : (
+          <mesh>
+            <planeGeometry args={[0.4, 0.4]} />
+            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
           </mesh>
         )}
+      </Billboard>
+    </>
+  );
+}
+
+function Building({ x, z, avatar, joker, btype }: {
+  x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; btype: number;
+}) {
+  const tex = useAvatarTexture(avatar.emoji);
+  const color = avatar.color;
+  const bi = btype % 8;
+
+  return (
+    <group position={[x, 0.05, z]}>
+      <TeamBase x={0} z={0} color={color} joker={joker} />
+
+      {bi === 0 && <HouseB color={color} joker={joker} tex={tex} />}
+      {bi === 1 && <TowerB color={color} joker={joker} tex={tex} />}
+      {bi === 2 && <HighriseB color={color} joker={joker} tex={tex} />}
+      {bi === 3 && <ShopB color={color} joker={joker} tex={tex} />}
+      {bi === 4 && <FactoryB color={color} joker={joker} tex={tex} />}
+      {bi === 5 && <ChurchB color={color} joker={joker} tex={tex} />}
+      {bi === 6 && <CastleB color={color} joker={joker} tex={tex} />}
+      {bi === 7 && <SiloB color={color} joker={joker} tex={tex} />}
+    </group>
+  );
+}
+
+type BProps = { color: string; joker: boolean; tex: THREE.Texture };
+
+// 0: HAUS — niedrig, breit, Satteldach
+function HouseB({ color, joker, tex }: BProps) {
+  const w = 0.9, d = 0.9, h = 0.45;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      {/* Satteldach — Prisma */}
+      <mesh position={[0, h + 0.15, 0]} castShadow rotation={[0, 0, 0]}>
+        <boxGeometry args={[w + 0.04, 0.3, d + 0.04]} />
+        <meshStandardMaterial color={color} roughness={0.5} metalness={0.05} />
+      </mesh>
+      <WindowGrid width={w} height={h} rows={1} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={h + 0.3} joker={joker} />
+    </group>
+  );
+}
+
+// 1: TURM — schmal, hoch, gestuft
+function TowerB({ color, joker, tex }: BProps) {
+  const w = 0.38, d = 0.38, h = 1.1;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      <BodyBox w={w * 0.7} h={0.22} d={d * 0.7} y={h} color={color} joker={joker} />
+      <BodyBox w={w * 0.45} h={0.15} d={d * 0.45} y={h + 0.22} color={color} joker={joker} />
+      <mesh position={[0, h + 0.42, 0]} castShadow>
+        <coneGeometry args={[w * 0.3, 0.2, 4]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      <WindowGrid width={w} height={h} rows={4} cols={1} side="front" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={h + 0.55} joker={joker} />
+    </group>
+  );
+}
+
+// 2: HOCHHAUS — quadratisch, hoch, Antenne
+function HighriseB({ color, joker, tex }: BProps) {
+  const w = 0.62, d = 0.62, h = 0.95;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      <WindowGrid width={w} height={h} rows={3} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
+      <WindowGrid width={d} height={h} rows={3} cols={2} side="right" buildingDepth={d} buildingWidth={w} />
+      {/* Antenne */}
+      <mesh position={[0, h + 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.01, 0.012, 0.3, 8]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, h + 0.32, 0]}>
+        <sphereGeometry args={[0.025, 12, 10]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.2} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h} joker={joker} />
+    </group>
+  );
+}
+
+// 3: LADEN — flach, breit, mit Markise
+function ShopB({ color, joker, tex }: BProps) {
+  const w = 1.0, d = 0.75, h = 0.25;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      {/* Markise */}
+      <mesh position={[0, h * 0.6, d / 2 + 0.09]} castShadow rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[w + 0.1, 0.03, 0.2]} />
+        <meshStandardMaterial color={color} roughness={0.55} />
+      </mesh>
+      <WindowGrid width={w} height={h} rows={1} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={h} joker={joker} />
+    </group>
+  );
+}
+
+// 4: FABRIK — zwei Hallen + Schornstein
+function FactoryB({ color, joker, tex }: BProps) {
+  const wA = 0.55, wB = 0.4, d = 0.7, hA = 0.65, hB = 0.3;
+  return (
+    <group>
+      <group position={[-wB * 0.5, 0, 0]}>
+        <BodyBox w={wA} h={hA} d={d} y={0} color={color} joker={joker} />
+        <WindowGrid width={wA} height={hA} rows={2} cols={1} side="front" buildingDepth={d} buildingWidth={wA} />
       </group>
+      <group position={[wA * 0.5, 0, 0]}>
+        <BodyBox w={wB} h={hB} d={d} y={0} color={color} joker={joker} />
+      </group>
+      {/* Schornstein */}
+      <mesh position={[-wB * 0.5, hA + 0.18, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.08, 0.36, 12]} />
+        <meshStandardMaterial color="#475569" roughness={0.75} />
+      </mesh>
+      <RoofAvatar tex={tex} y={hA + 0.4} joker={joker} />
+    </group>
+  );
+}
+
+// 5: KIRCHE — Kirchenschiff + Turm + Spitze + Kreuz
+function ChurchB({ color, joker, tex }: BProps) {
+  const w = 0.55, d = 0.75, h = 0.4;
+  const tw = 0.28, th = 0.55;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      <BodyBox w={tw} h={th} d={tw} y={0} color={color} joker={joker} />
+      <mesh position={[0, th + 0.13, 0]} castShadow>
+        <coneGeometry args={[tw * 0.7, 0.26, 4]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      {/* Kreuz */}
+      <group position={[0, th + 0.32, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.018, 0.12, 0.018]} />
+          <meshStandardMaterial color="#f8fafc" emissive="#fbbf24" emissiveIntensity={0.4} />
+        </mesh>
+        <mesh castShadow position={[0, 0.02, 0]}>
+          <boxGeometry args={[0.065, 0.018, 0.018]} />
+          <meshStandardMaterial color="#f8fafc" emissive="#fbbf24" emissiveIntensity={0.4} />
+        </mesh>
+      </group>
+      <WindowGrid width={w} height={h} rows={1} cols={2} side="front" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={th + 0.5} joker={joker} />
+    </group>
+  );
+}
+
+// 6: BURG — breite Basis + zwei hohe Ecktürme mit Zinnen
+function CastleB({ color, joker, tex }: BProps) {
+  const w = 0.95, d = 0.8, h = 0.35;
+  const tw = 0.22, th = 0.85;
+  return (
+    <group>
+      <BodyBox w={w} h={h} d={d} y={0} color={color} joker={joker} />
+      {/* Zinnen auf der Mauer */}
+      {[-0.28, 0, 0.28].map((px, i) => (
+        <mesh key={i} position={[px, h + 0.04, d / 2 - 0.04]} castShadow>
+          <boxGeometry args={[0.08, 0.08, 0.08]} />
+          <meshStandardMaterial color={color} roughness={0.55} />
+        </mesh>
+      ))}
+      {/* Zwei Ecktürme */}
+      {[[-w / 2 + tw / 2, d / 2 - tw / 2], [w / 2 - tw / 2, d / 2 - tw / 2]].map(([tx, tz], i) => (
+        <group key={i} position={[tx, 0, tz]}>
+          <BodyBox w={tw} h={th} d={tw} y={0} color={color} joker={joker} />
+          {/* Zinnen oben */}
+          {[-0.06, 0.06].map((cx, j) => (
+            <mesh key={j} position={[cx, th + 0.04, 0]} castShadow>
+              <boxGeometry args={[0.05, 0.08, 0.05]} />
+              <meshStandardMaterial color={color} roughness={0.55} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      <WindowGrid width={w} height={h} rows={1} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
+      <RoofAvatar tex={tex} y={th + 0.1} joker={joker} />
+    </group>
+  );
+}
+
+// 7: SILO — Zylinder mit Kuppel
+function SiloB({ color, joker, tex }: BProps) {
+  const r = 0.28, h = 0.75;
+  return (
+    <group>
+      <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[r, r, h, 20]} />
+        <meshStandardMaterial
+          color={color}
+          roughness={0.55}
+          emissive={joker ? '#fbbf24' : '#000'}
+          emissiveIntensity={joker ? 0.15 : 0}
+        />
+      </mesh>
+      {/* Kuppel */}
+      <mesh position={[0, h, 0]} castShadow>
+        <sphereGeometry args={[r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={color} roughness={0.4} metalness={0.2} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h + r + 0.02} joker={joker} />
     </group>
   );
 }
@@ -508,19 +743,19 @@ function Notes() {
     <div style={{
       marginTop: 22, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14,
     }}>
-      <Note title="① Standups" color="#F59E0B">
-        <b>Pro:</b> nutzt die App-Avatare 1:1 — stilistisch perfekt konsistent, keine
-        Extra-Assets, neue Tiere automatisch dabei. Leichtes Drehen hebt das "Flache" auf.
-        Pappfiguren-Look passt zum Quiz/Brettspiel-Charme.
-        <br /><b>Contra:</b> Rückseite = gespiegeltes Bild (funktioniert, aber bei
-        strikt seitlicher Kamera kurz sichtbar). Avatar selbst bleibt 2D.
+      <Note title="① Häuser (Three.js)" color="#F59E0B">
+        <b>Pro:</b> dieselben 8 Gebäudetypen wie aktuell im QQ-Beamer, aber mit
+        echtem Licht, Schatten und warm-gelben emissive Fenstern. Narrativ klar:
+        "Quartier" = Stadt. Avatar als Billboard auf dem Dach bleibt sichtbar.
+        <br /><b>Contra:</b> mehr Draw-Calls als CSS-3D (8 Teams × 25 Felder =
+        viele Meshes). Bei 8 Teams live auf schwachem Beamer-Laptop testen.
       </Note>
       <Note title="② Sockel + Kopf" color="#3B82F6">
         <b>Pro:</b> starker "Spielfigur"-Charakter — 3D-Sockel in Team-Farbe mit
-        Tier-Portrait oben drauf. Avatar immer lesbar (Billboard). Elegant wie
+        Avatar-Portrait oben drauf. Avatar immer lesbar (Billboard). Elegant wie
         Monopoly-Figuren.
-        <br /><b>Contra:</b> fragmentiert — Tier sitzt nicht "im" 3D-Raum, sondern
-        schwebt als Medaillon. Weniger "lebendig" als Standups.
+        <br /><b>Contra:</b> fragmentiert — Avatar sitzt nicht "im" 3D-Raum, sondern
+        schwebt als Medaillon. Weniger "Stadt" als Variante ①.
       </Note>
     </div>
   );

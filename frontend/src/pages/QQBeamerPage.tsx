@@ -3716,42 +3716,55 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         </div>
                       );
                     })()}
-                    {revealed && q.category === 'ZEHN_VON_ZEHN' && (() => {
-                      const bets = s.answers.map(a => {
-                        const pts = a.text.split(',').map(n => Number(n) || 0);
-                        return { team: s.teams.find(t => t.id === a.teamId), pts: pts[i] ?? 0 };
-                      }).filter((b): b is { team: NonNullable<typeof b.team>; pts: number } => !!b.team && b.pts > 0);
-                      if (bets.length === 0) return null;
-                      return (
-                        <div style={{
-                          position: 'absolute', top: 8, right: 8, zIndex: 2,
-                          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
-                          maxWidth: '60%', justifyContent: 'flex-end',
-                          animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
-                        }}>
-                          {bets.map(({ team: tm, pts }) => (
-                            <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
-                              display: 'flex', alignItems: 'center', gap: 4,
-                              padding: '3px 10px 3px 3px', borderRadius: 999,
-                              background: 'rgba(0,0,0,0.55)',
-                              border: `2px solid ${tm.color}`,
-                              boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
-                            }}>
-                              <span style={{
-                                width: 'clamp(28px, 3vw, 38px)', height: 'clamp(28px, 3vw, 38px)',
-                                borderRadius: '50%', background: tm.color,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 'clamp(16px, 1.8vw, 22px)',
-                              }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-                              <span style={{
-                                fontSize: 'clamp(14px, 1.6vw, 20px)', fontWeight: 900,
-                                color: '#FBBF24',
-                              }}>{pts}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ZEHN_VON_ZEHN: Bet-Chips UNTER den Options-Cards (volle Breite, nicht
+              über dem Antwort-Text). Eine Zeile pro Option, nur bei Treffern. */}
+          {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
+            <div style={{
+              width: '100%', maxWidth: 1400,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 18, marginBottom: 16,
+            }}>
+              {q.options.map((_, i) => {
+                const bets = s.answers.map(a => {
+                  const pts = a.text.split(',').map(n => Number(n) || 0);
+                  return { team: s.teams.find(t => t.id === a.teamId), pts: pts[i] ?? 0 };
+                }).filter((b): b is { team: NonNullable<typeof b.team>; pts: number } => !!b.team && b.pts > 0);
+                return (
+                  <div key={`bets-${i}`} style={{
+                    display: 'flex', flexWrap: 'wrap', gap: 6,
+                    justifyContent: 'center', alignItems: 'center',
+                    minHeight: 'clamp(36px, 4.5vw, 54px)',
+                    animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
+                  }}>
+                    {bets.length === 0 ? (
+                      <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#475569', fontStyle: 'italic' }}>—</span>
+                    ) : bets.map(({ team: tm, pts }) => (
+                      <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '3px 12px 3px 3px', borderRadius: 999,
+                        background: 'rgba(0,0,0,0.55)',
+                        border: `2px solid ${tm.color}`,
+                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
+                      }}>
+                        <span style={{
+                          width: 'clamp(28px, 3vw, 40px)', height: 'clamp(28px, 3vw, 40px)',
+                          borderRadius: '50%', background: tm.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 'clamp(16px, 1.8vw, 24px)',
+                        }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                        <span style={{
+                          fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+                          color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                        }}>{pts}</span>
+                      </div>
+                    ))}
                   </div>
                 );
               })}

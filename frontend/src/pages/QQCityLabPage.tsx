@@ -9,8 +9,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Billboard, MeshReflectorMaterial } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
@@ -142,36 +141,45 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
         <color attach="background" args={['#05060d']} />
         <fog attach="fog" args={['#05060d', 14, 36]} />
 
-        {/* Dunkles Ambient — Stage hat nur Spotlights, kein Tageslicht */}
-        <ambientLight intensity={0.12} color="#6b7db8" />
+        {/* Ambient — mehr Füllung, damit Gebäude-Farben lesbar bleiben */}
+        <ambientLight intensity={0.55} color="#c7d2fe" />
 
-        {/* Key-Light: goldenes Amber-Spotlight von schräg oben */}
+        {/* Key-Light: neutral-weißes Spotlight von schräg oben */}
         <spotLight
           position={[5, 11, 5]}
-          angle={0.6}
-          penumbra={0.5}
-          intensity={3.2}
-          color="#fbbf24"
+          angle={0.7}
+          penumbra={0.55}
+          intensity={2.2}
+          color="#fef3c7"
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
           shadow-bias={-0.0005}
         />
 
-        {/* Fill: kühles Cyan-Spot von der Gegenseite (Rim-Effekt) */}
+        {/* Fill von rechts vorne (wärmer) */}
+        <spotLight
+          position={[8, 6, 8]}
+          angle={0.8}
+          penumbra={0.8}
+          intensity={1.2}
+          color="#fde68a"
+        />
+
+        {/* Rim-Light: kühles Cyan von hinten/links */}
         <spotLight
           position={[-5, 8, -5]}
           angle={0.7}
           penumbra={0.7}
-          intensity={1.8}
-          color="#06b6d4"
+          intensity={1.4}
+          color="#7dd3fc"
         />
 
-        {/* Akzent: violettes Punktlicht unten/hinten — Bühnen-Ambient */}
-        <pointLight position={[0, 1.5, -7]} intensity={1.4} color="#a855f7" distance={12} decay={2} />
+        {/* Akzent: violettes Punktlicht unten/hinten */}
+        <pointLight position={[0, 1.5, -7]} intensity={0.9} color="#a855f7" distance={12} decay={2} />
 
-        {/* Mittiger Down-Light Scheinwerfer (volumetrisch angedeutet) */}
-        <pointLight position={[0, 6, 0]} intensity={0.9} color="#fde68a" distance={10} decay={2} />
+        {/* Front-Fill damit Avatare lesbar sind */}
+        <pointLight position={[0, 5, 8]} intensity={0.8} color="#ffffff" distance={14} decay={2} />
 
         <Ground />
         <GridLines />
@@ -202,21 +210,15 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           autoRotateSpeed={0.4}
         />
 
-        {/* Post-Processing: Bloom auf emissive + leichte Vignette + Chromatic Aberration */}
+        {/* Post-Processing: dezenter Bloom nur auf sehr helle Emissives */}
         <EffectComposer multisampling={0}>
           <Bloom
-            intensity={1.35}
-            luminanceThreshold={0.55}
-            luminanceSmoothing={0.5}
+            intensity={0.65}
+            luminanceThreshold={0.88}
+            luminanceSmoothing={0.35}
             mipmapBlur
           />
-          <ChromaticAberration
-            blendFunction={BlendFunction.NORMAL}
-            offset={new THREE.Vector2(0.0006, 0.0006)}
-            radialModulation={false}
-            modulationOffset={0}
-          />
-          <Vignette eskil={false} offset={0.2} darkness={0.75} />
+          <Vignette eskil={false} offset={0.3} darkness={0.55} />
         </EffectComposer>
       </Canvas>
     </div>
@@ -354,7 +356,8 @@ function WindowGrid({ width, height, rows, cols, side = 'front', buildingDepth, 
   return <>{planes}</>;
 }
 
-// Haupt-Body eines Gebäudes: gefärbte Box
+// Haupt-Body eines Gebäudes: gefärbte Box — leicht selbst-emissive
+// damit Team-Farbe auch im Schatten lesbar bleibt.
 function BodyBox({ w, h, d, y, color, joker }: {
   w: number; h: number; d: number; y: number; color: string; joker: boolean;
 }) {
@@ -363,39 +366,34 @@ function BodyBox({ w, h, d, y, color, joker }: {
       <boxGeometry args={[w, h, d]} />
       <meshStandardMaterial
         color={color}
-        roughness={0.6}
-        emissive={joker ? '#fbbf24' : '#000'}
-        emissiveIntensity={joker ? 0.15 : 0}
+        roughness={0.55}
+        emissive={joker ? '#fbbf24' : color}
+        emissiveIntensity={joker ? 0.25 : 0.22}
       />
     </mesh>
   );
 }
 
-// Avatar-Billboard auf dem Dach
+// Avatar-Billboard auf dem Dach — größer + direkt aufgesetzt
 function RoofAvatar({ tex, y, joker }: { tex: THREE.Texture; y: number; joker: boolean }) {
   return (
-    <>
-      <Billboard position={[0, y + 0.28, 0]}>
-        {joker ? (
-          // Joker: goldener Stern-Look durch goldenen Kreis hinter dem Avatar
-          <>
-            <mesh position={[0, 0, -0.01]}>
-              <circleGeometry args={[0.28, 32]} />
-              <meshBasicMaterial color="#fbbf24" toneMapped={false} />
-            </mesh>
-            <mesh position={[0, 0, 0]}>
-              <planeGeometry args={[0.4, 0.4]} />
-              <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-            </mesh>
-          </>
-        ) : (
-          <mesh>
-            <planeGeometry args={[0.4, 0.4]} />
-            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-          </mesh>
-        )}
-      </Billboard>
-    </>
+    <Billboard position={[0, y + 0.36, 0]}>
+      {joker && (
+        <mesh position={[0, 0, -0.015]}>
+          <circleGeometry args={[0.44, 32]} />
+          <meshBasicMaterial color="#fbbf24" toneMapped={false} />
+        </mesh>
+      )}
+      {/* Weißes Kreis-Badge als Hintergrund */}
+      <mesh position={[0, 0, -0.005]}>
+        <circleGeometry args={[0.36, 32]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh>
+        <planeGeometry args={[0.62, 0.62]} />
+        <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+      </mesh>
+    </Billboard>
   );
 }
 
@@ -463,7 +461,7 @@ function HouseB({ color, joker, tex }: BProps) {
       </mesh>
       <WindowGrid width={w} height={h} rows={2} cols={3} side="front" buildingDepth={d} buildingWidth={w} />
       <WindowGrid width={d} height={h} rows={2} cols={3} side="right" buildingDepth={d} buildingWidth={w} />
-      <RoofAvatar tex={tex} y={h + 0.48} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.32} joker={joker} />
     </group>
   );
 }
@@ -507,7 +505,7 @@ function TowerB({ color, joker, tex }: BProps) {
         <sphereGeometry args={[0.035, 16, 12]} />
         <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={3.2} toneMapped={false} />
       </mesh>
-      <RoofAvatar tex={tex} y={h + 0.78} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.65} joker={joker} />
     </group>
   );
 }
@@ -539,7 +537,7 @@ function HighriseB({ color, joker, tex }: BProps) {
         <sphereGeometry args={[0.035, 16, 12]} />
         <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3.5} toneMapped={false} />
       </mesh>
-      <RoofAvatar tex={tex} y={h + 0.25} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.78} joker={joker} />
     </group>
   );
 }
@@ -565,7 +563,7 @@ function ShopB({ color, joker, tex }: BProps) {
         <planeGeometry args={[w * 0.82, h * 0.55]} />
         <meshStandardMaterial color="#fef3c7" emissive="#fbbf24" emissiveIntensity={1.8} toneMapped={false} />
       </mesh>
-      <RoofAvatar tex={tex} y={h + 0.15} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.08} joker={joker} />
     </group>
   );
 }
@@ -609,7 +607,7 @@ function FactoryB({ color, joker, tex }: BProps) {
       </mesh>
       {/* Glühender "Rauch" — 3 aufsteigende Kugeln */}
       <FactorySmoke x={-wB * 0.5 - wA * 0.3} baseY={hA + 0.56} />
-      <RoofAvatar tex={tex} y={hA + 0.3} joker={joker} />
+      <RoofAvatar tex={tex} y={hA + 0.18} joker={joker} />
     </group>
   );
 }
@@ -688,7 +686,7 @@ function ChurchB({ color, joker, tex }: BProps) {
           </mesh>
         </group>
       </group>
-      <RoofAvatar tex={tex} y={h + 0.42} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.25} joker={joker} />
     </group>
   );
 }
@@ -756,7 +754,7 @@ function CastleB({ color, joker, tex }: BProps) {
           </mesh>
         </group>
       ))}
-      <RoofAvatar tex={tex} y={h + 0.2} joker={joker} />
+      <RoofAvatar tex={tex} y={h + 0.08} joker={joker} />
     </group>
   );
 }
@@ -814,7 +812,7 @@ function SiloB({ color, joker, tex }: BProps) {
         <cylinderGeometry args={[0.03, 0.03, r * 1.4, 10]} />
         <meshStandardMaterial color="#64748b" roughness={0.45} metalness={0.6} />
       </mesh>
-      <RoofAvatar tex={tex} y={h + r + 0.2} joker={joker} />
+      <RoofAvatar tex={tex} y={h + r + 0.05} joker={joker} />
     </group>
   );
 }

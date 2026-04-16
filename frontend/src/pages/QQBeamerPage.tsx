@@ -4637,18 +4637,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // All-time leaderboard
-  if (leaderboard.length > 0) {
+  // All-time leaderboard (nur echte Siege)
+  const realLeaderboard = leaderboard.filter(e => e.wins > 0);
+  if (realLeaderboard.length > 0) {
     panels.push({ key: 'leaderboard', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           🏆 {de ? 'Bestenliste' : 'Leaderboard'}
           {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
-        {leaderboard.slice(0, 5).map((entry, i) => (
+        {realLeaderboard.slice(0, 5).map((entry, i) => (
           <div key={entry.name} style={{
             display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0',
-            borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
           }}>
             <span style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', width: 48, textAlign: 'center' }}>
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
@@ -4662,10 +4663,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // Records
+  // Records — nur Einträge mit echten Werten zeigen (0-Records sind irreführend)
   if (funStats) {
     const records: React.ReactNode[] = [];
-    if (funStats.highestScore) {
+    if (funStats.highestScore && funStats.highestScore.score > 0) {
       records.push(
         <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
@@ -4678,7 +4679,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       );
     }
-    if (funStats.closestGame) {
+    if (funStats.closestGame && funStats.closestGame.gap > 0) {
       records.push(
         <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚔️</span>
@@ -4691,7 +4692,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       );
     }
-    if (funStats.winStreak) {
+    if (funStats.winStreak && funStats.winStreak.streak >= 2) {
       records.push(
         <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
@@ -4704,7 +4705,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       );
     }
-    if (funStats.fastestAnswer) {
+    if (funStats.fastestAnswer && funStats.fastestAnswer.ms >= 100) {
       const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
       records.push(
         <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
@@ -4767,10 +4768,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
       {/* Title */}
       <div style={{
-        fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900,
+        fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900,
         color: mode === 'preGame' ? '#F59E0B' : '#94a3b8',
-        display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 5,
+        display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 5,
         animation: 'lobbyPulse 3s ease-in-out infinite',
+        whiteSpace: 'nowrap',
       }}>
         {mode === 'preGame'
           ? <>✨ {de ? 'Gleich geht\'s los' : 'Starting soon'}</>

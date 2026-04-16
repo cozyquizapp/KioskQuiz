@@ -3524,28 +3524,57 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           }}>
             🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
-          {bestFirst.map((p, i) => {
-            const team = s.teams.find(t => t.id === p.teamId);
-            if (!team) return null;
-            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-            const dist = p.distKm == null ? '—' : p.distKm < 1 ? `${Math.round(p.distKm * 1000)} m` : `${p.distKm.toFixed(1)} km`;
-            const isTop = i === 0;
-            return (
-              <div key={p.teamId} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '12px 16px', borderRadius: 14,
-                background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(255,255,255,0.04)',
-                border: `2px solid ${isTop ? team.color + '88' : 'rgba(255,255,255,0.08)'}`,
-                boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
-                animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
-              }}>
-                <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center' }}>{medal}</span>
-                <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-                <span style={{ flex: 1, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color }}>{team.name}</span>
-                <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
-              </div>
-            );
-          })}
+          {(() => {
+            // Tie-Erkennung: Teams mit (gerundet) gleicher Distanz — dann entscheidet Speed.
+            // Gruppen nach Distanz-Bucket (auf Anzeige-Präzision, also ganze Meter bzw. 0.1 km).
+            const bucket = (km: number | null): string => {
+              if (km == null) return '—';
+              return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
+            };
+            const tieGroups: Record<string, number> = {};
+            bestFirst.forEach(p => { const k = bucket(p.distKm); tieGroups[k] = (tieGroups[k] ?? 0) + 1; });
+            const groupEarliest: Record<string, number> = {};
+            bestFirst.forEach(p => {
+              const k = bucket(p.distKm);
+              const at = p.submittedAt ?? 0;
+              if (groupEarliest[k] == null || at < groupEarliest[k]) groupEarliest[k] = at;
+            });
+            return bestFirst.map((p, i) => {
+              const team = s.teams.find(t => t.id === p.teamId);
+              if (!team) return null;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+              const dist = p.distKm == null ? '—' : p.distKm < 1 ? `${Math.round(p.distKm * 1000)} m` : `${p.distKm.toFixed(1)} km`;
+              const isTop = i === 0;
+              const key = bucket(p.distKm);
+              const isTied = (tieGroups[key] ?? 0) > 1;
+              const deltaMs = isTied && p.submittedAt ? p.submittedAt - (groupEarliest[key] ?? p.submittedAt) : 0;
+              const timeLabel = isTied ? (deltaMs === 0 ? '⚡ zuerst' : `+${(deltaMs / 1000).toFixed(1)}s`) : null;
+              return (
+                <div key={p.teamId} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 16px', borderRadius: 14,
+                  background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(255,255,255,0.04)',
+                  border: `2px solid ${isTop ? team.color + '88' : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
+                  animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
+                }}>
+                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color }}>{team.name}</span>
+                  {timeLabel && (
+                    <span style={{
+                      fontWeight: 800, fontSize: 'clamp(12px, 1.1vw, 15px)',
+                      padding: '3px 9px', borderRadius: 999,
+                      background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
+                      color: deltaMs === 0 ? '#FDE68A' : '#94a3b8',
+                      border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
+                    }}>{timeLabel}</span>
+                  )}
+                  <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
     </div>

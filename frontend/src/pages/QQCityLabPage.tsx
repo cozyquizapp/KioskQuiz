@@ -10,8 +10,28 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Billboard, Text } from '@react-three/drei';
+import { OrbitControls, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Emoji → Canvas-Textur. Three-Text-Glyphen rendern Emojis nicht,
+// also malen wir sie per 2D-Canvas und benutzen die Textur als Sprite.
+function useEmojiTexture(emoji: string, size = 256): THREE.Texture {
+  return useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    ctx.clearRect(0, 0, size, size);
+    ctx.font = `${size * 0.75}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, size / 2, size / 2 + size * 0.04);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    tex.needsUpdate = true;
+    return tex;
+  }, [emoji, size]);
+}
 
 type TeamId = 'A' | 'B' | 'C' | 'D' | null;
 
@@ -242,6 +262,7 @@ function AvatarFigure({ x, z, color, emoji, joker, seed }: {
 }) {
   const ref = useRef<THREE.Group>(null);
   const bob = seed * 0.7;
+  const emojiTex = useEmojiTexture(emoji);
   useFrame((state) => {
     if (ref.current) {
       ref.current.position.y = 0.45 + Math.sin(state.clock.elapsedTime * 1.5 + bob) * 0.04;
@@ -266,20 +287,16 @@ function AvatarFigure({ x, z, color, emoji, joker, seed }: {
           <sphereGeometry args={[0.28, 16, 12]} />
           <meshStandardMaterial color={color} roughness={0.55} />
         </mesh>
-        {/* Kopf — Emoji als Billboard */}
+        {/* Kopf — weißer Kreis als Hintergrund + Emoji-Textur als Billboard */}
         <Billboard position={[0, 0.35, 0]}>
           <mesh>
             <circleGeometry args={[0.28, 32]} />
             <meshBasicMaterial color="#ffffff" />
           </mesh>
-          <Text
-            fontSize={0.4}
-            position={[0, 0, 0.01]}
-            anchorX="center"
-            anchorY="middle"
-          >
-            {emoji}
-          </Text>
+          <mesh position={[0, 0, 0.01]}>
+            <planeGeometry args={[0.5, 0.5]} />
+            <meshBasicMaterial map={emojiTex} transparent alphaTest={0.05} toneMapped={false} />
+          </mesh>
         </Billboard>
         {/* Krone bei Joker */}
         {joker && (
@@ -300,6 +317,7 @@ function FlagPole({ x, z, color, emoji, joker }: {
   x: number; z: number; color: string; emoji: string; joker: boolean;
 }) {
   const flagRef = useRef<THREE.Mesh>(null);
+  const emojiTex = useEmojiTexture(emoji);
   useFrame((state) => {
     if (flagRef.current) {
       const t = state.clock.elapsedTime;
@@ -334,9 +352,10 @@ function FlagPole({ x, z, color, emoji, joker }: {
       </mesh>
       {/* Emoji auf der Fahne */}
       <Billboard position={[x + 0.32, 1.2, z]}>
-        <Text fontSize={0.22} anchorX="center" anchorY="middle">
-          {emoji}
-        </Text>
+        <mesh>
+          <planeGeometry args={[0.3, 0.3]} />
+          <meshBasicMaterial map={emojiTex} transparent alphaTest={0.05} toneMapped={false} />
+        </mesh>
       </Billboard>
     </group>
   );

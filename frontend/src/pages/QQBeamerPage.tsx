@@ -1204,31 +1204,44 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               gridTemplateColumns: teamCount > 4
                 ? 'repeat(2, minmax(0, 1fr))'
                 : 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: 'clamp(8px, 1.2vw, 14px)',
-              maxHeight: '58vh', overflowY: 'auto',
+              gap: teamCount > 6 ? 6 : 'clamp(8px, 1.2vw, 14px)',
             }}>
-              {s.teams.map((t, i) => (
-                <div key={t.id} style={{
-                  padding: 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.5vw, 20px)', borderRadius: 16,
-                  background: cardBg,
-                  border: `2px solid ${t.color}55`,
-                  boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
-                  display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 12px)',
-                  animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.08}s both`,
-                  minWidth: 0,
-                }}>
-                  <span style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', lineHeight: 1, flexShrink: 0 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{
-                      fontWeight: 900, fontSize: 'clamp(16px, 1.8vw, 24px)', color: t.color,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{t.name}</div>
-                    <div style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866' }}>
-                      {t.connected ? '● bereit' : '○ offline'}
+              {s.teams.map((t, i) => {
+                const compact = teamCount > 6;
+                return (
+                  <div key={t.id} style={{
+                    padding: compact
+                      ? '6px 10px'
+                      : 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.5vw, 20px)',
+                    borderRadius: compact ? 12 : 16,
+                    background: cardBg,
+                    border: `2px solid ${t.color}55`,
+                    boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
+                    display: 'flex', alignItems: 'center', gap: compact ? 8 : 'clamp(8px, 1vw, 12px)',
+                    animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
+                    minWidth: 0,
+                  }}>
+                    <span style={{
+                      fontSize: compact ? 'clamp(22px, 2.4vw, 30px)' : 'clamp(28px, 3.5vw, 42px)',
+                      lineHeight: 1, flexShrink: 0,
+                    }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontWeight: 900,
+                        fontSize: compact ? 'clamp(13px, 1.3vw, 17px)' : 'clamp(16px, 1.8vw, 24px)',
+                        color: t.color,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{t.name}</div>
+                      <div style={{
+                        fontSize: compact ? 10 : 'clamp(10px, 1vw, 13px)',
+                        fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
+                      }}>
+                        {t.connected ? '● bereit' : '○ offline'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -4114,39 +4127,47 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   : `${s.answers.length}/${s.teams.length} Teams`}
               </div>
               {/* Avatar row */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-                flexWrap: 'wrap', maxWidth: '100%',
-              }}>
-                {s.teams.map(tm => {
-                  const answered = s.answers.some(a => a.teamId === tm.id);
-                  return (
-                    <div key={tm.id} style={{
-                      position: 'relative',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: 52, height: 52, borderRadius: '50%',
-                      background: answered ? `${tm.color}25` : 'rgba(255,255,255,0.04)',
-                      border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.08)'}`,
-                      transition: 'all 0.4s ease',
-                      opacity: answered ? 1 : 0.4,
-                      boxShadow: answered ? `0 0 16px ${tm.color}44` : 'none',
-                    }}>
-                      <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
-                      {/* Checkmark overlay */}
-                      {answered && (
-                        <div style={{
-                          position: 'absolute', bottom: -4, right: -4,
-                          width: 22, height: 22, borderRadius: '50%',
-                          background: '#22C55E', border: '2px solid #0D0A06',
+              {(() => {
+                const tc = s.teams.length;
+                const av = tc > 6 ? 40 : tc > 4 ? 46 : 52;
+                const gap = tc > 6 ? 8 : tc > 4 ? 11 : 14;
+                const emoji = tc > 6 ? 22 : tc > 4 ? 25 : 28;
+                return (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap,
+                    maxWidth: '100%',
+                  }}>
+                    {s.teams.map(tm => {
+                      const answered = s.answers.some(a => a.teamId === tm.id);
+                      return (
+                        <div key={tm.id} style={{
+                          position: 'relative',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12, fontWeight: 900, color: '#fff',
-                          animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
-                        }}>✓</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                          width: av, height: av, borderRadius: '50%',
+                          background: answered ? `${tm.color}25` : 'rgba(255,255,255,0.04)',
+                          border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.08)'}`,
+                          transition: 'all 0.4s ease',
+                          opacity: answered ? 1 : 0.4,
+                          boxShadow: answered ? `0 0 16px ${tm.color}44` : 'none',
+                          flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: emoji, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          {answered && (
+                            <div style={{
+                              position: 'absolute', bottom: -4, right: -4,
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: '#22C55E', border: '2px solid #0D0A06',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 900, color: '#fff',
+                              animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                            }}>✓</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -4902,7 +4923,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 padding: '12px 24px', borderRadius: 16,
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.15}s both`,
+                animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.10}s both`,
               }}>
                 <span style={{
                   fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, width: 40,

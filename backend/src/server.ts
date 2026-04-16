@@ -8408,44 +8408,68 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
   const q = room.currentQuestion;
   if (!q) return res.status(400).json({ error: 'Keine Frage geladen' });
   const correctRate = Math.min(1, Math.max(0, Number(req.body?.correctRate ?? 0.6)));
-  let answered = 0;
+  const stagger = req.body?.stagger !== false; // default: staggered
   const teams = Object.values(room.teams).filter((t: any) => !room.answers.some((a: any) => a.teamId === t.id));
-  for (const t of teams as any[]) {
-    let answer = '';
+
+  function pickAnswer(forTeam: any): string {
     const beCorrect = Math.random() < correctRate;
-    if (q.category === 'MUCHO' && q.options) {
-      const idx = beCorrect && q.correctOptionIndex != null
-        ? q.correctOptionIndex
-        : Math.floor(Math.random() * q.options.length);
-      answer = String(idx);
-    } else if (q.category === 'SCHAETZCHEN') {
-      const target = q.targetValue ?? 100;
+    if (q!.category === 'MUCHO' && q!.options) {
+      const idx = beCorrect && q!.correctOptionIndex != null
+        ? q!.correctOptionIndex
+        : Math.floor(Math.random() * q!.options.length);
+      return String(idx);
+    } else if (q!.category === 'SCHAETZCHEN') {
+      const target = q!.targetValue ?? 100;
       const noise = beCorrect ? target * 0.1 : target * (0.5 + Math.random());
-      answer = String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
-    } else if (q.category === 'ZEHN_VON_ZEHN' && q.options) {
-      // Distribute 10 points randomly across options
-      const pts = Array(q.options.length).fill(0);
+      return String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
+    } else if (q!.category === 'ZEHN_VON_ZEHN' && q!.options) {
+      const pts = Array(q!.options.length).fill(0);
       let remaining = 10;
       while (remaining > 0) {
-        const idx = Math.floor(Math.random() * q.options.length);
+        const idx = Math.floor(Math.random() * q!.options.length);
         const give = Math.min(remaining, Math.ceil(Math.random() * 5));
         pts[idx] += give;
         remaining -= give;
       }
-      answer = pts.join(',');
-    } else if (q.category === 'CHEESE' || q.category === 'BUNTE_TUETE') {
+      return pts.join(',');
+    } else if (q!.category === 'CHEESE' || q!.category === 'BUNTE_TUETE') {
       const fallback = (q as any).correctAnswer || (q as any).answer || 'Test';
-      answer = beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
-    } else {
-      answer = `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+      return beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
     }
-    try {
-      qqSubmitAnswer(room, t.id, answer);
-      answered++;
-    } catch { /* skip */ }
+    // avoid unused-warning noise
+    void forTeam;
+    return `Dummy ${Math.random().toString(36).slice(2, 6)}`;
   }
-  broadcastQQ(io, roomCode);
-  res.json({ answered });
+
+  if (!stagger) {
+    // Legacy: alle sofort einfliegen
+    let answered = 0;
+    for (const t of teams as any[]) {
+      try { qqSubmitAnswer(room, t.id, pickAnswer(t)); answered++; } catch { /* skip */ }
+    }
+    broadcastQQ(io, roomCode);
+    return res.json({ answered, staggered: false });
+  }
+
+  // Gestaffelt: jede Antwort kriegt einen Random-Delay innerhalb des verbleibenden Timers
+  // (min 400ms, max min(18s, Timer-Ende - 800ms)).
+  const now = Date.now();
+  const maxWindow = Math.max(1500, Math.min(18_000, (room.timerEndsAt ?? (now + 20_000)) - now - 800));
+  const scheduled = teams.length;
+  for (const t of teams as any[]) {
+    const delay = 400 + Math.floor(Math.random() * maxWindow);
+    setTimeout(() => {
+      // Raum-Zustand kann sich bis dahin geändert haben — nur submitten wenn noch aktive Frage + nicht schon beantwortet
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'QUESTION_ACTIVE' || live.currentQuestion?.id !== q.id) return;
+      if (live.answers.some((a: any) => a.teamId === t.id)) return;
+      try {
+        qqSubmitAnswer(live, t.id, pickAnswer(t));
+        broadcastQQ(io, roomCode);
+      } catch { /* skip */ }
+    }, delay);
+  }
+  res.json({ scheduled, staggered: true, windowMs: maxWindow });
 });
 
 app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {

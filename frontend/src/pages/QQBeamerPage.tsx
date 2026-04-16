@@ -533,7 +533,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             willChange: 'transform, opacity, filter',
           }}
         >
-          {s.phase === 'LOBBY'           && <LobbyView state={s} />}
+          {s.phase === 'LOBBY' && !s.setupDone && <PausedView state={s} mode="preGame" />}
+          {s.phase === 'LOBBY' && s.setupDone  && <LobbyView state={s} />}
           {s.phase === 'RULES'           && <RulesView state={s} />}
           {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={s} />}
           {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
@@ -4587,7 +4588,7 @@ type FunStats = {
   funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
 };
 
-export function PausedView({ state: s }: { state: QQStateUpdate }) {
+export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   const cardBg = s.theme?.cardBg ?? '#1B1510';
   const [de, setDe] = useState(true);
   useEffect(() => {
@@ -4766,11 +4767,14 @@ export function PausedView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Title */}
       <div style={{
-        fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900, color: '#94a3b8',
+        fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900,
+        color: mode === 'preGame' ? '#F59E0B' : '#94a3b8',
         display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 5,
         animation: 'lobbyPulse 3s ease-in-out infinite',
       }}>
-        ⏸ {de ? 'Kurze Pause' : 'Short Break'}
+        {mode === 'preGame'
+          ? <>✨ {de ? 'Gleich geht\'s los' : 'Starting soon'}</>
+          : <>⏸ {de ? 'Kurze Pause' : 'Short Break'}</>}
       </div>
 
       {/* Records panel */}

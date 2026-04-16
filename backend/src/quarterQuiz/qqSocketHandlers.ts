@@ -681,6 +681,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // Moderator signalisiert Setup fertig / rückgängig — nur im LOBBY-State relevant.
+    socket.on('qq:setSetupDone', (payload: { roomCode: string; value: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.setupDone = !!payload.value;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Placement ───────────────────────────────────────────────────────────
     socket.on('qq:placeCell', (payload: QQPlaceCellPayload, ack?: unknown) => {
       try {

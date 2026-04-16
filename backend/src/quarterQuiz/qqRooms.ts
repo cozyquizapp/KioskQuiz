@@ -94,6 +94,8 @@ export interface QQRoomState {
   musicMuted: boolean;
   sfxMuted: boolean;
   volume: number; // 0–1
+  // Setup/Lobby split — false means moderator is still in Setup; Beamer shows pre-game wait-screen.
+  setupDone: boolean;
   // 3D grid
   enable3DTransition: boolean;
   // Rules presentation
@@ -192,6 +194,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       musicMuted: false,
       sfxMuted: false,
       volume: 0.8,
+      setupDone: false,
       enable3DTransition: false,
       rulesSlideIndex: 0,
       teamsRevealStartedAt: null,
@@ -1701,6 +1704,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     sfxMuted:         room.sfxMuted,
     volume:           room.volume,
     soundConfig:      room.soundConfig,
+    setupDone:        room.setupDone,
     enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
     teamsRevealStartedAt: room.teamsRevealStartedAt,
@@ -1814,6 +1818,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.buzzQueue       = [];
   const gs = room.gridSize;
   room.phase           = 'LOBBY';
+  room.setupDone       = false;
   room.gamePhaseIndex  = 1;
   room.questionIndex   = 0;
   room.grid            = buildEmptyGrid(gs);

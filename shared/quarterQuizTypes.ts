@@ -489,6 +489,8 @@ export interface QQStateUpdate {
   sfxMuted: boolean;     // mutes: all SFX (correct, wrong, reveal, fanfare, fieldPlaced, steal, ticks, gameOver)
   volume: number; // 0–1
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
+  // Setup/Lobby-Zweiteilung: wenn false und phase === LOBBY, zeigt der Beamer den Pre-Game-Wartescreen (Leaderboard/Rekorde).
+  setupDone: boolean;
   // 3D grid
   enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)

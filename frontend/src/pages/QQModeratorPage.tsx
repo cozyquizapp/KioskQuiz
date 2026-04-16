@@ -28,16 +28,6 @@ export default function QQModeratorPage() {
   const [showSoundPanel, setShowSoundPanel] = useState(false);
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   const startingRef = useRef(false); // prevent double-fire on startGame
-  // Moderator-lokales Flag: Setup ist abgeschlossen → Lobby-Ansicht statt Setup-Form.
-  // Backend-Phase bleibt 'LOBBY'; das ist rein eine Frontend-Zweiteilung.
-  const [setupDone, setSetupDone] = useState<boolean>(() => {
-    try { return localStorage.getItem(`qq:setupDone:${roomCode ?? 'default'}`) === '1'; }
-    catch { return false; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem(`qq:setupDone:${roomCode ?? 'default'}`, setupDone ? '1' : '0'); }
-    catch {}
-  }, [setupDone, roomCode]);
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
@@ -45,6 +35,13 @@ export default function QQModeratorPage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
   const { state, connected, emit } = useQQSocket(roomCode);
+
+  // Setup/Lobby-Zweiteilung: Wert kommt aus dem server-state (via useQQSocket).
+  // Fallback bis der erste State-Update da ist: false (= Setup anzeigen).
+  const setupDone = state?.setupDone ?? false;
+  const setSetupDone = (v: boolean) => {
+    emit('qq:setSetupDone', { roomCode, value: v });
+  };
 
   // Auto-join (and re-join after reconnect)
   useEffect(() => {

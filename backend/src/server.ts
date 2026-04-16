@@ -90,7 +90,7 @@ import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
-import { getQQRoom, qqJoinTeam, qqSubmitAnswer } from './quarterQuiz/qqRooms';
+import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell } from './quarterQuiz/qqRooms';
 import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
@@ -8445,6 +8445,56 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
   }
   broadcastQQ(io, roomCode);
   res.json({ answered });
+});
+
+app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
+  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  const { roomCode } = req.params;
+  const room = getQQRoom(roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (room.phase !== 'PLACEMENT') return res.status(400).json({ error: 'Nur in PLACEMENT-Phase' });
+  const teamId = room.pendingFor;
+  const action = room.pendingAction;
+  if (!teamId || !action) return res.status(400).json({ error: 'Kein Team zur Platzierung' });
+
+  // Collect free / opponent cells
+  const free: Array<{ row: number; col: number }> = [];
+  const oppFree: Array<{ row: number; col: number }> = [];
+  for (let r = 0; r < room.grid.length; r++) {
+    for (let c = 0; c < room.grid[r].length; c++) {
+      const cell = room.grid[r][c];
+      if (cell.ownerId === null) free.push({ row: r, col: c });
+      else if (cell.ownerId !== teamId && !cell.frozen && !cell.stuck) oppFree.push({ row: r, col: c });
+    }
+  }
+
+  const pick = (arr: typeof free) => arr[Math.floor(Math.random() * arr.length)];
+  let mode: 'place' | 'steal' | null = null;
+  let target: { row: number; col: number } | undefined;
+
+  if (action === 'PLACE_1' || action === 'PLACE_2') {
+    if (!free.length) return res.status(400).json({ error: 'Kein freies Feld' });
+    mode = 'place'; target = pick(free);
+  } else if (action === 'STEAL_1') {
+    if (!oppFree.length) return res.status(400).json({ error: 'Kein Gegnerfeld' });
+    mode = 'steal'; target = pick(oppFree);
+  } else if (action === 'FREE' || action === 'COMEBACK') {
+    // Prefer placing if possible, else steal
+    if (free.length) { mode = 'place'; target = pick(free); }
+    else if (oppFree.length) { mode = 'steal'; target = pick(oppFree); }
+    else return res.status(400).json({ error: 'Keine g\u00fcltige Option' });
+  } else {
+    return res.status(400).json({ error: `Action ${action} nicht unterst\u00fctzt` });
+  }
+
+  try {
+    if (mode === 'place') qqPlaceCell(room, teamId, target!.row, target!.col);
+    else qqStealCell(room, teamId, target!.row, target!.col);
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message ?? 'Platzierung fehlgeschlagen' });
+  }
+  broadcastQQ(io, roomCode);
+  res.json({ mode, target, team: teamId });
 });
 
 app.post('/api/qq/feedback', (req, res) => {

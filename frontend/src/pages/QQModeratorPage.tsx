@@ -1579,6 +1579,16 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
       if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
     } finally { setBusy(null); }
   }
+  async function devAutoPlace() {
+    setBusy('place');
+    try {
+      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/autoPlace`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await r.json();
+      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+    } finally { setBusy(null); }
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
@@ -1641,6 +1651,19 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
               >{busy === 'sim' ? '…' : '🎲'} Zufalls-Antworten
                 <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
                   {phase === 'QUESTION_ACTIVE' ? 'Offene Teams antworten (60% richtig)' : 'Nur bei aktiver Frage'}
+                </span>
+              </button>
+              <button
+                disabled={phase !== 'PLACEMENT' || busy !== null}
+                onClick={() => devAutoPlace()}
+                style={{
+                  ...menuItemStyle('#8B5CF6'),
+                  opacity: phase !== 'PLACEMENT' || busy !== null ? 0.4 : 1,
+                  cursor: phase !== 'PLACEMENT' || busy !== null ? 'not-allowed' : 'pointer',
+                }}
+              >{busy === 'place' ? '…' : '🤖'} Auto-Platzierung
+                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
+                  {phase === 'PLACEMENT' ? 'Aktives Team setzt/klaut zufällig' : 'Nur in Platzier-Phase'}
                 </span>
               </button>
             </>

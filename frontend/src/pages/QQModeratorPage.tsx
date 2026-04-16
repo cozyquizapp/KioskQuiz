@@ -1911,7 +1911,7 @@ function SetupView({
             </div>
             {s.teams.length === 0 ? (
               <div style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
-                Noch keine Teams beigetreten — der Start funktioniert trotzdem.
+                Noch keine Teams beigetreten.
               </div>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -1953,6 +1953,39 @@ function SetupView({
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {import.meta.env.DEV && (
+              <div style={{
+                marginTop: 12, padding: '10px 12px', borderRadius: 8,
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px dashed rgba(245,158,11,0.35)',
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+              }}>
+                <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.08em' }}>
+                  🧪 DEV
+                </span>
+                <button
+                  onClick={async () => {
+                    const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ count: 8 }),
+                    });
+                    if (!r.ok) {
+                      const d = await r.json().catch(() => ({}));
+                      alert(`Fehler: ${d.error ?? r.statusText}`);
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                    border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
+                    color: '#F59E0B', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                  }}
+                >+ 8 Dummy-Teams joinen</button>
+                <span style={{ fontSize: 10, color: '#64748b' }}>
+                  nur in Entwicklungsumgebung sichtbar
+                </span>
               </div>
             )}
           </div>

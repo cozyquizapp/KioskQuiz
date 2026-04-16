@@ -3949,7 +3949,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                padding: 'clamp(20px, 2.5vh, 32px) clamp(24px, 3vw, 48px) clamp(70px, 7vh, 100px)',
+                padding: 'clamp(210px, 22vh, 260px) clamp(24px, 3vw, 48px) clamp(210px, 22vh, 260px)',
                 marginBottom: 'clamp(12px, 1.5vh, 24px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
@@ -3958,10 +3958,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 animation: 'contentReveal 0.5s ease 0.3s both',
               }}>
-                {/* Axis line */}
+                {/* Axis line — mittig im Container, genug Luft oben/unten für die Pins */}
                 <div style={{
-                  position: 'relative', height: 'clamp(100px, 12vh, 150px)',
-                  marginTop: 'clamp(28px, 3vh, 44px)',
+                  position: 'relative', height: 4,
                 }}>
                   {/* Rail */}
                   <div style={{
@@ -3986,7 +3985,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       gestrichelte Verbindungslinie zeigt nach unten zur Rail. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
-                    transform: 'translate(-50%, calc(-50% - 140px))',
+                    transform: 'translate(-50%, calc(-50% - 210px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
@@ -4017,7 +4016,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     </div>
                     {/* Gestrichelte Linie vom Chip nach unten zur Rail */}
                     <div style={{
-                      width: 2, height: 72,
+                      width: 2, height: 140,
                       backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.85) 50%, transparent 50%)',
                       backgroundSize: '2px 8px',
                       backgroundRepeat: 'repeat-y',
@@ -4036,7 +4035,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const tColor = p.team!.color;
                     // Vertical offset: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
                     // Alterniert über/unter dem Strahl, damit sich die Avatare nicht überlappen.
-                    const yOffset = r === 0 ? -54 : r === 1 ? 54 : r === 2 ? -100 : 100;
+                    // Deutlich über/unter der Schiene platzieren, damit Avatare eindeutig
+                    // getrennt sichtbar sind (nicht "auf einer Linie" wirken).
+                    const yOffset = r === 0 ? -96 : r === 1 ? 96 : r === 2 ? -172 : 172;
                     // Gewinner hüpft nach dem Reveal 2× Richtung Ziel (percent-basiert,
                     // damit der Nudge zur echten Entfernung passt — weit weg vom Ziel
                     // = größerer Hüpfer).
@@ -4102,7 +4103,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Schätzchen: nur die Gewinner-Karte zeigen (alle Werte sind am Zeitstrahl oben schon sichtbar) */}
+          {/* Schätzchen: schlanker Gewinner-Chip unter dem Zeitstrahl (kein redundantes Riesen-Panel,
+              Avatare/Werte sind am Strahl bereits sichtbar). */}
           {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (() => {
             const ranked = s.answers
               .map(a => {
@@ -4113,44 +4115,32 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               })
               .sort((a, b) => a.distance - b.distance);
             const w = ranked[0];
-            if (!w || w.distance === Infinity) return null;
-            const tColor = w.team?.color ?? '#94a3b8';
+            if (!w || w.distance === Infinity || !w.team) return null;
+            const tColor = w.team.color;
             return (
               <div style={{
-                width: '100%', maxWidth: 1400,
-                animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-                display: 'flex', justifyContent: 'center',
+                display: 'flex', justifyContent: 'center', width: '100%',
+                animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.9s both',
               }}>
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: 24,
-                  padding: 'clamp(14px, 2vw, 24px) clamp(24px, 3.5vw, 48px)',
-                  borderRadius: 24,
-                  background: `linear-gradient(135deg, ${tColor}22, ${tColor}0a)`,
-                  border: `2px solid ${tColor}66`,
-                  boxShadow: `0 0 40px ${tColor}33`,
+                  display: 'inline-flex', alignItems: 'center', gap: 14,
+                  padding: '10px 22px', borderRadius: 999,
+                  background: `linear-gradient(135deg, ${tColor}2a, ${tColor}0a)`,
+                  border: `1.5px solid ${tColor}66`,
+                  boxShadow: `0 0 22px ${tColor}33`,
                 }}>
-                  <span style={{
-                    fontSize: 'clamp(40px, 5vw, 72px)', lineHeight: 1, flexShrink: 0,
-                    animation: 'celebShake 0.6s ease 1.1s both',
-                  }}>
-                    {w.team ? qqGetAvatar(w.team.avatarId).emoji : '?'}
+                  <span style={{ fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1 }}>🏆</span>
+                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', lineHeight: 1, flexShrink: 0 }}>
+                    {qqGetAvatar(w.team.avatarId).emoji}
                   </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: 900, fontSize: 'clamp(22px, 3vw, 40px)',
-                      color: tColor, lineHeight: 1.2,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{w.team?.name ?? w.teamId}</div>
-                    <div style={{
-                      fontWeight: 900, fontSize: 'clamp(28px, 4vw, 52px)',
-                      color: '#e2e8f0', lineHeight: 1.2,
-                    }}>{w.text}</div>
-                    <div style={{
-                      color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 800, marginTop: 2,
-                    }}>
-                      {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
-                    </div>
-                  </div>
+                  <span style={{
+                    fontWeight: 900, fontSize: 'clamp(17px, 1.9vw, 24px)', color: tColor, lineHeight: 1.1,
+                  }}>{w.team.name}</span>
+                  <span style={{
+                    color: '#cbd5e1', fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 700, lineHeight: 1.1,
+                  }}>
+                    {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
+                  </span>
                 </div>
               </div>
             );
@@ -4475,60 +4465,52 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Fireflies color={`${teamColor}77`} />
 
-      {/* Top banner — hero status */}
-      <div style={{
-        padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
-        position: 'relative', zIndex: 5,
-        background: `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)`,
-        borderBottom: `2px solid ${teamColor}22`,
-      }}>
-        {team && (
-          <>
-            {/* Avatar with glow ring */}
-            <div style={{
-              position: 'relative',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 72, height: 72, borderRadius: '50%',
-              background: `${teamColor}20`,
-              border: `3px solid ${teamColor}88`,
-              boxShadow: `0 0 20px ${teamColor}44`,
-              animation: 'activeTeamGlow 2s ease-in-out infinite',
-              ['--team-color' as string]: `${teamColor}55`,
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {/* Top banner — nur rendern, wenn ein Team aktiv ist (kein leerer "Waiting…"-Platzhalter) */}
+      {team && (
+        <div style={{
+          padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
+          position: 'relative', zIndex: 5,
+          background: `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)`,
+          borderBottom: `2px solid ${teamColor}22`,
+        }}>
+          <div style={{
+            position: 'relative',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 72, height: 72, borderRadius: '50%',
+            background: `${teamColor}20`,
+            border: `3px solid ${teamColor}88`,
+            boxShadow: `0 0 20px ${teamColor}44`,
+            animation: 'activeTeamGlow 2s ease-in-out infinite',
+            ['--team-color' as string]: `${teamColor}55`,
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{
+              fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
+              textShadow: `0 0 24px ${teamColor}44`,
+            }}>{team.name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{
-                fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
-                textShadow: `0 0 24px ${teamColor}44`,
-              }}>{team.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
+                color: '#e2e8f0',
+              }}>
+                {actionVerb(s.pendingAction, lang)}
+              </span>
+              {s.teamPhaseStats[team.id] && (
                 <span style={{
-                  fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
-                  color: '#e2e8f0',
+                  padding: '3px 12px', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
                 }}>
-                  {actionVerb(s.pendingAction, lang)}
+                  {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
                 </span>
-                {s.teamPhaseStats[team.id] && (
-                  <span style={{
-                    padding: '3px 12px', borderRadius: 999,
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
-                  }}>
-                    {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-          </>
-        )}
-        {!team && (
-          <span style={{ fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 800, color: '#64748b' }}>
-            {lang === 'de' ? '⏳ Warte auf nächsten Zug…' : '⏳ Waiting for next move…'}
-          </span>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll) */}
       <div style={{
@@ -5650,43 +5632,41 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
   // Bei vielen Teams (≥6) wird die Liste kompakter, sonst passen 8 Zeilen nicht
   // nebeneinander neben das Grid auf den Beamer.
   const dense = sorted.length >= 6;
-  const rowGap = dense ? 8 : 14;
-  const avatarSize = dense ? 28 : 34;
-  const avatarBox = dense ? 36 : 44;
-  const nameFs = dense ? 19 : 24;
-  const valFs = dense ? 18 : 22;
-  const unitFs = dense ? 12 : 15;
-  const barH = dense ? 10 : 14;
+  const rowGap = dense ? 10 : 16;
+  const avatarSize = dense ? 36 : 44;
+  const avatarBox = dense ? 46 : 56;
+  const nameFs = dense ? 24 : 30;
+  const valFs = dense ? 24 : 30;
+  const unitFs = dense ? 14 : 17;
+  const barH = dense ? 8 : 11;
+  // Balken bewusst schmal halten — die Info steckt in der Zahl, nicht in der Balkenbreite.
+  const barMaxW = 220;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, width: '100%', maxWidth: 800 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, width: '100%', maxWidth: 560 }}>
       {sorted.map((t, i) => {
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
         return (
         <div key={t.id} style={{
-          display: 'flex', alignItems: 'center', gap: dense ? 10 : 14,
+          display: 'flex', alignItems: 'center', gap: dense ? 12 : 16,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
           opacity: activeTeamId && !isActive ? 0.6 : 1,
           transition: 'opacity 0.3s ease',
         }}>
-          <div style={{ position: 'relative', width: avatarBox, textAlign: 'center' }}>
+          <div style={{ position: 'relative', width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{ fontSize: avatarSize, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-            {isLeader && <span style={{ position: 'absolute', top: -6, right: -2, fontSize: dense ? 13 : 16 }}>👑</span>}
+            {isLeader && <span style={{ position: 'absolute', top: -6, right: -2, fontSize: dense ? 15 : 18 }}>👑</span>}
           </div>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: dense ? 3 : 5 }}>
-              <span style={{
-                fontSize: nameFs, fontWeight: 900, color: t.color,
-                textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
-              }}>{t.name}</span>
-              <span style={{ fontSize: valFs, color: '#e2e8f0', fontWeight: 900 }}>
-                {t.largestConnected}
-                <span style={{ opacity: 0.4, fontSize: unitFs, fontWeight: 700, marginLeft: 4 }}>
-                  {t.largestConnected === 1 ? 'Feld' : 'Felder'}
-                </span>
-              </span>
-            </div>
+          {/* Name — flex-1, darf wachsen */}
+          <span style={{
+            flex: 1, minWidth: 0,
+            fontSize: nameFs, fontWeight: 900, color: t.color,
+            textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{t.name}</span>
+          {/* Balken — feste, schmale Breite */}
+          <div style={{ position: 'relative', width: barMaxW, flexShrink: 0 }}>
             <div style={{ height: barH, borderRadius: barH / 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: barH / 2,
@@ -5699,14 +5679,24 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
             {/* Float +N */}
             {floaters.filter(f => f.teamId === t.id).map(f => (
               <div key={f.id} style={{
-                position: 'absolute', right: 0, top: -6,
-                fontWeight: 900, fontSize: dense ? 17 : 20, color: t.color,
+                position: 'absolute', right: 0, top: -20,
+                fontWeight: 900, fontSize: dense ? 18 : 22, color: t.color,
                 animation: 'scoreFloat 1.0s ease-out both',
                 pointerEvents: 'none',
                 textShadow: `0 0 10px ${t.color}88`,
               }}>+{f.diff}</div>
             ))}
           </div>
+          {/* Wert — rechts */}
+          <span style={{
+            fontSize: valFs, color: '#e2e8f0', fontWeight: 900,
+            minWidth: dense ? 90 : 110, textAlign: 'right', flexShrink: 0,
+          }}>
+            {t.largestConnected}
+            <span style={{ opacity: 0.45, fontSize: unitFs, fontWeight: 700, marginLeft: 5 }}>
+              {t.largestConnected === 1 ? 'Feld' : 'Felder'}
+            </span>
+          </span>
         </div>
         );
       })}

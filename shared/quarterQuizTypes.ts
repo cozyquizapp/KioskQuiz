@@ -58,7 +58,7 @@ export const QQ_QUESTIONS_PER_PHASE   = 5;
 export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
-export const QQ_MAX_TEAMS             = 10;
+export const QQ_MAX_TEAMS             = 8;
 export const QQ_MIN_TEAMS             = 2;
 
 export function qqGridSize(teamCount: number): number {

@@ -1200,9 +1200,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              display: 'grid',
+              gridTemplateColumns: teamCount > 4
+                ? 'repeat(2, minmax(0, 1fr))'
+                : 'repeat(auto-fill, minmax(200px, 1fr))',
               gap: 'clamp(8px, 1.2vw, 14px)',
-              maxHeight: '50vh', overflow: 'hidden',
+              maxHeight: '58vh', overflowY: 'auto',
             }}>
               {s.teams.map((t, i) => (
                 <div key={t.id} style={{
@@ -1356,6 +1359,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           const shown = i < revealedCount;
           const slamDelay = titleDur + i * perTeamDelay;
           const av = qqGetAvatar(t.avatarId);
+          const many = teams.length > 5;
+          const discSize = many ? 'clamp(90px, 10vw, 160px)' : 'clamp(120px, 14vw, 200px)';
+          const discFont = many ? 'clamp(46px, 6vw, 90px)' : 'clamp(60px, 8vw, 110px)';
           return (
             <div key={t.id} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -1366,14 +1372,14 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {/* Avatar-Disc */}
               <div style={{
-                width: 'clamp(120px, 14vw, 200px)',
-                height: 'clamp(120px, 14vw, 200px)',
+                width: discSize,
+                height: discSize,
                 borderRadius: '50%',
                 background: `radial-gradient(circle at 35% 30%, ${t.color} 0%, ${t.color}cc 45%, ${t.color}88 100%)`,
                 border: `5px solid ${t.color}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
-                fontSize: 'clamp(60px, 8vw, 110px)', lineHeight: 1,
+                fontSize: discFont, lineHeight: 1,
                 animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
               }}>
                 {av.emoji}
@@ -1382,8 +1388,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
               {shown && (
                 <div style={{
                   position: 'absolute',
-                  width: 'clamp(120px, 14vw, 200px)',
-                  height: 'clamp(120px, 14vw, 200px)',
+                  width: discSize,
+                  height: discSize,
                   borderRadius: '50%',
                   background: '#fff',
                   pointerEvents: 'none',
@@ -4110,6 +4116,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {/* Avatar row */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+                flexWrap: 'wrap', maxWidth: '100%',
               }}>
                 {s.teams.map(tm => {
                   const answered = s.answers.some(a => a.teamId === tm.id);
@@ -4881,8 +4888,10 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       {/* Stage 3: Rankings — slide in staggered */}
       {sorted.length > 1 && (
         <div style={{
-          width: '100%', maxWidth: 640,
-          display: 'flex', flexDirection: 'column', gap: 8,
+          width: '100%', maxWidth: sorted.length > 5 ? 920 : 640,
+          display: 'grid',
+          gridTemplateColumns: sorted.length > 5 ? '1fr 1fr' : '1fr',
+          gap: 8,
         }}>
           {sorted.slice(1).map((tm, i) => {
             const rank = i + 2;

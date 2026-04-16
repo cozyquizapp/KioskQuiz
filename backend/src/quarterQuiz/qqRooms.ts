@@ -4,7 +4,7 @@ import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
-  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME,
+  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_TEAMS,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
 } from '../../../shared/quarterQuizTypes';
 import {
@@ -230,8 +230,8 @@ export function qqJoinTeam(
     throw new QQError('GAME_STARTED', 'Das Spiel hat bereits begonnen.');
   }
   const existingCount = Object.keys(room.teams).length;
-  if (existingCount >= 5) {
-    throw new QQError('ROOM_FULL', 'Maximale Teamanzahl (5) erreicht.');
+  if (existingCount >= QQ_MAX_TEAMS) {
+    throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${QQ_MAX_TEAMS}) erreicht.`);
   }
   // Avatar exclusivity: each avatar can only be chosen by one team
   const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);

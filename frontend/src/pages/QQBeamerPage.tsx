@@ -5652,7 +5652,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </div>
         )}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 18,
+          display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
           fontSize: 15, color: 'rgba(251,191,36,0.75)', fontWeight: 800,
           letterSpacing: '0.14em', textTransform: 'uppercase',
         }}>
@@ -5661,6 +5661,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 18 }}>📸</span>
             @cozywolf.events
+          </span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🐺</span>
+            cozywolf.de
           </span>
         </div>
       </div>

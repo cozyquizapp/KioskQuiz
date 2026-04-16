@@ -134,6 +134,7 @@ export default function QQSummaryPage() {
           </div>
         </Section>
         <FeedbackForm roomCode={summary.roomCode} />
+        <PartnerCTA />
         <UpcomingEvents events={upcoming} />
         <Footer />
       </Shell>
@@ -229,6 +230,7 @@ export default function QQSummaryPage() {
       </Section>
 
       <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} />
+      <PartnerCTA />
       <UpcomingEvents events={upcoming} />
       <Footer />
     </Shell>
@@ -435,6 +437,47 @@ function UpcomingEvents({ events }: { events: UpcomingEvent[] }) {
   );
 }
 
+function PartnerCTA() {
+  return (
+    <Section title="Quiz bei euch?">
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(236,72,153,0.08))',
+        border: '1px solid rgba(251,191,36,0.3)',
+        borderRadius: 14, padding: '16px 16px 14px',
+      }}>
+        <div style={{ fontSize: 15, fontWeight: 900, color: '#fbbf24', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+          🐺 Ihr wollt Quarter Quiz bei euch haben?
+        </div>
+        <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 12 }}>
+          Ob Kneipe, Event, Geburtstag oder Firmenfeier — ich komme mit Beamer, Stimme und guter Laune. Schreibt mir, ich mach euch ein Angebot.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <a href="mailto:hallo@cozywolf.de" style={ctaButton('#fbbf24', '#1e293b')}>
+            ✉️ Mail
+          </a>
+          <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={ctaButton('rgba(251,191,36,0.15)', '#fbbf24', 'rgba(251,191,36,0.4)')}>
+            🌐 cozywolf.de
+          </a>
+          <a href="https://instagram.com/cozywolf.events" target="_blank" rel="noreferrer" style={{ ...ctaButton('rgba(236,72,153,0.15)', '#f0abfc', 'rgba(236,72,153,0.4)'), gridColumn: '1 / -1' }}>
+            📸 @cozywolf.events
+          </a>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function ctaButton(bg: string, color: string, border?: string): React.CSSProperties {
+  return {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    padding: '10px 12px', borderRadius: 10,
+    background: bg, color,
+    fontSize: 13, fontWeight: 900, fontFamily: 'inherit',
+    textDecoration: 'none',
+    border: border ? `1px solid ${border}` : 'none',
+  };
+}
+
 function Footer() {
   return (
     <div style={{
@@ -443,8 +486,10 @@ function Footer() {
       textAlign: 'center', fontSize: 11, color: '#64748b',
     }}>
       <div>Quarter Quiz by <b style={{ color: '#94a3b8' }}>cozywolf</b></div>
-      <div style={{ marginTop: 4 }}>
+      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
         <a href="https://play.cozyquiz.app" style={{ color: '#94a3b8', textDecoration: 'none' }}>play.cozyquiz.app</a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', textDecoration: 'none' }}>cozywolf.de</a>
       </div>
     </div>
   );

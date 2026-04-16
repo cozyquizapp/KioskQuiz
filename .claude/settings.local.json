@@ -70,7 +70,11 @@
       "Bash(wc -l c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\frontend\\\\\\\\src\\\\\\\\pages\\\\\\\\QQModeratorPage.tsx c:\\\\\\\\Users\\\\\\\\hornu\\\\\\\\Desktop\\\\\\\\kioskquiz\\\\\\\\shared\\\\\\\\quarterQuizTypes.ts)",
       "WebFetch(domain:play.cozyquiz.app)",
       "Bash(git reset:*)",
-      "Bash(node -e \"console.log\\('node ok'\\)\")"
+      "Bash(node -e \"console.log\\('node ok'\\)\")",
+      "Bash(rm \"C:\\\\Users\\\\hornu\\\\.claude\\\\plans\\\\deep-sleeping-robin.md\")",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh auth *)"
     ]
   }
 }

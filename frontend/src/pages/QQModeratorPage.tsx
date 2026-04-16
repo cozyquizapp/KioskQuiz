@@ -28,6 +28,16 @@ export default function QQModeratorPage() {
   const [showSoundPanel, setShowSoundPanel] = useState(false);
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   const startingRef = useRef(false); // prevent double-fire on startGame
+  // Moderator-lokales Flag: Setup ist abgeschlossen → Lobby-Ansicht statt Setup-Form.
+  // Backend-Phase bleibt 'LOBBY'; das ist rein eine Frontend-Zweiteilung.
+  const [setupDone, setSetupDone] = useState<boolean>(() => {
+    try { return localStorage.getItem(`qq:setupDone:${roomCode ?? 'default'}`) === '1'; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(`qq:setupDone:${roomCode ?? 'default'}`, setupDone ? '1' : '0'); }
+    catch {}
+  }, [setupDone, roomCode]);
 
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
@@ -140,6 +150,10 @@ export default function QQModeratorPage() {
   stateRef.current = state;
   const startGameRef = useRef(startGame);
   startGameRef.current = startGame;
+  const setupDoneRef = useRef(setupDone);
+  setupDoneRef.current = setupDone;
+  const setSetupDoneRef = useRef(setSetupDone);
+  setSetupDoneRef.current = setSetupDone;
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
@@ -174,7 +188,11 @@ export default function QQModeratorPage() {
         return;
       }
       if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
-      else if (s.phase === 'LOBBY')      startGameRef.current();
+      else if (s.phase === 'LOBBY') {
+        // Zweistufig: erst Setup abschließen → in Lobby-Ansicht; dort dann Quiz starten.
+        if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        else startGameRef.current();
+      }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
@@ -245,7 +263,10 @@ export default function QQModeratorPage() {
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
       }
-      if (s.phase === 'LOBBY')            startGameRef.current();
+      if (s.phase === 'LOBBY') {
+        if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        else startGameRef.current();
+      }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
@@ -398,7 +419,7 @@ export default function QQModeratorPage() {
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
       )}
 
-      {joined && s && s.phase === 'LOBBY' && (
+      {joined && s && s.phase === 'LOBBY' && !setupDone && (
         <SetupView
           s={s}
           drafts={drafts}
@@ -413,7 +434,21 @@ export default function QQModeratorPage() {
           setLocalSoundConfig={setLocalSoundConfig}
           roomCode={roomCode}
           emit={emit}
+          finishSetup={() => setSetupDone(true)}
+        />
+      )}
+
+      {joined && s && s.phase === 'LOBBY' && setupDone && (
+        <LobbyView
+          s={s}
+          drafts={drafts}
+          selectedDraftId={selectedDraftId}
+          phases={phases}
+          timerInput={timerInput}
+          roomCode={roomCode}
+          emit={emit}
           startGame={startGame}
+          backToSetup={() => setSetupDone(false)}
         />
       )}
 
@@ -698,6 +733,7 @@ export default function QQModeratorPage() {
                     if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
                     for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
                     emit('qq:resetRoom', { roomCode });
+                    setSetupDone(false);
                   }}
                   roomCode={roomCode}
                   phase={s.phase}
@@ -1709,7 +1745,7 @@ const menuItemStyle = (accent: string): React.CSSProperties => ({
 function SetupView({
   s, drafts, selectedDraftId, setSelectedDraftId, phases, setPhases,
   timerInput, setTimerInput, applyTimer, localSoundConfig, setLocalSoundConfig,
-  roomCode, emit, startGame,
+  roomCode, emit, finishSetup,
 }: {
   s: QQStateUpdate;
   drafts: DraftSummary[];
@@ -1724,8 +1760,9 @@ function SetupView({
   setLocalSoundConfig: (v: QQSoundConfig) => void;
   roomCode: string;
   emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
-  startGame: () => void;
+  finishSetup: () => void;
 }) {
+  void emit; // stays in signature for future use, currently not needed after moving team-lobby out
   // Load the currently-selected draft's soundConfig (persistent per draft).
   const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
   const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});
@@ -1875,123 +1912,7 @@ function SetupView({
         )}
       </div>
 
-      {/* ── Lobby-Card: QR + Teams (bereits joinbar während Setup) ── */}
-      <div style={sectionCard}>
-        <div style={sectionTitle}>
-          👥 Teams-Lobby
-          <span style={{ color: '#64748b', fontWeight: 600, fontSize: 11 }}>
-            · Teams können bereits joinen
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Kompakter QR links */}
-          <div style={{
-            background: '#fff', padding: 10, borderRadius: 12,
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-          }}>
-            <QRCodeSVG
-              value={`${window.location.origin}/team?room=${roomCode}`}
-              size={120}
-              bgColor="#ffffff"
-              fgColor="#0D0A06"
-            />
-          </div>
-          {/* Join-URL + Team-Status rechts */}
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={fieldLabel}>Team-URL</div>
-            <div style={{
-              padding: '8px 12px', borderRadius: 8,
-              background: 'rgba(0,0,0,0.35)', color: '#e2e8f0',
-              fontFamily: 'monospace', fontSize: 13, marginBottom: 12,
-              border: '1px solid rgba(255,255,255,0.08)', userSelect: 'all',
-            }}>/team?room={roomCode}</div>
-
-            <div style={fieldLabel}>
-              Verbundene Teams ({s.teams.filter(t => t.connected).length}/{s.teams.length})
-            </div>
-            {s.teams.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
-                Noch keine Teams beigetreten.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {s.teams.map(t => {
-                  const av = qqGetAvatar(t.avatarId);
-                  return (
-                    <div key={t.id} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '5px 6px 5px 6px', borderRadius: 999,
-                      background: t.connected ? `${t.color}22` : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${t.connected ? t.color : 'rgba(255,255,255,0.08)'}`,
-                      opacity: t.connected ? 1 : 0.5,
-                    }}>
-                      <span style={{
-                        fontSize: 16, width: 22, height: 22, borderRadius: '50%',
-                        background: t.color, display: 'inline-flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        border: '1.5px solid #fff',
-                      }}>{av.emoji}</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: t.connected ? '#e2e8f0' : '#64748b' }}>
-                        {t.name}
-                      </span>
-                      {!t.connected && <span style={{ fontSize: 9, color: '#EF4444', marginLeft: 2 }}>●</span>}
-                      <button
-                        onClick={() => {
-                          if (!window.confirm(`Team "${t.name}" entfernen?`)) return;
-                          emit('qq:kickTeam', { roomCode, teamId: t.id });
-                        }}
-                        title="Team entfernen"
-                        style={{
-                          width: 18, height: 18, borderRadius: '50%',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          border: '1px solid rgba(239,68,68,0.35)',
-                          background: 'rgba(239,68,68,0.08)', color: '#EF4444',
-                          fontSize: 10, fontWeight: 900, cursor: 'pointer',
-                          padding: 0, lineHeight: 1, fontFamily: 'inherit',
-                        }}
-                      >✕</button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* TEMP: sichtbar in Production für 8-Team-Test. Nach dem Test wieder auf `import.meta.env.DEV` gaten. */}
-            {true && (
-              <div style={{
-                marginTop: 12, padding: '10px 12px', borderRadius: 8,
-                background: 'rgba(245,158,11,0.08)',
-                border: '1px dashed rgba(245,158,11,0.35)',
-                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-              }}>
-                <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.08em' }}>
-                  🧪 TEST
-                </span>
-                <button
-                  onClick={async () => {
-                    const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ count: 8 }),
-                    });
-                    if (!r.ok) {
-                      const d = await r.json().catch(() => ({}));
-                      alert(`Fehler: ${d.error ?? r.statusText}`);
-                    }
-                  }}
-                  style={{
-                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                    border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
-                    color: '#F59E0B', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
-                  }}
-                >+ 8 Dummy-Teams joinen</button>
-                <span style={{ fontSize: 10, color: '#64748b' }}>
-                  nur in Entwicklungsumgebung sichtbar
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Teams-Lobby + QR + Dev-Fill wandern in die LobbyView (nach "Setup abschließen") */}
 
       {/* ── Zwei-Spalten-Grid: Spielregeln | Show-Feel ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
@@ -2171,7 +2092,7 @@ function SetupView({
           justifyContent: 'center', alignItems: 'center', gap: 14, pointerEvents: 'auto',
         }}>
           <button
-            onClick={startGame}
+            onClick={finishSetup}
             disabled={!selectedDraftId}
             style={{
               padding: '18px 56px', borderRadius: 16,
@@ -2190,7 +2111,7 @@ function SetupView({
             }}
             onMouseEnter={e => { if (selectedDraftId) (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; }}
-          >▶ Spiel starten
+          >✓ Setup abschließen
             <span style={{
               fontSize: 11, marginLeft: 12, padding: '3px 8px', borderRadius: 6,
               background: 'rgba(0,0,0,0.25)', opacity: 0.85, fontWeight: 700,
@@ -2198,10 +2119,266 @@ function SetupView({
           </button>
         </div>
         <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 10, pointerEvents: 'none' }}>
-          Teams joinen erst nach Start über den QR-Code auf dem Beamer.
+          Danach öffnet sich die Lobby — Teams joinen per QR, du startest das Quiz.
         </div>
       </div>
 
+    </div>
+  );
+}
+
+// ── Lobby View (nach "Setup abschließen" — Moderator wartet auf joinende Teams) ──
+
+function LobbyView({
+  s, drafts, selectedDraftId, phases, timerInput,
+  roomCode, emit, startGame, backToSetup,
+}: {
+  s: QQStateUpdate;
+  drafts: DraftSummary[];
+  selectedDraftId: string;
+  phases: 3 | 4;
+  timerInput: number;
+  roomCode: string;
+  emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
+  startGame: () => void;
+  backToSetup: () => void;
+}) {
+  const GOLD = '#F59E0B';
+  const lobbyCard: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: 14, padding: 20, marginBottom: 14,
+  };
+  const sectionTitle: React.CSSProperties = {
+    fontSize: 13, fontWeight: 900, color: '#e2e8f0', marginBottom: 12,
+    letterSpacing: '0.04em', textTransform: 'uppercase',
+    display: 'flex', alignItems: 'center', gap: 8,
+  };
+  const fieldLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 800, color: '#94a3b8',
+    letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
+  };
+
+  const draft = drafts.find(d => d.id === selectedDraftId);
+  const connected = s.teams.filter(t => t.connected).length;
+  const total = s.teams.length;
+  const joinUrl = `${window.location.origin}/team?room=${roomCode}`;
+
+  return (
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      {/* Titel + Setup-Zurück */}
+      <div style={{
+        textAlign: 'center', marginBottom: 18,
+      }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 10,
+          padding: '6px 14px', borderRadius: 999,
+          background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+          fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', color: GOLD,
+          textTransform: 'uppercase',
+        }}>
+          <span style={{ fontSize: 16 }}>🎭</span>
+          Lobby — Teams joinen
+        </div>
+        <h1 style={{
+          margin: '12px 0 6px', fontSize: 28, fontWeight: 900, color: '#fff',
+        }}>Bereit zum Start</h1>
+        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+          Sobald alle Teams dabei sind: <strong style={{ color: '#22C55E' }}>Quiz starten</strong> drücken (oder Space).
+        </div>
+      </div>
+
+      {/* Read-only Config-Streifen */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 10,
+        marginBottom: 14, justifyContent: 'center',
+      }}>
+        <ConfigChip label="Fragensatz" value={draft?.title ?? '—'} />
+        <ConfigChip label="Fragen" value={draft ? `${draft.questionCount}` : '—'} />
+        <ConfigChip label="Runden" value={`${phases}`} />
+        <ConfigChip label="Timer" value={`${timerInput}s`} />
+        <button
+          onClick={backToSetup}
+          style={{
+            padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 800,
+            border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)',
+            color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit',
+          }}
+          title="Zurück ins Setup"
+        >⎌ Zurück zum Setup</button>
+      </div>
+
+      {/* QR + Teams */}
+      <div style={lobbyCard}>
+        <div style={sectionTitle}>
+          <span>👥 Verbundene Teams</span>
+          <span style={{
+            marginLeft: 'auto', fontSize: 12, fontWeight: 900,
+            color: connected > 0 ? '#22C55E' : '#64748b',
+          }}>
+            {connected}/{total} verbunden
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          {/* QR */}
+          <div style={{
+            background: '#fff', padding: 14, borderRadius: 14,
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
+          }}>
+            <QRCodeSVG value={joinUrl} size={160} bgColor="#ffffff" fgColor="#0D0A06" />
+            <div style={{
+              marginTop: 10, fontFamily: 'monospace', fontSize: 11,
+              color: '#0D0A06', fontWeight: 700,
+            }}>/team?room={roomCode}</div>
+          </div>
+
+          {/* Teams-Grid */}
+          <div style={{ flex: 1, minWidth: 320 }}>
+            <div style={fieldLabel}>Teams</div>
+            {total === 0 ? (
+              <div style={{
+                fontSize: 14, color: '#64748b', fontStyle: 'italic',
+                padding: '16px 12px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)',
+              }}>
+                Noch keine Teams beigetreten. QR scannen lassen — du kannst auch ohne Teams starten.
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+                gap: 8,
+              }}>
+                {s.teams.map(t => {
+                  const av = qqGetAvatar(t.avatarId);
+                  return (
+                    <div key={t.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 10,
+                      background: t.connected ? `${t.color}18` : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${t.connected ? `${t.color}66` : 'rgba(255,255,255,0.08)'}`,
+                      opacity: t.connected ? 1 : 0.55,
+                    }}>
+                      <span style={{
+                        fontSize: 20, width: 32, height: 32, borderRadius: '50%',
+                        background: t.color, display: 'inline-flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid rgba(255,255,255,0.9)', flexShrink: 0,
+                      }}>{av.emoji}</span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{
+                          fontSize: 13, fontWeight: 900,
+                          color: t.connected ? '#e2e8f0' : '#64748b',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{t.name}</div>
+                        <div style={{
+                          fontSize: 10, fontWeight: 700,
+                          color: t.connected ? '#22C55E' : '#EF4444',
+                        }}>
+                          {t.connected ? '● bereit' : '○ offline'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!window.confirm(`Team "${t.name}" entfernen?`)) return;
+                          emit('qq:kickTeam', { roomCode, teamId: t.id });
+                        }}
+                        title="Team entfernen"
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          border: '1px solid rgba(239,68,68,0.35)',
+                          background: 'rgba(239,68,68,0.08)', color: '#EF4444',
+                          fontSize: 11, fontWeight: 900, cursor: 'pointer',
+                          padding: 0, lineHeight: 1, fontFamily: 'inherit', flexShrink: 0,
+                        }}
+                      >✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TEMP Dev-Fill: sichtbar in Production für 8-Team-Test */}
+            {true && (
+              <div style={{
+                marginTop: 12, padding: '10px 12px', borderRadius: 8,
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px dashed rgba(245,158,11,0.35)',
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+              }}>
+                <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.08em' }}>
+                  🧪 TEST
+                </span>
+                <button
+                  onClick={async () => {
+                    const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ count: 8 }),
+                    });
+                    if (!r.ok) {
+                      const d = await r.json().catch(() => ({}));
+                      alert(`Fehler: ${d.error ?? r.statusText}`);
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                    border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
+                    color: '#F59E0B', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                  }}
+                >+ 8 Dummy-Teams joinen</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Start-Button */}
+      <div style={{
+        position: 'sticky', bottom: 16,
+        display: 'flex', justifyContent: 'center', marginTop: 20,
+      }}>
+        <button
+          onClick={startGame}
+          style={{
+            padding: '20px 64px', borderRadius: 16, border: 'none',
+            fontFamily: 'inherit', fontWeight: 900, fontSize: 26,
+            letterSpacing: '0.02em', cursor: 'pointer', color: '#fff',
+            background: 'linear-gradient(180deg, #22C55E, #15803D)',
+            boxShadow: '0 14px 40px rgba(34,197,94,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset',
+            animation: 'qqStartPulse 2.2s ease-in-out infinite',
+          }}
+        >
+          ▶ Quiz starten
+          <span style={{
+            fontSize: 12, marginLeft: 14, padding: '3px 10px', borderRadius: 6,
+            background: 'rgba(0,0,0,0.25)', opacity: 0.9, fontWeight: 700,
+          }}>SPACE</span>
+        </button>
+      </div>
+      <style>{`
+        @keyframes qqStartPulse {
+          0%, 100% { box-shadow: 0 14px 40px rgba(34,197,94,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+          50% { box-shadow: 0 14px 48px rgba(34,197,94,0.75), 0 0 0 1px rgba(255,255,255,0.15) inset; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ConfigChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      padding: '8px 14px', borderRadius: 10,
+      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+      display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+    }}>
+      <span style={{ color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 10 }}>
+        {label}
+      </span>
+      <span style={{ color: '#e2e8f0', fontWeight: 900 }}>{value}</span>
     </div>
   );
 }

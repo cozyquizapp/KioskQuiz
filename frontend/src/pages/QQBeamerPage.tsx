@@ -1211,30 +1211,33 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 return (
                   <div key={t.id} style={{
                     padding: compact
-                      ? '6px 10px'
-                      : 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.5vw, 20px)',
-                    borderRadius: compact ? 12 : 16,
+                      ? 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.6vw, 20px)'
+                      : 'clamp(12px, 1.6vh, 18px) clamp(16px, 1.8vw, 22px)',
+                    borderRadius: compact ? 14 : 18,
                     background: cardBg,
                     border: `2px solid ${t.color}55`,
                     boxShadow: `0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${t.color}18`,
-                    display: 'flex', alignItems: 'center', gap: compact ? 8 : 'clamp(8px, 1vw, 12px)',
+                    display: 'flex', alignItems: 'center',
+                    gap: compact ? 'clamp(10px, 1.1vw, 14px)' : 'clamp(10px, 1.2vw, 14px)',
                     animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
                     minWidth: 0,
                   }}>
                     <span style={{
-                      fontSize: compact ? 'clamp(22px, 2.4vw, 30px)' : 'clamp(28px, 3.5vw, 42px)',
+                      fontSize: compact ? 'clamp(32px, 3.2vw, 44px)' : 'clamp(34px, 3.8vw, 48px)',
                       lineHeight: 1, flexShrink: 0,
                     }}>{qqGetAvatar(t.avatarId).emoji}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
-                        fontSize: compact ? 'clamp(13px, 1.3vw, 17px)' : 'clamp(16px, 1.8vw, 24px)',
+                        fontSize: compact ? 'clamp(18px, 1.9vw, 24px)' : 'clamp(19px, 2.1vw, 26px)',
                         color: t.color,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        lineHeight: 1.15,
                       }}>{t.name}</div>
                       <div style={{
-                        fontSize: compact ? 10 : 'clamp(10px, 1vw, 13px)',
+                        fontSize: compact ? 'clamp(11px, 1.05vw, 14px)' : 'clamp(11px, 1.1vw, 14px)',
                         fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
+                        marginTop: 2,
                       }}>
                         {t.connected ? '● bereit' : '○ offline'}
                       </div>

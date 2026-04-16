@@ -4345,8 +4345,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                padding: 'clamp(210px, 22vh, 260px) clamp(24px, 3vw, 48px) clamp(210px, 22vh, 260px)',
-                marginBottom: 'clamp(12px, 1.5vh, 24px)',
+                // Mehr Luft oben/unten für größere Pins — aber kompakter drumherum
+                padding: 'clamp(240px, 26vh, 320px) clamp(24px, 3vw, 48px) clamp(240px, 26vh, 320px)',
+                marginBottom: 'clamp(8px, 1vh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
                 border: '1.5px solid rgba(255,255,255,0.08)',
@@ -4367,12 +4368,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }} />
                   {/* Axis endpoints labels */}
                   <div style={{
-                    position: 'absolute', left: 0, top: 'calc(50% + 18px)',
-                    fontSize: 'clamp(14px, 1.5vw, 20px)', color: '#94a3b8', fontWeight: 800,
+                    position: 'absolute', left: 0, top: 'calc(50% + 22px)',
+                    fontSize: 'clamp(18px, 1.8vw, 26px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMin)}</div>
                   <div style={{
-                    position: 'absolute', right: 0, top: 'calc(50% + 18px)',
-                    fontSize: 'clamp(14px, 1.5vw, 20px)', color: '#94a3b8', fontWeight: 800,
+                    position: 'absolute', right: 0, top: 'calc(50% + 22px)',
+                    fontSize: 'clamp(18px, 1.8vw, 26px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMax)}</div>
 
                   {/* Target marker — runder Avatar-Button mit Ziel-Emoji.
@@ -4381,29 +4382,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       gestrichelte Verbindungslinie zeigt nach unten zur Rail. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
-                    transform: 'translate(-50%, calc(-50% - 210px))',
+                    transform: 'translate(-50%, calc(-50% - 260px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
                   }}>
                     {/* Avatar-Button */}
                     <div style={{
-                      width: 'clamp(52px, 5.4vw, 72px)',
-                      height: 'clamp(52px, 5.4vw, 72px)',
+                      width: 'clamp(72px, 7vw, 96px)',
+                      height: 'clamp(72px, 7vw, 96px)',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(28px, 3vw, 40px)',
+                      fontSize: 'clamp(38px, 4vw, 54px)',
                       border: '3px solid rgba(255,255,255,0.9)',
                       boxShadow: '0 0 28px rgba(34,197,94,0.8), 0 6px 16px rgba(0,0,0,0.4)',
                     }}>🎯</div>
                     {/* Wert-Chip darunter */}
                     <div style={{
-                      marginTop: 8,
-                      padding: '6px 16px', borderRadius: 999,
+                      marginTop: 10,
+                      padding: '8px 22px', borderRadius: 999,
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(18px, 2.1vw, 26px)',
+                      fontSize: 'clamp(24px, 2.8vw, 36px)',
                       whiteSpace: 'nowrap',
                       boxShadow: '0 3px 10px rgba(34,197,94,0.45)',
                       border: '2px solid rgba(255,255,255,0.25)',
@@ -4412,7 +4413,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     </div>
                     {/* Gestrichelte Linie vom Chip nach unten zur Rail */}
                     <div style={{
-                      width: 2, height: 140,
+                      width: 2, height: 150,
                       backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.85) 50%, transparent 50%)',
                       backgroundSize: '2px 8px',
                       backgroundRepeat: 'repeat-y',
@@ -4436,9 +4437,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const tColor = p.team!.color;
                     // r: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
                     const isTop = r === 0 || r === 2;
-                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt
-                    const gap = r === 0 || r === 1 ? 110 : 186;
-                    const avatarSize = isWinner ? 64 : 52;
+                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt — größere Pins brauchen mehr Abstand
+                    const gap = r === 0 || r === 1 ? 130 : 230;
+                    const avatarSize = isWinner ? 86 : 72;
                     // Nudge/Animation-Deltas (Gewinner hüpft Richtung Ziel)
                     const nudgePctDelta = targetPct - pct;
                     const nudgeXPx = Math.max(-160, Math.min(160, nudgePctDelta * 12));
@@ -4476,11 +4477,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <div style={{
                           position: 'absolute', left: '50%', top: 0,
                           transform: 'translate(-50%, -50%)',
-                          width: isWinner ? 'clamp(52px, 5.4vw, 72px)' : 'clamp(42px, 4.6vw, 58px)',
-                          height: isWinner ? 'clamp(52px, 5.4vw, 72px)' : 'clamp(42px, 4.6vw, 58px)',
+                          width: isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)',
+                          height: isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)',
                           borderRadius: '50%', background: tColor,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: isWinner ? 'clamp(26px, 3vw, 40px)' : 'clamp(22px, 2.6vw, 32px)',
+                          fontSize: isWinner ? 'clamp(38px, 4vw, 54px)' : 'clamp(32px, 3.4vw, 46px)',
                           border: isWinner ? '3px solid #FBBF24' : '2px solid rgba(0,0,0,0.3)',
                           boxShadow: isWinner
                             ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
@@ -4491,14 +4492,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         {/* Value chip — isTop: ÜBER dem Avatar, sonst UNTER dem Avatar */}
                         <div style={{
                           position: 'absolute', left: '50%',
-                          top: isTop ? `${-avatarSize / 2 - 10}px` : `${avatarSize / 2 + 10}px`,
+                          top: isTop ? `${-avatarSize / 2 - 12}px` : `${avatarSize / 2 + 12}px`,
                           transform: isTop ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
-                          padding: '4px 12px', borderRadius: 10,
-                          background: 'rgba(0,0,0,0.78)',
-                          border: `1.5px solid ${tColor}`,
+                          padding: '6px 16px', borderRadius: 12,
+                          background: 'rgba(0,0,0,0.82)',
+                          border: `2px solid ${tColor}`,
                           color: '#fff', fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(18px, 2vw, 26px)' : 'clamp(15px, 1.7vw, 20px)',
+                          fontSize: isWinner ? 'clamp(24px, 2.6vw, 34px)' : 'clamp(20px, 2.2vw, 28px)',
                           whiteSpace: 'nowrap',
+                          boxShadow: `0 4px 12px rgba(0,0,0,0.5)`,
                         }}>
                           {fmt(p.num)}
                         </div>

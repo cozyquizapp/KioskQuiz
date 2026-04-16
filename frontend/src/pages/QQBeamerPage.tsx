@@ -6036,7 +6036,6 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
 
 export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams']; activeTeamId?: string | null }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
-  const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
   const prevScores = useRef<Record<string, number>>({});
   const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
@@ -6060,22 +6059,27 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
     }
   }, [teams]);
 
-  // Bei vielen Teams (≥6) wird die Liste kompakter, sonst passen 8 Zeilen nicht
-  // nebeneinander neben das Grid auf den Beamer.
+  // Bei vielen Teams (≥6) kompakter, sonst passen 8 Zeilen nicht nebeneinander.
+  // Balken ist raus — Info steckt in der Zahl. Dafür Name + Wert deutlich größer.
   const dense = sorted.length >= 6;
-  const avatarSize = dense ? 42 : 50;
-  const avatarBox = dense ? 52 : 62;
-  const nameFs = dense ? 28 : 34;
-  const valFs = dense ? 28 : 34;
-  const unitFs = dense ? 15 : 18;
-  const barH = dense ? 7 : 10;
-  // Balken bewusst schmal halten — die Info steckt in der Zahl, nicht in der Balkenbreite.
-  const barMaxW = 160;
+  const avatarSize = dense ? 52 : 62;
+  const avatarBox = dense ? 64 : 76;
+  const nameFs = dense ? 34 : 42;
+  const valFs = dense ? 42 : 54;
+  const unitFs = dense ? 18 : 22;
+
+  // Medaillen-Style für Top 3 (nur wenn Wert > 0 und eindeutig).
+  const medalFor = (i: number, val: number): string | null => {
+    if (val === 0) return null;
+    if (i === 0) return '🥇';
+    if (i === 1 && sorted[1].largestConnected < sorted[0].largestConnected) return '🥈';
+    if (i === 2 && sorted[2].largestConnected < (sorted[1]?.largestConnected ?? 0)) return '🥉';
+    return null;
+  };
 
   return (
     // Die Liste füllt die volle Höhe ihres Parent-Flex-Childs und verteilt die
-    // Zeilen gleichmäßig — dadurch wirkt sie auf gleicher Höhe wie das Grid
-    // und nicht in der Mitte zusammengequetscht.
+    // Zeilen gleichmäßig — dadurch wirkt sie auf gleicher Höhe wie das Grid.
     <div style={{
       display: 'flex', flexDirection: 'column',
       justifyContent: 'space-between',
@@ -6085,16 +6089,17 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
       {sorted.map((t, i) => {
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
+        const medal = medalFor(i, t.largestConnected);
         return (
         <div key={t.id} style={{
           display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
-          opacity: activeTeamId && !isActive ? 0.6 : 1,
+          opacity: activeTeamId && !isActive ? 0.55 : 1,
           transition: 'opacity 0.3s ease',
         }}>
           <div style={{ position: 'relative', width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{ fontSize: avatarSize, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-            {isLeader && <span style={{ position: 'absolute', top: -6, right: -2, fontSize: dense ? 15 : 18 }}>👑</span>}
+            {isLeader && <span style={{ position: 'absolute', top: -8, right: -2, fontSize: dense ? 20 : 24 }}>👑</span>}
           </div>
           {/* Name — flex-1, darf wachsen */}
           <span style={{
@@ -6103,38 +6108,37 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
             textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{t.name}</span>
-          {/* Balken — feste, schmale Breite */}
-          <div style={{ position: 'relative', width: barMaxW, flexShrink: 0 }}>
-            <div style={{ height: barH, borderRadius: barH / 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: barH / 2,
-                background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
-                width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
-                transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: isLeader ? `0 0 12px ${t.color}88` : 'none',
-              }} />
-            </div>
-            {/* Float +N */}
+          {/* Wert — prominent rechts mit Medaille für Top 3 */}
+          <div style={{
+            position: 'relative',
+            display: 'flex', alignItems: 'baseline', gap: 6,
+            flexShrink: 0,
+          }}>
+            {medal && (
+              <span style={{ fontSize: dense ? 22 : 28, lineHeight: 1, marginRight: 2 }}>{medal}</span>
+            )}
+            <span style={{
+              fontSize: valFs, color: isLeader ? '#FBBF24' : '#F1F5F9', fontWeight: 900,
+              textShadow: isLeader ? '0 0 18px rgba(251,191,36,0.55)' : 'none',
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1,
+            }}>
+              {t.largestConnected}
+            </span>
+            <span style={{ opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8' }}>
+              {t.largestConnected === 1 ? 'Feld' : 'Felder'}
+            </span>
+            {/* Float +N — knapp über der Zahl */}
             {floaters.filter(f => f.teamId === t.id).map(f => (
               <div key={f.id} style={{
-                position: 'absolute', right: 0, top: -20,
-                fontWeight: 900, fontSize: dense ? 18 : 22, color: t.color,
+                position: 'absolute', right: 0, top: -28,
+                fontWeight: 900, fontSize: dense ? 22 : 28, color: t.color,
                 animation: 'scoreFloat 1.0s ease-out both',
                 pointerEvents: 'none',
                 textShadow: `0 0 10px ${t.color}88`,
               }}>+{f.diff}</div>
             ))}
           </div>
-          {/* Wert — rechts */}
-          <span style={{
-            fontSize: valFs, color: '#e2e8f0', fontWeight: 900,
-            minWidth: dense ? 90 : 110, textAlign: 'right', flexShrink: 0,
-          }}>
-            {t.largestConnected}
-            <span style={{ opacity: 0.45, fontSize: unitFs, fontWeight: 700, marginLeft: 5 }}>
-              {t.largestConnected === 1 ? 'Feld' : 'Felder'}
-            </span>
-          </span>
         </div>
         );
       })}

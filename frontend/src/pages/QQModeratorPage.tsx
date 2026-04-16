@@ -1897,7 +1897,7 @@ function SetupView({
                   return (
                     <div key={t.id} style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '5px 10px 5px 6px', borderRadius: 999,
+                      padding: '5px 6px 5px 6px', borderRadius: 999,
                       background: t.connected ? `${t.color}22` : 'rgba(255,255,255,0.04)',
                       border: `1px solid ${t.connected ? t.color : 'rgba(255,255,255,0.08)'}`,
                       opacity: t.connected ? 1 : 0.5,
@@ -1912,6 +1912,21 @@ function SetupView({
                         {t.name}
                       </span>
                       {!t.connected && <span style={{ fontSize: 9, color: '#EF4444', marginLeft: 2 }}>●</span>}
+                      <button
+                        onClick={() => {
+                          if (!window.confirm(`Team "${t.name}" entfernen?`)) return;
+                          emit('qq:kickTeam', { roomCode, teamId: t.id });
+                        }}
+                        title="Team entfernen"
+                        style={{
+                          width: 18, height: 18, borderRadius: '50%',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          border: '1px solid rgba(239,68,68,0.35)',
+                          background: 'rgba(239,68,68,0.08)', color: '#EF4444',
+                          fontSize: 10, fontWeight: 900, cursor: 'pointer',
+                          padding: 0, lineHeight: 1, fontFamily: 'inherit',
+                        }}
+                      >✕</button>
                     </div>
                   );
                 })}

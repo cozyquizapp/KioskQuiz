@@ -213,6 +213,17 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Winner-Nudge: Gewinner-Avatar am Zeitstrahl hüpft 2x Richtung Ziel.
+     Nutzt CSS-Vars --nudge-x (horizontal offset zum Ziel, z.B. "20px")
+     und --nudge-y (vertikal offset des Pins auf dem Strahl, z.B. "-44px"),
+     damit die Ausgangs-/Endposition korrekt bleibt. */
+  @keyframes winnerNudge {
+    0%   { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
+    25%  { transform: translate(calc(-50% + var(--nudge-x, 0px) * 0.35), calc(-50% + var(--nudge-y, 0px) - 10px)) scale(1.12); }
+    50%  { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
+    75%  { transform: translate(calc(-50% + var(--nudge-x, 0px) * 0.55), calc(-50% + var(--nudge-y, 0px) - 14px)) scale(1.15); }
+    100% { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
+  }
   @keyframes top5RowSlideIn {
     0%   { opacity: 0; transform: translateX(60px) scale(0.92); filter: blur(6px); }
     60%  { opacity: 1; transform: translateX(-4px) scale(1.01); filter: blur(0); }

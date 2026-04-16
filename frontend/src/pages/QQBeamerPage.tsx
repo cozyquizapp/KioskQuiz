@@ -3940,12 +3940,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     // Vertical offset: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
                     // Alterniert über/unter dem Strahl, damit sich die Avatare nicht überlappen.
                     const yOffset = r === 0 ? -54 : r === 1 ? 54 : r === 2 ? -100 : 100;
+                    // Gewinner hüpft nach dem Reveal 2× Richtung Ziel (percent-basiert,
+                    // damit der Nudge zur echten Entfernung passt — weit weg vom Ziel
+                    // = größerer Hüpfer).
+                    const nudgePctDelta = targetPct - pct; // signed %
+                    // Umrechnen in px (Axis-Breite = 100% des Container, Container ist ca. 1400*0.9 = ~1250).
+                    // Wir nehmen einen konservativen Wert, kappen auf ±160px.
+                    const nudgeXPx = Math.max(-160, Math.min(160, nudgePctDelta * 12));
+                    const nudgeDelay = delay + 0.8; // nach revealWinnerIn zusätzlich 0.25s Puffer
                     return (
                       <div key={p.teamId} style={{
                         position: 'absolute', left: `${pct}%`, top: '50%',
                         transform: `translate(-50%, calc(-50% + ${yOffset}px))`,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                        animation: `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
+                        animation: isWinner
+                          ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
+                          : `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
+                        ...(isWinner ? {
+                          ['--nudge-x' as any]: `${nudgeXPx}px`,
+                          ['--nudge-y' as any]: `${yOffset}px`,
+                        } : {}),
                         zIndex: isWinner ? 20 : 10,
                       }}>
                         {/* Connector line to rail */}
@@ -4319,7 +4333,11 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   }, [s.questionIndex, use3D]);
 
   const show3D = viewMode === '3d' || viewMode === 'transitioning';
-  const gridMaxSize = Math.min(720, typeof window !== 'undefined' ? window.innerHeight * 0.55 : 600);
+  // 2-spaltiges Layout: Grid links darf nicht zu groß werden, sonst bleibt rechts
+  // kein Platz für die Team-Liste bei 8 Teams.
+  const gridMaxSize = typeof window !== 'undefined'
+    ? Math.min(720, window.innerHeight * 0.72, window.innerWidth * 0.48)
+    : 600;
 
   // Manual flyover hotkey (F): trigger a cinematic orbit over the grid
   const [flyoverSignal, setFlyoverSignal] = useState(0);
@@ -4414,10 +4432,13 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
         )}
       </div>
 
-      {/* Center: large grid + score */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 44px', position: 'relative', zIndex: 5, gap: 20 }}>
-        {show3D ? (
-          <>
+      {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll) */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        padding: '12px 36px', position: 'relative', zIndex: 5, gap: 32,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {show3D ? (
             <QQ3DGrid
               state={s}
               maxSize={gridMaxSize}
@@ -4426,11 +4447,13 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               entering={viewMode === 'transitioning'}
               flyoverSignal={flyoverSignal}
             />
-          </>
-        ) : (
-          <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
-        )}
-        <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
+          ) : (
+            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+          )}
+        </div>
+        <div style={{ flex: 1, maxWidth: 560, minWidth: 320 }}>
+          <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
+        </div>
       </div>
 
       {/* Claim toast */}
@@ -4623,28 +4646,48 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
 
-  // Current game standings
+  // Current game standings — bei >=5 Teams 2-spaltig, damit nichts überläuft
   const sortedTeams = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
   if (sortedTeams.length > 0) {
+    const twoCol = sortedTeams.length >= 5;
+    const rankSize = twoCol ? 'clamp(22px, 2.4vw, 32px)' : 'clamp(28px, 3.2vw, 42px)';
+    const avSize   = twoCol ? 'clamp(26px, 2.8vw, 38px)' : 'clamp(32px, 3.6vw, 48px)';
+    const nameSize = twoCol ? 'clamp(18px, 2vw, 26px)'  : 'clamp(22px, 2.6vw, 32px)';
+    const valSize  = twoCol ? 'clamp(18px, 2vw, 26px)'  : 'clamp(22px, 2.6vw, 32px)';
+    const unitSize = twoCol ? 'clamp(12px, 1.3vw, 16px)' : 'clamp(14px, 1.6vw, 20px)';
     panels.push({ key: 'standings', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           📊 {de ? 'Aktueller Stand' : 'Current Standings'}
         </div>
-        {sortedTeams.map((t, i) => (
-          <div key={t.id} style={{
-            display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0',
-            borderBottom: i < sortedTeams.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          }}>
-            <span style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', width: 48, textAlign: 'center' }}>
-              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-            </span>
-            <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(22px, 2.6vw, 32px)', color: t.color }}>{t.name}</span>
-            <span style={{ fontSize: 'clamp(22px, 2.6vw, 32px)', fontWeight: 900, color: '#F59E0B' }}>{t.totalCells}</span>
-            <span style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#64748b' }}>{de ? 'Felder' : 'cells'}</span>
-          </div>
-        ))}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
+          columnGap: 32, rowGap: 0,
+        }}>
+          {sortedTeams.map((t, i) => {
+            // Border-bottom nur wenn es innerhalb der Spalte noch einen Nachfolger gibt
+            const nextInCol = twoCol ? (i + 2 < sortedTeams.length) : (i < sortedTeams.length - 1);
+            return (
+              <div key={t.id} style={{
+                display: 'flex', alignItems: 'center', gap: twoCol ? 12 : 18, padding: twoCol ? '8px 0' : '12px 0',
+                borderBottom: nextInCol ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                minWidth: 0,
+              }}>
+                <span style={{ fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0 }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                </span>
+                <span style={{ fontSize: avSize, lineHeight: 1, flexShrink: 0 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                <span style={{
+                  flex: 1, fontWeight: 800, fontSize: nameSize, color: t.color,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+                }}>{t.name}</span>
+                <span style={{ fontSize: valSize, fontWeight: 900, color: '#F59E0B', flexShrink: 0 }}>{t.totalCells}</span>
+                <span style={{ fontSize: unitSize, color: '#64748b', flexShrink: 0 }}>{de ? 'Felder' : 'cells'}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     )});
   }
@@ -5492,38 +5535,49 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
     }
   }, [teams]);
 
+  // Bei vielen Teams (≥6) wird die Liste kompakter, sonst passen 8 Zeilen nicht
+  // nebeneinander neben das Grid auf den Beamer.
+  const dense = sorted.length >= 6;
+  const rowGap = dense ? 8 : 14;
+  const avatarSize = dense ? 28 : 34;
+  const avatarBox = dense ? 36 : 44;
+  const nameFs = dense ? 19 : 24;
+  const valFs = dense ? 18 : 22;
+  const unitFs = dense ? 12 : 15;
+  const barH = dense ? 10 : 14;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 800 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, width: '100%', maxWidth: 800 }}>
       {sorted.map((t, i) => {
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
         return (
         <div key={t.id} style={{
-          display: 'flex', alignItems: 'center', gap: 14,
+          display: 'flex', alignItems: 'center', gap: dense ? 10 : 14,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
           opacity: activeTeamId && !isActive ? 0.6 : 1,
           transition: 'opacity 0.3s ease',
         }}>
-          <div style={{ position: 'relative', width: 44, textAlign: 'center' }}>
-            <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-            {isLeader && <span style={{ position: 'absolute', top: -8, right: -4, fontSize: 16 }}>👑</span>}
+          <div style={{ position: 'relative', width: avatarBox, textAlign: 'center' }}>
+            <span style={{ fontSize: avatarSize, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+            {isLeader && <span style={{ position: 'absolute', top: -6, right: -2, fontSize: dense ? 13 : 16 }}>👑</span>}
           </div>
           <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: dense ? 3 : 5 }}>
               <span style={{
-                fontSize: 24, fontWeight: 900, color: t.color,
+                fontSize: nameFs, fontWeight: 900, color: t.color,
                 textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
               }}>{t.name}</span>
-              <span style={{ fontSize: 22, color: '#e2e8f0', fontWeight: 900 }}>
+              <span style={{ fontSize: valFs, color: '#e2e8f0', fontWeight: 900 }}>
                 {t.largestConnected}
-                <span style={{ opacity: 0.4, fontSize: 15, fontWeight: 700, marginLeft: 4 }}>
+                <span style={{ opacity: 0.4, fontSize: unitFs, fontWeight: 700, marginLeft: 4 }}>
                   {t.largestConnected === 1 ? 'Feld' : 'Felder'}
                 </span>
               </span>
             </div>
-            <div style={{ height: 14, borderRadius: 7, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ height: barH, borderRadius: barH / 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 7,
+                height: '100%', borderRadius: barH / 2,
                 background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
                 width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
                 transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
@@ -5534,7 +5588,7 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
             {floaters.filter(f => f.teamId === t.id).map(f => (
               <div key={f.id} style={{
                 position: 'absolute', right: 0, top: -6,
-                fontWeight: 900, fontSize: 20, color: t.color,
+                fontWeight: 900, fontSize: dense ? 17 : 20, color: t.color,
                 animation: 'scoreFloat 1.0s ease-out both',
                 pointerEvents: 'none',
                 textShadow: `0 0 10px ${t.color}88`,

@@ -90,7 +90,7 @@ const NUM_BTYPES = 8;
 
 function buildBuilding(
   tileEl: HTMLElement, team: TeamRGB, sz: number, btypeIdx: number,
-  opts: { frozen?: boolean; stuck?: boolean; joker?: boolean; stacked?: number; home?: boolean } = {},
+  opts: { frozen?: boolean; stuck?: boolean; joker?: boolean; stacked?: number; home?: boolean; wasSteal?: boolean } = {},
   animate = false,
 ) {
   // Clear old building
@@ -266,16 +266,54 @@ function buildBuilding(
     mainTop.style.border = '2px solid rgba(251,191,36,.7)';
   }
 
-  // Animate: building slams down from above with bounce + dust ring + shake
+  // Animate: building slams down from above with bounce + dust ring + particles + glow + grid shake
   if (animate) {
-    // Collect all direct children of the tile that are NOT the ground (the building + emoji)
+    // ── 0. STEAL EXPLOSION: shards fly out before new building drops ──
+    const stealDelay = opts.wasSteal ? 400 : 0;
+    if (opts.wasSteal) {
+      const shardCount = 10;
+      for (let i = 0; i < shardCount; i++) {
+        const shard = document.createElement('div');
+        shard.className = 'qq3d-particle';
+        const sSz = Math.round(sz * (.06 + Math.random() * .06));
+        const angle = (360 / shardCount) * i + (Math.random() - .5) * 20;
+        const rad = angle * Math.PI / 180;
+        const dist = sz * (.7 + Math.random() * .6);
+        const tx = Math.round(Math.cos(rad) * dist);
+        const ty = Math.round(Math.sin(rad) * dist);
+        const tz = Math.round(30 + Math.random() * 60);
+        // Use white/grey shards for "destruction" look
+        shard.style.cssText = `position:absolute;left:${Math.round(sz / 2 - sSz / 2)}px;top:${Math.round(sz / 2 - sSz / 2)}px;width:${sSz}px;height:${sSz}px;background:rgba(255,255,255,.8);border-radius:1px;transform:translateZ(${Math.round(sz * .3)}px) translate(0px,0px) rotate(0deg);opacity:1;pointer-events:none;transform-style:preserve-3d;box-shadow:0 0 8px rgba(255,200,150,.5)`;
+        tileEl.appendChild(shard);
+        const delay = Math.round(Math.random() * 60);
+        setTimeout(() => {
+          shard.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1), opacity .5s ease-out';
+          shard.style.transform = `translateZ(${tz}px) translate(${tx}px,${ty}px) rotate(${Math.round(Math.random() * 360)}deg)`;
+          shard.style.opacity = '0';
+          setTimeout(() => { shard.remove(); }, 600);
+        }, delay);
+      }
+      // Flash the ground red briefly for "destruction"
+      const ground = tileEl.querySelector('.ground') as HTMLElement | null;
+      if (ground) {
+        const origBg = ground.style.background;
+        ground.style.transition = 'background .1s ease-out';
+        ground.style.background = 'rgba(239,68,68,.7)';
+        setTimeout(() => {
+          ground.style.transition = 'background .3s ease-out';
+          ground.style.background = origBg;
+        }, 200);
+      }
+    }
+
+    // Collect all direct children of the tile that are NOT the ground / dust / particles
     const parts = Array.from(tileEl.children).filter(ch => {
       const el = ch as HTMLElement;
-      return !el.classList.contains('ground') && !el.classList.contains('qq3d-dust');
+      return !el.classList.contains('ground') && !el.classList.contains('qq3d-dust') && !el.classList.contains('qq3d-particle') && !el.classList.contains('qq3d-glow');
     }) as HTMLElement[];
 
-    // Drop height: fall from way up
-    const dropFrom = Math.max(120, Math.round(sz * 1.8));
+    // ── 1. DROP: fall from high up with dramatic bounce (delayed if steal) ──
+    const dropFrom = Math.max(200, Math.round(sz * 3));
 
     parts.forEach((p, i) => {
       const origTransform = p.style.transform || '';
@@ -283,53 +321,98 @@ function buildBuilding(
       p.style.opacity = '0';
       p.style.transition = 'none';
       // Staggered: emoji (last child) drops slightly after the building body
-      const delay = i === parts.length - 1 ? 280 : 0;
+      const partDelay = stealDelay + (i === parts.length - 1 ? 350 : 0);
       requestAnimationFrame(() => {
         setTimeout(() => {
-          p.style.transition = `transform .55s cubic-bezier(.34,1.8,.5,1), opacity .2s ease-out`;
+          p.style.transition = `transform .8s cubic-bezier(.22,1.6,.36,1), opacity .25s ease-out`;
           p.style.transform = origTransform;
           p.style.opacity = '1';
-        }, delay);
+        }, partDelay);
       });
     });
 
-    // Ground flash
-    const ground = tileEl.querySelector('.ground') as HTMLElement | null;
-    if (ground) {
-      const origBg = ground.style.background;
-      const origShadow = ground.style.boxShadow;
-      ground.style.transition = 'background .4s ease-out, box-shadow .4s ease-out';
+    // Impact timing — all effects trigger relative to when building lands
+    const impactT = stealDelay + 650;
+
+    // ── 2. GROUND FLASH: intense team-color flash on impact ──
+    const ground2 = tileEl.querySelector('.ground') as HTMLElement | null;
+    if (ground2) {
+      const origBg = ground2.style.background;
+      const origShadow = ground2.style.boxShadow;
       setTimeout(() => {
-        ground.style.background = rgba(team, .65);
-        ground.style.boxShadow = `0 0 30px ${rgba(team, .9)}, 0 0 60px ${rgba(team, .5)}`;
+        ground2.style.transition = 'background .15s ease-out, box-shadow .15s ease-out';
+        ground2.style.background = rgba(team, .85);
+        ground2.style.boxShadow = `0 0 40px ${rgba(team, 1)}, 0 0 80px ${rgba(team, .7)}, 0 0 120px ${rgba(team, .3)}`;
         setTimeout(() => {
-          ground.style.background = origBg;
-          ground.style.boxShadow = origShadow;
-        }, 420);
-      }, 520);
+          ground2.style.transition = 'background .6s ease-out, box-shadow .6s ease-out';
+          ground2.style.background = origBg;
+          ground2.style.boxShadow = origShadow;
+        }, 300);
+      }, impactT);
     }
 
-    // Dust ring — expanding flat disc at impact
+    // ── 3. GLOW RING: expanding light ring at impact point ──
+    const glow = document.createElement('div');
+    glow.className = 'qq3d-glow';
+    const glowSz = Math.round(sz * 1.4);
+    glow.style.cssText = `position:absolute;left:${Math.round((sz - glowSz) / 2)}px;top:${Math.round((sz - glowSz) / 2)}px;width:${glowSz}px;height:${glowSz}px;border-radius:50%;background:radial-gradient(circle,${rgba(team, .6)} 0%,${rgba(team, .3)} 30%,${rgba(team, 0)} 70%);transform:translateZ(3px) scale(.2);opacity:0;pointer-events:none;transform-style:preserve-3d`;
+    tileEl.appendChild(glow);
+    setTimeout(() => {
+      glow.style.transition = 'transform .6s ease-out, opacity .6s ease-out';
+      glow.style.transform = 'translateZ(3px) scale(2.5)';
+      glow.style.opacity = '1';
+      setTimeout(() => { glow.style.opacity = '0'; }, 200);
+      setTimeout(() => { glow.remove(); }, 800);
+    }, impactT - 30);
+
+    // ── 4. DUST RING: larger expanding disc ──
     const dust = document.createElement('div');
     dust.className = 'qq3d-dust';
-    const dustSz = Math.round(sz * .9);
-    dust.style.cssText = `position:absolute;left:${Math.round((sz - dustSz) / 2)}px;top:${Math.round((sz - dustSz) / 2)}px;width:${dustSz}px;height:${dustSz}px;border-radius:50%;border:3px solid ${rgba(team, .9)};background:radial-gradient(circle,${rgba(team, .4)} 0%,${rgba(team, 0)} 70%);transform:translateZ(2px) scale(.1);opacity:0;pointer-events:none;transform-style:preserve-3d`;
+    const dustSz = Math.round(sz * 1.1);
+    dust.style.cssText = `position:absolute;left:${Math.round((sz - dustSz) / 2)}px;top:${Math.round((sz - dustSz) / 2)}px;width:${dustSz}px;height:${dustSz}px;border-radius:50%;border:3px solid ${rgba(team, .9)};background:radial-gradient(circle,${rgba(team, .5)} 0%,${rgba(team, .15)} 40%,${rgba(team, 0)} 70%);transform:translateZ(2px) scale(.1);opacity:0;pointer-events:none;transform-style:preserve-3d`;
     tileEl.appendChild(dust);
     setTimeout(() => {
-      dust.style.transition = 'transform .55s ease-out, opacity .55s ease-out';
-      dust.style.transform = 'translateZ(2px) scale(1.6)';
+      dust.style.transition = 'transform .7s ease-out, opacity .7s ease-out';
+      dust.style.transform = 'translateZ(2px) scale(2.2)';
       dust.style.opacity = '1';
-      requestAnimationFrame(() => {
-        setTimeout(() => { dust.style.opacity = '0'; }, 250);
-        setTimeout(() => { dust.remove(); }, 700);
-      });
-    }, 500);
+      setTimeout(() => { dust.style.opacity = '0'; }, 300);
+      setTimeout(() => { dust.remove(); }, 900);
+    }, impactT - 10);
 
-    // Tile shake on impact
+    // ── 5. PARTICLES: debris flying outward on impact ──
+    const particleCount = 8;
+    for (let i = 0; i < particleCount; i++) {
+      const p = document.createElement('div');
+      p.className = 'qq3d-particle';
+      const pSz = Math.round(sz * (.04 + Math.random() * .04));
+      const angle = (360 / particleCount) * i + (Math.random() - .5) * 25;
+      const rad = angle * Math.PI / 180;
+      const dist = sz * (.6 + Math.random() * .5);
+      const tx = Math.round(Math.cos(rad) * dist);
+      const ty = Math.round(Math.sin(rad) * dist);
+      const tz = Math.round(20 + Math.random() * 40);
+      p.style.cssText = `position:absolute;left:${Math.round(sz / 2 - pSz / 2)}px;top:${Math.round(sz / 2 - pSz / 2)}px;width:${pSz}px;height:${pSz}px;background:${rgba(team, .9)};border-radius:1px;transform:translateZ(${Math.round(sz * .2)}px) translate(0px,0px);opacity:1;pointer-events:none;transform-style:preserve-3d;box-shadow:0 0 6px ${rgba(team, .6)}`;
+      tileEl.appendChild(p);
+      const pDelay = impactT + Math.round(Math.random() * 80);
+      setTimeout(() => {
+        p.style.transition = 'transform .6s cubic-bezier(.2,.8,.3,1), opacity .6s ease-out';
+        p.style.transform = `translateZ(${tz}px) translate(${tx}px,${ty}px)`;
+        p.style.opacity = '0';
+        setTimeout(() => { p.remove(); }, 700);
+      }, pDelay);
+    }
+
+    // ── 6. GRID SHAKE: whole grid shakes on impact (not just tile) ──
     setTimeout(() => {
-      tileEl.style.animation = 'qq3d-impactShake .35s ease-out';
-      setTimeout(() => { tileEl.style.animation = ''; }, 400);
-    }, 520);
+      tileEl.style.animation = 'qq3d-impactShake .4s ease-out';
+      setTimeout(() => { tileEl.style.animation = ''; }, 450);
+      // Also shake the parent grid for a heavier feel
+      const gridEl = tileEl.parentElement;
+      if (gridEl) {
+        gridEl.style.animation = 'qq3d-gridShake .5s ease-out';
+        setTimeout(() => { gridEl.style.animation = ''; }, 550);
+      }
+    }, impactT);
   }
 }
 
@@ -344,7 +427,8 @@ const QQ3D_CSS = `
 @keyframes qq3d-frostPulse{0%,100%{box-shadow:0 0 6px rgba(147,210,255,.4)}50%{box-shadow:0 0 16px rgba(147,210,255,.8)}}
 @keyframes qq3d-jokerGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.5)}50%{box-shadow:0 0 22px rgba(251,191,36,.9)}}
 @keyframes qq3d-gridEnter{0%{transform:scale(var(--zoom,1)) rotateX(0deg) rotateZ(0deg)}100%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg))}}
-@keyframes qq3d-impactShake{0%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,1px)}80%{transform:translate(1px,0)}100%{transform:translate(0,0)}}
+@keyframes qq3d-impactShake{0%{transform:translate(0,0)}15%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px)}80%{transform:translate(-1px,0)}100%{transform:translate(0,0)}}
+@keyframes qq3d-gridShake{0%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(0,0,0)}15%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(-4px,2px,0)}30%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(4px,-3px,0)}50%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(-3px,1px,0)}70%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(2px,-1px,0)}100%{transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg)) translate3d(0,0,0)}}
 `;
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -502,6 +586,7 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
               frozen: cell.frozen,
               stuck: cell.stuck,
               joker: cell.jokerFormed,
+              wasSteal: animateCell?.wasSteal,
             }, shouldAnimate);
             if (shouldAnimate) lastAnimatedKey.current = animKey;
           } else {

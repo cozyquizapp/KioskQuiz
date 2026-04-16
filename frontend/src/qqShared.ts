@@ -218,11 +218,16 @@ export const QQ_BEAMER_CSS = `
      und --nudge-y (vertikal offset des Pins auf dem Strahl, z.B. "-44px"),
      damit die Ausgangs-/Endposition korrekt bleibt. */
   @keyframes winnerNudge {
-    0%   { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
-    25%  { transform: translate(calc(-50% + var(--nudge-x, 0px) * 0.35), calc(-50% + var(--nudge-y, 0px) - 10px)) scale(1.12); }
-    50%  { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
-    75%  { transform: translate(calc(-50% + var(--nudge-x, 0px) * 0.55), calc(-50% + var(--nudge-y, 0px) - 14px)) scale(1.15); }
-    100% { transform: translate(-50%, calc(-50% + var(--nudge-y, 0px))) scale(1); }
+    0%   { transform: translate(calc(-50% + var(--base-x, 0px)), calc(-50% + var(--nudge-y, 0px))) scale(1); }
+    25%  { transform: translate(calc(-50% + var(--base-x, 0px) + var(--nudge-x, 0px) * 0.35), calc(-50% + var(--nudge-y, 0px) - 10px)) scale(1.12); }
+    50%  { transform: translate(calc(-50% + var(--base-x, 0px)), calc(-50% + var(--nudge-y, 0px))) scale(1); }
+    75%  { transform: translate(calc(-50% + var(--base-x, 0px) + var(--nudge-x, 0px) * 0.55), calc(-50% + var(--nudge-y, 0px) - 14px)) scale(1.15); }
+    100% { transform: translate(calc(-50% + var(--base-x, 0px)), calc(-50% + var(--nudge-y, 0px))) scale(1); }
+  }
+  @keyframes panelSlideIn {
+    0%   { opacity: 0; transform: translateY(18px) scale(0.98); filter: blur(4px); }
+    60%  { opacity: 1; transform: translateY(-2px) scale(1.003); filter: blur(0); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
   @keyframes top5RowSlideIn {
     0%   { opacity: 0; transform: translateX(60px) scale(0.92); filter: blur(6px); }

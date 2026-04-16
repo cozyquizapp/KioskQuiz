@@ -256,10 +256,30 @@ export default function QQBeamerPage() {
 
 function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates; roomCode: string }) {
   const cat = s.currentQuestion?.category;
-  const bg = s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
+  // Pause-/Wartescreen: statt Braun ein kühler Event-Look mit farbigen Blobs.
+  // Pre-Game (warm, orange/gold) und Paused (cool, cyan/violett) kriegen
+  // eigene Identitäten.
+  const isPreGame = s.phase === 'LOBBY' && !s.setupDone;
+  const isPaused = s.phase === 'PAUSED';
+  const pauseBg = isPreGame
+    ? [
+        'radial-gradient(ellipse at 22% 30%, rgba(251,191,36,0.28) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 78% 70%, rgba(249,115,22,0.22) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 50% 100%, rgba(124,58,237,0.18) 0%, transparent 60%)',
+        '#0b1020',
+      ].join(',')
+    : isPaused
+    ? [
+        'radial-gradient(ellipse at 25% 30%, rgba(6,182,212,0.24) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.26) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 55% 10%, rgba(236,72,153,0.14) 0%, transparent 55%)',
+        '#0b1020',
+      ].join(',')
+    : null;
+  const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
   const accent = s.theme?.accentColor ?? '#F59E0B';
-  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const cardBg = (isPreGame || isPaused) ? '#141b2e' : (s.theme?.cardBg ?? '#1B1510');
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
   // ── 3D grid toggle (beamer-local) ──
@@ -3836,22 +3856,39 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const sorted = [...parsed].sort((a, b) =>
               Math.abs(b.num - target) - Math.abs(a.num - target)
             );
-            // Avatare alternieren über/unter dem Zahlenstrahl, um Überlappung zu
-            // vermeiden — links nach rechts durchnummeriert (0=oben, 1=unten, 2=weit oben, 3=weit unten).
-            // Zusätzlich: wenn genug Abstand zum vorherigen Pin, Reihe resetten.
+            // Avatare strikt alternieren oben/unten am Zahlenstrahl (0=oben nah,
+            // 1=unten nah). Bei echter Nähe (<9% zum direkten Nachbarn auf
+            // derselben Seite): weiter nach außen (2=oben weit, 3=unten weit).
+            // Zusätzlich bei sehr nahen Pins: kleiner X-Offset (-8/+8 px) damit
+            // sich die Avatare nicht berühren.
             const pinRows = new Map<string, number>();
+            const pinXNudge = new Map<string, number>();
             const sortedByPos = [...parsed].sort((a, b) => a.num - b.num);
-            let lastPct = -Infinity;
-            let altIdx = 0;
-            sortedByPos.forEach(p => {
+            let lastTop = -Infinity;
+            let lastBot = -Infinity;
+            sortedByPos.forEach((p, i) => {
               const pct = pctOf(p.num);
-              if (pct - lastPct < 9) {
-                altIdx = (altIdx + 1) % 4;
+              // Strikte Alternation top/bot nach Positions-Rang
+              const baseSide = i % 2; // 0 = top, 1 = bot
+              const nearestSame = baseSide === 0 ? lastTop : lastBot;
+              let row: number;
+              if (pct - nearestSame < 9 && nearestSame > -Infinity) {
+                row = baseSide === 0 ? 2 : 3; // weiter nach außen
               } else {
-                altIdx = altIdx % 2; // weiter alternieren, aber ohne weit-oben/unten
+                row = baseSide;
               }
-              pinRows.set(p.teamId, altIdx);
-              lastPct = pct;
+              pinRows.set(p.teamId, row);
+              // X-Nudge bei sehr knapper Nähe zum unmittelbaren Vorgänger
+              if (i > 0) {
+                const prev = sortedByPos[i - 1];
+                const prevPct = pctOf(prev.num);
+                if (pct - prevPct < 4) {
+                  pinXNudge.set(p.teamId, 10);
+                  pinXNudge.set(prev.teamId, (pinXNudge.get(prev.teamId) ?? 0) - 10);
+                }
+              }
+              if (baseSide === 0) lastTop = pct;
+              else lastBot = pct;
             });
             const targetPct = pctOf(target);
             const fmt = (n: number) => {
@@ -3895,10 +3932,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
                   }}>{fmt(axMax)}</div>
 
-                  {/* Target marker — runder Avatar-Button mit Ziel-Emoji */}
+                  {/* Target marker — runder Avatar-Button mit Ziel-Emoji.
+                      Position: hoch über der Rail-Mittellinie (weit über den
+                      Pins), damit nichts mit Team-Avataren kollidiert. Eine
+                      gestrichelte Verbindungslinie zeigt nach unten zur Rail. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    transform: 'translate(-50%, calc(-50% - 140px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
@@ -3927,12 +3967,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     }}>
                       ✓ {fmt(target)}
                     </div>
+                    {/* Gestrichelte Linie vom Chip nach unten zur Rail */}
+                    <div style={{
+                      width: 2, height: 72,
+                      backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.85) 50%, transparent 50%)',
+                      backgroundSize: '2px 8px',
+                      backgroundRepeat: 'repeat-y',
+                      marginTop: 2,
+                    }} />
                   </div>
 
                   {/* Team pins */}
                   {parsed.map((p) => {
                     const pct = pctOf(p.num);
                     const r = pinRows.get(p.teamId) ?? 0;
+                    const xNudge = pinXNudge.get(p.teamId) ?? 0;
                     const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
                     const orderIdx = sorted.findIndex(x => x.teamId === p.teamId); // 0 = worst
                     const delay = 0.7 + orderIdx * 0.18;
@@ -3951,7 +4000,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     return (
                       <div key={p.teamId} style={{
                         position: 'absolute', left: `${pct}%`, top: '50%',
-                        transform: `translate(-50%, calc(-50% + ${yOffset}px))`,
+                        transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${yOffset}px))`,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                         animation: isWinner
                           ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
@@ -3959,6 +4008,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         ...(isWinner ? {
                           ['--nudge-x' as any]: `${nudgeXPx}px`,
                           ['--nudge-y' as any]: `${yOffset}px`,
+                          ['--base-x' as any]: `${xNudge}px`,
                         } : {}),
                         zIndex: isWinner ? 20 : 10,
                       }}>
@@ -4624,7 +4674,11 @@ type FunStats = {
 };
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
-  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const cardBg = '#141b2e';
+  // Mode-spezifische Akzentfarbe für Titel/Panel-Border/Chips
+  const modeAccent = mode === 'preGame' ? '#FBBF24' : '#38BDF8';
+  const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.35)' : 'rgba(56,189,248,0.4)';
+  const modeGlow = mode === 'preGame' ? 'rgba(251,191,36,0.25)' : 'rgba(56,189,248,0.25)';
   const [de, setDe] = useState(true);
   useEffect(() => {
     const id = setInterval(() => setDe(p => !p), 8000);
@@ -4821,39 +4875,48 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     }}>
       <Fireflies />
 
-      {/* Title */}
+      {/* Title mit Glow-Pulse in Mode-Farbe */}
       <div style={{
-        fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900,
-        color: mode === 'preGame' ? '#F59E0B' : '#94a3b8',
-        display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 5,
+        fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 900,
+        color: modeAccent,
+        display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 5,
         animation: 'lobbyPulse 3s ease-in-out infinite',
         whiteSpace: 'nowrap',
+        textShadow: `0 0 24px ${modeGlow}, 0 0 48px ${modeGlow}`,
+        letterSpacing: '0.02em',
       }}>
         {mode === 'preGame'
           ? <>✨ {de ? 'Gleich geht\'s los' : 'Starting soon'}</>
           : <>⏸ {de ? 'Kurze Pause' : 'Short Break'}</>}
       </div>
 
-      {/* Records panel */}
+      {/* Records panel — mit Slide-In pro Panel-Wechsel */}
       {activePanel && (
         <div style={{
           width: '100%', maxWidth: 900, position: 'relative', zIndex: 5,
-          animation: 'contentReveal 0.5s ease both',
         }}>
           <div key={activePanel.key} style={{
             background: cardBg, borderRadius: 24, padding: 'clamp(28px, 3.5vw, 48px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+            border: `1px solid ${modeAccentDim}`,
+            boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 -2px 0 ${modeAccent} inset`,
+            animation: 'panelSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both',
+            position: 'relative', overflow: 'hidden',
           }}>
+            {/* Akzent-Streifen oben */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: `linear-gradient(90deg, transparent, ${modeAccent}, transparent)`,
+            }} />
             {activePanel.node}
           </div>
           {panels.length > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 18 }}>
               {panels.map((_, i) => (
                 <div key={i} style={{
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: i === panelIdx % panels.length ? '#e2e8f0' : 'rgba(255,255,255,0.15)',
-                  transition: 'background 0.3s',
+                  width: i === panelIdx % panels.length ? 22 : 10, height: 10,
+                  borderRadius: 999,
+                  background: i === panelIdx % panels.length ? modeAccent : 'rgba(255,255,255,0.15)',
+                  transition: 'all 0.3s',
                 }} />
               ))}
             </div>
@@ -4863,8 +4926,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
       {/* Hint */}
       <div style={{
-        fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#475569', fontWeight: 700,
+        fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#64748b', fontWeight: 700,
         position: 'relative', zIndex: 5,
+        letterSpacing: '0.03em',
       }}>
         {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
       </div>

@@ -261,6 +261,7 @@ export default function QQLibraryPage() {
           <button onClick={() => navigate('/menu')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>← Menü</button>
           <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📚 QQ Fragebibliothek</h1>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <button onClick={() => navigate('/city-lab')} title="Brainstorming zur Grid-Darstellung" style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(245,158,11,0.15)', color: '#FDE68A' }}>🏙️ City Lab</button>
             <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#3B82F6', color: '#fff' }}>📥 Importieren</button>
             <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#22C55E', color: '#fff' }}>+ Neuer Fragensatz</button>
           </div>

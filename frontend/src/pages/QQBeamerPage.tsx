@@ -3771,6 +3771,174 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             }} />
           )}
 
+          {/* Schätzchen: number-line visualization (above leaderboard) */}
+          {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && q.targetValue != null && (() => {
+            const target = q.targetValue as number;
+            const parsed = s.answers
+              .map(a => {
+                const num = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+                const team = s.teams.find(t => t.id === a.teamId);
+                return { teamId: a.teamId, num, team, text: a.text };
+              })
+              .filter(p => Number.isFinite(p.num) && p.team);
+            if (parsed.length === 0) return null;
+            const values = [target, ...parsed.map(p => p.num)];
+            const rawMin = Math.min(...values);
+            const rawMax = Math.max(...values);
+            const rawSpan = rawMax - rawMin;
+            // Padding 10% auf beiden Seiten, mindestens 10% relativ zum Target.
+            const pad = Math.max(rawSpan * 0.1, Math.abs(target) * 0.05, 1);
+            const axMin = rawMin - pad;
+            const axMax = rawMax + pad;
+            const axSpan = Math.max(axMax - axMin, 1);
+            const pctOf = (v: number) => ((v - axMin) / axSpan) * 100;
+            // Worst → best für Animation-Reihenfolge (Trommelwirbel bis Gewinner)
+            const sorted = [...parsed].sort((a, b) =>
+              Math.abs(b.num - target) - Math.abs(a.num - target)
+            );
+            // Nicht-kollidierende vertikale Spur: wenn zwei Pins <6% auseinander,
+            // zweiter bekommt höhere Spur
+            const pinRows = new Map<string, number>();
+            const sortedByPos = [...parsed].sort((a, b) => a.num - b.num);
+            let lastPct = -Infinity;
+            let row = 0;
+            sortedByPos.forEach(p => {
+              const pct = pctOf(p.num);
+              if (pct - lastPct < 7) row = (row + 1) % 3; else row = 0;
+              pinRows.set(p.teamId, row);
+              lastPct = pct;
+            });
+            const targetPct = pctOf(target);
+            const fmt = (n: number) => {
+              const abs = Math.abs(n);
+              if (abs >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+              if (abs >= 10000) return (n / 1000).toFixed(0) + 'k';
+              if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+              return n % 1 === 0 ? String(n) : n.toFixed(1);
+            };
+            return (
+              <div style={{
+                width: '100%', maxWidth: 1400,
+                padding: 'clamp(20px, 2.5vh, 32px) clamp(24px, 3vw, 48px) clamp(70px, 7vh, 100px)',
+                marginBottom: 'clamp(12px, 1.5vh, 24px)',
+                position: 'relative',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1.5px solid rgba(255,255,255,0.08)',
+                borderRadius: 20,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                animation: 'contentReveal 0.5s ease 0.3s both',
+              }}>
+                {/* Axis line */}
+                <div style={{
+                  position: 'relative', height: 'clamp(100px, 12vh, 150px)',
+                  marginTop: 'clamp(28px, 3vh, 44px)',
+                }}>
+                  {/* Rail */}
+                  <div style={{
+                    position: 'absolute', left: 0, right: 0, top: '50%',
+                    height: 4, borderRadius: 2,
+                    background: 'linear-gradient(90deg, rgba(148,163,184,0.15), rgba(148,163,184,0.35), rgba(148,163,184,0.15))',
+                    transform: 'translateY(-50%)',
+                  }} />
+                  {/* Axis endpoints labels */}
+                  <div style={{
+                    position: 'absolute', left: 0, top: 'calc(50% + 14px)',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
+                  }}>{fmt(axMin)}</div>
+                  <div style={{
+                    position: 'absolute', right: 0, top: 'calc(50% + 14px)',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b', fontWeight: 700,
+                  }}>{fmt(axMax)}</div>
+
+                  {/* Target marker — prominent */}
+                  <div style={{
+                    position: 'absolute', left: `${targetPct}%`, top: 0, bottom: 0,
+                    transform: 'translateX(-50%)',
+                    animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+                  }}>
+                    <div style={{
+                      position: 'absolute', left: '50%', top: '50%',
+                      transform: 'translate(-50%,-50%)',
+                      width: 5, height: 'clamp(80px, 10vh, 120px)',
+                      background: 'linear-gradient(180deg, #22C55E, #16A34A)',
+                      borderRadius: 3,
+                      boxShadow: '0 0 20px rgba(34,197,94,0.7)',
+                    }} />
+                    <div style={{
+                      position: 'absolute', left: '50%', top: '-4px',
+                      transform: 'translate(-50%,-100%)',
+                      padding: '6px 14px', borderRadius: 999,
+                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                      color: '#fff', fontWeight: 900,
+                      fontSize: 'clamp(14px, 1.7vw, 22px)',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 16px rgba(34,197,94,0.5)',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                    }}>
+                      ✓ {fmt(target)}
+                    </div>
+                  </div>
+
+                  {/* Team pins */}
+                  {parsed.map((p) => {
+                    const pct = pctOf(p.num);
+                    const r = pinRows.get(p.teamId) ?? 0;
+                    const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+                    const orderIdx = sorted.findIndex(x => x.teamId === p.teamId); // 0 = worst
+                    const delay = 0.7 + orderIdx * 0.18;
+                    const tColor = p.team!.color;
+                    // Vertical offset: row 0 = above rail, 1 = below, 2 = far above
+                    const yOffset = r === 0 ? -44 : r === 1 ? 44 : -88;
+                    return (
+                      <div key={p.teamId} style={{
+                        position: 'absolute', left: `${pct}%`, top: '50%',
+                        transform: `translate(-50%, calc(-50% + ${yOffset}px))`,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        animation: `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
+                        zIndex: isWinner ? 20 : 10,
+                      }}>
+                        {/* Connector line to rail */}
+                        <div style={{
+                          position: 'absolute', left: '50%', top: '50%',
+                          width: 2, height: Math.abs(yOffset),
+                          background: `${tColor}88`,
+                          transform: `translate(-50%, ${yOffset < 0 ? '0' : '-100%'})`,
+                          zIndex: -1,
+                        }} />
+                        {/* Avatar pin */}
+                        <div style={{
+                          width: isWinner ? 'clamp(44px, 4.8vw, 64px)' : 'clamp(36px, 4vw, 52px)',
+                          height: isWinner ? 'clamp(44px, 4.8vw, 64px)' : 'clamp(36px, 4vw, 52px)',
+                          borderRadius: '50%', background: tColor,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: isWinner ? 'clamp(22px, 2.6vw, 34px)' : 'clamp(18px, 2.2vw, 28px)',
+                          border: isWinner ? '3px solid #FBBF24' : '2px solid rgba(0,0,0,0.3)',
+                          boxShadow: isWinner
+                            ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
+                            : `0 4px 12px rgba(0,0,0,0.5)`,
+                        }}>
+                          {qqGetAvatar(p.team!.avatarId).emoji}
+                        </div>
+                        {/* Value chip */}
+                        <div style={{
+                          padding: '2px 8px', borderRadius: 8,
+                          background: 'rgba(0,0,0,0.7)',
+                          border: `1.5px solid ${tColor}`,
+                          color: '#fff', fontWeight: 900,
+                          fontSize: isWinner ? 'clamp(13px, 1.4vw, 17px)' : 'clamp(11px, 1.15vw, 14px)',
+                          whiteSpace: 'nowrap',
+                          marginTop: 4,
+                        }}>
+                          {fmt(p.num)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Schätzchen: combined leaderboard with all estimates */}
           {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (() => {
             const ranked = s.answers

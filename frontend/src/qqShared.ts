@@ -229,6 +229,12 @@ export const QQ_BEAMER_CSS = `
     60%  { opacity: 1; transform: translateY(-2px) scale(1.003); filter: blur(0); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
+  @keyframes panelIconPop {
+    0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
+    55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }
+    80%  { transform: scale(0.95) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
   @keyframes top5RowSlideIn {
     0%   { opacity: 0; transform: translateX(60px) scale(0.92); filter: blur(6px); }
     60%  { opacity: 1; transform: translateX(-4px) scale(1.01); filter: blur(0); }

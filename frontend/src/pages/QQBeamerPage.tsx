@@ -49,11 +49,11 @@ interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: stri
 // Positions avoid the top-right timer (at top:16px right:48px) and top-left category pill.
 // Decorations stay on the sides (mid-height) and near the bottom, where nothing else sits.
 const CAT_CUTOUTS: Record<string, CutoutSpec[]> = {
-  SCHAETZCHEN:   [{ emoji:'🎯', top:'45%', left:'3%',  size:70, rot:-12 },{ emoji:'✨', bottom:'14%', left:'7%',  size:50, rot:8  },{ emoji:'🔮', top:'50%', right:'4%',  size:54, rot:16, alt:true }],
-  MUCHO:         [{ emoji:'🅰️', top:'48%', left:'4%',  size:66, rot:-8  },{ emoji:'💡', bottom:'18%', left:'6%',  size:54, rot:12 },{ emoji:'🤔', top:'48%', right:'5%',  size:58, rot:-14, alt:true }],
-  BUNTE_TUETE:   [{ emoji:'🎁', top:'46%', left:'3%',  size:72, rot:-10 },{ emoji:'🎲', bottom:'16%', left:'8%',  size:56, rot:14 },{ emoji:'⭐', top:'52%', right:'4%',  size:56, rot:20 }],
-  ZEHN_VON_ZEHN: [{ emoji:'🎰', top:'48%', left:'4%',  size:62, rot:-6  },{ emoji:'⚡', bottom:'20%', left:'7%',  size:50, rot:10 },{ emoji:'💪', top:'48%', right:'5%',  size:58, rot:-12, alt:true }],
-  CHEESE:        [{ emoji:'📸', top:'48%', left:'3%',  size:68, rot:-11 },{ emoji:'🔍', bottom:'15%', left:'7%',  size:52, rot:8  },{ emoji:'👁️', top:'48%', right:'5%',  size:56, rot:-9, alt:true }],
+  SCHAETZCHEN:   [{ emoji:'🎯', top:'10%', left:'1.5%',  size:64, rot:-12 },{ emoji:'✨', bottom:'6%', left:'2%',  size:48, rot:8  },{ emoji:'🔮', bottom:'6%', right:'1.5%',  size:52, rot:16, alt:true }],
+  MUCHO:         [{ emoji:'🅰️', top:'12%', left:'1.5%',  size:60, rot:-8  },{ emoji:'💡', bottom:'6%', left:'2%',  size:50, rot:12 },{ emoji:'🤔', bottom:'6%', right:'1.5%',  size:54, rot:-14, alt:true }],
+  BUNTE_TUETE:   [{ emoji:'🎁', top:'10%', left:'1.5%',  size:66, rot:-10 },{ emoji:'🎲', bottom:'6%', left:'2%',  size:54, rot:14 },{ emoji:'⭐', bottom:'6%', right:'1.5%',  size:54, rot:20 }],
+  ZEHN_VON_ZEHN: [{ emoji:'🎰', top:'10%', left:'1.5%',  size:58, rot:-6  },{ emoji:'⚡', bottom:'6%', left:'2%',  size:48, rot:10 },{ emoji:'💪', bottom:'6%', right:'1.5%',  size:54, rot:-12, alt:true }],
+  CHEESE:        [{ emoji:'📸', top:'10%', left:'1.5%',  size:64, rot:-11 },{ emoji:'🔍', bottom:'6%', left:'2%',  size:50, rot:8  },{ emoji:'👁️', bottom:'6%', right:'1.5%',  size:54, rot:-9, alt:true }],
 };
 
 // ── Static firefly positions ──────────────────────────────────────────────────
@@ -2749,38 +2749,67 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
   const correctList = lang === 'en' && correctListEN.length ? correctListEN : correctListDE;
   const n = correctList.length;
 
+  // Match-Logik:
+  // 1. Normalisieren: lowercase, Sonderzeichen raus, Whitespace-trim
+  // 2. Direkter String-Match ODER Multiword-Korrektantwort als Bag-of-Tokens
+  //    Substring-Match nur noch bei sehr kurzen Antworten (<=2 Tokens) verhindert,
+  //    dass "brot" auf "Mischbrot/Toastbrot/Vollkornbrot" matcht.
+  const norm = (x: string) =>
+    x.toLowerCase()
+      .replace(/[^a-z0-9äöüß\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const matches = (p: string, c: string) => {
+    const np = norm(p);
+    const nc = norm(c);
+    if (!np || !nc) return false;
+    if (np === nc) return true;
+    // Für korrekte Antworten aus mehreren Wörtern: Spielerantwort muss alle
+    // Tokens enthalten (robust gegen Umstellung, aber nicht gegen Substrings).
+    const cTokens = nc.split(' ').filter(t => t.length >= 2);
+    if (cTokens.length >= 2) {
+      const pTokens = np.split(' ');
+      return cTokens.every(ct => pTokens.includes(ct));
+    }
+    // Kurze Antworten: Wort-Boundary-Match (nicht "brot" in "Mischbrot")
+    const re = new RegExp(`\\b${nc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    return re.test(np);
+  };
+
   // perAnswer in Original-Reihenfolge (Platz 1 = Index 0).
   const perAnswer = useMemo(() => {
-    const matches = (p: string, c: string) =>
-      p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
     const teamAnswers = s.answers.map(a => ({
       teamId: a.teamId,
       parts: a.text.split('|').map(p => p.trim()).filter(Boolean),
     }));
     return correctList.map((correct, ci) => {
-      const deLower = correctListDE[ci]?.toLowerCase() ?? '';
-      const enLower = correctListEN[ci]?.toLowerCase() ?? '';
+      const de = correctListDE[ci] ?? '';
+      const en = correctListEN[ci] ?? '';
       const hitters = teamAnswers
-        .filter(ta => ta.parts.some(p => (deLower && matches(p, deLower)) || (enLower && matches(p, enLower))))
+        .filter(ta => ta.parts.some(p => (de && matches(p, de)) || (en && matches(p, en))))
         .map(ta => s.teams.find(t => t.id === ta.teamId))
         .filter((t): t is NonNullable<typeof t> => !!t);
       return { correct, hitters };
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.answers, s.teams, correctList, correctListDE, correctListEN]);
 
-  // Treffer pro Team — für Winner-Block.
+  // Treffer pro Team — für Winner-Block. Jeder korrekten Antwort darf pro Team
+  // nur EINMAL getroffen werden (sonst könnte derselbe Part auf mehrere matchen).
   const teamScore = useMemo(() => {
-    const acceptedLower = new Set<string>([
-      ...correctListDE.map(x => x.toLowerCase()),
-      ...correctListEN.map(x => x.toLowerCase()),
-    ]);
-    const matches = (p: string, c: string) =>
-      p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
+    const accepted = correctListDE.map((de, i) => ({ de, en: correctListEN[i] ?? '' }));
     return s.answers.map(a => {
       const parts = a.text.split('|').map(p => p.trim()).filter(Boolean);
-      const hits = parts.filter(p => [...acceptedLower].some(c => c && matches(p, c))).length;
-      return { teamId: a.teamId, hits };
+      const hitIdx = new Set<number>();
+      parts.forEach(p => {
+        accepted.forEach((c, i) => {
+          if (hitIdx.has(i)) return;
+          if ((c.de && matches(p, c.de)) || (c.en && matches(p, c.en))) hitIdx.add(i);
+        });
+      });
+      return { teamId: a.teamId, hits: hitIdx.size };
     }).sort((x, y) => y.hits - x.hits);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.answers, correctListDE, correctListEN]);
 
   const topHits = teamScore[0]?.hits ?? 0;
@@ -2814,42 +2843,47 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
 
   return (
     <div style={{
-      flex: 1, display: 'grid',
-      gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
-      gap: 'clamp(16px, 2.5vw, 36px)',
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(14px, 1.8vh, 22px)',
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
-      alignItems: 'stretch',
       animation: 'contentReveal 0.45s ease both',
+      minHeight: 0,
     }}>
-      {/* ── Left column: Question + Winners ─────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)', minWidth: 0 }}>
-        {/* Question card */}
+      {/* ── Top row: Full-width question card ─────────────────── */}
+      <div style={{
+        background: 'rgba(255,255,255,0.04)',
+        border: '2px solid rgba(255,255,255,0.08)',
+        borderRadius: 26,
+        padding: 'clamp(16px, 2vh, 26px) clamp(24px, 2.8vw, 42px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        flexShrink: 0,
+      }}>
         <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '2px solid rgba(255,255,255,0.08)',
-          borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-          animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#F59E0B',
+          letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
         }}>
-          <div style={{
-            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#F59E0B',
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
-          }}>
-            🎁 {lang === 'en' ? 'Top 5 — Reveal' : 'Top 5 — Auflösung'}
-          </div>
-          <div key={lang} style={{
-            fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 42px)',
-            fontWeight: 900, lineHeight: 1.22, color: '#F1F5F9',
-            animation: 'langFadeIn 0.4s ease both',
-          }}>
-            {qText}
-          </div>
+          🎁 {lang === 'en' ? 'Top 5 — Reveal' : 'Top 5 — Auflösung'}
         </div>
+        <div key={lang} style={{
+          fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+          fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+          animation: 'langFadeIn 0.4s ease both',
+        }}>
+          {qText}
+        </div>
+      </div>
 
-        {/* Winner card — erst nach komplettem Reveal komplett sichtbar */}
+      {/* ── Bottom row: Winners (left) + Top-5 list (right) ───── */}
+      <div style={{
+        flex: 1, display: 'grid',
+        gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
+        gap: 'clamp(16px, 2.5vw, 36px)',
+        minHeight: 0,
+      }}>
+        {/* Winner card — füllt volle Spaltenhöhe */}
         <div style={{
-          flex: 1,
+          height: '100%',
           background: winners.length > 0
             ? `linear-gradient(135deg, ${winners[0] && s.teams.find(t => t.id === winners[0].teamId)?.color}22, rgba(0,0,0,0.25))`
             : 'rgba(239,68,68,0.06)',
@@ -2916,13 +2950,12 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Right column: Top-5 List (bottom-up reveal) ─────── */}
+      {/* ── Right column: Top-5 List (bottom-up reveal, fills column) ─────── */}
       <div style={{
         display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
-        justifyContent: 'flex-end',
-        minHeight: 0,
+        justifyContent: 'space-between',
+        minHeight: 0, height: '100%',
       }}>
         {perAnswer.map(({ correct, hitters }, idx) => {
           const rank = idx + 1;
@@ -2955,6 +2988,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                 animation: isVisible
                   ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
                   : 'none',
+                flex: 1,
                 minHeight: 'clamp(64px, 8vh, 92px)',
               }}
             >
@@ -3027,6 +3061,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
@@ -4712,7 +4747,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'standings', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          📊 {de ? 'Aktueller Stand' : 'Current Standings'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>📊</span> {de ? 'Aktueller Stand' : 'Current Standings'}
         </div>
         <div style={{
           display: 'grid',
@@ -4752,7 +4787,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'leaderboard', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          🏆 {de ? 'Bestenliste' : 'Leaderboard'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🏆</span> {de ? 'Bestenliste' : 'Leaderboard'}
           {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => (
@@ -4832,7 +4867,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'records', node: (
         <div>
           <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-            🏅 {de ? 'Rekorde' : 'Records'}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🏅</span> {de ? 'Rekorde' : 'Records'}
           </div>
           {records}
         </div>
@@ -4845,7 +4880,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'funny', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          😂 {de ? 'Lustigste Antworten' : 'Funniest Answers'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>😂</span> {de ? 'Lustigste Antworten' : 'Funniest Answers'}
         </div>
         {funStats.funnyAnswers.map((fa, i) => (
           <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>

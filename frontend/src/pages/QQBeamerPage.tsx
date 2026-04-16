@@ -3998,31 +3998,68 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {revealed && q.category === 'MUCHO' && (() => {
                       const voters = s.answers
                         .filter(a => a.text === String(i))
-                        .map(a => s.teams.find(t => t.id === a.teamId))
-                        .filter((t): t is NonNullable<typeof t> => !!t);
+                        .sort((a, b) => a.submittedAt - b.submittedAt)
+                        .map(a => {
+                          const team = s.teams.find(t => t.id === a.teamId);
+                          return team ? { team, submittedAt: a.submittedAt } : null;
+                        })
+                        .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
                       if (voters.length === 0) return null;
+                      // Zeit-Anker: Timer-Start, sonst schnellster Voter als Fallback.
+                      const t0 = s.timerEndsAt && s.timerDurationSec
+                        ? s.timerEndsAt - s.timerDurationSec * 1000
+                        : voters[0]?.submittedAt;
                       return (
                         <div style={{
-                          position: 'absolute', top: 8, right: 8, zIndex: 2,
-                          display: 'flex', alignItems: 'center', gap: -8,
+                          position: 'absolute', top: 6, right: 10, zIndex: 2,
+                          display: 'flex', alignItems: 'flex-start', gap: 6,
                           animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
                         }}>
-                          {voters.map((tm, vi) => (
-                            <div key={tm.id} title={tm.name} style={{
-                              width: 'clamp(40px, 4.5vw, 60px)',
-                              height: 'clamp(40px, 4.5vw, 60px)',
-                              borderRadius: '50%',
-                              background: tm.color,
-                              border: '3px solid #fff',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 'clamp(22px, 2.6vw, 34px)',
-                              marginLeft: vi === 0 ? 0 : -12,
-                              zIndex: 10 - vi,
-                            }}>
-                              {qqGetAvatar(tm.avatarId).emoji}
-                            </div>
-                          ))}
+                          {voters.map((v, vi) => {
+                            const tm = v.team;
+                            const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
+                            const isFastest = isCorrect && vi === 0;
+                            return (
+                              <div key={tm.id} style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                              }}>
+                                <div title={tm.name} style={{
+                                  position: 'relative',
+                                  width: 'clamp(40px, 4.5vw, 60px)',
+                                  height: 'clamp(40px, 4.5vw, 60px)',
+                                  borderRadius: '50%',
+                                  background: tm.color,
+                                  border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
+                                  boxShadow: isFastest
+                                    ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
+                                    : '0 4px 12px rgba(0,0,0,0.5)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 'clamp(22px, 2.6vw, 34px)',
+                                }}>
+                                  {qqGetAvatar(tm.avatarId).emoji}
+                                  {isFastest && (
+                                    <span style={{
+                                      position: 'absolute', top: -8, right: -8,
+                                      fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
+                                    }}>⚡</span>
+                                  )}
+                                </div>
+                                {timeSec != null && isCorrect && (
+                                  <span style={{
+                                    padding: '1px 7px', borderRadius: 999,
+                                    background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
+                                    border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                    color: isFastest ? '#FBBF24' : '#e2e8f0',
+                                    fontWeight: 900,
+                                    fontSize: 'clamp(11px, 1.1vw, 14px)',
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {timeSec.toFixed(1)}s
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })()}

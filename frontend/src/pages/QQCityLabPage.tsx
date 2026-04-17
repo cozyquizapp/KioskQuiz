@@ -142,18 +142,18 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
         camera={{ position: [11, 10.5, 13], fov: 32 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       >
-        {/* Mediterraner Tageshimmel */}
-        <color attach="background" args={['#8fc8e8']} />
-        <fog attach="fog" args={['#c9e2f0', 22, 55]} />
+        {/* Mediterraner Tageshimmel — Gradient von hellblau oben zu dunstig unten */}
+        <SkyGradient />
+        <fog attach="fog" args={['#d8e6ef', 18, 44]} />
 
-        {/* Sanftes Himmels-Ambient (Hemisphere) */}
-        <hemisphereLight args={['#e8f2ff', '#d4b896', 0.65]} />
+        {/* Stärkeres Himmels-Ambient — hellt Schatten auf */}
+        <hemisphereLight args={['#e8f2ff', '#d4b896', 1.0]} />
 
-        {/* Sonne — harte gerichtete Beleuchtung von schräg oben */}
+        {/* Sonne — Mittagsstand, weicher Schatten */}
         <directionalLight
-          position={[9, 14, 7]}
-          intensity={2.6}
-          color="#fff4d6"
+          position={[5, 20, 4]}
+          intensity={2.0}
+          color="#fff6dc"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -164,10 +164,11 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           shadow-camera-near={0.5}
           shadow-camera-far={40}
           shadow-bias={-0.0003}
+          shadow-radius={4}
         />
 
         {/* Bounce-Fill von unten (warm vom Straßen-Asphalt reflektiert) */}
-        <hemisphereLight args={['#b89a6b', '#6b7a8f', 0.25]} />
+        <hemisphereLight args={['#b89a6b', '#6b7a8f', 0.35]} />
 
         <Ground />
         {variant === 1 && <Streets />}
@@ -210,6 +211,44 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
       </Canvas>
     </div>
   );
+}
+
+// Sky-Gradient: große Kuppel mit vertikalem Gradient (hellblau → dunstig am Horizont)
+function SkyGradient() {
+  const geom = useMemo(() => new THREE.SphereGeometry(50, 32, 16), []);
+  const mat = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      uniforms: {
+        topColor:    { value: new THREE.Color('#6ab4e2') },
+        bottomColor: { value: new THREE.Color('#dce8ef') },
+        offset:      { value: 3.0 },
+        exponent:    { value: 0.7 },
+      },
+      vertexShader: `
+        varying vec3 vWorld;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorld = worldPosition.xyz;
+          gl_Position = projectionMatrix * viewMatrix * worldPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        uniform float offset;
+        uniform float exponent;
+        varying vec3 vWorld;
+        void main() {
+          float h = normalize(vWorld + vec3(0.0, offset, 0.0)).y;
+          float t = max(pow(max(h, 0.0), exponent), 0.0);
+          gl_FragColor = vec4(mix(bottomColor, topColor, t), 1.0);
+        }
+      `,
+    });
+  }, []);
+  return <mesh geometry={geom} material={mat} />;
 }
 
 function Ground() {
@@ -297,30 +336,54 @@ function Streets() {
   return <>{lines}</>;
 }
 
-// Chaflán-Plätze: An jeder inneren Kreuzung ein achteckiger Mini-Platz,
-// wie im echten Eixample (wo die 4 abgeschrägten Ecken einen freien Raum
-// bilden — oft Parkplätze / Baumreihen).
+// Chaflán-Plätze + parkende Autos an jeder inneren Kreuzung
+const CAR_COLORS = ['#d8433a', '#3c6fb5', '#2b2b2b', '#e8e8e2', '#d9a42a', '#4a6b52', '#8f3a78', '#c5c5c2'];
 function ChaflanPlazas() {
   const items: JSX.Element[] = [];
-  // Innere Kreuzungen: zwischen zwei Tiles (i, j) mit 1 ≤ i,j ≤ SIZE-1
   for (let i = 1; i < SIZE; i++) {
     for (let j = 1; j < SIZE; j++) {
       const x = (j * TILE) - OFFSET - TILE / 2;
       const z = (i * TILE) - OFFSET - TILE / 2;
+      const rng = rngFromSeed(i * 31 + j * 17 + 101);
+
+      // Platz-Boden
       items.push(
         <group key={`plaza-${i}-${j}`} position={[x, 0.006, z]}>
-          {/* Heller Platz-Boden (Pflaster) */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
             <circleGeometry args={[0.26, 8]} />
             <meshStandardMaterial color="#a9a8a0" roughness={0.9} />
           </mesh>
-          {/* Kreuzformige Pflasterstruktur-Andeutung */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
             <circleGeometry args={[0.06, 8]} />
             <meshStandardMaterial color="#8b8a82" roughness={0.85} />
           </mesh>
         </group>
       );
+
+      // Parkende Autos entlang der Chamfer-Kanten (1-3 pro Platz)
+      const carCount = 1 + Math.floor(rng() * 3);
+      for (let k = 0; k < carCount; k++) {
+        // Position rund um den Platz-Rand
+        const angle = rng() * Math.PI * 2;
+        const dist = 0.2 + rng() * 0.08;
+        const cx = x + Math.cos(angle) * dist;
+        const cz = z + Math.sin(angle) * dist;
+        const carColor = CAR_COLORS[Math.floor(rng() * CAR_COLORS.length)];
+        const orientation = angle + Math.PI / 2;
+        items.push(
+          <group key={`car-${i}-${j}-${k}`} position={[cx, 0.018, cz]} rotation={[0, orientation, 0]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.055, 0.022, 0.11]} />
+              <meshStandardMaterial color={carColor} roughness={0.4} metalness={0.35} />
+            </mesh>
+            {/* Dach/Windschutz etwas dunkler oben drauf */}
+            <mesh position={[0, 0.013, 0]} castShadow>
+              <boxGeometry args={[0.048, 0.012, 0.06]} />
+              <meshStandardMaterial color="#1a1e26" roughness={0.25} metalness={0.5} />
+            </mesh>
+          </group>
+        );
+      }
     }
   }
   return <>{items}</>;
@@ -827,8 +890,8 @@ function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number
 // - Keine Team-Farben, keine Avatare
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Terrakotta-Palette (Variation über deterministischen Seed)
-const TERRACOTTA = ['#b44c2b', '#c25733', '#a64527', '#b95538', '#d06543', '#9f4223', '#c45a38'];
+// Terrakotta-Palette (satt rot-orange — das Barcelona-Signal von oben)
+const TERRACOTTA = ['#c2481e', '#b84220', '#a83a1a', '#cc5025', '#b53f1c', '#bd4520', '#a6371c'];
 const FACADE_TONES = ['#e8d9b8', '#efdebc', '#e0cfa3', '#eadbb2', '#d8c59a', '#f0e2c4', '#e4d3af'];
 
 // Mulberry32 deterministic RNG
@@ -848,9 +911,9 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
   // Variation: Höhe — mit 20% Chance ein echter Turm (2-3× normal)
   const heightBase = useMemo(() => {
     const v = rng();
-    if (v < 0.12) return 0.95 + rng() * 0.35;  // Turm (~1-1.3) — selten
-    if (v < 0.28) return 0.6 + rng() * 0.2;    // höherer Block
-    return 0.36 + rng() * 0.18;                // Standard (0.36-0.54)
+    if (v < 0.08) return 0.68 + rng() * 0.12;  // Punktuell höher (~0.68-0.8)
+    if (v < 0.3)  return 0.52 + rng() * 0.12;  // leicht erhöht
+    return 0.38 + rng() * 0.1;                 // Standard (0.38-0.48)
   }, [rng]);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
@@ -899,14 +962,15 @@ function BarcelonaBlock({
     return geom;
   }, [H]);
 
-  // Dachfläche (dünne Scheibe in Terrakotta oben auf dem Ring)
+  // Dachfläche (sichtbare Terrakotta-Scheibe über dem Ring)
+  // Größer als Fassade (überhängt leicht) + dicker für klare Luft-Ansicht
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.04, INNER - 0.02, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.03, bevelEnabled: false, curveSegments: 4,
+      depth: 0.07, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, H + 0.03, 0);
+    geom.translate(0, H + 0.07, 0);
     return geom;
   }, [H]);
 
@@ -925,13 +989,19 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* Terrakotta-Dachfläche */}
+      {/* Terrakotta-Dachfläche — klar sichtbar rot von oben */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
-        <meshStandardMaterial color={roofColor} roughness={0.78} metalness={0.04} />
+        <meshStandardMaterial
+          color={roofColor}
+          roughness={0.85}
+          metalness={0.0}
+          emissive={roofColor}
+          emissiveIntensity={0.15}
+        />
       </mesh>
 
       {/* Dachziegel-Textur-Andeutung: horizontale Streifen als dünne dunkle Linien */}
-      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.061} />
+      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.141} />
 
       {/* Fenster */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
@@ -940,16 +1010,16 @@ function BarcelonaBlock({
       <InnerCourtyard size={INNER * 0.9} />
 
       {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) */}
-      {hasPenthouse && <RooftopPenthouse roofY={H + 0.06} color={facadeColor} />}
-      {hasSolar && <RooftopSolar roofY={H + 0.065} />}
-      {hasTerrace && <RooftopTerrace roofY={H + 0.06} />}
+      {hasPenthouse && <RooftopPenthouse roofY={H + 0.14} color={facadeColor} />}
+      {hasSolar && <RooftopSolar roofY={H + 0.14} />}
+      {hasTerrace && <RooftopTerrace roofY={H + 0.14} />}
       {acSeeds.map((s, i) => (
-        <RooftopAC key={i} roofY={H + 0.065} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
+        <RooftopAC key={i} roofY={H + 0.14} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
       ))}
 
       {/* Joker-Indikator: schwach leuchtende Dach-Kante */}
       {joker && (
-        <mesh position={[0, H + 0.08, 0]}>
+        <mesh position={[0, H + 0.18, 0]}>
           <torusGeometry args={[OUTER * 0.55, 0.008, 8, 48]} />
           <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={2} toneMapped={false} />
         </mesh>

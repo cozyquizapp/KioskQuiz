@@ -891,7 +891,16 @@ function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number
 
 // Terrakotta-Palette (satt rot-orange — das Barcelona-Signal von oben)
 const TERRACOTTA = ['#c2481e', '#b84220', '#a83a1a', '#cc5025', '#b53f1c', '#bd4520', '#a6371c'];
-const FACADE_TONES = ['#e8d9b8', '#efdebc', '#e0cfa3', '#eadbb2', '#d8c59a', '#f0e2c4', '#e4d3af'];
+// Erweiterte Fassaden-Palette: Creme, Ocker, Sandrosa, Lehm — mehr Variation
+const FACADE_TONES = [
+  '#e8d9b8', '#efdebc', '#e0cfa3', '#eadbb2',   // Creme-Gelb
+  '#d8c59a', '#f0e2c4', '#e4d3af',              // Standard-Creme
+  '#d9b888', '#c9a472', '#dab584',              // Ocker
+  '#e8c8a8', '#e0bfa0', '#d7ae8e',              // Sandrosa
+  '#c5a784', '#b8977a',                          // Lehm-warm
+];
+// Sockel-Farben (dunklere Varianten der Fassaden für Erdgeschoss-Zone)
+const PLINTH_TONES = ['#8c7458', '#9a8366', '#80684e', '#897359', '#786148', '#9a7f5d', '#8a7256'];
 
 // Mulberry32 deterministic RNG
 function rngFromSeed(seed: number): () => number {
@@ -915,10 +924,12 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
     return 0.38 + rng() * 0.1;                 // Standard (0.38-0.48)
   }, [rng]);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
+  const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
   const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
   const hasPenthouse = rng() > 0.4;
   const hasSolar = rng() > 0.55;
   const hasTerrace = rng() > 0.45;
+  const hasBalconies = rng() > 0.25;
   const acCount = 2 + Math.floor(rng() * 4);
   const acSeeds = useMemo(() => Array.from({ length: acCount }, () => [rng(), rng(), rng()]), [acCount, rng]);
 
@@ -927,11 +938,13 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
       <BarcelonaBlock
         heightBase={heightBase}
         facadeColor={facade}
+        plinthColor={plinth}
         roofColor={roof}
         joker={joker}
         hasPenthouse={hasPenthouse}
         hasSolar={hasSolar}
         hasTerrace={hasTerrace}
+        hasBalconies={hasBalconies}
         acSeeds={acSeeds}
       />
     </group>
@@ -939,27 +952,39 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
 }
 
 function BarcelonaBlock({
-  heightBase, facadeColor, roofColor, joker,
-  hasPenthouse, hasSolar, hasTerrace, acSeeds,
+  heightBase, facadeColor, plinthColor, roofColor, joker,
+  hasPenthouse, hasSolar, hasTerrace, hasBalconies, acSeeds,
 }: {
-  heightBase: number; facadeColor: string; roofColor: string; joker: boolean;
-  hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean;
+  heightBase: number; facadeColor: string; plinthColor: string; roofColor: string; joker: boolean;
+  hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean; hasBalconies: boolean;
   acSeeds: number[][];
 }) {
   const OUTER = 1.22;
   const INNER = 0.58;
   const CHAMFER = 0.24;
   const H = heightBase;
+  const PLINTH_H = Math.min(0.1, H * 0.22);
+
+  // Fassade: Plinth-Sockel (bis PLINTH_H) + normale Fassade (PLINTH_H bis H)
+  const plinthGeom = useMemo(() => {
+    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: PLINTH_H, bevelEnabled: false, curveSegments: 4,
+    });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, PLINTH_H, 0);
+    return geom;
+  }, [PLINTH_H]);
 
   const facadeGeom = useMemo(() => {
     const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
-      depth: H, bevelEnabled: false, curveSegments: 4,
+      depth: H - PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
     geom.translate(0, H, 0);
     return geom;
-  }, [H]);
+  }, [H, PLINTH_H]);
 
   // Dachfläche (sichtbare Terrakotta-Scheibe direkt auf dem Ring)
   // Bottom des Dachs = H (Fassaden-Top), top = H + ROOF_T
@@ -979,7 +1004,16 @@ function BarcelonaBlock({
   // Etwas über Ground positioniert damit keine Z-Fights
   return (
     <group>
-      {/* Fassade */}
+      {/* Sockel-Zone (Erdgeschoss) — dunkler, minimal breiter */}
+      <mesh geometry={plinthGeom} castShadow receiveShadow>
+        <meshStandardMaterial
+          color={plinthColor}
+          roughness={0.88}
+          metalness={0.03}
+        />
+      </mesh>
+
+      {/* Fassade (Obergeschosse) */}
       <mesh geometry={facadeGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={facadeColor}
@@ -989,6 +1023,14 @@ function BarcelonaBlock({
           emissiveIntensity={joker ? 0.15 : 0}
         />
       </mesh>
+
+      {/* Ladentüren / Eingangsportale auf der Sockel-Zone (jede Hauptseite 2 Türen) */}
+      <PlinthDoors outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} />
+
+      {/* Schmiedeeiserne Balkon-Bänder pro Etage */}
+      {hasBalconies && (
+        <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
+      )}
 
       {/* Terrakotta-Dachfläche — klar sichtbar rot von oben */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
@@ -1063,6 +1105,120 @@ function RoofTileLines({ outer, inner, chamfer, y }: {
     );
   }
   return <>{lines}</>;
+}
+
+// Ladentüren/Eingangsportale auf dem Sockel (2 dunkle Rechtecke pro Hauptseite)
+function PlinthDoors({ outer, chamfer, plinthH }: {
+  outer: number; chamfer: number; plinthH: number;
+}) {
+  const s = outer / 2;
+  const flatLen = outer - 2 * chamfer;
+  const doorW = 0.08;
+  const doorH = plinthH * 0.75;
+  const doorY = doorH / 2 + 0.005;
+
+  const sides: { pos: [number, number, number]; rot: [number, number, number]; key: string }[] = [
+    { pos: [0, 0, s + 0.004],  rot: [0, 0, 0],            key: 'S' },
+    { pos: [0, 0, -s - 0.004], rot: [0, Math.PI, 0],      key: 'N' },
+    { pos: [s + 0.004, 0, 0],  rot: [0, Math.PI / 2, 0],  key: 'E' },
+    { pos: [-s - 0.004, 0, 0], rot: [0, -Math.PI / 2, 0], key: 'W' },
+  ];
+
+  const items: JSX.Element[] = [];
+  sides.forEach((side) => {
+    const doors: JSX.Element[] = [];
+    // 2 Türen pro Seite + ein paar schmalere "Laden-Vitrinen" dazwischen
+    [-flatLen * 0.3, flatLen * 0.3].forEach((px, i) => {
+      doors.push(
+        <mesh key={`door-${side.key}-${i}`} position={[px, doorY, 0]}>
+          <planeGeometry args={[doorW, doorH]} />
+          <meshStandardMaterial color="#2a1e14" roughness={0.6} metalness={0.2} />
+        </mesh>
+      );
+    });
+    // Laden-Schaufenster (breiter, heller)
+    [-flatLen * 0.05, flatLen * 0.05].forEach((px, i) => {
+      doors.push(
+        <mesh key={`shop-${side.key}-${i}`} position={[px, doorY + 0.003, 0]}>
+          <planeGeometry args={[doorW * 0.9, doorH * 0.7]} />
+          <meshStandardMaterial color="#c8d2d9" roughness={0.25} metalness={0.5} />
+        </mesh>
+      );
+    });
+    items.push(
+      <group key={`doors-${side.key}`} position={side.pos} rotation={side.rot}>
+        {doors}
+      </group>
+    );
+  });
+  return <>{items}</>;
+}
+
+// Schmiedeeiserne Balkon-Bänder pro Etage (dünne dunkle vorspringende Streifen)
+function Balconies({ outer, chamfer, plinthH, totalH }: {
+  outer: number; chamfer: number; plinthH: number; totalH: number;
+}) {
+  const s = outer / 2;
+  const flatLen = outer - 2 * chamfer;
+  const diagLen = chamfer * Math.SQRT2;
+  const upperH = totalH - plinthH;
+  const floors = Math.max(2, Math.round(upperH / 0.1));
+
+  const items: JSX.Element[] = [];
+  const mainSides: { pos: [number, number, number]; rot: [number, number, number]; key: string }[] = [
+    { pos: [0, 0, s + 0.012],  rot: [0, 0, 0],            key: 'S' },
+    { pos: [0, 0, -s - 0.012], rot: [0, Math.PI, 0],      key: 'N' },
+    { pos: [s + 0.012, 0, 0],  rot: [0, Math.PI / 2, 0],  key: 'E' },
+    { pos: [-s - 0.012, 0, 0], rot: [0, -Math.PI / 2, 0], key: 'W' },
+  ];
+  // Balkons nur auf oberen Etagen (nicht auf dem Erdgeschoss-Sockel)
+  for (let f = 1; f < floors; f++) {
+    const y = plinthH + (f / floors) * upperH - upperH / (floors + 1) * 0.35;
+    mainSides.forEach((side) => {
+      items.push(
+        <group key={`balc-${side.key}-${f}`} position={side.pos} rotation={side.rot}>
+          {/* Haupt-Geländer als dünner dunkler Streifen */}
+          <mesh position={[0, y, 0]}>
+            <boxGeometry args={[flatLen * 0.86, 0.012, 0.018]} />
+            <meshStandardMaterial color="#1c1f2a" roughness={0.55} metalness={0.4} />
+          </mesh>
+          {/* Dünne Bodenplatte darunter (hellerer Beton-Ton) */}
+          <mesh position={[0, y - 0.008, 0]}>
+            <boxGeometry args={[flatLen * 0.86, 0.006, 0.024]} />
+            <meshStandardMaterial color="#a89d86" roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    });
+  }
+
+  // Chamfer-Balkons (diagonal) — kleiner
+  const diagOffset = s - chamfer / 2 + 0.012;
+  const diagSides: { pos: [number, number, number]; rot: [number, number, number]; key: string }[] = [
+    { pos: [ diagOffset, 0,  diagOffset], rot: [0,  Math.PI / 4, 0],      key: 'SE' },
+    { pos: [-diagOffset, 0,  diagOffset], rot: [0, -Math.PI / 4, 0],      key: 'SW' },
+    { pos: [ diagOffset, 0, -diagOffset], rot: [0,  3 * Math.PI / 4, 0],  key: 'NE' },
+    { pos: [-diagOffset, 0, -diagOffset], rot: [0, -3 * Math.PI / 4, 0],  key: 'NW' },
+  ];
+  for (let f = 1; f < floors; f++) {
+    const y = plinthH + (f / floors) * upperH - upperH / (floors + 1) * 0.35;
+    diagSides.forEach((side) => {
+      items.push(
+        <group key={`balc-d-${side.key}-${f}`} position={side.pos} rotation={side.rot}>
+          <mesh position={[0, y, 0]}>
+            <boxGeometry args={[diagLen * 0.7, 0.012, 0.018]} />
+            <meshStandardMaterial color="#1c1f2a" roughness={0.55} metalness={0.4} />
+          </mesh>
+          <mesh position={[0, y - 0.008, 0]}>
+            <boxGeometry args={[diagLen * 0.7, 0.006, 0.024]} />
+            <meshStandardMaterial color="#a89d86" roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    });
+  }
+
+  return <>{items}</>;
 }
 
 // Innenhof — grüner Garten mit Baum in der Mitte

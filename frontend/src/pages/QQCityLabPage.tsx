@@ -731,14 +731,17 @@ function chamferedRingShape(outer: number, inner: number, chamfer: number): THRE
   const hole = new THREE.Path();
   const s = holeSize / 2;
   const c = hc;
-  hole.moveTo( s,     -s + c);
-  hole.lineTo( s,      s - c);
-  hole.lineTo( s - c,  s);
-  hole.lineTo(-s + c,  s);
-  hole.lineTo(-s,      s - c);
-  hole.lineTo(-s,     -s + c);
+  // Hole muss entgegengesetzt zum Outer gewunden sein (im Uhrzeigersinn,
+  // waehrend Outer gegen den Uhrzeigersinn geht). Sonst kollabieren die
+  // Innenwand-Triangulationen.
+  hole.moveTo( s - c, -s);
   hole.lineTo(-s + c, -s);
-  hole.lineTo( s - c, -s);
+  hole.lineTo(-s,     -s + c);
+  hole.lineTo(-s,      s - c);
+  hole.lineTo(-s + c,  s);
+  hole.lineTo( s - c,  s);
+  hole.lineTo( s,      s - c);
+  hole.lineTo( s,     -s + c);
   hole.closePath();
   shape.holes.push(hole);
   return shape;
@@ -1041,16 +1044,20 @@ function BarcelonaBlock({
   // Etwas über Ground positioniert damit keine Z-Fights
   return (
     <group>
-      {/* Sockel-Zone (Erdgeschoss) — dunkler, minimal breiter */}
+      {/* Sockel-Zone (Erdgeschoss) — dunkler, minimal breiter
+          DoubleSide ist noetig weil die Ring-Geometrie eine Innen- und eine
+          Aussenwand hat (Innenhof!). Ohne DoubleSide wird eine Seite gecullt,
+          und man sieht durch die Haeuser durch. */}
       <mesh geometry={plinthGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={plinthColor}
           roughness={0.88}
           metalness={0.03}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Fassade (Obergeschosse) */}
+      {/* Fassade (Obergeschosse) — DoubleSide fuer Innen- und Aussenwand */}
       <mesh geometry={facadeGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={facadeColor}
@@ -1058,6 +1065,7 @@ function BarcelonaBlock({
           metalness={0.02}
           emissive={joker ? '#fbbf24' : '#000'}
           emissiveIntensity={joker ? 0.15 : 0}
+          side={THREE.DoubleSide}
         />
       </mesh>
 

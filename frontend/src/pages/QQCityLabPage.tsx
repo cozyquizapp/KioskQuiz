@@ -9,7 +9,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Billboard, MeshReflectorMaterial } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
@@ -24,15 +24,20 @@ const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }>
 
 type Cell = { owner: AvatarKey | null; joker?: boolean };
 
+// 7×7 Grid — für den Barcelona-Luftbild-Look (Eixample).
+// `null`-Felder = Plazas/Parks mit Grün/Fountain (wie Monumental Squares
+// im echten Eixample-Raster).
 const DEMO_GRID: Cell[][] = [
-  [{ owner: 'fox' },   { owner: 'fox' },             { owner: null },    { owner: 'frog' },    { owner: 'frog' }],
-  [{ owner: 'fox', joker: true }, { owner: 'panda' }, { owner: 'cat' },  { owner: 'frog' },    { owner: null }],
-  [{ owner: null },    { owner: 'cat' },             { owner: 'unicorn' }, { owner: 'rabbit' }, { owner: 'rabbit' }],
-  [{ owner: 'cow' },   { owner: 'cat' },             { owner: null },    { owner: 'raccoon', joker: true }, { owner: null }],
-  [{ owner: 'cow' },   { owner: null },              { owner: 'unicorn' }, { owner: 'unicorn' }, { owner: 'raccoon' }],
+  [{ owner: 'fox' },   { owner: 'fox' },     { owner: 'frog' },   { owner: null },     { owner: 'frog' },    { owner: 'panda' },   { owner: 'panda' }],
+  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'frog' },   { owner: 'frog' },   { owner: 'panda' },   { owner: 'panda' },   { owner: 'cat' }],
+  [{ owner: 'fox' },   { owner: 'cat' },     { owner: null },     { owner: 'unicorn' },{ owner: 'unicorn' }, { owner: null },      { owner: 'cat' }],
+  [{ owner: 'cow' },   { owner: 'cow' },     { owner: 'unicorn' },{ owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: 'raccoon' }, { owner: 'raccoon' }],
+  [{ owner: 'cow' },   { owner: null },      { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: null },      { owner: 'raccoon' }, { owner: 'raccoon' }],
+  [{ owner: 'cow' },   { owner: 'unicorn' }, { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: 'unicorn' }, { owner: 'frog' },    { owner: 'panda' }],
+  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'cat' },    { owner: null },     { owner: 'cow' },     { owner: 'frog' },    { owner: 'panda' }],
 ];
 
-const SIZE = 5;
+const SIZE = 7;
 const TILE = 1.6;
 const OFFSET = ((SIZE - 1) * TILE) / 2;
 
@@ -134,55 +139,40 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [7.5, 7, 9.5], fov: 34 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
+        camera={{ position: [11, 10.5, 13], fov: 32 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       >
-        {/* Tief-dunkler Bühnen-Hintergrund */}
-        <color attach="background" args={['#05060d']} />
-        <fog attach="fog" args={['#05060d', 14, 36]} />
+        {/* Mediterraner Tageshimmel */}
+        <color attach="background" args={['#8fc8e8']} />
+        <fog attach="fog" args={['#c9e2f0', 22, 55]} />
 
-        {/* Ambient — mehr Füllung, damit Gebäude-Farben lesbar bleiben */}
-        <ambientLight intensity={0.55} color="#c7d2fe" />
+        {/* Sanftes Himmels-Ambient (Hemisphere) */}
+        <hemisphereLight args={['#e8f2ff', '#d4b896', 0.65]} />
 
-        {/* Key-Light: neutral-weißes Spotlight von schräg oben */}
-        <spotLight
-          position={[5, 11, 5]}
-          angle={0.7}
-          penumbra={0.55}
-          intensity={2.2}
-          color="#fef3c7"
+        {/* Sonne — harte gerichtete Beleuchtung von schräg oben */}
+        <directionalLight
+          position={[9, 14, 7]}
+          intensity={2.6}
+          color="#fff4d6"
           castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-          shadow-bias={-0.0005}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-left={-14}
+          shadow-camera-right={14}
+          shadow-camera-top={14}
+          shadow-camera-bottom={-14}
+          shadow-camera-near={0.5}
+          shadow-camera-far={40}
+          shadow-bias={-0.0003}
         />
 
-        {/* Fill von rechts vorne (wärmer) */}
-        <spotLight
-          position={[8, 6, 8]}
-          angle={0.8}
-          penumbra={0.8}
-          intensity={1.2}
-          color="#fde68a"
-        />
-
-        {/* Rim-Light: kühles Cyan von hinten/links */}
-        <spotLight
-          position={[-5, 8, -5]}
-          angle={0.7}
-          penumbra={0.7}
-          intensity={1.4}
-          color="#7dd3fc"
-        />
-
-        {/* Akzent: violettes Punktlicht unten/hinten */}
-        <pointLight position={[0, 1.5, -7]} intensity={0.9} color="#a855f7" distance={12} decay={2} />
-
-        {/* Front-Fill damit Avatare lesbar sind */}
-        <pointLight position={[0, 5, 8]} intensity={0.8} color="#ffffff" distance={14} decay={2} />
+        {/* Bounce-Fill von unten (warm vom Straßen-Asphalt reflektiert) */}
+        <hemisphereLight args={['#b89a6b', '#6b7a8f', 0.25]} />
 
         <Ground />
-        <GridLines />
+        {variant === 1 && <Streets />}
+        {variant === 1 && <StreetTrees />}
+        {variant !== 1 && <GridLines />}
 
         {DEMO_GRID.flatMap((row, r) => row.map((cell, c) => {
           const x = (c * TILE) - OFFSET;
@@ -191,11 +181,13 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           const owner = cell.owner;
           const joker = !!cell.joker;
 
+          if (variant === 1) {
+            if (!owner) return <Plaza key={key} x={x} z={z} seed={r * 11 + c * 7} />;
+            return <BarcelonaCell key={key} x={x} z={z} seed={r * 31 + c * 17} joker={joker} />;
+          }
+
           if (!owner) return <EmptyPlot key={key} x={x} z={z} />;
-
           const avatar = AVATARS[owner];
-
-          if (variant === 1) return <Building key={key} x={x} z={z} avatar={avatar} joker={joker} btype={cellBType(r, c)} ownerId={owner} />;
           if (variant === 2) return <PedestalFigure key={key} x={x} z={z} avatar={avatar} joker={joker} seed={r * 5 + c} />;
           return null;
         }))}
@@ -210,15 +202,9 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           autoRotateSpeed={0.4}
         />
 
-        {/* Post-Processing: dezenter Bloom nur auf sehr helle Emissives */}
+        {/* Post-Processing — Tag: nur dezente Vignette, kein Bloom */}
         <EffectComposer multisampling={0}>
-          <Bloom
-            intensity={0.65}
-            luminanceThreshold={0.88}
-            luminanceSmoothing={0.35}
-            mipmapBlur
-          />
-          <Vignette eskil={false} offset={0.3} darkness={0.55} />
+          <Vignette eskil={false} offset={0.4} darkness={0.35} />
         </EffectComposer>
       </Canvas>
     </div>
@@ -228,36 +214,144 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 function Ground() {
   return (
     <group>
-      {/* Äußerer Bühnenboden: großer spiegelnder Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[60, 60]} />
-        <MeshReflectorMaterial
-          blur={[300, 80]}
-          resolution={512}
-          mixBlur={1}
-          mixStrength={3.5}
-          roughness={0.85}
-          depthScale={0.5}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.2}
-          color="#050810"
-          metalness={0.7}
-          mirror={0.55}
-        />
+      {/* Äußerer Horizont — hellgrau/dunstig wie Entfernung */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#b8c2c8" roughness={0.95} />
       </mesh>
-      {/* Inneres Bühnen-Tile: subtil heller, damit Grid darauf sichtbar ist */}
+      {/* Stadtboden — grauer Asphalt für alle Straßen */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[SIZE * TILE + 1.8, SIZE * TILE + 1.8]} />
-        <meshStandardMaterial
-          color="#0b1221"
-          roughness={0.35}
-          metalness={0.55}
-          emissive="#fbbf24"
-          emissiveIntensity={0.04}
-        />
+        <planeGeometry args={[SIZE * TILE + 2.4, SIZE * TILE + 2.4]} />
+        <meshStandardMaterial color="#4a4e54" roughness={0.9} metalness={0.02} />
       </mesh>
     </group>
   );
+}
+
+// Straßen: heller Asphalt-Streifen + gestrichelte weiße Mittellinie
+function Streets() {
+  const halfGrid = (SIZE * TILE) / 2;
+  const lines: JSX.Element[] = [];
+  // Für jede Zeile/Spalten-Grenze: ein Asphalt-Band exakt im Gap zwischen Tiles
+  for (let i = 0; i <= SIZE; i++) {
+    const p = (i * TILE) - OFFSET - TILE / 2;
+    const streetWidth = 0.42;
+    // Horizontale Straße (läuft in X-Richtung, Position bei Z=p)
+    lines.push(
+      <mesh key={`h-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, p]} receiveShadow>
+        <planeGeometry args={[SIZE * TILE + 2.4, streetWidth]} />
+        <meshStandardMaterial color="#5c6269" roughness={0.9} />
+      </mesh>
+    );
+    // Vertikale Straße (Z-Richtung, Position bei X=p)
+    lines.push(
+      <mesh key={`v-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.005, 0]} receiveShadow>
+        <planeGeometry args={[streetWidth, SIZE * TILE + 2.4]} />
+        <meshStandardMaterial color="#5c6269" roughness={0.9} />
+      </mesh>
+    );
+  }
+  // Gestrichelte Mittellinien auf den inneren Straßen
+  const dashCount = 14;
+  for (let i = 1; i < SIZE; i++) {
+    const p = (i * TILE) - OFFSET - TILE / 2;
+    for (let d = 0; d < dashCount; d++) {
+      const pos = -halfGrid + (d + 0.5) * (SIZE * TILE / dashCount);
+      lines.push(
+        <mesh key={`h-dash-${i}-${d}`} rotation={[-Math.PI / 2, 0, 0]} position={[pos, 0.008, p]}>
+          <planeGeometry args={[0.18, 0.03]} />
+          <meshStandardMaterial color="#e8e2c8" roughness={0.7} />
+        </mesh>
+      );
+      lines.push(
+        <mesh key={`v-dash-${i}-${d}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.008, pos]}>
+          <planeGeometry args={[0.03, 0.18]} />
+          <meshStandardMaterial color="#e8e2c8" roughness={0.7} />
+        </mesh>
+      );
+    }
+  }
+  // Gehsteig-Kanten — schmale helle Streifen am Rand jedes Blocks
+  for (let i = 0; i <= SIZE; i++) {
+    const p = (i * TILE) - OFFSET - TILE / 2;
+    const curb = 0.02;
+    const inset = 0.24;
+    lines.push(
+      <mesh key={`h-curb-a-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, p - inset]}>
+        <planeGeometry args={[SIZE * TILE + 2.4, curb]} />
+        <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
+      </mesh>,
+      <mesh key={`h-curb-b-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, p + inset]}>
+        <planeGeometry args={[SIZE * TILE + 2.4, curb]} />
+        <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
+      </mesh>,
+      <mesh key={`v-curb-a-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p - inset, 0.012, 0]}>
+        <planeGeometry args={[curb, SIZE * TILE + 2.4]} />
+        <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
+      </mesh>,
+      <mesh key={`v-curb-b-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p + inset, 0.012, 0]}>
+        <planeGeometry args={[curb, SIZE * TILE + 2.4]} />
+        <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
+      </mesh>
+    );
+  }
+  return <>{lines}</>;
+}
+
+// Alleebaum an Kreuzungs-Ecken (wie Barcelona-Platanen)
+function TreeAt({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  return (
+    <group position={[x, 0, z]} scale={scale}>
+      {/* Stamm */}
+      <mesh position={[0, 0.18, 0]} castShadow>
+        <cylinderGeometry args={[0.03, 0.04, 0.36, 8]} />
+        <meshStandardMaterial color="#5a3a22" roughness={0.9} />
+      </mesh>
+      {/* Krone — 3 überlappende Kugeln für buschigen Look */}
+      <mesh position={[0, 0.42, 0]} castShadow>
+        <sphereGeometry args={[0.17, 14, 12]} />
+        <meshStandardMaterial color="#3a6a3e" roughness={0.85} />
+      </mesh>
+      <mesh position={[0.08, 0.48, 0.03]} castShadow>
+        <sphereGeometry args={[0.12, 12, 10]} />
+        <meshStandardMaterial color="#4a7b4e" roughness={0.85} />
+      </mesh>
+      <mesh position={[-0.06, 0.46, -0.08]} castShadow>
+        <sphereGeometry args={[0.11, 12, 10]} />
+        <meshStandardMaterial color="#2f5a32" roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+// Bäume entlang der Straßen — an jeder Straßen-Seite zwei pro Block
+function StreetTrees() {
+  const trees: JSX.Element[] = [];
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const cx = c * TILE - OFFSET;
+      const cz = r * TILE - OFFSET;
+      // 4 Bäume pro Block, an den Eckzonen auf der Straße
+      const offs = TILE * 0.34;
+      const roadOffs = TILE * 0.5 - 0.08;
+      const positions: [number, number, number][] = [
+        [cx - offs, 0, cz - roadOffs],
+        [cx + offs, 0, cz - roadOffs],
+        [cx - offs, 0, cz + roadOffs],
+        [cx + offs, 0, cz + roadOffs],
+      ];
+      positions.forEach((p, i) => {
+        // Deterministische "Zufalls"-Variation in Größe
+        const seed = (r * 7 + c * 3 + i * 13) % 5;
+        const scale = 0.85 + seed * 0.06;
+        // Nur die äußeren Bäume pro Block rendern, um nicht zu dicht zu werden
+        if ((r + c + i) % 2 === 0) {
+          trees.push(<TreeAt key={`t-${r}-${c}-${i}`} x={p[0]} z={p[2]} scale={scale} />);
+        }
+      });
+    }
+  }
+  return <>{trees}</>;
 }
 
 // Grid-Lines — wie 2D-Grid-Gap (dezent hell, nicht leuchtend gelb)
@@ -693,6 +787,330 @@ function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number
   });
 
   return <>{items}</>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BARCELONA-RECONSTRUCTION — Tag-Luftbild-Look (Eixample)
+// - Gleiche O-Form pro Zelle, per-cell deterministische Höhen-/Detail-Variation
+// - Terrakotta-Dächer, Innenhof grün, AC-Boxen, Solarpanels, Dachterrassen
+// - Keine Team-Farben, keine Avatare
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Terrakotta-Palette (Variation über deterministischen Seed)
+const TERRACOTTA = ['#b44c2b', '#c25733', '#a64527', '#b95538', '#d06543', '#9f4223', '#c45a38'];
+const FACADE_TONES = ['#e8d9b8', '#efdebc', '#e0cfa3', '#eadbb2', '#d8c59a', '#f0e2c4', '#e4d3af'];
+
+// Mulberry32 deterministic RNG
+function rngFromSeed(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Pro Zelle: ein Barcelona-Block mit detaillierter Dachvariation
+function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: number; joker: boolean }) {
+  const rng = useMemo(() => rngFromSeed(seed + 1), [seed]);
+  // Variation: Höhe, Fassaden-Ton, Dach-Ton, Rooftop-Dekore
+  const heights = useMemo(() => {
+    const base = 0.34 + rng() * 0.18;
+    // 8 segmentale Höhen (4 Seiten + 4 Chamfers) ganz leicht variiert
+    return {
+      base,
+      segs: [0, 1, 2, 3, 4, 5, 6, 7].map(() => base + (rng() - 0.5) * 0.08),
+    };
+  }, [rng]);
+  const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
+  const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
+  const hasPenthouse = rng() > 0.4;
+  const hasSolar = rng() > 0.55;
+  const hasTerrace = rng() > 0.5;
+  const acCount = Math.floor(rng() * 4);
+  const acSeeds = useMemo(() => Array.from({ length: acCount }, () => [rng(), rng(), rng()]), [acCount, rng]);
+
+  return (
+    <group position={[x, 0.02, z]}>
+      <BarcelonaBlock
+        heightBase={heights.base}
+        facadeColor={facade}
+        roofColor={roof}
+        joker={joker}
+        hasPenthouse={hasPenthouse}
+        hasSolar={hasSolar}
+        hasTerrace={hasTerrace}
+        acSeeds={acSeeds}
+      />
+    </group>
+  );
+}
+
+function BarcelonaBlock({
+  heightBase, facadeColor, roofColor, joker,
+  hasPenthouse, hasSolar, hasTerrace, acSeeds,
+}: {
+  heightBase: number; facadeColor: string; roofColor: string; joker: boolean;
+  hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean;
+  acSeeds: number[][];
+}) {
+  const OUTER = 1.22;
+  const INNER = 0.46;
+  const CHAMFER = 0.24;
+  const H = heightBase;
+
+  const facadeGeom = useMemo(() => {
+    const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: H, bevelEnabled: false, curveSegments: 4,
+    });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, H, 0);
+    return geom;
+  }, [H]);
+
+  // Dachfläche (dünne Scheibe in Terrakotta oben auf dem Ring)
+  const roofGeom = useMemo(() => {
+    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.03, bevelEnabled: false, curveSegments: 4,
+    });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, H + 0.03, 0);
+    return geom;
+  }, [H]);
+
+  // Innenhof-Boden (Grün + Sand) — wie echter Eixample-pati interior
+  // Etwas über Ground positioniert damit keine Z-Fights
+  return (
+    <group>
+      {/* Fassade */}
+      <mesh geometry={facadeGeom} castShadow receiveShadow>
+        <meshStandardMaterial
+          color={facadeColor}
+          roughness={0.82}
+          metalness={0.02}
+          emissive={joker ? '#fbbf24' : '#000'}
+          emissiveIntensity={joker ? 0.15 : 0}
+        />
+      </mesh>
+
+      {/* Terrakotta-Dachfläche */}
+      <mesh geometry={roofGeom} castShadow receiveShadow>
+        <meshStandardMaterial color={roofColor} roughness={0.78} metalness={0.04} />
+      </mesh>
+
+      {/* Dachziegel-Textur-Andeutung: horizontale Streifen als dünne dunkle Linien */}
+      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.061} />
+
+      {/* Fenster */}
+      <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
+
+      {/* Innenhof — grüner Garten mit Baum */}
+      <InnerCourtyard size={INNER * 0.9} />
+
+      {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) */}
+      {hasPenthouse && <RooftopPenthouse roofY={H + 0.06} color={facadeColor} />}
+      {hasSolar && <RooftopSolar roofY={H + 0.065} />}
+      {hasTerrace && <RooftopTerrace roofY={H + 0.06} />}
+      {acSeeds.map((s, i) => (
+        <RooftopAC key={i} roofY={H + 0.065} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
+      ))}
+
+      {/* Joker-Indikator: schwach leuchtende Dach-Kante */}
+      {joker && (
+        <mesh position={[0, H + 0.08, 0]}>
+          <torusGeometry args={[OUTER * 0.55, 0.008, 8, 48]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={2} toneMapped={false} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Dachziegel-Linien (dünne dunkle Streifen auf dem Dach für Textur-Look)
+function RoofTileLines({ outer, inner, chamfer, y }: {
+  outer: number; inner: number; chamfer: number; y: number;
+}) {
+  void chamfer;
+  const lines: JSX.Element[] = [];
+  const steps = 6;
+  // Außenring-Streifen (4 Hauptseiten)
+  for (let i = 0; i < steps; i++) {
+    const t = (i + 0.5) / steps;
+    const len = outer * 0.88;
+    // Nord/Süd
+    const posZN = -outer / 2 + (outer / 2 - inner / 2) * t;
+    const posZS = outer / 2 - (outer / 2 - inner / 2) * t;
+    lines.push(
+      <mesh key={`n-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, posZN]}>
+        <planeGeometry args={[len, 0.006]} />
+        <meshStandardMaterial color="#6b2f1a" roughness={0.9} transparent opacity={0.35} />
+      </mesh>,
+      <mesh key={`s-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, posZS]}>
+        <planeGeometry args={[len, 0.006]} />
+        <meshStandardMaterial color="#6b2f1a" roughness={0.9} transparent opacity={0.35} />
+      </mesh>,
+      <mesh key={`e-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[posZS, y, 0]}>
+        <planeGeometry args={[0.006, len]} />
+        <meshStandardMaterial color="#6b2f1a" roughness={0.9} transparent opacity={0.35} />
+      </mesh>,
+      <mesh key={`w-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[posZN, y, 0]}>
+        <planeGeometry args={[0.006, len]} />
+        <meshStandardMaterial color="#6b2f1a" roughness={0.9} transparent opacity={0.35} />
+      </mesh>
+    );
+  }
+  return <>{lines}</>;
+}
+
+// Innenhof — grüner Garten mit Baum in der Mitte
+function InnerCourtyard({ size }: { size: number }) {
+  return (
+    <group>
+      {/* Rasenfläche */}
+      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[size, size]} />
+        <meshStandardMaterial color="#6b8e4a" roughness={0.92} />
+      </mesh>
+      {/* Sand-Weg als Kreuz */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size * 0.2, size * 0.95]} />
+        <meshStandardMaterial color="#c9ad7f" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size * 0.95, size * 0.2]} />
+        <meshStandardMaterial color="#c9ad7f" roughness={0.9} />
+      </mesh>
+      {/* Kleiner Baum mittig */}
+      <mesh position={[0, 0.06, 0]} castShadow>
+        <cylinderGeometry args={[0.015, 0.02, 0.12, 6]} />
+        <meshStandardMaterial color="#4a2e1a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.16, 0]} castShadow>
+        <sphereGeometry args={[0.08, 12, 10]} />
+        <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+// Dachboxen: Klimaanlagen (kleine graue Quader)
+function RooftopAC({ roofY, sx, sz, sr }: { roofY: number; sx: number; sz: number; sr: number }) {
+  const w = 0.06 + sr * 0.04;
+  return (
+    <mesh position={[sx, roofY + 0.03, sz]} castShadow>
+      <boxGeometry args={[w, 0.05, w * 0.8]} />
+      <meshStandardMaterial color="#c8ccd0" roughness={0.5} metalness={0.4} />
+    </mesh>
+  );
+}
+
+// Solarpanels — Reihe aus dunkelblauen flachen Rechtecken
+function RooftopSolar({ roofY }: { roofY: number }) {
+  const panels: JSX.Element[] = [];
+  const count = 3;
+  for (let i = 0; i < count; i++) {
+    const px = (i - (count - 1) / 2) * 0.12;
+    panels.push(
+      <mesh key={i} position={[px, roofY + 0.015, 0.22]} rotation={[-Math.PI / 2.4, 0, 0]} castShadow>
+        <planeGeometry args={[0.1, 0.07]} />
+        <meshStandardMaterial color="#1e2a4a" roughness={0.25} metalness={0.6} />
+      </mesh>
+    );
+  }
+  return <>{panels}</>;
+}
+
+// Penthouse — kleine weiße Box auf dem Dach
+function RooftopPenthouse({ roofY, color }: { roofY: number; color: string }) {
+  return (
+    <group>
+      <mesh position={[-0.24, roofY + 0.06, -0.24]} castShadow receiveShadow>
+        <boxGeometry args={[0.18, 0.12, 0.16]} />
+        <meshStandardMaterial color={color} roughness={0.75} />
+      </mesh>
+      {/* kleines Dach auf dem Penthouse */}
+      <mesh position={[-0.24, roofY + 0.128, -0.24]}>
+        <boxGeometry args={[0.2, 0.01, 0.18]} />
+        <meshStandardMaterial color="#8a3a20" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+// Terrasse — helle Fläche + Geländer-Linie
+function RooftopTerrace({ roofY }: { roofY: number }) {
+  return (
+    <group>
+      <mesh position={[0.3, roofY + 0.005, 0.3]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.32, 0.28]} />
+        <meshStandardMaterial color="#d8cfb8" roughness={0.85} />
+      </mesh>
+      {/* 2 Liege-Andeutungen */}
+      <mesh position={[0.24, roofY + 0.018, 0.3]} castShadow>
+        <boxGeometry args={[0.08, 0.02, 0.04]} />
+        <meshStandardMaterial color="#4a8ec5" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.36, roofY + 0.018, 0.3]} castShadow>
+        <boxGeometry args={[0.08, 0.02, 0.04]} />
+        <meshStandardMaterial color="#e8a23c" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+// Plaza — grüner Park für null-Zellen (Monumental Squares im echten Eixample)
+function Plaza({ x, z, seed }: { x: number; z: number; seed: number }) {
+  const rng = useMemo(() => rngFromSeed(seed + 999), [seed]);
+  const hasFountain = useMemo(() => rng() > 0.4, [rng]);
+  const treeCount = 4 + Math.floor(rng() * 3);
+  const treePos = useMemo(
+    () => Array.from({ length: treeCount }, () => [(rng() - 0.5) * 0.9, (rng() - 0.5) * 0.9, rng()] as [number, number, number]),
+    [rng, treeCount]
+  );
+  return (
+    <group position={[x, 0.02, z]}>
+      {/* Rasen */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[1.22, 1.22]} />
+        <meshStandardMaterial color="#6d9249" roughness={0.92} />
+      </mesh>
+      {/* Diagonale Wege als Kreuz */}
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, Math.PI / 4, 0]}>
+        <planeGeometry args={[1.55, 0.14]} />
+        <meshStandardMaterial color="#cdb184" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, -Math.PI / 4, 0]}>
+        <planeGeometry args={[1.55, 0.14]} />
+        <meshStandardMaterial color="#cdb184" roughness={0.9} />
+      </mesh>
+      {/* Fountain */}
+      {hasFountain && (
+        <group>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <cylinderGeometry args={[0.14, 0.14, 0.05, 24]} />
+            <meshStandardMaterial color="#a8a8a4" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.065, 0]} receiveShadow>
+            <cylinderGeometry args={[0.12, 0.12, 0.01, 24]} />
+            <meshStandardMaterial color="#5a8dc2" roughness={0.2} metalness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.13, 0]} castShadow>
+            <cylinderGeometry args={[0.02, 0.02, 0.12, 10]} />
+            <meshStandardMaterial color="#8a8a86" roughness={0.6} />
+          </mesh>
+        </group>
+      )}
+      {/* Bäume */}
+      {treePos.map((p, i) => {
+        // Nicht auf Fountain legen
+        if (hasFountain && Math.abs(p[0]) < 0.2 && Math.abs(p[1]) < 0.2) return null;
+        return <TreeAt key={i} x={p[0]} z={p[1]} scale={0.8 + p[2] * 0.25} />;
+      })}
+    </group>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

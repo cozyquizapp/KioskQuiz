@@ -293,18 +293,18 @@ function TeamBase({ x, z, color, joker }: { x: number; z: number; color: string;
       {/* Basis-Tile in Team-Farbe */}
       <mesh position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[1.25, 1.25]} />
-        <meshStandardMaterial color={color} roughness={0.7} transparent opacity={0.45} />
+        <meshStandardMaterial color={color} roughness={0.7} transparent opacity={0.55} />
       </mesh>
-      {/* Team-Glow-Ring (wie Beamer-Avatar-Disc-Glow) */}
+      {/* Team-Glow-Ring (breiter und heller → klare Team-ID) */}
       <mesh position={[x, 0.045, z]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.52, 0.6, 40]} />
-        <meshBasicMaterial color={color} transparent opacity={0.55} toneMapped={false} />
+        <ringGeometry args={[0.5, 0.62, 48]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
       {/* Joker: zweiter goldener Ring außen */}
       {joker && (
         <mesh position={[x, 0.046, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.62, 0.68, 40]} />
-          <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} toneMapped={false} />
+          <ringGeometry args={[0.64, 0.7, 48]} />
+          <meshBasicMaterial color="#fbbf24" toneMapped={false} />
         </mesh>
       )}
     </group>
@@ -374,23 +374,20 @@ function BodyBox({ w, h, d, y, color, joker }: {
   );
 }
 
-// Avatar-Billboard auf dem Dach — größer + direkt aufgesetzt
+// Avatar-Billboard auf dem Dach — klein + direkt aufsitzend, wie QQ3DGrid
+// (kein weißer Badge-Hintergrund, nur das Emoji selbst; Team-ID trägt
+// der farbige Boden-Ring in TeamBase).
 function RoofAvatar({ tex, y, joker }: { tex: THREE.Texture; y: number; joker: boolean }) {
   return (
-    <Billboard position={[0, y + 0.36, 0]}>
+    <Billboard position={[0, y + 0.18, 0]}>
       {joker && (
-        <mesh position={[0, 0, -0.015]}>
-          <circleGeometry args={[0.44, 32]} />
+        <mesh position={[0, 0, -0.01]}>
+          <circleGeometry args={[0.2, 28]} />
           <meshBasicMaterial color="#fbbf24" toneMapped={false} />
         </mesh>
       )}
-      {/* Weißes Kreis-Badge als Hintergrund */}
-      <mesh position={[0, 0, -0.005]}>
-        <circleGeometry args={[0.36, 32]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
       <mesh>
-        <planeGeometry args={[0.62, 0.62]} />
+        <planeGeometry args={[0.34, 0.34]} />
         <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
       </mesh>
     </Billboard>

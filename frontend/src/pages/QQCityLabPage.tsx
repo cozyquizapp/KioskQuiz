@@ -1013,13 +1013,22 @@ function BarcelonaBlock({
   //   y=0 .. PLINTH_H          -> Plinth (Sockel, cremig)
   //   y=PLINTH_H .. H          -> Fassade (heller Creme)
   //   y=H .. H+ROOF_T          -> ROOF (Terrakotta, mit Ueberhang, deckt Fassade oben komplett ab)
+  // ROOT CAUSE FUER DEN 'WAENDE UEBER DEM DACH'-BUG:
+  // Nach geom.rotateX(-PI/2) liegt die extrudierte Geometrie in y ∈ [0, +depth]
+  // (NICHT [-depth, 0] wie ich faelschlich angenommen habe). Deshalb muss der
+  // Translate-Offset der UNTERE Startpunkt sein, nicht der obere.
+  //   Plinth: y ∈ [0, PLINTH_H]      -> translate(0, 0, 0)
+  //   Fassade: y ∈ [PLINTH_H, H]     -> translate(0, PLINTH_H, 0)
+  //   Dach: y ∈ [H, H + ROOF_T]       -> translate(0, H, 0) (+ kleiner Offset)
   const plinthGeom = useMemo(() => {
     const shape = chamferedSquareShape(OUTER + 0.008, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, PLINTH_H, 0);
+    // Unten-Kappe soll bei y=0 liegen -> kein translate noetig (bzw. 0).
+    // Shape liegt nach rotateX-(-PI/2) in XZ, Extrusion waechst +Y.
+    geom.translate(0, 0, 0);
     return geom;
   }, [PLINTH_H]);
 
@@ -1029,22 +1038,21 @@ function BarcelonaBlock({
       depth: H - PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, H, 0);
+    // Fassade startet unten auf Plinth-Top (y=PLINTH_H) und waechst +Y
+    geom.translate(0, PLINTH_H, 0);
     return geom;
   }, [H, PLINTH_H]);
 
-  // DEBUG: Dach als massiver weit ueberstehender "Hut" — +0.4 Ueberhang,
-  // 0.15 dick, knalliges Rot. Wenn dieser Hut korrekt oben sitzt, ist die
-  // Geometrie OK und "Waende ueber dem Dach" = Haeuser der naechsten Reihe
-  // (Perspektive). Wenn er woanders sitzt -> echter Bug.
-  const ROOF_T = 0.15;
+  // Dach sitzt bei y ∈ [H, H + ROOF_T] -> translate(0, H, 0) (+ epsilon gegen
+  // Z-Fighting mit Fassaden-Top-Cap)
+  const ROOF_T = 0.04;
   const roofGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER + 0.4, CHAMFER);
+    const shape = chamferedSquareShape(OUTER + 0.03, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, H + 0.001 + ROOF_T, 0);
+    geom.translate(0, H + 0.001, 0);
     return geom;
   }, [H]);
 
@@ -1078,24 +1086,17 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* DEBUG-Dach: leuchtendes Rot, damit wir sofort sehen, WO es rendert.
-          Wenn die roten Bloecke oben auf den Haeusern sitzen -> alles korrekt
-          und die "Durchsichtigkeit" ist ein Wahrnehmungs-Thema.
-          Wenn sie fehlen / woanders sitzen -> echter Geometrie-Bug. */}
+      {/* Dach (y ∈ [H, H + ROOF_T]) in Terrakotta, mit leichtem Ueberhang */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
         <meshStandardMaterial
-          color="#ff0000"
-          emissive="#ff0000"
-          emissiveIntensity={0.4}
-          roughness={0.6}
+          color={roofColor}
+          roughness={0.85}
           metalness={0.0}
         />
       </mesh>
-      {/* Nicht-genutzte Vars (ESLint-Silencer fuer DEBUG-Mode) */}
-      {roofColor === '' ? null : null}
 
-      {/* Innenhof-Plateau wieder drin: kleiner gruener Hof auf dem Dach */}
-      <mesh position={[0, H + 0.001 + ROOF_T + 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* Innenhof-Plateau: kleiner gruener Hof auf dem Dach (Eixample Patio) */}
+      <mesh position={[0, H + 0.001 + ROOF_T + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[COURTYARD_SIZE, COURTYARD_SIZE]} />
         <meshStandardMaterial color="#6b8e4a" roughness={0.9} />
       </mesh>

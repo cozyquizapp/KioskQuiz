@@ -46,7 +46,7 @@ const SIZE = 7;
 const TILE = 1.6;
 const OFFSET = ((SIZE - 1) * TILE) / 2;
 
-type Variant = 1 | 2;
+type Variant = 1 | 2 | 3;
 
 // ── Avatar-Textur-Cache (Emoji → CanvasTexture) ────────────────────────────
 // Emojis werden via 2D-Canvas mit System-Emoji-Fonts gerendert und
@@ -151,6 +151,7 @@ export default function QQCityLabPage() {
 const VARIANTS: { id: Variant; title: string; sub: string; accent: string }[] = [
   { id: 1, title: '① Häuser (Three.js)', sub: '8 Gebäudetypen wie QQ3DGrid, mit echtem Licht & emissive Fenstern', accent: '#F59E0B' },
   { id: 2, title: '② Sockel + Kopf',      sub: 'Team-farbiger 3D-Sockel mit Avatar-Portrait',                       accent: '#3B82F6' },
+  { id: 3, title: '③ 2D-Plan (Morph-Base)', sub: 'Flacher Stadtplan mit Straßen + Innenhöfen — gleiche Topologie wie 3D, morphbar', accent: '#10B981' },
 ];
 
 // Gebäude-Typ pro Zelle deterministisch bestimmen (wie QQ3DGrid-Ansatz)
@@ -163,6 +164,19 @@ function cellBType(r: number, c: number): number {
 
 function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; big?: boolean; emptyStyle?: EmptyStyle }) {
   const h = big ? 560 : 360;
+  // Variante 3: 2D-Plan mit identischer Topologie (Straßen + Innenhöfe).
+  // Rendert keine Canvas/Three — das ist der Morph-Ausgangspunkt.
+  if (variant === 3) {
+    return (
+      <div style={{ width: '100%', height: h, borderRadius: 12, overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'radial-gradient(ellipse at center, #1e293b 0%, #0b0d14 70%, #020617 100%)',
+        position: 'relative',
+      }}>
+        <Grid2DTopDown emptyStyle={emptyStyle} />
+      </div>
+    );
+  }
   return (
     <div style={{ width: '100%', height: h, borderRadius: 12, overflow: 'hidden' }}>
       <Canvas
@@ -267,6 +281,216 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
           <Vignette eskil={false} offset={0.4} darkness={0.35} />
         </EffectComposer>
       </Canvas>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Grid2DTopDown — 2D-Plan der exakt gleichen Topologie wie das 3D-Grid.
+// Jede Zelle ist ein Block-Quadrat mit Innenhof-Fenster in der Mitte;
+// zwischen den Zellen liegt das Straßenraster (Gaps). Dachfarbe (Team)
+// erscheint als Ring um den Innenhof — exakt die gleiche Schicht-Logik wie
+// im 3D-BarcelonaBlock (Plinth → Fassade → Dach → Innenhof-Plateau).
+// Damit lässt sich jede 2D-Zelle beim Morph direkt zu ihrem 3D-Gegenstück
+// extrudieren (Translate x/z gleich, Höhe interpoliert 0 → heightBase).
+// ─────────────────────────────────────────────────────────────────────────────
+function Grid2DTopDown({ emptyStyle }: { emptyStyle: EmptyStyle }) {
+  // Zelle = Roof-Quadrat mit abgeschrägten Ecken (chaflán), Innenhof in der
+  // Mitte, Straßen als Gap um die Zelle herum. Genau wie in Barcelona-Eixample.
+  const CELL = 88;          // px pro Zelle (Block + Dach)
+  const GAP  = 14;          // px Straßenbreite zwischen Zellen (~15% des Tile)
+  const CHAMFER_PCT = 18;   // % der Zellenbreite = Eckabschrägung (wie CHAMFER in 3D)
+  const INNER_PCT = 46;     // % der Zellenbreite = Innenhof (INNER/OUTER ≈ 0.58/1.22)
+  const rows = DEMO_GRID.length;
+  const cols = DEMO_GRID[0].length;
+  const w = cols * CELL + (cols + 1) * GAP;
+  const h = rows * CELL + (rows + 1) * GAP;
+
+  // Chaflán-Polygon: 8-Eck mit abgeschrägten Ecken — matcht chamferedSquareShape in 3D.
+  const chaflanClip = (() => {
+    const c = CHAMFER_PCT;
+    return `polygon(${c}% 0%, ${100 - c}% 0%, 100% ${c}%, 100% ${100 - c}%, ${100 - c}% 100%, ${c}% 100%, 0% ${100 - c}%, 0% ${c}%)`;
+  })();
+
+  return (
+    <div style={{
+      position: 'relative', width: w, height: h,
+      // Straßen-Grundfarbe (Asphalt-Grau) als Background
+      background: 'linear-gradient(180deg, #3a3f4a 0%, #2e333d 100%)',
+      borderRadius: 10,
+      boxShadow: '0 10px 40px rgba(0,0,0,0.6), inset 0 0 0 1.5px rgba(0,0,0,0.5)',
+      overflow: 'hidden',
+    }}>
+      {/* Straßen-Grid-Muster: horizontale + vertikale Linien an jeder Gap-Mitte */}
+      <svg width={w} height={h} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {Array.from({ length: rows + 1 }).map((_, i) => {
+          const y = i * (CELL + GAP) + GAP / 2;
+          return <line key={`hl-${i}`} x1={0} y1={y} x2={w} y2={y} stroke="#cdb184" strokeWidth={0.8} strokeDasharray="4 6" opacity={0.25} />;
+        })}
+        {Array.from({ length: cols + 1 }).map((_, i) => {
+          const x = i * (CELL + GAP) + GAP / 2;
+          return <line key={`vl-${i}`} x1={x} y1={0} x2={x} y2={h} stroke="#cdb184" strokeWidth={0.8} strokeDasharray="4 6" opacity={0.25} />;
+        })}
+      </svg>
+
+      {/* Zellen */}
+      {DEMO_GRID.flatMap((row, r) => row.map((cell, c) => {
+        const left = GAP + c * (CELL + GAP);
+        const top  = GAP + r * (CELL + GAP);
+        const owner = cell.owner;
+        const avatar = owner ? AVATARS[owner] : null;
+        const teamColor = avatar?.color;
+        const isEmpty = !owner;
+        const joker = !!cell.joker;
+        const frozen = !!cell.frozen;
+        const stacked = cell.stacked ?? 0;
+
+        // Dach-Farbe: gleiche Logik wie 3D BarcelonaCell.
+        const roofColor = joker
+          ? '#fbbf24'
+          : frozen
+            ? '#7ec5ef'
+            : teamColor
+              ?? (emptyStyle === 'plaza' ? '#3d6b3f' : emptyStyle === 'brache' ? '#7a6f52' : '#c9b692');
+
+        // Fassade (als leichter "Mantel"-Rand im 2D sichtbar): beige, bei frozen eisblau.
+        const facadeColor = frozen ? '#b8daf2' : '#e8dcc0';
+
+        return (
+          <div key={`${r}-${c}`} style={{
+            position: 'absolute', left, top, width: CELL, height: CELL,
+            clipPath: chaflanClip,
+            // Fassade = äußere Schicht (Dach wird drauf gesetzt als kleineres Polygon)
+            background: isEmpty && emptyStyle === 'plaza'
+              ? 'transparent'  // Plaza = kein Gebäude, nur Park — Innenhof füllt alles
+              : `linear-gradient(180deg, ${facadeColor} 0%, ${facadeColor}dd 100%)`,
+            boxShadow: isEmpty && emptyStyle === 'plaza'
+              ? 'none'
+              : `inset 0 0 0 1px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.5)`,
+            // Stacked = stärkerer Schatten als Höhen-Hinweis
+            filter: stacked > 0 && !isEmpty
+              ? `drop-shadow(0 ${2 + stacked * 2}px ${3 + stacked * 2}px rgba(0,0,0,0.55))`
+              : undefined,
+          }}>
+            {/* Dach-Layer (Ring um Innenhof) — bei Plaza wird kein Dach gerendert */}
+            {!(isEmpty && emptyStyle === 'plaza') && (
+              <div style={{
+                position: 'absolute', inset: 0,
+                clipPath: chaflanClip,
+                background: roofColor,
+                // Emissive-Effekt für Joker/Frozen simulieren
+                boxShadow: joker
+                  ? `inset 0 0 24px rgba(251,191,36,0.6), 0 0 16px rgba(251,191,36,0.5)`
+                  : frozen
+                    ? `inset 0 0 18px rgba(91,179,255,0.55)`
+                    : undefined,
+              }} />
+            )}
+
+            {/* Innenhof — quadratisches Fenster in der Mitte.
+                Bei Plaza-Park = grüner großer Innenhof (nimmt fast alles ein). */}
+            {(() => {
+              const innerPct = isEmpty && emptyStyle === 'plaza' ? 78 : INNER_PCT;
+              const innerBg = isEmpty && emptyStyle === 'plaza'
+                ? 'radial-gradient(ellipse at center, #6b8e4a 0%, #4d6b38 70%, #3d5a2e 100%)'
+                : isEmpty
+                  ? (emptyStyle === 'brache' ? '#7a6f52' : emptyStyle === 'beige' ? '#d4c4a0' : '#c9b692')
+                  : '#6b8e4a';  // Innenhof = Garten (grün)
+              return (
+                <div style={{
+                  position: 'absolute',
+                  left: `${(100 - innerPct) / 2}%`, top: `${(100 - innerPct) / 2}%`,
+                  width: `${innerPct}%`, height: `${innerPct}%`,
+                  borderRadius: 4,
+                  background: innerBg,
+                  boxShadow: isEmpty && emptyStyle === 'plaza'
+                    ? 'none'
+                    : `inset 0 0 0 1px rgba(0,0,0,0.35), inset 0 2px 6px rgba(0,0,0,0.45)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {/* Mini-Baum im Innenhof (immer — matcht 3D-Szene) */}
+                  {!isEmpty && (
+                    <div style={{
+                      width: 10, height: 10, borderRadius: '50%',
+                      background: '#3d6b3f',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                    }} />
+                  )}
+                  {/* Plaza: Brunnen + 3 Bäume */}
+                  {isEmpty && emptyStyle === 'plaza' && (
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <div style={{
+                        position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: 'radial-gradient(circle, #a8c8e0 0%, #6d9ab8 100%)',
+                        boxShadow: '0 0 6px rgba(168,200,224,0.6), inset 0 -2px 3px rgba(0,0,0,0.3)',
+                      }} />
+                      {[[20, 20], [76, 22], [24, 78], [76, 78]].map(([x, y], i) => (
+                        <div key={i} style={{
+                          position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)',
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: '#3d6b3f',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        }} />
+                      ))}
+                    </div>
+                  )}
+                  {/* Avatar-Emoji über dem Innenhof (im 3D: Billboard) */}
+                  {avatar && (
+                    <div style={{
+                      position: 'absolute', left: '50%', top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      fontSize: 22, lineHeight: 1,
+                      filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))',
+                      zIndex: 2,
+                    }}>{avatar.emoji}</div>
+                  )}
+                  {/* Joker: Stern */}
+                  {joker && (
+                    <div style={{
+                      position: 'absolute', left: '50%', top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      fontSize: 20, filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.9))',
+                      zIndex: 3,
+                    }}>⭐</div>
+                  )}
+                </div>
+              );
+            })()}
+            {/* Frozen: Schneeflocken-Badge oben rechts, wie 3D */}
+            {frozen && (
+              <div style={{
+                position: 'absolute', top: -6, right: -6,
+                width: 22, height: 22, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #a8d8ff, #5bb3ff)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, color: '#fff',
+                boxShadow: '0 0 8px rgba(91,179,255,0.7)',
+                zIndex: 4,
+              }}>❄</div>
+            )}
+            {/* Stacked: kleine Ebenen-Indikatoren (•• oder •••) */}
+            {stacked > 0 && !isEmpty && (
+              <div style={{
+                position: 'absolute', bottom: 4, right: 6,
+                fontSize: 10, color: '#fff', fontWeight: 900,
+                textShadow: '0 1px 2px rgba(0,0,0,0.9)',
+                zIndex: 4,
+              }}>{'•'.repeat(1 + stacked)}</div>
+            )}
+          </div>
+        );
+      }))}
+
+      {/* Label: Morph-Hinweis */}
+      <div style={{
+        position: 'absolute', left: 10, bottom: 10,
+        padding: '4px 10px', borderRadius: 8,
+        background: 'rgba(0,0,0,0.6)', color: '#10b981', fontSize: 11, fontWeight: 800,
+        letterSpacing: '0.05em',
+      }}>
+        TOPOLOGIE IDENTISCH ZU 3D — MORPH-BASE
+      </div>
     </div>
   );
 }

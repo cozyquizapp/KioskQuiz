@@ -24,16 +24,17 @@ const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }>
 
 type Cell = { owner: AvatarKey | null; joker?: boolean };
 
-// 7×7 Grid — für das Spiel voll mit Hausblocks (keine Plazas).
-// Eine Joker-Zelle in der Mitte für Demo-Zwecke.
+// 7×7 Grid — Mix aus eingenommenen Blöcken (Team-farbig) + unbebauten
+// Plazas (Parks mit Bäumen/Brunnen) für den nötigen Kontrast.
+// Joker-Zelle in der Mitte für Demo-Zwecke.
 const DEMO_GRID: Cell[][] = [
-  [{ owner: 'fox' },   { owner: 'fox' },     { owner: 'frog' },   { owner: 'frog' },   { owner: 'frog' },    { owner: 'panda' },   { owner: 'panda' }],
-  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'frog' },   { owner: 'frog' },   { owner: 'panda' },   { owner: 'panda' },   { owner: 'cat' }],
-  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'unicorn' },{ owner: 'unicorn' },{ owner: 'unicorn' }, { owner: 'cat' },     { owner: 'cat' }],
-  [{ owner: 'cow' },   { owner: 'cow' },     { owner: 'unicorn' },{ owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: 'raccoon' }, { owner: 'raccoon' }],
-  [{ owner: 'cow' },   { owner: 'cow' },     { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: 'raccoon' }, { owner: 'raccoon' }, { owner: 'raccoon' }],
-  [{ owner: 'cow' },   { owner: 'unicorn' }, { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: 'unicorn' }, { owner: 'frog' },    { owner: 'panda' }],
-  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'cat' },    { owner: 'unicorn' },{ owner: 'cow' },     { owner: 'frog' },    { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: null },      { owner: 'frog' },   { owner: 'frog' },   { owner: null },      { owner: 'panda' },   { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: 'cat' },     { owner: null },     { owner: 'frog' },   { owner: 'panda' },   { owner: null },      { owner: 'cat' }],
+  [{ owner: null },      { owner: 'cat' },     { owner: 'unicorn' },{ owner: 'unicorn' },{ owner: 'unicorn' }, { owner: 'cat' },     { owner: null }],
+  [{ owner: 'cow' },     { owner: null },      { owner: 'unicorn' },{ owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: null },      { owner: 'raccoon' }],
+  [{ owner: null },      { owner: 'cow' },     { owner: 'rabbit' }, { owner: null },     { owner: 'raccoon' }, { owner: 'raccoon' }, { owner: null }],
+  [{ owner: 'cow' },     { owner: 'unicorn' }, { owner: null },     { owner: 'rabbit' }, { owner: null },      { owner: 'frog' },    { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: null },      { owner: 'cat' },    { owner: 'unicorn' },{ owner: 'cow' },     { owner: null },      { owner: 'panda' }],
 ];
 
 const SIZE = 7;
@@ -66,9 +67,12 @@ function useAvatarTexture(emoji: string): THREE.Texture {
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
+type EmptyStyle = 'plaza' | 'brache' | 'beige' | 'ghost';
+
 export default function QQCityLabPage() {
   const [variant, setVariant] = useState<Variant>(1);
   const [showAll, setShowAll] = useState(false);
+  const [emptyStyle, setEmptyStyle] = useState<EmptyStyle>('plaza');
 
   return (
     <div style={{
@@ -88,11 +92,32 @@ export default function QQCityLabPage() {
       <div style={{ maxWidth: 1400, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <Header variant={variant} setVariant={setVariant} showAll={showAll} setShowAll={setShowAll} />
 
+        {/* Empty-Style-Picker — 4 Varianten für unbesetzte Felder */}
+        <div style={{
+          marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap',
+          justifyContent: 'center', alignItems: 'center',
+        }}>
+          <span style={{ fontSize: 13, opacity: 0.7, marginRight: 6 }}>Freie Felder:</span>
+          {([
+            { id: 'plaza',  label: '① Plaza-Park' },
+            { id: 'brache', label: '② Brache'     },
+            { id: 'beige',  label: '③ Beige-Haus' },
+            { id: 'ghost',  label: '④ Ghost-Haus' },
+          ] as const).map(opt => (
+            <button key={opt.id} onClick={() => setEmptyStyle(opt.id)} style={{
+              padding: '6px 14px', borderRadius: 999,
+              border: emptyStyle === opt.id ? '2px solid #F59E0B' : '1px solid rgba(255,255,255,0.15)',
+              background: emptyStyle === opt.id ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.05)',
+              color: '#e2e8f0', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>{opt.label}</button>
+          ))}
+        </div>
+
         {showAll ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginTop: 28 }}>
             {VARIANTS.map(v => (
               <Card key={v.id} title={v.title} subtitle={v.sub} accent={v.accent}>
-                <SceneHost variant={v.id} />
+                <SceneHost variant={v.id} emptyStyle={emptyStyle} />
               </Card>
             ))}
           </div>
@@ -105,7 +130,7 @@ export default function QQCityLabPage() {
                 accent={VARIANTS[variant - 1].accent}
                 big
               >
-                <SceneHost variant={variant} big />
+                <SceneHost variant={variant} big emptyStyle={emptyStyle} />
               </Card>
             </div>
           </div>
@@ -131,7 +156,7 @@ function cellBType(r: number, c: number): number {
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
-function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
+function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; big?: boolean; emptyStyle?: EmptyStyle }) {
   const h = big ? 560 : 360;
   return (
     <div style={{ width: '100%', height: h, borderRadius: 12, overflow: 'hidden' }}>
@@ -141,18 +166,18 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
         camera={{ position: [11, 10.5, 13], fov: 32 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       >
-        {/* Mediterraner Tageshimmel — Gradient von hellblau oben zu dunstig unten */}
-        <SkyGradient />
-        <fog attach="fog" args={['#d8e6ef', 18, 44]} />
+        {/* Epischer Nacht-Look, konsistent mit dem Beamer-Theme */}
+        <color attach="background" args={['#0b0d14']} />
+        <fog attach="fog" args={['#0b0d14', 16, 38]} />
 
-        {/* Stärkeres Himmels-Ambient — hellt Schatten auf */}
-        <hemisphereLight args={['#e8f2ff', '#d4b896', 1.0]} />
+        {/* Dezente Umgebungsfüllung — hellt Schatten auf, warmer Amber-Ground */}
+        <hemisphereLight args={['#6d80a8', '#2a1f14', 0.55]} />
 
-        {/* Sonne — Mittagsstand, weicher Schatten */}
+        {/* Key-Light: warmer Amber-Spot, wie das Beamer-Theme */}
         <directionalLight
-          position={[5, 20, 4]}
-          intensity={2.0}
-          color="#fff6dc"
+          position={[6, 18, 6]}
+          intensity={1.6}
+          color="#ffc880"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -163,11 +188,10 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           shadow-camera-near={0.5}
           shadow-camera-far={40}
           shadow-bias={-0.0003}
-          shadow-radius={4}
+          shadow-radius={6}
         />
-
-        {/* Bounce-Fill von unten (warm vom Straßen-Asphalt reflektiert) */}
-        <hemisphereLight args={['#b89a6b', '#6b7a8f', 0.35]} />
+        {/* Rim-Light gegenüberliegend, kühler Akzent */}
+        <directionalLight position={[-6, 10, -6]} intensity={0.4} color="#7c9cff" />
 
         <Ground />
         {variant === 1 && <Streets />}
@@ -183,7 +207,24 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
           const joker = !!cell.joker;
 
           if (variant === 1) {
-            if (!owner) return <Plaza key={key} x={x} z={z} seed={r * 11 + c * 7} />;
+            if (!owner) {
+              const seed = r * 11 + c * 7;
+              if (emptyStyle === 'plaza')  return <Plaza key={key} x={x} z={z} seed={seed} />;
+              if (emptyStyle === 'brache') return <Brache key={key} x={x} z={z} seed={seed} />;
+              // 'beige' + 'ghost' rendern leeres Haus im Barcelona-Stil
+              return (
+                <BarcelonaCell
+                  key={key}
+                  x={x}
+                  z={z}
+                  seed={r * 31 + c * 17}
+                  joker={false}
+                  teamColor={undefined}
+                  avatarEmoji={undefined}
+                  emptyVariant={emptyStyle === 'beige' ? 'beige' : 'ghost'}
+                />
+              );
+            }
             const avatar = AVATARS[owner];
             return (
               <BarcelonaCell
@@ -262,15 +303,20 @@ function SkyGradient() {
 }
 
 function Ground() {
-  // Stadtboden EXAKT auf Grid-Größe beschränkt — keine Straßen außerhalb
-  // des bespielbaren Feldes. Kein äußerer Horizont-Plane (SkyGradient + fog
-  // übernehmen den Hintergrund).
+  // Stadtboden exakt auf Grid-Größe — keine Straßen außerhalb. Darunter ein
+  // leicht größeres, dunkles Podium als Rahmen (setzt das Grid in Szene).
   const groundSize = SIZE * TILE;
   return (
     <group>
+      {/* Podium (leicht größer, tiefer unten, dunkler) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
+        <planeGeometry args={[groundSize + 0.6, groundSize + 0.6]} />
+        <meshStandardMaterial color="#1a1d26" roughness={0.95} />
+      </mesh>
+      {/* Asphalt-Ebene (Blocks stehen hier drauf) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[groundSize, groundSize]} />
-        <meshStandardMaterial color="#7e8189" roughness={0.92} metalness={0.01} />
+        <meshStandardMaterial color="#2e323c" roughness={0.92} metalness={0.02} />
       </mesh>
     </group>
   );
@@ -968,9 +1014,10 @@ function rngFromSeed(seed: number): () => number {
 }
 
 // Pro Zelle: ein Barcelona-Block mit detaillierter Dachvariation
-function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji }: {
+function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant }: {
   x: number; z: number; seed: number; joker: boolean;
   teamColor?: string; avatarEmoji?: string;
+  emptyVariant?: 'beige' | 'ghost';
 }) {
   const rng = useMemo(() => rngFromSeed(seed + 1), [seed]);
   // Variation: Höhe — mit 20% Chance ein echter Turm (2-3× normal)
@@ -982,11 +1029,13 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji }: {
   }, [rng]);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
-  // Dach: Team-Farbe (eingenommen), mit ~20% Chance bleibt es Terrakotta
-  // als Kontrast-Insel. Ohne Team -> Terrakotta.
-  const useTerrakottaInstead = rng() < 0.2;
+  // Dach-Farbe: Team-Farbe wenn eingenommen. Leere Felder:
+  //   emptyVariant='beige'  → neutrales Sandbeige
+  //   emptyVariant='ghost'  → gleiches Beige, wird später via Opacity gerendert
+  // Sonst Fallback Terrakotta (rein Defensive).
   const terracotta = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
-  const roof = teamColor && !useTerrakottaInstead ? teamColor : terracotta;
+  const roof = teamColor
+    ?? (emptyVariant === 'beige' || emptyVariant === 'ghost' ? '#c9b692' : terracotta);
   const hasPenthouse = rng() > 0.75;  // seltener, damit Dach lesbar bleibt
   const hasSolar = rng() > 0.7;
   const hasTerrace = rng() > 0.6;
@@ -1008,6 +1057,7 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji }: {
         hasBalconies={hasBalconies}
         acSeeds={acSeeds}
         avatarEmoji={avatarEmoji}
+        ghost={emptyVariant === 'ghost'}
       />
     </group>
   );
@@ -1016,12 +1066,13 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji }: {
 function BarcelonaBlock({
   heightBase, facadeColor, plinthColor, roofColor, joker,
   hasPenthouse, hasSolar, hasTerrace, hasBalconies, acSeeds,
-  avatarEmoji,
+  avatarEmoji, ghost = false,
 }: {
   heightBase: number; facadeColor: string; plinthColor: string; roofColor: string; joker: boolean;
   hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean; hasBalconies: boolean;
   acSeeds: number[][];
   avatarEmoji?: string;
+  ghost?: boolean;
 }) {
   const OUTER = 1.22;
   const INNER = 0.58;
@@ -1089,31 +1140,40 @@ function BarcelonaBlock({
       {/* Sockel (Erdgeschoss, y=0..PLINTH_H) — voller Octagon-Block, keine
           Ring-Geometrie mehr -> keine Winding- oder Hole-Probleme,
           kein DoubleSide noetig. */}
-      <mesh geometry={plinthGeom} castShadow receiveShadow>
+      <mesh geometry={plinthGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={plinthColor}
           roughness={0.88}
           metalness={0.03}
+          transparent={ghost}
+          opacity={ghost ? 0.35 : 1}
+          depthWrite={!ghost}
         />
       </mesh>
 
       {/* Fassade (y=PLINTH_H..H) — voller Octagon-Block */}
-      <mesh geometry={facadeGeom} castShadow receiveShadow>
+      <mesh geometry={facadeGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={facadeColor}
           roughness={0.82}
           metalness={0.02}
           emissive={joker ? '#fbbf24' : '#000'}
           emissiveIntensity={joker ? 0.15 : 0}
+          transparent={ghost}
+          opacity={ghost ? 0.35 : 1}
+          depthWrite={!ghost}
         />
       </mesh>
 
       {/* Dach (y ∈ [H, H + ROOF_T]) in Terrakotta, mit leichtem Ueberhang */}
-      <mesh geometry={roofGeom} castShadow receiveShadow>
+      <mesh geometry={roofGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={roofColor}
           roughness={0.85}
           metalness={0.0}
+          transparent={ghost}
+          opacity={ghost ? 0.4 : 1}
+          depthWrite={!ghost}
         />
       </mesh>
 
@@ -1509,6 +1569,59 @@ function RooftopTerrace({ roofY }: { roofY: number }) {
 }
 
 // Plaza — grüner Park für null-Zellen (Monumental Squares im echten Eixample)
+// Brache — ungenutztes Grundstück: sandiger Boden, ein paar Grasbüschel,
+// vielleicht ein Schutthaufen. Flach, klarer Kontrast zu hohen Team-Blöcken.
+function Brache({ x, z, seed }: { x: number; z: number; seed: number }) {
+  const rng = useMemo(() => rngFromSeed(seed + 2024), [seed]);
+  const clumps = useMemo(
+    () => Array.from({ length: 5 + Math.floor(rng() * 4) },
+      () => [(rng() - 0.5) * 1.0, (rng() - 0.5) * 1.0, 0.5 + rng() * 0.5] as [number, number, number]),
+    [rng]
+  );
+  const hasRubble = useMemo(() => rng() > 0.5, [rng]);
+  return (
+    <group position={[x, 0.02, z]}>
+      {/* Erdboden */}
+      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[1.22, 1.22]} />
+        <meshStandardMaterial color="#6b5a3d" roughness={0.98} />
+      </mesh>
+      {/* Dunklere Flecken (Erdvariation) */}
+      <mesh position={[0.15, 0.004, -0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.3, 10]} />
+        <meshStandardMaterial color="#5a4a30" roughness={0.98} />
+      </mesh>
+      {/* Gras-/Unkraut-Büschel */}
+      {clumps.map((c, i) => (
+        <mesh key={i} position={[c[0], 0.025, c[1]]} castShadow>
+          <sphereGeometry args={[0.04 * c[2], 6, 5]} />
+          <meshStandardMaterial color="#7a8a4a" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Schutthaufen (optional) */}
+      {hasRubble && (
+        <group position={[0.25, 0, 0.2]}>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <boxGeometry args={[0.22, 0.08, 0.18]} />
+            <meshStandardMaterial color="#8c8275" roughness={0.9} />
+          </mesh>
+          <mesh position={[0.08, 0.08, 0.05]} castShadow rotation={[0.2, 0.4, 0.1]}>
+            <boxGeometry args={[0.1, 0.08, 0.09]} />
+            <meshStandardMaterial color="#7a7268" roughness={0.9} />
+          </mesh>
+        </group>
+      )}
+      {/* Niedriger Bauzaun rundherum (3 von 4 Seiten stilisiert) */}
+      {[[0, 0.06, 0.58], [0.58, 0.06, 0], [-0.58, 0.06, 0]].map((p, i) => (
+        <mesh key={`fence-${i}`} position={[p[0], p[1], p[2]]} castShadow>
+          <boxGeometry args={i === 0 ? [1.16, 0.12, 0.02] : [0.02, 0.12, 1.16]} />
+          <meshStandardMaterial color="#b5a584" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function Plaza({ x, z, seed }: { x: number; z: number; seed: number }) {
   const rng = useMemo(() => rngFromSeed(seed + 999), [seed]);
   const hasFountain = useMemo(() => rng() > 0.4, [rng]);

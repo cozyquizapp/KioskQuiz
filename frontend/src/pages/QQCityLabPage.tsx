@@ -1006,9 +1006,15 @@ function BarcelonaBlock({
   const H = heightBase;
   const PLINTH_H = Math.min(0.1, H * 0.22);
 
-  // Fassade: Plinth-Sockel (bis PLINTH_H) + normale Fassade (PLINTH_H bis H)
+  // NEUER ANSATZ (sauberer Rebuild): kein Ring mit Hole.
+  // Gebaeude ist ein VOLLER chamfered-Octagon-Block (keine Durchsicht moeglich).
+  // Innenhof-Illusion macht nur die RoofDepression als aufgesetztes Plateau.
+  // Stack von unten nach oben:
+  //   y=0 .. PLINTH_H          -> Plinth (Sockel, cremig)
+  //   y=PLINTH_H .. H          -> Fassade (heller Creme)
+  //   y=H .. H+ROOF_T          -> ROOF (Terrakotta, mit Ueberhang, deckt Fassade oben komplett ab)
   const plinthGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
+    const shape = chamferedSquareShape(OUTER + 0.008, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
@@ -1018,7 +1024,7 @@ function BarcelonaBlock({
   }, [PLINTH_H]);
 
   const facadeGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
+    const shape = chamferedSquareShape(OUTER, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: H - PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
@@ -1027,11 +1033,11 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach — hauchduenne Terrakotta-Sims direkt auf Fassadenkante.
-  // Bei H≈0.4 sollte das Dach nur ~3% sein, nicht 15%. Kein Ueberhang.
-  const ROOF_T = 0.015;
+  // Dach: voller chamfered-Octagon-Block in Terrakotta, minimaler Ueberhang
+  // nach aussen damit die Facade-Oberkante garantiert UNTER dem Dach endet.
+  const ROOF_T = 0.02;
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.01, INNER - 0.005, CHAMFER);
+    const shape = chamferedSquareShape(OUTER + 0.04, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
@@ -1040,24 +1046,26 @@ function BarcelonaBlock({
     return geom;
   }, [H]);
 
+  // Innenhof-Vertiefung: kleines Loch-Plateau IM Dach (Eixample Patio Interior)
+  // Wird NICHT durch den Block gestanzt -> keine Winding-Issues.
+  // Grüner Boden sitzt auf dem Dach leicht versenkt.
+  const COURTYARD_SIZE = INNER * 0.9;
+
   // Innenhof-Boden (Grün + Sand) — wie echter Eixample-pati interior
-  // Etwas über Ground positioniert damit keine Z-Fights
   return (
     <group>
-      {/* Sockel-Zone (Erdgeschoss) — dunkler, minimal breiter
-          DoubleSide ist noetig weil die Ring-Geometrie eine Innen- und eine
-          Aussenwand hat (Innenhof!). Ohne DoubleSide wird eine Seite gecullt,
-          und man sieht durch die Haeuser durch. */}
+      {/* Sockel (Erdgeschoss, y=0..PLINTH_H) — voller Octagon-Block, keine
+          Ring-Geometrie mehr -> keine Winding- oder Hole-Probleme,
+          kein DoubleSide noetig. */}
       <mesh geometry={plinthGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={plinthColor}
           roughness={0.88}
           metalness={0.03}
-          side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Fassade (Obergeschosse) — DoubleSide fuer Innen- und Aussenwand */}
+      {/* Fassade (y=PLINTH_H..H) — voller Octagon-Block */}
       <mesh geometry={facadeGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={facadeColor}
@@ -1065,22 +1073,11 @@ function BarcelonaBlock({
           metalness={0.02}
           emissive={joker ? '#fbbf24' : '#000'}
           emissiveIntensity={joker ? 0.15 : 0}
-          side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Ladentüren / Eingangsportale auf der Sockel-Zone (jede Hauptseite 2 Türen) */}
-      <PlinthDoors outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} />
-
-      {/* Markisen über Schaufenstern — bunte kleine Streifen pro Seite */}
-      <Awnings outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} seed={Math.round(H * 1000)} />
-
-      {/* Schmiedeeiserne Balkon-Bänder pro Etage */}
-      {hasBalconies && (
-        <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
-      )}
-
-      {/* Terrakotta-Dachfläche — flacher Extrude-Ring direkt auf Fassadenkante */}
+      {/* Dach (y=H..H+ROOF_T) — Terrakotta mit kleinem Ueberhang, deckt
+          die Fassade-Oberkante komplett ab. */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={roofColor}
@@ -1089,16 +1086,33 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* Dachziegel-Textur-Andeutung: horizontale Streifen auf dem Dach */}
-      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + ROOF_T + 0.002} />
+      {/* Innenhof-Plateau: grüner Hofboden direkt auf dem Dach (keine
+          Durchstanzung, keine Winding-Issues). Gibt den Eixample-Patio-Look. */}
+      <mesh position={[0, H + ROOF_T + 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[COURTYARD_SIZE, COURTYARD_SIZE]} />
+        <meshStandardMaterial color="#6b8e4a" roughness={0.9} />
+      </mesh>
+      {/* kleiner Innenhof-Baum */}
+      <mesh position={[0, H + ROOF_T + 0.05, 0]} castShadow>
+        <sphereGeometry args={[0.06, 10, 8]} />
+        <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
+      </mesh>
 
-      {/* Fenster */}
+      {/* Ladentüren / Schaufenster auf dem Sockel */}
+      <PlinthDoors outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} />
+
+      {/* Markisen ueber Schaufenstern */}
+      <Awnings outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} seed={Math.round(H * 1000)} />
+
+      {/* Schmiedeeiserne Balkon-Baender pro Etage */}
+      {hasBalconies && (
+        <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
+      )}
+
+      {/* Fenster auf der Fassade */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} plinthH={PLINTH_H} />
 
-      {/* Innenhof — grüner Garten mit Baum */}
-      <InnerCourtyard size={INNER * 0.9} />
-
-      {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) — auf Dach-Top */}
+      {/* Rooftop-Details auf das Dach */}
       {hasPenthouse && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
       {hasSolar && <RooftopSolar roofY={H + ROOF_T} />}
       {hasTerrace && <RooftopTerrace roofY={H + ROOF_T} />}

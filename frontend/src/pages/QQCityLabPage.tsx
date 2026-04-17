@@ -1124,8 +1124,8 @@ function BarcelonaBlock({
       )}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} plinthH={PLINTH_H} />
 
-      {/* AC-Boxen nur klein, nicht raumfuellend */}
-      {acSeeds.slice(0, 2).map((s, i) => (
+      {/* AC-Boxen ausgeblendet (stoeren das saubere Dach-Bild) */}
+      {false && acSeeds.map((s, i) => (
         <RooftopAC key={i} roofY={H + 0.001 + ROOF_T} sx={(s[0] - 0.5) * 0.5} sz={(s[1] - 0.5) * 0.5} sr={s[2]} />
       ))}
 

@@ -4366,39 +4366,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const sorted = [...parsed].sort((a, b) =>
               Math.abs(b.num - target) - Math.abs(a.num - target)
             );
-            // Avatare strikt alternieren oben/unten am Zahlenstrahl (0=oben nah,
-            // 1=unten nah). Bei echter Nähe (<9% zum direkten Nachbarn auf
-            // derselben Seite): weiter nach außen (2=oben weit, 3=unten weit).
-            // Zusätzlich bei sehr nahen Pins: kleiner X-Offset (-8/+8 px) damit
-            // sich die Avatare nicht berühren.
+            // 4-Slot-Kollisionssystem: Avatare werden auf die erste freie Reihe
+            // gelegt, die genug horizontalen Abstand hat. Reihenfolge der Reihen:
+            // 0=oben nah, 1=unten nah, 2=oben weit, 3=unten weit.
+            // MIN_DIST_PCT = minimaler X-Abstand in % für dieselbe Reihe.
+            // Avatar 72px bei ~1400px Breite ≈ 5.2%, + 2% Luft = 7.2% → 8%.
             const pinRows = new Map<string, number>();
             const pinXNudge = new Map<string, number>();
+            const MIN_DIST_PCT = 8;
+            const rowLastPct: number[] = [-Infinity, -Infinity, -Infinity, -Infinity];
             const sortedByPos = [...parsed].sort((a, b) => a.num - b.num);
-            let lastTop = -Infinity;
-            let lastBot = -Infinity;
-            sortedByPos.forEach((p, i) => {
+            sortedByPos.forEach((p) => {
               const pct = pctOf(p.num);
-              // Strikte Alternation top/bot nach Positions-Rang
-              const baseSide = i % 2; // 0 = top, 1 = bot
-              const nearestSame = baseSide === 0 ? lastTop : lastBot;
-              let row: number;
-              if (pct - nearestSame < 9 && nearestSame > -Infinity) {
-                row = baseSide === 0 ? 2 : 3; // weiter nach außen
-              } else {
-                row = baseSide;
-              }
-              pinRows.set(p.teamId, row);
-              // X-Nudge bei sehr knapper Nähe zum unmittelbaren Vorgänger
-              if (i > 0) {
-                const prev = sortedByPos[i - 1];
-                const prevPct = pctOf(prev.num);
-                if (pct - prevPct < 4) {
-                  pinXNudge.set(p.teamId, 10);
-                  pinXNudge.set(prev.teamId, (pinXNudge.get(prev.teamId) ?? 0) - 10);
+              // Probiere die 4 Reihen in bevorzugter Reihenfolge durch
+              const preferredOrder = [0, 1, 2, 3];
+              let chosen = 3; // Fallback = weit-unten
+              for (const row of preferredOrder) {
+                if (pct - rowLastPct[row] >= MIN_DIST_PCT) {
+                  chosen = row;
+                  break;
                 }
               }
-              if (baseSide === 0) lastTop = pct;
-              else lastBot = pct;
+              pinRows.set(p.teamId, chosen);
+              rowLastPct[chosen] = pct;
             });
             const targetPct = pctOf(target);
             const fmt = (n: number) => {
@@ -4411,8 +4401,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                // Kompakter: Oben Target-Stack (-180 + Avatar 48 + Chip ~36 ≈ 250). Unten: far row (+180 + Avatar 41 + Chip 36 ≈ 250).
-                padding: '235px clamp(24px, 3vw, 48px) 235px',
+                // Oben: Target-Stack (-240 + Avatar 48 + Chip ~36 ≈ 305). Unten: far row (+180 + Avatar 41 + Chip 36 ≈ 250).
+                padding: '295px clamp(24px, 3vw, 48px) 235px',
                 marginBottom: 'clamp(8px, 1vh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
@@ -4449,8 +4439,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
                     ['--pin-x' as any]: '0px',
-                    ['--pin-y' as any]: '-180px',
-                    transform: 'translate(-50%, calc(-50% - 180px))',
+                    ['--pin-y' as any]: '-240px',
+                    transform: 'translate(-50%, calc(-50% - 240px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
@@ -4485,7 +4475,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
                     transform: 'translate(-50%, -100%)',
-                    width: 2, height: 90,
+                    width: 2, height: 150,
                     backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.75) 50%, transparent 50%)',
                     backgroundSize: '2px 8px',
                     backgroundRepeat: 'repeat-y',

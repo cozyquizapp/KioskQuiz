@@ -22,19 +22,24 @@ const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }>
     return acc;
   }, {} as Record<AvatarKey, { name: string; color: string; emoji: string }>);
 
-type Cell = { owner: AvatarKey | null; joker?: boolean };
+type Cell = {
+  owner: AvatarKey | null;
+  joker?: boolean;     // Goldenes Glow-Dach (Event-Feld vom Quiz)
+  frozen?: boolean;    // Eis-Dach (Team darf Zelle nicht verlieren)
+  stacked?: number;    // 0 = normal, 1+ = höheres Haus pro Level
+};
 
 // 7×7 Grid — Mix aus eingenommenen Blöcken (Team-farbig) + unbebauten
 // Plazas (Parks mit Bäumen/Brunnen) für den nötigen Kontrast.
 // Joker-Zelle in der Mitte für Demo-Zwecke.
 const DEMO_GRID: Cell[][] = [
-  [{ owner: 'fox' },     { owner: null },      { owner: 'frog' },   { owner: 'frog' },   { owner: null },      { owner: 'panda' },   { owner: 'panda' }],
-  [{ owner: 'fox' },     { owner: 'cat' },     { owner: null },     { owner: 'frog' },   { owner: 'panda' },   { owner: null },      { owner: 'cat' }],
-  [{ owner: null },      { owner: 'cat' },     { owner: 'unicorn' },{ owner: 'unicorn' },{ owner: 'unicorn' }, { owner: 'cat' },     { owner: null }],
-  [{ owner: 'cow' },     { owner: null },      { owner: 'unicorn' },{ owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: null },      { owner: 'raccoon' }],
-  [{ owner: null },      { owner: 'cow' },     { owner: 'rabbit' }, { owner: null },     { owner: 'raccoon' }, { owner: 'raccoon' }, { owner: null }],
-  [{ owner: 'cow' },     { owner: 'unicorn' }, { owner: null },     { owner: 'rabbit' }, { owner: null },      { owner: 'frog' },    { owner: 'panda' }],
-  [{ owner: 'fox' },     { owner: null },      { owner: 'cat' },    { owner: 'unicorn' },{ owner: 'cow' },     { owner: null },      { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: null },      { owner: 'frog', stacked: 2 }, { owner: 'frog' },   { owner: null },      { owner: 'panda' },   { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: 'cat', frozen: true }, { owner: null },     { owner: 'frog' },   { owner: 'panda' },   { owner: null },      { owner: 'cat' }],
+  [{ owner: null },      { owner: 'cat' },     { owner: 'unicorn' },          { owner: 'unicorn', stacked: 1 }, { owner: 'unicorn' }, { owner: 'cat' },     { owner: null }],
+  [{ owner: 'cow' },     { owner: null },      { owner: 'unicorn' },          { owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: null },      { owner: 'raccoon' }],
+  [{ owner: null },      { owner: 'cow' },     { owner: 'rabbit' },           { owner: null },     { owner: 'raccoon', frozen: true }, { owner: 'raccoon' }, { owner: null }],
+  [{ owner: 'cow' },     { owner: 'unicorn', stacked: 1 }, { owner: null },   { owner: 'rabbit' }, { owner: null },      { owner: 'frog' },    { owner: 'panda' }],
+  [{ owner: 'fox' },     { owner: null },      { owner: 'cat' },              { owner: 'unicorn' },{ owner: 'cow' },     { owner: null },      { owner: 'panda' }],
 ];
 
 const SIZE = 7;
@@ -235,6 +240,8 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
                 joker={joker}
                 teamColor={avatar.color}
                 avatarEmoji={avatar.emoji}
+                frozen={cell.frozen}
+                stacked={cell.stacked ?? 0}
               />
             );
           }
@@ -1014,28 +1021,34 @@ function rngFromSeed(seed: number): () => number {
 }
 
 // Pro Zelle: ein Barcelona-Block mit detaillierter Dachvariation
-function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant }: {
+function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant, frozen, stacked }: {
   x: number; z: number; seed: number; joker: boolean;
   teamColor?: string; avatarEmoji?: string;
   emptyVariant?: 'beige' | 'ghost';
+  frozen?: boolean;
+  stacked?: number;
 }) {
   const rng = useMemo(() => rngFromSeed(seed + 1), [seed]);
   // Variation: Höhe — mit 20% Chance ein echter Turm (2-3× normal)
-  const heightBase = useMemo(() => {
+  const baseH = useMemo(() => {
     const v = rng();
     if (v < 0.08) return 0.68 + rng() * 0.12;  // Punktuell höher (~0.68-0.8)
     if (v < 0.3)  return 0.52 + rng() * 0.12;  // leicht erhöht
     return 0.38 + rng() * 0.1;                 // Standard (0.38-0.48)
   }, [rng]);
+  // Stacked erhöht pro Level um 40% der Basishöhe (deutlich sichtbar)
+  const heightBase = baseH * (1 + (stacked ?? 0) * 0.4);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
-  // Dach-Farbe: Team-Farbe wenn eingenommen. Leere Felder:
-  //   emptyVariant='beige'  → neutrales Sandbeige
-  //   emptyVariant='ghost'  → gleiches Beige, wird später via Opacity gerendert
-  // Sonst Fallback Terrakotta (rein Defensive).
+  // Dach-Farbe: Joker → Amber, Frozen → Eis-Blau, sonst Team-Farbe.
+  // Leere Felder: beige/ghost → sandbeige; Fallback Terrakotta (Defensive).
   const terracotta = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
-  const roof = teamColor
-    ?? (emptyVariant === 'beige' || emptyVariant === 'ghost' ? '#c9b692' : terracotta);
+  const roof = joker
+    ? '#fbbf24'
+    : frozen
+      ? '#93d2ff'
+      : teamColor
+        ?? (emptyVariant === 'beige' || emptyVariant === 'ghost' ? '#c9b692' : terracotta);
   const hasPenthouse = rng() > 0.75;  // seltener, damit Dach lesbar bleibt
   const hasSolar = rng() > 0.7;
   const hasTerrace = rng() > 0.6;
@@ -1051,6 +1064,7 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant
         plinthColor={plinth}
         roofColor={roof}
         joker={joker}
+        frozen={!!frozen}
         hasPenthouse={hasPenthouse}
         hasSolar={hasSolar}
         hasTerrace={hasTerrace}
@@ -1064,11 +1078,12 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant
 }
 
 function BarcelonaBlock({
-  heightBase, facadeColor, plinthColor, roofColor, joker,
+  heightBase, facadeColor, plinthColor, roofColor, joker, frozen = false,
   hasPenthouse, hasSolar, hasTerrace, hasBalconies, acSeeds,
   avatarEmoji, ghost = false,
 }: {
-  heightBase: number; facadeColor: string; plinthColor: string; roofColor: string; joker: boolean;
+  heightBase: number; facadeColor: string; plinthColor: string; roofColor: string;
+  joker: boolean; frozen?: boolean;
   hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean; hasBalconies: boolean;
   acSeeds: number[][];
   avatarEmoji?: string;
@@ -1165,17 +1180,26 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* Dach (y ∈ [H, H + ROOF_T]) in Terrakotta, mit leichtem Ueberhang */}
+      {/* Dach (y ∈ [H, H + ROOF_T]) — Team/Joker/Frozen-Farbe, mit leichtem Ueberhang.
+          Joker = Amber-Emissive, Frozen = kühles Cyan-Emissive. */}
       <mesh geometry={roofGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={roofColor}
-          roughness={0.85}
-          metalness={0.0}
+          roughness={frozen ? 0.4 : 0.85}
+          metalness={frozen ? 0.3 : 0.0}
+          emissive={joker ? '#fbbf24' : frozen ? '#5bb3ff' : '#000'}
+          emissiveIntensity={joker ? 0.5 : frozen ? 0.3 : 0}
           transparent={ghost}
           opacity={ghost ? 0.4 : 1}
           depthWrite={!ghost}
         />
       </mesh>
+
+      {/* Joker: pulsierender Glow-Ring knapp über dem Dach */}
+      {joker && <JokerGlowRing y={H + 0.08} />}
+
+      {/* Frozen: Frost-Overlay auf dem Dach + pulsierender Eis-Ring */}
+      {frozen && <FrostOverlay y={H + 0.045} />}
 
       {/* Innenhof auf Bodenhoehe (Eixample Patio Interior) — gruener Garten
           mit kleinem Baum, sichtbar durchs Dach-Loch */}
@@ -1194,11 +1218,13 @@ function BarcelonaBlock({
         <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
       </mesh>
 
-      {/* Avatar als Billboard — schwebt auf Dachhöhe über dem Innenhof,
-          keine Umrandung, dreht sich immer zur Kamera (aus jedem Winkel lesbar). */}
-      {avatarEmoji && (
+      {/* Avatar / Icon als Billboard auf Dachhöhe über dem Innenhof.
+          Joker → ⭐ statt Team-Avatar, Frozen → Avatar + ❄️-Badge. */}
+      {joker && <AvatarBillboard emoji="⭐" y={H + 0.22} size={0.52} />}
+      {!joker && avatarEmoji && (
         <AvatarBillboard emoji={avatarEmoji} y={H + 0.18} />
       )}
+      {frozen && <SnowflakeBadge y={H + 0.34} />}
 
       {/* Rooftop-Extras bleiben ausgeblendet solange Bug nicht gefunden */}
       {false && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
@@ -1227,15 +1253,63 @@ function BarcelonaBlock({
 
 // Avatar-Billboard: Emoji-Plane, dreht sich zur Kamera (lesbar aus jedem Winkel).
 // Keine Umrandung, keine Plate — der Avatar schwebt pur.
-function AvatarBillboard({ emoji, y }: { emoji: string; y: number }) {
+function AvatarBillboard({ emoji, y, size = 0.42 }: { emoji: string; y: number; size?: number }) {
   const tex = useAvatarTexture(emoji);
   return (
     <Billboard position={[0, y, 0]}>
       <mesh>
-        <planeGeometry args={[0.42, 0.42]} />
+        <planeGeometry args={[size, size]} />
         <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
       </mesh>
     </Billboard>
+  );
+}
+
+// Schneeflocken-Badge oben über dem Avatar — kleiner Icon-Akzent für Frozen-Felder.
+function SnowflakeBadge({ y }: { y: number }) {
+  const tex = useAvatarTexture('❄️');
+  return (
+    <Billboard position={[0.18, y, 0]}>
+      <mesh>
+        <planeGeometry args={[0.22, 0.22]} />
+        <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </Billboard>
+  );
+}
+
+// Joker-Glow-Ring: pulsierender Amber-Ring über dem Dach (sieht wie ein Halo aus).
+function JokerGlowRing({ y }: { y: number }) {
+  const ref = useRef<THREE.Mesh>(null!);
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = state.clock.elapsedTime;
+    const s = 1 + Math.sin(t * 2.2) * 0.08;
+    ref.current.scale.set(s, s, 1);
+    const m = ref.current.material as THREE.MeshBasicMaterial;
+    m.opacity = 0.55 + Math.sin(t * 2.2) * 0.2;
+  });
+  return (
+    <mesh ref={ref} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.55, 0.72, 32]} />
+      <meshBasicMaterial color="#fbbf24" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Frost-Overlay: leicht transparente hellblaue Scheibe über dem Dach + pulse.
+function FrostOverlay({ y }: { y: number }) {
+  const ref = useRef<THREE.Mesh>(null!);
+  useFrame((state) => {
+    if (!ref.current) return;
+    const m = ref.current.material as THREE.MeshBasicMaterial;
+    m.opacity = 0.3 + Math.sin(state.clock.elapsedTime * 1.5) * 0.12;
+  });
+  return (
+    <mesh ref={ref} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.0, 0.68, 28]} />
+      <meshBasicMaterial color="#cfe8ff" transparent opacity={0.35} depthWrite={false} toneMapped={false} />
+    </mesh>
   );
 }
 
@@ -1637,13 +1711,17 @@ function Plaza({ x, z, seed }: { x: number; z: number; seed: number }) {
         <planeGeometry args={[1.22, 1.22]} />
         <meshStandardMaterial color="#6d9249" roughness={0.92} />
       </mesh>
-      {/* Diagonale Wege als Kreuz */}
-      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, Math.PI / 4, 0]}>
-        <planeGeometry args={[1.55, 0.14]} />
+      {/* Diagonale Wege als Kreuz — Plane plattlegen (rotateX -PI/2) und danach
+          innerhalb der horizontalen Ebene via rotateZ um 45° drehen.
+          (rotateY nach rotateX würde den Plane aufrichten, weil die lokale Y-Achse
+          nach dem X-Flip entlang World-Z zeigt — das war der diagonale-Balken-Bug.)
+          Außerdem kürzer (1.0 statt 1.55), damit sie nicht aus der Plaza ragen. */}
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
+        <planeGeometry args={[1.0, 0.14]} />
         <meshStandardMaterial color="#cdb184" roughness={0.9} />
       </mesh>
-      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, -Math.PI / 4, 0]}>
-        <planeGeometry args={[1.55, 0.14]} />
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
+        <planeGeometry args={[1.0, 0.14]} />
         <meshStandardMaterial color="#cdb184" roughness={0.9} />
       </mesh>
       {/* Fountain */}

@@ -24,17 +24,16 @@ const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }>
 
 type Cell = { owner: AvatarKey | null; joker?: boolean };
 
-// 7×7 Grid — für den Barcelona-Luftbild-Look (Eixample).
-// `null`-Felder = Plazas/Parks mit Grün/Fountain (wie Monumental Squares
-// im echten Eixample-Raster).
+// 7×7 Grid — für das Spiel voll mit Hausblocks (keine Plazas).
+// Eine Joker-Zelle in der Mitte für Demo-Zwecke.
 const DEMO_GRID: Cell[][] = [
-  [{ owner: 'fox' },   { owner: 'fox' },     { owner: 'frog' },   { owner: null },     { owner: 'frog' },    { owner: 'panda' },   { owner: 'panda' }],
+  [{ owner: 'fox' },   { owner: 'fox' },     { owner: 'frog' },   { owner: 'frog' },   { owner: 'frog' },    { owner: 'panda' },   { owner: 'panda' }],
   [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'frog' },   { owner: 'frog' },   { owner: 'panda' },   { owner: 'panda' },   { owner: 'cat' }],
-  [{ owner: 'fox' },   { owner: 'cat' },     { owner: null },     { owner: 'unicorn' },{ owner: 'unicorn' }, { owner: null },      { owner: 'cat' }],
+  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'unicorn' },{ owner: 'unicorn' },{ owner: 'unicorn' }, { owner: 'cat' },     { owner: 'cat' }],
   [{ owner: 'cow' },   { owner: 'cow' },     { owner: 'unicorn' },{ owner: 'rabbit', joker: true }, { owner: 'unicorn' }, { owner: 'raccoon' }, { owner: 'raccoon' }],
-  [{ owner: 'cow' },   { owner: null },      { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: null },      { owner: 'raccoon' }, { owner: 'raccoon' }],
+  [{ owner: 'cow' },   { owner: 'cow' },     { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: 'raccoon' }, { owner: 'raccoon' }, { owner: 'raccoon' }],
   [{ owner: 'cow' },   { owner: 'unicorn' }, { owner: 'rabbit' }, { owner: 'rabbit' }, { owner: 'unicorn' }, { owner: 'frog' },    { owner: 'panda' }],
-  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'cat' },    { owner: null },     { owner: 'cow' },     { owner: 'frog' },    { owner: 'panda' }],
+  [{ owner: 'fox' },   { owner: 'cat' },     { owner: 'cat' },    { owner: 'unicorn' },{ owner: 'cow' },     { owner: 'frog' },    { owner: 'panda' }],
 ];
 
 const SIZE = 7;
@@ -272,8 +271,8 @@ function Ground() {
 function Streets() {
   const halfGrid = (SIZE * TILE) / 2;
   const lines: JSX.Element[] = [];
-  // Schmalere Straßen + dunklere Fahrbahn (bessere Lesbarkeit gegen Blocks)
-  const streetWidth = 0.32;
+  // Straßenbreite — ausreichend für Bäume zwischen den Blocks
+  const streetWidth = 0.4;
   for (let i = 0; i <= SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
     lines.push(
@@ -962,15 +961,17 @@ function BarcelonaBlock({
     return geom;
   }, [H]);
 
-  // Dachfläche (sichtbare Terrakotta-Scheibe über dem Ring)
-  // Größer als Fassade (überhängt leicht) + dicker für klare Luft-Ansicht
+  // Dachfläche (sichtbare Terrakotta-Scheibe direkt auf dem Ring)
+  // Bottom des Dachs = H (Fassaden-Top), top = H + ROOF_T
+  const ROOF_T = 0.07;
   const roofGeom = useMemo(() => {
     const shape = chamferedRingShape(OUTER + 0.04, INNER - 0.02, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.07, bevelEnabled: false, curveSegments: 4,
+      depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, H + 0.07, 0);
+    // depth wächst nach +Y; nach Rotation sitzt die Unterkante bei 0 → auf H heben
+    geom.translate(0, H + ROOF_T, 0);
     return geom;
   }, [H]);
 
@@ -1001,7 +1002,7 @@ function BarcelonaBlock({
       </mesh>
 
       {/* Dachziegel-Textur-Andeutung: horizontale Streifen als dünne dunkle Linien */}
-      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.141} />
+      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.072} />
 
       {/* Fenster */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
@@ -1009,17 +1010,17 @@ function BarcelonaBlock({
       {/* Innenhof — grüner Garten mit Baum */}
       <InnerCourtyard size={INNER * 0.9} />
 
-      {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) */}
-      {hasPenthouse && <RooftopPenthouse roofY={H + 0.14} color={facadeColor} />}
-      {hasSolar && <RooftopSolar roofY={H + 0.14} />}
-      {hasTerrace && <RooftopTerrace roofY={H + 0.14} />}
+      {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) — auf Dach-Top */}
+      {hasPenthouse && <RooftopPenthouse roofY={H + 0.07} color={facadeColor} />}
+      {hasSolar && <RooftopSolar roofY={H + 0.07} />}
+      {hasTerrace && <RooftopTerrace roofY={H + 0.07} />}
       {acSeeds.map((s, i) => (
-        <RooftopAC key={i} roofY={H + 0.14} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
+        <RooftopAC key={i} roofY={H + 0.07} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
       ))}
 
       {/* Joker-Indikator: schwach leuchtende Dach-Kante */}
       {joker && (
-        <mesh position={[0, H + 0.18, 0]}>
+        <mesh position={[0, H + 0.12, 0]}>
           <torusGeometry args={[OUTER * 0.55, 0.008, 8, 48]} />
           <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={2} toneMapped={false} />
         </mesh>

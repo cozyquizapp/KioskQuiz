@@ -171,6 +171,7 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 
         <Ground />
         {variant === 1 && <Streets />}
+        {variant === 1 && <ChaflanPlazas />}
         {variant === 1 && <StreetTrees />}
         {variant !== 1 && <GridLines />}
 
@@ -219,10 +220,10 @@ function Ground() {
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#b8c2c8" roughness={0.95} />
       </mesh>
-      {/* Stadtboden — grauer Asphalt für alle Straßen */}
+      {/* Stadtboden — heller Asphalt (sandiger Ton wie in BCN-Aerials) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[SIZE * TILE + 2.4, SIZE * TILE + 2.4]} />
-        <meshStandardMaterial color="#4a4e54" roughness={0.9} metalness={0.02} />
+        <meshStandardMaterial color="#7e8189" roughness={0.92} metalness={0.01} />
       </mesh>
     </group>
   );
@@ -232,22 +233,20 @@ function Ground() {
 function Streets() {
   const halfGrid = (SIZE * TILE) / 2;
   const lines: JSX.Element[] = [];
-  // Für jede Zeile/Spalten-Grenze: ein Asphalt-Band exakt im Gap zwischen Tiles
+  // Schmalere Straßen + dunklere Fahrbahn (bessere Lesbarkeit gegen Blocks)
+  const streetWidth = 0.32;
   for (let i = 0; i <= SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
-    const streetWidth = 0.42;
-    // Horizontale Straße (läuft in X-Richtung, Position bei Z=p)
     lines.push(
       <mesh key={`h-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, p]} receiveShadow>
         <planeGeometry args={[SIZE * TILE + 2.4, streetWidth]} />
-        <meshStandardMaterial color="#5c6269" roughness={0.9} />
+        <meshStandardMaterial color="#4f555c" roughness={0.9} />
       </mesh>
     );
-    // Vertikale Straße (Z-Richtung, Position bei X=p)
     lines.push(
       <mesh key={`v-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.005, 0]} receiveShadow>
         <planeGeometry args={[streetWidth, SIZE * TILE + 2.4]} />
-        <meshStandardMaterial color="#5c6269" roughness={0.9} />
+        <meshStandardMaterial color="#4f555c" roughness={0.9} />
       </mesh>
     );
   }
@@ -296,6 +295,35 @@ function Streets() {
     );
   }
   return <>{lines}</>;
+}
+
+// Chaflán-Plätze: An jeder inneren Kreuzung ein achteckiger Mini-Platz,
+// wie im echten Eixample (wo die 4 abgeschrägten Ecken einen freien Raum
+// bilden — oft Parkplätze / Baumreihen).
+function ChaflanPlazas() {
+  const items: JSX.Element[] = [];
+  // Innere Kreuzungen: zwischen zwei Tiles (i, j) mit 1 ≤ i,j ≤ SIZE-1
+  for (let i = 1; i < SIZE; i++) {
+    for (let j = 1; j < SIZE; j++) {
+      const x = (j * TILE) - OFFSET - TILE / 2;
+      const z = (i * TILE) - OFFSET - TILE / 2;
+      items.push(
+        <group key={`plaza-${i}-${j}`} position={[x, 0.006, z]}>
+          {/* Heller Platz-Boden (Pflaster) */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
+            <circleGeometry args={[0.26, 8]} />
+            <meshStandardMaterial color="#a9a8a0" roughness={0.9} />
+          </mesh>
+          {/* Kreuzformige Pflasterstruktur-Andeutung */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
+            <circleGeometry args={[0.06, 8]} />
+            <meshStandardMaterial color="#8b8a82" roughness={0.85} />
+          </mesh>
+        </group>
+      );
+    }
+  }
+  return <>{items}</>;
 }
 
 // Alleebaum an Kreuzungs-Ecken (wie Barcelona-Platanen)
@@ -721,13 +749,16 @@ function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number
   const flatLen = outer - 2 * chamfer;
   const diagLen = chamfer * Math.SQRT2;
 
-  const rows = 2;
-  const cols = 4;
-  const winW = (flatLen / (cols + 1)) * 0.5;
-  const winH = 0.08;
-  const rowYs = [h * 0.32, h * 0.68];
+  // Fensterreihen: dichtere, kleinere Rechtecke als dunkles Glas (Tag-Look)
+  const rows = Math.max(2, Math.round(h * 6));
+  const cols = 5;
+  const winW = (flatLen / (cols + 1)) * 0.42;
+  const winH = 0.055;
+  const rowStep = h / (rows + 1);
+  const rowYs: number[] = [];
+  for (let r = 0; r < rows; r++) rowYs.push((r + 1) * rowStep);
   const winMat = (
-    <meshStandardMaterial color="#fef3c7" emissive="#fbbf24" emissiveIntensity={0.9} toneMapped={false} />
+    <meshStandardMaterial color="#2a3440" roughness={0.25} metalness={0.55} />
   );
 
   const items: JSX.Element[] = [];
@@ -814,27 +845,25 @@ function rngFromSeed(seed: number): () => number {
 // Pro Zelle: ein Barcelona-Block mit detaillierter Dachvariation
 function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: number; joker: boolean }) {
   const rng = useMemo(() => rngFromSeed(seed + 1), [seed]);
-  // Variation: Höhe, Fassaden-Ton, Dach-Ton, Rooftop-Dekore
-  const heights = useMemo(() => {
-    const base = 0.34 + rng() * 0.18;
-    // 8 segmentale Höhen (4 Seiten + 4 Chamfers) ganz leicht variiert
-    return {
-      base,
-      segs: [0, 1, 2, 3, 4, 5, 6, 7].map(() => base + (rng() - 0.5) * 0.08),
-    };
+  // Variation: Höhe — mit 20% Chance ein echter Turm (2-3× normal)
+  const heightBase = useMemo(() => {
+    const v = rng();
+    if (v < 0.12) return 0.95 + rng() * 0.35;  // Turm (~1-1.3) — selten
+    if (v < 0.28) return 0.6 + rng() * 0.2;    // höherer Block
+    return 0.36 + rng() * 0.18;                // Standard (0.36-0.54)
   }, [rng]);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
   const hasPenthouse = rng() > 0.4;
   const hasSolar = rng() > 0.55;
-  const hasTerrace = rng() > 0.5;
-  const acCount = Math.floor(rng() * 4);
+  const hasTerrace = rng() > 0.45;
+  const acCount = 2 + Math.floor(rng() * 4);
   const acSeeds = useMemo(() => Array.from({ length: acCount }, () => [rng(), rng(), rng()]), [acCount, rng]);
 
   return (
     <group position={[x, 0.02, z]}>
       <BarcelonaBlock
-        heightBase={heights.base}
+        heightBase={heightBase}
         facadeColor={facade}
         roofColor={roof}
         joker={joker}
@@ -856,7 +885,7 @@ function BarcelonaBlock({
   acSeeds: number[][];
 }) {
   const OUTER = 1.22;
-  const INNER = 0.46;
+  const INNER = 0.58;
   const CHAMFER = 0.24;
   const H = heightBase;
 

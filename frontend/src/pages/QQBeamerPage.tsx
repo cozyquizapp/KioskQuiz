@@ -8,6 +8,7 @@ import {
   QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
   QQQuestionImage,
   QQSlideTemplates,
+  QQLanguage,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -256,6 +257,22 @@ export default function QQBeamerPage() {
 
 function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates; roomCode: string }) {
   const cat = s.currentQuestion?.category;
+  // Intro-Overlay: einmal pro Session beim ersten Wechsel LOBBY→RULES.
+  // Wird als Fullscreen-Overlay über der Rules-Ansicht gerendert und blendet
+  // nach ~4.8s aus. Ref merkt sich, dass das Intro schon lief.
+  const introPlayedRef = useRef(false);
+  const [introActive, setIntroActive] = useState(false);
+  useEffect(() => {
+    if (s.phase === 'RULES' && !introPlayedRef.current) {
+      introPlayedRef.current = true;
+      setIntroActive(true);
+    }
+    // Wenn Phase zurück auf LOBBY geht (z.B. Reset), Intro wieder freigeben.
+    if (s.phase === 'LOBBY') {
+      introPlayedRef.current = false;
+      setIntroActive(false);
+    }
+  }, [s.phase]);
   // Pause-/Wartescreen: statt Braun ein kühler Event-Look mit farbigen Blobs.
   // Pre-Game (warm, orange/gold) und Paused (cool, cyan/violett) kriegen
   // eigene Identitäten.
@@ -571,6 +588,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} roomCode={roomCode} />}
           {s.phase === 'THANKS'          && <ThanksView state={s} roomCode={roomCode} />}
         </div>
+      )}
+
+      {/* Intro-Overlay — "Willkommen beim BLOCK QUIZ / QUARTER QUIZ by cozywolf".
+          Spielt einmal pro Session beim ersten Wechsel in die RULES-Phase. */}
+      {introActive && (
+        <QuizIntroOverlay language={s.language} onDone={() => setIntroActive(false)} />
       )}
 
       {/* Gameshow flash-sweep overlay — runs once per phase group change */}
@@ -971,6 +994,157 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
           color: slideColor, letterSpacing: '0.02em',
         }}>{grid.label}</div>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QuizIntroOverlay — epische Begrüßungs-Folie "Willkommen beim BLOCK QUIZ
+// / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
+// in RULES-Phase und blendet dann in die Rules-Ansicht über.
+// ─────────────────────────────────────────────────────────────────────────────
+function QuizIntroOverlay({ language, onDone }: { language: QQLanguage; onDone: () => void }) {
+  const lang = useLangFlip(language);
+  const title = lang === 'en' ? 'QUARTER QUIZ' : 'BLOCK QUIZ';
+  const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
+  const tagline = lang === 'en' ? 'by cozywolf' : 'by cozywolf';
+  useEffect(() => {
+    const t = setTimeout(onDone, 4800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9990,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'radial-gradient(ellipse at center, #1a1030 0%, #0b0618 55%, #050208 100%)',
+      overflow: 'hidden',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+      animation: 'qqIntroFade 4.8s ease both',
+    }}>
+      {/* Hintergrund-Glow Pulse (warm amber) */}
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%',
+        width: '140vmin', height: '140vmin',
+        transform: 'translate(-50%, -50%)',
+        background: 'radial-gradient(circle, rgba(251,191,36,0.22) 0%, rgba(249,115,22,0.12) 35%, transparent 65%)',
+        filter: 'blur(10px)',
+        animation: 'qqIntroGlow 4.8s ease-out both',
+        pointerEvents: 'none',
+      }} />
+      {/* Sweep-Strahl diagonal */}
+      <div style={{
+        position: 'absolute', left: '-20%', top: 0, width: '40%', height: '100%',
+        background: 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)',
+        animation: 'qqIntroSweep 2.6s ease-out 0.2s both',
+        pointerEvents: 'none',
+      }} />
+      {/* Partikel (kleine Stern-Punkte) */}
+      {Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        const r = 260 + (i % 5) * 30;
+        const dx = Math.cos(angle) * r;
+        const dy = Math.sin(angle) * r;
+        return (
+          <div key={i} style={{
+            position: 'absolute', left: '50%', top: '50%',
+            width: 6, height: 6, borderRadius: '50%',
+            background: i % 2 ? '#fbbf24' : '#fde68a',
+            boxShadow: '0 0 14px rgba(251,191,36,0.9)',
+            ['--dx' as any]: `${dx}px`,
+            ['--dy' as any]: `${dy}px`,
+            transform: 'translate(-50%, -50%)',
+            animation: `qqIntroSpark 2.8s cubic-bezier(0.2, 0.8, 0.4, 1) ${0.4 + (i % 6) * 0.05}s both`,
+            pointerEvents: 'none',
+          }} />
+        );
+      })}
+      {/* Content-Stack */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(12px, 2vh, 24px)',
+        textAlign: 'center',
+        padding: '0 6vw',
+      }}>
+        {/* Welcome label */}
+        <div style={{
+          fontSize: 'clamp(22px, 2.4vw, 36px)', fontWeight: 700,
+          letterSpacing: '0.3em', textTransform: 'uppercase',
+          color: '#fbbf24',
+          textShadow: '0 0 18px rgba(251,191,36,0.6)',
+          animation: 'qqIntroWelcome 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.2s both',
+        }}>{welcome}</div>
+        {/* Logo */}
+        <img
+          src="/logo.png"
+          alt="cozywolf"
+          style={{
+            width: 'clamp(120px, 14vw, 200px)', height: 'auto',
+            filter: 'drop-shadow(0 6px 24px rgba(251,191,36,0.55))',
+            animation: 'qqIntroLogoIn 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.5s both',
+          }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+        {/* Title */}
+        <div style={{
+          fontSize: 'clamp(68px, 10vw, 160px)', fontWeight: 900,
+          letterSpacing: '0.04em',
+          lineHeight: 1.0,
+          background: 'linear-gradient(180deg, #fff 0%, #fde68a 45%, #fbbf24 75%, #f97316 100%)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 0 60px rgba(251,191,36,0.4)',
+          animation: 'qqIntroTitleIn 1.2s cubic-bezier(0.2,0.9,0.3,1.1) 0.8s both',
+        }}>{title}</div>
+        {/* Tagline */}
+        <div style={{
+          fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 600,
+          letterSpacing: '0.22em',
+          color: 'rgba(255,255,255,0.88)',
+          textShadow: '0 2px 12px rgba(0,0,0,0.5)',
+          animation: 'qqIntroTagline 0.9s cubic-bezier(0.2,0.8,0.4,1) 1.6s both',
+        }}>{tagline}</div>
+      </div>
+      <style>{`
+        @keyframes qqIntroFade {
+          0% { opacity: 0; }
+          6%, 85% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes qqIntroGlow {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+          30% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+          100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.15); }
+        }
+        @keyframes qqIntroSweep {
+          0% { transform: translateX(0); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translateX(360%); opacity: 0; }
+        }
+        @keyframes qqIntroSpark {
+          0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; }
+        }
+        @keyframes qqIntroWelcome {
+          0% { opacity: 0; transform: translateY(10px); letter-spacing: 0.5em; }
+          100% { opacity: 1; transform: translateY(0); letter-spacing: 0.3em; }
+        }
+        @keyframes qqIntroLogoIn {
+          0% { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+          70% { transform: scale(1.08) rotate(3deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes qqIntroTitleIn {
+          0% { opacity: 0; transform: translateY(30px) scale(0.85); filter: blur(12px); }
+          60% { filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes qqIntroTagline {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -4390,6 +4564,105 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               pinRows.set(p.teamId, chosen);
               rowLastPct[chosen] = pct;
             });
+
+            // ═══════════════════════════════════════════════════════════════
+            // DYNAMIC CHIP PLACEMENT mit echter Kollisionserkennung.
+            // Pixel-basiert auf einer virtuellen Bühne von 1400px Breite.
+            // Für jeden Pin werden 4 Chip-Kandidaten geprüft (below, above,
+            // right, left relativ zum Avatar) und der erste freie gewählt.
+            // Geprüft wird gegen ALLE bereits platzierten Avatare & Chips.
+            // Die Chip-Offsets werden dann per CSS-Var an den Chip gereicht.
+            // ═══════════════════════════════════════════════════════════════
+            type Rect = { x: number; y: number; w: number; h: number };
+            const STAGE_W = 1400;
+            const rectsOverlap = (a: Rect, b: Rect, pad = 4) =>
+              !(a.x + a.w + pad <= b.x ||
+                b.x + b.w + pad <= a.x ||
+                a.y + a.h + pad <= b.y ||
+                b.y + b.h + pad <= a.y);
+            const placedRects: Rect[] = [];
+            // Zielmarker-Rechteck (Avatar + Chip) oben gesperrt halten.
+            const targetPx = (pctOf(target) / 100) * STAGE_W;
+            placedRects.push({ x: targetPx - 48, y: -300, w: 96, h: 250 });
+            // Alle Pin-Avatare als Rects für Kollision vormerken.
+            parsed.forEach((p) => {
+              const r = pinRows.get(p.teamId) ?? 0;
+              const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+              const isTop = r === 0 || r === 2;
+              const gap = r === 0 || r === 1 ? 110 : 180;
+              const wrapperY = isTop ? -gap : gap;
+              const aSize = isWinner ? 86 : 72;
+              const px = (pctOf(p.num) / 100) * STAGE_W;
+              placedRects.push({
+                x: px - aSize / 2, y: wrapperY - aSize / 2,
+                w: aSize, h: aSize,
+              });
+            });
+            // Chip-Offsets pro Team berechnen.
+            const pinChipOffset = new Map<string, { dx: number; dy: number; side: 'below' | 'above' | 'right' | 'left' }>();
+            // In Reihenfolge der sortierten Enthüllung (sorted = worst→best),
+            // damit Gewinner zuletzt platziert wird und freie Plätze wählt.
+            // Aber bessere Verteilung: erst die engsten Cluster (mittlere Pcts)
+            // durchgehen — wir gehen links→rechts, das klappt in der Praxis.
+            [...parsed].sort((a, b) => a.num - b.num).forEach((p) => {
+              const r = pinRows.get(p.teamId) ?? 0;
+              const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+              const isTop = r === 0 || r === 2;
+              const gap = r === 0 || r === 1 ? 110 : 180;
+              const wrapperY = isTop ? -gap : gap;
+              const aSize = isWinner ? 86 : 72;
+              const px = (pctOf(p.num) / 100) * STAGE_W;
+              const chipW = isWinner ? 100 : 70;
+              const chipH = isWinner ? 40 : 30;
+              // Kandidaten relativ zum Avatar-Wrapper-Zentrum (px-Koordinaten).
+              // Primär: Richtung "Rail" (zur Mitte hin) bleibt erhalten —
+              // unten-Avatare → Chip nach oben, oben-Avatare → Chip nach unten.
+              // Dann Fallbacks: außen, rechts, links.
+              const primaryBelow = !isTop; // !isTop = Avatar unten der Rail → Chip über dem Avatar (Richtung Rail)
+              const candidates: Array<{ dx: number; dy: number; side: 'below' | 'above' | 'right' | 'left' }> = [];
+              // Rail-zugewandt (primär)
+              if (primaryBelow) {
+                candidates.push({ dx: 0, dy: -aSize / 2 - 6 - chipH, side: 'above' });
+              } else {
+                candidates.push({ dx: 0, dy: aSize / 2 + 6, side: 'below' });
+              }
+              // Rail-abgewandt (sekundär)
+              if (primaryBelow) {
+                candidates.push({ dx: 0, dy: aSize / 2 + 6, side: 'below' });
+              } else {
+                candidates.push({ dx: 0, dy: -aSize / 2 - 6 - chipH, side: 'above' });
+              }
+              // Rechts / links vom Avatar
+              candidates.push({ dx: aSize / 2 + 8, dy: -chipH / 2, side: 'right' });
+              candidates.push({ dx: -aSize / 2 - 8 - chipW, dy: -chipH / 2, side: 'left' });
+              // Weitere Fallbacks: weiter oben/unten
+              candidates.push({ dx: 0, dy: -aSize / 2 - 6 - chipH - 28, side: 'above' });
+              candidates.push({ dx: 0, dy: aSize / 2 + 6 + 28, side: 'below' });
+
+              let picked = candidates[0];
+              for (const c of candidates) {
+                const chipRect: Rect = {
+                  x: px + c.dx - chipW / 2 + (c.side === 'right' || c.side === 'left' ? chipW / 2 : 0),
+                  y: wrapperY + c.dy,
+                  w: chipW, h: chipH,
+                };
+                // Für side=right/left: dx bereits inkl. Chip-Breite gesetzt.
+                if (c.side === 'right' || c.side === 'left') {
+                  chipRect.x = px + c.dx;
+                } else {
+                  chipRect.x = px + c.dx - chipW / 2;
+                }
+                const collides = placedRects.some(r2 => rectsOverlap(chipRect, r2));
+                if (!collides) {
+                  placedRects.push(chipRect);
+                  picked = c;
+                  break;
+                }
+              }
+              // Falls alle kollidieren → trotzdem primary nehmen, platzieren.
+              if (!picked) picked = candidates[0];
+              pinChipOffset.set(p.teamId, picked);
+            });
             const targetPct = pctOf(target);
             const fmt = (n: number) => {
               const abs = Math.abs(n);
@@ -4555,29 +4828,60 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           {qqGetAvatar(p.team!.avatarId).emoji}
                         </div>
-                        {/* Value-Chip auf der RAIL-ZUGEWANDTEN Seite des Avatars.
-                            Damit sitzt der Chip "auf der Leine" zwischen Avatar
-                            und Rail — der Avatar selbst bleibt immer frei sichtbar,
-                            und andere Pins können hier nicht reinragen (die Leine
-                            gehört zum eigenen Pin).
-                            isTop  → Chip UNTER dem Avatar (Richtung Rail unten)
-                            !isTop → Chip ÜBER dem Avatar (Richtung Rail oben)
-                            Gewinner-Chip leicht größer. */}
-                        <div style={{
-                          position: 'absolute', left: '50%',
-                          top: isTop ? `${avatarSize / 2 + 10}px` : `${-avatarSize / 2 - 10}px`,
-                          transform: isTop ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
-                          padding: isWinner ? '7px 18px' : '5px 14px',
-                          borderRadius: 12,
-                          background: 'rgba(0,0,0,0.88)',
-                          border: `2px solid ${tColor}`,
-                          color: '#fff', fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(26px, 2.8vw, 36px)' : 'clamp(18px, 2vw, 26px)',
-                          whiteSpace: 'nowrap',
-                          boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
-                        }}>
-                          {fmt(p.num)}
-                        </div>
+                        {/* Value-Chip mit DYNAMISCHER Kollisionsvermeidung.
+                            Der Chip wird relativ zum Avatar-Zentrum in eine der
+                            4 Richtungen gelegt (oben/unten/rechts/links), je
+                            nachdem wo Platz frei ist. Position kam aus
+                            pinChipOffset (px-basierte Kollisionserkennung). */}
+                        {(() => {
+                          const off = pinChipOffset.get(p.teamId) ?? { dx: 0, dy: avatarSize / 2 + 10, side: 'below' as const };
+                          const isChipTopOfAvatar = off.dy < 0;
+                          // Connector-Linie vom Avatar zum Chip (Team-Farbe),
+                          // damit Zuordnung klar bleibt wenn Chip seitlich sitzt.
+                          const connectorH = off.side === 'above'
+                            ? Math.abs(off.dy) - avatarSize / 2
+                            : off.side === 'below'
+                              ? off.dy - avatarSize / 2
+                              : 0;
+                          return (
+                            <>
+                              {/* Connector (nur oben/unten, seitlich nicht nötig da Chip direkt am Avatar) */}
+                              {(off.side === 'above' || off.side === 'below') && connectorH > 2 && (
+                                <div style={{
+                                  position: 'absolute', left: '50%',
+                                  top: isChipTopOfAvatar ? `${-(avatarSize / 2 + connectorH)}px` : `${avatarSize / 2}px`,
+                                  width: 2, height: connectorH,
+                                  background: `${tColor}99`,
+                                  transform: 'translateX(-50%)',
+                                  zIndex: 0,
+                                }} />
+                              )}
+                              <div style={{
+                                position: 'absolute',
+                                left: off.side === 'right'
+                                  ? `${off.dx}px`
+                                  : off.side === 'left'
+                                    ? `${off.dx}px`
+                                    : '50%',
+                                top: `${off.dy}px`,
+                                transform: off.side === 'right' || off.side === 'left'
+                                  ? 'translate(0, 0)'
+                                  : 'translate(-50%, 0)',
+                                padding: isWinner ? '7px 18px' : '5px 14px',
+                                borderRadius: 12,
+                                background: 'rgba(0,0,0,0.88)',
+                                border: `2px solid ${tColor}`,
+                                color: '#fff', fontWeight: 900,
+                                fontSize: isWinner ? 'clamp(26px, 2.8vw, 36px)' : 'clamp(18px, 2vw, 26px)',
+                                whiteSpace: 'nowrap',
+                                boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
+                                zIndex: 1,
+                              }}>
+                                {fmt(p.num)}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     );
                   })}

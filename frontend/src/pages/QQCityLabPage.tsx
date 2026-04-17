@@ -967,9 +967,9 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
   const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
-  const hasPenthouse = rng() > 0.4;
-  const hasSolar = rng() > 0.55;
-  const hasTerrace = rng() > 0.45;
+  const hasPenthouse = rng() > 0.75;  // seltener, damit Dach lesbar bleibt
+  const hasSolar = rng() > 0.7;
+  const hasTerrace = rng() > 0.6;
   const hasBalconies = rng() > 0.25;
   const acCount = 2 + Math.floor(rng() * 4);
   const acSeeds = useMemo(() => Array.from({ length: acCount }, () => [rng(), rng(), rng()]), [acCount, rng]);
@@ -1027,11 +1027,11 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach — flache Terrakotta-Schicht, minimaler Überhang (echter Dachsims)
-  // Dünn aber klar sichtbar — 0.06 Dicke + kleiner Überhang nach außen
-  const ROOF_T = 0.06;
+  // Dach — hauchduenne Terrakotta-Sims direkt auf Fassadenkante.
+  // Bei H≈0.4 sollte das Dach nur ~3% sein, nicht 15%. Kein Ueberhang.
+  const ROOF_T = 0.015;
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.03, INNER + 0.02, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.01, INNER - 0.005, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
@@ -1373,13 +1373,14 @@ function RooftopSolar({ roofY }: { roofY: number }) {
 function RooftopPenthouse({ roofY, color }: { roofY: number; color: string }) {
   return (
     <group>
-      <mesh position={[-0.24, roofY + 0.06, -0.24]} castShadow receiveShadow>
-        <boxGeometry args={[0.18, 0.12, 0.16]} />
+      {/* Kleiner Dachaufbau — bewusst klein, damit er nicht wie eine zweite
+          Fassadenschicht wirkt. Nur ~30% der Dachhoehe. */}
+      <mesh position={[-0.24, roofY + 0.025, -0.24]} castShadow receiveShadow>
+        <boxGeometry args={[0.12, 0.05, 0.1]} />
         <meshStandardMaterial color={color} roughness={0.75} />
       </mesh>
-      {/* kleines Dach auf dem Penthouse */}
-      <mesh position={[-0.24, roofY + 0.128, -0.24]}>
-        <boxGeometry args={[0.2, 0.01, 0.18]} />
+      <mesh position={[-0.24, roofY + 0.055, -0.24]}>
+        <boxGeometry args={[0.14, 0.008, 0.12]} />
         <meshStandardMaterial color="#8a3a20" roughness={0.8} />
       </mesh>
     </group>

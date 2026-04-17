@@ -1033,18 +1033,17 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach: voller chamfered-Octagon-Block in Terrakotta, kleiner Ueberhang.
-  // DEBUG: Dach bewusst dick (0.08) + echte TEST-Farbe (#ff0000) — so sehen wir
-  // garantiert, wo es rendert und koennen den Bug lokalisieren.
-  const ROOF_T = 0.08;
+  // DEBUG: Dach als massiver weit ueberstehender "Hut" — +0.4 Ueberhang,
+  // 0.15 dick, knalliges Rot. Wenn dieser Hut korrekt oben sitzt, ist die
+  // Geometrie OK und "Waende ueber dem Dach" = Haeuser der naechsten Reihe
+  // (Perspektive). Wenn er woanders sitzt -> echter Bug.
+  const ROOF_T = 0.15;
   const roofGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER + 0.05, CHAMFER);
+    const shape = chamferedSquareShape(OUTER + 0.4, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    // WICHTIG: Dach startet bei H + 0.001 (nicht H) um Z-Fighting mit der
-    // Fassaden-Top-Cap zu vermeiden. Dann y ∈ [H + 0.001, H + 0.001 + ROOF_T].
     geom.translate(0, H + 0.001 + ROOF_T, 0);
     return geom;
   }, [H]);
@@ -1095,8 +1094,17 @@ function BarcelonaBlock({
       {/* Nicht-genutzte Vars (ESLint-Silencer fuer DEBUG-Mode) */}
       {roofColor === '' ? null : null}
 
-      {/* DEBUG-MODE: alle Extras ausgeblendet, damit man nur Sockel+Fassade+Dach
-          sieht. Sobald der Bug lokalisiert ist, kommen die Details zurueck. */}
+      {/* Innenhof-Plateau wieder drin: kleiner gruener Hof auf dem Dach */}
+      <mesh position={[0, H + 0.001 + ROOF_T + 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[COURTYARD_SIZE, COURTYARD_SIZE]} />
+        <meshStandardMaterial color="#6b8e4a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, H + 0.001 + ROOF_T + 0.05, 0]} castShadow>
+        <sphereGeometry args={[0.06, 10, 8]} />
+        <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
+      </mesh>
+
+      {/* Rooftop-Extras bleiben ausgeblendet solange Bug nicht gefunden */}
       {false && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
       {false && <RooftopSolar roofY={H + ROOF_T} />}
       {false && <RooftopTerrace roofY={H + ROOF_T} />}

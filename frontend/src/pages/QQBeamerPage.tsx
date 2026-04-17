@@ -4411,9 +4411,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                // Oben: Target-Stack (-260 + Avatar 48 = 308). Unten: far row (+250 + Avatar 41 = 291).
-                // Exakt knapp: 320px oben, 300px unten — keine ungenutzte Luft mehr.
-                padding: '320px clamp(24px, 3vw, 48px) 300px',
+                // Kompakter: Oben Target-Stack (-180 + Avatar 48 + Chip ~36 ≈ 250). Unten: far row (+180 + Avatar 41 + Chip 36 ≈ 250).
+                padding: '235px clamp(24px, 3vw, 48px) 235px',
                 marginBottom: 'clamp(8px, 1vh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
@@ -4450,8 +4449,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
                     ['--pin-x' as any]: '0px',
-                    ['--pin-y' as any]: '-260px',
-                    transform: 'translate(-50%, calc(-50% - 260px))',
+                    ['--pin-y' as any]: '-180px',
+                    transform: 'translate(-50%, calc(-50% - 180px))',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     zIndex: 30,
@@ -4486,7 +4485,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
                     transform: 'translate(-50%, -100%)',
-                    width: 2, height: 140,
+                    width: 2, height: 90,
                     backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.75) 50%, transparent 50%)',
                     backgroundSize: '2px 8px',
                     backgroundRepeat: 'repeat-y',
@@ -4511,9 +4510,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const tColor = p.team!.color;
                     // r: 0 = oben nah, 1 = unten nah, 2 = oben weit, 3 = unten weit.
                     const isTop = r === 0 || r === 2;
-                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt — größere Pins brauchen mehr Abstand.
-                    // Nah: 150 (Avatar klar > rail weg), Weit: 250 (doppelte Reihe weit außen)
-                    const gap = r === 0 || r === 1 ? 150 : 250;
+                    // gap = Entfernung Rail ↔ Avatar-Mittelpunkt — kompakter, aber Avatare klar von der Rail getrennt.
+                    // Nah: 110, Weit: 180 (zweite Reihe bei Kollision)
+                    const gap = r === 0 || r === 1 ? 110 : 180;
                     const avatarSize = isWinner ? 86 : 72;
                     // Nudge/Animation-Deltas (Gewinner hüpft Richtung Ziel)
                     const nudgePctDelta = targetPct - pct;

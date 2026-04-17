@@ -260,85 +260,116 @@ function Ground() {
   );
 }
 
+// Grid-Lines — wie 2D-Grid-Gap (dezent hell, nicht leuchtend gelb)
 function GridLines() {
   const lines = [];
   for (let i = 0; i <= SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
     lines.push(
       <mesh key={`h-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, p]}>
-        <planeGeometry args={[SIZE * TILE + 0.4, 0.035]} />
-        <meshBasicMaterial color="#fde68a" toneMapped={false} />
+        <planeGeometry args={[SIZE * TILE + 0.4, 0.02]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.15} toneMapped={false} />
       </mesh>,
       <mesh key={`v-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.02, 0]}>
-        <planeGeometry args={[0.035, SIZE * TILE + 0.4]} />
-        <meshBasicMaterial color="#fde68a" toneMapped={false} />
+        <planeGeometry args={[0.02, SIZE * TILE + 0.4]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.15} toneMapped={false} />
       </mesh>
     );
   }
   return <>{lines}</>;
 }
 
+// Leere Zelle — wie 2D: sehr dunkel mit subtilem Rand
 function EmptyPlot({ x, z }: { x: number; z: number }) {
   return (
-    <mesh position={[x, 0.025, z]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[1.22, 1.22]} />
-      <meshStandardMaterial color="#0d1626" roughness={0.4} metalness={0.3} />
-    </mesh>
+    <group>
+      <mesh position={[x, 0.025, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.22, 1.22]} />
+        <meshBasicMaterial color="#0a0f1c" toneMapped={false} />
+      </mesh>
+      <SquareFrame
+        x={x} z={z} y={0.031}
+        size={1.22} thickness={0.012}
+        color="#ffffff" opacity={0.12}
+      />
+    </group>
   );
 }
 
-// Team-Tile: volles farbiges Quadrat (passt zur quadratischen Grid-Logik),
-// leuchtender quadratischer Rahmen aus 4 Kanten-Planes.
-function SquareFrame({ x, z, y, size, thickness, color }: {
-  x: number; z: number; y: number; size: number; thickness: number; color: string;
+// Team-Tile — Übersetzung des 2D-Grid-Looks:
+// 2D: linearer Gradient teamColor99 → teamColor66, 135°, dünner Rand teamColor55,
+//     Joker: 2px goldener Rand + goldener Glow.
+// 3D: gradient-lookalike per Canvas-Texture auf das Tile, dünner Rahmen,
+//     goldenes Außen-Quadrat bei Joker.
+
+function useTeamTileTexture(color: string): THREE.Texture {
+  return useMemo(() => {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    // Wie 2D: 135° Linear-Gradient teamColor99 → teamColor66
+    const g = ctx.createLinearGradient(0, 0, size, size);
+    g.addColorStop(0, color + '99');
+    g.addColorStop(1, color + '66');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    // Dünner Innen-Rand wie teamColor55 im 2D
+    ctx.strokeStyle = color + '55';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, size - 6, size - 6);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    return tex;
+  }, [color]);
+}
+
+function SquareFrame({ x, z, y, size, thickness, color, opacity = 1 }: {
+  x: number; z: number; y: number; size: number; thickness: number; color: string; opacity?: number;
 }) {
   const half = size / 2;
   const tHalf = thickness / 2;
   return (
     <group>
-      {/* Top (+Z-Seite) */}
       <mesh position={[x, y, z + half - tHalf]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size, thickness]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent={opacity < 1} opacity={opacity} />
       </mesh>
-      {/* Bottom (-Z) */}
       <mesh position={[x, y, z - half + tHalf]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size, thickness]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent={opacity < 1} opacity={opacity} />
       </mesh>
-      {/* Right (+X) */}
       <mesh position={[x + half - tHalf, y, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[thickness, size]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent={opacity < 1} opacity={opacity} />
       </mesh>
-      {/* Left (-X) */}
       <mesh position={[x - half + tHalf, y, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[thickness, size]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent={opacity < 1} opacity={opacity} />
       </mesh>
     </group>
   );
 }
 
 function TeamBase({ x, z, color, joker }: { x: number; z: number; color: string; joker: boolean }) {
-  const size = 1.32;
+  const tex = useTeamTileTexture(color);
+  // Zelle wie 2D: 1.22 (EmptyPlot-Größe) statt 1.32 — damit bleibt Grid-Gap sichtbar
+  const size = 1.22;
   return (
     <group>
-      {/* Komplett farbige Tile-Fläche */}
+      {/* Gradient-Tile wie im 2D-Grid */}
       <mesh position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[size, size]} />
-        <meshStandardMaterial
-          color={color}
-          roughness={0.65}
-          emissive={color}
-          emissiveIntensity={0.35}
-        />
+        <meshBasicMaterial map={tex} transparent toneMapped={false} />
       </mesh>
-      {/* Leuchtender quadratischer Rahmen */}
-      <SquareFrame x={x} z={z} y={0.046} size={size} thickness={0.05} color={color} />
-      {/* Joker: goldener Außen-Rahmen */}
+      {/* Joker: goldener 2D-style Rahmen ohne Gap-Überschreitung */}
       {joker && (
-        <SquareFrame x={x} z={z} y={0.048} size={size + 0.12} thickness={0.04} color="#fbbf24" />
+        <SquareFrame
+          x={x} z={z} y={0.047}
+          size={size - 0.02}
+          thickness={0.035}
+          color="#fbbf24"
+        />
       )}
     </group>
   );

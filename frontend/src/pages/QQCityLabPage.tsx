@@ -1033,16 +1033,19 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach: voller chamfered-Octagon-Block in Terrakotta, minimaler Ueberhang
-  // nach aussen damit die Facade-Oberkante garantiert UNTER dem Dach endet.
-  const ROOF_T = 0.02;
+  // Dach: voller chamfered-Octagon-Block in Terrakotta, kleiner Ueberhang.
+  // DEBUG: Dach bewusst dick (0.08) + echte TEST-Farbe (#ff0000) — so sehen wir
+  // garantiert, wo es rendert und koennen den Bug lokalisieren.
+  const ROOF_T = 0.08;
   const roofGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER + 0.04, CHAMFER);
+    const shape = chamferedSquareShape(OUTER + 0.05, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    geom.translate(0, H + ROOF_T, 0);
+    // WICHTIG: Dach startet bei H + 0.001 (nicht H) um Z-Fighting mit der
+    // Fassaden-Top-Cap zu vermeiden. Dann y ∈ [H + 0.001, H + 0.001 + ROOF_T].
+    geom.translate(0, H + 0.001 + ROOF_T, 0);
     return geom;
   }, [H]);
 
@@ -1076,50 +1079,44 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* Dach (y=H..H+ROOF_T) — Terrakotta mit kleinem Ueberhang, deckt
-          die Fassade-Oberkante komplett ab. */}
+      {/* DEBUG-Dach: leuchtendes Rot, damit wir sofort sehen, WO es rendert.
+          Wenn die roten Bloecke oben auf den Haeusern sitzen -> alles korrekt
+          und die "Durchsichtigkeit" ist ein Wahrnehmungs-Thema.
+          Wenn sie fehlen / woanders sitzen -> echter Geometrie-Bug. */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
         <meshStandardMaterial
-          color={roofColor}
-          roughness={0.85}
+          color="#ff0000"
+          emissive="#ff0000"
+          emissiveIntensity={0.4}
+          roughness={0.6}
           metalness={0.0}
         />
       </mesh>
+      {/* Nicht-genutzte Vars (ESLint-Silencer fuer DEBUG-Mode) */}
+      {roofColor === '' ? null : null}
 
-      {/* Innenhof-Plateau: grüner Hofboden direkt auf dem Dach (keine
-          Durchstanzung, keine Winding-Issues). Gibt den Eixample-Patio-Look. */}
-      <mesh position={[0, H + ROOF_T + 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[COURTYARD_SIZE, COURTYARD_SIZE]} />
-        <meshStandardMaterial color="#6b8e4a" roughness={0.9} />
-      </mesh>
-      {/* kleiner Innenhof-Baum */}
-      <mesh position={[0, H + ROOF_T + 0.05, 0]} castShadow>
-        <sphereGeometry args={[0.06, 10, 8]} />
-        <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
-      </mesh>
+      {/* DEBUG-MODE: alle Extras ausgeblendet, damit man nur Sockel+Fassade+Dach
+          sieht. Sobald der Bug lokalisiert ist, kommen die Details zurueck. */}
+      {false && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
+      {false && <RooftopSolar roofY={H + ROOF_T} />}
+      {false && <RooftopTerrace roofY={H + ROOF_T} />}
 
-      {/* Ladentüren / Schaufenster auf dem Sockel */}
+      {/* Ladentueren + Markisen + Fenster weiter an der Fassade */}
       <PlinthDoors outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} />
-
-      {/* Markisen ueber Schaufenstern */}
       <Awnings outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} seed={Math.round(H * 1000)} />
-
-      {/* Schmiedeeiserne Balkon-Baender pro Etage */}
       {hasBalconies && (
         <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
       )}
-
-      {/* Fenster auf der Fassade */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} plinthH={PLINTH_H} />
 
-      {/* Rooftop-Details auf das Dach */}
-      {hasPenthouse && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
-      {hasSolar && <RooftopSolar roofY={H + ROOF_T} />}
-      {hasTerrace && <RooftopTerrace roofY={H + ROOF_T} />}
-      {acSeeds.map((s, i) => (
-        <RooftopAC key={i} roofY={H + ROOF_T} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
+      {/* AC-Boxen nur klein, nicht raumfuellend */}
+      {acSeeds.slice(0, 2).map((s, i) => (
+        <RooftopAC key={i} roofY={H + 0.001 + ROOF_T} sx={(s[0] - 0.5) * 0.5} sz={(s[1] - 0.5) * 0.5} sr={s[2]} />
       ))}
 
+      {/* Referenz-Verwendung um TS-Unused-Warning zu vermeiden */}
+      {hasPenthouse || hasSolar || hasTerrace ? null : null}
+      {COURTYARD_SIZE > 0 ? null : null}
     </group>
   );
 }

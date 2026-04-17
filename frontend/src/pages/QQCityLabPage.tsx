@@ -1020,14 +1020,11 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach — Ring in Terrakotta, dicker (0.1) + Überhang nach außen & innen
-  // damit die Facade-Oberkante komplett abgedeckt ist. ExtrudeGeometry wächst
-  // nach +Z. Nach rotateX(-PI/2) liegt Z→-Y, also y ∈ [-depth, 0]. Mit
-  // translate(0, H+depth, 0) wird das zu [H, H+depth] — Bottom bündig auf
-  // Facade-Top, Top auf H+depth. Funktioniert für facadeGeom genauso.
-  const ROOF_T = 0.1;
+  // Dach — flache Terrakotta-Schicht, deckungsgleich mit Fassade (kein Überhang)
+  // Dünn (0.04) damit es nicht wie ein Hut über der Fassade schwebt.
+  const ROOF_T = 0.04;
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.06, INNER - 0.08, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
@@ -1046,7 +1043,6 @@ function BarcelonaBlock({
           color={plinthColor}
           roughness={0.88}
           metalness={0.03}
-          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -1058,7 +1054,6 @@ function BarcelonaBlock({
           metalness={0.02}
           emissive={joker ? '#fbbf24' : '#000'}
           emissiveIntensity={joker ? 0.15 : 0}
-          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -1073,32 +1068,17 @@ function BarcelonaBlock({
         <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
       )}
 
-      {/* Terrakotta-Dachfläche — 3D Extrude-Ring für seitliche Sichtbarkeit */}
+      {/* Terrakotta-Dachfläche — flacher Extrude-Ring direkt auf Fassadenkante */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={roofColor}
           roughness={0.85}
           metalness={0.0}
-          emissive={roofColor}
-          emissiveIntensity={0.18}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Dach-Topfläche als explizite Platte (sichert Lesbarkeit von oben) */}
-      <mesh position={[0, H + ROOF_T + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <shapeGeometry args={[chamferedRingShape(OUTER + 0.06, INNER - 0.08, CHAMFER)]} />
-        <meshStandardMaterial
-          color={roofColor}
-          roughness={0.85}
-          emissive={roofColor}
-          emissiveIntensity={0.2}
-          side={THREE.DoubleSide}
         />
       </mesh>
 
       {/* Dachziegel-Textur-Andeutung: horizontale Streifen auf dem Dach */}
-      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.103} />
+      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + ROOF_T + 0.002} />
 
       {/* Fenster */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
@@ -1107,20 +1087,13 @@ function BarcelonaBlock({
       <InnerCourtyard size={INNER * 0.9} />
 
       {/* Rooftop-Details (AC-Boxen, Solar, Penthouse, Terrasse) — auf Dach-Top */}
-      {hasPenthouse && <RooftopPenthouse roofY={H + 0.07} color={facadeColor} />}
-      {hasSolar && <RooftopSolar roofY={H + 0.07} />}
-      {hasTerrace && <RooftopTerrace roofY={H + 0.07} />}
+      {hasPenthouse && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
+      {hasSolar && <RooftopSolar roofY={H + ROOF_T} />}
+      {hasTerrace && <RooftopTerrace roofY={H + ROOF_T} />}
       {acSeeds.map((s, i) => (
-        <RooftopAC key={i} roofY={H + 0.07} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
+        <RooftopAC key={i} roofY={H + ROOF_T} sx={(s[0] - 0.5) * 0.7} sz={(s[1] - 0.5) * 0.7} sr={s[2]} />
       ))}
 
-      {/* Joker-Indikator: schwach leuchtende Dach-Kante */}
-      {joker && (
-        <mesh position={[0, H + 0.12, 0]}>
-          <torusGeometry args={[OUTER * 0.55, 0.008, 8, 48]} />
-          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={2} toneMapped={false} />
-        </mesh>
-      )}
     </group>
   );
 }

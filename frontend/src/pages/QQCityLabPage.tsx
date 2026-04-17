@@ -840,19 +840,22 @@ function EixampleRoofRim({ color, outer, inner, chamfer, y }: {
 }
 
 // Fensterreihen auf den 4 Haupt-Fassaden + 4 Schräg-Fassaden
-function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number; h: number }) {
+function EixampleWindows({ outer, chamfer, h, plinthH = 0 }: { outer: number; chamfer: number; h: number; plinthH?: number }) {
   const s = outer / 2;
   const flatLen = outer - 2 * chamfer;
   const diagLen = chamfer * Math.SQRT2;
 
-  // Fensterreihen: dichtere, kleinere Rechtecke als dunkles Glas (Tag-Look)
-  const rows = Math.max(2, Math.round(h * 6));
+  // Fensterreihen starten OBERHALB des Sockels (Erdgeschoss hat Türen/Schaufenster)
+  const winZoneBottom = plinthH + 0.02;
+  const winZoneTop = h - 0.05;
+  const winZoneH = Math.max(0.05, winZoneTop - winZoneBottom);
+  const rows = Math.max(2, Math.round(winZoneH * 6));
   const cols = 5;
   const winW = (flatLen / (cols + 1)) * 0.42;
   const winH = 0.055;
-  const rowStep = h / (rows + 1);
+  const rowStep = winZoneH / (rows + 1);
   const rowYs: number[] = [];
-  for (let r = 0; r < rows; r++) rowYs.push((r + 1) * rowStep);
+  for (let r = 0; r < rows; r++) rowYs.push(winZoneBottom + (r + 1) * rowStep);
   const winMat = (
     <meshStandardMaterial color="#2a3440" roughness={0.25} metalness={0.55} />
   );
@@ -933,8 +936,9 @@ const FACADE_TONES = [
   '#e8c8a8', '#e0bfa0', '#d7ae8e',              // Sandrosa
   '#c5a784', '#b8977a',                          // Lehm-warm
 ];
-// Sockel-Farben (dunklere Varianten der Fassaden für Erdgeschoss-Zone)
-const PLINTH_TONES = ['#8c7458', '#9a8366', '#80684e', '#897359', '#786148', '#9a7f5d', '#8a7256'];
+// Sockel-Farben — nur leicht dunkler als Fassade (nicht braun-dunkel,
+// sonst wirken die Erdgeschosse wie durchsichtige Lücken)
+const PLINTH_TONES = ['#c9b898', '#d0bea0', '#c5b090', '#cfbda0', '#bfac8a', '#d4c2a6', '#c8b494'];
 
 // Mulberry32 deterministic RNG
 function rngFromSeed(seed: number): () => number {
@@ -1020,11 +1024,11 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach — flache Terrakotta-Schicht, deckungsgleich mit Fassade (kein Überhang)
-  // Dünn (0.04) damit es nicht wie ein Hut über der Fassade schwebt.
-  const ROOF_T = 0.04;
+  // Dach — flache Terrakotta-Schicht, minimaler Überhang (echter Dachsims)
+  // Dünn aber klar sichtbar — 0.06 Dicke + kleiner Überhang nach außen
+  const ROOF_T = 0.06;
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.03, INNER + 0.02, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
@@ -1081,7 +1085,7 @@ function BarcelonaBlock({
       <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + ROOF_T + 0.002} />
 
       {/* Fenster */}
-      <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
+      <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} plinthH={PLINTH_H} />
 
       {/* Innenhof — grüner Garten mit Baum */}
       <InnerCourtyard size={INNER * 0.9} />

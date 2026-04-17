@@ -359,6 +359,40 @@ function ChaflanPlazas() {
         </group>
       );
 
+      // Zebrastreifen — 4 Richtungen (N/S/E/W) rund um den Chaflán
+      const stripeCount = 4;
+      const stripeW = 0.035;
+      const stripeL = 0.14;
+      const stripeGap = 0.018;
+      const groupOffset = 0.32;
+      const dirs: Array<[number, number, number]> = [
+        [0, -groupOffset, 0],
+        [0, groupOffset, 0],
+        [groupOffset, 0, Math.PI / 2],
+        [-groupOffset, 0, Math.PI / 2],
+      ];
+      dirs.forEach(([dx, dz, rotY], d) => {
+        const stripes: JSX.Element[] = [];
+        for (let s = 0; s < stripeCount; s++) {
+          const offset = (s - (stripeCount - 1) / 2) * (stripeW + stripeGap);
+          stripes.push(
+            <mesh
+              key={`stripe-${s}`}
+              position={rotY === 0 ? [offset, 0.001, 0] : [0, 0.001, offset]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={rotY === 0 ? [stripeW, stripeL] : [stripeL, stripeW]} />
+              <meshStandardMaterial color="#f4f1e6" roughness={0.85} />
+            </mesh>
+          );
+        }
+        items.push(
+          <group key={`crosswalk-${i}-${j}-${d}`} position={[x + dx, 0.008, z + dz]}>
+            {stripes}
+          </group>
+        );
+      });
+
       // Parkende Autos entlang der Chamfer-Kanten (1-3 pro Platz)
       const carCount = 1 + Math.floor(rng() * 3);
       for (let k = 0; k < carCount; k++) {
@@ -986,16 +1020,18 @@ function BarcelonaBlock({
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dachfläche (sichtbare Terrakotta-Scheibe direkt auf dem Ring)
-  // Bottom des Dachs = H (Fassaden-Top), top = H + ROOF_T
-  const ROOF_T = 0.07;
+  // Dach — Ring in Terrakotta, dicker (0.1) + Überhang nach außen & innen
+  // damit die Facade-Oberkante komplett abgedeckt ist. ExtrudeGeometry wächst
+  // nach +Z. Nach rotateX(-PI/2) liegt Z→-Y, also y ∈ [-depth, 0]. Mit
+  // translate(0, H+depth, 0) wird das zu [H, H+depth] — Bottom bündig auf
+  // Facade-Top, Top auf H+depth. Funktioniert für facadeGeom genauso.
+  const ROOF_T = 0.1;
   const roofGeom = useMemo(() => {
-    const shape = chamferedRingShape(OUTER + 0.04, INNER - 0.02, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.06, INNER - 0.08, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    // depth wächst nach +Y; nach Rotation sitzt die Unterkante bei 0 → auf H heben
     geom.translate(0, H + ROOF_T, 0);
     return geom;
   }, [H]);
@@ -1010,6 +1046,7 @@ function BarcelonaBlock({
           color={plinthColor}
           roughness={0.88}
           metalness={0.03}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -1021,30 +1058,47 @@ function BarcelonaBlock({
           metalness={0.02}
           emissive={joker ? '#fbbf24' : '#000'}
           emissiveIntensity={joker ? 0.15 : 0}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
       {/* Ladentüren / Eingangsportale auf der Sockel-Zone (jede Hauptseite 2 Türen) */}
       <PlinthDoors outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} />
 
+      {/* Markisen über Schaufenstern — bunte kleine Streifen pro Seite */}
+      <Awnings outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} seed={Math.round(H * 1000)} />
+
       {/* Schmiedeeiserne Balkon-Bänder pro Etage */}
       {hasBalconies && (
         <Balconies outer={OUTER} chamfer={CHAMFER} plinthH={PLINTH_H} totalH={H} />
       )}
 
-      {/* Terrakotta-Dachfläche — klar sichtbar rot von oben */}
+      {/* Terrakotta-Dachfläche — 3D Extrude-Ring für seitliche Sichtbarkeit */}
       <mesh geometry={roofGeom} castShadow receiveShadow>
         <meshStandardMaterial
           color={roofColor}
           roughness={0.85}
           metalness={0.0}
           emissive={roofColor}
-          emissiveIntensity={0.15}
+          emissiveIntensity={0.18}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Dachziegel-Textur-Andeutung: horizontale Streifen als dünne dunkle Linien */}
-      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.072} />
+      {/* Dach-Topfläche als explizite Platte (sichert Lesbarkeit von oben) */}
+      <mesh position={[0, H + ROOF_T + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <shapeGeometry args={[chamferedRingShape(OUTER + 0.06, INNER - 0.08, CHAMFER)]} />
+        <meshStandardMaterial
+          color={roofColor}
+          roughness={0.85}
+          emissive={roofColor}
+          emissiveIntensity={0.2}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Dachziegel-Textur-Andeutung: horizontale Streifen auf dem Dach */}
+      <RoofTileLines outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H + 0.103} />
 
       {/* Fenster */}
       <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
@@ -1155,6 +1209,57 @@ function PlinthDoors({ outer, chamfer, plinthH }: {
 }
 
 // Schmiedeeiserne Balkon-Bänder pro Etage (dünne dunkle vorspringende Streifen)
+// Markisen über den Schaufenstern (bunte kleine Schrägflächen)
+const AWNING_COLORS = ['#c23828', '#2e7a3b', '#1e5ea0', '#d9a72a', '#8c2d6b', '#c26632'];
+function Awnings({ outer, chamfer, plinthH, seed }: {
+  outer: number; chamfer: number; plinthH: number; seed: number;
+}) {
+  const s = outer / 2;
+  const flatLen = outer - 2 * chamfer;
+  const awnW = 0.12;
+  const awnH = 0.035;
+  const awnDepth = 0.04;
+  // Oberkante über dem Schaufenster (Schaufenster geht etwa bis 0.7*plinthH)
+  const awnY = plinthH * 0.82;
+
+  const rng = rngFromSeed(seed);
+  const items: JSX.Element[] = [];
+  const sides: { pos: [number, number, number]; rot: [number, number, number]; key: string }[] = [
+    { pos: [0, 0, s + 0.01],   rot: [0, 0, 0],            key: 'S' },
+    { pos: [0, 0, -s - 0.01],  rot: [0, Math.PI, 0],      key: 'N' },
+    { pos: [s + 0.01, 0, 0],   rot: [0, Math.PI / 2, 0],  key: 'E' },
+    { pos: [-s - 0.01, 0, 0],  rot: [0, -Math.PI / 2, 0], key: 'W' },
+  ];
+  sides.forEach((side) => {
+    const awnings: JSX.Element[] = [];
+    // 2 Markisen mittig pro Seite (über den Schaufenstern)
+    [-flatLen * 0.05, flatLen * 0.05].forEach((px, i) => {
+      // Nicht immer alle Markisen setzen — per rng weglassen
+      if (rng() < 0.3) return;
+      const color = AWNING_COLORS[Math.floor(rng() * AWNING_COLORS.length)];
+      awnings.push(
+        <mesh
+          key={`awn-${side.key}-${i}`}
+          position={[px, awnY, awnDepth / 2]}
+          rotation={[-Math.PI / 8, 0, 0]}
+          castShadow
+        >
+          <boxGeometry args={[awnW, awnH, awnDepth]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+      );
+    });
+    if (awnings.length > 0) {
+      items.push(
+        <group key={`awn-grp-${side.key}`} position={side.pos} rotation={side.rot}>
+          {awnings}
+        </group>
+      );
+    }
+  });
+  return <>{items}</>;
+}
+
 function Balconies({ outer, chamfer, plinthH, totalH }: {
   outer: number; chamfer: number; plinthH: number; totalH: number;
 }) {
@@ -1296,7 +1401,7 @@ function RooftopPenthouse({ roofY, color }: { roofY: number; color: string }) {
   );
 }
 
-// Terrasse — helle Fläche + Geländer-Linie
+// Terrasse — helle Fläche + Liegen + Pflanzen-Töpfe
 function RooftopTerrace({ roofY }: { roofY: number }) {
   return (
     <group>
@@ -1313,6 +1418,37 @@ function RooftopTerrace({ roofY }: { roofY: number }) {
         <boxGeometry args={[0.08, 0.02, 0.04]} />
         <meshStandardMaterial color="#e8a23c" roughness={0.6} />
       </mesh>
+      {/* Pflanzen-Töpfe — 3 Stück */}
+      <group position={[0.28, roofY + 0.012, 0.22]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.025, 0.022, 0.025, 10]} />
+          <meshStandardMaterial color="#8a5a3a" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.025, 0]} castShadow>
+          <sphereGeometry args={[0.035, 10, 8]} />
+          <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
+        </mesh>
+      </group>
+      <group position={[0.38, roofY + 0.012, 0.38]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.022, 0.02, 0.022, 10]} />
+          <meshStandardMaterial color="#95613f" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.022, 0]} castShadow>
+          <sphereGeometry args={[0.032, 10, 8]} />
+          <meshStandardMaterial color="#4c7c4a" roughness={0.85} />
+        </mesh>
+      </group>
+      <group position={[0.2, roofY + 0.012, 0.36]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.02, 0.018, 0.02, 10]} />
+          <meshStandardMaterial color="#7f4f30" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.02, 0]} castShadow>
+          <sphereGeometry args={[0.028, 10, 8]} />
+          <meshStandardMaterial color="#588a50" roughness={0.85} />
+        </mesh>
+      </group>
     </group>
   );
 }

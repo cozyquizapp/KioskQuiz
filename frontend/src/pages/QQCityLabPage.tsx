@@ -184,7 +184,18 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 
           if (variant === 1) {
             if (!owner) return <Plaza key={key} x={x} z={z} seed={r * 11 + c * 7} />;
-            return <BarcelonaCell key={key} x={x} z={z} seed={r * 31 + c * 17} joker={joker} />;
+            const avatar = AVATARS[owner];
+            return (
+              <BarcelonaCell
+                key={key}
+                x={x}
+                z={z}
+                seed={r * 31 + c * 17}
+                joker={joker}
+                teamColor={avatar.color}
+                avatarEmoji={avatar.emoji}
+              />
+            );
           }
 
           if (!owner) return <EmptyPlot key={key} x={x} z={z} />;
@@ -251,16 +262,14 @@ function SkyGradient() {
 }
 
 function Ground() {
+  // Stadtboden EXAKT auf Grid-Größe beschränkt — keine Straßen außerhalb
+  // des bespielbaren Feldes. Kein äußerer Horizont-Plane (SkyGradient + fog
+  // übernehmen den Hintergrund).
+  const groundSize = SIZE * TILE;
   return (
     <group>
-      {/* Äußerer Horizont — hellgrau/dunstig wie Entfernung */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#b8c2c8" roughness={0.95} />
-      </mesh>
-      {/* Stadtboden — heller Asphalt (sandiger Ton wie in BCN-Aerials) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[SIZE * TILE + 2.4, SIZE * TILE + 2.4]} />
+        <planeGeometry args={[groundSize, groundSize]} />
         <meshStandardMaterial color="#7e8189" roughness={0.92} metalness={0.01} />
       </mesh>
     </group>
@@ -268,22 +277,25 @@ function Ground() {
 }
 
 // Straßen: heller Asphalt-Streifen + gestrichelte weiße Mittellinie
+// Nur INNERE Straßen (zwischen Blöcken) — keine Straßen am äußeren Rand,
+// sonst hätte das Grid einen "Kragen" aus Straße um sich herum.
 function Streets() {
-  const halfGrid = (SIZE * TILE) / 2;
+  const gridLen = SIZE * TILE;
+  const halfGrid = gridLen / 2;
   const lines: JSX.Element[] = [];
-  // Straßenbreite — ausreichend für Bäume zwischen den Blocks
   const streetWidth = 0.4;
-  for (let i = 0; i <= SIZE; i++) {
+  // Nur innere Linien: i = 1..SIZE-1 (nicht 0 und nicht SIZE)
+  for (let i = 1; i < SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
     lines.push(
       <mesh key={`h-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, p]} receiveShadow>
-        <planeGeometry args={[SIZE * TILE + 2.4, streetWidth]} />
+        <planeGeometry args={[gridLen, streetWidth]} />
         <meshStandardMaterial color="#4f555c" roughness={0.9} />
       </mesh>
     );
     lines.push(
       <mesh key={`v-road-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.005, 0]} receiveShadow>
-        <planeGeometry args={[streetWidth, SIZE * TILE + 2.4]} />
+        <planeGeometry args={[streetWidth, gridLen]} />
         <meshStandardMaterial color="#4f555c" roughness={0.9} />
       </mesh>
     );
@@ -293,7 +305,7 @@ function Streets() {
   for (let i = 1; i < SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
     for (let d = 0; d < dashCount; d++) {
-      const pos = -halfGrid + (d + 0.5) * (SIZE * TILE / dashCount);
+      const pos = -halfGrid + (d + 0.5) * (gridLen / dashCount);
       lines.push(
         <mesh key={`h-dash-${i}-${d}`} rotation={[-Math.PI / 2, 0, 0]} position={[pos, 0.008, p]}>
           <planeGeometry args={[0.18, 0.03]} />
@@ -308,26 +320,26 @@ function Streets() {
       );
     }
   }
-  // Gehsteig-Kanten — schmale helle Streifen am Rand jedes Blocks
-  for (let i = 0; i <= SIZE; i++) {
+  // Gehsteig-Kanten nur an inneren Straßen
+  const curb = 0.02;
+  const inset = 0.24;
+  for (let i = 1; i < SIZE; i++) {
     const p = (i * TILE) - OFFSET - TILE / 2;
-    const curb = 0.02;
-    const inset = 0.24;
     lines.push(
       <mesh key={`h-curb-a-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, p - inset]}>
-        <planeGeometry args={[SIZE * TILE + 2.4, curb]} />
+        <planeGeometry args={[gridLen, curb]} />
         <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
       </mesh>,
       <mesh key={`h-curb-b-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, p + inset]}>
-        <planeGeometry args={[SIZE * TILE + 2.4, curb]} />
+        <planeGeometry args={[gridLen, curb]} />
         <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
       </mesh>,
       <mesh key={`v-curb-a-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p - inset, 0.012, 0]}>
-        <planeGeometry args={[curb, SIZE * TILE + 2.4]} />
+        <planeGeometry args={[curb, gridLen]} />
         <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
       </mesh>,
       <mesh key={`v-curb-b-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p + inset, 0.012, 0]}>
-        <planeGeometry args={[curb, SIZE * TILE + 2.4]} />
+        <planeGeometry args={[curb, gridLen]} />
         <meshStandardMaterial color="#aeb4bc" roughness={0.85} />
       </mesh>
     );
@@ -448,14 +460,15 @@ function TreeAt({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
   );
 }
 
-// Bäume entlang der Straßen — an jeder Straßen-Seite zwei pro Block
+// Bäume entlang der Straßen — nur auf INNEREN Straßen, nicht am äußeren
+// Grid-Rand (da gibt es keine Straßen mehr).
 function StreetTrees() {
   const trees: JSX.Element[] = [];
+  const halfGrid = (SIZE * TILE) / 2;
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const cx = c * TILE - OFFSET;
       const cz = r * TILE - OFFSET;
-      // 4 Bäume pro Block, an den Eckzonen auf der Straße
       const offs = TILE * 0.34;
       const roadOffs = TILE * 0.5 - 0.08;
       const positions: [number, number, number][] = [
@@ -465,10 +478,10 @@ function StreetTrees() {
         [cx + offs, 0, cz + roadOffs],
       ];
       positions.forEach((p, i) => {
-        // Deterministische "Zufalls"-Variation in Größe
+        // Aus Grid gefallene Bäume auslassen (kein Außen-Straßen-Kragen mehr)
+        if (Math.abs(p[0]) > halfGrid - 0.05 || Math.abs(p[2]) > halfGrid - 0.05) return;
         const seed = (r * 7 + c * 3 + i * 13) % 5;
         const scale = 0.85 + seed * 0.06;
-        // Nur die äußeren Bäume pro Block rendern, um nicht zu dicht zu werden
         if ((r + c + i) % 2 === 0) {
           trees.push(<TreeAt key={`t-${r}-${c}-${i}`} x={p[0]} z={p[2]} scale={scale} />);
         }
@@ -955,7 +968,10 @@ function rngFromSeed(seed: number): () => number {
 }
 
 // Pro Zelle: ein Barcelona-Block mit detaillierter Dachvariation
-function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: number; joker: boolean }) {
+function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji }: {
+  x: number; z: number; seed: number; joker: boolean;
+  teamColor?: string; avatarEmoji?: string;
+}) {
   const rng = useMemo(() => rngFromSeed(seed + 1), [seed]);
   // Variation: Höhe — mit 20% Chance ein echter Turm (2-3× normal)
   const heightBase = useMemo(() => {
@@ -966,7 +982,11 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
   }, [rng]);
   const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
   const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
-  const roof = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
+  // Dach: Team-Farbe (eingenommen), mit ~20% Chance bleibt es Terrakotta
+  // als Kontrast-Insel. Ohne Team -> Terrakotta.
+  const useTerrakottaInstead = rng() < 0.2;
+  const terracotta = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
+  const roof = teamColor && !useTerrakottaInstead ? teamColor : terracotta;
   const hasPenthouse = rng() > 0.75;  // seltener, damit Dach lesbar bleibt
   const hasSolar = rng() > 0.7;
   const hasTerrace = rng() > 0.6;
@@ -987,6 +1007,7 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
         hasTerrace={hasTerrace}
         hasBalconies={hasBalconies}
         acSeeds={acSeeds}
+        avatarEmoji={avatarEmoji}
       />
     </group>
   );
@@ -995,10 +1016,12 @@ function BarcelonaCell({ x, z, seed, joker }: { x: number; z: number; seed: numb
 function BarcelonaBlock({
   heightBase, facadeColor, plinthColor, roofColor, joker,
   hasPenthouse, hasSolar, hasTerrace, hasBalconies, acSeeds,
+  avatarEmoji,
 }: {
   heightBase: number; facadeColor: string; plinthColor: string; roofColor: string; joker: boolean;
   hasPenthouse: boolean; hasSolar: boolean; hasTerrace: boolean; hasBalconies: boolean;
   acSeeds: number[][];
+  avatarEmoji?: string;
 }) {
   const OUTER = 1.22;
   const INNER = 0.58;
@@ -1111,6 +1134,12 @@ function BarcelonaBlock({
         <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
       </mesh>
 
+      {/* Avatar als Billboard — schwebt auf Dachhöhe über dem Innenhof,
+          keine Umrandung, dreht sich immer zur Kamera (aus jedem Winkel lesbar). */}
+      {avatarEmoji && (
+        <AvatarBillboard emoji={avatarEmoji} y={H + 0.18} />
+      )}
+
       {/* Rooftop-Extras bleiben ausgeblendet solange Bug nicht gefunden */}
       {false && <RooftopPenthouse roofY={H + ROOF_T} color={facadeColor} />}
       {false && <RooftopSolar roofY={H + ROOF_T} />}
@@ -1133,6 +1162,20 @@ function BarcelonaBlock({
       {hasPenthouse || hasSolar || hasTerrace ? null : null}
       {COURTYARD_SIZE > 0 ? null : null}
     </group>
+  );
+}
+
+// Avatar-Billboard: Emoji-Plane, dreht sich zur Kamera (lesbar aus jedem Winkel).
+// Keine Umrandung, keine Plate — der Avatar schwebt pur.
+function AvatarBillboard({ emoji, y }: { emoji: string; y: number }) {
+  const tex = useAvatarTexture(emoji);
+  return (
+    <Billboard position={[0, y, 0]}>
+      <mesh>
+        <planeGeometry args={[0.42, 0.42]} />
+        <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </Billboard>
   );
 }
 

@@ -195,7 +195,7 @@ function SceneHost({ variant, big }: { variant: Variant; big?: boolean }) {
 
           const avatar = AVATARS[owner];
 
-          if (variant === 1) return <Building key={key} x={x} z={z} avatar={avatar} joker={joker} btype={cellBType(r, c)} />;
+          if (variant === 1) return <Building key={key} x={x} z={z} avatar={avatar} joker={joker} btype={cellBType(r, c)} ownerId={owner} />;
           if (variant === 2) return <PedestalFigure key={key} x={x} z={z} avatar={avatar} joker={joker} seed={r * 5 + c} />;
           return null;
         }))}
@@ -458,17 +458,55 @@ function RoofAvatar({ tex, y, joker }: { tex: THREE.Texture; y: number; joker: b
   );
 }
 
-function Building({ x, z, avatar, joker, btype }: {
-  x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; btype: number;
+function Building({ x, z, avatar, joker, btype, ownerId }: {
+  x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; btype: number; ownerId: AvatarKey;
 }) {
   const tex = useAvatarTexture(avatar.emoji);
   const color = avatar.color;
-  const bi = btype % 8;
 
+  // Style-Prototypen: 3 Teams bekommen eigene Stil-Welten, je 3 Gebäude-Varianten (S/M/L)
+  // Die restlichen Teams behalten die alten generischen Typen (nach btype).
+  const variant = btype % 3;
+
+  if (ownerId === 'fox') {
+    // Paris — Fox (warmes Rot/Bordeaux)
+    return (
+      <group position={[x, 0.05, z]}>
+        <TeamBase x={0} z={0} color={color} joker={joker} />
+        {variant === 0 && <ParisHouse color={color} joker={joker} tex={tex} />}
+        {variant === 1 && <ParisBasilica color={color} joker={joker} tex={tex} />}
+        {variant === 2 && <ParisEiffel color={color} joker={joker} tex={tex} />}
+      </group>
+    );
+  }
+  if (ownerId === 'frog') {
+    // Kyoto — Frog (Moos-Grün, Holz-Braun)
+    return (
+      <group position={[x, 0.05, z]}>
+        <TeamBase x={0} z={0} color={color} joker={joker} />
+        {variant === 0 && <KyotoShoya color={color} joker={joker} tex={tex} />}
+        {variant === 1 && <KyotoTorii color={color} joker={joker} tex={tex} />}
+        {variant === 2 && <KyotoPagoda color={color} joker={joker} tex={tex} />}
+      </group>
+    );
+  }
+  if (ownerId === 'rabbit') {
+    // Santorin — Rabbit (Weiß + Kykladen-Blau)
+    return (
+      <group position={[x, 0.05, z]}>
+        <TeamBase x={0} z={0} color={color} joker={joker} />
+        {variant === 0 && <SantoriniCube color={color} joker={joker} tex={tex} />}
+        {variant === 1 && <SantoriniDome color={color} joker={joker} tex={tex} />}
+        {variant === 2 && <SantoriniMill color={color} joker={joker} tex={tex} />}
+      </group>
+    );
+  }
+
+  // Alle anderen Teams: generische 8-Typen (Fallback)
+  const bi = btype % 8;
   return (
     <group position={[x, 0.05, z]}>
       <TeamBase x={0} z={0} color={color} joker={joker} />
-
       {bi === 0 && <HouseB color={color} joker={joker} tex={tex} />}
       {bi === 1 && <TowerB color={color} joker={joker} tex={tex} />}
       {bi === 2 && <HighriseB color={color} joker={joker} tex={tex} />}
@@ -482,6 +520,503 @@ function Building({ x, z, avatar, joker, btype }: {
 }
 
 type BProps = { color: string; joker: boolean; tex: THREE.Texture };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STIL-WELTEN PROTOTYP — 3 Teams × 3 Gebäude
+// Jeder Stil hat eigene Material-Palette (unabhängig von Team-Farbe als Body).
+// Team-Farbe sitzt nur noch als Akzent (Fensterlichter, Dach, Flagge) auf der
+// Stil-Fassade — so bleibt "Paris" immer als Paris lesbar, egal welche Farbe.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Material-Helfer (mehr als nur Farbe: eigene Roughness/Metalness pro Stil)
+function m(color: string, roughness = 0.65, metalness = 0.0, emissive?: string, emissiveIntensity = 0): JSX.Element {
+  return (
+    <meshStandardMaterial
+      color={color}
+      roughness={roughness}
+      metalness={metalness}
+      emissive={emissive ?? '#000'}
+      emissiveIntensity={emissiveIntensity}
+    />
+  );
+}
+
+// ═══ PARIS (Fox) ═════════════════════════════════════════════════════════════
+// Creme-Fassade · Zink-blaues Mansard-Dach · schmiedeeiserne Balkone (dunkel) ·
+// Team-Farbe als warmes Fensterlicht
+
+const PARIS_WALL = '#f3e5c2';
+const PARIS_ROOF = '#394b63';   // zinc blue
+const PARIS_IRON = '#1c1f2a';
+
+function ParisMansardRoof({ w, d, y, height = 0.28 }: { w: number; d: number; y: number; height?: number }) {
+  // Angeschrägte Pyramide (Mansarddach) — schmalere Top-Box
+  return (
+    <group position={[0, y, 0]}>
+      <mesh castShadow position={[0, height / 2, 0]}>
+        <boxGeometry args={[w + 0.02, height, d + 0.02]} />
+        {m(PARIS_ROOF, 0.55, 0.15)}
+      </mesh>
+      {/* Top flat cap schmaler → Trapezform-Andeutung */}
+      <mesh castShadow position={[0, height + 0.015, 0]}>
+        <boxGeometry args={[w * 0.75, 0.04, d * 0.75]} />
+        {m(PARIS_ROOF, 0.55, 0.15)}
+      </mesh>
+    </group>
+  );
+}
+
+// Balkon-Gitter als dünne dunkle Linie unterhalb einer Fensterreihe
+function ParisBalcony({ w, y, z }: { w: number; y: number; z: number }) {
+  return (
+    <mesh position={[0, y, z + 0.005]}>
+      <boxGeometry args={[w, 0.02, 0.01]} />
+      {m(PARIS_IRON, 0.4, 0.6)}
+    </mesh>
+  );
+}
+
+// Parisian-Fensterreihe: Team-Farbe als warmes Licht
+function ParisWindows({ w, d, rows, cols, startY, stepY, color }: {
+  w: number; d: number; rows: number; cols: number; startY: number; stepY: number; color: string;
+}) {
+  const winW = (w / (cols + 1)) * 0.55;
+  const winH = 0.09;
+  const ps: JSX.Element[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const px = (c + 1) * (w / (cols + 1)) - w / 2;
+      const py = startY + r * stepY;
+      ps.push(
+        <mesh key={`pw-${r}-${c}`} position={[px, py, d / 2 + 0.002]}>
+          <planeGeometry args={[winW, winH]} />
+          <meshStandardMaterial color="#fef3c7" emissive={color} emissiveIntensity={1.3} toneMapped={false} />
+        </mesh>
+      );
+    }
+  }
+  return <>{ps}</>;
+}
+
+// Paris S — Haussmann-Bürgerhaus (5 Etagen, Mansarddach, Balkon)
+function ParisHouse({ color, joker, tex }: BProps) {
+  const w = 0.9, d = 0.85, h = 0.95;
+  return (
+    <group>
+      <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w, h, d]} />
+        {m(PARIS_WALL, 0.7, 0.05, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      <ParisMansardRoof w={w} d={d} y={h} height={0.24} />
+      <ParisWindows w={w} d={d} rows={4} cols={3} startY={0.18} stepY={0.18} color={color} />
+      <ParisBalcony w={w * 0.95} y={0.36} z={d / 2} />
+      {/* Eingang (dunkles Tor mittig) */}
+      <mesh position={[0, 0.12, d / 2 + 0.002]}>
+        <planeGeometry args={[0.14, 0.22]} />
+        {m(PARIS_IRON, 0.5, 0.2)}
+      </mesh>
+      <RoofAvatar tex={tex} y={h + 0.3} joker={joker} />
+    </group>
+  );
+}
+
+// Paris M — Sacré-Cœur-artige Basilika (große Kuppel + Türmchen)
+function ParisBasilica({ color, joker, tex }: BProps) {
+  const w = 0.85, d = 0.85, h = 0.5;
+  return (
+    <group>
+      {/* Basis */}
+      <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w, h, d]} />
+        {m(PARIS_WALL, 0.7, 0.05, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      {/* Tambour (runder Sockel unter Kuppel) */}
+      <mesh position={[0, h + 0.1, 0]} castShadow>
+        <cylinderGeometry args={[0.24, 0.28, 0.2, 24]} />
+        {m(PARIS_WALL, 0.65, 0.1)}
+      </mesh>
+      {/* Haupt-Kuppel */}
+      <mesh position={[0, h + 0.2, 0]} castShadow>
+        <sphereGeometry args={[0.26, 24, 18, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        {m('#e8e4d5', 0.45, 0.2)}
+      </mesh>
+      {/* Zwei kleine Ecktürmchen */}
+      {[[-w / 2 + 0.1, d / 2 - 0.1], [w / 2 - 0.1, d / 2 - 0.1]].map(([tx, tz], i) => (
+        <group key={i} position={[tx, h, tz]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.05, 0.06, 0.18, 12]} />
+            {m(PARIS_WALL)}
+          </mesh>
+          <mesh position={[0, 0.12, 0]} castShadow>
+            <sphereGeometry args={[0.055, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            {m('#e8e4d5', 0.45, 0.2)}
+          </mesh>
+        </group>
+      ))}
+      {/* Großes Rosetten-Fenster in Team-Farbe */}
+      <mesh position={[0, h * 0.6, d / 2 + 0.002]}>
+        <circleGeometry args={[0.12, 32]} />
+        <meshStandardMaterial color="#fef3c7" emissive={color} emissiveIntensity={2.4} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={h + 0.48} joker={joker} />
+    </group>
+  );
+}
+
+// Paris L — Eiffelturm (4 geneigte Beine → Plattform → 2 Stufen → Spitze)
+function ParisEiffel({ color, joker, tex }: BProps) {
+  return (
+    <group>
+      {/* 4 geneigte Beine */}
+      {[[-0.22, -0.22, 0.16, 0, 0.11, 0], [0.22, -0.22, -0.16, 0, 0.11, 0],
+        [-0.22, 0.22, 0.16, 0, -0.11, 0], [0.22, 0.22, -0.16, 0, -0.11, 0]].map((v, i) => (
+        <mesh key={i} position={[v[0] * 0.6, 0.3, v[1] * 0.6]} rotation={[v[2], v[3], v[4]]} castShadow>
+          <boxGeometry args={[0.035, 0.6, 0.035]} />
+          {m('#d4a574', 0.5, 0.4, joker ? '#fbbf24' : undefined, joker ? 0.15 : 0)}
+        </mesh>
+      ))}
+      {/* Plattform 1 */}
+      <mesh position={[0, 0.58, 0]} castShadow>
+        <boxGeometry args={[0.34, 0.04, 0.34]} />
+        {m('#b8895a', 0.55, 0.3)}
+      </mesh>
+      {/* Mittelteil */}
+      <mesh position={[0, 0.82, 0]} castShadow>
+        <boxGeometry args={[0.2, 0.45, 0.2]} />
+        {m('#d4a574', 0.5, 0.4)}
+      </mesh>
+      {/* Plattform 2 */}
+      <mesh position={[0, 1.07, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.035, 0.22]} />
+        {m('#b8895a', 0.55, 0.3)}
+      </mesh>
+      {/* Spitze */}
+      <mesh position={[0, 1.26, 0]} castShadow>
+        <coneGeometry args={[0.09, 0.35, 4]} />
+        {m('#d4a574', 0.5, 0.4)}
+      </mesh>
+      {/* Leuchtender Team-Farb-Punkt auf der Spitze */}
+      <mesh position={[0, 1.46, 0]}>
+        <sphereGeometry args={[0.03, 14, 10]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3.5} toneMapped={false} />
+      </mesh>
+      <RoofAvatar tex={tex} y={1.58} joker={joker} />
+    </group>
+  );
+}
+
+// ═══ KYOTO (Frog) ════════════════════════════════════════════════════════════
+// Dunkles Holz · geschwungene schwarze Dächer · weißer Putz · Team-Farbe als
+// Lampion-Akzent
+
+const KYOTO_WOOD = '#6b4a2b';
+const KYOTO_ROOF = '#1c1a1f';
+const KYOTO_WALL = '#f4ead5';
+
+function KyotoRoof({ w, d, y, overhang = 0.12, height = 0.14 }: {
+  w: number; d: number; y: number; overhang?: number; height?: number;
+}) {
+  // Schwungdach-Andeutung: breites flaches Prisma + abgerundete Ecken via kleine Kegel-Enden
+  return (
+    <group position={[0, y, 0]}>
+      <mesh castShadow position={[0, height / 2, 0]}>
+        <boxGeometry args={[w + overhang * 2, height, d + overhang * 2]} />
+        {m(KYOTO_ROOF, 0.7, 0.1)}
+      </mesh>
+      {/* Nach oben geneigter oberer Dachgrat */}
+      <mesh castShadow position={[0, height + 0.04, 0]}>
+        <boxGeometry args={[w + overhang * 1.4, 0.04, d + overhang * 1.4]} />
+        {m(KYOTO_ROOF, 0.7, 0.1)}
+      </mesh>
+      {/* Dachfirst */}
+      <mesh position={[0, height + 0.07, 0]}>
+        <boxGeometry args={[w + overhang * 1.6, 0.02, 0.05]} />
+        {m('#0f0d10', 0.7, 0.1)}
+      </mesh>
+    </group>
+  );
+}
+
+// Lampion in Team-Farbe (klein, emissive)
+function KyotoLampion({ y, x = 0, z = 0, color }: { y: number; x?: number; z?: number; color: string }) {
+  return (
+    <mesh position={[x, y, z]}>
+      <sphereGeometry args={[0.05, 14, 10]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.2} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Kyoto S — Shōya-Holzhaus (niedrig, Schwungdach, Schiebetüren)
+function KyotoShoya({ color, joker, tex }: BProps) {
+  const w = 0.92, d = 0.78, h = 0.35;
+  return (
+    <group>
+      {/* Holz-Unterbau */}
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w + 0.04, 0.12, d + 0.04]} />
+        {m(KYOTO_WOOD, 0.75, 0.1)}
+      </mesh>
+      {/* Weiße Putz-Wand */}
+      <mesh position={[0, 0.12 + h / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w, h, d]} />
+        {m(KYOTO_WALL, 0.7, 0.0, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      {/* Holzrahmen-Gitter auf Front (Schiebetüren) */}
+      {[-0.25, 0, 0.25].map((px, i) => (
+        <mesh key={i} position={[px, 0.25, d / 2 + 0.002]}>
+          <planeGeometry args={[0.18, h - 0.05]} />
+          <meshStandardMaterial color="#d4c598" emissive={color} emissiveIntensity={0.6} toneMapped={false} />
+        </mesh>
+      ))}
+      {/* Horizontale Holz-Balken */}
+      <mesh position={[0, 0.12, d / 2 + 0.003]}>
+        <planeGeometry args={[w, 0.02]} />
+        {m(KYOTO_WOOD)}
+      </mesh>
+      <mesh position={[0, 0.12 + h, d / 2 + 0.003]}>
+        <planeGeometry args={[w, 0.025]} />
+        {m(KYOTO_WOOD)}
+      </mesh>
+      <KyotoRoof w={w} d={d} y={0.12 + h} overhang={0.16} height={0.12} />
+      <KyotoLampion x={-w / 2 + 0.1} y={0.28} z={d / 2 + 0.08} color={color} />
+      <KyotoLampion x={w / 2 - 0.1} y={0.28} z={d / 2 + 0.08} color={color} />
+      <RoofAvatar tex={tex} y={0.12 + h + 0.3} joker={joker} />
+    </group>
+  );
+}
+
+// Kyoto M — Torii-Tor + kleiner Schrein dahinter
+function KyotoTorii({ color, joker, tex }: BProps) {
+  return (
+    <group>
+      {/* Torii: zwei Säulen + zwei Querbalken */}
+      <mesh position={[-0.3, 0.3, 0.2]} castShadow>
+        <cylinderGeometry args={[0.04, 0.045, 0.6, 12]} />
+        {m('#c24a3a', 0.55, 0.1, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      <mesh position={[0.3, 0.3, 0.2]} castShadow>
+        <cylinderGeometry args={[0.04, 0.045, 0.6, 12]} />
+        {m('#c24a3a', 0.55, 0.1)}
+      </mesh>
+      {/* Oberer Querbalken (geschwungen, dicker + länger) */}
+      <mesh position={[0, 0.65, 0.2]} castShadow>
+        <boxGeometry args={[0.78, 0.06, 0.08]} />
+        {m('#1c1a1f', 0.7, 0.1)}
+      </mesh>
+      {/* Unterer Querbalken */}
+      <mesh position={[0, 0.55, 0.2]} castShadow>
+        <boxGeometry args={[0.68, 0.04, 0.06]} />
+        {m('#c24a3a', 0.55, 0.1)}
+      </mesh>
+      {/* Mittelstempel oben */}
+      <mesh position={[0, 0.72, 0.2]}>
+        <boxGeometry args={[0.08, 0.05, 0.07]} />
+        {m('#1c1a1f')}
+      </mesh>
+      {/* Schrein dahinter (niedriger Holz-Bau) */}
+      <mesh position={[0, 0.16, -0.22]} castShadow>
+        <boxGeometry args={[0.55, 0.32, 0.4]} />
+        {m(KYOTO_WALL, 0.7)}
+      </mesh>
+      <KyotoRoof w={0.55} d={0.4} y={0.32} overhang={0.14} height={0.1} />
+      {/* Schrein-Front: leuchtendes Quadrat (Kerzen) */}
+      <mesh position={[0, 0.18, -0.02]}>
+        <planeGeometry args={[0.22, 0.14]} />
+        <meshStandardMaterial color="#fef3c7" emissive={color} emissiveIntensity={2.0} toneMapped={false} />
+      </mesh>
+      {/* Lampions an den Säulen */}
+      <KyotoLampion x={-0.3} y={0.12} z={0.28} color={color} />
+      <KyotoLampion x={0.3} y={0.12} z={0.28} color={color} />
+      <RoofAvatar tex={tex} y={0.85} joker={joker} />
+    </group>
+  );
+}
+
+// Kyoto L — 3-stöckige Pagode (je schmaler nach oben, Schwungdächer)
+function KyotoPagoda({ color, joker, tex }: BProps) {
+  const levels = [
+    { w: 0.85, d: 0.85, h: 0.26, y: 0 },
+    { w: 0.68, d: 0.68, h: 0.24, y: 0.4 },
+    { w: 0.5,  d: 0.5,  h: 0.22, y: 0.78 },
+  ];
+  return (
+    <group>
+      {/* Holz-Sockel */}
+      <mesh position={[0, 0.04, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.95, 0.08, 0.95]} />
+        {m(KYOTO_WOOD, 0.75)}
+      </mesh>
+      {levels.map((L, i) => (
+        <group key={i}>
+          {/* Body */}
+          <mesh position={[0, L.y + L.h / 2 + 0.08, 0]} castShadow receiveShadow>
+            <boxGeometry args={[L.w, L.h, L.d]} />
+            {m(KYOTO_WALL, 0.7, 0.0, joker ? '#fbbf24' : undefined, joker ? 0.18 : 0)}
+          </mesh>
+          {/* Fenster-Akzent pro Stockwerk in Team-Farbe */}
+          <mesh position={[0, L.y + L.h / 2 + 0.08, L.d / 2 + 0.002]}>
+            <planeGeometry args={[L.w * 0.45, L.h * 0.5]} />
+            <meshStandardMaterial color="#fef3c7" emissive={color} emissiveIntensity={1.6} toneMapped={false} />
+          </mesh>
+          {/* Geschwungenes Dach */}
+          <KyotoRoof w={L.w} d={L.d} y={L.y + L.h + 0.08} overhang={0.14} height={0.1} />
+        </group>
+      ))}
+      {/* Spitze (dünner Turm + Spitzring) */}
+      <mesh position={[0, 1.25, 0]} castShadow>
+        <cylinderGeometry args={[0.012, 0.018, 0.24, 10]} />
+        {m('#c9a14a', 0.4, 0.7)}
+      </mesh>
+      {[0.08, 0.14, 0.2].map((yp, i) => (
+        <mesh key={i} position={[0, 1.13 + yp, 0]}>
+          <torusGeometry args={[0.03, 0.006, 8, 18]} />
+          {m('#c9a14a', 0.4, 0.7)}
+        </mesh>
+      ))}
+      <RoofAvatar tex={tex} y={1.45} joker={joker} />
+    </group>
+  );
+}
+
+// ═══ SANTORINI (Rabbit) ═══════════════════════════════════════════════════════
+// Weißer Putz · blaue Kuppeln · Kykladen-Würfel · Team-Farbe als Tür/Fenster
+
+const SANT_WALL = '#f8f5ed';
+const SANT_DOME = '#2e6fb5';   // Aegean blue
+const SANT_SHADOW = '#e2dccb';
+
+// Santorin S — schichtiger weißer Kubus-Stack
+function SantoriniCube({ color, joker, tex }: BProps) {
+  return (
+    <group>
+      {/* Unterste Schicht (breit, flach) */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.95, 0.2, 0.8]} />
+        {m(SANT_WALL, 0.85, 0.0, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      {/* Mittlere Schicht (leicht versetzt) */}
+      <mesh position={[0.06, 0.32, -0.06]} castShadow>
+        <boxGeometry args={[0.65, 0.24, 0.55]} />
+        {m(SANT_WALL, 0.85)}
+      </mesh>
+      {/* Obere Schicht */}
+      <mesh position={[-0.1, 0.54, 0.04]} castShadow>
+        <boxGeometry args={[0.4, 0.2, 0.35]} />
+        {m(SANT_WALL, 0.85)}
+      </mesh>
+      {/* Schatten-Wangen an den Übergängen */}
+      <mesh position={[0.06, 0.2, -0.06]}>
+        <boxGeometry args={[0.66, 0.015, 0.56]} />
+        {m(SANT_SHADOW, 0.9)}
+      </mesh>
+      {/* Tür in Team-Farbe */}
+      <mesh position={[0, 0.12, 0.4 + 0.002]}>
+        <planeGeometry args={[0.1, 0.18]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} toneMapped={false} />
+      </mesh>
+      {/* Zwei kleine blaue Fensterläden */}
+      {[-0.22, 0.22].map((xp, i) => (
+        <mesh key={i} position={[xp, 0.14, 0.4 + 0.002]}>
+          <planeGeometry args={[0.1, 0.1]} />
+          {m(SANT_DOME, 0.4, 0.2, color, 0.6)}
+        </mesh>
+      ))}
+      <RoofAvatar tex={tex} y={0.66} joker={joker} />
+    </group>
+  );
+}
+
+// Santorin M — Kuppelkirche (weißer Würfel + blaue Halbkugel + Glocken-Bogen)
+function SantoriniDome({ color, joker, tex }: BProps) {
+  return (
+    <group>
+      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.75, 0.44, 0.75]} />
+        {m(SANT_WALL, 0.85, 0.0, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      {/* Tambour */}
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.22, 0.25, 0.1, 20]} />
+        {m(SANT_WALL, 0.85)}
+      </mesh>
+      {/* Blaue Kuppel */}
+      <mesh position={[0, 0.55, 0]} castShadow>
+        <sphereGeometry args={[0.24, 24, 18, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        {m(SANT_DOME, 0.35, 0.4)}
+      </mesh>
+      {/* Kreuz oben */}
+      <group position={[0, 0.82, 0]}>
+        <mesh><boxGeometry args={[0.015, 0.1, 0.015]} />{m('#ffffff', 0.4, 0.3, color, 1.2)}</mesh>
+        <mesh position={[0, 0.01, 0]}><boxGeometry args={[0.06, 0.015, 0.015]} />{m('#ffffff', 0.4, 0.3, color, 1.2)}</mesh>
+      </group>
+      {/* Glocken-Bogen seitlich (kleine Mauer mit Loch) */}
+      <mesh position={[-0.45, 0.32, 0]} castShadow>
+        <boxGeometry args={[0.14, 0.38, 0.18]} />
+        {m(SANT_WALL, 0.85)}
+      </mesh>
+      <mesh position={[-0.45, 0.38, 0]}>
+        <cylinderGeometry args={[0.045, 0.045, 0.06, 18]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} toneMapped={false} />
+      </mesh>
+      {/* Blaue Tür */}
+      <mesh position={[0, 0.15, 0.375 + 0.002]}>
+        <planeGeometry args={[0.12, 0.22]} />
+        {m(SANT_DOME, 0.4, 0.2, color, 0.8)}
+      </mesh>
+      <RoofAvatar tex={tex} y={0.95} joker={joker} />
+    </group>
+  );
+}
+
+// Santorin L — Windmühle (runder Turm + kegelförmiges Dach + 4 Segel)
+function SantoriniMill({ color, joker, tex }: BProps) {
+  const millRef = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (millRef.current) millRef.current.rotation.z = state.clock.elapsedTime * 0.6;
+  });
+  return (
+    <group>
+      {/* Turm */}
+      <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.3, 0.34, 1.2, 24]} />
+        {m(SANT_WALL, 0.85, 0.0, joker ? '#fbbf24' : undefined, joker ? 0.2 : 0)}
+      </mesh>
+      {/* Kleine Fensterchen in Team-Farbe */}
+      {[0.35, 0.75, 1.0].map((yp, i) => (
+        <mesh key={i} position={[0, yp, 0.32]}>
+          <planeGeometry args={[0.08, 0.08]} />
+          <meshStandardMaterial color="#fef3c7" emissive={color} emissiveIntensity={1.6} toneMapped={false} />
+        </mesh>
+      ))}
+      {/* Kegel-Dach */}
+      <mesh position={[0, 1.3, 0]} castShadow>
+        <coneGeometry args={[0.34, 0.28, 24]} />
+        {m(SANT_DOME, 0.4, 0.3)}
+      </mesh>
+      {/* Nabe + rotierende Segel */}
+      <group position={[0, 0.85, 0.34]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.045, 0.045, 0.08, 16]} />
+          {m('#3a2e20', 0.55, 0.1)}
+        </mesh>
+        <group ref={millRef} position={[0, 0, 0.04]}>
+          {[0, Math.PI / 2, Math.PI, 3 * Math.PI / 2].map((a, i) => (
+            <mesh key={i} rotation={[0, 0, a]}>
+              <boxGeometry args={[0.06, 0.42, 0.01]} />
+              <meshStandardMaterial color="#f8f5ed" emissive={color} emissiveIntensity={0.35} toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
+      </group>
+      <RoofAvatar tex={tex} y={1.6} joker={joker} />
+    </group>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERISCHE GEBÄUDE (Fallback für noch nicht umgesetzte Teams)
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Helper: emissive strip (für neon-style Akzente, toneMapped off = bloom-ready)
 function NeonStrip({ w, h, d, y, x = 0, z = 0, color, intensity = 2.2 }: {

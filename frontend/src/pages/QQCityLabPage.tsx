@@ -287,25 +287,58 @@ function EmptyPlot({ x, z }: { x: number; z: number }) {
   );
 }
 
-function TeamBase({ x, z, color, joker }: { x: number; z: number; color: string; joker: boolean }) {
+// Team-Tile: volles farbiges Quadrat (passt zur quadratischen Grid-Logik),
+// leuchtender quadratischer Rahmen aus 4 Kanten-Planes.
+function SquareFrame({ x, z, y, size, thickness, color }: {
+  x: number; z: number; y: number; size: number; thickness: number; color: string;
+}) {
+  const half = size / 2;
+  const tHalf = thickness / 2;
   return (
     <group>
-      {/* Basis-Tile in Team-Farbe */}
-      <mesh position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1.25, 1.25]} />
-        <meshStandardMaterial color={color} roughness={0.7} transparent opacity={0.55} />
-      </mesh>
-      {/* Team-Glow-Ring (breiter und heller → klare Team-ID) */}
-      <mesh position={[x, 0.045, z]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.62, 48]} />
+      {/* Top (+Z-Seite) */}
+      <mesh position={[x, y, z + half - tHalf]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size, thickness]} />
         <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
-      {/* Joker: zweiter goldener Ring außen */}
+      {/* Bottom (-Z) */}
+      <mesh position={[x, y, z - half + tHalf]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size, thickness]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Right (+X) */}
+      <mesh position={[x + half - tHalf, y, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[thickness, size]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Left (-X) */}
+      <mesh position={[x - half + tHalf, y, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[thickness, size]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function TeamBase({ x, z, color, joker }: { x: number; z: number; color: string; joker: boolean }) {
+  const size = 1.32;
+  return (
+    <group>
+      {/* Komplett farbige Tile-Fläche */}
+      <mesh position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[size, size]} />
+        <meshStandardMaterial
+          color={color}
+          roughness={0.65}
+          emissive={color}
+          emissiveIntensity={0.35}
+        />
+      </mesh>
+      {/* Leuchtender quadratischer Rahmen */}
+      <SquareFrame x={x} z={z} y={0.046} size={size} thickness={0.05} color={color} />
+      {/* Joker: goldener Außen-Rahmen */}
       {joker && (
-        <mesh position={[x, 0.046, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.64, 0.7, 48]} />
-          <meshBasicMaterial color="#fbbf24" toneMapped={false} />
-        </mesh>
+        <SquareFrame x={x} z={z} y={0.048} size={size + 0.12} thickness={0.04} color="#fbbf24" />
       )}
     </group>
   );

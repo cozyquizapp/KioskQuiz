@@ -1038,15 +1038,20 @@ function BarcelonaCell({ x, z, seed, joker, teamColor, avatarEmoji, emptyVariant
   }, [rng]);
   // Stacked erhöht pro Level um 40% der Basishöhe (deutlich sichtbar)
   const heightBase = baseH * (1 + (stacked ?? 0) * 0.4);
-  const facade = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
-  const plinth = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
+  const facadeBase = useMemo(() => FACADE_TONES[Math.floor(rng() * FACADE_TONES.length)], [rng]);
+  const plinthBase = useMemo(() => PLINTH_TONES[Math.floor(rng() * PLINTH_TONES.length)], [rng]);
+  // Frozen: Fassade + Sockel werden in kühles Eis-Blau getaucht, damit das
+  // ganze Haus sofort als "gefroren" lesbar ist — nicht nur das Dach.
+  // Sockel minimal dunkler als Fassade für Kontrast.
+  const facade = frozen ? '#b8daf2' : facadeBase;
+  const plinth = frozen ? '#8fb9d6' : plinthBase;
   // Dach-Farbe: Joker → Amber, Frozen → Eis-Blau, sonst Team-Farbe.
   // Leere Felder: beige/ghost → sandbeige; Fallback Terrakotta (Defensive).
   const terracotta = useMemo(() => TERRACOTTA[Math.floor(rng() * TERRACOTTA.length)], [rng]);
   const roof = joker
     ? '#fbbf24'
     : frozen
-      ? '#93d2ff'
+      ? '#7ec5ef'
       : teamColor
         ?? (emptyVariant === 'beige' || emptyVariant === 'ghost' ? '#c9b692' : terracotta);
   const hasPenthouse = rng() > 0.75;  // seltener, damit Dach lesbar bleibt
@@ -1158,8 +1163,10 @@ function BarcelonaBlock({
       <mesh geometry={plinthGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={plinthColor}
-          roughness={0.88}
-          metalness={0.03}
+          roughness={frozen ? 0.45 : 0.88}
+          metalness={frozen ? 0.2 : 0.03}
+          emissive={frozen ? '#5bb3ff' : '#000'}
+          emissiveIntensity={frozen ? 0.18 : 0}
           transparent={ghost}
           opacity={ghost ? 0.35 : 1}
           depthWrite={!ghost}
@@ -1170,10 +1177,10 @@ function BarcelonaBlock({
       <mesh geometry={facadeGeom} castShadow={!ghost} receiveShadow={!ghost}>
         <meshStandardMaterial
           color={facadeColor}
-          roughness={0.82}
-          metalness={0.02}
-          emissive={joker ? '#fbbf24' : '#000'}
-          emissiveIntensity={joker ? 0.15 : 0}
+          roughness={frozen ? 0.4 : 0.82}
+          metalness={frozen ? 0.25 : 0.02}
+          emissive={joker ? '#fbbf24' : frozen ? '#5bb3ff' : '#000'}
+          emissiveIntensity={joker ? 0.15 : frozen ? 0.22 : 0}
           transparent={ghost}
           opacity={ghost ? 0.35 : 1}
           depthWrite={!ghost}

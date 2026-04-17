@@ -4555,18 +4555,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           {qqGetAvatar(p.team!.avatarId).emoji}
                         </div>
-                        {/* Value chip — isTop: ÜBER dem Avatar, sonst UNTER dem Avatar */}
+                        {/* Value-Chip auf der RAIL-ZUGEWANDTEN Seite des Avatars.
+                            Damit sitzt der Chip "auf der Leine" zwischen Avatar
+                            und Rail — der Avatar selbst bleibt immer frei sichtbar,
+                            und andere Pins können hier nicht reinragen (die Leine
+                            gehört zum eigenen Pin).
+                            isTop  → Chip UNTER dem Avatar (Richtung Rail unten)
+                            !isTop → Chip ÜBER dem Avatar (Richtung Rail oben)
+                            Gewinner-Chip leicht größer. */}
                         <div style={{
                           position: 'absolute', left: '50%',
-                          top: isTop ? `${-avatarSize / 2 - 12}px` : `${avatarSize / 2 + 12}px`,
-                          transform: isTop ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
-                          padding: '6px 16px', borderRadius: 12,
-                          background: 'rgba(0,0,0,0.82)',
+                          top: isTop ? `${avatarSize / 2 + 10}px` : `${-avatarSize / 2 - 10}px`,
+                          transform: isTop ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+                          padding: isWinner ? '7px 18px' : '5px 14px',
+                          borderRadius: 12,
+                          background: 'rgba(0,0,0,0.88)',
                           border: `2px solid ${tColor}`,
                           color: '#fff', fontWeight: 900,
-                          fontSize: isWinner ? 'clamp(24px, 2.6vw, 34px)' : 'clamp(20px, 2.2vw, 28px)',
+                          fontSize: isWinner ? 'clamp(26px, 2.8vw, 36px)' : 'clamp(18px, 2vw, 26px)',
                           whiteSpace: 'nowrap',
-                          boxShadow: `0 4px 12px rgba(0,0,0,0.5)`,
+                          boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
                         }}>
                           {fmt(p.num)}
                         </div>
@@ -4598,21 +4606,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.9s both',
               }}>
                 <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 14,
-                  padding: '10px 22px', borderRadius: 999,
+                  display: 'inline-flex', alignItems: 'center', gap: 18,
+                  padding: '14px 30px', borderRadius: 999,
                   background: `linear-gradient(135deg, ${tColor}2a, ${tColor}0a)`,
-                  border: `1.5px solid ${tColor}66`,
-                  boxShadow: `0 0 22px ${tColor}33`,
+                  border: `2px solid ${tColor}66`,
+                  boxShadow: `0 0 32px ${tColor}44`,
                 }}>
-                  <span style={{ fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1 }}>🏆</span>
-                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', lineHeight: 1, flexShrink: 0 }}>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>🏆</span>
+                  <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>
                     {qqGetAvatar(w.team.avatarId).emoji}
                   </span>
                   <span style={{
-                    fontWeight: 900, fontSize: 'clamp(17px, 1.9vw, 24px)', color: tColor, lineHeight: 1.1,
+                    fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)', color: tColor, lineHeight: 1.1,
                   }}>{w.team.name}</span>
                   <span style={{
-                    color: '#cbd5e1', fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 700, lineHeight: 1.1,
+                    color: '#cbd5e1', fontSize: 'clamp(19px, 2.1vw, 28px)', fontWeight: 700, lineHeight: 1.1,
                   }}>
                     {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
                   </span>

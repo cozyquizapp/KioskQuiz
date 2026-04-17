@@ -1020,34 +1020,33 @@ function BarcelonaBlock({
   //   Plinth: y ∈ [0, PLINTH_H]      -> translate(0, 0, 0)
   //   Fassade: y ∈ [PLINTH_H, H]     -> translate(0, PLINTH_H, 0)
   //   Dach: y ∈ [H, H + ROOF_T]       -> translate(0, H, 0) (+ kleiner Offset)
+  // Plinth + Fassade sind Ring-Geometrien mit Innenhof-Loch. Ring-Winding
+  // ist jetzt korrekt (chamferedRingShape fixed in vorherigem commit).
   const plinthGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER + 0.008, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.008, INNER - 0.008, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    // Unten-Kappe soll bei y=0 liegen -> kein translate noetig (bzw. 0).
-    // Shape liegt nach rotateX-(-PI/2) in XZ, Extrusion waechst +Y.
     geom.translate(0, 0, 0);
     return geom;
   }, [PLINTH_H]);
 
   const facadeGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER, CHAMFER);
+    const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: H - PLINTH_H, bevelEnabled: false, curveSegments: 4,
     });
     geom.rotateX(-Math.PI / 2);
-    // Fassade startet unten auf Plinth-Top (y=PLINTH_H) und waechst +Y
     geom.translate(0, PLINTH_H, 0);
     return geom;
   }, [H, PLINTH_H]);
 
-  // Dach sitzt bei y ∈ [H, H + ROOF_T] -> translate(0, H, 0) (+ epsilon gegen
-  // Z-Fighting mit Fassaden-Top-Cap)
+  // Dach sitzt bei y ∈ [H, H + ROOF_T]. Ring-Shape mit Innenhof-Loch,
+  // damit man durch das Dach auf den Innenhof-Boden unten schauen kann.
   const ROOF_T = 0.04;
   const roofGeom = useMemo(() => {
-    const shape = chamferedSquareShape(OUTER + 0.03, CHAMFER);
+    const shape = chamferedRingShape(OUTER + 0.03, INNER, CHAMFER);
     const geom = new THREE.ExtrudeGeometry(shape, {
       depth: ROOF_T, bevelEnabled: false, curveSegments: 4,
     });
@@ -1095,13 +1094,20 @@ function BarcelonaBlock({
         />
       </mesh>
 
-      {/* Innenhof-Plateau: kleiner gruener Hof auf dem Dach (Eixample Patio) */}
-      <mesh position={[0, H + 0.001 + ROOF_T + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* Innenhof auf Bodenhoehe (Eixample Patio Interior) — gruener Garten
+          mit kleinem Baum, sichtbar durchs Dach-Loch */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[COURTYARD_SIZE, COURTYARD_SIZE]} />
         <meshStandardMaterial color="#6b8e4a" roughness={0.9} />
       </mesh>
-      <mesh position={[0, H + 0.001 + ROOF_T + 0.05, 0]} castShadow>
-        <sphereGeometry args={[0.06, 10, 8]} />
+      {/* Stamm */}
+      <mesh position={[0, 0.06, 0]} castShadow>
+        <cylinderGeometry args={[0.012, 0.016, 0.12, 6]} />
+        <meshStandardMaterial color="#4a2e1a" roughness={0.9} />
+      </mesh>
+      {/* Krone */}
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <sphereGeometry args={[0.08, 12, 10]} />
         <meshStandardMaterial color="#3d6b3f" roughness={0.85} />
       </mesh>
 

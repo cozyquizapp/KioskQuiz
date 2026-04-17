@@ -458,68 +458,242 @@ function RoofAvatar({ tex, y, joker }: { tex: THREE.Texture; y: number; joker: b
   );
 }
 
-function Building({ x, z, avatar, joker, btype, ownerId }: {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function Building({ x, z, avatar, joker, btype: _btype, ownerId: _ownerId }: {
   x: number; z: number; avatar: typeof AVATARS[AvatarKey]; joker: boolean; btype: number; ownerId: AvatarKey;
 }) {
   const tex = useAvatarTexture(avatar.emoji);
   const color = avatar.color;
 
-  // Style-Prototypen: 3 Teams bekommen eigene Stil-Welten, je 3 Gebäude-Varianten (S/M/L)
-  // Die restlichen Teams behalten die alten generischen Typen (nach btype).
-  const variant = btype % 3;
-
-  if (ownerId === 'fox') {
-    // Paris — Fox (warmes Rot/Bordeaux)
-    return (
-      <group position={[x, 0.05, z]}>
-        <TeamBase x={0} z={0} color={color} joker={joker} />
-        {variant === 0 && <ParisHouse color={color} joker={joker} tex={tex} />}
-        {variant === 1 && <ParisBasilica color={color} joker={joker} tex={tex} />}
-        {variant === 2 && <ParisEiffel color={color} joker={joker} tex={tex} />}
-      </group>
-    );
-  }
-  if (ownerId === 'frog') {
-    // Kyoto — Frog (Moos-Grün, Holz-Braun)
-    return (
-      <group position={[x, 0.05, z]}>
-        <TeamBase x={0} z={0} color={color} joker={joker} />
-        {variant === 0 && <KyotoShoya color={color} joker={joker} tex={tex} />}
-        {variant === 1 && <KyotoTorii color={color} joker={joker} tex={tex} />}
-        {variant === 2 && <KyotoPagoda color={color} joker={joker} tex={tex} />}
-      </group>
-    );
-  }
-  if (ownerId === 'rabbit') {
-    // Santorin — Rabbit (Weiß + Kykladen-Blau)
-    return (
-      <group position={[x, 0.05, z]}>
-        <TeamBase x={0} z={0} color={color} joker={joker} />
-        {variant === 0 && <SantoriniCube color={color} joker={joker} tex={tex} />}
-        {variant === 1 && <SantoriniDome color={color} joker={joker} tex={tex} />}
-        {variant === 2 && <SantoriniMill color={color} joker={joker} tex={tex} />}
-      </group>
-    );
-  }
-
-  // Alle anderen Teams: generische 8-Typen (Fallback)
-  const bi = btype % 8;
+  // Eixample-Block (Barcelona) für alle Teams:
+  // Chamfered-Corner-Grundriss (abgeschrägte Ecken wie in Eixample),
+  // cremefarbene Fassaden, Dach in Team-Farbe, Avatar mittig auf dem Dach,
+  // dunkler Innenhof. Form bleibt konstant = echter "Quartier"-Look.
   return (
     <group position={[x, 0.05, z]}>
-      <TeamBase x={0} z={0} color={color} joker={joker} />
-      {bi === 0 && <HouseB color={color} joker={joker} tex={tex} />}
-      {bi === 1 && <TowerB color={color} joker={joker} tex={tex} />}
-      {bi === 2 && <HighriseB color={color} joker={joker} tex={tex} />}
-      {bi === 3 && <ShopB color={color} joker={joker} tex={tex} />}
-      {bi === 4 && <FactoryB color={color} joker={joker} tex={tex} />}
-      {bi === 5 && <ChurchB color={color} joker={joker} tex={tex} />}
-      {bi === 6 && <CastleB color={color} joker={joker} tex={tex} />}
-      {bi === 7 && <SiloB color={color} joker={joker} tex={tex} />}
+      <EixampleBlock color={color} joker={joker} tex={tex} />
     </group>
   );
 }
 
 type BProps = { color: string; joker: boolean; tex: THREE.Texture };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EIXAMPLE-BLOCK (Barcelona) — Kern-Gebäude für Quartier-Look
+// Chamfered Octagon footprint, ring-shape mit Innenhof, flaches Team-Dach.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EIX_WALL = '#e8d9b8';    // warme Creme-Fassade
+const EIX_WALL_DARK = '#b69a6c';
+const EIX_COURTYARD = '#1a1208'; // dunkler Innenhof
+
+// Chamfered-Square Shape (Eixample-Grundriss): Quadrat mit 4 abgeschrägten Ecken
+function chamferedSquareShape(size: number, chamfer: number): THREE.Shape {
+  const s = size / 2;
+  const c = chamfer;
+  const shape = new THREE.Shape();
+  // Start rechts unten, gegen den Uhrzeigersinn (= außen)
+  shape.moveTo( s,     -s + c);
+  shape.lineTo( s,      s - c);
+  shape.lineTo( s - c,  s);
+  shape.lineTo(-s + c,  s);
+  shape.lineTo(-s,      s - c);
+  shape.lineTo(-s,     -s + c);
+  shape.lineTo(-s + c, -s);
+  shape.lineTo( s - c, -s);
+  shape.closePath();
+  return shape;
+}
+
+// Ring-Shape (Eixample-Block ist hohl → Innenhof)
+function chamferedRingShape(outer: number, inner: number, chamfer: number): THREE.Shape {
+  const shape = chamferedSquareShape(outer, chamfer);
+  const holeSize = inner;
+  const hc = chamfer * (inner / outer);
+  const hole = new THREE.Path();
+  const s = holeSize / 2;
+  const c = hc;
+  hole.moveTo( s,     -s + c);
+  hole.lineTo( s,      s - c);
+  hole.lineTo( s - c,  s);
+  hole.lineTo(-s + c,  s);
+  hole.lineTo(-s,      s - c);
+  hole.lineTo(-s,     -s + c);
+  hole.lineTo(-s + c, -s);
+  hole.lineTo( s - c, -s);
+  hole.closePath();
+  shape.holes.push(hole);
+  return shape;
+}
+
+function EixampleBlock({ color, joker, tex }: BProps) {
+  const OUTER = 1.18;
+  const INNER = 0.48;
+  const CHAMFER = 0.22;
+  const H = 0.42;
+
+  // Geometrien memoizen (werden pro Frame sonst neu gebaut)
+  const facadeGeom = useMemo(() => {
+    const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: H,
+      bevelEnabled: false,
+      curveSegments: 4,
+    });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, H, 0);
+    return geom;
+  }, []);
+
+  const roofGeom = useMemo(() => {
+    const shape = chamferedRingShape(OUTER, INNER, CHAMFER);
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.04,
+      bevelEnabled: false,
+      curveSegments: 4,
+    });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, H + 0.04, 0);
+    return geom;
+  }, []);
+
+  return (
+    <group>
+      {/* Hauptkörper — Eixample-Ring-Gebäude */}
+      <mesh geometry={facadeGeom} castShadow receiveShadow>
+        <meshStandardMaterial
+          color={EIX_WALL}
+          roughness={0.78}
+          metalness={0.02}
+          emissive={joker ? '#fbbf24' : '#000'}
+          emissiveIntensity={joker ? 0.18 : 0}
+        />
+      </mesh>
+
+      {/* Dach — in Team-Farbe (hier sitzt die Team-ID) */}
+      <mesh geometry={roofGeom} castShadow>
+        <meshStandardMaterial
+          color={color}
+          roughness={0.55}
+          metalness={0.1}
+          emissive={color}
+          emissiveIntensity={0.45}
+        />
+      </mesh>
+
+      {/* Dach-Kante (kleiner farbiger Rahmen auf Fassaden-Oberkante) */}
+      <EixampleRoofRim color={color} outer={OUTER} inner={INNER} chamfer={CHAMFER} y={H} />
+
+      {/* Fensterbänder auf den 4 Hauptfassaden */}
+      <EixampleWindows outer={OUTER} chamfer={CHAMFER} h={H} />
+
+      {/* Innenhof-Boden (dunkel, tiefer liegend) */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[INNER * 0.95, INNER * 0.95]} />
+        <meshStandardMaterial color={EIX_COURTYARD} roughness={0.9} />
+      </mesh>
+
+      {/* Avatar mittig über dem Innenhof, hängt über dem Block */}
+      <RoofAvatar tex={tex} y={H + 0.18} joker={joker} />
+    </group>
+  );
+}
+
+// Schmaler farbiger Dach-Rand als sichtbare Linie zwischen Fassade und Dach
+function EixampleRoofRim({ color, outer, inner, chamfer, y }: {
+  color: string; outer: number; inner: number; chamfer: number; y: number;
+}) {
+  const geom = useMemo(() => {
+    const shape = chamferedRingShape(outer + 0.015, inner - 0.015, chamfer);
+    const g = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.015,
+      bevelEnabled: false,
+      curveSegments: 4,
+    });
+    g.rotateX(-Math.PI / 2);
+    g.translate(0, y + 0.015, 0);
+    return g;
+  }, [outer, inner, chamfer, y]);
+  return (
+    <mesh geometry={geom}>
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Fensterreihen auf den 4 Haupt-Fassaden + 4 Schräg-Fassaden
+function EixampleWindows({ outer, chamfer, h }: { outer: number; chamfer: number; h: number }) {
+  const s = outer / 2;
+  const flatLen = outer - 2 * chamfer;
+  const diagLen = chamfer * Math.SQRT2;
+
+  const rows = 2;
+  const cols = 4;
+  const winW = (flatLen / (cols + 1)) * 0.5;
+  const winH = 0.08;
+  const rowYs = [h * 0.32, h * 0.68];
+  const winMat = (
+    <meshStandardMaterial color="#fef3c7" emissive="#fbbf24" emissiveIntensity={0.9} toneMapped={false} />
+  );
+
+  const items: JSX.Element[] = [];
+
+  // Pro Hauptfassade ein <group> das an die Seite gesetzt und rotiert wird.
+  // Innen die Fenster im lokalen Raum (X = horizontal, Y = vertikal, Z = 0).
+  type Side = { groupPos: [number, number, number]; groupRot: [number, number, number]; key: string };
+  const mainSides: Side[] = [
+    { groupPos: [0, 0, s + 0.003],  groupRot: [0, 0, 0],            key: 'S' },
+    { groupPos: [0, 0, -s - 0.003], groupRot: [0, Math.PI, 0],      key: 'N' },
+    { groupPos: [s + 0.003, 0, 0],  groupRot: [0, Math.PI / 2, 0],  key: 'E' },
+    { groupPos: [-s - 0.003, 0, 0], groupRot: [0, -Math.PI / 2, 0], key: 'W' },
+  ];
+  mainSides.forEach((side) => {
+    const winElements: JSX.Element[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const px = (c + 1) * (flatLen / (cols + 1)) - flatLen / 2;
+        winElements.push(
+          <mesh key={`${side.key}-${r}-${c}`} position={[px, rowYs[r], 0]}>
+            <planeGeometry args={[winW, winH]} />
+            {winMat}
+          </mesh>
+        );
+      }
+    }
+    items.push(
+      <group key={`side-${side.key}`} position={side.groupPos} rotation={side.groupRot}>
+        {winElements}
+      </group>
+    );
+  });
+
+  // 4 Schräg-Fassaden (Chamfers) — je 1 Fenster-Reihe mit 2 Etagen
+  const diagOffset = s - chamfer / 2 + 0.003;
+  const diagSides: Side[] = [
+    { groupPos: [ diagOffset, 0,  diagOffset], groupRot: [0,  Math.PI / 4, 0],      key: 'SE' },
+    { groupPos: [-diagOffset, 0,  diagOffset], groupRot: [0, -Math.PI / 4, 0],      key: 'SW' },
+    { groupPos: [ diagOffset, 0, -diagOffset], groupRot: [0,  3 * Math.PI / 4, 0],  key: 'NE' },
+    { groupPos: [-diagOffset, 0, -diagOffset], groupRot: [0, -3 * Math.PI / 4, 0],  key: 'NW' },
+  ];
+  diagSides.forEach((side) => {
+    const winElements: JSX.Element[] = [];
+    for (let r = 0; r < rows; r++) {
+      winElements.push(
+        <mesh key={`${side.key}-${r}`} position={[0, rowYs[r], 0]}>
+          <planeGeometry args={[diagLen * 0.45, winH]} />
+          {winMat}
+        </mesh>
+      );
+    }
+    items.push(
+      <group key={`side-${side.key}`} position={side.groupPos} rotation={side.groupRot}>
+        {winElements}
+      </group>
+    );
+  });
+
+  return <>{items}</>;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STIL-WELTEN PROTOTYP — 3 Teams × 3 Gebäude

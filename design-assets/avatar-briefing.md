@@ -112,6 +112,63 @@ Ordner `frontend/public/avatars/cozy-cast/`.
 
 ---
 
+## 🔧 Technische Liefer-Spec
+
+**Transparenz:** Außerhalb des Rings komplett transparent, innerhalb
+des Rings reines Weiß (genau wie das Wolf-Logo). Der Ring + das Weiß
+gehören zur Grafik — nur der Bereich **außenrum** ist Alpha. Dadurch
+funktioniert der Avatar als „Sticker" auf jedem Hintergrund (dunkler
+Beamer, helles Menü, farbige Team-Pill).
+
+### SVG (Pflicht, primäres Format)
+
+- `viewBox="0 0 1024 1024"`, quadratisch
+- Vektorpfade mit **exakten Hex-Farben aus der Matrix oben** — keine gerundeten/approximierten Werte
+- **Kein eingebettetes Raster** (keine `<image>`-Tags, keine base64-PNGs, keine externen Abhängigkeiten)
+- Hintergrund außerhalb des Rings: kein Fill (transparent)
+- Nach Möglichkeit pro Charakter benannte Gruppen/IDs:
+  - `#ring` — der farbige Kreis-Ring
+  - `#body` — Tier-Körper/-Kopf (die Signature-Farbe)
+  - `#hoodie` — Pullover/Kapuze
+  - `#accent` — tier-typische Akzente (Augenmaske, weißer Bauch, Flecken etc.)
+- Dadurch können Farben später per Code nachjustiert werden, falls ein Hue sich im Live-Test als schlecht lesbar herausstellt.
+
+### PNG mit Alpha (Fallback + schnelle Ladezeit)
+
+- **512×512** — für Team-Pills, Moderator-Panel, Grid-Badges
+- **1024×1024** — für Hero-Momente, Winner-Reveal, Beamer-Stage
+- RGBA (24-bit + Alpha), **nicht indiziert** (kein PNG-8)
+- Keine Weichzeichner-Kanten am Ring — harte Alpha-Kante außenrum
+
+### Dateinamen (ASCII, lowercase, keine Umlaute)
+
+```
+avatar-waschbaer.svg   avatar-waschbaer-512.png   avatar-waschbaer-1024.png
+avatar-faultier.svg    avatar-faultier-512.png    avatar-faultier-1024.png
+avatar-pinguin.svg     avatar-pinguin-512.png     avatar-pinguin-1024.png
+avatar-kuh.svg         avatar-kuh-512.png         avatar-kuh-1024.png
+avatar-koala.svg       avatar-koala-512.png       avatar-koala-1024.png
+avatar-giraffe.svg     avatar-giraffe-512.png     avatar-giraffe-1024.png
+avatar-capybara.svg    avatar-capybara-512.png    avatar-capybara-1024.png
+avatar-shiba.svg       avatar-shiba-512.png       avatar-shiba-1024.png
+```
+
+### Zielordner im Repo
+
+```
+frontend/public/avatars/cozy-cast/
+```
+
+### Optional: Lottie (Phase 2)
+
+- Format: `.json` (oder `.lottie`)
+- Canvas: transparent
+- Alle Assets **inline/flat** — keine externen PNG-Referenzen
+- viewBox 1024×1024, Framerate 30 oder 60
+- Dateiname: `avatar-<tier>.lottie.json`
+
+---
+
 ## 🎬 Optional: Lottie-Animation
 
 Zweite Phase (nur wenn Budget/Zeit da):

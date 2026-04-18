@@ -5831,8 +5831,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
             const allInTied = allInTie?.maxPointsTied ?? false;
 
+            // CHEESE: Wenn mehrere Teams richtig geraten haben, ist „am schnellsten"
+            // die entscheidende Info. Match-Logik spiegelt evalCheese im Backend.
+            const cheeseCorrectCount = cat === 'CHEESE'
+              ? (() => {
+                  const correctList = [q.answer, q.answerEn]
+                    .map(x => (x ?? '').trim().toLowerCase())
+                    .filter(Boolean);
+                  if (correctList.length === 0) return 0;
+                  return s.answers.filter(a => {
+                    const sub = a.text.trim().toLowerCase();
+                    if (sub.length < 2) return false;
+                    return correctList.some(c =>
+                      sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3)
+                    );
+                  }).length;
+                })()
+              : 0;
+            const cheeseSpeedWin = cat === 'CHEESE' && cheeseCorrectCount > 1;
+
             const winMsg = cat === 'CHEESE'
-              ? (isEn ? 'got it right!' : 'hat es erkannt!')
+              ? (cheeseSpeedWin
+                  ? (isEn ? 'recognized it fastest!' : 'hat es am schnellsten erkannt!')
+                  : (isEn ? 'got it right!' : 'hat es erkannt!'))
               : cat === 'BUNTE_TUETE'
                 ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
                 : cat === 'ZEHN_VON_ZEHN'

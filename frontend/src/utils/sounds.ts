@@ -165,8 +165,13 @@ let loopActive = false;
 let loopScheduleTimeout: ReturnType<typeof setTimeout> | null = null;
 let loopAudioEl: HTMLAudioElement | null = null;
 
+let lobbyLoopActive = false;
+let lobbyAudioEl: HTMLAudioElement | null = null;
+
 function applyDuckToLoop() {
   if (loopAudioEl) loopAudioEl.volume = masterVolume * musicDuckFactor;
+  // Lobby-Loop wird nicht geduckt — sie IST die Pausen-/Lobby-Musik.
+  if (lobbyAudioEl) lobbyAudioEl.volume = masterVolume;
 }
 
 /** Ziel-Duck setzen (500ms smooth fade). true = auf 0.2 dämpfen, false = auf 1 zurück. */
@@ -420,6 +425,30 @@ export function playLobbyWelcome() {
   notes.forEach((f, i) =>
     tone(f, 'sine', t + i * 0.13, 0.45, 0.16 - i * 0.02, 0.01, 0.32, ac)
   );
+}
+
+/** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent. */
+export function startLobbyLoop() {
+  if (lobbyLoopActive) return;
+  if (!isSlotEnabled('lobbyWelcome')) return;
+  const url = resolveSlotUrl('lobbyWelcome');
+  if (!url) return; // kein Synth-Fallback für Loop
+  lobbyLoopActive = true;
+  lobbyAudioEl = getOrCreateAudio(url);
+  lobbyAudioEl.volume = masterVolume * musicDuckFactor;
+  lobbyAudioEl.currentTime = 0;
+  lobbyAudioEl.loop = true;
+  lobbyAudioEl.play().catch(() => {});
+}
+
+export function stopLobbyLoop() {
+  if (!lobbyLoopActive && !lobbyAudioEl) return;
+  lobbyLoopActive = false;
+  if (lobbyAudioEl) {
+    const el = lobbyAudioEl;
+    lobbyAudioEl = null;
+    fadeOutAudio(el, 450, true);
+  }
 }
 
 export function playGameOver() {

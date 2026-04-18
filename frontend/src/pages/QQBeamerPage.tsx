@@ -17,6 +17,7 @@ import {
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
+  startLobbyLoop, stopLobbyLoop,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -377,6 +378,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     startTimerLoop();
     return () => stopTimerLoop();
   }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Music: Lobby-Loop in Lobby / Welcome-Folie / Pause ──
+  useEffect(() => {
+    const welcome = s.phase === 'RULES' && (s.rulesSlideIndex ?? 0) === -2;
+    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || welcome);
+    if (shouldLoop) {
+      resumeAudio();
+      startLobbyLoop();
+    } else {
+      stopLobbyLoop();
+    }
+    return () => stopLobbyLoop();
+  }, [s.phase, s.rulesSlideIndex, s.musicMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music Duck: während PAUSE wird alle Musik auf ~20% gedämpft (500ms fade) ──
   useEffect(() => {

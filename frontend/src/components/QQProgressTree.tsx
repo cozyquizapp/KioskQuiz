@@ -1,7 +1,7 @@
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 
-type Variant = 'hero' | 'inline' | 'panel';
+type Variant = 'hero' | 'inline' | 'panel' | 'mini';
 
 interface Props {
   state: QQStateUpdate;
@@ -40,13 +40,19 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
 
   const currentIdx = state.questionIndex;
 
+  const isMini = variant === 'mini';
+
   // Skalen je nach Variant
-  const scale = variant === 'hero' ? 1 : variant === 'panel' ? 0.8 : 0.95;
+  const scale = variant === 'hero' ? 1
+    : variant === 'panel' ? 0.8
+    : isMini ? 0.42
+    : 0.95;
   const titleSize = variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
   const phaseNameSize = variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
   const dotSize = Math.round(34 * scale);
-  const dotGap = Math.round(12 * scale);
-  const phaseGap = Math.round(40 * scale);
+  const dotGap = isMini ? 4 : Math.round(12 * scale);
+  const phaseGap = isMini ? 14 : Math.round(40 * scale);
+  const showLabels = !isMini;
 
   const phases: QQGamePhaseIndex[] = [];
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
@@ -79,23 +85,37 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
   const progressColor = '#FBBF24'; // Amber — markiert Fortschritt
 
+  const wrapperBg = isMini
+    ? 'rgba(15,23,42,0.55)'
+    : variant === 'inline'
+      ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
+      : 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92))';
+  const wrapperBorder = isMini
+    ? '1px solid rgba(148,163,184,0.18)'
+    : variant === 'inline'
+      ? '1px solid rgba(148,163,184,0.3)'
+      : '2px solid #e2e8f0';
+  const wrapperColor = (isMini || variant === 'inline') ? '#f8fafc' : '#0f172a';
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: variant === 'hero' ? 22 : 14,
-        padding: variant === 'hero' ? '28px 40px' : variant === 'inline' ? '20px 36px' : '16px 24px',
-        borderRadius: 20,
-        background: variant === 'inline'
-          ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
-          : 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92))',
-        color: variant === 'inline' ? '#f8fafc' : '#0f172a',
-        boxShadow: '0 10px 32px rgba(15,23,42,0.18)',
-        border: variant === 'inline' ? '1px solid rgba(148,163,184,0.3)' : '2px solid #e2e8f0',
-        maxWidth: variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : 920,
+        gap: variant === 'hero' ? 22 : isMini ? 0 : 14,
+        padding: variant === 'hero' ? '28px 40px'
+          : variant === 'inline' ? '20px 36px'
+          : isMini ? '6px 14px'
+          : '16px 24px',
+        borderRadius: isMini ? 999 : 20,
+        background: wrapperBg,
+        color: wrapperColor,
+        boxShadow: isMini ? '0 4px 12px rgba(0,0,0,0.35)' : '0 10px 32px rgba(15,23,42,0.18)',
+        border: wrapperBorder,
+        maxWidth: variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
         fontFamily: "'Nunito', system-ui, sans-serif",
+        backdropFilter: isMini ? 'blur(8px)' : undefined,
       }}
     >
       {title && (
@@ -105,8 +125,9 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
       )}
 
       {/* Container mit exakter Gesamtbreite — Labels + Timeline teilen sie sich */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: totalWidth, maxWidth: '100%' }}>
-        {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMini ? 0 : 10, width: totalWidth, maxWidth: '100%' }}>
+        {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert (nicht im mini-Mode) */}
+        {showLabels && (
         <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>
           {phases.map((p, pi) => {
             const isCurrentPhase = state.gamePhaseIndex === p;
@@ -131,6 +152,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
             );
           })}
         </div>
+        )}
 
         {/* Subway-Timeline — Track hinter allen Dots, Progress in Amber */}
         <div style={{
@@ -147,7 +169,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
             top: '50%',
             left: trackStart,
             width: Math.max(0, trackEnd - trackStart),
-            height: 3,
+            height: isMini ? 2 : 3,
             background: trackBg,
             borderRadius: 2,
             transform: 'translateY(-50%)',
@@ -159,7 +181,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
             top: '50%',
             left: trackStart,
             width: Math.max(0, progressEnd - trackStart),
-            height: 3,
+            height: isMini ? 2 : 3,
             background: `linear-gradient(90deg, ${progressColor}, #F59E0B)`,
             borderRadius: 2,
             transform: 'translateY(-50%)',
@@ -199,22 +221,22 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
                         background: isCurrent
                           ? color
                           : isPast
-                            ? (variant === 'inline' ? 'rgba(148,163,184,0.45)' : '#cbd5e1')
-                            : (variant === 'inline' ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
-                        color: isCurrent ? '#fff' : isPast ? '#fff' : (variant === 'inline' ? '#cbd5e1' : '#64748b'),
+                            ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.45)' : '#cbd5e1')
+                            : ((variant === 'inline' || isMini) ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
+                        color: isCurrent ? '#fff' : isPast ? '#fff' : ((variant === 'inline' || isMini) ? '#cbd5e1' : '#64748b'),
                         border: isCurrent
-                          ? `3px solid #fff`
+                          ? (isMini ? `2px solid #fff` : `3px solid #fff`)
                           : isPast
                             ? 'none'
-                            : (variant === 'inline' ? '2px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
+                            : ((variant === 'inline' || isMini) ? '1.5px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
                         boxShadow: isCurrent
-                          ? `0 0 0 4px ${color}55, 0 6px 14px ${color}66`
+                          ? (isMini ? `0 0 0 2px ${color}66` : `0 0 0 4px ${color}55, 0 6px 14px ${color}66`)
                           : isPast
                             ? '0 2px 6px rgba(0,0,0,0.15)'
                             : 'none',
-                        transform: isCurrent ? 'scale(1.15)' : 'scale(1)',
+                        transform: isCurrent ? (isMini ? 'scale(1.1)' : 'scale(1.15)') : 'scale(1)',
                         transition: 'transform 200ms ease, box-shadow 200ms ease',
-                        animation: isCurrent ? 'qqTreePulse 1.6s ease-in-out infinite' : 'none',
+                        animation: (isCurrent && !isMini) ? 'qqTreePulse 1.6s ease-in-out infinite' : 'none',
                       }}
                     >
                       {isPast ? '✓' : emoji}

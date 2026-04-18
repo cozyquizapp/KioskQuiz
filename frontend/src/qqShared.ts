@@ -213,6 +213,18 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Drumroll-Beat: Suspense zwischen Lösung und Winner-Banner für zack-Kategorien
+     (CHEESE/MUCHO/ZEHN_VON_ZEHN). Fade-in, kurz halten, fade-out. */
+  @keyframes qqDrumrollInOut {
+    0%    { opacity: 0; transform: translateY(12px) scale(0.94); }
+    22%   { opacity: 1; transform: translateY(0) scale(1); }
+    82%   { opacity: 1; transform: translateY(0) scale(1); }
+    100%  { opacity: 0; transform: translateY(-10px) scale(0.94); }
+  }
+  @keyframes qqDrumrollDot {
+    0%, 60%, 100% { opacity: 0.28; transform: translateY(0) scale(1); }
+    30%           { opacity: 1;    transform: translateY(-6px) scale(1.15); }
+  }
   /* Pin-Reveal für Schätzchen-Zeitstrahl — bewahrt das Wrapper-translate
      (--pin-x, --pin-y) und animiert nur opacity + scale. Ohne diese Keyframe
      würde revealWinnerIn die Position auf translateY(0) setzen und der

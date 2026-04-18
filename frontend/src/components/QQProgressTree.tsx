@@ -43,13 +43,41 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   // Skalen je nach Variant
   const scale = variant === 'hero' ? 1 : variant === 'panel' ? 0.8 : 0.95;
   const titleSize = variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
-  const phaseNameSize = variant === 'hero' ? 22 : variant === 'panel' ? 16 : 18;
+  const phaseNameSize = variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
   const dotSize = Math.round(34 * scale);
   const dotGap = Math.round(12 * scale);
-  const phaseGap = Math.round(56 * scale);
+  const phaseGap = Math.round(40 * scale);
 
   const phases: QQGamePhaseIndex[] = [];
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
+
+  // Berechne exakte x-Positionen aller Dots (für Progress-Track)
+  const dotCenters: number[] = [];
+  const phaseWidths: number[] = [];
+  let cursor = 0;
+  phases.forEach((p, pIdx) => {
+    if (pIdx > 0) cursor += phaseGap;
+    const entries = byPhase.get(p) ?? [];
+    const phaseStart = cursor;
+    entries.forEach((_e, i) => {
+      if (i > 0) cursor += dotGap;
+      dotCenters.push(cursor + dotSize / 2);
+      cursor += dotSize;
+    });
+    phaseWidths.push(cursor - phaseStart);
+  });
+  const totalWidth = cursor;
+
+  // Progress: von Center des ersten Dots bis Center des aktuellen Dots
+  const firstCenter = dotCenters[0] ?? 0;
+  const lastCenter = dotCenters[dotCenters.length - 1] ?? 0;
+  const currentCenter = dotCenters[Math.max(0, Math.min(currentIdx, dotCenters.length - 1))] ?? firstCenter;
+  const trackStart = firstCenter;
+  const trackEnd = lastCenter;
+  const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
+
+  const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
+  const progressColor = '#FBBF24'; // Amber — markiert Fortschritt
 
   return (
     <div
@@ -75,96 +103,130 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
           {title}
         </div>
       )}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          gap: phaseGap,
-          flexWrap: 'nowrap',
-          maxWidth: '100%',
-        }}
-      >
-        {phases.map((p, pi) => {
-          const entries = byPhase.get(p) ?? [];
-          const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
-          const isCurrentPhase = state.gamePhaseIndex === p;
-          return (
-            <div key={p} style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    fontSize: phaseNameSize,
-                    fontWeight: 800,
-                    color: isCurrentPhase
-                      ? (variant === 'inline' ? '#fbbf24' : '#b45309')
-                      : (variant === 'inline' ? '#94a3b8' : '#64748b'),
-                    letterSpacing: 0.3,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {phaseLabels[p]}
-                </div>
-                <div style={{ display: 'flex', gap: dotGap, alignItems: 'center' }}>
-                  {entries.map((e, i) => {
-                    const globalIdx = phaseStartIdx + i;
-                    const isPast = globalIdx < currentIdx;
-                    const isCurrent = globalIdx === currentIdx;
-                    const color = QQ_CATEGORY_COLORS[e.category];
-                    const label = QQ_CATEGORY_LABELS[e.category];
-                    const emoji = e.bunteTueteKind
-                      ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji
-                      : label.emoji;
-                    return (
-                      <div
-                        key={i}
-                        title={`${phaseLabels[p]} · ${label[lang]}`}
-                        style={{
-                          width: dotSize,
-                          height: dotSize,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: Math.round(dotSize * 0.55),
-                          fontWeight: 800,
-                          background: isCurrent
-                            ? color
-                            : isPast
-                              ? (variant === 'inline' ? 'rgba(148,163,184,0.35)' : '#cbd5e1')
-                              : (variant === 'inline' ? 'rgba(71,85,105,0.55)' : '#f1f5f9'),
-                          color: isCurrent ? '#fff' : isPast ? '#fff' : (variant === 'inline' ? '#cbd5e1' : '#64748b'),
-                          border: isCurrent ? `3px solid #fff` : `2px solid ${isPast ? 'transparent' : (variant === 'inline' ? 'rgba(148,163,184,0.3)' : '#e2e8f0')}`,
-                          boxShadow: isCurrent
-                            ? `0 0 0 4px ${color}55, 0 6px 14px ${color}66`
-                            : 'none',
-                          transform: isCurrent ? 'scale(1.15)' : 'scale(1)',
-                          transition: 'transform 200ms ease, box-shadow 200ms ease',
-                          animation: isCurrent ? 'qqTreePulse 1.6s ease-in-out infinite' : 'none',
-                        }}
-                      >
-                        {isPast ? '✓' : emoji}
-                      </div>
-                    );
-                  })}
-                </div>
+
+      {/* Container mit exakter Gesamtbreite — Labels + Timeline teilen sie sich */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: totalWidth, maxWidth: '100%' }}>
+        {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert */}
+        <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>
+          {phases.map((p, pi) => {
+            const isCurrentPhase = state.gamePhaseIndex === p;
+            return (
+              <div
+                key={p}
+                style={{
+                  width: phaseWidths[pi],
+                  textAlign: 'center',
+                  fontSize: phaseNameSize,
+                  fontWeight: 800,
+                  color: isCurrentPhase
+                    ? (variant === 'inline' ? '#FBBF24' : '#b45309')
+                    : (variant === 'inline' ? '#94a3b8' : '#64748b'),
+                  letterSpacing: 0.4,
+                  textTransform: 'uppercase',
+                  flexShrink: 0,
+                }}
+              >
+                {phaseLabels[p]}
               </div>
-              {pi < phases.length - 1 && (
-                <div
-                  style={{
-                    width: phaseGap,
-                    height: 2,
-                    background: variant === 'inline' ? 'rgba(148,163,184,0.35)' : '#cbd5e1',
-                    marginTop: phaseNameSize + 16 + dotSize / 2,
-                    flexShrink: 0,
-                    opacity: 0.7,
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        {/* Subway-Timeline — Track hinter allen Dots, Progress in Amber */}
+        <div style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          gap: phaseGap,
+          width: totalWidth,
+          height: Math.round(dotSize * 1.3), // Platz für Scale 1.15 + Glow
+        }}>
+          {/* Track: grau, von erstem bis letztem Dot-Center */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: trackStart,
+            width: Math.max(0, trackEnd - trackStart),
+            height: 3,
+            background: trackBg,
+            borderRadius: 2,
+            transform: 'translateY(-50%)',
+            zIndex: 0,
+          }} />
+          {/* Progress: amber, bis aktuelles Dot-Center */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: trackStart,
+            width: Math.max(0, progressEnd - trackStart),
+            height: 3,
+            background: `linear-gradient(90deg, ${progressColor}, #F59E0B)`,
+            borderRadius: 2,
+            transform: 'translateY(-50%)',
+            boxShadow: `0 0 10px ${progressColor}99`,
+            transition: 'width 600ms cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: 1,
+          }} />
+
+          {/* Dots — Flex-Layout, genau mit Berechnung oben synchron */}
+          {phases.map((p, pi) => {
+            const entries = byPhase.get(p) ?? [];
+            const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
+            return (
+              <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                {entries.map((e, i) => {
+                  const globalIdx = phaseStartIdx + i;
+                  const isPast = globalIdx < currentIdx;
+                  const isCurrent = globalIdx === currentIdx;
+                  const color = QQ_CATEGORY_COLORS[e.category];
+                  const label = QQ_CATEGORY_LABELS[e.category];
+                  const emoji = e.bunteTueteKind
+                    ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji
+                    : label.emoji;
+                  return (
+                    <div
+                      key={i}
+                      title={`${phaseLabels[p]} · ${label[lang]}`}
+                      style={{
+                        width: dotSize,
+                        height: dotSize,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: Math.round(dotSize * 0.55),
+                        fontWeight: 800,
+                        background: isCurrent
+                          ? color
+                          : isPast
+                            ? (variant === 'inline' ? 'rgba(148,163,184,0.45)' : '#cbd5e1')
+                            : (variant === 'inline' ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
+                        color: isCurrent ? '#fff' : isPast ? '#fff' : (variant === 'inline' ? '#cbd5e1' : '#64748b'),
+                        border: isCurrent
+                          ? `3px solid #fff`
+                          : isPast
+                            ? 'none'
+                            : (variant === 'inline' ? '2px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
+                        boxShadow: isCurrent
+                          ? `0 0 0 4px ${color}55, 0 6px 14px ${color}66`
+                          : isPast
+                            ? '0 2px 6px rgba(0,0,0,0.15)'
+                            : 'none',
+                        transform: isCurrent ? 'scale(1.15)' : 'scale(1)',
+                        transition: 'transform 200ms ease, box-shadow 200ms ease',
+                        animation: isCurrent ? 'qqTreePulse 1.6s ease-in-out infinite' : 'none',
+                      }}
+                    >
+                      {isPast ? '✓' : emoji}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
+
       <style>{`
         @keyframes qqTreePulse {
           0%, 100% { box-shadow: 0 0 0 4px rgba(251,191,36,0.35), 0 6px 14px rgba(0,0,0,0.2); }

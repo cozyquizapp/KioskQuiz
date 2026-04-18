@@ -3958,7 +3958,12 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           padding: 'clamp(14px, 1.8vh, 22px) clamp(20px, 2.4vw, 36px)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
           animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-          flexShrink: 0,
+          flex: '1 1 0',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          overflow: 'hidden',
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
@@ -3978,14 +3983,15 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
 
         {/* Lösungs-Hero — der Fokus der Folie */}
         <div style={{
-          flexShrink: 0,
-          padding: 'clamp(20px, 3vh, 40px) clamp(20px, 2.4vw, 36px)',
+          flex: '1 1 0',
+          minHeight: 0,
+          padding: 'clamp(16px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
           borderRadius: 28,
           background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
           border: '3px solid rgba(34,197,94,0.55)',
           boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
           animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{
@@ -4010,15 +4016,16 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           </div>
         </div>
 
-        {/* Winner-Card — füllt den Rest der linken Spalte */}
+        {/* Winner-Card — gleich hoch wie Frage + Lösung */}
         <div style={{
-          flex: 1,
-          background: 'transparent',
-          border: 'none',
+          flex: '1 1 0',
+          background: 'rgba(255,255,255,0.04)',
+          border: '2px solid rgba(255,255,255,0.08)',
           borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
+          padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 14, minHeight: 0,
+          gap: 12, minHeight: 0, overflow: 'hidden',
           opacity: revealedMinIdx === 0 ? 1 : 0.35,
           filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',

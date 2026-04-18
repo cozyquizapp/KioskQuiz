@@ -31,6 +31,7 @@ import {
   qqClearHotPotatoTimer,
   qqImposterStart, qqImposterChoose,
   qqFlushQuestionToHistory,
+  qqSkipCurrentPlacement,
 } from './qqRooms';
 import { detectPlusForStuck } from './qqBfs';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
@@ -789,23 +790,32 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     let mode: 'place' | 'steal' | null = null;
     let target: { row: number; col: number } | undefined;
 
+    // Helper: Dummy komplett festgefahren → Zug überspringen, damit der Flow
+    // weiterläuft (nächstes Team aus _placementQueue oder Rundenende).
+    const skipStuckDummy = (): boolean => {
+      qqSkipCurrentPlacement(live);
+      broadcastQQ(io, roomCode);
+      if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      return true;
+    };
+
     if (action === 'PLACE_1' || action === 'PLACE_2') {
       // Grid voll → auf Klauen ausweichen, sonst würde der Flow hängen bleiben.
       if (!free.length) {
-        if (!oppFree.length) return;
+        if (!oppFree.length) { skipStuckDummy(); return; }
         mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
       } else {
         mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0];
       }
     } else if (action === 'STEAL_1') {
-      if (!oppFree.length) return;
+      if (!oppFree.length) { skipStuckDummy(); return; }
       mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
     } else if (action === 'FREE' || action === 'COMEBACK') {
       // FREE/COMEBACK: bevorzugt setzen (Cluster wachsen), sonst klauen.
       // Bei PLACE_2 nutzen Dummies dasselbe, COMEBACK über PLACE_2 ausgelöst.
       if (free.length) { mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0]; }
       else if (oppFree.length) { mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0]; }
-      else return;
+      else { skipStuckDummy(); return; }
     } else {
       return;
     }
@@ -1363,6 +1373,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqChooseFreeAction(room, payload.teamId, payload.action);
+        broadcast(io, payload.roomCode);
+        maybeAutoPlace(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Moderator überspringt das aktuell pending Team (Grid voll & Team will/kann nicht klauen).
+    socket.on('qq:skipCurrentTeam', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqSkipCurrentPlacement(room);
         broadcast(io, payload.roomCode);
         maybeAutoPlace(io, payload.roomCode);
         ok(ack);

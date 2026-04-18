@@ -1108,14 +1108,22 @@ function pendingActionForPhase(
   room: QQRoomState,
   _teamId: string
 ): QQPendingAction {
-  if (room.gamePhaseIndex === 1) return 'PLACE_1';
+  const hasFreeCell = room.grid.some(row => row.some(cell => cell.ownerId === null));
+  if (room.gamePhaseIndex === 1) {
+    // Phase 1 is pre-comeback; if the grid is full, team can only steal.
+    if (!hasFreeCell) return 'STEAL_1';
+    return 'PLACE_1';
+  }
   if (room.gamePhaseIndex === 2) {
-    // If no free cells left, force steal
-    const hasFreeCell = room.grid.some(row => row.some(cell => cell.ownerId === null));
     if (!hasFreeCell) return 'STEAL_1';
     return 'PLACE_2'; // team may switch to STEAL_1
   }
-  return 'FREE'; // Phase 3 & 4: team picks from available actions
+  // Phase 3 & 4: free choice — but if grid is full there's nothing to place,
+  // so only klauen/spezial-aktionen. Force STEAL_1 as default entry so the
+  // Moderator-UI zeigt den Klauen-Modus sofort; spezial-aktionen bleiben
+  // weiterhin über qqChooseFreeAction möglich (Phase ≥ 3).
+  if (!hasFreeCell) return 'STEAL_1';
+  return 'FREE';
 }
 
 // ── Phase 2/3/4 free-action choice ───────────────────────────────────────────
@@ -1636,6 +1644,24 @@ function updateTerritories(room: QQRoomState): void {
     room.teams[id].totalCells       = r.total;
     room.teams[id].largestConnected = r.largest;
   }
+}
+
+// ── Skip current placement (grid voll / Team kann nichts tun) ────────────────
+// Öffentlicher Wrapper um finishPlacement: räumt Multi-Slot-Reste auf und
+// springt zum nächsten Team in der _placementQueue oder beendet die Runde.
+// Wird verwendet, wenn (a) ein Dummy keinen gültigen Zug hat, (b) der Moderator
+// per Skip-Button das aktuelle Team überspringt.
+export function qqSkipCurrentPlacement(room: QQRoomState): void {
+  if (room.phase !== 'PLACEMENT' || !room.pendingFor) return;
+  const teamId = room.pendingFor;
+  // Multi-Slot-Reste (PLACE_2, Joker-Bonus, pendingMultiSlot) verwerfen,
+  // damit finishPlacement nicht in einer halben Runde hängen bleibt.
+  const stats = room.teamPhaseStats[teamId];
+  if (stats) {
+    stats.placementsLeft = 0;
+    stats.pendingMultiSlot = 0;
+  }
+  finishPlacement(room);
 }
 
 // ── Finish placement & advance ────────────────────────────────────────────────

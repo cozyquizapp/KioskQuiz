@@ -1424,11 +1424,29 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
           → Klauen
         </Btn>
       )}
-      {s.gamePhaseIndex >= 2 && s.pendingAction === 'STEAL_1' && (
-        <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
-          → Setzen
+      {s.gamePhaseIndex >= 2 && s.pendingAction === 'STEAL_1' && (() => {
+        const gridFull = Array.isArray(s.grid) && s.grid.every((row: any[]) => row.every((c: any) => c.ownerId !== null));
+        // Wenn Grid voll ist, gibt es nichts zu "setzen" — nur Klauen oder Skip.
+        if (gridFull) return null;
+        return (
+          <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
+            → Setzen
+          </Btn>
+        );
+      })()}
+      <span title="Wenn Team nichts setzen/klauen kann oder will">
+        <Btn
+          small
+          color="#64748b"
+          onClick={() => {
+            if (confirm(`${team.name} überspringen? Der Zug wird verworfen.`)) {
+              emit('qq:skipCurrentTeam', { roomCode });
+            }
+          }}
+        >
+          ⏭ Skip
         </Btn>
-      )}
+      </span>
     </div>
   );
 }

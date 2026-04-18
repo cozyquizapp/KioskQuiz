@@ -11,6 +11,7 @@ import {
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
+import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
   setVolume, setSoundConfig,
@@ -452,12 +453,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         {step === 'NAME' && (
           <CozyCard anim borderColor="#EAB308">
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 64, lineHeight: 1, display: 'block',
+              <QQTeamAvatar avatarId={avatarId} size={64} style={{
+                margin: '0 auto',
                 animation: 'tcfloat 3s ease-in-out infinite',
                 filter: 'drop-shadow(0 0 12px rgba(234,179,8,0.3))',
-              }}>
-                {qqGetAvatar(avatarId).emoji}
-              </span>
+              }} />
             </div>
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
             <input
@@ -585,7 +585,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             background: '#1B1510', border: '1px solid rgba(255,255,255,0.10)',
             boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
-            <span style={{ fontSize: 34, lineHeight: 1 }}>{qqGetAvatar(myTeam.avatarId).emoji}</span>
+            <QQTeamAvatar avatarId={myTeam.avatarId} size={34} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', minWidth: 0 }}>
                 {myTeam.name}
@@ -784,12 +784,11 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginBottom: 8,
         }}>
-          <div style={{
-            fontSize: 56, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite',
+          <QQTeamAvatar avatarId={myTeam.avatarId} size={56} style={{
+            margin: '0 auto',
+            animation: 'tcfloat 3s ease-in-out infinite',
             filter: `drop-shadow(0 0 12px ${myTeam.color}44)`,
-          }}>
-            {qqGetAvatar(myTeam.avatarId).emoji}
-          </div>
+          }} />
           <div style={{ fontWeight: 900, fontSize: 22, color: myTeam.color, marginTop: 4 }}>
             {myTeam.name}
           </div>
@@ -835,7 +834,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
               background: `${t.color}08`,
               border: `1px solid ${t.color}22`,
             }}>
-              <span style={{ fontSize: 28, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={t.avatarId} size={28} />
               <span style={{ fontWeight: 800, fontSize: 16, color: t.color }}>{t.name}</span>
             </div>
           ))}
@@ -1508,12 +1507,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   {others.length > 0 && (
                     <div style={{ display: 'flex', gap: 3 }}>
                       {others.map(o => (
-                        <span key={o.id} title={o.name} style={{
-                          width: 22, height: 22, borderRadius: '50%',
-                          background: `${o.color}33`, border: `1.5px solid ${o.color}`,
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12,
-                        }}>{qqGetAvatar(o.avatarId).emoji}</span>
+                        <QQTeamAvatar key={o.id} avatarId={o.avatarId} size={22} title={o.name} />
                       ))}
                     </div>
                   )}
@@ -1558,7 +1552,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
-                  {team && <span style={{ fontSize: 18, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
                   <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
                   <span style={{ fontWeight: 800, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
                 </div>
@@ -2471,9 +2465,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           {pendingTeam ? (
             <>
-              <div style={{ fontSize: 40, marginBottom: 8, animation: 'tcfloat 2s ease-in-out infinite' }}>
-                {qqGetAvatar(pendingTeam.avatarId).emoji}
-              </div>
+              <QQTeamAvatar avatarId={pendingTeam.avatarId} size={40} style={{
+                margin: '0 auto 8px',
+                animation: 'tcfloat 2s ease-in-out infinite',
+              }} />
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
               <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, fontWeight: 600 }}>
                 {lang === 'de' ? 'wählt ein Feld' : 'is choosing a field'}<AnimatedDots />
@@ -2539,7 +2534,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       boxShadow: i === 0 ? `0 0 8px ${tm.color}33` : 'none',
                     }}>
                       {i === 0 && <span style={{ fontSize: 12 }}>👑</span>}
-                      <span style={{ fontSize: 16 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={16} />
                       <span style={{ fontSize: 15, fontWeight: 900, color: tm.color }}>
                         {cellCount} {lang === 'de' ? 'Felder' : 'cells'}
                       </span>
@@ -2772,9 +2767,10 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           {comebackTeam && (
             <>
-              <div style={{ fontSize: 40, animation: 'tcfloat 2s ease-in-out infinite' }}>
-                {qqGetAvatar(comebackTeam.avatarId).emoji}
-              </div>
+              <QQTeamAvatar avatarId={comebackTeam.avatarId} size={40} style={{
+                margin: '0 auto',
+                animation: 'tcfloat 2s ease-in-out infinite',
+              }} />
               <div style={{ fontWeight: 800, color: comebackTeam.color, marginTop: 6 }}>{comebackTeam.name}</div>
             </>
           )}
@@ -2947,7 +2943,11 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         {/* Hero section */}
         <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>
-          <div style={{ fontSize: 52, marginBottom: 4 }}>{iWon ? '🏆' : qqGetAvatar(winner.avatarId).emoji}</div>
+          {iWon ? (
+            <div style={{ fontSize: 52, marginBottom: 4 }}>🏆</div>
+          ) : (
+            <QQTeamAvatar avatarId={winner.avatarId} size={52} style={{ margin: '0 auto 4px' }} />
+          )}
           {iWon ? (
             <div style={{ fontSize: 26, fontWeight: 900, color: myTeam?.color, marginBottom: 4 }}>
               {t.gameOver.won[lang]}
@@ -2983,7 +2983,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
                   color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
                 }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                <QQTeamAvatar avatarId={tm.avatarId} size={24} />
                 <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? '#EAB308' : '#94a3b8' }}>

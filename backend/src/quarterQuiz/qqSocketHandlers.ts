@@ -790,8 +790,13 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     let target: { row: number; col: number } | undefined;
 
     if (action === 'PLACE_1' || action === 'PLACE_2') {
-      if (!free.length) return;
-      mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0];
+      // Grid voll → auf Klauen ausweichen, sonst würde der Flow hängen bleiben.
+      if (!free.length) {
+        if (!oppFree.length) return;
+        mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
+      } else {
+        mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0];
+      }
     } else if (action === 'STEAL_1') {
       if (!oppFree.length) return;
       mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];

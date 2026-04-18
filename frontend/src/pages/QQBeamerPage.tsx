@@ -6006,7 +6006,26 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   enable3DTransition?: boolean;
 }) {
   const lang = useLangFlip(s.language);
-  const team = s.teams.find(tm => tm.id === (flashCell?.teamId ?? s.pendingFor));
+
+  // Sticky Placer: Nachdem ein Team gesetzt hat, bleibt der Highlight noch
+  // ~1.2s auf diesem Team (sonst springt die Markierung schon zum naechsten
+  // Team, waehrend die Zell-Fuell-Animation des vorherigen Teams noch laeuft).
+  const [stickyPlacer, setStickyPlacer] = useState<string | null>(null);
+  const prevPlacedKey = useRef<string | null>(null);
+  useEffect(() => {
+    const lp = s.lastPlacedCell;
+    const key = lp ? `${lp.row}-${lp.col}-${lp.teamId}` : null;
+    if (!key) return;
+    if (key === prevPlacedKey.current) return;
+    prevPlacedKey.current = key;
+    setStickyPlacer(lp!.teamId);
+    const t = setTimeout(() => setStickyPlacer(cur => (cur === lp!.teamId ? null : cur)), 1200);
+    return () => clearTimeout(t);
+  }, [s.lastPlacedCell?.row, s.lastPlacedCell?.col, s.lastPlacedCell?.teamId]);
+
+  // Aufloesungsreihenfolge: Flash > Sticky Placer > pendingFor
+  const activeTeamId = flashCell?.teamId ?? stickyPlacer ?? s.pendingFor;
+  const team = s.teams.find(tm => tm.id === activeTeamId);
   const teamColor = team?.color ?? '#94a3b8';
 
   // ── 3D transition state machine ──
@@ -6164,7 +6183,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               flyoverSignal={flyoverSignal}
             />
           ) : (
-            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={flashCell?.teamId ?? s.pendingFor} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={activeTeamId} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
           )}
         </div>
         <div style={{
@@ -6174,7 +6193,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           width: 540, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
-          <ScoreBar teams={s.teams} activeTeamId={flashCell?.teamId ?? s.pendingFor} />
+          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} />
         </div>
       </div>
 
@@ -6975,12 +6994,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const activeColor = activeTeam?.color ?? '#fff';
 
   // Track newly placed cells for pop animation (#5) + stolen cells + neighbor reactions + board shake
-  const prevGridRef = useRef<string>('');
+  const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
+  // Initial-Snapshot = aktueller Stand, damit beim Mount KEIN Diff feuert
+  // (sonst wuerde Zelle (0,0) als „neu" erkannt, weil ''.split(',') nur ein Element ergibt).
+  const prevGridRef = useRef<string>(gridKey);
   const newCellsRef = useRef<Set<string>>(new Set());
   const stolenCellsRef = useRef<Set<string>>(new Set());
   const neighborCellsRef = useRef<Set<string>>(new Set());
   const [shakeTick, setShakeTick] = useState(0);
-  const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
   if (gridKey !== prevGridRef.current) {
     const newSet = new Set<string>();
     const stolenSet = new Set<string>();
@@ -6988,6 +7009,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     const prevOwners = prevGridRef.current.split(',');
     s.grid.forEach((row, r) => row.forEach((cell, c) => {
       const prevOwner = prevOwners[(r * s.gridSize) + c];
+      // Nur diffen wenn prevOwner definiert ist (sonst gab's im vorherigen
+      // Snapshot diese Zelle gar nicht → kein echtes „neu gesetzt").
+      if (prevOwner === undefined) return;
       if (cell.ownerId && prevOwner === '') newSet.add(`${r}-${c}`);
       else if (cell.ownerId && prevOwner && prevOwner !== cell.ownerId) stolenSet.add(`${r}-${c}`);
     }));

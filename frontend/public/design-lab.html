@@ -235,10 +235,10 @@
         <div id="paletteGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px"></div>
       </div>
 
-      <!-- Row 2: Avatar-Mockup — Ring + Emoji-Platzhalter + Hoodie-Stripe -->
+      <!-- Row 2: Avatar-Preview — echte PNG falls vorhanden, sonst Emoji-Fallback -->
       <div>
-        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Avatar-Mockup (Platzhalter — ersetzt Illustrator mit echter Figur)</div>
-        <div id="paletteAvatars" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px"></div>
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Avatar-Preview (Dark + Light BG · echte PNG falls in <code style="font-size:10px">/avatars/cozy-cast/</code>, sonst Emoji)</div>
+        <div id="paletteAvatars" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px"></div>
       </div>
     </section>
 
@@ -543,9 +543,16 @@
       paletteGrid.appendChild(tile);
     });
 
-    // Row 2 — Avatar mockup (ring + emoji + hoodie stripe + label)
+    // Shared slug helper (matches compositor download filename)
+    const teamSlug = (animal) => animal.toLowerCase()
+      .replaceAll('ä', 'ae').replaceAll('ö', 'oe').replaceAll('ü', 'ue').replaceAll('ß', 'ss')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    // Row 2 — Avatar mockup: real PNG if available, emoji fallback; shown on Dark + Light BG
     const paletteAvatars = document.getElementById('paletteAvatars');
     TEAMS.forEach(t => {
+      const slug = teamSlug(t.animal);
+      const pngPath = `/avatars/cozy-cast/avatar-${slug}-badge-1024.png`;
       const card = document.createElement('div');
       card.style.cssText = `
         background: rgba(255,255,255,0.025);
@@ -554,27 +561,63 @@
         padding: 14px 10px 12px;
         display: flex; flex-direction: column; align-items: center; gap: 8px;
       `;
-      card.innerHTML = `
-        <div style="
-          width: 88px; height: 88px; border-radius: 50%;
-          background: #fff;
-          border: 9px solid ${t.body};
+      // Two preview pills: dark BG + light BG. Each shows either the real PNG or emoji fallback.
+      // Emoji-Fallback keeps old mockup (white inner + ring). Real PNG has its ring baked in by Compositor.
+      const pillHtml = (bgColor, isLight) => `
+        <div class="avatar-preview" data-slug="${slug}" style="
+          width: 72px; height: 72px; border-radius: 50%;
+          background: ${bgColor};
           display: flex; align-items: center; justify-content: center;
-          font-size: 44px; line-height: 1;
-          box-shadow: 0 0 18px ${t.body}55;
-        ">${t.emoji}</div>
-        <div style="font-weight:900;font-size:14px;color:#f1f5f9;margin-top:2px">${t.animal}</div>
+          overflow: hidden; position: relative;
+          box-shadow: 0 0 12px ${t.body}44;
+        ">
+          <div class="avatar-fallback" style="
+            width: 100%; height: 100%; border-radius: 50%;
+            background: #fff;
+            border: 7px solid ${t.body};
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; line-height: 1; box-sizing: border-box;
+          ">${t.emoji}</div>
+          <img class="avatar-real" src="${pngPath}"
+            style="position:absolute;inset:0;width:100%;height:100%;display:none"
+            alt="" />
+          <div style="
+            position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+            font-size:8px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;
+            color:${isLight ? '#334155' : '#cbd5e1'};
+            background:${isLight ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'};
+            padding:1px 5px;border-radius:4px;
+            pointer-events:none;
+          ">${isLight ? 'Light' : 'Dark'}</div>
+        </div>
+      `;
+      card.innerHTML = `
+        <div style="display:flex;gap:8px">
+          ${pillHtml('#0B1220', false)}
+          ${pillHtml('#F1F5F9', true)}
+        </div>
+        <div style="font-weight:900;font-size:14px;color:#f1f5f9;margin-top:4px">${t.animal}</div>
         <div style="font-size:10px;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Team ${t.name}</div>
         <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
-          <span style="width:18px;height:18px;border-radius:5px;background:${t.body};border:1px solid rgba(255,255,255,0.15)" title="Body/Ring/Grid"></span>
+          <span style="width:16px;height:16px;border-radius:4px;background:${t.body};border:1px solid rgba(255,255,255,0.15)" title="Body/Ring/Grid"></span>
           <span style="font-size:10px;color:#94a3b8;font-family:ui-monospace,monospace">${t.body}</span>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <span style="width:18px;height:18px;border-radius:5px;background:${t.hoodie};border:1px solid rgba(255,255,255,0.15)" title="Hoodie"></span>
+          <span style="width:16px;height:16px;border-radius:4px;background:${t.hoodie};border:1px solid rgba(255,255,255,0.15)" title="Hoodie"></span>
           <span style="font-size:10px;color:#94a3b8;font-family:ui-monospace,monospace">${t.hoodie}</span>
         </div>
       `;
       paletteAvatars.appendChild(card);
+
+      // Swap fallback → real PNG if the file loads successfully
+      card.querySelectorAll('img.avatar-real').forEach(img => {
+        img.addEventListener('load', () => {
+          img.style.display = 'block';
+          const fb = img.previousElementSibling;
+          if (fb && fb.classList.contains('avatar-fallback')) fb.style.display = 'none';
+        });
+        img.addEventListener('error', () => { /* silent — keep emoji fallback */ });
+      });
     });
 
     // ═══════════════════════════════════════════════════════════════

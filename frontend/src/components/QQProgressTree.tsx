@@ -41,12 +41,12 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   const currentIdx = state.questionIndex;
 
   // Skalen je nach Variant
-  const scale = variant === 'hero' ? 1 : variant === 'panel' ? 0.8 : 0.7;
-  const titleSize = variant === 'hero' ? 34 : variant === 'panel' ? 22 : 18;
-  const phaseNameSize = variant === 'hero' ? 22 : variant === 'panel' ? 16 : 14;
-  const dotSize = Math.round(28 * scale);
-  const dotGap = Math.round(10 * scale);
-  const phaseGap = Math.round(36 * scale);
+  const scale = variant === 'hero' ? 1 : variant === 'panel' ? 0.8 : 0.95;
+  const titleSize = variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
+  const phaseNameSize = variant === 'hero' ? 22 : variant === 'panel' ? 16 : 18;
+  const dotSize = Math.round(34 * scale);
+  const dotGap = Math.round(12 * scale);
+  const phaseGap = Math.round(56 * scale);
 
   const phases: QQGamePhaseIndex[] = [];
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
@@ -58,7 +58,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
         flexDirection: 'column',
         alignItems: 'center',
         gap: variant === 'hero' ? 22 : 14,
-        padding: variant === 'hero' ? '28px 40px' : '16px 24px',
+        padding: variant === 'hero' ? '28px 40px' : variant === 'inline' ? '20px 36px' : '16px 24px',
         borderRadius: 20,
         background: variant === 'inline'
           ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
@@ -66,7 +66,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
         color: variant === 'inline' ? '#f8fafc' : '#0f172a',
         boxShadow: '0 10px 32px rgba(15,23,42,0.18)',
         border: variant === 'inline' ? '1px solid rgba(148,163,184,0.3)' : '2px solid #e2e8f0',
-        maxWidth: variant === 'hero' ? 1200 : 920,
+        maxWidth: variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : 920,
         fontFamily: "'Nunito', system-ui, sans-serif",
       }}
     >

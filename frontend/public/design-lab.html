@@ -181,6 +181,15 @@
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:11px;color:#64748b;font-weight:700">Wolf-Mode (Inner-BG):</span>
             <div id="wolfModePicker" style="display:flex;gap:4px"></div>
+            <button id="wolfDownloadAll" style="
+              font:inherit;font-size:11px;font-weight:800;
+              padding:6px 12px;border-radius:8px;
+              background:rgba(0,0,0,0.55);color:#f8fafc;
+              border:1px solid rgba(255,255,255,0.15);
+              cursor:pointer;
+            " title="Lädt alle 8 Avatare als avatar-{slug}-wolf.png herunter">
+              ⬇ Alle 8 als Wolf-PNG
+            </button>
           </div>
         </div>
         <div id="paletteAvatars" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px"></div>
@@ -675,6 +684,51 @@
         img.addEventListener('error', () => { /* silent — keep emoji fallback */ });
       });
     });
+
+    // ═══════════════════════════════════════════════════════════════
+    // "Alle 8 als Wolf-PNG" Download — bake schwarzer Inner-BG fix
+    // ═══════════════════════════════════════════════════════════════
+    const wolfDownloadBtn = document.getElementById('wolfDownloadAll');
+    if (wolfDownloadBtn) {
+      wolfDownloadBtn.addEventListener('click', async () => {
+        const origLabel = wolfDownloadBtn.textContent;
+        wolfDownloadBtn.disabled = true;
+        for (let i = 0; i < TEAMS.length; i++) {
+          const team = TEAMS[i];
+          const slug = teamSlug(team.animal);
+          wolfDownloadBtn.textContent = `⏳ ${i + 1}/8 ${team.animal}…`;
+          // Trans-Quelle laden (oder cached zurückbekommen)
+          const trans = loadTransImg(slug);
+          if (!trans.complete || !trans.naturalWidth) {
+            await new Promise((res, rej) => {
+              trans.addEventListener('load', res, { once: true });
+              trans.addEventListener('error', rej, { once: true });
+            }).catch(() => {});
+          }
+          if (!trans.complete || !trans.naturalWidth) continue;
+          // Wolf-Badge mit schwarzem Inner-BG komponieren
+          const canvas = composeWolfBadge(trans, '#000000');
+          // Download triggern
+          await new Promise(res => {
+            canvas.toBlob(blob => {
+              if (!blob) { res(); return; }
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `avatar-${slug}-wolf.png`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => { URL.revokeObjectURL(a.href); res(); }, 200);
+            }, 'image/png');
+          });
+          // Browser etwas Luft zwischen den Downloads geben
+          await new Promise(res => setTimeout(res, 250));
+        }
+        wolfDownloadBtn.disabled = false;
+        wolfDownloadBtn.textContent = '✓ Fertig — 8 PNGs heruntergeladen';
+        setTimeout(() => { wolfDownloadBtn.textContent = origLabel; }, 2400);
+      });
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // In-Game Mockups (Grid · Reveal · Scoreboard)

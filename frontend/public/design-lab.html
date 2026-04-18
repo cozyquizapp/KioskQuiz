@@ -359,6 +359,33 @@
             <input type="range" id="compFeatherSlider" min="0" max="20" step="1" value="4" style="width:100%">
           </div>
 
+          <!-- Inner-BG-Color (Wolf-Logo-Look mit dunklem Hintergrund) -->
+          <div>
+            <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Inner-BG</div>
+            <div id="compInnerBgPicker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+
+          <!-- White-Knockout (entfernt weiße Pixel im PNG damit Inner-BG sichtbar wird) -->
+          <div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="compKnockout" style="cursor:pointer">
+              <span style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">White-Knockout</span>
+            </label>
+            <div style="font-size:10px;color:#64748b;margin-top:3px;line-height:1.3">
+              Macht weiße Pixel im PNG transparent — sonst sieht man den Inner-BG nur in den kleinen Lücken
+            </div>
+          </div>
+
+          <!-- Outer-Ring (zweiter, dünner Ring außen) -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Outer-Ring</div>
+              <div id="compOuterLabel" style="font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace">0%</div>
+            </div>
+            <input type="range" id="compOuterSlider" min="0" max="4" step="0.25" value="0" style="width:100%">
+            <div id="compOuterColorPicker" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+          </div>
+
           <!-- Download -->
           <button id="compDownload" style="
             background: #3B82F6; color: #fff;
@@ -900,6 +927,63 @@
     const compHeadLabel = document.getElementById('compHeadLabel');
     const compFeatherSlider = document.getElementById('compFeatherSlider');
     const compFeatherLabel = document.getElementById('compFeatherLabel');
+    const compInnerBgPicker = document.getElementById('compInnerBgPicker');
+    const compOuterSlider = document.getElementById('compOuterSlider');
+    const compOuterLabel = document.getElementById('compOuterLabel');
+    const compOuterColorPicker = document.getElementById('compOuterColorPicker');
+    const compKnockout = document.getElementById('compKnockout');
+
+    // Inner-BG-Color presets
+    const INNER_BG_OPTIONS = [
+      { key: 'white',  label: 'Weiß',     color: '#FFFFFF' },
+      { key: 'black',  label: 'Schwarz',  color: '#0B1220' },
+      { key: 'navy',   label: 'Navy',     color: '#1E293B' },
+      { key: 'cream',  label: 'Cream',    color: '#FEF3C7' },
+    ];
+    let compInnerBg = INNER_BG_OPTIONS[0].color;
+    INNER_BG_OPTIONS.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.title = opt.label;
+      btn.style.cssText = `
+        width: 28px; height: 28px; border-radius: 8px;
+        background: ${opt.color};
+        border: 2px solid ${idx === 0 ? '#3B82F6' : 'rgba(255,255,255,0.15)'};
+        cursor: pointer;
+      `;
+      btn.addEventListener('click', () => {
+        compInnerBg = opt.color;
+        [...compInnerBgPicker.children].forEach(c => c.style.borderColor = 'rgba(255,255,255,0.15)');
+        btn.style.borderColor = '#3B82F6';
+        drawComp();
+      });
+      compInnerBgPicker.appendChild(btn);
+    });
+
+    // Outer-Ring color presets
+    const OUTER_RING_OPTIONS = [
+      { key: 'black',  color: '#0B1220' },
+      { key: 'navy',   color: '#1E293B' },
+      { key: 'white',  color: '#FFFFFF' },
+    ];
+    let compOuterColor = OUTER_RING_OPTIONS[0].color;
+    OUTER_RING_OPTIONS.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = `
+        width: 24px; height: 24px; border-radius: 6px;
+        background: ${opt.color};
+        border: 2px solid ${idx === 0 ? '#3B82F6' : 'rgba(255,255,255,0.15)'};
+        cursor: pointer;
+      `;
+      btn.addEventListener('click', () => {
+        compOuterColor = opt.color;
+        [...compOuterColorPicker.children].forEach(c => c.style.borderColor = 'rgba(255,255,255,0.15)');
+        btn.style.borderColor = '#3B82F6';
+        drawComp();
+      });
+      compOuterColorPicker.appendChild(btn);
+    });
     const compDownload = document.getElementById('compDownload');
 
     const COMP_MODES = [
@@ -912,6 +996,7 @@
     let compImage = null;
     let compTeam = TEAMS[0]; // Auto-select first team so Hoodie/Head-Fill work immediately
     let compMode = COMP_MODES[0];
+    let compKnockoutCache = null; // cached canvas with white pixels punched to transparent
 
     // Build team picker (reuses TEAMS array from palette section)
     const compTeamPicker = document.getElementById('compTeamPicker');
@@ -998,16 +1083,48 @@
       compFeatherLabel.textContent = compFeatherSlider.value + '%';
       drawComp();
     });
+    compOuterSlider.addEventListener('input', () => {
+      compOuterLabel.textContent = compOuterSlider.value + '%';
+      drawComp();
+    });
+    compKnockout.addEventListener('change', () => { compKnockoutCache = null; drawComp(); });
 
     // Core draw function — composites current image + team + mode onto canvas
+    // Build a knockout version of compImage: pure-white pixels → transparent
+    function buildKnockoutCanvas(srcImg) {
+      const w = srcImg.naturalWidth || srcImg.width;
+      const h = srcImg.naturalHeight || srcImg.height;
+      const tmp = document.createElement('canvas');
+      tmp.width = w; tmp.height = h;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(srcImg, 0, 0);
+      const data = tctx.getImageData(0, 0, w, h);
+      const px = data.data;
+      // Knock out near-white pixels (R,G,B all > 240) — soft-feather alpha based on distance from white
+      for (let i = 0; i < px.length; i += 4) {
+        const r = px[i], g = px[i + 1], b = px[i + 2];
+        if (r > 240 && g > 240 && b > 240) {
+          const minVal = Math.min(r, g, b);
+          // 240 → fully transparent, 255 → fully transparent; in between → fade
+          px[i + 3] = 0;
+        }
+      }
+      tctx.putImageData(data, 0, 0);
+      return tmp;
+    }
+
     function drawComp() {
       const size = compCanvas.width;
       const cx = size / 2, cy = size / 2;
       const ringPct = parseFloat(compRingSlider.value) / 100;
-      const outerR = (size / 2) - 4;
+      const outerRingPct = parseFloat(compOuterSlider.value) / 100;
+      const totalOuterR = (size / 2) - 4;
+      const outerRingW = size * outerRingPct;
+      // Colored ring sits inside the outer ring (if any)
+      const ringOuterR = totalOuterR - outerRingW;
       const ringW = size * ringPct;
       const hasRing = compMode.ring;
-      const innerR = hasRing ? (outerR - ringW) : outerR;
+      const innerR = hasRing ? (ringOuterR - ringW) : ringOuterR;
 
       compCtx.clearRect(0, 0, size, size);
 
@@ -1016,16 +1133,26 @@
         compCtx.fillStyle = compTeam.body;
         compCtx.fillRect(0, 0, size, size);
       } else if (hasRing) {
-        // Badge/face: white fill inside ring
+        // Badge/face: inner-bg fill inside ring (white default, dark for wolf-style)
         compCtx.beginPath();
         compCtx.arc(cx, cy, innerR, 0, Math.PI * 2);
-        compCtx.fillStyle = '#ffffff';
+        compCtx.fillStyle = compInnerBg;
         compCtx.fill();
       }
       // icon mode: transparent — no fill
 
+      // Build/cache knockout source if enabled
+      let drawSrc = compImage;
+      if (compImage && compKnockout.checked) {
+        if (!compKnockoutCache || compKnockoutCache._srcRef !== compImage) {
+          compKnockoutCache = buildKnockoutCanvas(compImage);
+          compKnockoutCache._srcRef = compImage;
+        }
+        drawSrc = compKnockoutCache;
+      }
+
       // Draw character, clipped depending on mode
-      if (compImage) {
+      if (drawSrc) {
         compCtx.save();
         if (hasRing || !compMode.tileFill) {
           // Clip to inner circle for badge/face/icon
@@ -1033,8 +1160,8 @@
           compCtx.arc(cx, cy, innerR, 0, Math.PI * 2);
           compCtx.clip();
         }
-        const iw = compImage.naturalWidth || compImage.width;
-        const ih = compImage.naturalHeight || compImage.height;
+        const iw = drawSrc.width || drawSrc.naturalWidth;
+        const ih = drawSrc.height || drawSrc.naturalHeight;
         const userZoom = parseFloat(compZoomSlider.value) / 100;
         const modeZoom = compMode.zoom || 1.0;
         const yOffset = (parseFloat(compYSlider.value) / 100) * innerR;
@@ -1043,7 +1170,7 @@
         const scale = baseScale * userZoom * modeZoom;
         const dw = iw * scale;
         const dh = ih * scale;
-        compCtx.drawImage(compImage, cx - dw / 2, cy - dh / 2 + yOffset, dw, dh);
+        compCtx.drawImage(drawSrc, cx - dw / 2, cy - dh / 2 + yOffset, dw, dh);
 
         // Hoodie-Fill: paint bottom crescent in hoodie color to cover white belly
         const fillPct = parseFloat(compFillSlider.value) / 100;
@@ -1081,12 +1208,20 @@
         compCtx.restore();
       }
 
-      // Ring stroke (only for badge/face modes)
+      // Colored ring stroke (only for badge/face modes)
       if (hasRing && compTeam) {
         compCtx.beginPath();
-        compCtx.arc(cx, cy, outerR - ringW / 2, 0, Math.PI * 2);
+        compCtx.arc(cx, cy, ringOuterR - ringW / 2, 0, Math.PI * 2);
         compCtx.strokeStyle = compTeam.body;
         compCtx.lineWidth = ringW;
+        compCtx.stroke();
+      }
+      // Outer ring stroke (optional, sits outside the colored ring)
+      if (hasRing && outerRingW > 0) {
+        compCtx.beginPath();
+        compCtx.arc(cx, cy, totalOuterR - outerRingW / 2, 0, Math.PI * 2);
+        compCtx.strokeStyle = compOuterColor;
+        compCtx.lineWidth = outerRingW;
         compCtx.stroke();
       }
     }

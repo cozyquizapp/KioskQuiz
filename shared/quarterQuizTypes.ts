@@ -562,22 +562,27 @@ export interface QQAck {
   code?: string;
 }
 
-// ── Available avatars ─────────────────────────────────────────────────────────
-// 8 avatar+color pairs. Order matters: first 4 are the highest-contrast picks
-// and should be picked first for games with few teams.
-// 8 head-only animal avatars, ordered for highest contrast at low team counts.
-// Colors are the "team color" — pairing is fixed so pickers choose avatar + color together.
+// ── Available avatars (CozyCast — Wolf-Style PNG-Badges) ─────────────────────
+// 8 Tier-Badges im CozyWolf-Logo-Stil (schwarzer Innenkreis, team-farbiger Ring,
+// illustrierter Charakter). Die `id`s bleiben aus Legacy-Gründen englisch
+// (DB-Sessions in flight haben noch alte IDs), Inhalte zeigen aber die neuen
+// CozyCast-Tiere. `image` zeigt auf die gebackenen 2000×2000 PNGs unter
+// /avatars/cozy-cast/avatar-{slug}-wolf.png. Die Reihenfolge bleibt: erste 4
+// sind die kontrastreichsten Picks für kleine Team-Counts.
 export const QQ_AVATARS = [
-  { id: 'fox',     emoji: '🦊', label: 'Fox',     color: '#EA580C' },  // orange
-  { id: 'frog',    emoji: '🐸', label: 'Frog',    color: '#16A34A' },  // green
-  { id: 'panda',   emoji: '🐼', label: 'Panda',   color: '#2563EB' },  // blue
-  { id: 'rabbit',  emoji: '🐰', label: 'Rabbit',  color: '#DB2777' },  // pink
-  { id: 'unicorn', emoji: '🦄', label: 'Unicorn', color: '#9333EA' },  // violet
-  { id: 'raccoon', emoji: '🦝', label: 'Raccoon', color: '#06B6D4' },  // cyan
-  { id: 'cow',     emoji: '🐮', label: 'Cow',     color: '#EAB308' },  // yellow
-  { id: 'cat',     emoji: '🐱', label: 'Cat',     color: '#DC2626' },  // red
-];
+  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Shiba',     color: '#EC4899', hoodie: '#0EA5E9' },
+  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  color: '#84CC16', hoodie: '#7C2D12' },
+  { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   color: '#2563EB', hoodie: '#FDE047' },
+  { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     color: '#8B5CF6', hoodie: '#EAB308' },
+  { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   color: '#EAB308', hoodie: '#5B21B6' },
+  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  color: '#14B8A6', hoodie: '#F59E0B' },
+  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       color: '#F97316', hoodie: '#581C87' },
+  { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  color: '#DC2626', hoodie: '#166534' },
+] as const;
 
-export function qqGetAvatar(avatarId: string) {
-  return QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
+export type QQAvatar = typeof QQ_AVATARS[number] & { image: string };
+
+export function qqGetAvatar(avatarId: string): QQAvatar {
+  const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
+  return { ...av, image: `/avatars/cozy-cast/avatar-${av.slug}-wolf.png` };
 }

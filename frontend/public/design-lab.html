@@ -388,6 +388,41 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════════════════
+         SECTION 1.8 — In-Game Mockups (Grid · Reveal · Scoreboard)
+         ═══════════════════════════════════════════════════════════════ -->
+    <section>
+      <h2>🎮 In-Game Mockups</h2>
+      <p class="lede">
+        Wie sehen die Avatare in den drei wichtigsten Spiel-Kontexten aus?
+        <b>Territorium-Grid</b>, <b>Winner-Reveal</b> und <b>Scoreboard</b> —
+        statisch, nur zur Optik-Prüfung. Echte Komponenten in der App haben
+        Animation + Live-Daten.
+      </p>
+
+      <!-- Mockup A: Grid -->
+      <div style="margin-bottom:32px">
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">A — Territorium-Grid (Beamer-View)</div>
+        <div style="background:#0B1220;border-radius:18px;padding:32px;display:flex;justify-content:center">
+          <div id="mockGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;width:100%;max-width:540px"></div>
+        </div>
+      </div>
+
+      <!-- Mockup B: Winner Reveal -->
+      <div style="margin-bottom:32px">
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">B — Winner-Reveal (Beamer nach richtiger Antwort)</div>
+        <div id="mockReveal" style="border-radius:18px;padding:48px 32px;display:flex;flex-direction:column;align-items:center;gap:18px;position:relative;overflow:hidden"></div>
+      </div>
+
+      <!-- Mockup C: Scoreboard -->
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">C — Scoreboard (Endstand / Zwischenstand)</div>
+        <div style="background:#0B1220;border-radius:18px;padding:24px;display:flex;justify-content:center">
+          <div id="mockScoreboard" style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:480px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
          SECTION 2 — Lottie Avatar Test
          ═══════════════════════════════════════════════════════════════ -->
     <section>
@@ -563,13 +598,14 @@
       `;
       // Two preview pills: dark BG + light BG. Each shows either the real PNG or emoji fallback.
       // Emoji-Fallback keeps old mockup (white inner + ring). Real PNG has its ring baked in by Compositor.
+      // Square rounded pill so transparent badge corners reveal the BG color
       const pillHtml = (bgColor, isLight) => `
         <div class="avatar-preview" data-slug="${slug}" style="
-          width: 72px; height: 72px; border-radius: 50%;
+          width: 84px; height: 84px; border-radius: 14px;
           background: ${bgColor};
           display: flex; align-items: center; justify-content: center;
           overflow: hidden; position: relative;
-          box-shadow: 0 0 12px ${t.body}44;
+          padding: 4px; box-sizing: border-box;
         ">
           <div class="avatar-fallback" style="
             width: 100%; height: 100%; border-radius: 50%;
@@ -579,7 +615,7 @@
             font-size: 32px; line-height: 1; box-sizing: border-box;
           ">${t.emoji}</div>
           <img class="avatar-real" src="${pngPath}"
-            style="position:absolute;inset:0;width:100%;height:100%;display:none"
+            style="position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);display:none"
             alt="" />
           <div style="
             position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
@@ -618,6 +654,138 @@
         });
         img.addEventListener('error', () => { /* silent — keep emoji fallback */ });
       });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // In-Game Mockups (Grid · Reveal · Scoreboard)
+    // ═══════════════════════════════════════════════════════════════
+    const avatarUrl = (animal) => `/avatars/cozy-cast/avatar-${teamSlug(animal)}-badge-1024.png`;
+
+    // Mockup A — Territorium-Grid 5×5
+    // Mix aus claimed (Team-Farbe + Avatar) und neutral (slate); ein Tile als "active question"
+    const GRID_LAYOUT = [
+      // teamIdx -1 = unclaimed; null = active question; sonst Index in TEAMS
+      0,  -1,  2,  2,  -1,
+      0,   0, -1,  2,   4,
+      -1,  6, null, 4, 4,
+      6,   6,  3, -1,  7,
+      -1,  3,  3,  5,  7,
+    ];
+    const mockGrid = document.getElementById('mockGrid');
+    GRID_LAYOUT.forEach((idx, i) => {
+      const tile = document.createElement('div');
+      const baseStyle = `
+        aspect-ratio: 1; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        position: relative; box-shadow: 0 3px 0 rgba(0,0,0,0.35), 0 6px 12px rgba(0,0,0,0.25);
+      `;
+      if (idx === null) {
+        // Active-question tile: pulsing yellow border
+        tile.style.cssText = baseStyle + `
+          background: #1E293B;
+          border: 3px solid #FBBF24;
+          box-shadow: 0 0 0 4px rgba(251,191,36,0.25), 0 4px 0 #B45309;
+        `;
+        tile.innerHTML = `<span style="font-size:28px">❓</span>`;
+      } else if (idx === -1) {
+        // Unclaimed
+        tile.style.cssText = baseStyle + `
+          background: #1E293B;
+          border: 1px solid rgba(255,255,255,0.06);
+        `;
+      } else {
+        // Claimed by team idx
+        const t = TEAMS[idx];
+        tile.style.cssText = baseStyle + `
+          background: ${t.body};
+          padding: 8px;
+        `;
+        tile.innerHTML = `<img src="${avatarUrl(t.animal)}" style="width:100%;height:100%;object-fit:contain" alt="${t.animal}" />`;
+      }
+      mockGrid.appendChild(tile);
+    });
+
+    // Mockup B — Winner-Reveal (Beispiel: Team Pinguin gewinnt)
+    const WINNER = TEAMS[2]; // Pinguin
+    const mockReveal = document.getElementById('mockReveal');
+    mockReveal.style.background = `linear-gradient(135deg, ${WINNER.body} 0%, ${WINNER.body}cc 100%)`;
+    mockReveal.innerHTML = `
+      <div style="
+        position:absolute;inset:0;
+        background:radial-gradient(circle at 50% 40%, rgba(255,255,255,0.18), transparent 60%);
+        pointer-events:none;
+      "></div>
+      <div style="
+        font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+        color: rgba(255,255,255,0.85); position: relative;
+      ">🎉 Richtige Antwort</div>
+      <div style="
+        width: 200px; height: 200px; border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 6px rgba(255,255,255,0.15);
+      ">
+        <img src="${avatarUrl(WINNER.animal)}" style="width:100%;height:100%" alt="${WINNER.animal}" />
+      </div>
+      <div style="
+        font-weight: 900; font-size: 38px; color: #fff; line-height: 1; position: relative;
+        text-shadow: 0 3px 0 rgba(0,0,0,0.25);
+      ">Team ${WINNER.animal}</div>
+      <div style="
+        background: rgba(0,0,0,0.25); color: #fff; font-weight: 900; font-size: 18px;
+        padding: 8px 18px; border-radius: 999px; position: relative;
+      ">+1 Feld erobert</div>
+    `;
+
+    // Mockup C — Scoreboard (alle 8 Teams nach Score sortiert)
+    const SCORES = [
+      { idx: 6, score: 7 }, // Capybara
+      { idx: 0, score: 6 }, // Waschbär
+      { idx: 2, score: 5 }, // Pinguin
+      { idx: 4, score: 4 }, // Koala
+      { idx: 7, score: 3 }, // Shiba
+      { idx: 3, score: 2 }, // Kuh
+      { idx: 1, score: 2 }, // Faultier
+      { idx: 5, score: 1 }, // Giraffe
+    ];
+    const mockScoreboard = document.getElementById('mockScoreboard');
+    SCORES.forEach((s, rank) => {
+      const t = TEAMS[s.idx];
+      const isFirst = rank === 0;
+      const row = document.createElement('div');
+      row.style.cssText = `
+        display: grid; grid-template-columns: 36px 56px 1fr auto; align-items: center; gap: 14px;
+        background: ${isFirst ? `linear-gradient(90deg, ${t.body}33 0%, ${t.body}11 100%)` : 'rgba(255,255,255,0.025)'};
+        border: 1px solid ${isFirst ? t.body + '66' : 'rgba(255,255,255,0.06)'};
+        border-radius: 12px;
+        padding: 10px 14px;
+        ${isFirst ? `box-shadow: 0 0 18px ${t.body}33;` : ''}
+      `;
+      row.innerHTML = `
+        <div style="
+          font-weight: 900; font-size: 20px;
+          color: ${isFirst ? '#FBBF24' : '#475569'};
+          text-align: center;
+        ">${isFirst ? '👑' : '#' + (rank + 1)}</div>
+        <div style="
+          width: 48px; height: 48px;
+          background: ${t.body}22; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+        ">
+          <img src="${avatarUrl(t.animal)}" style="width:100%;height:100%;object-fit:contain" alt="${t.animal}" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+          <div style="font-weight: 800; font-size: 16px; color: #f1f5f9; line-height: 1.1">Team ${t.animal}</div>
+          <div style="font-size: 10px; color: #64748b; letter-spacing: 0.06em; text-transform: uppercase">${t.name}</div>
+        </div>
+        <div style="
+          font-weight: 900; font-size: 22px;
+          color: ${isFirst ? t.body : '#cbd5e1'};
+          font-variant-numeric: tabular-nums;
+        ">${s.score}</div>
+      `;
+      mockScoreboard.appendChild(row);
     });
 
     // ═══════════════════════════════════════════════════════════════

@@ -314,9 +314,11 @@ export function qqStartGame(
   room.questionIndex  = 0;
   room.gamePhaseIndex = 1;
   room.phase          = 'RULES';
-  // -1 = Intro-Pseudo-Slide ("Willkommen beim BLOCK QUIZ / QUARTER QUIZ").
-  // Moderator schaltet per "Weiter" auf Slide 0 weiter (qqRulesNext erhöht).
-  room.rulesSlideIndex = -1;
+  // -2 = Willkommen-Folie ("Willkommen beim BLOCK QUIZ / QUARTER QUIZ")
+  // -1 = Regel-Intro ("Jetzt kommen die Regeln — gut aufpassen!")
+  //  0..= Regel-Folien
+  // Moderator schaltet jeweils per "Weiter".
+  room.rulesSlideIndex = -2;
   room.teamsRevealStartedAt = null;
   room.introStep      = 0;
   room.currentQuestion = questions[0];
@@ -1749,12 +1751,12 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
 // ── Rules presentation ────────────────────────────────────────────────────────
 
 /** Transition from LOBBY to RULES presentation.
- *  Startet bei rulesSlideIndex = -1 → das ist die Intro-Folie ("Willkommen beim
- *  BLOCK QUIZ / QUARTER QUIZ by cozywolf"). Erster "Weiter"-Klick geht zu Slide 0. */
+ *  -2 = Willkommen-Folie, -1 = Regel-Intro, 0..= Regel-Folien.
+ *  Weiter-Klick erhöht jeweils um 1. */
 export function qqStartRules(room: QQRoomState): void {
   assertPhase(room, ['LOBBY']);
   room.phase = 'RULES';
-  room.rulesSlideIndex = -1;
+  room.rulesSlideIndex = -2;
   room.lastActivityAt = Date.now();
 }
 
@@ -1766,11 +1768,11 @@ export function qqRulesNext(room: QQRoomState): void {
 }
 
 /** Go back to previous rules slide.
- *  Untergrenze ist -1 (Intro-Folie), nicht 0 — damit der Moderator von
- *  Folie 1 zurück aufs Intro kann. */
+ *  Untergrenze ist -2 (Willkommen), dann -1 (Regel-Intro), dann 0..
+ *  Damit kann der Moderator vollständig zurückspulen. */
 export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
-  room.rulesSlideIndex = Math.max(-1, room.rulesSlideIndex - 1);
+  room.rulesSlideIndex = Math.max(-2, room.rulesSlideIndex - 1);
   room.lastActivityAt = Date.now();
 }
 

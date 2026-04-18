@@ -257,11 +257,14 @@ export default function QQBeamerPage() {
 
 function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates; roomCode: string }) {
   const cat = s.currentQuestion?.category;
-  // Intro-Overlay: wird angezeigt solange phase === 'RULES' und
-  // rulesSlideIndex === -1 (Intro-Pseudo-Slide). Moderator steuert das
-  // Weiterschalten per "Weiter"-Button → Backend setzt rulesSlideIndex auf 0,
-  // das Overlay verschwindet dann automatisch via State-Sync.
-  const introActive = s.phase === 'RULES' && (s.rulesSlideIndex ?? 0) === -1;
+  // Drei Overlay-Stufen vor den Regel-Folien:
+  //   -2 = Willkommens-Screen ("Willkommen beim BLOCK QUIZ")
+  //   -1 = Regel-Intro ("Jetzt kommen die Regeln — gut aufpassen!")
+  //    0..= normale Regel-Folien (RulesView)
+  // Crossfade zwischen -2 → -1 → Regeln via opacity transition.
+  const rulesIdx = s.rulesSlideIndex ?? 0;
+  const welcomeActive = s.phase === 'RULES' && rulesIdx === -2;
+  const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
   // Pause-/Wartescreen: statt Braun ein kühler Event-Look mit farbigen Blobs.
   // Pre-Game (warm, orange/gold) und Paused (cool, cyan/violett) kriegen
   // eigene Identitäten.
@@ -579,12 +582,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         </div>
       )}
 
-      {/* Intro-Overlay — "Willkommen beim BLOCK QUIZ / QUARTER QUIZ by cozywolf".
-          Sichtbar während RULES-Phase mit rulesSlideIndex === -1. Moderator
-          schaltet per "Weiter" auf Slide 0 weiter → Overlay blendet aus. */}
-      {introActive && (
-        <QuizIntroOverlay language={s.language} />
-      )}
+      {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
+          Übergang zum Regel-Intro. */}
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} />
+      {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
+          Willkommen und erster Regel-Folie. */}
+      <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
 
       {/* Gameshow flash-sweep overlay — runs once per phase group change */}
       {flashKey > 0 && (
@@ -813,8 +816,8 @@ type RulesSlide = {
 
 const RULES_SLIDES_DE: RulesSlide[] = [
   {
-    icon: '🎮',
-    title: 'Willkommen!',
+    icon: '🏆',
+    title: 'Das Ziel',
     color: '#3B82F6',
     lines: [
       'Beantwortet Quizfragen und erobert Felder auf dem Spielfeld.',
@@ -875,8 +878,8 @@ const RULES_SLIDES_DE: RulesSlide[] = [
 
 const RULES_SLIDES_EN: RulesSlide[] = [
   {
-    icon: '🎮',
-    title: 'Welcome!',
+    icon: '🏆',
+    title: 'The Goal',
     color: '#3B82F6',
     lines: [
       'Answer quiz questions and conquer cells on the grid.',
@@ -995,13 +998,14 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language }: { language: QQLanguage }) {
+function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
   const lang = useLangFlip(language);
   const title = lang === 'en' ? 'QUARTER QUIZ' : 'BLOCK QUIZ';
   const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
   const tagline = lang === 'en' ? 'by cozywolf' : 'by cozywolf';
   // Keine Auto-Dismiss: Moderator steuert das Weiterschalten per "Weiter"-Button.
   // Die Intro-Elemente animieren einmalig ein und bleiben dann ruhig stehen.
+  // visible=false → opacity 0 crossfade, pointer-events off, bleibt gemountet.
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9990,
@@ -1009,6 +1013,10 @@ function QuizIntroOverlay({ language }: { language: QQLanguage }) {
       background: 'radial-gradient(ellipse at center, #1a1030 0%, #0b0618 55%, #050208 100%)',
       overflow: 'hidden',
       fontFamily: "'Nunito', system-ui, sans-serif",
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'scale(1)' : 'scale(1.04)',
+      transition: 'opacity 0.55s ease, transform 0.65s cubic-bezier(0.4,0,0.2,1)',
+      pointerEvents: visible ? 'auto' : 'none',
     }}>
       {/* Hintergrund-Glow Pulse (warm amber) */}
       <div style={{
@@ -1138,12 +1146,96 @@ function QuizIntroOverlay({ language }: { language: QQLanguage }) {
   );
 }
 
+// ─── RulesIntroOverlay ──────────────────────────────────────────────────────
+// Zwischen-Folie: "Jetzt kommen die Regeln — gut aufpassen!"
+// Aktiv bei rulesSlideIndex === -1. Crossfade vom Willkommen rein, in die
+// erste Regel-Folie raus. Kühlere Palette (blau/violett) als Kontrast zum
+// warmen Welcome, damit der Übergang auch farblich spürbar ist.
+function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
+  const lang = useLangFlip(language);
+  const headline = lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln';
+  const sub = lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!';
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9988,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'radial-gradient(ellipse at center, #102033 0%, #0a1424 55%, #050912 100%)',
+      overflow: 'hidden',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'scale(1)' : 'scale(0.98)',
+      transition: 'opacity 0.55s ease, transform 0.65s cubic-bezier(0.4,0,0.2,1)',
+      pointerEvents: visible ? 'auto' : 'none',
+    }}>
+      {/* Hintergrund-Glow — kühles blau/violett */}
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%',
+        width: '140vmin', height: '140vmin',
+        transform: 'translate(-50%, -50%)',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(139,92,246,0.14) 40%, transparent 65%)',
+        filter: 'blur(10px)',
+        animation: visible ? 'qqRulesIntroGlow 3.6s ease-out both' : 'none',
+        pointerEvents: 'none',
+      }} />
+      {/* Content */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(18px, 3vh, 36px)', textAlign: 'center', padding: '0 6vw',
+      }}>
+        <div style={{
+          fontSize: 'clamp(72px, 9vw, 140px)', lineHeight: 1,
+          animation: visible ? 'qqRulesIntroIcon 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.2s both' : 'none',
+          filter: 'drop-shadow(0 6px 24px rgba(139,92,246,0.55))',
+        }}>📖</div>
+        <div style={{
+          fontSize: 'clamp(56px, 7.5vw, 120px)', fontWeight: 900,
+          lineHeight: 1.05, letterSpacing: '-0.01em',
+          background: 'linear-gradient(180deg, #fff 0%, #c7d2fe 45%, #a5b4fc 75%, #818cf8 100%)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 0 60px rgba(139,92,246,0.35)',
+          animation: visible ? 'qqRulesIntroHeadline 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 0.5s both' : 'none',
+        }}>{headline}</div>
+        <div style={{
+          fontSize: 'clamp(28px, 3.2vw, 52px)', fontWeight: 700,
+          letterSpacing: '0.08em',
+          color: '#fbbf24',
+          textShadow: '0 0 18px rgba(251,191,36,0.55), 0 2px 12px rgba(0,0,0,0.4)',
+          animation: visible ? 'qqRulesIntroSub 0.8s cubic-bezier(0.2,0.8,0.4,1) 0.95s both' : 'none',
+        }}>{sub}</div>
+      </div>
+      <style>{`
+        @keyframes qqRulesIntroGlow {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+          60% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+          100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.08); }
+        }
+        @keyframes qqRulesIntroIcon {
+          0% { opacity: 0; transform: translateY(18px) scale(0.6) rotate(-8deg); }
+          65% { transform: translateY(-4px) scale(1.08) rotate(3deg); }
+          100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        }
+        @keyframes qqRulesIntroHeadline {
+          0% { opacity: 0; transform: translateY(24px) scale(0.92); filter: blur(8px); }
+          55% { filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes qqRulesIntroSub {
+          0% { opacity: 0; transform: translateY(10px); letter-spacing: 0.22em; }
+          100% { opacity: 1; transform: translateY(0); letter-spacing: 0.08em; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
   const totalSlides = slides.length;
-  // idx=-1 bedeutet Intro-Overlay (wird separat gerendert). Hier auf 0 clampen,
-  // sonst wäre slides[-1] undefined — der Overlay liegt sowieso drüber.
+  // idx<0 = Overlay-Phase (Willkommen/Regel-Intro), wird separat gerendert.
+  // Hier auf 0 clampen, damit slides[idx] nie undefined ist.
   const idx = Math.max(0, Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1));
   const slide = slides[idx];
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";

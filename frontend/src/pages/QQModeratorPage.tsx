@@ -370,7 +370,11 @@ export default function QQModeratorPage() {
     const connectedTeams = s.teams.filter(t => t.connected).length;
     switch (s.phase) {
       case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
-      case 'RULES': return { text: 'REGELN', color: '#6366f1', sub: (s.rulesSlideIndex ?? 0) === -1 ? 'Intro-Folie' : `Slide ${(s.rulesSlideIndex ?? 0) + 1}` };
+      case 'RULES': {
+        const r = s.rulesSlideIndex ?? 0;
+        const sub = r === -2 ? 'Willkommen' : r === -1 ? 'Regel-Intro' : `Slide ${r + 1}`;
+        return { text: 'REGELN', color: '#6366f1', sub };
+      }
       case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
       case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
@@ -1448,13 +1452,19 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
 }) {
   const totalSlides = 5;
   const idx = s.rulesSlideIndex ?? 0;
-  const isIntro = idx === -1;
-  const isFirst = idx <= -1;
+  const isWelcome = idx === -2;
+  const isRulesIntro = idx === -1;
+  const isFirst = idx <= -2;
   const isLast = idx >= totalSlides - 1;
+  const label = isWelcome
+    ? '🎬 Willkommen'
+    : isRulesIntro
+      ? '📣 Regel-Intro'
+      : `📖 Folie ${idx + 1} / ${totalSlides}`;
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
-        {isIntro ? '🎬 Intro-Folie' : `📖 Folie ${idx + 1} / ${totalSlides}`}
+        {label}
       </span>
       <Btn small color="#64748b" onClick={() => emit('qq:rulesPrev', { roomCode })} outline={isFirst}>
         ◀ Zurück

@@ -4678,7 +4678,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // nur ein schmales Rect in Rail-Höhe sperren, damit Avatar-Chips
             // oben/unten drumherum frei platziert werden können.
             const targetPx = (pctOf(target) / 100) * STAGE_W;
-            placedRects.push({ x: targetPx - 70, y: -22, w: 140, h: 44 });
+            placedRects.push({ x: targetPx - 50, y: -16, w: 100, h: 32 });
             // Alle Pin-Avatare als Rects für Kollision vormerken.
             parsed.forEach((p) => {
               const r = pinRows.get(p.teamId) ?? 0;
@@ -4801,17 +4801,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }}>{fmt(axMax)}</div>
 
                   {/* Target marker — kompakte Pille direkt AUF der Rail.
-                      Klar erkennbar als "Ziel auf der Zeitleiste", blockiert
-                      keinen vertikalen Platz für Avatare oben/unten. */}
+                      Etwas kleiner, damit nahe Avatare nicht verdeckt werden. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
                     transform: 'translate(-50%, -50%)',
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 18px 8px 10px',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '4px 11px 4px 7px',
                     borderRadius: 999,
                     background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                    boxShadow: '0 0 24px rgba(34,197,94,0.75), 0 4px 12px rgba(0,0,0,0.45)',
-                    border: '3px solid rgba(255,255,255,0.9)',
+                    boxShadow: '0 0 14px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.38)',
+                    border: '2px solid rgba(255,255,255,0.9)',
                     animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
                     ['--pin-x' as any]: '0px',
                     ['--pin-y' as any]: '0px',
@@ -4819,12 +4818,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     whiteSpace: 'nowrap',
                   }}>
                     <span style={{
-                      fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1,
+                      fontSize: 'clamp(16px, 1.7vw, 22px)', lineHeight: 1,
                     }}>🎯</span>
                     <span style={{
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(22px, 2.6vw, 32px)', lineHeight: 1,
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                      fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
+                      textShadow: '0 1px 3px rgba(0,0,0,0.3)',
                     }}>{fmt(target)}</span>
                   </div>
 

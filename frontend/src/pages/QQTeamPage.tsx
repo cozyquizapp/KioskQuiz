@@ -365,7 +365,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
-            {t.header[lang]}
+            a cozy wolf production
           </div>
           <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
             {t.header[lang]}
@@ -435,12 +435,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         animationDelay: `${si * 0.02}s`,
                       }} />
                     ))}
-                    <span style={{
-                      fontSize: 34, lineHeight: 1,
-                      filter: taken ? 'grayscale(1)' : 'none',
+                    <QQTeamAvatar avatarId={a.id} size={48} style={{
+                      filter: taken ? 'grayscale(1) opacity(0.5)' : 'none',
                       animation: justPicked ? 'tcAvatarPick 0.5s ease-out' : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
                       ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
-                    }}>{a.emoji}</span>
+                    }} />
                     <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
                       textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>
                   </button>
@@ -922,17 +921,11 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
           🎬 {lang === 'en' ? "Today's players" : 'Heute spielen'}
         </div>
 
-        {/* Big avatar disc */}
-        <div style={{
-          width: 160, height: 160, borderRadius: '50%',
-          background: `radial-gradient(circle at 35% 30%, ${color} 0%, ${color}cc 45%, ${color}88 100%)`,
-          border: `5px solid ${color}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 100, lineHeight: 1,
+        {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring, daher kein Wrapper-Disc mehr */}
+        <QQTeamAvatar avatarId={myTeam.avatarId} size={160} style={{
           animation: 'tcTeamPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
-        }}>
-          {av.emoji}
-        </div>
+          boxShadow: `0 0 32px ${color}66`,
+        }} />
 
         {/* Team name banner */}
         <div style={{

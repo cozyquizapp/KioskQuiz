@@ -4201,17 +4201,25 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
   const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
 
-  // Cluster-Spread: Pins, die sehr nah beieinander stehen (z.B. alle auf gleicher
-  // Stadt), würden sich gegenseitig verdecken. Wir gruppieren nach einem groben
-  // Koordinaten-Raster (~0.5°) und verteilen Duplikate kreisförmig um den Anker.
-  // displayLat/displayLng werden für das Map-Icon benutzt, lat/lng bleiben für
-  // Distanz/FitBounds unverändert (ankern an der echten Position).
+  // Cluster-Spread: Pins, die sehr nah beieinander stehen (z.B. alle in Australien),
+  // würden sich auf dem Beamer verdecken. Greedy-Clustering nach Großkreis-Distanz,
+  // dann werden Duplikate kreisförmig um den Anker verteilt.
+  // WICHTIG: Spread-Radius skaliert mit der Map-Spannweite, sonst verdecken sich Pins
+  // bei weit auseinander liegenden Antworten (FitBounds zoomt raus → 1° = wenige Pixel).
+  // displayLat/displayLng werden für das Map-Icon benutzt, lat/lng bleiben echt
+  // (Distanz-Berechnung + Bounds verwenden die echten Positionen).
   const displayPos = useMemo(() => {
-    // Greedy-Clustering: Pins innerhalb von ~2.5° Radius werden zusammengefasst
-    // (statt starrem Grid-Bucket, der bei Grenz-Fällen zwei nahe Pins trennt).
     const valid = scored.filter(p => p.lat != null && p.lng != null);
+    // Spannweite aller Antworten + Target → Spread proportional dazu wählen.
+    const allLats = [tLat, ...valid.map(p => p.lat)];
+    const allLngs = [tLng, ...valid.map(p => p.lng)];
+    const spanLat = Math.max(...allLats) - Math.min(...allLats);
+    const spanLng = Math.max(...allLngs) - Math.min(...allLngs);
+    const span = Math.max(spanLat, spanLng, 10); // mind. 10° auch bei engem Zoom
+    // Merge-Schwelle ~6% der Spannweite, mind. 2.5° (2 nah beieinander = ein Cluster).
+    const MERGE_DEG = Math.max(2.5, span * 0.06);
+
     const clusters: Array<typeof scored> = [];
-    const MERGE_DEG = 2.5;
     for (const p of valid) {
       let placed = false;
       for (const cl of clusters) {
@@ -4234,11 +4242,11 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         out.set(p.teamId, { lat: p.lat, lng: p.lng });
         continue;
       }
-      // Mehrere Pins im Cluster: auf einem Ring um den Durchschnitt verteilen.
       const avgLat = list.reduce((s, p) => s + p.lat, 0) / list.length;
       const avgLng = list.reduce((s, p) => s + p.lng, 0) / list.length;
-      // Radius skaliert mit Team-Count, damit auch 4-5 Pins auseinandergehen.
-      const radiusDeg = Math.max(1.0, 0.7 + list.length * 0.3);
+      // Spread-Radius ~7% der Spannweite + Bonus pro Pin im Cluster.
+      // Bei 3 Pins über 60° Span → ~5° Radius (statt früher 1.6°).
+      const radiusDeg = Math.max(2.0, span * 0.07 + list.length * 0.4);
       list.forEach((p, i) => {
         const angle = (i / list.length) * Math.PI * 2 - Math.PI / 2;
         const dLat = radiusDeg * Math.sin(angle);
@@ -4247,7 +4255,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       });
     }
     return out;
-  }, [scored]);
+  }, [scored, tLat, tLng]);
 
   const showTarget  = step >= 1;
   const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...

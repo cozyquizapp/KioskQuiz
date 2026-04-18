@@ -7182,12 +7182,34 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {team && (() => {
                   const isActiveTeam = team.id === highlightTeam;
                   const isDimmed = highlightTeam && !isActiveTeam && !isAccent;
+                  // Territorium-Fusion: gleiche Team-Nachbarn ermitteln
+                  const tid = team.id;
+                  const nTop    = s.grid[r - 1]?.[c]?.ownerId === tid;
+                  const nRight  = s.grid[r]?.[c + 1]?.ownerId === tid;
+                  const nBottom = s.grid[r + 1]?.[c]?.ownerId === tid;
+                  const nLeft   = s.grid[r]?.[c - 1]?.ownerId === tid;
+                  // Ecken eckig, wo eine anliegende Kante fusioniert (sonst cellRadius)
+                  const rTL = (nTop    || nLeft ) ? 0 : cellRadius;
+                  const rTR = (nTop    || nRight) ? 0 : cellRadius;
+                  const rBR = (nBottom || nRight) ? 0 : cellRadius;
+                  const rBL = (nBottom || nLeft ) ? 0 : cellRadius;
+                  // Spezial-Cells (stuck/frozen/joker) behalten runde Kanten für eigenes Styling
+                  const specialBorder = isStuck || isFrozen || showStar;
+                  const fusedRadius = specialBorder
+                    ? cellRadius
+                    : `${rTL}px ${rTR}px ${rBR}px ${rBL}px` as any;
+                  const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : '99';
+                  const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : '66';
+                  const bridgeBg = `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`;
+                  const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
+                  const bridgeOffset = cellRadius;
                   return (
+                  <>
                   <div style={{
-                    position: 'absolute', inset: 0, borderRadius: cellRadius,
+                    position: 'absolute', inset: 0, borderRadius: fusedRadius,
                     background: isStuck
                       ? `linear-gradient(135deg, ${team.color}ff, ${team.color}bb)`
-                      : `linear-gradient(135deg, ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : '99'}, ${team.color}${isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : '66'})`,
+                      : `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`,
                     border: isStuck
                       ? '2px solid rgba(251,191,36,0.95)'
                       : showStar
@@ -7208,6 +7230,29 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                     filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
                   }} />
+                  {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
+                      Nachbarn, damit „verbundene Felder" als eine Fläche wirken. */}
+                  {nRight && (
+                    <div style={{
+                      position: 'absolute',
+                      right: -gap - 1, top: bridgeOffset,
+                      width: gap + 2, height: bridgeSpan,
+                      background: bridgeBg,
+                      zIndex: 2, pointerEvents: 'none',
+                      filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
+                    }} />
+                  )}
+                  {nBottom && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: -gap - 1, left: bridgeOffset,
+                      height: gap + 2, width: bridgeSpan,
+                      background: bridgeBg,
+                      zIndex: 2, pointerEvents: 'none',
+                      filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
+                    }} />
+                  )}
+                  </>
                   );
                 })()}
                 {/* Frozen overlay — ice tint + shimmer + frost corners */}

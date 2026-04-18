@@ -32,6 +32,7 @@ import {
   qqImposterStart, qqImposterChoose,
   qqFlushQuestionToHistory,
 } from './qqRooms';
+import { detectPlusForStuck } from './qqBfs';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 
 type AckFn = (payload: QQAck) => void;
@@ -699,6 +700,89 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
         const cell = live.grid[r][c];
         if (cell.ownerId === null) free.push({ row: r, col: c });
         else if (cell.ownerId !== teamId && !cell.frozen && !cell.stuck) oppFree.push({ row: r, col: c });
+      }
+    }
+
+    // ── Power-Up-Würfel (nur bei FREE, also Phase 3+) ─────────────────────
+    // FREEZE ab Phase 3, STAPEL + SWAP ab Phase 4. 30% Gesamt-Chance, sonst normal setzen/klauen.
+    if (action === 'FREE') {
+      const phase = live.gamePhaseIndex;
+      const ownCells: Array<{ row: number; col: number }> = [];
+      const ownFreezable: Array<{ row: number; col: number }> = [];
+      for (let r = 0; r < live.grid.length; r++) {
+        for (let c = 0; c < live.grid[r].length; c++) {
+          const cell = live.grid[r][c];
+          if (cell.ownerId === teamId) {
+            ownCells.push({ row: r, col: c });
+            if (!cell.frozen && !cell.stuck) ownFreezable.push({ row: r, col: c });
+          }
+        }
+      }
+      const freezeAvail = phase >= 3 && ownFreezable.length > 0;
+      const plusCandidates = phase >= 4 ? detectPlusForStuck(live.grid, live.gridSize, teamId) : [];
+      const stapelAvail = phase >= 4 && plusCandidates.length > 0;
+      const swapAvail = phase >= 4 && ownCells.length > 0 && oppFree.length > 0;
+      const options: Array<'FREEZE' | 'STAPEL' | 'SWAP'> = [];
+      if (freezeAvail) options.push('FREEZE');
+      if (stapelAvail) options.push('STAPEL');
+      if (swapAvail) options.push('SWAP');
+      if (options.length > 0 && Math.random() < 0.3) {
+        const pick = options[Math.floor(Math.random() * options.length)];
+        try {
+          qqChooseFreeAction(live, teamId, pick);
+          broadcastQQ(io, roomCode);
+          if (pick === 'FREEZE') {
+            // Eigenes Feld einfrieren: bevorzuge Feld aus größtem eigenem Cluster (schützt Kern).
+            const best = pickSmartPlacement(live, teamId, ownFreezable) ?? ownFreezable[0];
+            setTimeout(() => {
+              const live2 = getQQRoom(roomCode);
+              if (!live2 || live2.phase !== 'PLACEMENT') return;
+              if (live2.pendingFor !== teamId || live2.pendingAction !== 'FREEZE_1') return;
+              try {
+                qqFreezeCell(live2, teamId, best.row, best.col);
+                broadcastQQ(io, roomCode);
+                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+              } catch { /* skip */ }
+            }, 900);
+          } else if (pick === 'STAPEL') {
+            const pc = plusCandidates[Math.floor(Math.random() * plusCandidates.length)];
+            setTimeout(() => {
+              const live2 = getQQRoom(roomCode);
+              if (!live2 || live2.phase !== 'PLACEMENT') return;
+              if (live2.pendingFor !== teamId || live2.pendingAction !== 'STAPEL_1') return;
+              try {
+                qqStuckCell(live2, teamId, pc.r, pc.c);
+                broadcastQQ(io, roomCode);
+                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+              } catch { /* skip */ }
+            }, 900);
+          } else if (pick === 'SWAP') {
+            // Step 1: eigenes Feld (bevorzugt Randfeld) auswählen
+            const ownPick = ownCells[Math.floor(Math.random() * ownCells.length)];
+            setTimeout(() => {
+              const live2 = getQQRoom(roomCode);
+              if (!live2 || live2.phase !== 'PLACEMENT') return;
+              if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
+              try {
+                qqSwapOneCell(live2, teamId, ownPick.row, ownPick.col);
+                broadcastQQ(io, roomCode);
+                // Step 2: gegnerisches Feld auswählen (smart: größter Gegner-Cluster)
+                setTimeout(() => {
+                  const live3 = getQQRoom(roomCode);
+                  if (!live3 || live3.phase !== 'PLACEMENT') return;
+                  if (live3.pendingFor !== teamId || live3.pendingAction !== 'SWAP_1') return;
+                  const enemy = pickSmartSteal(live3, teamId, oppFree) ?? oppFree[0];
+                  try {
+                    qqSwapOneCell(live3, teamId, enemy.row, enemy.col);
+                    broadcastQQ(io, roomCode);
+                    if (live3.phase === 'PLACEMENT' && live3.pendingFor) maybeAutoPlace(io, roomCode);
+                  } catch { /* skip */ }
+                }, 900);
+              } catch { /* skip */ }
+            }, 900);
+          }
+          return;
+        } catch { /* Fallback: normaler Place/Steal */ }
       }
     }
 

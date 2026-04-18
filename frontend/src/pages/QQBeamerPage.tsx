@@ -3311,42 +3311,55 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
               {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {winners.map(w => {
-                const tm = s.teams.find(t => t.id === w.teamId);
-                if (!tm) return null;
-                return (
-                  <div key={tm.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
-                  }}>
-                    <span style={{
-                      fontSize: 'clamp(48px, 6vw, 84px)', lineHeight: 1,
-                      width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
-                      borderRadius: '50%', background: tm.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0, boxShadow: `0 0 30px ${tm.color}66`,
-                      animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+          ) : (() => {
+            // Skaliere Größen je nach Anzahl Sieger, damit nichts die Karte überläuft.
+            const wn = winners.length;
+            const compact = wn >= 5;
+            const mid = wn >= 3;
+            const avatarSize = compact ? 'clamp(38px, 4vw, 58px)' : mid ? 'clamp(52px, 5.5vw, 76px)' : 'clamp(64px, 7vw, 96px)';
+            const emojiSize  = compact ? 'clamp(24px, 2.8vw, 36px)' : mid ? 'clamp(34px, 4.2vw, 52px)' : 'clamp(44px, 5.5vw, 72px)';
+            const nameSize   = compact ? 'clamp(18px, 2.2vw, 30px)' : mid ? 'clamp(22px, 2.8vw, 40px)' : 'clamp(26px, 3.2vw, 50px)';
+            const subSize    = compact ? 'clamp(11px, 1.1vw, 15px)' : mid ? 'clamp(13px, 1.4vw, 20px)' : 'clamp(14px, 1.5vw, 22px)';
+            const rowGap     = compact ? 6 : mid ? 8 : 10;
+            const itemGap    = compact ? 10 : 14;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
+                {winners.map(w => {
+                  const tm = s.teams.find(t => t.id === w.teamId);
+                  if (!tm) return null;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
+                      animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
                     }}>
-                      {qqGetAvatar(tm.avatarId).emoji}
-                    </span>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{
-                        fontSize: 'clamp(26px, 3.2vw, 50px)', fontWeight: 900, color: tm.color,
-                        textShadow: `0 0 20px ${tm.color}44`, lineHeight: 1.1,
-                      }}>{tm.name}</div>
-                      <div style={{
-                        fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                      <span style={{
+                        fontSize: emojiSize, lineHeight: 1,
+                        width: avatarSize, height: avatarSize,
+                        borderRadius: '50%', background: tm.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, boxShadow: `0 0 24px ${tm.color}55`,
+                        animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                       }}>
-                        {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+                        {qqGetAvatar(tm.avatarId).emoji}
+                      </span>
+                      <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                        <div style={{
+                          fontSize: nameSize, fontWeight: 900, color: tm.color,
+                          textShadow: `0 0 16px ${tm.color}44`, lineHeight: 1.1,
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>{tm.name}</div>
+                        <div style={{
+                          fontSize: subSize, fontWeight: 800, color: '#cbd5e1', marginTop: 2,
+                        }}>
+                          {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
       {/* ── Right column: Top-5 List (bottom-up reveal, fills column) ─────── */}
@@ -3629,42 +3642,55 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
               {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {winners.map(w => {
-                const tm = s.teams.find(t => t.id === w.teamId);
-                if (!tm) return null;
-                return (
-                  <div key={tm.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
-                  }}>
-                    <span style={{
-                      fontSize: 'clamp(48px, 6vw, 84px)', lineHeight: 1,
-                      width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
-                      borderRadius: '50%', background: tm.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0, boxShadow: `0 0 30px ${tm.color}66`,
-                      animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+          ) : (() => {
+            // Skaliere Größen je nach Anzahl Sieger, damit nichts die Karte überläuft.
+            const wn = winners.length;
+            const compact = wn >= 5;
+            const mid = wn >= 3;
+            const avatarSize = compact ? 'clamp(38px, 4vw, 58px)' : mid ? 'clamp(52px, 5.5vw, 76px)' : 'clamp(64px, 7vw, 96px)';
+            const emojiSize  = compact ? 'clamp(24px, 2.8vw, 36px)' : mid ? 'clamp(34px, 4.2vw, 52px)' : 'clamp(44px, 5.5vw, 72px)';
+            const nameSize   = compact ? 'clamp(18px, 2.2vw, 30px)' : mid ? 'clamp(22px, 2.8vw, 40px)' : 'clamp(26px, 3.2vw, 50px)';
+            const subSize    = compact ? 'clamp(11px, 1.1vw, 15px)' : mid ? 'clamp(13px, 1.4vw, 20px)' : 'clamp(14px, 1.5vw, 22px)';
+            const rowGap     = compact ? 6 : mid ? 8 : 10;
+            const itemGap    = compact ? 10 : 14;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
+                {winners.map(w => {
+                  const tm = s.teams.find(t => t.id === w.teamId);
+                  if (!tm) return null;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
+                      animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
                     }}>
-                      {qqGetAvatar(tm.avatarId).emoji}
-                    </span>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{
-                        fontSize: 'clamp(26px, 3.2vw, 50px)', fontWeight: 900, color: tm.color,
-                        textShadow: `0 0 20px ${tm.color}44`, lineHeight: 1.1,
-                      }}>{tm.name}</div>
-                      <div style={{
-                        fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                      <span style={{
+                        fontSize: emojiSize, lineHeight: 1,
+                        width: avatarSize, height: avatarSize,
+                        borderRadius: '50%', background: tm.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, boxShadow: `0 0 24px ${tm.color}55`,
+                        animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                       }}>
-                        {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+                        {qqGetAvatar(tm.avatarId).emoji}
+                      </span>
+                      <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                        <div style={{
+                          fontSize: nameSize, fontWeight: 900, color: tm.color,
+                          textShadow: `0 0 16px ${tm.color}44`, lineHeight: 1.1,
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>{tm.name}</div>
+                        <div style={{
+                          fontSize: subSize, fontWeight: 800, color: '#cbd5e1', marginTop: 2,
+                        }}>
+                          {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Right column: Ranking bottom-up */}
@@ -4898,79 +4924,83 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     }}>{isCorrect ? '✓' : label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
-                      color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
-                      textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
-                      transition: 'color 0.3s ease',
-                    }}>{optText}</div>
-                    {revealed && q.category === 'MUCHO' && (() => {
-                      const voters = s.answers
-                        .filter(a => a.text === String(i))
-                        .sort((a, b) => a.submittedAt - b.submittedAt)
-                        .map(a => {
-                          const team = s.teams.find(t => t.id === a.teamId);
-                          return team ? { team, submittedAt: a.submittedAt } : null;
-                        })
-                        .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
-                      if (voters.length === 0) return null;
-                      // Zeit-Anker: Timer-Start, sonst schnellster Voter als Fallback.
-                      const t0 = s.timerEndsAt && s.timerDurationSec
-                        ? s.timerEndsAt - s.timerDurationSec * 1000
-                        : voters[0]?.submittedAt;
-                      return (
-                        <div style={{
-                          position: 'absolute', top: 6, right: 10, zIndex: 2,
-                          display: 'flex', alignItems: 'flex-start', gap: 6,
-                          animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
-                        }}>
-                          {voters.map((v, vi) => {
-                            const tm = v.team;
-                            const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
-                            const isFastest = isCorrect && vi === 0;
-                            return (
-                              <div key={tm.id} style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                              }}>
-                                <div title={tm.name} style={{
-                                  position: 'relative',
-                                  width: 'clamp(40px, 4.5vw, 60px)',
-                                  height: 'clamp(40px, 4.5vw, 60px)',
-                                  borderRadius: '50%',
-                                  background: tm.color,
-                                  border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
-                                  boxShadow: isFastest
-                                    ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
-                                    : '0 4px 12px rgba(0,0,0,0.5)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: 'clamp(22px, 2.6vw, 34px)',
+                      flex: 1, minWidth: 0,
+                      display: 'flex', flexDirection: 'column', gap: 10,
+                    }}>
+                      <div style={{
+                        fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
+                        color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                        textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
+                        transition: 'color 0.3s ease',
+                      }}>{optText}</div>
+                      {revealed && q.category === 'MUCHO' && (() => {
+                        const voters = s.answers
+                          .filter(a => a.text === String(i))
+                          .sort((a, b) => a.submittedAt - b.submittedAt)
+                          .map(a => {
+                            const team = s.teams.find(t => t.id === a.teamId);
+                            return team ? { team, submittedAt: a.submittedAt } : null;
+                          })
+                          .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
+                        if (voters.length === 0) return null;
+                        // Zeit-Anker: Timer-Start, sonst schnellster Voter als Fallback.
+                        const t0 = s.timerEndsAt && s.timerDurationSec
+                          ? s.timerEndsAt - s.timerDurationSec * 1000
+                          : voters[0]?.submittedAt;
+                        return (
+                          <div style={{
+                            display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 8,
+                            animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
+                          }}>
+                            {voters.map((v, vi) => {
+                              const tm = v.team;
+                              const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
+                              const isFastest = isCorrect && vi === 0;
+                              return (
+                                <div key={tm.id} style={{
+                                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                                 }}>
-                                  {qqGetAvatar(tm.avatarId).emoji}
-                                  {isFastest && (
+                                  <div title={tm.name} style={{
+                                    position: 'relative',
+                                    width: 'clamp(36px, 4vw, 52px)',
+                                    height: 'clamp(36px, 4vw, 52px)',
+                                    borderRadius: '50%',
+                                    background: tm.color,
+                                    border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
+                                    boxShadow: isFastest
+                                      ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
+                                      : '0 4px 12px rgba(0,0,0,0.5)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 'clamp(20px, 2.3vw, 30px)',
+                                  }}>
+                                    {qqGetAvatar(tm.avatarId).emoji}
+                                    {isFastest && (
+                                      <span style={{
+                                        position: 'absolute', top: -8, right: -8,
+                                        fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
+                                      }}>⚡</span>
+                                    )}
+                                  </div>
+                                  {timeSec != null && isCorrect && (
                                     <span style={{
-                                      position: 'absolute', top: -8, right: -8,
-                                      fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
-                                    }}>⚡</span>
+                                      padding: '1px 7px', borderRadius: 999,
+                                      background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
+                                      border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                      color: isFastest ? '#FBBF24' : '#e2e8f0',
+                                      fontWeight: 900,
+                                      fontSize: 'clamp(11px, 1.1vw, 14px)',
+                                      whiteSpace: 'nowrap',
+                                    }}>
+                                      {timeSec.toFixed(1)}s
+                                    </span>
                                   )}
                                 </div>
-                                {timeSec != null && isCorrect && (
-                                  <span style={{
-                                    padding: '1px 7px', borderRadius: 999,
-                                    background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
-                                    border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                                    color: isFastest ? '#FBBF24' : '#e2e8f0',
-                                    fontWeight: 900,
-                                    fontSize: 'clamp(11px, 1.1vw, 14px)',
-                                    whiteSpace: 'nowrap',
-                                  }}>
-                                    {timeSec.toFixed(1)}s
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 );
               })}
@@ -5619,43 +5649,130 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Correct team — winner banner (non-Schätzchen) */}
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (() => {
-            const team = s.teams.find(t => t.id === s.correctTeamId);
-            if (!team) return null;
             const cat = q.category;
             const isEn = lang === 'en';
+
+            // ZEHN_VON_ZEHN: Tie-Info ermitteln, damit Text stimmt, wenn mehrere Teams
+            // die gleiche Höchstpunktzahl auf die richtige Antwort gesetzt haben
+            // (Reihenfolge per Schnelligkeit). Bei echtem Zeit-Gleichstand → alle als Co-Sieger.
+            let allInTie: {
+              maxPointsTied: boolean;  // mehrere Teams mit Höchstpunkten
+              speedTied: string[];     // Team-IDs mit max Punkten UND schnellstem Submit
+              winnerPts: number;
+            } | null = null;
+            if (cat === 'ZEHN_VON_ZEHN' && q.correctOptionIndex != null && q.options) {
+              const correctIdx = q.correctOptionIndex;
+              const onCorrect = s.answers
+                .map(a => {
+                  const parts = a.text.split(',').map(n => parseInt(n.trim(), 10));
+                  const pts = parts[correctIdx] ?? 0;
+                  return { teamId: a.teamId, pts, submittedAt: a.submittedAt };
+                })
+                .filter(x => x.pts > 0);
+              if (onCorrect.length > 0) {
+                const maxPts = Math.max(...onCorrect.map(x => x.pts));
+                const atMax = onCorrect.filter(x => x.pts === maxPts);
+                const minT  = Math.min(...atMax.map(x => x.submittedAt));
+                const atMaxAndFastest = atMax.filter(x => x.submittedAt === minT);
+                allInTie = {
+                  maxPointsTied: atMax.length > 1,
+                  speedTied: atMaxAndFastest.map(x => x.teamId),
+                  winnerPts: maxPts,
+                };
+              }
+            }
+
+            const coWinners = allInTie && allInTie.speedTied.length > 1
+              ? s.teams.filter(t => allInTie!.speedTied.includes(t.id))
+              : null;
+
+            // Single-team Banner (Default-Fall)
+            const team = s.teams.find(t => t.id === s.correctTeamId);
+            if (!coWinners && !team) return null;
+
             const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null
               && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
+            const allInTied = allInTie?.maxPointsTied ?? false;
+
             const winMsg = cat === 'CHEESE'
               ? (isEn ? 'got it right!' : 'hat es erkannt!')
               : cat === 'BUNTE_TUETE'
                 ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
                 : cat === 'ZEHN_VON_ZEHN'
-                  ? (isEn ? 'bet the most points on the correct answer!' : 'hat die meisten Punkte auf die richtige Antwort gesetzt!')
+                  ? (allInTied
+                      ? (isEn ? 'had the most points — and was fastest!' : 'hatte die meisten Punkte — und war am schnellsten!')
+                      : (isEn ? 'bet the most points on the correct answer!' : 'hat die meisten Punkte auf die richtige Antwort gesetzt!'))
                   : muchoSpeedWin
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
                     : (isEn ? 'correct!' : 'richtig!');
+
+            // Echter Zeit-Gleichstand (gleiche max Punkte + gleiche ms) → mehrere Sieger
+            if (coWinners && coWinners.length > 1) {
+              const coMsg = isEn
+                ? `all tied on points & speed${allInTie ? ` (+${allInTie.winnerPts})` : ''}!`
+                : `gleich viele Punkte und gleich schnell${allInTie ? ` (+${allInTie.winnerPts})` : ''}!`;
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
+                  padding: '22px 38px', borderRadius: 28, marginBottom: 12,
+                  width: '100%', maxWidth: 1400, flexWrap: 'wrap',
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
+                  border: '2px solid rgba(251,191,36,0.55)',
+                  boxShadow: '0 0 60px rgba(251,191,36,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {coWinners.map((tm, i) => (
+                      <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{
+                          fontSize: 'clamp(42px, 5vw, 72px)', lineHeight: 1,
+                          width: 'clamp(64px, 7vw, 96px)', height: 'clamp(64px, 7vw, 96px)',
+                          borderRadius: '50%', background: tm.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0, boxShadow: `0 0 24px ${tm.color}66`,
+                          animation: `celebShake 0.6s ease ${1.1 + i * 0.1}s both`,
+                        }}>
+                          {qqGetAvatar(tm.avatarId).emoji}
+                        </span>
+                        <div style={{
+                          fontWeight: 900, fontSize: 'clamp(26px, 3.4vw, 48px)', color: tm.color, lineHeight: 1.1,
+                          textShadow: `0 0 24px ${tm.color}44`,
+                        }}>{tm.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800,
+                  }}>
+                    {coMsg}
+                  </div>
+                </div>
+              );
+            }
+
+            // Single-winner Banner
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
                 padding: '28px 44px', borderRadius: 28, marginBottom: 12,
                 width: '100%', maxWidth: 1400,
-                background: `linear-gradient(135deg, ${team.color}22, ${team.color}0a)`,
-                border: `2px solid ${team.color}66`,
-                boxShadow: `0 0 60px ${team.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+                background: `linear-gradient(135deg, ${team!.color}22, ${team!.color}0a)`,
+                border: `2px solid ${team!.color}66`,
+                boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
                 animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
               }}>
                 <span style={{
                   fontSize: 'clamp(64px, 8vw, 110px)', lineHeight: 1, flexShrink: 0,
                   animation: 'celebShake 0.6s ease 1.1s both',
                 }}>
-                  {qqGetAvatar(team.avatarId).emoji}
+                  {qqGetAvatar(team!.avatarId).emoji}
                 </span>
                 <div>
                   <div style={{
-                    fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team.color, lineHeight: 1.1,
-                    textShadow: `0 0 30px ${team.color}44`,
+                    fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
+                    textShadow: `0 0 30px ${team!.color}44`,
                   }}>
-                    {team.name}
+                    {team!.name}
                   </div>
                   <div style={{
                     color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6,

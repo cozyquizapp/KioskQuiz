@@ -699,9 +699,32 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
   return (
     <div style={{
       position: 'absolute', bottom: 16, left: 0, right: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
       pointerEvents: 'none',
     }}>
+      {/* Used answers list — prominent über dem Active-Team-Pill */}
+      {used.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
+          maxWidth: 'min(94vw, 1500px)',
+        }}>
+          {used.map((a, i) => (
+            <div key={`${a}-${i}`} style={{
+              padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.10))',
+              border: '2px solid rgba(34,197,94,0.55)',
+              boxShadow: '0 4px 14px rgba(34,197,94,0.18)',
+              color: '#86efac', fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 800,
+              letterSpacing: 0.2,
+              animation: 'contentReveal 0.4s ease both',
+            }}>
+              ✓ {a}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Active team pill + turn timer */}
       {activeTeam ? (
         <div style={{
@@ -742,25 +765,6 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           color: '#94a3b8', fontSize: 15, fontWeight: 700,
         }}>
           🥔 {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
-        </div>
-      )}
-
-      {/* Used answers list */}
-      {used.length > 0 && (
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8,
-          maxWidth: 'min(92vw, 1200px)',
-        }}>
-          {used.map((a, i) => (
-            <div key={`${a}-${i}`} style={{
-              padding: '6px 14px', borderRadius: 999,
-              background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)',
-              color: '#86efac', fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
-              animation: 'contentReveal 0.3s ease both',
-            }}>
-              ✓ {a}
-            </div>
-          ))}
         </div>
       )}
 
@@ -3328,8 +3332,8 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
-          opacity: revealedMinIdx === 0 ? 1 : 0.35,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
+          opacity: revealedMinIdx === 0 ? 1 : 0.12,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
         }}>
           <div style={{
@@ -3673,8 +3677,8 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
           padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
-          opacity: revealedMinIdx === 0 ? 1 : 0.35,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
+          opacity: revealedMinIdx === 0 ? 1 : 0.12,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
         }}>
           <div style={{
@@ -4026,8 +4030,8 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 12, minHeight: 0, overflow: 'hidden',
-          opacity: revealedMinIdx === 0 ? 1 : 0.35,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
+          opacity: revealedMinIdx === 0 ? 1 : 0.12,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
         }}>
           <div style={{

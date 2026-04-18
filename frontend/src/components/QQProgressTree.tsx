@@ -152,12 +152,12 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
               {pi < phases.length - 1 && (
                 <div
                   style={{
-                    width: phaseGap * 0.8,
+                    width: phaseGap,
                     height: 2,
                     background: variant === 'inline' ? 'rgba(148,163,184,0.35)' : '#cbd5e1',
                     marginTop: phaseNameSize + 16 + dotSize / 2,
-                    marginLeft: -phaseGap * 0.4,
-                    marginRight: -phaseGap * 0.4,
+                    flexShrink: 0,
+                    opacity: 0.7,
                   }}
                 />
               )}

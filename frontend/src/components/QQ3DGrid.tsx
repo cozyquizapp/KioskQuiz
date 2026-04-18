@@ -570,6 +570,12 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
 
     grid.style.cssText = `display:grid;gap:${gap}px;grid-template-columns:repeat(${gs},${cellSize}px);grid-template-rows:repeat(${gs},${cellSize}px);transform-style:preserve-3d;transform:scale(var(--zoom,1)) rotateX(var(--rx,55deg)) rotateZ(var(--rz,-45deg));transition:transform 1.2s cubic-bezier(.25,.46,.45,.94)`;
 
+    // Helper: prüft, ob Nachbar-Zelle demselben Team gehört (für Territorium-Fusion)
+    const sameOwner = (rr: number, cc: number, tid: string): boolean => {
+      const other = state.grid[rr]?.[cc];
+      return !!other && other.ownerId === tid;
+    };
+
     for (let r = 0; r < gs; r++) {
       for (let c = 0; c < gs; c++) {
         const cell = state.grid[r]?.[c];
@@ -584,8 +590,44 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
         if (cell?.ownerId) {
           const team = teamMap.current.get(cell.ownerId);
           if (team) {
-            ground.style.cssText = `width:100%;height:100%;border-radius:3px;background:${rgba(team, .15)};border:1px solid ${rgba(team, .35)};box-shadow:0 0 10px ${rgba(team, .20)}`;
+            const tid = cell.ownerId;
+            // Nachbar-Check: welche Kanten sollen verschmelzen?
+            const nTop    = sameOwner(r - 1, c, tid);
+            const nRight  = sameOwner(r, c + 1, tid);
+            const nBottom = sameOwner(r + 1, c, tid);
+            const nLeft   = sameOwner(r, c - 1, tid);
+            // Ecken runden nur, wo KEINE benachbarte Kante fusioniert
+            const rTL = (nTop    || nLeft ) ? 0 : 6;
+            const rTR = (nTop    || nRight) ? 0 : 6;
+            const rBR = (nBottom || nRight) ? 0 : 6;
+            const rBL = (nBottom || nLeft ) ? 0 : 6;
+            const edge = `1.5px solid ${rgba(team, .55)}`;
+            ground.style.cssText = `
+              position:absolute;left:0;top:0;width:100%;height:100%;
+              border-radius:${rTL}px ${rTR}px ${rBR}px ${rBL}px;
+              background:linear-gradient(135deg, ${rgba(team, .34)}, ${rgba(team, .16)});
+              border-top:${nTop    ? 'none' : edge};
+              border-right:${nRight ? 'none' : edge};
+              border-bottom:${nBottom ? 'none' : edge};
+              border-left:${nLeft  ? 'none' : edge};
+              box-shadow:0 0 14px ${rgba(team, .30)}, inset 0 1px 0 ${rgba(team, .35)};
+            `.replace(/\s+/g, ' ');
             tile.appendChild(ground);
+
+            // Bridges: füllen die Grid-Gap zu gleichfarbigen Nachbarn, damit das
+            // Territorium als eine zusammenhängende Region wirkt (rechts + unten
+            // genügen, die gegenüberliegende Seite deckt der Nachbar selbst ab).
+            const bridgeBg = rgba(team, .24);
+            if (nRight) {
+              const b = document.createElement('div');
+              b.style.cssText = `position:absolute;right:${-gap - 1}px;top:0;width:${gap + 2}px;height:100%;background:${bridgeBg};border-top:${edge};border-bottom:${edge};z-index:1`;
+              tile.appendChild(b);
+            }
+            if (nBottom) {
+              const b = document.createElement('div');
+              b.style.cssText = `position:absolute;bottom:${-gap - 1}px;left:0;height:${gap + 2}px;width:100%;background:${bridgeBg};border-left:${edge};border-right:${edge};z-index:1`;
+              tile.appendChild(b);
+            }
 
             const animKey = animateCell ? `${animateCell.row}-${animateCell.col}-${animateCell.teamId}` : null;
             const isTargetCell = animateCell?.row === r && animateCell?.col === c;
@@ -599,11 +641,14 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
             }, shouldAnimate);
             if (shouldAnimate) lastAnimatedKey.current = animKey;
           } else {
-            ground.style.cssText = 'width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+            ground.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
             tile.appendChild(ground);
           }
         } else {
-          ground.style.cssText = 'width:100%;height:100%;border-radius:3px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)';
+          // Leerer Slot: eingesenkte Kachel mit dezentem Checker-Pattern (hell/dunkel).
+          const darker = ((r + c) % 2 === 0);
+          const slotBg = darker ? 'rgba(255,255,255,.015)' : 'rgba(255,255,255,.05)';
+          ground.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;border-radius:6px;background:${slotBg};border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 2px 5px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,.04)`;
           tile.appendChild(ground);
         }
 

@@ -177,11 +177,18 @@ const TEAM_CSS = `
     100% { box-shadow: 0 0 4px var(--cell-color, rgba(255,255,255,0.2)); }
   }
   @keyframes tcAvatarPick {
-    0%   { transform: scale(1); }
-    25%  { transform: scale(1.25) rotate(-8deg); }
-    50%  { transform: scale(0.9) rotate(5deg); }
-    75%  { transform: scale(1.08) rotate(-2deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0%   { transform: scale(1) translateY(0) rotate(0deg); }
+    12%  { transform: scale(1.38) translateY(-10px) rotate(-14deg); }
+    28%  { transform: scale(0.82) translateY(6px) rotate(11deg); }
+    44%  { transform: scale(1.20) translateY(-6px) rotate(-7deg); }
+    60%  { transform: scale(0.94) translateY(2px) rotate(4deg); }
+    78%  { transform: scale(1.06) translateY(0) rotate(-2deg); }
+    100% { transform: scale(1) translateY(0) rotate(0deg); }
+  }
+  @keyframes tcAvatarGlow {
+    0%   { filter: drop-shadow(0 0 0 transparent); }
+    20%  { filter: drop-shadow(0 0 14px var(--g, rgba(255,255,255,0.9))) drop-shadow(0 0 24px var(--g, rgba(255,255,255,0.5))); }
+    100% { filter: drop-shadow(0 0 0 transparent); }
   }
   @keyframes tcAvatarRing {
     0%   { transform: scale(0.5); opacity: 1; }
@@ -190,6 +197,15 @@ const TEAM_CSS = `
   @keyframes tcAvatarSpark {
     0%   { transform: translate(0,0) scale(1); opacity: 1; }
     100% { transform: translate(var(--sx,10px), var(--sy,-20px)) scale(0); opacity: 0; }
+  }
+  @keyframes tcAvatarHi {
+    0%   { opacity: 0; transform: scale(0.3) translate(-6px, 8px) rotate(-18deg); }
+    18%  { opacity: 1; transform: scale(1.25) translate(0, 0) rotate(10deg); }
+    32%  { transform: scale(0.92) rotate(-4deg); }
+    48%  { transform: scale(1.06) rotate(2deg); }
+    64%  { transform: scale(1) rotate(0deg); }
+    85%  { opacity: 1; transform: scale(1) translate(0, -2px); }
+    100% { opacity: 0; transform: scale(0.8) translate(3px, -12px) rotate(4deg); }
   }
   @keyframes tcRowPulse {
     0%, 100% { box-shadow: 0 0 6px var(--cell-color, rgba(255,255,255,0.3)); }
@@ -343,7 +359,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     setAvatarId(id);
     setPickedId(id);
     if (pickTimer.current) clearTimeout(pickTimer.current);
-    pickTimer.current = setTimeout(() => setPickedId(null), 600);
+    pickTimer.current = setTimeout(() => setPickedId(null), 1500);
   }
 
   // Spark positions for burst effect (8 particles radiating outward)
@@ -428,17 +444,33 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     {/* Spark burst on pick */}
                     {justPicked && sparks.map((sp, si) => (
                       <div key={si} style={{
-                        position: 'absolute', left: '50%', top: '40%', width: 5, height: 5,
+                        position: 'absolute', left: '50%', top: '40%', width: 6, height: 6,
                         borderRadius: '50%', background: avColor, pointerEvents: 'none',
+                        boxShadow: `0 0 8px ${avColor}`,
                         ['--sx' as string]: sp.sx, ['--sy' as string]: sp.sy,
-                        animation: 'tcAvatarSpark 0.45s ease-out forwards',
+                        animation: 'tcAvatarSpark 0.55s ease-out forwards',
                         animationDelay: `${si * 0.02}s`,
                       }} />
                     ))}
+                    {/* "Hi!" speech bubble greeting */}
+                    {justPicked && (
+                      <div style={{
+                        position: 'absolute', top: -6, right: -2,
+                        background: avColor, color: '#fff', fontWeight: 900,
+                        fontSize: 11, padding: '3px 8px',
+                        borderRadius: '12px 12px 12px 2px',
+                        boxShadow: `0 2px 8px ${avColor}88, 0 0 0 1.5px rgba(255,255,255,0.35) inset`,
+                        pointerEvents: 'none', zIndex: 5,
+                        transformOrigin: 'bottom left',
+                        animation: 'tcAvatarHi 1.4s ease-out forwards',
+                        letterSpacing: '0.5px',
+                      }}>Hi!</div>
+                    )}
                     <QQTeamAvatar avatarId={a.id} size={48} style={{
-                      filter: taken ? 'grayscale(1) opacity(0.5)' : 'none',
-                      animation: justPicked ? 'tcAvatarPick 0.5s ease-out' : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
-                      ['--r' as string]: `${(i % 2 === 0 ? -1 : 1) * (5 + i * 2)}deg`,
+                      animation: justPicked
+                        ? 'tcAvatarPick 0.7s ease-out, tcAvatarGlow 1.2s ease-out'
+                        : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
+                      ...(justPicked ? { ['--g' as string]: avColor, filter: 'none' } : taken ? { filter: 'grayscale(1) opacity(0.5)' } : {}),
                     }} />
                     <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
                       textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>

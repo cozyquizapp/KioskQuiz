@@ -89,7 +89,7 @@ const StatsPage: React.FC = () => {
         {/* Tab Switch */}
         <div style={{ display: 'flex', gap: 8 }}>
           {tabBtn('cozy', '🐺 CozyQuiz 60')}
-          {tabBtn('qq', '🗺️ Quarter Quiz')}
+          {tabBtn('qq', '🗺️ CozyQuiz')}
         </div>
 
         {/* ── CozyQuiz Tab ── */}
@@ -182,7 +182,7 @@ const StatsPage: React.FC = () => {
             {qqError && <div style={{ color: '#fca5a5', padding: 12 }}>{qqError}</div>}
             {!qqLoading && !qqError && qqResults.length === 0 && (
               <div style={{ ...card, color: '#64748b', textAlign: 'center', padding: 32 }}>
-                Noch keine Quarter Quiz Spiele gespeichert.<br />
+                Noch keine CozyQuiz Spiele gespeichert.<br />
                 <span style={{ fontSize: 12, marginTop: 6, display: 'block' }}>Ergebnisse werden automatisch nach dem Spielende gespeichert.</span>
               </div>
             )}

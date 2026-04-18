@@ -18,7 +18,7 @@ import {
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
 const t = {
-  header: { de: 'Quartier Quiz', en: 'Quarter Quiz' },
+  header: { de: 'CozyQuiz', en: 'CozyQuiz' },
   setup: {
     chooseAvatar: { de: 'Wähle deinen Avatar', en: 'Choose your avatar' },
     teamName: { de: 'Team-Name', en: 'Team name' },
@@ -3054,7 +3054,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 42, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9' }}>Quarter Quiz</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9' }}>CozyQuiz</div>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', margin: '8px 0' }}>
             {t.waiting.room[lang]}: {roomCode}
           </div>

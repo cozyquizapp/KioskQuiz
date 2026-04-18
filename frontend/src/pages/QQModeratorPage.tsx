@@ -406,7 +406,7 @@ export default function QQModeratorPage() {
             }}
             title="Zurück zum Hauptmenü"
           >⌂ Menü</button>
-          <span style={badgeStyle('#3B82F6')}>Quartier Quiz</span>
+          <span style={badgeStyle('#3B82F6')}>CozyQuiz</span>
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

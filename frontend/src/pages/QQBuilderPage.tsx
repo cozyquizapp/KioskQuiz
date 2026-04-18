@@ -1632,7 +1632,7 @@ function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onDelete }:
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", padding: 40, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Quarter Quiz</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>CozyQuiz</div>
         <div style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>Fragensätze</div>
         <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Erstelle einen neuen leeren Fragensatz oder lade den Hamburg Probekatalog als Beispiel.</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

@@ -262,7 +262,7 @@ function Hero({ draftTitle, winner, playedAt }: { draftTitle: string; winner: st
       border: '1px solid rgba(251,191,36,0.2)',
     }}>
       <div style={{ fontSize: 11, letterSpacing: 0.3, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
-        Quarter Quiz · {date}
+        CozyQuiz · {date}
       </div>
       <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginTop: 4 }}>{draftTitle}</div>
       {winner && (
@@ -446,7 +446,7 @@ function PartnerCTA() {
         borderRadius: 14, padding: '16px 16px 14px',
       }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: '#fbbf24', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-          🐺 Ihr wollt Quarter Quiz bei euch haben?
+          🐺 Ihr wollt CozyQuiz bei euch haben?
         </div>
         <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 12 }}>
           Ob Kneipe, Event, Geburtstag oder Firmenfeier — ich komme mit Beamer, Stimme und guter Laune. Schreibt mir, ich mach euch ein Angebot.
@@ -485,7 +485,7 @@ function Footer() {
       borderTop: '1px solid rgba(255,255,255,0.06)',
       textAlign: 'center', fontSize: 11, color: '#64748b',
     }}>
-      <div>Quarter Quiz by <b style={{ color: '#94a3b8' }}>cozywolf</b></div>
+      <div>CozyQuiz by <b style={{ color: '#94a3b8' }}>cozywolf</b></div>
       <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
         <a href="https://play.cozyquiz.app" style={{ color: '#94a3b8', textDecoration: 'none' }}>play.cozyquiz.app</a>
         <span style={{ opacity: 0.4 }}>·</span>

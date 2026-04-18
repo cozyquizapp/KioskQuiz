@@ -1049,7 +1049,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // ─────────────────────────────────────────────────────────────────────────────
 function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
   const lang = useLangFlip(language);
-  const title = lang === 'en' ? 'QUARTER QUIZ' : 'BLOCK QUIZ';
+  const title = 'CozyQuiz';
   const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
   const tagline = lang === 'en' ? 'by cozywolf' : 'by cozywolf';
   // Keine Auto-Dismiss: Moderator steuert das Weiterschalten per "Weiter"-Button.
@@ -1469,7 +1469,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           letterSpacing: '-0.02em',
         }}>
-          {de ? 'Quartier Quiz' : 'Quarter Quiz'}
+          CozyQuiz
         </div>
       </div>
 
@@ -6847,8 +6847,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           maxWidth: 680,
         }}>
           {lang === 'de'
-            ? '📣 Erzählt euren Freunden vom Quarter Quiz — und scannt den Code für eure Team-Stats 🎁'
-            : '📣 Tell your friends about Quarter Quiz — and scan the code for your team stats 🎁'}
+            ? '📣 Erzählt euren Freunden vom CozyQuiz — und scannt den Code für eure Team-Stats 🎁'
+            : '📣 Tell your friends about CozyQuiz — and scan the code for your team stats 🎁'}
         </div>
         {summaryUrl && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 36, marginTop: 4 }}>
@@ -7475,7 +7475,7 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
           background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>
-          Quarter Quiz
+          CozyQuiz
         </div>
         <div style={{ color: '#334155', marginBottom: 16, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
         <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>

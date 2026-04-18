@@ -10,15 +10,15 @@
 | App | Route-Prefix | Status |
 |---|---|---|
 | CozyQuiz 60 | `/moderator`, `/beamer`, `/team` | ✅ Live |
-| Quarter Quiz / Quartier Quiz | `/quarterquiz-*` | 🚧 In Entwicklung |
+| CozyQuiz (intern „QQ", früher Quarter/Block Quiz) | `/quarterquiz-*` | 🚧 In Entwicklung |
 | Gemeinsam | `/kanban-builder`, `/question-catalog` | ✅ Live |
 
 ---
 
-## Quarter Quiz / Quartier Quiz — Buildplan
+## CozyQuiz (QQ) — Buildplan
 
 ### Kerndaten
-- **EN**: Quarter Quiz · **DE**: Quartier Quiz
+- **Name**: CozyQuiz (auf allen Sprachen; Route-Prefix bleibt `/quarterquiz-*` intern)
 - Territorium-Grid-Spiel, 2–5 Teams
 - 15 Fragen: 3 Phasen × 5 Kategorien (Schätzchen, Mu-cho, Bunte Tüte, 10 von 10, Cheese)
 - Gewinnbedingung: **größtes zusammenhängendes Territorium** (BFS-Berechnung)
@@ -137,5 +137,5 @@
 - `frontend/src/views/TeamView.tsx` — Team-Client (4673 Zeilen)
 - `frontend/src/components/beamer/beamerTheme.css` — CSS für Beamer (groß, Grep+offset)
 - `shared/quizTypes.ts` — Alle geteilten Typen (710 Zeilen)
-- `preview/sneak-peak.html` — Design-Referenz für Quarter Quiz
+- `preview/sneak-peak.html` — Design-Referenz für CozyQuiz
 - `frontend/public/bingo-grid-test.html` — Grid-Mechanik-Referenz

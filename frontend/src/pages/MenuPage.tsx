@@ -177,7 +177,7 @@ const MenuPage = () => {
 
         <AppPanel
           id="qq"
-          label="Quarter Quiz"
+          label="CozyQuiz"
           emoji="🗺️"
           tagline="Territorium-Quiz — Felder erobern, Comeback kämpfen"
           accent="#3B82F6"

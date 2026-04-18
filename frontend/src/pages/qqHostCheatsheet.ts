@@ -168,7 +168,7 @@ function renderCoverPage(draft: QQDraft): string {
   return `
   <section class="cover">
     <div class="cover-top">
-      <div class="brand">Quartier Quiz</div>
+      <div class="brand">CozyQuiz</div>
       <div class="cover-title">${esc(draft.title || 'Host Cheatsheet')}</div>
       <div class="cover-sub">${phases} Phasen · ${totalQ} Fragen · Stand: ${new Date().toLocaleDateString('de-DE')}</div>
     </div>
@@ -211,7 +211,7 @@ export function exportHostCheatsheet(draft: QQDraft): void {
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>Host Cheatsheet — ${esc(draft.title || 'Quarter Quiz')}</title>
+<title>Host Cheatsheet — ${esc(draft.title || 'CozyQuiz')}</title>
 <style>
   @page { size: A4; margin: 16mm 14mm; }
   * { box-sizing: border-box; }

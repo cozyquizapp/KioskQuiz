@@ -4,8 +4,9 @@
 
 ## Aktueller Stand
 
-Quarter Quiz (QQ) ist in der Testphase. Gespräche mit einer Kioskkette laufen,
-nichts fixes. Cozy60 (alte App) wird nicht mehr angefasst.
+CozyQuiz (intern QQ, früher „Quarter Quiz / Block Quiz") ist in der Testphase.
+Gespräche mit einer Kioskkette laufen, nichts fixes. Cozy60 (alte App) wird
+nicht mehr angefasst.
 
 **Nächstes Todo**: Keine offenen Roadmap-Punkte. Neue Features/Bugs ad-hoc.
 Details + Anleitungen zu allen offenen Blöcken:

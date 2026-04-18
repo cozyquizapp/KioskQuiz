@@ -1713,68 +1713,108 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         🎬 Heute spielen…
       </div>
 
-      {/* Teams row */}
-      <div style={{
-        display: 'flex', gap: 'clamp(12px, 2vw, 28px)',
-        flexWrap: 'wrap', justifyContent: 'center', maxWidth: '90vw',
-      }}>
-        {teams.map((t, i) => {
-          const shown = i < revealedCount;
-          const slamDelay = titleDur + i * perTeamDelay;
-          const av = qqGetAvatar(t.avatarId);
-          const many = teams.length > 5;
-          const discSize = many ? 'clamp(90px, 10vw, 160px)' : 'clamp(120px, 14vw, 200px)';
-          const discFont = many ? 'clamp(46px, 6vw, 90px)' : 'clamp(60px, 8vw, 110px)';
-          return (
-            <div key={t.id} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 10,
-              opacity: shown ? 1 : 0,
-              animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
-              animationDelay: shown ? '0ms' : `${slamDelay}ms`,
-            }}>
-              {/* Avatar-Disc */}
-              <div style={{
-                width: discSize,
-                height: discSize,
-                borderRadius: '50%',
-                background: `radial-gradient(circle at 35% 30%, ${t.color} 0%, ${t.color}cc 45%, ${t.color}88 100%)`,
-                border: `5px solid ${t.color}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
-                fontSize: discFont, lineHeight: 1,
-                animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
-              }}>
-                {av.emoji}
-              </div>
-              {/* Flash overlay on slam */}
-              {shown && (
-                <div style={{
-                  position: 'absolute',
-                  width: discSize,
-                  height: discSize,
-                  borderRadius: '50%',
-                  background: '#fff',
-                  pointerEvents: 'none',
-                  animation: 'qqTrFlash 600ms ease-out both',
-                }} />
-              )}
-              {/* Team name */}
-              <div style={{
-                padding: '6px 16px', borderRadius: 14,
-                background: t.color,
-                color: '#fff', fontWeight: 900,
-                fontSize: 'clamp(18px, 2.2vw, 32px)',
-                textTransform: 'uppercase', letterSpacing: '0.04em',
-                boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
-                whiteSpace: 'nowrap',
-              }}>
-                {t.name}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Teams grid — feste Reihen, damit 8 als 2×4 statt 7+1 erscheint */}
+      {(() => {
+        const n = teams.length;
+        // Ausgewogene Reihen: 7→4+3, 8→4+4, 9→5+4, 10→5+5, ≥11 dynamisch
+        const rowSizes: number[] =
+          n <= 6 ? [n]
+          : n === 7 ? [4, 3]
+          : n === 8 ? [4, 4]
+          : n === 9 ? [5, 4]
+          : n === 10 ? [5, 5]
+          : (() => {
+              const rows = Math.ceil(n / 4);
+              const base = Math.floor(n / rows);
+              const extra = n - base * rows;
+              return Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
+            })();
+        const many = n > 5;
+        const multiRow = rowSizes.length > 1;
+        // Bei mehreren Reihen kleiner skalieren, damit beides in die Bühne passt
+        const discSize = multiRow
+          ? 'clamp(74px, 8vw, 130px)'
+          : many ? 'clamp(90px, 10vw, 160px)' : 'clamp(120px, 14vw, 200px)';
+        const discFont = multiRow
+          ? 'clamp(38px, 4.8vw, 74px)'
+          : many ? 'clamp(46px, 6vw, 90px)' : 'clamp(60px, 8vw, 110px)';
+        const nameFont = multiRow ? 'clamp(16px, 1.9vw, 26px)' : 'clamp(18px, 2.2vw, 32px)';
+        let cursor = 0;
+        return (
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            gap: 'clamp(18px, 2.4vw, 36px)',
+            alignItems: 'center', maxWidth: '92vw',
+          }}>
+            {rowSizes.map((size, rIdx) => {
+              const slice = teams.slice(cursor, cursor + size);
+              const startI = cursor;
+              cursor += size;
+              return (
+                <div key={rIdx} style={{
+                  display: 'flex', gap: 'clamp(12px, 2vw, 28px)',
+                  justifyContent: 'center', flexWrap: 'nowrap',
+                }}>
+                  {slice.map((t, j) => {
+                    const i = startI + j;
+                    const shown = i < revealedCount;
+                    const slamDelay = titleDur + i * perTeamDelay;
+                    const av = qqGetAvatar(t.avatarId);
+                    return (
+                      <div key={t.id} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 10,
+                        opacity: shown ? 1 : 0,
+                        animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
+                        animationDelay: shown ? '0ms' : `${slamDelay}ms`,
+                      }}>
+                        {/* Avatar-Disc */}
+                        <div style={{
+                          width: discSize,
+                          height: discSize,
+                          borderRadius: '50%',
+                          background: `radial-gradient(circle at 35% 30%, ${t.color} 0%, ${t.color}cc 45%, ${t.color}88 100%)`,
+                          border: `5px solid ${t.color}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
+                          fontSize: discFont, lineHeight: 1,
+                          animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
+                        }}>
+                          {av.emoji}
+                        </div>
+                        {/* Flash overlay on slam */}
+                        {shown && (
+                          <div style={{
+                            position: 'absolute',
+                            width: discSize,
+                            height: discSize,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            pointerEvents: 'none',
+                            animation: 'qqTrFlash 600ms ease-out both',
+                          }} />
+                        )}
+                        {/* Team name */}
+                        <div style={{
+                          padding: '6px 16px', borderRadius: 14,
+                          background: t.color,
+                          color: '#fff', fontWeight: 900,
+                          fontSize: nameFont,
+                          textTransform: 'uppercase', letterSpacing: '0.04em',
+                          boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {t.name}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* "Viel Glück!" — reserve space from the start to prevent layout jump when it fades in */}
       <div style={{
@@ -4145,25 +4185,38 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   // displayLat/displayLng werden für das Map-Icon benutzt, lat/lng bleiben für
   // Distanz/FitBounds unverändert (ankern an der echten Position).
   const displayPos = useMemo(() => {
-    const buckets = new Map<string, typeof scored>();
-    for (const p of scored) {
-      if (p.lat == null || p.lng == null) continue;
-      const key = `${Math.round(p.lat * 2) / 2},${Math.round(p.lng * 2) / 2}`;
-      const list = buckets.get(key) ?? [];
-      list.push(p);
-      buckets.set(key, list);
+    // Greedy-Clustering: Pins innerhalb von ~2.5° Radius werden zusammengefasst
+    // (statt starrem Grid-Bucket, der bei Grenz-Fällen zwei nahe Pins trennt).
+    const valid = scored.filter(p => p.lat != null && p.lng != null);
+    const clusters: Array<typeof scored> = [];
+    const MERGE_DEG = 2.5;
+    for (const p of valid) {
+      let placed = false;
+      for (const cl of clusters) {
+        const avgLat = cl.reduce((s, q) => s + q.lat, 0) / cl.length;
+        const avgLng = cl.reduce((s, q) => s + q.lng, 0) / cl.length;
+        const dLat = p.lat - avgLat;
+        const dLng = (p.lng - avgLng) * Math.cos(avgLat * Math.PI / 180);
+        if (Math.hypot(dLat, dLng) < MERGE_DEG) {
+          cl.push(p);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) clusters.push([p]);
     }
     const out = new Map<string, { lat: number; lng: number }>();
-    for (const [, list] of buckets) {
+    for (const list of clusters) {
       if (list.length === 1) {
         const p = list[0];
         out.set(p.teamId, { lat: p.lat, lng: p.lng });
         continue;
       }
-      // Mehrere Pins am selben Spot: auf einem Ring um den Durchschnitt verteilen.
+      // Mehrere Pins im Cluster: auf einem Ring um den Durchschnitt verteilen.
       const avgLat = list.reduce((s, p) => s + p.lat, 0) / list.length;
       const avgLng = list.reduce((s, p) => s + p.lng, 0) / list.length;
-      const radiusDeg = 0.85; // ~95 km — auf low-zoom Welt-Ansicht ~40 px Separation
+      // Radius skaliert mit Team-Count, damit auch 4-5 Pins auseinandergehen.
+      const radiusDeg = Math.max(1.0, 0.7 + list.length * 0.3);
       list.forEach((p, i) => {
         const angle = (i / list.length) * Math.PI * 2 - Math.PI / 2;
         const dLat = radiusDeg * Math.sin(angle);

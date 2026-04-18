@@ -424,6 +424,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     return () => clearInterval(iv);
   }, [s.timerEndsAt, s.phase, s.sfxMuted]);
 
+  // ── Sound: Timer-End auch wenn alle Teams vor Ablauf geantwortet haben ──
+  const prevAllAnsweredRef = useRef(false);
+  useEffect(() => {
+    const justAllAnswered =
+      s.phase === 'QUESTION_ACTIVE' && s.allAnswered && !prevAllAnsweredRef.current;
+    prevAllAnsweredRef.current = s.allAnswered;
+    if (justAllAnswered && !s.sfxMuted) {
+      stopTimerLoop();
+      playTimesUp();
+    }
+  }, [s.allAnswered, s.phase, s.sfxMuted]);
+
   // ── Sound: placement → score up (SFX) ──
   const prevCorrectRef = useRef(s.correctTeamId);
   useEffect(() => {

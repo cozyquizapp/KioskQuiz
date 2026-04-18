@@ -651,31 +651,51 @@
       wolfModePicker.appendChild(btn);
     });
 
-    // Per-slug: keep a hidden Image with the ORIGINAL pixels (separate from displayed <img>
-    // whose src may get rewritten with a recolored data URL).
-    const originalImgs = new Map(); // slug → Image
+    // Wolf-Mode uses the clean transparent-BG variants (avatar-{slug}-trans.png)
+    // → composes a fresh badge with: dark inner circle + trans character + colored ring.
+    // No pixel-walk knockout needed — character white stays intact.
+    const transImgs = new Map();   // slug → Image (lazy-loaded transparent source)
     const wolfModeCache = new Map(); // `${slug}::${color}` → data URL
-    function recolorAvatar(srcImg, bgColor) {
-      const w = srcImg.naturalWidth || srcImg.width;
-      const h = srcImg.naturalHeight || srcImg.height;
+    function loadTransImg(slug) {
+      if (transImgs.has(slug)) return transImgs.get(slug);
+      const img = new Image();
+      img.src = `/avatars/cozy-cast/avatar-${slug}-trans.png`;
+      transImgs.set(slug, img);
+      img.addEventListener('load', () => {
+        if (activeWolfMode.color !== null) applyWolfMode();
+      });
+      return img;
+    }
+    function composeWolfBadge(transImg, bgColor, ringColor) {
+      const size = 1024;
+      const cx = size / 2, cy = size / 2;
+      const ringW = size * 0.05; // 5% — matches existing -badge- look
+      const outerR = size / 2 - 4;
+      const innerR = outerR - ringW;
       const out = document.createElement('canvas');
-      out.width = w; out.height = h;
+      out.width = size; out.height = size;
       const ctx = out.getContext('2d');
+      // Inner-BG circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
       ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(srcImg, 0, 0);
-      const data = ctx.getImageData(0, 0, w, h);
-      const px = data.data;
-      const br = parseInt(bgColor.slice(1, 3), 16);
-      const bgC = parseInt(bgColor.slice(3, 5), 16);
-      const bb = parseInt(bgColor.slice(5, 7), 16);
-      for (let i = 0; i < px.length; i += 4) {
-        const r = px[i], g = px[i + 1], b = px[i + 2], a = px[i + 3];
-        if (a > 0 && r > 240 && g > 240 && b > 240) {
-          px[i] = br; px[i + 1] = bgC; px[i + 2] = bb;
-        }
-      }
-      ctx.putImageData(data, 0, 0);
+      ctx.fill();
+      // Character (clip to inner circle)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.clip();
+      const iw = transImg.naturalWidth, ih = transImg.naturalHeight;
+      const scale = (innerR * 2) / Math.max(iw, ih);
+      const dw = iw * scale, dh = ih * scale;
+      ctx.drawImage(transImg, cx - dw / 2, cy - dh / 2, dw, dh);
+      ctx.restore();
+      // Colored ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR - ringW / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = ringW;
+      ctx.stroke();
       return out;
     }
     function applyWolfMode() {
@@ -693,14 +713,16 @@
           img.src = wolfModeCache.get(cacheKey);
           return;
         }
-        const orig = originalImgs.get(slug);
-        if (!orig || !orig.complete || !orig.naturalWidth) return; // not ready yet
+        const trans = loadTransImg(slug);
+        if (!trans.complete || !trans.naturalWidth) return; // wait for trans load
+        const team = TEAMS.find(t => teamSlug(t.animal) === slug);
+        if (!team) return;
         try {
-          const canvas = recolorAvatar(orig, activeWolfMode.color);
+          const canvas = composeWolfBadge(trans, activeWolfMode.color, team.body);
           const url = canvas.toDataURL('image/png');
           wolfModeCache.set(cacheKey, url);
           img.src = url;
-        } catch (e) { /* CORS or decode issue — silent */ }
+        } catch (e) { /* silent */ }
       });
     }
 

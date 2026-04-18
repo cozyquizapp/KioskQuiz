@@ -649,15 +649,29 @@ export default function QQModeratorPage() {
                   const step = s.mapRevealStep ?? 0;
                   const inProgress = isMap && step < maxStep;
                   if (inProgress) {
+                    // Auto-Phase = Pins werden automatisch alle ~2.4s eingeblendet.
+                    // Läuft zwischen step 1 (Target) und 1+validPins (alle Pins drauf).
+                    const isAutoPhase = step >= 1 && step < 1 + validPins;
                     const label = step === 0
                       ? '🎯 Target zeigen'
-                      : step <= validPins
-                        ? `📍 Pin ${step}/${validPins} aufdecken`
+                      : step < 1 + validPins
+                        ? `⏩ Auto: Pin ${step}/${validPins} …`
                         : '🏆 Ranking zeigen';
                     return (
-                      <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:mapRevealStep', { roomCode })} hotkey="Space">
-                        {label}
-                      </PrimaryBtn>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <PrimaryBtn
+                          color={isAutoPhase ? '#64748b' : '#F59E0B'}
+                          onClick={() => emit('qq:mapRevealStep', { roomCode })}
+                          hotkey="Space"
+                        >
+                          {label}
+                        </PrimaryBtn>
+                        {isAutoPhase && (
+                          <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                            Klicken überspringt den nächsten Pin
+                          </span>
+                        )}
+                      </div>
                     );
                   }
                   if (s.correctTeamId) {

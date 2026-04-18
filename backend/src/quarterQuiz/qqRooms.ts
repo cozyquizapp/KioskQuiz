@@ -68,6 +68,8 @@ export interface QQRoomState {
   // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
   // 0 = keine Pins, 1 = Target allein, 2+ = Target + n schlechteste Teams, N+1 = Ranking-Panel
   mapRevealStep: number;
+  // Auto-advance timer für Map-Pin-Reveal (zwischen step 1 und 1+validCount)
+  _mapRevealTimerHandle: ReturnType<typeof setTimeout> | null;
   // Comeback-Erklärung — moderator-gesteuerte Intro-Slides vor den 3 Optionen
   // 0 = Was ist Comeback, 1 = warum DIESES Team, 2 = Optionen zeigen
   comebackIntroStep: number;
@@ -132,6 +134,7 @@ setInterval(() => {
     if (now - room.lastActivityAt > QQ_ROOM_TTL_MS) {
       qqStopTimer(room);
       qqClearHotPotatoTimer(room);
+      if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
       qqRooms.delete(code);
     }
   }
@@ -185,6 +188,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       frozenCells: [],
       imageRevealed: false,
       mapRevealStep: 0,
+      _mapRevealTimerHandle: null,
       comebackIntroStep: 0,
       _timerOnExpire: null,
       avatarsEnabled: true,
@@ -528,8 +532,9 @@ export function qqActivateQuestion(
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately
   room.imageRevealed  = room.currentQuestion?.category === 'CHEESE';
-  // CozyGuessr (map) reveal — pro Frage bei 0 starten
+  // CozyGuessr (map) reveal — pro Frage bei 0 starten, evtl. laufenden Auto-Timer stoppen
   room.mapRevealStep  = 0;
+  if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
@@ -1876,6 +1881,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.frozenCells           = [];
   room.imageRevealed         = false;
   room.mapRevealStep         = 0;
+  if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
   room.comebackIntroStep     = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();

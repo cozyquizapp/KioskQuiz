@@ -3729,20 +3729,61 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
   const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
 
+  // Cluster-Spread: Pins, die sehr nah beieinander stehen (z.B. alle auf gleicher
+  // Stadt), würden sich gegenseitig verdecken. Wir gruppieren nach einem groben
+  // Koordinaten-Raster (~0.5°) und verteilen Duplikate kreisförmig um den Anker.
+  // displayLat/displayLng werden für das Map-Icon benutzt, lat/lng bleiben für
+  // Distanz/FitBounds unverändert (ankern an der echten Position).
+  const displayPos = useMemo(() => {
+    const buckets = new Map<string, typeof scored>();
+    for (const p of scored) {
+      if (p.lat == null || p.lng == null) continue;
+      const key = `${Math.round(p.lat * 2) / 2},${Math.round(p.lng * 2) / 2}`;
+      const list = buckets.get(key) ?? [];
+      list.push(p);
+      buckets.set(key, list);
+    }
+    const out = new Map<string, { lat: number; lng: number }>();
+    for (const [, list] of buckets) {
+      if (list.length === 1) {
+        const p = list[0];
+        out.set(p.teamId, { lat: p.lat, lng: p.lng });
+        continue;
+      }
+      // Mehrere Pins am selben Spot: auf einem Ring um den Durchschnitt verteilen.
+      const avgLat = list.reduce((s, p) => s + p.lat, 0) / list.length;
+      const avgLng = list.reduce((s, p) => s + p.lng, 0) / list.length;
+      const radiusDeg = 0.85; // ~95 km — auf low-zoom Welt-Ansicht ~40 px Separation
+      list.forEach((p, i) => {
+        const angle = (i / list.length) * Math.PI * 2 - Math.PI / 2;
+        const dLat = radiusDeg * Math.sin(angle);
+        const dLng = radiusDeg * Math.cos(angle) / Math.max(0.3, Math.cos(avgLat * Math.PI / 180));
+        out.set(p.teamId, { lat: avgLat + dLat, lng: avgLng + dLng });
+      });
+    }
+    return out;
+  }, [scored]);
+
   const showTarget  = step >= 1;
   const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...
   const revealedPins = worstFirst.slice(0, revealedCnt);
   const validCount = scored.length;
   const showRanking = step >= (1 + validCount + 1);
 
-  // FitBounds bounds aus aktuell sichtbaren Punkten
+  // FitBounds bounds aus aktuell sichtbaren Punkten — display-Positionen verwenden,
+  // damit fan-out-Pins nicht außerhalb der Map landen.
   const bounds = useMemo(() => {
     const b = L.latLngBounds([] as any);
     if (showTarget) b.extend([tLat, tLng]);
-    for (const p of revealedPins) b.extend([p.lat, p.lng]);
+    for (const p of revealedPins) {
+      const dp = displayPos.get(p.teamId);
+      const lat = dp?.lat ?? p.lat;
+      const lng = dp?.lng ?? p.lng;
+      b.extend([lat, lng]);
+    }
     if (!b.isValid()) b.extend([tLat, tLng]);
     return b;
-  }, [showTarget, revealedPins, tLat, tLng]);
+  }, [showTarget, revealedPins, tLat, tLng, displayPos]);
 
   const targetIcon = useMemo(() => L.divIcon({
     className: 'qq-target-pin',
@@ -3805,10 +3846,13 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           {revealedPins.map(p => {
             const team = s.teams.find(t => t.id === p.teamId);
             if (!team) return null;
+            const dp = displayPos.get(p.teamId);
+            const lat = dp?.lat ?? p.lat;
+            const lng = dp?.lng ?? p.lng;
             return (
               <Marker
                 key={p.teamId}
-                position={[p.lat, p.lng] as any}
+                position={[lat, lng] as any}
                 icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).emoji)}
               />
             );

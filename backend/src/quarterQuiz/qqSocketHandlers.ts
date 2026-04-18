@@ -1423,6 +1423,46 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     // ── CozyGuessr Map Reveal Step (moderator -> beamer, progressiv) ──────
+    // Flow:
+    //   step 0 → 1  (Moderator): Target-Pin einblenden, danach startet Auto-Advance.
+    //   step 1 → 2..1+N (automatisch, alle MAP_AUTO_MS): Team-Pins nacheinander.
+    //   step 1+N → 1+N+1 (Moderator): Ranking-Panel einblenden.
+    // Manuelles Klicken während der Auto-Phase bricht den Timer ab und springt weiter.
+    const MAP_AUTO_MS = 2400;
+    const scheduleMapAutoAdvance = (roomCode: string) => {
+      const live = getQQRoom(roomCode);
+      if (!live) return;
+      if (live._mapRevealTimerHandle) { clearTimeout(live._mapRevealTimerHandle); live._mapRevealTimerHandle = null; }
+      const q = live.currentQuestion;
+      const isMap = q?.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'map';
+      if (!isMap || live.phase !== 'QUESTION_REVEAL') return;
+      const validPinCount = live.answers.filter(a => {
+        const parts = String(a.text ?? '').split(',');
+        const lat = Number(parts[0]);
+        const lng = Number(parts[1]);
+        return Number.isFinite(lat) && Number.isFinite(lng);
+      }).length;
+      // Auto-Advance nur zwischen step 1 und 1+validPinCount-1 (letzter Pin),
+      // danach wartet der Moderator aufs Ranking.
+      const allPinsStep = 1 + validPinCount;
+      if (live.mapRevealStep >= allPinsStep) return;
+      live._mapRevealTimerHandle = setTimeout(() => {
+        const l2 = getQQRoom(roomCode);
+        if (!l2) return;
+        l2._mapRevealTimerHandle = null;
+        const q2 = l2.currentQuestion;
+        const isMap2 = q2?.category === 'BUNTE_TUETE' && (q2 as any).bunteTuete?.kind === 'map';
+        if (!isMap2 || l2.phase !== 'QUESTION_REVEAL') return;
+        if (l2.mapRevealStep < allPinsStep) {
+          l2.mapRevealStep += 1;
+          broadcast(io, roomCode);
+          if (l2.mapRevealStep < allPinsStep) {
+            scheduleMapAutoAdvance(roomCode);
+          }
+        }
+      }, MAP_AUTO_MS);
+    };
+
     socket.on('qq:mapRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
@@ -1436,9 +1476,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
           return Number.isFinite(lat) && Number.isFinite(lng);
         }).length;
         const maxStep = 1 + validPinCount + 1;
+        // Manuelles Advance bricht ggf. laufenden Auto-Timer ab.
+        if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
         if (room.mapRevealStep < maxStep) {
           room.mapRevealStep += 1;
           broadcast(io, payload.roomCode);
+          // Nach step 1 (Target gezeigt) Auto-Advance für Pins starten.
+          // Nach allPinsStep (alle Pins) stoppen — Moderator entscheidet über Ranking.
+          if (room.mapRevealStep >= 1 && room.mapRevealStep < 1 + validPinCount) {
+            scheduleMapAutoAdvance(payload.roomCode);
+          }
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

@@ -329,6 +329,27 @@
             <input type="range" id="compYSlider" min="-25" max="25" step="1" value="0" style="width:100%">
           </div>
 
+          <!-- Hoodie-Fill (füllt Kreis-Unterkante in Hoodie-Farbe) -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Hoodie-Fill</div>
+              <div id="compFillLabel" style="font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace">0%</div>
+            </div>
+            <input type="range" id="compFillSlider" min="0" max="60" step="1" value="0" style="width:100%">
+            <div style="font-size:10px;color:#64748b;margin-top:3px;line-height:1.3">
+              Malt untere Kreis-Sichel in Hoodie-Farbe — kaschiert weißen Bauch, wenn Figur kurz geraten ist
+            </div>
+          </div>
+
+          <!-- Hoodie-Feather (weicher Übergang) -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Fill-Feather</div>
+              <div id="compFeatherLabel" style="font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace">4%</div>
+            </div>
+            <input type="range" id="compFeatherSlider" min="0" max="20" step="1" value="4" style="width:100%">
+          </div>
+
           <!-- Download -->
           <button id="compDownload" style="
             background: #3B82F6; color: #fff;
@@ -653,6 +674,10 @@
     const compZoomLabel = document.getElementById('compZoomLabel');
     const compYSlider = document.getElementById('compYSlider');
     const compYLabel = document.getElementById('compYLabel');
+    const compFillSlider = document.getElementById('compFillSlider');
+    const compFillLabel = document.getElementById('compFillLabel');
+    const compFeatherSlider = document.getElementById('compFeatherSlider');
+    const compFeatherLabel = document.getElementById('compFeatherLabel');
     const compDownload = document.getElementById('compDownload');
 
     const COMP_MODES = [
@@ -737,6 +762,14 @@
       compYLabel.textContent = compYSlider.value + '%';
       drawComp();
     });
+    compFillSlider.addEventListener('input', () => {
+      compFillLabel.textContent = compFillSlider.value + '%';
+      drawComp();
+    });
+    compFeatherSlider.addEventListener('input', () => {
+      compFeatherLabel.textContent = compFeatherSlider.value + '%';
+      drawComp();
+    });
 
     // Core draw function — composites current image + team + mode onto canvas
     function drawComp() {
@@ -783,6 +816,26 @@
         const dw = iw * scale;
         const dh = ih * scale;
         compCtx.drawImage(compImage, cx - dw / 2, cy - dh / 2 + yOffset, dw, dh);
+
+        // Hoodie-Fill: paint bottom crescent in hoodie color to cover white belly
+        const fillPct = parseFloat(compFillSlider.value) / 100;
+        if (fillPct > 0 && compTeam && compTeam.hoodie) {
+          const featherPct = parseFloat(compFeatherSlider.value) / 100;
+          const fillHeight = innerR * 2 * fillPct;
+          const fillTopY = cy + innerR - fillHeight;
+          const featherH = innerR * 2 * featherPct;
+          if (featherH > 0) {
+            // Soft gradient edge so the transition into the AI hoodie is seamless
+            const grad = compCtx.createLinearGradient(0, fillTopY - featherH, 0, fillTopY);
+            grad.addColorStop(0, compTeam.hoodie + '00');
+            grad.addColorStop(1, compTeam.hoodie);
+            compCtx.fillStyle = grad;
+            compCtx.fillRect(0, fillTopY - featherH, size, featherH);
+          }
+          compCtx.fillStyle = compTeam.hoodie;
+          compCtx.fillRect(0, fillTopY, size, size - fillTopY);
+        }
+
         compCtx.restore();
       }
 

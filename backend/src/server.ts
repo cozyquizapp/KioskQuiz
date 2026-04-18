@@ -8373,7 +8373,9 @@ function saveQQFeedback(list: QQFeedbackEntry[]): void {
 // ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
 // TEMP: auf `true` gesetzt für 8-Team-Test in Production. Nach Test zurück auf `process.env.NODE_ENV !== 'production'`.
 const QQ_DEV_ENABLED = true;
-const DUMMY_NAMES = ['Rotkäppchen','Blaubeeren','Grünschnabel','Goldfisch','Orangina','Lilalaune','Cyansturm','Rotziege'];
+// TODO: Familien-Test-Namen (nur für heute) — zurück auf Rotkäppchen/Blaubeeren/… nach dem Test.
+// Original: ['Rotkäppchen','Blaubeeren','Grünschnabel','Goldfisch','Orangina','Lilalaune','Cyansturm','Rotziege']
+const DUMMY_NAMES = ['Harald','Anna','Maria','Johannes','Sonja','Till','Robin','Jule'];
 app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
   const { roomCode } = req.params;

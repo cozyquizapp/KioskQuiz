@@ -2546,7 +2546,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {cellTeam ? qqGetAvatar(cellTeam.avatarId).emoji : ''}
+                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={24} /> : null}
                       </div>
                     );
                   })
@@ -2754,7 +2754,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       opacity: isFrozenCell ? 0.5 : undefined,
                       filter: isFrozenCell ? 'saturate(0.4) brightness(1.2)' : undefined,
                     }}>
-                      {isStuckCell ? '📌' : team ? qqGetAvatar(team.avatarId).emoji : ''}
+                      {isStuckCell ? '📌' : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
                     </span>
                   </div>
                 );

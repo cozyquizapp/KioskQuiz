@@ -13,6 +13,7 @@ import {
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import QQProgressTree from '../components/QQProgressTree';
+import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
@@ -746,7 +747,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           boxShadow: `0 0 32px ${activeTeam.color}55`,
           animation: 'tcpulse 1.4s ease-in-out infinite',
         }}>
-          <span style={{ fontSize: 36, lineHeight: 1 }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
+          <QQTeamAvatar avatarId={activeTeam.avatarId} size={36} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#94a3b8' }}>
               🥔 {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
@@ -790,8 +791,8 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
             const t = s.teams.find((tm: any) => tm.id === id);
             if (!t) return null;
             return (
-              <span key={id} style={{ color: t.color, opacity: 0.7 }}>
-                {qqGetAvatar(t.avatarId).emoji} {t.name}
+              <span key={id} style={{ color: t.color, opacity: 0.7, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <QQTeamAvatar avatarId={t.avatarId} size={14} /> {t.name}
               </span>
             );
           })}
@@ -1580,10 +1581,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
                     minWidth: 0,
                   }}>
-                    <span style={{
-                      fontSize: compact ? 'clamp(44px, 4.4vw, 60px)' : 'clamp(48px, 5vw, 68px)',
-                      lineHeight: 1, flexShrink: 0,
-                    }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                    <QQTeamAvatar avatarId={t.avatarId} size={compact ? 'clamp(44px, 4.4vw, 60px)' : 'clamp(48px, 5vw, 68px)'} style={{ flexShrink: 0 }} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
@@ -1774,7 +1772,6 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                     const i = startI + j;
                     const shown = i < revealedCount;
                     const slamDelay = titleDur + i * perTeamDelay;
-                    const av = qqGetAvatar(t.avatarId);
                     return (
                       <div key={t.id} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -1784,19 +1781,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                         animationDelay: shown ? '0ms' : `${slamDelay}ms`,
                       }}>
                         {/* Avatar-Disc */}
-                        <div style={{
-                          width: discSize,
-                          height: discSize,
-                          borderRadius: '50%',
-                          background: `radial-gradient(circle at 35% 30%, ${t.color} 0%, ${t.color}cc 45%, ${t.color}88 100%)`,
+                        <QQTeamAvatar avatarId={t.avatarId} size={discSize} style={{
                           border: `5px solid ${t.color}`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
                           boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
-                          fontSize: discFont, lineHeight: 1,
                           animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
-                        }}>
-                          {av.emoji}
-                        </div>
+                        }} />
                         {/* Flash overlay on slam */}
                         {shown && (
                           <div style={{
@@ -2441,13 +2430,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         {isWinner ? '🥇' : `#${i + 1}`}
                       </span>
                       {a.team && (
-                        <span style={{
-                          width: 'clamp(28px, 3vw, 38px)', height: 'clamp(28px, 3vw, 38px)',
-                          borderRadius: '50%', background: a.team.color,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(16px, 1.8vw, 22px)',
-                          flexShrink: 0,
-                        }}>{qqGetAvatar(a.team.avatarId).emoji}</span>
+                        <QQTeamAvatar avatarId={a.team.avatarId} size={'clamp(28px, 3vw, 38px)'} style={{ flexShrink: 0 }} />
                       )}
                       <span style={{
                         fontWeight: 900, fontSize: 'clamp(14px, 1.5vw, 20px)',
@@ -2539,12 +2522,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                             border: `1.5px solid ${tm.color}`,
                             animation: `contentReveal 0.3s ease ${vi * 0.08}s both`,
                           }}>
-                            <span style={{
-                              width: 'clamp(26px, 3vw, 36px)', height: 'clamp(26px, 3vw, 36px)',
-                              borderRadius: '50%', background: tm.color,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 'clamp(16px, 1.9vw, 22px)',
-                            }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(26px, 3vw, 36px)'} />
                             <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                           </div>
                         ))}
@@ -2584,7 +2562,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
                         color: rank === 1 ? '#FBBF24' : '#cbd5e1',
                       }}>#{rank}</span>
-                      <span style={{ fontSize: 'clamp(16px, 1.9vw, 22px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(16px, 1.9vw, 22px)'} />
                       <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                       {timeSec && (
                         <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700, color: '#94a3b8' }}>{timeSec}s</span>
@@ -2643,15 +2621,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 boxShadow: `0 0 0 3px ${winner.team.color}22`,
                 animation: 'contentReveal 0.5s ease 0.05s both',
               }}>
-                <span style={{
-                  width: 'clamp(44px, 4.5vw, 60px)', height: 'clamp(44px, 4.5vw, 60px)',
-                  borderRadius: '50%', background: winner.team.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(22px, 2.6vw, 34px)', flexShrink: 0,
-                  boxShadow: `0 0 20px ${winner.team.color}66`,
-                }}>
-                  {qqGetAvatar(winner.team.avatarId).emoji}
-                </span>
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(44px, 4.5vw, 60px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${winner.team.color}66` }} />
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{
                     fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
@@ -2741,7 +2711,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           textShadow: '0 1px 2px rgba(0,0,0,0.6)',
                           animation: `contentReveal 0.5s ease ${0.2 + optIdx * 0.08 + ci * 0.05}s both`,
                         }}>
-                          <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(c.team.avatarId).emoji}</span>
+                          <QQTeamAvatar avatarId={c.team.avatarId} size={'clamp(14px, 1.5vw, 18px)'} />
                           <span>{c.pts}</span>
                         </div>
                       );
@@ -2774,11 +2744,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       background: 'rgba(0,0,0,0.28)',
                       border: `1.5px solid ${tm.color}`,
                     }}>
-                      <span style={{
-                        width: 22, height: 22, borderRadius: '50%', background: tm.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 14,
-                      }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={22} />
                       <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                       <span style={{
                         fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
@@ -2828,7 +2794,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, gap: 2,
                   }}>
-                    <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                    <QQTeamAvatar avatarId={team.avatarId} size={'clamp(22px, 2.6vw, 34px)'} />
                     <span style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900, color: isWinner ? '#fff' : team.color, letterSpacing: 0.3 }}>
                       {team.name}
                     </span>
@@ -2945,12 +2911,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           border: `1.5px solid ${tm.color}`,
                           animation: `contentReveal 0.3s ease ${0.2 + i * 0.08 + hi * 0.05}s both`,
                         }}>
-                          <span style={{
-                            width: 'clamp(24px, 2.8vw, 32px)', height: 'clamp(24px, 2.8vw, 32px)',
-                            borderRadius: '50%', background: tm.color,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 'clamp(14px, 1.6vw, 18px)',
-                          }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(24px, 2.8vw, 32px)'} />
                           <span style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                         </div>
                       ))}
@@ -2987,7 +2948,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
                     border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
                   }}>
-                    <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                    <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(14px, 1.5vw, 18px)'} />
                     <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                     <span style={{
                       fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
@@ -3068,16 +3029,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     {hitters.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {hitters.map((tm, hi) => (
-                          <span key={tm.id} title={tm.name} style={{
-                            width: 'clamp(24px, 2.6vw, 32px)', height: 'clamp(24px, 2.6vw, 32px)',
-                            borderRadius: '50%', background: tm.color,
+                          <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} size={'clamp(24px, 2.6vw, 32px)'} title={tm.name} style={{
                             border: '2px solid rgba(0,0,0,0.3)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 'clamp(13px, 1.5vw, 17px)',
                             marginLeft: hi > 0 ? -6 : 0,
                             boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
                             animation: `contentReveal 0.3s ease ${0.2 + pi * 0.08 + hi * 0.04}s both`,
-                          }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          }} />
                         ))}
                       </div>
                     )}
@@ -3116,7 +3073,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
                     border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
                   }}>
-                    <span style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                    <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(14px, 1.5vw, 18px)'} />
                     <span style={{ fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800, color: tm.color }}>{tm.name}</span>
                     <span style={{
                       fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
@@ -3157,7 +3114,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               animation: `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
             }}>
               <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? '#60A5FA' : '#475569', width: 20 }}>#{i + 1}</span>
-              {team && <span style={{ fontSize: 18 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+              {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
               <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 13 }}>{team?.name}</span>
               <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? '#4ade80' : '#64748b' }}>📍 {distStr}</span>
             </div>
@@ -3402,16 +3359,10 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                       display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
                       animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
                     }}>
-                      <span style={{
-                        fontSize: emojiSize, lineHeight: 1,
-                        width: avatarSize, height: avatarSize,
-                        borderRadius: '50%', background: tm.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} style={{
                         flexShrink: 0,
                         animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
-                      }}>
-                        {qqGetAvatar(tm.avatarId).emoji}
-                      </span>
+                      }} />
                       <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
                         <div style={{
                           fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
@@ -3504,23 +3455,19 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
               }}>
                 {hasHits ? (
                   hitters.map((tm, hi) => (
-                    <div
+                    <QQTeamAvatar
                       key={tm.id}
+                      avatarId={tm.avatarId}
+                      size={'clamp(36px, 3.8vw, 54px)'}
                       title={tm.name}
                       style={{
-                        width: 'clamp(36px, 3.8vw, 54px)', height: 'clamp(36px, 3.8vw, 54px)',
-                        borderRadius: '50%', background: tm.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 'clamp(20px, 2.2vw, 30px)',
                         border: '2px solid rgba(0,0,0,0.25)',
                         boxShadow: `0 0 14px ${tm.color}66`,
                         animation: isVisible
                           ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
                           : 'none',
                       }}
-                    >
-                      {qqGetAvatar(tm.avatarId).emoji}
-                    </div>
+                    />
                   ))
                 ) : (
                   <div style={{
@@ -3747,16 +3694,10 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                       display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
                       animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
                     }}>
-                      <span style={{
-                        fontSize: emojiSize, lineHeight: 1,
-                        width: avatarSize, height: avatarSize,
-                        borderRadius: '50%', background: tm.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} style={{
                         flexShrink: 0,
                         animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
-                      }}>
-                        {qqGetAvatar(tm.avatarId).emoji}
-                      </span>
+                      }} />
                       <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
                         <div style={{
                           fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
@@ -3847,23 +3788,19 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                 }}>
                   {hasHits ? (
                     hitters.map((tm, hi) => (
-                      <div
+                      <QQTeamAvatar
                         key={tm.id}
+                        avatarId={tm.avatarId}
+                        size={'clamp(36px, 3.8vw, 54px)'}
                         title={tm.name}
                         style={{
-                          width: 'clamp(36px, 3.8vw, 54px)', height: 'clamp(36px, 3.8vw, 54px)',
-                          borderRadius: '50%', background: tm.color,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(20px, 2.2vw, 30px)',
                           border: '2px solid rgba(0,0,0,0.25)',
                           boxShadow: `0 0 14px ${tm.color}66`,
                           animation: isVisible
                             ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
                             : 'none',
                         }}
-                      >
-                        {qqGetAvatar(tm.avatarId).emoji}
-                      </div>
+                      />
                     ))
                   ) : (
                     <div style={{
@@ -4103,17 +4040,11 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                       ? `revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) ${0.2 + i * 0.08}s both`
                       : 'none',
                   }}>
-                    <span style={{
-                      fontSize: emojiSize, lineHeight: 1,
-                      width: avatarSize, height: avatarSize,
-                      borderRadius: '50%', background: w.team.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    <QQTeamAvatar avatarId={w.team.avatarId} size={avatarSize} style={{
                       flexShrink: 0,
                       boxShadow: `0 0 20px ${w.team.color}55`,
                       animation: revealedMinIdx === 0 ? `celebShake 0.6s ease ${0.6 + i * 0.05}s both` : 'none',
-                    }}>
-                      {qqGetAvatar(w.team.avatarId).emoji}
-                    </span>
+                    }} />
                     <div style={{ minWidth: 0, flex: isGrid ? '0 0 auto' : 1, width: isGrid ? '100%' : 'auto' }}>
                       <div style={{
                         fontSize: nameSize, fontWeight: 900, color: w.team.color, lineHeight: 1.1,
@@ -4197,18 +4128,12 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   #{rank}
                 </div>
                 {/* Avatar */}
-                <div style={{
-                  width: 'clamp(44px, 4.4vw, 62px)', height: 'clamp(44px, 4.4vw, 62px)',
-                  borderRadius: '50%', background: r.team.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(24px, 2.6vw, 36px)',
+                <QQTeamAvatar avatarId={r.team.avatarId} size={'clamp(44px, 4.4vw, 62px)'} style={{
                   border: '2px solid rgba(0,0,0,0.25)',
                   boxShadow: `0 0 14px ${r.team.color}66`,
                   flexShrink: 0,
                   animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both` : 'none',
-                }}>
-                  {qqGetAvatar(r.team.avatarId).emoji}
-                </div>
+                }} />
                 {/* Name + Schätzung */}
                 <div style={{ minWidth: 0 }}>
                   <div style={{
@@ -4508,7 +4433,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                   animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
                 }}>
                   <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center' }}>{medal}</span>
-                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+                  <QQTeamAvatar avatarId={team.avatarId} size={'clamp(26px, 2.8vw, 38px)'} />
                   <span style={{ flex: 1, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color }}>{team.name}</span>
                   {timeLabel && (
                     <span style={{
@@ -4754,7 +4679,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           boxShadow: answered ? `0 0 14px ${tm.color}66` : '0 2px 8px rgba(0,0,0,0.5)',
                           flexShrink: 0,
                         }}>
-                          <span style={{ fontSize: emoji, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={emoji} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -3, right: -3,
@@ -4882,7 +4807,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {correctAnswers.map((a, i) => {
                     const team = s.teams.find(t => t.id === a.teamId);
                     if (!team) return null;
-                    const av = qqGetAvatar(team.avatarId);
                     const timeSec = Math.max(0, (a.submittedAt - t0) / 1000);
                     const isFastest = i === 0;
                     return (
@@ -4891,19 +4815,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       }}>
                         <div style={{
                           position: 'relative',
-                          width: 'clamp(44px, 5vw, 64px)',
-                          height: 'clamp(44px, 5vw, 64px)',
-                          borderRadius: '50%',
-                          background: team.color,
-                          border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
-                          boxShadow: isFastest
-                            ? '0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
-                            : '0 4px 12px rgba(0,0,0,0.4)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(22px, 2.6vw, 34px)',
+                          display: 'inline-block',
                           animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
                         }}>
-                          {av.emoji}
+                          <QQTeamAvatar avatarId={team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
+                            border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                            boxShadow: isFastest
+                              ? '0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
+                              : '0 4px 12px rgba(0,0,0,0.4)',
+                          }} />
                           {isFastest && (
                             <span style={{
                               position: 'absolute', top: -10, right: -10,
@@ -5139,18 +5059,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 }}>
                                   <div title={tm.name} style={{
                                     position: 'relative',
-                                    width: 'clamp(36px, 4vw, 52px)',
-                                    height: 'clamp(36px, 4vw, 52px)',
-                                    borderRadius: '50%',
-                                    background: tm.color,
-                                    border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
-                                    boxShadow: isFastest
-                                      ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
-                                      : '0 4px 12px rgba(0,0,0,0.5)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 'clamp(20px, 2.3vw, 30px)',
+                                    display: 'inline-block',
                                   }}>
-                                    {qqGetAvatar(tm.avatarId).emoji}
+                                    <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{
+                                      border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
+                                      boxShadow: isFastest
+                                        ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
+                                        : '0 4px 12px rgba(0,0,0,0.5)',
+                                    }} />
                                     {isFastest && (
                                       <span style={{
                                         position: 'absolute', top: -8, right: -8,
@@ -5215,12 +5131,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         border: `2px solid ${tm.color}`,
                         boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
                       }}>
-                        <span style={{
-                          width: 'clamp(28px, 3vw, 40px)', height: 'clamp(28px, 3vw, 40px)',
-                          borderRadius: '50%', background: tm.color,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(16px, 1.8vw, 24px)',
-                        }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 3vw, 40px)'} />
                         <span style={{
                           fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
                           color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
@@ -5303,20 +5214,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           <div key={ct.team.id} style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                           }}>
-                            <div style={{
-                              position: 'relative',
-                              width: 'clamp(44px, 5vw, 64px)',
-                              height: 'clamp(44px, 5vw, 64px)',
-                              borderRadius: '50%',
-                              background: ct.team.color,
-                              border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
-                              boxShadow: isFastest
-                                ? `0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
-                                : '0 4px 12px rgba(0,0,0,0.4)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 'clamp(22px, 2.6vw, 34px)',
-                            }}>
-                              {qqGetAvatar(ct.team.avatarId).emoji}
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
+                                border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                                boxShadow: isFastest
+                                  ? `0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
+                                  : '0 4px 12px rgba(0,0,0,0.4)',
+                              }} />
                               {isFastest && (
                                 <span style={{
                                   position: 'absolute', top: -10, right: -10,
@@ -5399,15 +5303,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         boxShadow: authorTeam ? `0 0 12px ${authorTeam.color}44` : 'none',
                       }}>
                         {authorTeam && (
-                          <span title={authorTeam.name} style={{
-                            width: 'clamp(30px, 3vw, 40px)', height: 'clamp(30px, 3vw, 40px)',
-                            borderRadius: '50%', background: authorTeam.color,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 'clamp(16px, 1.8vw, 22px)', flexShrink: 0,
+                          <QQTeamAvatar avatarId={authorTeam.avatarId} size={'clamp(30px, 3vw, 40px)'} title={authorTeam.name} style={{
+                            flexShrink: 0,
                             border: '2px solid rgba(0,0,0,0.25)',
-                          }}>
-                            {qqGetAvatar(authorTeam.avatarId).emoji}
-                          </span>
+                          }} />
                         )}
                         <span>{named ? '✓ ' : ''}{a}</span>
                       </div>
@@ -5704,21 +5603,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           zIndex: -1,
                         }} />
                         {/* Avatar pin (zentriert auf Wrapper-Punkt) */}
-                        <div style={{
+                        <QQTeamAvatar avatarId={p.team!.avatarId} size={isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)'} style={{
                           position: 'absolute', left: '50%', top: 0,
                           transform: 'translate(-50%, -50%)',
-                          width: isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)',
-                          height: isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)',
-                          borderRadius: '50%', background: tColor,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: isWinner ? 'clamp(38px, 4vw, 54px)' : 'clamp(32px, 3.4vw, 46px)',
                           border: isWinner ? '3px solid #FBBF24' : '2px solid rgba(0,0,0,0.3)',
                           boxShadow: isWinner
                             ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
                             : `0 4px 12px rgba(0,0,0,0.5)`,
-                        }}>
-                          {qqGetAvatar(p.team!.avatarId).emoji}
-                        </div>
+                        }} />
                         {/* Value-Chip mit DYNAMISCHER Kollisionsvermeidung.
                             Der Chip wird relativ zum Avatar-Zentrum in eine der
                             4 Richtungen gelegt (oben/unten/rechts/links), je
@@ -5808,9 +5700,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   boxShadow: `0 0 32px ${tColor}44`,
                 }}>
                   <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>🏆</span>
-                  <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>
-                    {qqGetAvatar(w.team.avatarId).emoji}
-                  </span>
+                  <QQTeamAvatar avatarId={w.team.avatarId} size={'clamp(28px, 3vw, 40px)'} style={{ flexShrink: 0 }} />
                   <span style={{
                     fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)', color: tColor, lineHeight: 1.1,
                   }}>{w.team.name}</span>
@@ -5963,16 +5853,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                       {coWinners.map((tm, i) => (
                         <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{
-                            fontSize: 'clamp(42px, 5vw, 72px)', lineHeight: 1,
-                            width: 'clamp(64px, 7vw, 96px)', height: 'clamp(64px, 7vw, 96px)',
-                            borderRadius: '50%', background: tm.color,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(64px, 7vw, 96px)'} style={{
                             flexShrink: 0, boxShadow: `0 0 24px ${tm.color}66`,
                             animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
-                          }}>
-                            {qqGetAvatar(tm.avatarId).emoji}
-                          </span>
+                          }} />
                           <div style={{
                             fontWeight: 900, fontSize: 'clamp(26px, 3.4vw, 48px)', color: tm.color, lineHeight: 1.1,
                             textShadow: `0 0 24px ${tm.color}44`,
@@ -6003,12 +5887,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
                   animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
                 }}>
-                  <span style={{
-                    fontSize: 'clamp(64px, 8vw, 110px)', lineHeight: 1, flexShrink: 0,
+                  <QQTeamAvatar avatarId={team!.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
+                    flexShrink: 0,
                     animation: `celebShake 0.6s ease ${avatarDelay}s both`,
-                  }}>
-                    {qqGetAvatar(team!.avatarId).emoji}
-                  </span>
+                  }} />
                   <div>
                     <div style={{
                       fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
@@ -6105,7 +5987,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           boxShadow: answered ? `0 0 16px ${tm.color}44` : 'none',
                           flexShrink: 0,
                         }}>
-                          <span style={{ fontSize: emoji, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={emoji} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,
@@ -6325,7 +6207,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               ['--team-color' as string]: `${teamColor}55`,
               flexShrink: 0,
             }}>
-              <span style={{ fontSize: 44, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={team.avatarId} size={44} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{
@@ -6468,7 +6350,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             animation: 'activeTeamGlow 2s ease-in-out infinite',
             ['--team-color' as string]: `${teamColor}55`,
           }}>
-            <span style={{ fontSize: 60, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+            <QQTeamAvatar avatarId={team.avatarId} size={60} />
           </div>
           <div style={{
             fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
@@ -6616,7 +6498,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 <span style={{ fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0 }}>
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                 </span>
-                <span style={{ fontSize: avSize, lineHeight: 1, flexShrink: 0 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+                <QQTeamAvatar avatarId={t.avatarId} size={avSize} style={{ flexShrink: 0 }} />
                 <span style={{
                   flex: 1, fontWeight: 800, fontSize: nameSize, color: t.color,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
@@ -6881,19 +6763,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           }}>🏆</div>
 
           {/* Avatar with celebration ring */}
-          <div style={{
-            width: 'clamp(100px, 14vw, 160px)', height: 'clamp(100px, 14vw, 160px)',
-            borderRadius: '50%',
-            background: `${winnerColor}15`,
+          <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
             border: `4px solid ${winnerColor}`,
             boxShadow: `0 0 60px ${winnerColor}44, 0 0 120px ${winnerColor}22`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
             animation: 'celebShake 0.6s ease 1.2s both',
-          }}>
-            <span style={{ fontSize: 'clamp(56px, 8vw, 96px)', lineHeight: 1 }}>
-              {qqGetAvatar(winner.avatarId).emoji}
-            </span>
-          </div>
+          }} />
 
           {/* Winner name */}
           <div style={{
@@ -6949,9 +6823,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 }}>
                   {rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
                 </span>
-                <span style={{ fontSize: many ? 'clamp(22px, 2.2vw, 30px)' : 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>
-                  {qqGetAvatar(tm.avatarId).emoji}
-                </span>
+                <QQTeamAvatar avatarId={tm.avatarId} size={many ? 'clamp(22px, 2.2vw, 30px)' : 'clamp(28px, 3vw, 40px)'} style={{ flexShrink: 0 }} />
                 <span style={{
                   flex: 1, minWidth: 0,
                   fontSize: many ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(20px, 2.5vw, 32px)',
@@ -7496,7 +7368,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {isStuck ? '📌' : showStar ? '⭐' : (team && qqGetAvatar(team.avatarId).emoji)}
+                  {isStuck ? '📌' : showStar ? '⭐' : (team && <QQTeamAvatar avatarId={team.avatarId} size={Math.max(8, cellSize * 0.72)} />)}
                 </div>
               </div>
             );
@@ -7596,9 +7468,8 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',
-              fontSize: avatarSize, lineHeight: 1,
             }}>
-              {qqGetAvatar(t.avatarId).emoji}
+              <QQTeamAvatar avatarId={t.avatarId} size={avatarSize} />
               {isLeader && (
                 <span style={{
                   position: 'absolute',

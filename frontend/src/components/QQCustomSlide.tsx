@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
+  QQStateUpdate, QQ_CATEGORY_LABELS, QQCategory,
   QQSlideTemplate, QQSlideElement, QQSlideTemplateType, QQQuestion,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG as CAT_BADGE_BG, QQ_CAT_ACCENT as CAT_ACCENT } from '../qqShared';
+import { QQTeamAvatar } from './QQTeamAvatar';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
@@ -381,7 +382,7 @@ function GridDisplay({ state: s, maxSize = 320 }: { state: QQStateUpdate; maxSiz
                 boxShadow: cell.jokerFormed ? '0 0 10px rgba(251,191,36,0.5)' : 'none',
               }}>
                 {cell.jokerFormed && '⭐'}
-                {!cell.jokerFormed && team && qqGetAvatar(team.avatarId).emoji}
+                {!cell.jokerFormed && team && <QQTeamAvatar avatarId={team.avatarId} size={Math.max(8, cellSize * 0.42)} />}
               </div>
             );
           })
@@ -398,7 +399,7 @@ function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {sorted.map((t, i) => (
         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22, width: 30, textAlign: 'center', lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+          <QQTeamAvatar avatarId={t.avatarId} size={22} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 14, fontWeight: 900, color: t.color }}>{t.name}</span>
@@ -604,9 +605,7 @@ function CustomSlideElement({
           color:      el.color ?? winner.color,
           padding:    '8px 16px',
         }}>
-          <span style={{ fontSize: `${(el.fontSize ?? 2.5) * canvasW / 100}px` }}>
-            {qqGetAvatar(winner.avatarId).emoji}
-          </span>
+          <QQTeamAvatar avatarId={winner.avatarId} size={(el.fontSize ?? 2.5) * canvasW / 100} />
           <span>{winner.name}</span>
         </div>
       ) : null;
@@ -687,7 +686,7 @@ function CustomSlideElement({
             {ranked.map((a, i) => (
               <div key={a.teamId} style={rowStyle(i === 0)}>
                 <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? themeAccent : '#475569', width: fs * 2 }}>#{i + 1}</span>
-                {a.team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(a.team.avatarId).emoji}</span>}
+                {a.team && <QQTeamAvatar avatarId={a.team.avatarId} size={fs * 1.4} />}
                 <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{a.team?.name ?? a.teamId}</span>
                 <span style={{ fontSize: fs * 1.2, fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
                 <span style={{ fontSize: fs * 0.85, color: '#64748b' }}>
@@ -710,7 +709,7 @@ function CustomSlideElement({
               return (
                 <div key={a.teamId} style={rowStyle(isWinner)}>
                   <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
-                  {team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.4} />}
                   <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
                   <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
                   {isWinner && <span style={{ fontSize: fs, color: '#4ade80' }}>✓</span>}
@@ -741,7 +740,7 @@ function CustomSlideElement({
                 <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
                     <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
-                    {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
                     <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
                     <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5}</span>
                   </div>
@@ -782,7 +781,7 @@ function CustomSlideElement({
                 <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
                     <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
-                    {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                    {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
                     <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
                     <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length}</span>
                   </div>
@@ -827,7 +826,7 @@ function CustomSlideElement({
               return (
                 <div key={a.teamId} style={rowStyle(isWinner)}>
                   <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569', width: fs * 2 }}>#{i + 1}</span>
-                  {team && <span style={{ fontSize: fs * 1.4 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                  {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.4} />}
                   <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
                   <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{distStr}</span>
                 </div>
@@ -859,7 +858,7 @@ function CustomSlideElement({
                   </span>
                   {voters.map(t => (
                     <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: fs * 0.3 }}>
-                      <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                      <QQTeamAvatar avatarId={t!.avatarId} size={fs * 1.3} />
                       <span style={{ fontSize: fs, fontWeight: 800, color: t!.color }}>{t!.name}</span>
                     </span>
                   ))}
@@ -877,7 +876,7 @@ function CustomSlideElement({
             const team = s.teams.find(t => t.id === a.teamId);
             return (
               <div key={a.teamId} style={rowStyle(a.teamId === s.correctTeamId)}>
-                {team && <span style={{ fontSize: fs * 1.3 }}>{qqGetAvatar(team.avatarId).emoji}</span>}
+                {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
                 <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
                 <span style={{ fontSize: fs, color: '#e2e8f0' }}>{a.text}</span>
               </div>
@@ -954,7 +953,7 @@ function CustomSlideElement({
                   <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 6, paddingLeft: 40 }}>
                     {voters.map(t => (
                       <span key={t!.id} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <span style={{ fontSize: Math.max(12, canvasW * 0.014) }}>{qqGetAvatar(t!.avatarId).emoji}</span>
+                        <QQTeamAvatar avatarId={t!.avatarId} size={Math.max(12, canvasW * 0.014)} />
                         <span style={{ fontSize: Math.max(10, canvasW * 0.01), fontWeight: 800, color: t!.color }}>{t!.name}</span>
                       </span>
                     ))}
@@ -1142,7 +1141,7 @@ function CustomSlideElement({
         <div style={{ ...baseStyle, display: 'flex', flexDirection: 'column', gap: fs * 0.7 }}>
           {cTeam && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: fs * 0.6, marginBottom: fs * 0.5 }}>
-              <span style={{ fontSize: fs * 2 }}>{qqGetAvatar(cTeam.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={cTeam.avatarId} size={fs * 2} />
               <span style={{ fontSize: fs * 1.5, fontWeight: 900, color: cTeam.color }}>{cTeam.name}</span>
             </div>
           )}
@@ -1180,7 +1179,7 @@ function CustomSlideElement({
                 #{i + 1}
               </div>
               <div style={{ width: fs * 0.8, height: fs * 2.5, borderRadius: fs * 0.4, background: t.color, flexShrink: 0 }} />
-              <span style={{ fontSize: fs * 1.8, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={t.avatarId} size={fs * 1.8} />
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.8, fontWeight: 700, color: '#fff', flex: 1 }}>
                 {t.name}{i === 0 && <span style={{ marginLeft: 8 }}>⭐</span>}
               </div>
@@ -1277,7 +1276,7 @@ function CustomSlideElement({
             🕵️ Imposter — wählt eine Aussage
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <span style={{ fontSize: `${(el.fontSize ?? 2) * canvasW / 100}px` }}>{qqGetAvatar(activeTeam.avatarId).emoji}</span>
+            <QQTeamAvatar avatarId={activeTeam.avatarId} size={(el.fontSize ?? 2) * canvasW / 100} />
             <span style={{ fontWeight: 900, fontSize: `${(el.fontSize ?? 2) * canvasW / 100 * 0.75}px`, color: activeTeam.color }}>{activeTeam.name}</span>
           </div>
           <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#64748b', marginTop: 6 }}>
@@ -1367,7 +1366,7 @@ function CustomSlideElement({
               display: 'flex', alignItems: 'center',
               gap: `${0.5 * canvasW / 100}px`,
             }}>
-              <span style={{ fontSize: `${1.4 * canvasW / 100}px` }}>{qqGetAvatar(t.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={t.avatarId} size={1.4 * canvasW / 100} />
               <span style={{ fontWeight: 800, color: t.color, fontSize: `${0.9 * canvasW / 100}px` }}>{t.name}</span>
               <span style={{ color: '#64748b', fontSize: `${0.75 * canvasW / 100}px`, fontWeight: 700 }}>{t.largestConnected} Felder</span>
             </div>
@@ -1410,7 +1409,7 @@ function CustomSlideElement({
           </span>
           {team && (
             <>
-              <span style={{ fontSize: `${2 * canvasW / 100}px`, lineHeight: 1 }}>{qqGetAvatar(team.avatarId).emoji}</span>
+              <QQTeamAvatar avatarId={team.avatarId} size={2 * canvasW / 100} />
               <span style={{ fontWeight: 900, fontSize: `${1.8 * canvasW / 100}px`, color: team.color }}>{team.name}</span>
               <span style={{ color: '#475569', fontSize: `${0.9 * canvasW / 100}px`, fontWeight: 700 }}>
                 {actionDesc(s.pendingAction, s.teamPhaseStats[team.id])}

@@ -4441,10 +4441,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Order-BunteTüte hat in der Question-Phase keine Items am Beamer (Phone-Eingabe),
   // deshalb gleiche Größen wie normale Kategorien. Nur im Reveal wird geshrunken
   // (qFontSizeShrunk weiter unten), damit die Rangfolge darunter passt.
-  const qFontSize = qText.length > 200 ? 'clamp(30px, 3.5vw, 52px)'
-    : qText.length > 120 ? 'clamp(36px, 4.5vw, 68px)'
-    : qText.length > 60 ? 'clamp(44px, 6vw, 88px)'
-    : 'clamp(52px, 7vw, 108px)';
+  // min(vw, vh) verhindert Overflow nach oben/unten auf niedrigen Displays.
+  const qFontSize = qText.length > 200 ? 'clamp(26px, min(3vw, 4.5vh), 44px)'
+    : qText.length > 120 ? 'clamp(32px, min(3.8vw, 6vh), 58px)'
+    : qText.length > 80  ? 'clamp(36px, min(4.5vw, 7vh), 72px)'
+    : qText.length > 40  ? 'clamp(42px, min(5.2vw, 8vh), 84px)'
+    : 'clamp(48px, min(6vw, 9vh), 96px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 

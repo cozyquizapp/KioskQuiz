@@ -1780,10 +1780,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                         animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
                         animationDelay: shown ? '0ms' : `${slamDelay}ms`,
                       }}>
-                        {/* Avatar-Disc */}
+                        {/* Avatar-Disc — Ring ist im PNG eingebrannt, nur Glow drumherum */}
                         <QQTeamAvatar avatarId={t.avatarId} size={discSize} style={{
-                          border: `5px solid ${t.color}`,
-                          boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66, inset 0 -8px 20px rgba(0,0,0,0.25)`,
+                          boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}66`,
                           animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
                         }} />
                         {/* Flash overlay on slam */}
@@ -3030,7 +3029,6 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {hitters.map((tm, hi) => (
                           <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} size={'clamp(24px, 2.6vw, 32px)'} title={tm.name} style={{
-                            border: '2px solid rgba(0,0,0,0.3)',
                             marginLeft: hi > 0 ? -6 : 0,
                             boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
                             animation: `contentReveal 0.3s ease ${0.2 + pi * 0.08 + hi * 0.04}s both`,
@@ -3461,7 +3459,6 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                       size={'clamp(36px, 3.8vw, 54px)'}
                       title={tm.name}
                       style={{
-                        border: '2px solid rgba(0,0,0,0.25)',
                         boxShadow: `0 0 14px ${tm.color}66`,
                         animation: isVisible
                           ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
@@ -3794,7 +3791,6 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                         size={'clamp(36px, 3.8vw, 54px)'}
                         title={tm.name}
                         style={{
-                          border: '2px solid rgba(0,0,0,0.25)',
                           boxShadow: `0 0 14px ${tm.color}66`,
                           animation: isVisible
                             ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
@@ -4129,7 +4125,6 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 </div>
                 {/* Avatar */}
                 <QQTeamAvatar avatarId={r.team.avatarId} size={'clamp(44px, 4.4vw, 62px)'} style={{
-                  border: '2px solid rgba(0,0,0,0.25)',
                   boxShadow: `0 0 14px ${r.team.color}66`,
                   flexShrink: 0,
                   animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both` : 'none',
@@ -4819,7 +4814,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
                         }}>
                           <QQTeamAvatar avatarId={team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
-                            border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                            border: isFastest ? '3px solid #FBBF24' : 'none',
                             boxShadow: isFastest
                               ? '0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
                               : '0 4px 12px rgba(0,0,0,0.4)',
@@ -5062,7 +5057,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     display: 'inline-block',
                                   }}>
                                     <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{
-                                      border: isFastest ? '3px solid #FBBF24' : '3px solid #fff',
+                                      border: isFastest ? '3px solid #FBBF24' : 'none',
                                       boxShadow: isFastest
                                         ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
                                         : '0 4px 12px rgba(0,0,0,0.5)',
@@ -5305,7 +5300,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         {authorTeam && (
                           <QQTeamAvatar avatarId={authorTeam.avatarId} size={'clamp(30px, 3vw, 40px)'} title={authorTeam.name} style={{
                             flexShrink: 0,
-                            border: '2px solid rgba(0,0,0,0.25)',
                           }} />
                         )}
                         <span>{named ? '✓ ' : ''}{a}</span>
@@ -5606,7 +5600,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <QQTeamAvatar avatarId={p.team!.avatarId} size={isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)'} style={{
                           position: 'absolute', left: '50%', top: 0,
                           transform: 'translate(-50%, -50%)',
-                          border: isWinner ? '3px solid #FBBF24' : '2px solid rgba(0,0,0,0.3)',
+                          border: isWinner ? '3px solid #FBBF24' : 'none',
                           boxShadow: isWinner
                             ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
                             : `0 4px 12px rgba(0,0,0,0.5)`,
@@ -6764,8 +6758,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 
           {/* Avatar with celebration ring */}
           <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
-            border: `4px solid ${winnerColor}`,
-            boxShadow: `0 0 60px ${winnerColor}44, 0 0 120px ${winnerColor}22`,
+            boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
             animation: 'celebShake 0.6s ease 1.2s both',
           }} />
 

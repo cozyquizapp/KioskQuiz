@@ -45,11 +45,16 @@ export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
 
 // ── Team palette (derived from QQ_AVATARS, kept for legacy reference) ────────
 // Each avatar has its own signature color — teams pick an avatar+color pair.
-// Order in QQ_AVATARS below is the "recommended" order: first 4 are the highest-
-// contrast picks (blue/red/green/yellow) for games with few teams.
+// Order matches QQ_AVATARS so fallback indexing stays in sync with avatar rings.
 export const QQ_TEAM_PALETTE: string[] = [
-  '#2563EB', '#DC2626', '#16A34A', '#EAB308',
-  '#EA580C', '#9333EA', '#DB2777', '#06B6D4',
+  '#EC4899', // shiba
+  '#84CC16', // faultier
+  '#2563EB', // pinguin
+  '#8B5CF6', // koala
+  '#EAB308', // giraffe
+  '#14B8A6', // waschbaer
+  '#F97316', // kuh
+  '#DC2626', // capybara
 ];
 
 // ── Game constants ────────────────────────────────────────────────────────────

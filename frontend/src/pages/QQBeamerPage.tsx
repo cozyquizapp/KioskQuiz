@@ -4093,6 +4093,65 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
+          {/* Team-Answer-Progress (vor dem Reveal) — spiegelt non-CHEESE-Layout wider */}
+          {!revealed && s.teams.length > 0 && (
+            <div style={{
+              position: 'absolute', top: 72, left: 0, right: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              pointerEvents: 'none', zIndex: 9,
+              animation: 'contentReveal 0.45s ease 0.35s both',
+            }}>
+              <div style={{
+                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.75)',
+                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                transition: 'color 0.3s ease',
+              }}>
+                {s.allAnswered
+                  ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
+                  : `${s.answers.length}/${s.teams.length} Teams`}
+              </div>
+              {(() => {
+                const tc = s.teams.length;
+                const av = tc > 6 ? 36 : tc > 4 ? 42 : 46;
+                const gap = tc > 6 ? 8 : tc > 4 ? 10 : 12;
+                const emoji = tc > 6 ? 20 : tc > 4 ? 23 : 26;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap }}>
+                    {s.teams.map(tm => {
+                      const answered = s.answers.some(a => a.teamId === tm.id);
+                      return (
+                        <div key={tm.id} style={{
+                          position: 'relative',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          width: av, height: av, borderRadius: '50%',
+                          background: answered ? `${tm.color}25` : 'rgba(0,0,0,0.35)',
+                          border: `2.5px solid ${answered ? tm.color : 'rgba(255,255,255,0.18)'}`,
+                          transition: 'all 0.4s ease',
+                          opacity: answered ? 1 : 0.55,
+                          boxShadow: answered ? `0 0 14px ${tm.color}66` : '0 2px 8px rgba(0,0,0,0.5)',
+                          flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: emoji, lineHeight: 1 }}>{qqGetAvatar(tm.avatarId).emoji}</span>
+                          {answered && (
+                            <div style={{
+                              position: 'absolute', bottom: -3, right: -3,
+                              width: 18, height: 18, borderRadius: '50%',
+                              background: '#22C55E', border: '2px solid #0D0A06',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 10, fontWeight: 900, color: '#fff',
+                              animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                            }}>✓</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Frosted question/answer card — bottom */}
           <div style={{
             width: '100%', maxWidth: 900,
@@ -4163,21 +4222,72 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             )}
 
-            {/* Winner banner */}
-            {isCheeseReveal && s.correctTeamId && (() => {
-              const winner = s.teams.find(t => t.id === s.correctTeamId);
-              if (!winner) return null;
-              const av = qqGetAvatar(winner.avatarId);
+            {/* Alle richtigen Teams mit Zeit — analog zu MUCHO/ZEHN_VON_ZEHN */}
+            {isCheeseReveal && (() => {
+              const correctDE = (q.answer ?? '').trim().toLowerCase();
+              const correctEN = (q.answerEn ?? '').trim().toLowerCase();
+              const correctSet = [correctDE, correctEN].filter(Boolean);
+              const matches = (submitted: string) => {
+                const s2 = submitted.trim().toLowerCase();
+                if (s2.length < 2) return false;
+                return correctSet.some(c => c === s2 || s2.includes(c) || (c.length > 3 && c.includes(s2) && s2.length >= 3));
+              };
+              const correctAnswers = [...s.answers]
+                .filter(a => matches(a.text))
+                .sort((a, b) => a.submittedAt - b.submittedAt);
+              if (correctAnswers.length === 0) {
+                return (
+                  <div style={{
+                    marginTop: 14,
+                    fontSize: 'clamp(16px, 1.9vw, 24px)', fontWeight: 800,
+                    color: '#94a3b8',
+                    animation: 'revealWinnerIn 0.5s ease 0.4s both',
+                  }}>
+                    {lang === 'en' ? 'No team got it right.' : 'Kein Team hatte die richtige Antwort.'}
+                  </div>
+                );
+              }
+              const t0 = s.timerEndsAt
+                ? s.timerEndsAt - (s.timerDurationSec * 1000)
+                : (correctAnswers[0].submittedAt);
               return (
                 <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-                  marginTop: 8,
-                  animation: 'revealWinnerIn 0.5s ease 0.5s both',
+                  marginTop: 14,
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                  animation: 'revealWinnerIn 0.5s ease 0.35s both',
                 }}>
-                  <span style={{ fontSize: 40, animation: 'celebShake 0.6s ease 0.9s both' }}>{av.emoji}</span>
-                  <span style={{ fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900, color: winner.color }}>
-                    {winner.name}
-                  </span>
+                  {correctAnswers.map((a, i) => {
+                    const team = s.teams.find(t => t.id === a.teamId);
+                    if (!team) return null;
+                    const av = qqGetAvatar(team.avatarId);
+                    const timeSec = Math.max(0, (a.submittedAt - t0) / 1000);
+                    const isFirst = i === 0;
+                    return (
+                      <div key={a.teamId} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+                        padding: '8px 16px', borderRadius: 14,
+                        background: isFirst ? 'rgba(251,191,36,0.14)' : 'rgba(34,197,94,0.10)',
+                        border: isFirst ? '2px solid rgba(251,191,36,0.55)' : '1.5px solid rgba(34,197,94,0.4)',
+                        animation: `contentReveal 0.4s ease ${0.4 + i * 0.1}s both`,
+                      }}>
+                        <span style={{ fontSize: 32, lineHeight: 1, animation: isFirst ? 'celebShake 0.6s ease 0.9s both' : 'none' }}>{av.emoji}</span>
+                        <span style={{
+                          fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900,
+                          color: team.color,
+                        }}>{team.name}</span>
+                        <span style={{
+                          padding: '3px 10px', borderRadius: 999,
+                          background: isFirst ? 'rgba(251,191,36,0.25)' : 'rgba(0,0,0,0.35)',
+                          border: isFirst ? '1.5px solid rgba(251,191,36,0.6)' : '1px solid rgba(255,255,255,0.12)',
+                          fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 800,
+                          color: isFirst ? '#FBBF24' : '#cbd5e1',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {isFirst ? '⚡ ' : ''}{timeSec.toFixed(1)}s
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}

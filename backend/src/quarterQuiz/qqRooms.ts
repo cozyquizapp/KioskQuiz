@@ -1721,6 +1721,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackIntroStep: room.comebackIntroStep,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
+    schedule:         room.questions.map(q => ({
+      phase: q.phaseIndex,
+      category: q.category,
+      bunteTueteKind: q.bunteTuete?.kind,
+    })),
     theme:            room.theme,
     draftId:          room.draftId,
     slideTemplates:   room.slideTemplates,

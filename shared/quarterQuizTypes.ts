@@ -499,6 +499,14 @@ export interface QQStateUpdate {
   categoryIsNew: boolean; // true when introStep is showing category explanation for first time
   // Set when all connected teams have submitted answers (before moderator reveals)
   allAnswered: boolean;
+  // Schedule für Fortschrittsbaum — kompakte Ansicht aller Fragen im Quiz.
+  schedule?: QQScheduleEntry[];
+}
+
+export interface QQScheduleEntry {
+  phase: QQGamePhaseIndex;
+  category: QQCategory;
+  bunteTueteKind?: QQBunteTueteKind;
 }
 
 export type QQPendingAction =

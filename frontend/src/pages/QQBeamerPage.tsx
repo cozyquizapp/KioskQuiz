@@ -12,6 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
+import QQProgressTree from '../components/QQProgressTree';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
@@ -838,6 +839,8 @@ type RulesSlide = {
   extra?: string;
   /** Mini grid example: 2D array — 'A' = team A, 'B' = team B, '⭐' = joker star, '📌' = stacked, null = empty */
   grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
+  /** Rendert stattdessen den Fortschrittsbaum (Phasen + Fragen-Punkte). */
+  showTree?: boolean;
 };
 
 const RULES_SLIDES_DE: RulesSlide[] = [
@@ -859,6 +862,16 @@ const RULES_SLIDES_DE: RulesSlide[] = [
       'Jedes richtige Team darf ein Feld auf dem Spielfeld setzen.',
       'Bei Gleichstand entscheidet die Geschwindigkeit, wer zuerst wählt!',
     ],
+  },
+  {
+    icon: '🗺️',
+    title: 'Das Quiz im Überblick',
+    color: '#06B6D4',
+    lines: [
+      'Das Quiz läuft in mehreren Runden mit verschiedenen Kategorien.',
+      'Oben seht ihr den Fahrplan — so behaltet ihr den Überblick, wo wir gerade sind.',
+    ],
+    showTree: true,
   },
   {
     icon: '⭐',
@@ -921,6 +934,16 @@ const RULES_SLIDES_EN: RulesSlide[] = [
       'Every correct team places a cell on the grid.',
       'On a tie, speed decides who picks first!',
     ],
+  },
+  {
+    icon: '🗺️',
+    title: 'Quiz Overview',
+    color: '#06B6D4',
+    lines: [
+      'The quiz runs in multiple rounds with different categories.',
+      'Above you see the roadmap — so you always know where we are.',
+    ],
+    showTree: true,
   },
   {
     icon: '⭐',
@@ -1322,9 +1345,17 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 
         {/* Content: text left, grid right (if grid exists) */}
         <div style={{
-          display: 'flex', gap: 'clamp(24px, 3vw, 48px)', alignItems: 'center',
-          flexDirection: hasGrid ? 'row' : 'column',
+          display: 'flex', gap: 'clamp(24px, 3vw, 48px)',
+          alignItems: slide.showTree ? 'stretch' : 'center',
+          flexDirection: slide.showTree ? 'column' : (hasGrid ? 'row' : 'column'),
         }}>
+          {/* Fortschrittsbaum (wenn Flag gesetzt) — oben, volle Breite */}
+          {slide.showTree && (
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'contentReveal 0.5s ease 0.05s both' }}>
+              <QQProgressTree state={s} variant="inline" />
+            </div>
+          )}
+
           {/* Text lines */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 20px)', flex: 1 }}>
             {slide.lines.map((line, i) => (
@@ -1911,6 +1942,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             textAlign: 'center',
           }}>
             {phaseDesc}
+          </div>
+
+          {/* Fortschrittsbaum — so sieht man was noch kommt */}
+          <div style={{
+            marginTop: 36,
+            animation: 'contentReveal 0.6s ease 1.0s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            <QQProgressTree state={s} variant="inline" />
           </div>
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
@@ -5599,6 +5639,21 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
+
+  // Fortschrittsbaum — nur in Pause (nicht im Pre-Game, da kein Spiel läuft)
+  if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
+    panels.push({ key: 'progress', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🗺️</span>
+          {de ? 'Wo sind wir?' : 'Where are we?'}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <QQProgressTree state={s} variant="inline" />
+        </div>
+      </div>
+    )});
+  }
 
   // Current game standings — bei >=5 Teams 2-spaltig, damit nichts überläuft
   const sortedTeams = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);

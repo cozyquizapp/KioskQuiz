@@ -4790,37 +4790,52 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <div style={{
                   marginTop: 14,
-                  display: 'flex', flexDirection: 'column', gap: 8,
-                  animation: 'revealWinnerIn 0.5s ease 0.35s both',
+                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                  gap: 12, flexWrap: 'wrap', width: '100%',
+                  animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.45s both',
                 }}>
                   {correctAnswers.map((a, i) => {
                     const team = s.teams.find(t => t.id === a.teamId);
                     if (!team) return null;
                     const av = qqGetAvatar(team.avatarId);
                     const timeSec = Math.max(0, (a.submittedAt - t0) / 1000);
-                    const isFirst = i === 0;
+                    const isFastest = i === 0;
                     return (
                       <div key={a.teamId} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-                        padding: '8px 16px', borderRadius: 14,
-                        background: isFirst ? 'rgba(251,191,36,0.14)' : 'rgba(34,197,94,0.10)',
-                        border: isFirst ? '2px solid rgba(251,191,36,0.55)' : '1.5px solid rgba(34,197,94,0.4)',
-                        animation: `contentReveal 0.4s ease ${0.4 + i * 0.1}s both`,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                       }}>
-                        <span style={{ fontSize: 32, lineHeight: 1, animation: isFirst ? 'celebShake 0.6s ease 0.9s both' : 'none' }}>{av.emoji}</span>
+                        <div style={{
+                          position: 'relative',
+                          width: 'clamp(44px, 5vw, 64px)',
+                          height: 'clamp(44px, 5vw, 64px)',
+                          borderRadius: '50%',
+                          background: team.color,
+                          border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                          boxShadow: isFastest
+                            ? '0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
+                            : '0 4px 12px rgba(0,0,0,0.4)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 'clamp(22px, 2.6vw, 34px)',
+                          animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
+                        }}>
+                          {av.emoji}
+                          {isFastest && (
+                            <span style={{
+                              position: 'absolute', top: -10, right: -10,
+                              fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
+                            }}>⚡</span>
+                          )}
+                        </div>
                         <span style={{
-                          fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900,
-                          color: team.color,
-                        }}>{team.name}</span>
-                        <span style={{
-                          padding: '3px 10px', borderRadius: 999,
-                          background: isFirst ? 'rgba(251,191,36,0.25)' : 'rgba(0,0,0,0.35)',
-                          border: isFirst ? '1.5px solid rgba(251,191,36,0.6)' : '1px solid rgba(255,255,255,0.12)',
-                          fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 800,
-                          color: isFirst ? '#FBBF24' : '#cbd5e1',
+                          padding: '2px 8px', borderRadius: 999,
+                          background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
+                          border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                          color: isFastest ? '#FBBF24' : '#cbd5e1',
+                          fontWeight: 900,
+                          fontSize: 'clamp(12px, 1.2vw, 15px)',
                           whiteSpace: 'nowrap',
                         }}>
-                          {isFirst ? '⚡ ' : ''}{timeSec.toFixed(1)}s
+                          {timeSec.toFixed(1)}s
                         </span>
                       </div>
                     );

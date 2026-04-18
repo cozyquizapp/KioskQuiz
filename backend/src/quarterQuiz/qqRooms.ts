@@ -1746,11 +1746,13 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
 
 // ── Rules presentation ────────────────────────────────────────────────────────
 
-/** Transition from LOBBY to RULES presentation. */
+/** Transition from LOBBY to RULES presentation.
+ *  Startet bei rulesSlideIndex = -1 → das ist die Intro-Folie ("Willkommen beim
+ *  BLOCK QUIZ / QUARTER QUIZ by cozywolf"). Erster "Weiter"-Klick geht zu Slide 0. */
 export function qqStartRules(room: QQRoomState): void {
   assertPhase(room, ['LOBBY']);
   room.phase = 'RULES';
-  room.rulesSlideIndex = 0;
+  room.rulesSlideIndex = -1;
   room.lastActivityAt = Date.now();
 }
 
@@ -1761,10 +1763,12 @@ export function qqRulesNext(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-/** Go back to previous rules slide (clamps at 0). */
+/** Go back to previous rules slide.
+ *  Untergrenze ist -1 (Intro-Folie), nicht 0 — damit der Moderator von
+ *  Folie 1 zurück aufs Intro kann. */
 export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
-  room.rulesSlideIndex = Math.max(0, room.rulesSlideIndex - 1);
+  room.rulesSlideIndex = Math.max(-1, room.rulesSlideIndex - 1);
   room.lastActivityAt = Date.now();
 }
 

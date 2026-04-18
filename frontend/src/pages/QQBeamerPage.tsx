@@ -257,22 +257,11 @@ export default function QQBeamerPage() {
 
 function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates; roomCode: string }) {
   const cat = s.currentQuestion?.category;
-  // Intro-Overlay: einmal pro Session beim ersten Wechsel LOBBY→RULES.
-  // Wird als Fullscreen-Overlay über der Rules-Ansicht gerendert und blendet
-  // nach ~4.8s aus. Ref merkt sich, dass das Intro schon lief.
-  const introPlayedRef = useRef(false);
-  const [introActive, setIntroActive] = useState(false);
-  useEffect(() => {
-    if (s.phase === 'RULES' && !introPlayedRef.current) {
-      introPlayedRef.current = true;
-      setIntroActive(true);
-    }
-    // Wenn Phase zurück auf LOBBY geht (z.B. Reset), Intro wieder freigeben.
-    if (s.phase === 'LOBBY') {
-      introPlayedRef.current = false;
-      setIntroActive(false);
-    }
-  }, [s.phase]);
+  // Intro-Overlay: wird angezeigt solange phase === 'RULES' und
+  // rulesSlideIndex === -1 (Intro-Pseudo-Slide). Moderator steuert das
+  // Weiterschalten per "Weiter"-Button → Backend setzt rulesSlideIndex auf 0,
+  // das Overlay verschwindet dann automatisch via State-Sync.
+  const introActive = s.phase === 'RULES' && (s.rulesSlideIndex ?? 0) === -1;
   // Pause-/Wartescreen: statt Braun ein kühler Event-Look mit farbigen Blobs.
   // Pre-Game (warm, orange/gold) und Paused (cool, cyan/violett) kriegen
   // eigene Identitäten.
@@ -591,9 +580,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       )}
 
       {/* Intro-Overlay — "Willkommen beim BLOCK QUIZ / QUARTER QUIZ by cozywolf".
-          Spielt einmal pro Session beim ersten Wechsel in die RULES-Phase. */}
+          Sichtbar während RULES-Phase mit rulesSlideIndex === -1. Moderator
+          schaltet per "Weiter" auf Slide 0 weiter → Overlay blendet aus. */}
       {introActive && (
-        <QuizIntroOverlay language={s.language} onDone={() => setIntroActive(false)} />
+        <QuizIntroOverlay language={s.language} />
       )}
 
       {/* Gameshow flash-sweep overlay — runs once per phase group change */}
@@ -1003,15 +993,13 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, onDone }: { language: QQLanguage; onDone: () => void }) {
+function QuizIntroOverlay({ language }: { language: QQLanguage }) {
   const lang = useLangFlip(language);
   const title = lang === 'en' ? 'QUARTER QUIZ' : 'BLOCK QUIZ';
   const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
   const tagline = lang === 'en' ? 'by cozywolf' : 'by cozywolf';
-  useEffect(() => {
-    const t = setTimeout(onDone, 4800);
-    return () => clearTimeout(t);
-  }, [onDone]);
+  // Keine Auto-Dismiss: Moderator steuert das Weiterschalten per "Weiter"-Button.
+  // Die Intro-Elemente animieren einmalig ein und bleiben dann ruhig stehen.
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9990,
@@ -1019,7 +1007,6 @@ function QuizIntroOverlay({ language, onDone }: { language: QQLanguage; onDone: 
       background: 'radial-gradient(ellipse at center, #1a1030 0%, #0b0618 55%, #050208 100%)',
       overflow: 'hidden',
       fontFamily: "'Nunito', system-ui, sans-serif",
-      animation: 'qqIntroFade 4.8s ease both',
     }}>
       {/* Hintergrund-Glow Pulse (warm amber) */}
       <div style={{
@@ -1153,7 +1140,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
   const totalSlides = slides.length;
-  const idx = Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1);
+  // idx=-1 bedeutet Intro-Overlay (wird separat gerendert). Hier auf 0 clampen,
+  // sonst wäre slides[-1] undefined — der Overlay liegt sowieso drüber.
+  const idx = Math.max(0, Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1));
   const slide = slides[idx];
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const isLast = idx === totalSlides - 1;

@@ -239,13 +239,19 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
       }
       return `Dummy-${Math.random().toString(36).slice(2, 6)}`;
     }
-    // Order: Reihenfolge als "idx,idx,idx,..." — bei korrekt die echte,
-    // sonst eine geshuffelte Variante.
+    // Order (Fix It): Teams submit item-Texte pipe-separated in ihrer Reihenfolge.
+    // evalOrder splittet auf '|' und vergleicht Strings. Dummy muss daher
+    // Items anhand correctOrder-Indizes auflösen und mit '|' joinen.
     if (bt.kind === 'order') {
       const correct = bt.correctOrder || [];
-      if (beCorrect && correct.length) return correct.join(',');
-      const shuffled = [...correct].sort(() => Math.random() - 0.5);
-      return shuffled.join(',');
+      const items = bt.items || [];
+      if (correct.length === 0 || items.length === 0) {
+        return `Dummy-${Math.random().toString(36).slice(2, 6)}`;
+      }
+      const seq = beCorrect
+        ? correct.map(idx => items[idx] ?? '')
+        : [...correct].sort(() => Math.random() - 0.5).map(idx => items[idx] ?? '');
+      return seq.join('|');
     }
     // hotPotato / oneOfEight werden nicht via submitAnswer bedient →
     // eigene Auto-Handler (maybeAutoHotPotato/maybeAutoImposter).
@@ -762,6 +768,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         broadcast(io, payload.roomCode);
         // Dummies automatisch antworten lassen
         maybeAutoSimulateAnswers(io, payload.roomCode);
+        // Hot Potato / Imposter: falls aktives Team ein Dummy ist, Kette starten.
+        if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+          maybeAutoHotPotato(io, payload.roomCode);
+        }
+        if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
+          maybeAutoImposter(io, payload.roomCode);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

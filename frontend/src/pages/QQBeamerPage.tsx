@@ -3322,22 +3322,15 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
         {/* Winner card — füllt volle Spaltenhöhe */}
         <div style={{
           height: '100%',
-          background: winners.length > 0
-            ? `linear-gradient(135deg, ${winners[0] && s.teams.find(t => t.id === winners[0].teamId)?.color}22, rgba(0,0,0,0.25))`
-            : 'rgba(239,68,68,0.06)',
-          border: winners.length > 0
-            ? `2px solid ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}55`
-            : '2px solid rgba(239,68,68,0.25)',
+          background: 'transparent',
+          border: 'none',
           borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
           opacity: revealedMinIdx === 0 ? 1 : 0.35,
           filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
-          boxShadow: revealedMinIdx === 0 && winners.length > 0
-            ? `0 0 60px ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}33`
-            : 'none',
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
@@ -3352,16 +3345,34 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
               {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
             </div>
           ) : (() => {
-            // Skaliere Größen je nach Anzahl Sieger, damit nichts die Karte überläuft.
+            // Skaliere Größen je nach Anzahl Sieger — wenig Sieger = deutlich größer.
             const wn = winners.length;
-            const compact = wn >= 5;
-            const mid = wn >= 3;
-            const avatarSize = compact ? 'clamp(38px, 4vw, 58px)' : mid ? 'clamp(52px, 5.5vw, 76px)' : 'clamp(64px, 7vw, 96px)';
-            const emojiSize  = compact ? 'clamp(24px, 2.8vw, 36px)' : mid ? 'clamp(34px, 4.2vw, 52px)' : 'clamp(44px, 5.5vw, 72px)';
-            const nameSize   = compact ? 'clamp(18px, 2.2vw, 30px)' : mid ? 'clamp(22px, 2.8vw, 40px)' : 'clamp(26px, 3.2vw, 50px)';
-            const subSize    = compact ? 'clamp(11px, 1.1vw, 15px)' : mid ? 'clamp(13px, 1.4vw, 20px)' : 'clamp(14px, 1.5vw, 22px)';
-            const rowGap     = compact ? 6 : mid ? 8 : 10;
-            const itemGap    = compact ? 10 : 14;
+            const avatarSize =
+              wn === 1 ? 'clamp(96px, 10vw, 150px)'
+              : wn === 2 ? 'clamp(80px, 8.5vw, 120px)'
+              : wn === 3 ? 'clamp(66px, 7vw, 100px)'
+              : wn === 4 ? 'clamp(56px, 6vw, 84px)'
+              : 'clamp(42px, 4.5vw, 64px)';
+            const emojiSize =
+              wn === 1 ? 'clamp(60px, 7vw, 100px)'
+              : wn === 2 ? 'clamp(50px, 6vw, 80px)'
+              : wn === 3 ? 'clamp(42px, 5vw, 70px)'
+              : wn === 4 ? 'clamp(36px, 4.2vw, 56px)'
+              : 'clamp(26px, 3vw, 40px)';
+            const nameSize =
+              wn === 1 ? 'clamp(34px, 4vw, 64px)'
+              : wn === 2 ? 'clamp(30px, 3.4vw, 54px)'
+              : wn === 3 ? 'clamp(26px, 3vw, 46px)'
+              : wn === 4 ? 'clamp(22px, 2.6vw, 38px)'
+              : 'clamp(18px, 2.2vw, 30px)';
+            const subSize =
+              wn === 1 ? 'clamp(16px, 1.7vw, 26px)'
+              : wn === 2 ? 'clamp(15px, 1.5vw, 24px)'
+              : wn === 3 ? 'clamp(14px, 1.4vw, 22px)'
+              : wn === 4 ? 'clamp(13px, 1.3vw, 20px)'
+              : 'clamp(11px, 1.1vw, 16px)';
+            const rowGap = wn <= 2 ? 16 : wn === 3 ? 12 : wn === 4 ? 10 : 6;
+            const itemGap = wn <= 2 ? 18 : wn === 3 ? 16 : wn === 4 ? 14 : 10;
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
                 {winners.map(w => {
@@ -3653,22 +3664,15 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         {/* Winner */}
         <div style={{
           height: '100%',
-          background: winners.length > 0
-            ? `linear-gradient(135deg, ${winners[0] && s.teams.find(t => t.id === winners[0].teamId)?.color}22, rgba(0,0,0,0.25))`
-            : 'rgba(239,68,68,0.06)',
-          border: winners.length > 0
-            ? `2px solid ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}55`
-            : '2px solid rgba(239,68,68,0.25)',
+          background: 'transparent',
+          border: 'none',
           borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
           opacity: revealedMinIdx === 0 ? 1 : 0.35,
           filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
-          boxShadow: revealedMinIdx === 0 && winners.length > 0
-            ? `0 0 60px ${s.teams.find(t => t.id === winners[0]?.teamId)?.color ?? '#64748b'}33`
-            : 'none',
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
@@ -3683,16 +3687,34 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
               {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
             </div>
           ) : (() => {
-            // Skaliere Größen je nach Anzahl Sieger, damit nichts die Karte überläuft.
+            // Skaliere Größen je nach Anzahl Sieger — wenig Sieger = deutlich größer.
             const wn = winners.length;
-            const compact = wn >= 5;
-            const mid = wn >= 3;
-            const avatarSize = compact ? 'clamp(38px, 4vw, 58px)' : mid ? 'clamp(52px, 5.5vw, 76px)' : 'clamp(64px, 7vw, 96px)';
-            const emojiSize  = compact ? 'clamp(24px, 2.8vw, 36px)' : mid ? 'clamp(34px, 4.2vw, 52px)' : 'clamp(44px, 5.5vw, 72px)';
-            const nameSize   = compact ? 'clamp(18px, 2.2vw, 30px)' : mid ? 'clamp(22px, 2.8vw, 40px)' : 'clamp(26px, 3.2vw, 50px)';
-            const subSize    = compact ? 'clamp(11px, 1.1vw, 15px)' : mid ? 'clamp(13px, 1.4vw, 20px)' : 'clamp(14px, 1.5vw, 22px)';
-            const rowGap     = compact ? 6 : mid ? 8 : 10;
-            const itemGap    = compact ? 10 : 14;
+            const avatarSize =
+              wn === 1 ? 'clamp(96px, 10vw, 150px)'
+              : wn === 2 ? 'clamp(80px, 8.5vw, 120px)'
+              : wn === 3 ? 'clamp(66px, 7vw, 100px)'
+              : wn === 4 ? 'clamp(56px, 6vw, 84px)'
+              : 'clamp(42px, 4.5vw, 64px)';
+            const emojiSize =
+              wn === 1 ? 'clamp(60px, 7vw, 100px)'
+              : wn === 2 ? 'clamp(50px, 6vw, 80px)'
+              : wn === 3 ? 'clamp(42px, 5vw, 70px)'
+              : wn === 4 ? 'clamp(36px, 4.2vw, 56px)'
+              : 'clamp(26px, 3vw, 40px)';
+            const nameSize =
+              wn === 1 ? 'clamp(34px, 4vw, 64px)'
+              : wn === 2 ? 'clamp(30px, 3.4vw, 54px)'
+              : wn === 3 ? 'clamp(26px, 3vw, 46px)'
+              : wn === 4 ? 'clamp(22px, 2.6vw, 38px)'
+              : 'clamp(18px, 2.2vw, 30px)';
+            const subSize =
+              wn === 1 ? 'clamp(16px, 1.7vw, 26px)'
+              : wn === 2 ? 'clamp(15px, 1.5vw, 24px)'
+              : wn === 3 ? 'clamp(14px, 1.4vw, 22px)'
+              : wn === 4 ? 'clamp(13px, 1.3vw, 20px)'
+              : 'clamp(11px, 1.1vw, 16px)';
+            const rowGap = wn <= 2 ? 16 : wn === 3 ? 12 : wn === 4 ? 10 : 6;
+            const itemGap = wn <= 2 ? 18 : wn === 3 ? 16 : wn === 4 ? 14 : 10;
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
                 {winners.map(w => {

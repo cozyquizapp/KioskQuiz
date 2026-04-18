@@ -1234,9 +1234,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
   const totalSlides = slides.length;
-  // idx<0 = Overlay-Phase (Willkommen/Regel-Intro), wird separat gerendert.
-  // Hier auf 0 clampen, damit slides[idx] nie undefined ist.
-  const idx = Math.max(0, Math.min(s.rulesSlideIndex ?? 0, totalSlides - 1));
+  const rawIdx = s.rulesSlideIndex ?? 0;
+  // idx<0 = Overlay-Phase (Willkommen/Regel-Intro). Nichts rendern, damit der
+  // Crossfade der Overlays nicht die erste Regel-Folie im Hintergrund zeigt.
+  if (rawIdx < 0) return null;
+  const idx = Math.max(0, Math.min(rawIdx, totalSlides - 1));
   const slide = slides[idx];
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const isLast = idx === totalSlides - 1;

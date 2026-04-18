@@ -171,6 +171,11 @@ function hasDummyTeams(room: import('./qqRooms').QQRoomState): boolean {
   return Object.values(room.teams).some((t: any) => t._dummy);
 }
 
+function isDummy(room: import('./qqRooms').QQRoomState, teamId: string | null | undefined): boolean {
+  if (!teamId) return false;
+  return !!(room.teams as any)[teamId]?._dummy;
+}
+
 function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], correctRate = 0.6): string {
   if (!q) return 'Dummy';
   const beCorrect = Math.random() < correctRate;
@@ -186,6 +191,20 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
     return String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
   }
   if (q.category === 'ZEHN_VON_ZEHN' && q.options) {
+    // Bei korrekt: meistens auf die richtige Option legen.
+    if (beCorrect && q.correctOptionIndex != null) {
+      const pts = Array(q.options.length).fill(0);
+      const main = 6 + Math.floor(Math.random() * 4); // 6-9 Punkte auf richtig
+      pts[q.correctOptionIndex] = main;
+      let remaining = 10 - main;
+      while (remaining > 0) {
+        const idx = Math.floor(Math.random() * q.options.length);
+        const give = Math.min(remaining, Math.ceil(Math.random() * 3));
+        pts[idx] += give;
+        remaining -= give;
+      }
+      return pts.join(',');
+    }
     const pts = Array(q.options.length).fill(0);
     let remaining = 10;
     while (remaining > 0) {
@@ -196,11 +215,338 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
     }
     return pts.join(',');
   }
-  if (q.category === 'CHEESE' || q.category === 'BUNTE_TUETE') {
-    const fallback = (q as any).correctAnswer || (q as any).answer || 'Test';
-    return beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+  if (q.category === 'BUNTE_TUETE' && q.bunteTuete) {
+    const bt = q.bunteTuete;
+    // CozyGuessr (map): Pin als "lat,lng" — bei korrekt nah am Ziel, sonst
+    // weit weg gestreut (irgendwo auf der Erde).
+    if (bt.kind === 'map') {
+      if (beCorrect) {
+        // ±3° Jitter um Ziel (~330km) → meist auf Kontinent, manchmal daneben
+        const lat = bt.lat + (Math.random() - 0.5) * 6;
+        const lng = bt.lng + (Math.random() - 0.5) * 6;
+        return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+      }
+      // Völlig daneben: zufälliger Punkt
+      const lat = -60 + Math.random() * 120;
+      const lng = -180 + Math.random() * 360;
+      return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    }
+    // Top5: eine der gültigen Antworten
+    if (bt.kind === 'top5') {
+      const answers = (bt.answers || []).filter((a: string) => !!a && a.trim().length > 0);
+      if (beCorrect && answers.length) {
+        return answers[Math.floor(Math.random() * answers.length)];
+      }
+      return `Dummy-${Math.random().toString(36).slice(2, 6)}`;
+    }
+    // Order: Reihenfolge als "idx,idx,idx,..." — bei korrekt die echte,
+    // sonst eine geshuffelte Variante.
+    if (bt.kind === 'order') {
+      const correct = bt.correctOrder || [];
+      if (beCorrect && correct.length) return correct.join(',');
+      const shuffled = [...correct].sort(() => Math.random() - 0.5);
+      return shuffled.join(',');
+    }
+    // hotPotato / oneOfEight werden nicht via submitAnswer bedient →
+    // eigene Auto-Handler (maybeAutoHotPotato/maybeAutoImposter).
+    const fallback = (q as any).answer || 'Test';
+    return beCorrect ? String(fallback) : `Dummy-${Math.random().toString(36).slice(2, 6)}`;
   }
-  return `Dummy ${Math.random().toString(36).slice(2, 6)}`;
+  if (q.category === 'CHEESE') {
+    const fallback = (q as any).answer || 'Test';
+    return beCorrect ? String(fallback) : `Dummy-${Math.random().toString(36).slice(2, 6)}`;
+  }
+  return `Dummy-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+// ── Smart Placement Heuristik ───────────────────────────────────────────────
+// Dummies platzieren nicht rein zufällig, sondern priorisieren Züge, die
+// ihre eigene Strategie "Regeln ausschöpfen" umsetzen:
+//   1. 2×2-Abschluss (Joker-Bonus) — höchste Priorität
+//   2. Ans eigene größte Cluster andocken (Gebiet wachsen lassen)
+//   3. Feld neben einem existierenden eigenen Feld (Cluster-Seed erweitern)
+//   4. Random free
+type CellCoord = { row: number; col: number };
+
+/** Find free cells that would complete a 2×2 of teamId. Returns cells sorted by completion count. */
+function findJokerCompletions(room: import('./qqRooms').QQRoomState, teamId: string): CellCoord[] {
+  const rows = room.grid.length;
+  const cols = room.grid[0]?.length ?? 0;
+  const completions: CellCoord[] = [];
+  // Ein free Feld schließt ein 2×2, wenn von den 4 möglichen 2×2-Rahmen, in
+  // denen das Feld vorkommt, mindestens einer nach Setzen des Feldes komplett
+  // vom teamId beherrscht ist.
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (room.grid[r][c].ownerId !== null) continue;
+      // Prüfe alle 4 möglichen 2×2-Rahmen, die dieses Feld enthalten
+      const frames = [
+        [{ r: r, c: c }, { r: r, c: c + 1 }, { r: r + 1, c: c }, { r: r + 1, c: c + 1 }],
+        [{ r: r, c: c - 1 }, { r: r, c: c }, { r: r + 1, c: c - 1 }, { r: r + 1, c: c }],
+        [{ r: r - 1, c: c }, { r: r - 1, c: c + 1 }, { r: r, c: c }, { r: r, c: c + 1 }],
+        [{ r: r - 1, c: c - 1 }, { r: r - 1, c: c }, { r: r, c: c - 1 }, { r: r, c: c }],
+      ];
+      for (const frame of frames) {
+        const valid = frame.every(p => p.r >= 0 && p.r < rows && p.c >= 0 && p.c < cols);
+        if (!valid) continue;
+        const owned = frame.every(p => {
+          if (p.r === r && p.c === c) return true; // hypothetisch gesetzt
+          return room.grid[p.r][p.c].ownerId === teamId;
+        });
+        if (owned) {
+          completions.push({ row: r, col: c });
+          break;
+        }
+      }
+    }
+  }
+  return completions;
+}
+
+/** BFS-Größe des Clusters, das Cell (r,c) mit teamId enthalten würde. */
+function clusterSizeWithCell(
+  room: import('./qqRooms').QQRoomState,
+  teamId: string,
+  r: number,
+  c: number,
+): number {
+  const rows = room.grid.length;
+  const cols = room.grid[0]?.length ?? 0;
+  const visited = new Set<string>();
+  const stack: CellCoord[] = [{ row: r, col: c }];
+  let size = 0;
+  while (stack.length) {
+    const { row, col } = stack.pop()!;
+    const key = `${row},${col}`;
+    if (visited.has(key)) continue;
+    if (row < 0 || row >= rows || col < 0 || col >= cols) continue;
+    const owner = (row === r && col === c) ? teamId : room.grid[row][col].ownerId;
+    if (owner !== teamId) continue;
+    visited.add(key);
+    size++;
+    stack.push({ row: row - 1, col }, { row: row + 1, col }, { row, col: col - 1 }, { row, col: col + 1 });
+  }
+  return size;
+}
+
+/** Smart pick for placing on a free cell. */
+function pickSmartPlacement(
+  room: import('./qqRooms').QQRoomState,
+  teamId: string,
+  freeCells: CellCoord[],
+): CellCoord | null {
+  if (!freeCells.length) return null;
+  // 70% strategisch, 30% zufällig — damit nicht 100% perfekt, aber spürbar besser.
+  const strategic = Math.random() < 0.7;
+  if (!strategic) return freeCells[Math.floor(Math.random() * freeCells.length)];
+
+  // 1) 2×2 abschließen
+  const jokers = findJokerCompletions(room, teamId).filter(jc =>
+    freeCells.some(f => f.row === jc.row && f.col === jc.col),
+  );
+  if (jokers.length) return jokers[Math.floor(Math.random() * jokers.length)];
+
+  // 2) Größtes Cluster weiter ausbauen: Cell picken, die die größte
+  // Cluster-Größe ergibt. Adjazente Felder werden bevorzugt.
+  let bestCells: CellCoord[] = [];
+  let bestSize = -1;
+  for (const f of freeCells) {
+    const size = clusterSizeWithCell(room, teamId, f.row, f.col);
+    if (size > bestSize) {
+      bestSize = size;
+      bestCells = [f];
+    } else if (size === bestSize) {
+      bestCells.push(f);
+    }
+  }
+  if (bestCells.length && bestSize > 1) {
+    return bestCells[Math.floor(Math.random() * bestCells.length)];
+  }
+
+  // 3) Sonst zufälliges freies Feld
+  return freeCells[Math.floor(Math.random() * freeCells.length)];
+}
+
+/** Smart pick for stealing: priorisiere gegnerische Jokerfelder, dann
+ *  Felder aus größten Gegner-Clustern (max Damage). */
+function pickSmartSteal(
+  room: import('./qqRooms').QQRoomState,
+  teamId: string,
+  oppFreeCells: CellCoord[],
+): CellCoord | null {
+  if (!oppFreeCells.length) return null;
+  const strategic = Math.random() < 0.7;
+  if (!strategic) return oppFreeCells[Math.floor(Math.random() * oppFreeCells.length)];
+
+  // 1) Gegnerische Joker-Felder zuerst (jokerFormed flag)
+  const jokerCells = oppFreeCells.filter(cc => !!(room.grid[cc.row][cc.col] as any).jokerFormed);
+  if (jokerCells.length) return jokerCells[Math.floor(Math.random() * jokerCells.length)];
+
+  // 2) Feld aus dem größten Gegner-Cluster — ermittel Cluster-Größe des
+  // Opfers für jedes Kandidatenfeld.
+  let bestCells: CellCoord[] = [];
+  let bestSize = -1;
+  for (const cc of oppFreeCells) {
+    const victimId = room.grid[cc.row][cc.col].ownerId;
+    if (!victimId) continue;
+    const size = clusterSizeWithCell(room, victimId, cc.row, cc.col);
+    if (size > bestSize) { bestSize = size; bestCells = [cc]; }
+    else if (size === bestSize) bestCells.push(cc);
+  }
+  if (bestCells.length) return bestCells[Math.floor(Math.random() * bestCells.length)];
+  return oppFreeCells[Math.floor(Math.random() * oppFreeCells.length)];
+}
+
+/**
+ * Hot Potato: Wenn der aktive Team-Slot ein Dummy ist, liefert der
+ * Dummy nach kurzer Verzögerung eine gültige, noch nicht benutzte Antwort
+ * aus dem Answer-Pool ab (oder würfelt Müll, wenn "falsch"). Der bestehende
+ * qq:hotPotatoAnswer-Flow kümmert sich um Eliminierung/Weiterreichen.
+ */
+export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'QUESTION_ACTIVE') return;
+  const q = room.currentQuestion;
+  if (!q || q.category !== 'BUNTE_TUETE' || q.bunteTuete?.kind !== 'hotPotato') return;
+  const activeId = room.hotPotatoActiveTeamId;
+  if (!activeId) return;
+  if (!isDummy(room, activeId)) return;
+
+  // Pool an noch nicht verwendeten gültigen Antworten ermitteln
+  const validAnswers = (q.answer || '')
+    .split(/[,;]/)
+    .map(a => a.replace(/[…\.]+$/, '').trim())
+    .filter(a => a.length > 0);
+  const usedNorm = room.hotPotatoUsedAnswers.map(u => normalizeText(u));
+  const unused = validAnswers.filter(v =>
+    !usedNorm.some(u => similarityScore(u, v) >= 0.8),
+  );
+
+  // Dummy "weiß" zu 70% eine echte Antwort
+  const beCorrect = Math.random() < 0.7 && unused.length > 0;
+  const answer = beCorrect
+    ? unused[Math.floor(Math.random() * unused.length)]
+    : `Dummy-${Math.random().toString(36).slice(2, 6)}`;
+
+  // Kurze Verzögerung, damit der Wechsel sichtbar ist
+  const delay = 900 + Math.random() * 1500;
+  setTimeout(() => {
+    const live = getQQRoom(roomCode);
+    if (!live || live.phase !== 'QUESTION_ACTIVE') return;
+    if (live.hotPotatoActiveTeamId !== activeId) return;
+    // Wiederverwendung der internen Antwort-Logik via submitAnswer-Helper
+    try {
+      const trimmed = answer.slice(0, 500);
+      const normalizedAnswer = normalizeText(trimmed);
+      const isDuplicate = live.hotPotatoUsedAnswers.some(
+        u => normalizeText(u) === normalizedAnswer,
+      );
+      if (isDuplicate && normalizedAnswer.length > 0) {
+        live.hotPotatoLastAnswer = trimmed;
+        const next = qqHotPotatoEliminate(live, () => { /* no-op for dummy turn */ });
+        void next;
+      } else {
+        const validList = validAnswers;
+        const isMatch = validList.some(v => similarityScore(trimmed, v) >= 0.8);
+        if (isMatch) {
+          live.hotPotatoUsedAnswers.push(trimmed);
+          live.hotPotatoAnswerAuthors.push(activeId);
+          qqHotPotatoNext(live, () => { /* no-op */ });
+        } else {
+          // Als "falsch" behandeln → Dummy wird eliminiert
+          live.hotPotatoLastAnswer = trimmed;
+          qqHotPotatoEliminate(live, () => { /* no-op */ });
+        }
+      }
+      broadcastQQ(io, roomCode);
+      // Endbedingungen prüfen
+      const alive = live.joinOrder.filter(id => !live.hotPotatoEliminated.includes(id) && live.teams[id]?.connected);
+      if (alive.length <= 1) {
+        if (alive.length === 1) {
+          qqClearHotPotatoTimer(live);
+          qqRevealAnswer(live);
+          qqMarkCorrect(live, alive[0]);
+        } else {
+          qqRevealAnswer(live);
+          qqMarkWrong(live);
+        }
+        broadcastQQ(io, roomCode);
+        // Nach markCorrect kann PLACEMENT starten → maybeAutoPlace
+        // (cast: live.phase wurde oben narrow'ed, kann zur Laufzeit aber flippen)
+        if ((live.phase as string) === 'PLACEMENT' && live.pendingFor) {
+          maybeAutoPlace(io, roomCode);
+        }
+      } else {
+        // Weiter: evtl. ist der nächste auch ein Dummy → Kette
+        maybeAutoHotPotato(io, roomCode);
+      }
+    } catch { /* skip */ }
+  }, delay);
+}
+
+/**
+ * Imposter: Dummy wählt mit 70% eine korrekte Aussage, sonst random.
+ * Der bestehende qqImposterChoose-Flow erledigt Eliminierung/Weiterreichen.
+ */
+export function maybeAutoImposter(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'QUESTION_ACTIVE') return;
+  const q = room.currentQuestion;
+  if (!q || q.category !== 'BUNTE_TUETE' || q.bunteTuete?.kind !== 'oneOfEight') return;
+  const activeId = room.imposterActiveTeamId;
+  if (!activeId) return;
+  if (!isDummy(room, activeId)) return;
+
+  const total = q.bunteTuete.statements.length;
+  const falseIdx = q.bunteTuete.falseIndex;
+  const used = room.imposterChosenIndices;
+
+  // Freie Indizes ermitteln
+  const available: number[] = [];
+  for (let i = 0; i < total; i++) {
+    if (!used.includes(i)) available.push(i);
+  }
+  if (!available.length) return;
+
+  const beCorrect = Math.random() < 0.7;
+  const correctOptions = available.filter(i => i !== falseIdx);
+  let pickIdx: number;
+  if (beCorrect && correctOptions.length) {
+    pickIdx = correctOptions[Math.floor(Math.random() * correctOptions.length)];
+  } else {
+    pickIdx = available[Math.floor(Math.random() * available.length)];
+  }
+
+  const delay = 1000 + Math.random() * 1600;
+  setTimeout(() => {
+    const live = getQQRoom(roomCode);
+    if (!live || live.phase !== 'QUESTION_ACTIVE') return;
+    if (live.imposterActiveTeamId !== activeId) return;
+    try {
+      const result = qqImposterChoose(live, activeId, pickIdx);
+      if (result.allWin) {
+        qqRevealAnswer(live);
+        const survivors = live.joinOrder.filter(id => !live.imposterEliminated.includes(id));
+        qqMarkCorrect(live, survivors);
+      } else if (result.eliminated) {
+        const survivors = live.joinOrder.filter(id => !live.imposterEliminated.includes(id));
+        if (survivors.length <= 1) {
+          qqRevealAnswer(live);
+          if (survivors.length === 1) qqMarkCorrect(live, survivors);
+          else qqMarkWrong(live);
+        }
+      }
+      broadcastQQ(io, roomCode);
+      if ((live.phase as string) === 'PLACEMENT' && live.pendingFor) {
+        maybeAutoPlace(io, roomCode);
+      } else {
+        // Nächster Zug könnte auch Dummy sein
+        maybeAutoImposter(io, roomCode);
+      }
+    } catch { /* skip */ }
+  }, delay);
 }
 
 /**
@@ -216,7 +562,9 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
   const q = room.currentQuestion;
   if (!q) return;
 
-  // Hot Potato + Imposter laufen selbst-gesteuert — skip
+  // Hot Potato + Imposter nutzen nicht submitAnswer, sondern eigene
+  // Auto-Handler (maybeAutoHotPotato / maybeAutoImposter). Die werden nach
+  // qq:hotPotatoStart / qq:imposterStart gezündet.
   if (q.category === 'BUNTE_TUETE' && (q.bunteTuete?.kind === 'hotPotato' || q.bunteTuete?.kind === 'oneOfEight')) {
     return;
   }
@@ -317,19 +665,20 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       }
     }
 
-    const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
     let mode: 'place' | 'steal' | null = null;
     let target: { row: number; col: number } | undefined;
 
     if (action === 'PLACE_1' || action === 'PLACE_2') {
       if (!free.length) return;
-      mode = 'place'; target = pick(free);
+      mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0];
     } else if (action === 'STEAL_1') {
       if (!oppFree.length) return;
-      mode = 'steal'; target = pick(oppFree);
+      mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
     } else if (action === 'FREE' || action === 'COMEBACK') {
-      if (free.length) { mode = 'place'; target = pick(free); }
-      else if (oppFree.length) { mode = 'steal'; target = pick(oppFree); }
+      // FREE/COMEBACK: bevorzugt setzen (Cluster wachsen), sonst klauen.
+      // Bei PLACE_2 nutzen Dummies dasselbe, COMEBACK über PLACE_2 ausgelöst.
+      if (free.length) { mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0]; }
+      else if (oppFree.length) { mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0]; }
       else return;
     } else {
       return;
@@ -550,6 +899,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
         broadcast(io, payload.roomCode);
+        maybeAutoHotPotato(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -576,6 +926,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
           }
         }
         broadcast(io, payload.roomCode);
+        maybeAutoHotPotato(io, payload.roomCode);
+        if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -609,6 +961,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
           }
         }
         broadcast(io, payload.roomCode);
+        maybeAutoHotPotato(io, payload.roomCode);
+        if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -721,6 +1075,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqImposterStart(room);
         broadcast(io, payload.roomCode);
+        maybeAutoImposter(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -754,6 +1109,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
 
         broadcast(io, payload.roomCode);
+        maybeAutoImposter(io, payload.roomCode);
+        if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });

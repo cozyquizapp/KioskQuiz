@@ -217,6 +217,32 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════════════════
+         SECTION 1.5 — Team Color Palette Preview
+         ═══════════════════════════════════════════════════════════════ -->
+    <section>
+      <h2>🎨 Team-Farbpalette Preview</h2>
+      <p class="lede">
+        Vorschau der 8 Team-Farben wie sie auf dem Grid aussehen werden.
+        Jedes Tier bekommt seine Signature-Farbe (= Grid-Tile-Farbe = Ring-
+        Farbe). Unten zusätzlich Avatar-Mockup (Ring + Platzhalter-Emoji)
+        + Hoodie-Streifen zur Kontrastprüfung. Prüfe: Sind alle 8 Farben
+        nebeneinander deutlich unterscheidbar?
+      </p>
+
+      <!-- Row 1: Grid-Tiles wie sie im Territorium aussehen -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Grid-Tiles (so sieht's auf dem Territorium aus)</div>
+        <div id="paletteGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px"></div>
+      </div>
+
+      <!-- Row 2: Avatar-Mockup — Ring + Emoji-Platzhalter + Hoodie-Stripe -->
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Avatar-Mockup (Platzhalter — ersetzt Illustrator mit echter Figur)</div>
+        <div id="paletteAvatars" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
          SECTION 2 — Lottie Avatar Test
          ═══════════════════════════════════════════════════════════════ -->
     <section>
@@ -340,6 +366,70 @@
         }, 'image/png');
       };
       img.src = objUrl;
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // Team palette preview
+    // ═══════════════════════════════════════════════════════════════
+    const TEAMS = [
+      { animal: 'Waschbär', emoji: '🦝', body: '#14B8A6', hoodie: '#F59E0B', name: 'Teal' },
+      { animal: 'Faultier', emoji: '🦥', body: '#84CC16', hoodie: '#7C2D12', name: 'Lime' },
+      { animal: 'Pinguin',  emoji: '🐧', body: '#2563EB', hoodie: '#FDE047', name: 'Blue' },
+      { animal: 'Kuh',      emoji: '🐄', body: '#F97316', hoodie: '#581C87', name: 'Orange' },
+      { animal: 'Koala',    emoji: '🐨', body: '#8B5CF6', hoodie: '#EAB308', name: 'Violet' },
+      { animal: 'Giraffe',  emoji: '🦒', body: '#EAB308', hoodie: '#5B21B6', name: 'Yellow' },
+      { animal: 'Capybara', emoji: '🐹', body: '#DC2626', hoodie: '#166534', name: 'Red' },
+      { animal: 'Shiba',    emoji: '🐕', body: '#EC4899', hoodie: '#0EA5E9', name: 'Pink' },
+    ];
+
+    // Row 1 — Grid tiles (how they look when a team claims a field)
+    const paletteGrid = document.getElementById('paletteGrid');
+    TEAMS.forEach(t => {
+      const tile = document.createElement('div');
+      tile.style.cssText = `
+        aspect-ratio: 1; border-radius: 12px;
+        background: ${t.body};
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; position: relative;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 8px 16px rgba(0,0,0,0.25);
+      `;
+      tile.title = `${t.animal} — Team ${t.name} (${t.body})`;
+      tile.textContent = t.emoji;
+      paletteGrid.appendChild(tile);
+    });
+
+    // Row 2 — Avatar mockup (ring + emoji + hoodie stripe + label)
+    const paletteAvatars = document.getElementById('paletteAvatars');
+    TEAMS.forEach(t => {
+      const card = document.createElement('div');
+      card.style.cssText = `
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 14px;
+        padding: 14px 10px 12px;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+      `;
+      card.innerHTML = `
+        <div style="
+          width: 88px; height: 88px; border-radius: 50%;
+          background: #fff;
+          border: 9px solid ${t.body};
+          display: flex; align-items: center; justify-content: center;
+          font-size: 44px; line-height: 1;
+          box-shadow: 0 0 18px ${t.body}55;
+        ">${t.emoji}</div>
+        <div style="font-weight:900;font-size:14px;color:#f1f5f9;margin-top:2px">${t.animal}</div>
+        <div style="font-size:10px;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Team ${t.name}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <span style="width:18px;height:18px;border-radius:5px;background:${t.body};border:1px solid rgba(255,255,255,0.15)" title="Body/Ring/Grid"></span>
+          <span style="font-size:10px;color:#94a3b8;font-family:ui-monospace,monospace">${t.body}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="width:18px;height:18px;border-radius:5px;background:${t.hoodie};border:1px solid rgba(255,255,255,0.15)" title="Hoodie"></span>
+          <span style="font-size:10px;color:#94a3b8;font-family:ui-monospace,monospace">${t.hoodie}</span>
+        </div>
+      `;
+      paletteAvatars.appendChild(card);
     });
 
     // ═══════════════════════════════════════════════════════════════

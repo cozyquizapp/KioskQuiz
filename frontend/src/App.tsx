@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
 import PinGate from './components/PinGate';
+import QQErrorBoundary, { installGlobalCrashHandlers } from './components/QQErrorBoundary';
 
 // Eager load: Fast paths
 import LandingPage from './pages/LandingPage';
@@ -120,6 +121,23 @@ function GlobalErrorOverlay() {
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
+  useEffect(() => {
+    // RoomCode aus localStorage holen (wird von QQ-Pages dort abgelegt); URL-Query als Fallback
+    const getRoom = () => {
+      try {
+        const ls = localStorage.getItem('qq:lastRoomCode') || localStorage.getItem('qq.roomCode');
+        if (ls) return ls;
+        const u = new URL(window.location.href);
+        return u.searchParams.get('room') || u.pathname.split('/').find((p) => /^[A-Z0-9]{4,6}$/i.test(p));
+      } catch { return undefined; }
+    };
+    const source = window.location.pathname.includes('/moderator') ? 'moderator'
+                 : window.location.pathname.includes('/beamer') ? 'beamer'
+                 : window.location.pathname.includes('/team') ? 'team'
+                 : 'qq';
+    installGlobalCrashHandlers(source, getRoom);
+  }, []);
+
   return (
     <AppErrorBoundary>
       <GlobalErrorOverlay />
@@ -132,9 +150,9 @@ function App() {
         <Routes>
           {/* ── Quarter Quiz (Hauptapp) ───────────────────────────── */}
           <Route path="/" element={<QQLandingPage />} />
-          <Route path="/team"       element={<QQTeamPage />} />
-          <Route path="/beamer"     element={<QQBeamerPage />} />
-          <Route path="/moderator"  element={<PinGate><QQModeratorPage /></PinGate>} />
+          <Route path="/team"       element={<QQErrorBoundary source="team"><QQTeamPage /></QQErrorBoundary>} />
+          <Route path="/beamer"     element={<QQErrorBoundary source="beamer"><QQBeamerPage /></QQErrorBoundary>} />
+          <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           <Route path="/builder"    element={<PinGate><QQBuilderPage /></PinGate>} />
           <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />
           <Route path="/host-sheets" element={<PinGate><QQHostSheetsPage /></PinGate>} />

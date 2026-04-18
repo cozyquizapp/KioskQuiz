@@ -8370,6 +8370,62 @@ function saveQQFeedback(list: QQFeedbackEntry[]): void {
     console.error('QQ feedback write failed:', err);
   }
 }
+// ── QQ Crash-Reporting ───────────────────────────────────────────────────────
+// Append-only JSON-File für Client-side Crashes (Moderator/Beamer/Team).
+// Damit wir sporadische Crashes reproduzieren können.
+const qqCrashPath = path.join(__dirname, 'data', 'qqCrashes.json');
+const qqCrashMaxEntries = 500;
+type QQCrashEntry = {
+  id: string;
+  ts: number;
+  source: string;
+  roomCode?: string | null;
+  kind: string;
+  message: string;
+  stack?: string | null;
+  componentStack?: string | null;
+  url?: string | null;
+  userAgent?: string | null;
+};
+function appendQQCrash(entry: QQCrashEntry): void {
+  try {
+    const dir = path.dirname(qqCrashPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    let list: QQCrashEntry[] = [];
+    if (fs.existsSync(qqCrashPath)) {
+      try { list = JSON.parse(fs.readFileSync(qqCrashPath, 'utf-8')); } catch { list = []; }
+    }
+    list.push(entry);
+    if (list.length > qqCrashMaxEntries) list = list.slice(-qqCrashMaxEntries);
+    fs.writeFileSync(qqCrashPath, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('QQ crash write failed:', err);
+  }
+}
+app.post('/api/qq/crashReport', (req, res) => {
+  try {
+    const b = req.body ?? {};
+    const entry: QQCrashEntry = {
+      id: Math.random().toString(36).slice(2) + Date.now().toString(36),
+      ts: typeof b.ts === 'number' ? b.ts : Date.now(),
+      source: String(b.source || 'unknown').slice(0, 40),
+      roomCode: b.roomCode ? String(b.roomCode).slice(0, 20) : null,
+      kind: String(b.kind || 'unknown').slice(0, 20),
+      message: String(b.message || '').slice(0, 2000),
+      stack: b.stack ? String(b.stack).slice(0, 8000) : null,
+      componentStack: b.componentStack ? String(b.componentStack).slice(0, 8000) : null,
+      url: b.url ? String(b.url).slice(0, 500) : null,
+      userAgent: b.userAgent ? String(b.userAgent).slice(0, 500) : null,
+    };
+    console.warn('[QQ CRASH]', entry.source, entry.kind, entry.message, entry.roomCode ?? '');
+    appendQQCrash(entry);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('QQ crashReport error:', err);
+    res.status(500).json({ ok: false });
+  }
+});
+
 // ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
 // TEMP: auf `true` gesetzt für 8-Team-Test in Production. Nach Test zurück auf `process.env.NODE_ENV !== 'production'`.
 const QQ_DEV_ENABLED = true;

@@ -121,8 +121,17 @@ function getOrCreateAudio(url: string): HTMLAudioElement {
   return el;
 }
 
+// Spam-Guard: gleicher Sound darf erst nach X ms erneut getriggert werden.
+// Schützt vor Endlos-Retrigger-Loops (Buggy Effect / React-Re-render-Storm).
+const lastPlayAt: Map<string, number> = new Map();
+const PLAY_COOLDOWN_MS = 200;
+
 /** Play a one-shot audio file. Resets to start if already playing. */
 function playAudioFile(url: string) {
+  const now = Date.now();
+  const last = lastPlayAt.get(url) ?? 0;
+  if (now - last < PLAY_COOLDOWN_MS) return; // spam-guard
+  lastPlayAt.set(url, now);
   const el = getOrCreateAudio(url);
   el.volume = masterVolume;
   el.currentTime = 0;

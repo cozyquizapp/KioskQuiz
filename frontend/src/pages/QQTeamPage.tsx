@@ -353,11 +353,16 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 }) {
   // Track which avatar was just picked for the burst animation
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 3 zufällige Begrüßungen, sprachabhängig
+  const greetings = lang === 'de' ? ['Hi!', 'Hallo!', 'Hey!'] : ['Hi!', 'Hey!', 'Yo!'];
 
   function handleAvatarPick(id: string) {
     setAvatarId(id);
     setPickedId(id);
+    setPickedGreeting(greetings[Math.floor(Math.random() * greetings.length)]);
     if (pickTimer.current) clearTimeout(pickTimer.current);
     pickTimer.current = setTimeout(() => setPickedId(null), 1500);
   }
@@ -464,7 +469,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         transformOrigin: 'bottom left',
                         animation: 'tcAvatarHi 1.4s ease-out forwards',
                         letterSpacing: '0.5px',
-                      }}>Hi!</div>
+                      }}>{pickedGreeting}</div>
                     )}
                     <QQTeamAvatar avatarId={a.id} size={48} style={{
                       animation: justPicked

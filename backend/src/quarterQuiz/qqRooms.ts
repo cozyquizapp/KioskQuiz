@@ -804,12 +804,15 @@ function evalOrder(
 ): QQEvalResult {
   const correctOrder = bt.correctOrder ?? [];
   const items = bt.items ?? [];
+  const itemsEn = (bt as any).itemsEn ?? [];
   if (correctOrder.length === 0 || items.length === 0) {
     return { winnerTeamIds: [], earnedPoints: {} };
   }
 
-  // Build the correct sequence of item texts (DE)
-  const correctSequence = correctOrder.map(idx => (items[idx] ?? '').trim().toLowerCase());
+  // Build the correct sequences in DE *and* EN — teams may submit either language,
+  // and bots submit DE. Also accept numeric index submissions (older clients).
+  const correctDE = correctOrder.map(idx => (items[idx] ?? '').trim().toLowerCase());
+  const correctEN = correctOrder.map(idx => (itemsEn[idx] ?? '').trim().toLowerCase());
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
@@ -817,8 +820,14 @@ function evalOrder(
   for (const ans of room.answers) {
     const submitted = ans.text.split('|').map(s => s.trim().toLowerCase()).filter(Boolean);
     let score = 0;
-    for (let i = 0; i < Math.min(submitted.length, correctSequence.length); i++) {
-      if (submitted[i] === correctSequence[i]) score++;
+    for (let i = 0; i < Math.min(submitted.length, correctOrder.length); i++) {
+      const s = submitted[i];
+      // Index match (old format): "0|1|2"
+      const asIdx = Number(s);
+      if (Number.isFinite(asIdx) && asIdx === correctOrder[i]) { score++; continue; }
+      // Text match DE or EN
+      if (correctDE[i] && s === correctDE[i]) { score++; continue; }
+      if (correctEN[i] && s === correctEN[i]) { score++; continue; }
     }
     scores.push({ teamId: ans.teamId, score });
     if (score > maxScore) maxScore = score;

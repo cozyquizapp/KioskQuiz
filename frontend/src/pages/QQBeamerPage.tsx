@@ -2555,8 +2555,71 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const totalsPerOption = q.options!.map((_, i) => parsed.reduce((sum, p) => sum + (p.pts[i] ?? 0), 0));
         const globalMax = Math.max(1, ...totalsPerOption);
 
+        // Gewinner-Bestimmung: höchster Einsatz auf der korrekten Option, bei Tie → schnellste Einreichung gewinnt.
+        const correctIdx = q.correctOptionIndex;
+        let winner: { team: (typeof s.teams)[number]; pts: number; submittedAt: number; hasTie: boolean; correctOptText: string } | null = null;
+        if (correctIdx != null) {
+          const onCorrect = parsed
+            .map(p => ({ team: s.teams.find(t => t.id === p.teamId), pts: p.pts[correctIdx] ?? 0, submittedAt: p.submittedAt }))
+            .filter((x): x is { team: (typeof s.teams)[number]; pts: number; submittedAt: number } => !!x.team && x.pts > 0);
+          if (onCorrect.length > 0) {
+            const maxPts = Math.max(...onCorrect.map(x => x.pts));
+            const topPts = onCorrect.filter(x => x.pts === maxPts);
+            topPts.sort((a, b) => a.submittedAt - b.submittedAt);
+            winner = {
+              team: topPts[0].team,
+              pts: topPts[0].pts,
+              submittedAt: topPts[0].submittedAt,
+              hasTie: topPts.length > 1,
+              correctOptText: q.options![correctIdx] ?? '',
+            };
+          }
+        }
+
         return (
           <div style={{ animation: 'contentReveal 0.5s ease 0.1s both', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {winner && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: 'clamp(10px, 1.2vh, 16px) clamp(14px, 1.6vw, 22px)',
+                borderRadius: 16,
+                background: `linear-gradient(135deg, ${winner.team.color}22, rgba(34,197,94,0.18))`,
+                border: `2px solid ${winner.team.color}66`,
+                boxShadow: `0 0 0 3px ${winner.team.color}22`,
+                animation: 'contentReveal 0.5s ease 0.05s both',
+              }}>
+                <span style={{
+                  width: 'clamp(44px, 4.5vw, 60px)', height: 'clamp(44px, 4.5vw, 60px)',
+                  borderRadius: '50%', background: winner.team.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 'clamp(22px, 2.6vw, 34px)', flexShrink: 0,
+                  boxShadow: `0 0 20px ${winner.team.color}66`,
+                }}>
+                  {qqGetAvatar(winner.team.avatarId).emoji}
+                </span>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{
+                    fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                  }}>
+                    🏆 {lang === 'en' ? 'Round winner' : 'Rundensieger'}
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 900,
+                    color: '#F1F5F9', lineHeight: 1.2,
+                  }}>
+                    <span style={{ color: winner.team.color }}>{winner.team.name}</span>{' '}
+                    {winner.hasTie
+                      ? (lang === 'en'
+                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span> and was fastest.</>
+                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span> und war am schnellsten.</>)
+                      : (lang === 'en'
+                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span>.</>
+                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span>.</>)}
+                  </div>
+                </div>
+              </div>
+            )}
             {q.options!.map((optText, optIdx) => {
               const isCorrect = optIdx === q.correctOptionIndex;
               const color = isCorrect ? '#22C55E' : (ALLIN_COLORS[optIdx] ?? '#64748b');
@@ -3416,14 +3479,27 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
 
   const criteriaTxt = lang === 'en' && btt.criteriaEn ? btt.criteriaEn : btt.criteria;
 
-  // Antworten sind "idx1|idx2|idx3|..." — Indizes in items-Array.
+  // Antworten sind meistens Item-Texte ("text1|text2|..."), manchmal noch Indizes
+  // ("0|1|2"). Wir normalisieren pro Position auf den Item-Index, indem wir zuerst
+  // als Zahl probieren und dann über DE/EN-Item-Listen matchen.
   const parsedAnswers = useMemo(() => {
+    const deLc = itemsDE.map(s => (s ?? '').trim().toLowerCase());
+    const enLc = itemsEN.map(s => (s ?? '').trim().toLowerCase());
     return s.answers.map(a => {
       const parts = String(a.text ?? '').split('|').map(p => p.trim()).filter(Boolean);
-      const order = parts.map(p => Number(p)).filter(n => Number.isFinite(n));
+      const order: number[] = parts.map(p => {
+        const asNum = Number(p);
+        if (Number.isFinite(asNum) && asNum >= 0 && asNum < itemsDE.length) return asNum;
+        const pLc = p.toLowerCase();
+        const di = deLc.indexOf(pLc);
+        if (di >= 0) return di;
+        const ei = enLc.indexOf(pLc);
+        if (ei >= 0) return ei;
+        return -1;
+      });
       return { teamId: a.teamId, order };
     });
-  }, [s.answers]);
+  }, [s.answers, itemsDE, itemsEN]);
 
   // Pro Position: welche Teams haben hier den richtigen Item-Index gesetzt?
   const perPosition = useMemo(() => {
@@ -3767,69 +3843,68 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
 
   return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      gap: 'clamp(14px, 1.8vh, 22px)',
+      flex: 1, display: 'grid',
+      gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
+      gap: 'clamp(16px, 2.5vw, 36px)',
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
       animation: 'contentReveal 0.45s ease both',
       minHeight: 0,
     }}>
-      {/* ── Top: Frage + Lösung (volle Breite) ────────────────── */}
+      {/* ── Linke Spalte: Frage oben, Winner-Card darunter ────── */}
       <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '2px solid rgba(255,255,255,0.08)',
-        borderRadius: 26,
-        padding: 'clamp(16px, 2vh, 26px) clamp(24px, 2.8vw, 42px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-        flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        gap: 'clamp(14px, 1.8vh, 22px)',
+        minHeight: 0, minWidth: 0,
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
-          letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
-        }}>
-          🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
-        </div>
-        <div key={lang} style={{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          gap: 'clamp(16px, 2.5vw, 36px)', flexWrap: 'wrap',
+          background: 'rgba(255,255,255,0.04)',
+          border: '2px solid rgba(255,255,255,0.08)',
+          borderRadius: 26,
+          padding: 'clamp(16px, 2vh, 26px) clamp(20px, 2.4vw, 36px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+          animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+          flexShrink: 0,
         }}>
           <div style={{
-            fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
-            fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
+            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
+          }}>
+            🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
+          </div>
+          <div key={lang} style={{
+            display: 'flex', flexDirection: 'column', gap: 12,
             animation: 'langFadeIn 0.4s ease both',
-            flex: 1, minWidth: 0,
           }}>
-            {qText}
-          </div>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            padding: '10px 22px', borderRadius: 14,
-            background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.08))',
-            border: '2px solid rgba(34,197,94,0.55)',
-            boxShadow: '0 0 32px rgba(34,197,94,0.25)',
-            animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.25s both',
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>✓</span>
-            <span style={{
-              fontWeight: 900, color: '#86efac',
-              fontSize: 'clamp(26px, 3vw, 44px)', lineHeight: 1,
-              fontVariantNumeric: 'tabular-nums',
-            }}>{fmt(target)}</span>
+            <div style={{
+              fontSize: qText.length > 120 ? 'clamp(20px, 1.9vw, 28px)' : 'clamp(22px, 2.2vw, 34px)',
+              fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+              minWidth: 0,
+            }}>
+              {qText}
+            </div>
+            <div style={{
+              alignSelf: 'flex-start',
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '10px 22px', borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.08))',
+              border: '2px solid rgba(34,197,94,0.55)',
+              boxShadow: '0 0 32px rgba(34,197,94,0.25)',
+              animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.25s both',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>✓</span>
+              <span style={{
+                fontWeight: 900, color: '#86efac',
+                fontSize: 'clamp(26px, 3vw, 44px)', lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
+              }}>{fmt(target)}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Bottom: Winner (links) + Rangliste (rechts) ───────── */}
-      <div style={{
-        flex: 1, display: 'grid',
-        gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
-        gap: 'clamp(16px, 2.5vw, 36px)',
-        minHeight: 0,
-      }}>
-        {/* Winner-Card */}
+        {/* Winner-Card — füllt den Rest der linken Spalte */}
         <div style={{
-          height: '100%',
+          flex: 1,
           background: winners.length > 0
             ? `linear-gradient(135deg, ${winners[0].team.color}22, rgba(0,0,0,0.25))`
             : 'rgba(239,68,68,0.06)',
@@ -3898,13 +3973,14 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             </div>
           )}
         </div>
+      </div>
 
-        {/* Right column: Ranking bottom-up (schlechtester zuerst, bester zuletzt) */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
-          justifyContent: 'space-between',
-          minHeight: 0, height: '100%',
-        }}>
+      {/* ── Rechte Spalte: Ranking bottom-up (schlechtester zuerst, bester zuletzt) ── */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
+        justifyContent: 'space-between',
+        minHeight: 0, height: '100%',
+      }}>
           {ranked.map((r, idx) => {
             const rank = idx + 1;
             const isVisible = idx >= revealedMinIdx;
@@ -4008,7 +4084,6 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>
           )}
-        </div>
       </div>
     </div>
   );
@@ -4987,7 +5062,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
                   marginBottom: 'clamp(8px, 1.2vh, 24px)',
                   width: '100%', maxWidth: 1400,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px, 2vw, 32px)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 'clamp(10px, 1.4vh, 18px)',
                   animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
                 }}>
                   {/* Shimmer sweep */}
@@ -5007,8 +5083,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   </span>
                   {correctTeams.length > 0 && (
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      flexShrink: 0,
+                      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                      gap: 12, flexWrap: 'wrap',
+                      flexShrink: 0, width: '100%',
                       position: 'relative', zIndex: 1,
                       animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
                     }}>
@@ -7082,9 +7159,24 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
           opacity: activeTeamId && !isActive ? 0.55 : 1,
           transition: 'opacity 0.3s ease',
         }}>
-          <div style={{ position: 'relative', width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: avatarSize, lineHeight: 1 }}>{qqGetAvatar(t.avatarId).emoji}</span>
-            {isLeader && <span style={{ position: 'absolute', top: -8, right: -2, fontSize: dense ? 20 : 24 }}>👑</span>}
+          <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
+            <span style={{
+              position: 'relative', display: 'inline-block',
+              fontSize: avatarSize, lineHeight: 1,
+            }}>
+              {qqGetAvatar(t.avatarId).emoji}
+              {isLeader && (
+                <span style={{
+                  position: 'absolute',
+                  top: dense ? -12 : -16,
+                  left: '50%',
+                  transform: 'translateX(-50%) rotate(-14deg)',
+                  fontSize: dense ? 24 : 30,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                }}>👑</span>
+              )}
+            </span>
           </div>
           {/* Name — flex-1, darf wachsen */}
           <span style={{

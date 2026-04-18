@@ -404,6 +404,37 @@ function pickSmartSteal(
 }
 
 /**
+ * Modul-Level Turn-Expire-Handler, damit auch maybeAutoHotPotato denselben
+ * Callback an qqHotPotatoNext/Eliminate weitergeben kann (sonst bleibt der
+ * Flow beim nächsten echten Team ohne Timer stehen).
+ */
+export function hotPotatoTurnExpiredFor(io: SocketIOServer, roomCode: string): () => void {
+  return () => {
+    try {
+      const room = getQQRoom(roomCode);
+      if (!room) return;
+      if (room.phase !== 'QUESTION_ACTIVE' || !room.hotPotatoActiveTeamId) return;
+      const next = qqHotPotatoEliminate(room, hotPotatoTurnExpiredFor(io, roomCode));
+      if (!next) {
+        qqRevealAnswer(room);
+        qqMarkWrong(room);
+      } else {
+        const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
+        if (alive.length === 1) {
+          qqClearHotPotatoTimer(room);
+          qqRevealAnswer(room);
+          qqClearBuzz(room);
+          qqMarkCorrect(room, next);
+        }
+      }
+      broadcastQQ(io, roomCode);
+      // Falls der nächste dran ein Dummy ist, sofort antreiben
+      maybeAutoHotPotato(io, roomCode);
+    } catch { /* room gone */ }
+  };
+}
+
+/**
  * Hot Potato: Wenn der aktive Team-Slot ein Dummy ist, liefert der
  * Dummy nach kurzer Verzögerung eine gültige, noch nicht benutzte Antwort
  * aus dem Answer-Pool ab (oder würfelt Müll, wenn "falsch"). Der bestehende
@@ -429,14 +460,15 @@ export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
     !usedNorm.some(u => similarityScore(u, v) >= 0.8),
   );
 
-  // Dummy "weiß" zu 70% eine echte Antwort
-  const beCorrect = Math.random() < 0.7 && unused.length > 0;
+  // Dummy "weiß" zu 60% eine echte Antwort
+  const beCorrect = Math.random() < 0.6 && unused.length > 0;
   const answer = beCorrect
     ? unused[Math.floor(Math.random() * unused.length)]
     : `Dummy-${Math.random().toString(36).slice(2, 6)}`;
 
   // Kurze Verzögerung, damit der Wechsel sichtbar ist
   const delay = 900 + Math.random() * 1500;
+  const turnExpired = hotPotatoTurnExpiredFor(io, roomCode);
   setTimeout(() => {
     const live = getQQRoom(roomCode);
     if (!live || live.phase !== 'QUESTION_ACTIVE') return;
@@ -450,19 +482,18 @@ export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
       );
       if (isDuplicate && normalizedAnswer.length > 0) {
         live.hotPotatoLastAnswer = trimmed;
-        const next = qqHotPotatoEliminate(live, () => { /* no-op for dummy turn */ });
-        void next;
+        qqHotPotatoEliminate(live, turnExpired);
       } else {
         const validList = validAnswers;
         const isMatch = validList.some(v => similarityScore(trimmed, v) >= 0.8);
         if (isMatch) {
           live.hotPotatoUsedAnswers.push(trimmed);
           live.hotPotatoAnswerAuthors.push(activeId);
-          qqHotPotatoNext(live, () => { /* no-op */ });
+          qqHotPotatoNext(live, turnExpired);
         } else {
           // Als "falsch" behandeln → Dummy wird eliminiert
           live.hotPotatoLastAnswer = trimmed;
-          qqHotPotatoEliminate(live, () => { /* no-op */ });
+          qqHotPotatoEliminate(live, turnExpired);
         }
       }
       broadcastQQ(io, roomCode);
@@ -880,32 +911,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     // ── Hot Potato (moderator + team) ─────────────────────────────────────
-
-    /** Helper: build an auto-eliminate callback for the current active team. */
-    function hotPotatoTurnExpired(roomCode: string) {
-      return () => {
-        try {
-          const room = ensureQQRoom(roomCode);
-          if (room.phase !== 'QUESTION_ACTIVE' || !room.hotPotatoActiveTeamId) return;
-          const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(roomCode));
-          if (!next) {
-            // All eliminated — no winner
-            qqRevealAnswer(room);
-            qqMarkWrong(room);
-          } else {
-            // Check if only 1 team left → they win
-            const alive = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
-            if (alive.length === 1) {
-              qqClearHotPotatoTimer(room);
-              qqRevealAnswer(room);
-              qqClearBuzz(room);
-              qqMarkCorrect(room, next);
-            }
-          }
-          broadcast(io, roomCode);
-        } catch { /* room gone */ }
-      };
-    }
+    const hotPotatoTurnExpired = (roomCode: string) => hotPotatoTurnExpiredFor(io, roomCode);
 
     socket.on('qq:hotPotatoStart', (payload: { roomCode: string }, ack?: unknown) => {
       try {
